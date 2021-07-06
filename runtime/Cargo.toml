@@ -1,10 +1,10 @@
 [package]
-authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>']
+authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>', 'tuxmain <tuxmain@zettascript.org>']
 edition = '2018'
 homepage = 'https://substrate.dev'
-license = 'Unlicense'
+license = 'AGPL v3'
 name = 'node-template-runtime'
-repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
+repository = 'https://forge.tedomum.net/axiom-team/substrate-libre-currency'
 version = '3.0.0'
 
 [package.metadata.docs.rs]

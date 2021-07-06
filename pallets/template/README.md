@@ -1,1 +1,1 @@
-License: Unlicense
+License: GNU AGPL v3

@@ -1,12 +1,12 @@
 [package]
-authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>']
+authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>', 'tuxmain <tuxmain@zettascript.org>']
 build = 'build.rs'
-description = 'A fresh FRAME-based Substrate node, ready for hacking.'
+description = 'PoC Substrate-based libre currency'
 edition = '2018'
 homepage = 'https://substrate.dev'
-license = 'Unlicense'
+license = 'AGPL v3'
 name = 'node-template'
-repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
+repository = 'https://forge.tedomum.net/axiom-team/substrate-libre-currency'
 version = '3.0.0'
 
 [[bin]]
