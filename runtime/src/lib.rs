@@ -22,9 +22,27 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+mod authorizations;
+mod entities;
+mod handlers;
+
+pub use crate::entities::{IdtyDid, IdtyRight, Planet};
+pub use pallet_balances::Call as BalancesCall;
+pub use pallet_identity::IdtyValue;
+pub use pallet_timestamp::Call as TimestampCall;
+use pallet_transaction_payment::CurrencyAdapter;
+pub use pallet_universal_dividend;
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
+pub use sp_runtime::{Perbill, Permill};
+
+use crate::handlers::OnRightKeyChangeHandler;
+use frame_support::traits::Get;
+use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
+use sp_arithmetic::traits::{BaseArithmetic, Unsigned};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::traits::{
@@ -46,19 +64,10 @@ pub use frame_support::{
     traits::{KeyOwnerProofSystem, Randomness},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-        IdentityFee, Weight,
+        Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
     },
     StorageValue,
 };
-pub use pallet_balances::Call as BalancesCall;
-pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::CurrencyAdapter;
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{Perbill, Permill};
-
-/// Import the template pallet.
-pub use pallet_template;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -70,21 +79,14 @@ pub type Signature = MultiSignature;
 /// to the public key of our transaction signing scheme.
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
-/// The type for looking up accounts. We don't expect more than 4 billion of them, but you
-/// never know...
-pub type AccountIndex = u32;
-
 /// Balance of an account.
-pub type Balance = u128;
+pub type Balance = u64;
 
 /// Index of a transaction in the chain.
 pub type Index = u32;
 
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
-
-/// Digest item type.
-pub type DigestItem = generic::DigestItem<Hash>;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -112,9 +114,10 @@ pub mod opaque {
 
 // To learn more about runtime versioning and what each of the following value means:
 //   https://substrate.dev/docs/en/knowledgebase/runtime/upgrades#runtime-versioning
+#[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("node-template"),
-    impl_name: create_runtime_str!("node-template"),
+    spec_name: create_runtime_str!("lc-core"),
+    impl_name: create_runtime_str!("lc-core"),
     authoring_version: 1,
     // The version of the runtime specification. A full node will not attempt to use its native
     //   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
@@ -143,6 +146,8 @@ pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
+pub const MONTHS: BlockNumber = DAYS * 30;
+pub const YEARS: BlockNumber = MONTHS * 12;
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -219,6 +224,8 @@ impl frame_system::Config for Runtime {
     type OnSetCode = ();
 }
 
+impl pallet_randomness_collective_flip::Config for Runtime {}
+
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
 }
@@ -255,12 +262,14 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u128 = 500;
+    pub const ExistentialDeposit: Balance = 500;
     pub const MaxLocks: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
     type MaxLocks = MaxLocks;
+    type MaxReserves = ();
+    type ReserveIdentifier = [u8; 8];
     /// The type for recording an account's balance.
     type Balance = Balance;
     /// The ubiquitous event type.
@@ -272,13 +281,31 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const TransactionByteFee: Balance = 1;
+    pub const TransactionByteFee: Balance = 0;
+}
+
+pub struct WeightToFeeImpl<T>(sp_std::marker::PhantomData<T>);
+
+impl<T> WeightToFeePolynomial for WeightToFeeImpl<T>
+where
+    T: BaseArithmetic + From<u32> + Copy + Unsigned,
+{
+    type Balance = T;
+
+    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+        smallvec::smallvec!(WeightToFeeCoefficient {
+            coeff_integer: 0u32.into(),
+            coeff_frac: Perbill::from_parts(1),
+            negative: false,
+            degree: 1,
+        })
+    }
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
     type TransactionByteFee = TransactionByteFee;
-    type WeightToFee = IdentityFee<Balance>;
+    type WeightToFee = WeightToFeeImpl<Balance>;
     type FeeMultiplierUpdate = ();
 }
 
@@ -287,10 +314,67 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
-/// Configure the pallet-template in pallets/template.
-impl pallet_template::Config for Runtime {
-    type Event = Event;
+// PALLET IDENTITY
+
+parameter_types! {
+    pub const ConfirmPeriod: BlockNumber = 12 * HOURS;
+    pub const MaxInactivityPeriod: BlockNumber = 1 * YEARS;
+    pub const ValidationPeriod: BlockNumber = 2 * MONTHS;
 }
+
+/// Configure the pallet identity
+impl pallet_identity::Config for Runtime {
+    type ConfirmPeriod = ConfirmPeriod;
+    type Event = Event;
+    type AddRightOrigin = EnsureRoot<Self::AccountId>;
+    type DelRightOrigin = EnsureRoot<Self::AccountId>;
+    type EnsureIdtyCallAllowed = crate::authorizations::EnsureIdtyCallAllowedImpl;
+    type IdtyData = ();
+    type IdtyDid = IdtyDid;
+    type IdtyValidationOrigin = EnsureRoot<Self::AccountId>;
+    type IdtyRight = IdtyRight;
+    type OnIdtyConfirmed = ();
+    type OnIdtyRemoved = ();
+    type OnIdtyValidated = crate::handlers::OnIdtyValidatedHandler;
+    type OnRightKeyChange = OnRightKeyChangeHandler;
+    type MaxInactivityPeriod = MaxInactivityPeriod;
+    type ValidationPeriod = ValidationPeriod;
+}
+
+// PALLET UNIVERSAL DIVIDEND
+
+parameter_types! {
+    pub const SquareMoneyGrowthRate: Permill = Permill::one();
+}
+
+pub struct UdAccountsProvider;
+impl Get<u64> for UdAccountsProvider {
+    fn get() -> u64 {
+        UdAccountsStorage::ud_accounts_count()
+    }
+}
+impl Get<Vec<AccountId>> for UdAccountsProvider {
+    fn get() -> Vec<AccountId> {
+        UdAccountsStorage::account_list()
+    }
+}
+
+/// Configure the pallet universal-dividend in pallets/universal-dividend.
+impl pallet_universal_dividend::Config for Runtime {
+    const UD_CREATION_PERIOD: Self::BlockNumber = 10;
+    const UD_REEVAL_PERIOD: Balance = 10;
+    const UD_REEVAL_PERIOD_IN_BLOCKS: Self::BlockNumber =
+        Self::UD_CREATION_PERIOD * Self::UD_REEVAL_PERIOD as Self::BlockNumber;
+
+    type Currency = pallet_balances::Pallet<Runtime>;
+    type Event = Event;
+    type MembersCount = UdAccountsProvider;
+    type MembersIds = UdAccountsProvider;
+    type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
+}
+
+/// Configure the pallet ud-accounts-storage
+impl pallet_ud_accounts_storage::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -300,15 +384,16 @@ construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Aura: pallet_aura::{Pallet, Config<T>},
         Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-        // Include the custom logic from the pallet-template in the runtime.
-        TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
+        UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage},
+        UniversalDividend: pallet_universal_dividend::{Pallet, Config<T>, Storage, Event<T>},
+        Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
 );
 
@@ -318,10 +403,6 @@ pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-/// A Block signed with a Justification
-pub type SignedBlock = generic::SignedBlock<Block>;
-/// BlockId type as expected by this runtime.
-pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
     frame_system::CheckSpecVersion<Runtime>,
@@ -334,8 +415,6 @@ pub type SignedExtra = (
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
-/// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -384,10 +463,6 @@ impl_runtime_apis! {
             data: sp_inherents::InherentData,
         ) -> sp_inherents::CheckInherentsResult {
             data.check_extrinsics(&block)
-        }
-
-        fn random_seed() -> <Block as BlockT>::Hash {
-            RandomnessCollectiveFlip::random_seed().0
         }
     }
 
@@ -504,7 +579,7 @@ impl_runtime_apis! {
             add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
             add_benchmark!(params, batches, pallet_balances, Balances);
             add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-            add_benchmark!(params, batches, pallet_template, TemplateModule);
+            add_benchmark!(params, batches, pallet_universal_dividend, UniversalDividend);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
