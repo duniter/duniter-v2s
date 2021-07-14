@@ -65,7 +65,7 @@ RUST_LOG=debug RUST_BACKTRACE=1 ./target/release/lc-core -lruntime=debug --dev
 Once the node template is running locally, you can connect it with **Polkadot-JS Apps** front-end
 to interact with your chain. [Click here](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944) connecting the Apps to your local node template.
 
-CAUTION: Pour que **Polkadot-JS Apps** soit capable de comprendre pleinement l'interface exposée par le noeud, vous devez y importer les types définies dans le fichier `types-bundle/types_definition.json`:
+CAUTION: In order for **Polkadot-JS Apps** to be able to fully understand the interface exposed by the node, you must import the types defined in the file `types-bundle/types_definition.json`:
 
 ![js-app-custom-types](./images/js-app-custom-types.png)
 
