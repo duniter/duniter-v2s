@@ -1,27 +1,29 @@
-# Substrate Node Template
+# Libre currency based on Substrate framework
 
-A fresh FRAME-based [Substrate](https://www.substrate.io/) node, ready for hacking :rocket:
+A FRAME-based [Substrate](https://www.substrate.io/) libre currency implementation.
 
-### Rust Setup
+## Setup
 
-First, complete the [basic Rust setup instructions](./docs/rust-setup.md).
+First, complete the [basic setup instructions](./docs/setup.md).
 
-### Run
+## Build
 
-Use Rust's native `cargo` command to build and launch the template node:
+NOTE: You must first follow the instructions in the [Setup] section (#setup).
+
+Use the following command to build the node without launching it:
+
+```sh
+cargo build --release
+```
+
+## Run
+
+Use Rust's native `cargo` command to build and launch the node:
 
 ```sh
 cargo run --release -- --dev --tmp
 ```
 
-### Build
-
-The `cargo run` command will perform an initial build. Use the following command to build the node
-without launching it:
-
-```sh
-cargo build --release
-```
 
 ### Embedded Docs
 
@@ -62,6 +64,10 @@ RUST_LOG=debug RUST_BACKTRACE=1 ./target/release/lc-core -lruntime=debug --dev
 
 Once the node template is running locally, you can connect it with **Polkadot-JS Apps** front-end
 to interact with your chain. [Click here](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944) connecting the Apps to your local node template.
+
+CAUTION: Pour que **Polkadot-JS Apps** soit capable de comprendre pleinement l'interface exposée par le noeud, vous devez y importer les types définies dans le fichier `types-bundle/types_definition.json`:
+
+![js-app-custom-types](./images/js-app-custom-types.png)
 
 ### Multi-Node Local Testnet
 
