@@ -41,7 +41,7 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        UniversalDividend: pallet_universal_dividend::{Pallet, Call, Storage, Config<T>, Event<T>},
+        UniversalDividend: pallet_universal_dividend::{Pallet, Storage, Config<T>, Event<T>},
     }
 );
 

@@ -30,10 +30,13 @@ mod benchmarking;*/
 pub use pallet::*;
 
 use crate::traits::*;
+use codec::Codec;
 use frame_support::dispatch::Weight;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::traits::{AtLeast32BitUnsigned, One, Saturating, Zero};
 use sp_std::collections::btree_map::BTreeMap;
+use sp_std::fmt::Debug;
 use sp_std::prelude::*;
 
 #[frame_support::pallet]
@@ -60,6 +63,16 @@ pub mod pallet {
         type IdtyData: IdtyData;
         /// Identity decentralized identifier
         type IdtyDid: IdtyDid;
+        /// A short identity index.
+        type IdtyIndex: Parameter
+            + Member
+            + AtLeast32BitUnsigned
+            + Codec
+            + Default
+            + Copy
+            + MaybeSerializeDeserialize
+            + Debug
+            + MaxEncodedLen;
         /// Origin allowed to validate identity
         type IdtyValidationOrigin: EnsureOrigin<Self::Origin>;
         /// Rights that an identity can have
@@ -115,6 +128,7 @@ pub mod pallet {
     #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
     #[derive(Encode, Decode, Clone, PartialEq, Eq)]
     pub struct IdtyValue<T: Config> {
+        pub index: T::IdtyIndex,
         pub owner_key: T::AccountId,
         pub removable_on: Option<T::BlockNumber>,
         pub rights: Vec<(T::IdtyRight, Option<T::AccountId>)>,
@@ -124,6 +138,7 @@ pub mod pallet {
     impl<T: Config> IdtyValue<T> {
         pub fn new_valid(owner_key: T::AccountId, rights: Vec<T::IdtyRight>) -> Self {
             Self {
+                index: Default::default(),
                 owner_key,
                 removable_on: None,
                 rights: rights.into_iter().map(|right| (right, None)).collect(),
@@ -135,6 +150,7 @@ pub mod pallet {
     impl<T: Config> Default for IdtyValue<T> {
         fn default() -> Self {
             Self {
+                index: Default::default(),
                 owner_key: Default::default(),
                 removable_on: None,
                 rights: Default::default(),
@@ -171,6 +187,15 @@ pub mod pallet {
     #[pallet::getter(fn identity)]
     pub type Identities<T: Config> =
         StorageMap<_, Blake2_128Concat, T::IdtyDid, IdtyValue<T>, ValueQuery>;
+
+    /// IdentitiesByIndex
+    #[pallet::storage]
+    #[pallet::getter(fn identity_did_of_index)]
+    pub type IdentitiesByIndex<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::IdtyIndex, T::IdtyDid, ValueQuery>;
+
+    #[pallet::storage]
+    pub(super) type NextIdtyIndex<T: Config> = StorageValue<_, T::IdtyIndex, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn identities_count)]
@@ -298,14 +323,17 @@ pub mod pallet {
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             let removable_on = block_number + T::ConfirmPeriod::get();
 
+            let idty_index = Self::get_next_idty_index();
             <Identities<T>>::insert(
                 idty_did,
                 IdtyValue {
+                    index: idty_index,
                     owner_key: owner_key.clone(),
                     removable_on: Some(removable_on),
                     ..Default::default()
                 },
             );
+            <IdentitiesByIndex<T>>::insert(idty_index, idty_did);
             IdentitiesRemovableOn::<T>::append(removable_on, (idty_did, IdtyStatus::Created));
             Self::inc_identities_counter();
             Self::deposit_event(Event::IdtyCreated(idty_did, owner_key));
@@ -590,6 +618,15 @@ pub mod pallet {
                 <IdentitiesCount<T>>::put(counter.saturating_sub(1));
             } else {
                 panic!("storage corrupted")
+            }
+        } //NextIdtyIndex
+        fn get_next_idty_index() -> T::IdtyIndex {
+            if let Ok(next_index) = <NextIdtyIndex<T>>::try_get() {
+                <NextIdtyIndex<T>>::put(next_index.saturating_add(T::IdtyIndex::one()));
+                next_index
+            } else {
+                <NextIdtyIndex<T>>::put(T::IdtyIndex::one());
+                T::IdtyIndex::zero()
             }
         }
         fn inc_identities_counter() {

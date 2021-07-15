@@ -1,0 +1,81 @@
+[package]
+authors = ['librelois <c@elo.tf>']
+description = 'FRAME pallet strong certifications.'
+edition = '2018'
+homepage = 'https://substrate.dev'
+license = 'AGPL-3.0'
+name = 'pallet-strong-certs'
+readme = 'README.md'
+repository = 'https://git.duniter.org/nodes/rust/lc-core-substrate' 
+version = '3.0.0'
+
+[features]
+default = ['std']
+runtime-benchmarks = ['frame-benchmarking']
+std = [
+    'codec/std',
+    'frame-support/std',
+    'frame-system/std',
+    'frame-benchmarking/std',
+    'serde',
+    'sp-core/std',
+    'sp-runtime/std',
+	'sp-std/std',
+]
+try-runtime = ['frame-support/try-runtime']
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '2.1.0'
+
+[dependencies.frame-benchmarking]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+optional = true
+tag = 'monthly-2021-07'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'
+
+[dependencies.frame-system]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'
+
+[dependencies.serde]
+version = "1.0.101"
+optional = true
+features = ["derive"]
+
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'
+
+### DOC ###
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+[dev-dependencies.serde]
+version = '1.0.119'
+
+### DEV ###
+
+[dev-dependencies.sp-io]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'

@@ -113,6 +113,7 @@ impl pallet_identity::Config for Test {
     type EnsureIdtyCallAllowed = ();
     type IdtyData = ();
     type IdtyDid = IdtyDid;
+    type IdtyIndex = u64;
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
     type IdtyRight = IdtyRight;
     type OnIdtyConfirmed = ();

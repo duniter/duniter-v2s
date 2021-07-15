@@ -82,6 +82,9 @@ pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::Account
 /// Balance of an account.
 pub type Balance = u64;
 
+/// Index of an identity
+pub type IdtyIndex = u64;
+
 /// Index of a transaction in the chain.
 pub type Index = u32;
 
@@ -331,6 +334,7 @@ impl pallet_identity::Config for Runtime {
     type EnsureIdtyCallAllowed = crate::authorizations::EnsureIdtyCallAllowedImpl;
     type IdtyData = ();
     type IdtyDid = IdtyDid;
+    type IdtyIndex = IdtyIndex;
     type IdtyValidationOrigin = EnsureRoot<Self::AccountId>;
     type IdtyRight = IdtyRight;
     type OnIdtyConfirmed = ();

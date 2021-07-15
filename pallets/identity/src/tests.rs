@@ -37,19 +37,23 @@ fn test_two_identities() {
     identities.insert(
         Did(1),
         crate::IdtyValue {
+            index: 0,
             owner_key: 1,
             removable_on: None,
             rights: vec![(Right::Right2, Some(10))],
             status: crate::IdtyStatus::Validated,
+            data: (),
         },
     );
     identities.insert(
         Did(2),
         crate::IdtyValue {
+            index: 1,
             owner_key: 2,
             removable_on: None,
             rights: vec![(Right::Right1, Some(20))],
             status: crate::IdtyStatus::Validated,
+            data: (),
         },
     );
     new_test_ext(IdentityConfig { identities }).execute_with(|| {
