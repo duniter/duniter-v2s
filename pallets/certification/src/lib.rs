@@ -33,6 +33,10 @@ pub mod pallet {
     pub trait Config<I: Instance = DefaultInstance>: frame_system::Config {
         /// Duration after which a certification is renewable
         type ChainabilityPeriod: Get<Self::BlockNumber>;
+        /// Origin allowed to add a certification
+        type AddCertOrigin: EnsureOrigin<(Self::Origin, Self::IdtyIndex)>;
+        /// Origin allowed to delete a certification
+        type DelCertOrigin: EnsureOrigin<(Self::Origin, Self::IdtyIndex)>;
         /// The overarching event type.
         type Event: From<Event<Self, I>> + Into<<Self as frame_system::Config>::Event>;
         /// A short identity index.
@@ -55,20 +59,28 @@ pub mod pallet {
 
     frame_support::decl_event! {
         pub enum Event<T, I=DefaultInstance> where
-            <T as frame_system::Config>::Hash,
-            <T as frame_system::Config>::AccountId,
+            <T as Config<I>>::IdtyIndex,
         {
-            /// A motion (given hash) has been proposed (by given account) with a threshold (given
-            /// `MemberCount`).
-            /// \[account, proposal_hash\]
-            Proposed(AccountId, Hash),
+            /// New certification
+            /// \[issuer, receiver\]
+            NewCert(IdtyIndex, IdtyIndex),
+            /// Removed certification
+            /// \[issuer, receiver, expiration\]
+            RemovedCert(IdtyIndex, IdtyIndex, bool),
+            /// Renewed certification
+            /// \[issuer, receiver\]
+            RenewedCert(IdtyIndex, IdtyIndex),
         }
     }
 
     frame_support::decl_error! {
         pub enum Error for Module<T: Config<I>, I: Instance> {
-            /// Account is not a member
-            NotMember,
+            /// This identity has already issued the maximum number of certifications
+            IssuedTooManyCert,
+            /// This certification has already been issued or renewed recently
+            NotRespectChainabilityPeriodPeriod,
+            /// This identity has already issued a certification too recently
+            NotRespectSignPeriod,
         }
     }
 
@@ -166,6 +178,74 @@ pub mod pallet {
             fn on_initialize(n: T::BlockNumber) -> Weight {
                 Self::prune_certifications(n)
             }
+
+            #[weight = 0]
+            pub fn add_cert(origin, issuer: T::IdtyIndex, receiver: T::IdtyIndex) {
+                T::AddCertOrigin::ensure_origin((origin, issuer))?;
+
+                let block_number = frame_system::pallet::Pallet::<T>::block_number();
+                let mut create = false;
+                let removable_on = block_number + T::ValidityPeriod::get();
+                let certs = if let Ok(CertsByIssuer { mut certs, next_issuable_on }) = <StorageCertsByIssuer<T, I>>::try_get(issuer) {
+                    if next_issuable_on > block_number {
+                        return Err(Error::<T, I>::NotRespectSignPeriod.into());
+                    } else if certs.len() >= T::MaxByIssuer::get() as usize {
+                        return Err(Error::<T, I>::IssuedTooManyCert.into());
+                    }
+                    let insert_index = match certs.binary_search_by(
+                        |CertValue {
+                             receiver: receiver_,
+                             ..
+                         }| receiver.cmp(&receiver_),
+                    ) {
+                        Ok(index) => {
+                            if certs[index].chainable_on > block_number {
+                                return Err(Error::<T, I>::NotRespectChainabilityPeriodPeriod.into());
+                            }
+                            create = true;
+                            index
+                        },
+                        Err(index) => index,
+                    };
+                    certs.insert(insert_index, CertValue {
+                        receiver,
+                        chainable_on: block_number + T::ChainabilityPeriod::get(),
+                        removable_on,
+                    });
+                    certs
+                } else {
+                    vec![CertValue {
+                        receiver,
+                        chainable_on: block_number + T::ChainabilityPeriod::get(),
+                        removable_on,
+                    }]
+                };
+
+                <StorageCertsByIssuer<T, I>>::insert(issuer, CertsByIssuer {
+                    certs,
+                    next_issuable_on: block_number + T::SignPeriod::get()
+                });
+                if !create {
+                    <StorageCertsByReceiver<T, I>>::mutate_exists(receiver, |issuers_opt| {
+                        let issuers = issuers_opt.get_or_insert(vec![]);
+                        if let Err(index) = issuers.binary_search(&issuer) {
+                            issuers.insert(index, issuer);
+                        }
+                    });
+                }
+                <StorageCertsRemovableOn<T, I>>::append(removable_on, (issuer, receiver));
+
+                if create {
+                    Self::deposit_event(RawEvent::NewCert(issuer, receiver));
+                } else {
+                    Self::deposit_event(RawEvent::RenewedCert(issuer, receiver));
+                }
+            }
+            #[weight = 0]
+            pub fn del_cert(origin, issuer: T::IdtyIndex, receiver: T::IdtyIndex) {
+                T::DelCertOrigin::ensure_origin((origin, issuer))?;
+                Self::remove_cert_inner(issuer, receiver, None);
+            }
         }
     }
 
@@ -213,6 +293,11 @@ pub mod pallet {
                                     certs_by_receiver.remove(index);
                                 }
                             }
+                            Self::deposit_event(RawEvent::RemovedCert(
+                                issuer,
+                                receiver,
+                                block_number_opt.is_some(),
+                            ));
                         }
                     }
                 }
