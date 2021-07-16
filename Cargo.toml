@@ -1,6 +1,7 @@
 [workspace]
 members = [
     'node',
+    'pallets/certification',
     'pallets/identity',
     'pallets/ud-accounts-storage',
     'pallets/universal-dividend',

@@ -1,10 +1,10 @@
 [package]
 authors = ['librelois <c@elo.tf>']
-description = 'FRAME pallet strong certifications.'
+description = 'FRAME pallet certification.'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'AGPL-3.0'
-name = 'pallet-strong-certs'
+name = 'pallet-certification'
 readme = 'README.md'
 repository = 'https://git.duniter.org/nodes/rust/lc-core-substrate' 
 version = '3.0.0'
