@@ -255,9 +255,13 @@ pub mod pallet {
                 dids.insert(idty_value.did);
             }
 
+            // We need to sort identities to ensure determinisctic result
+            let mut identities = self.identities.clone();
+            identities.sort_by(|idty_val_1, idty_val_2| idty_val_1.did.cmp(&idty_val_2.did));
+
             <StorageVersion<T>>::put(Releases::V1_0_0);
             <IdentitiesCount<T>>::put(self.identities.len() as u64);
-            for idty_value in &self.identities {
+            for idty_value in &identities {
                 let idty_index = Pallet::<T>::get_next_idty_index();
                 if let Some(removable_on) = idty_value.removable_on {
                     <IdentitiesRemovableOn<T>>::append(
