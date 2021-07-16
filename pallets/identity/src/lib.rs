@@ -35,7 +35,7 @@ use frame_support::dispatch::Weight;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::traits::{AtLeast32BitUnsigned, One, Saturating, Zero};
-use sp_std::collections::btree_map::BTreeMap;
+use sp_std::collections::btree_set::BTreeSet;
 use sp_std::fmt::Debug;
 use sp_std::prelude::*;
 
@@ -128,7 +128,7 @@ pub mod pallet {
     #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
     #[derive(Encode, Decode, Clone, PartialEq, Eq)]
     pub struct IdtyValue<T: Config> {
-        pub index: T::IdtyIndex,
+        pub did: T::IdtyDid,
         pub owner_key: T::AccountId,
         pub removable_on: Option<T::BlockNumber>,
         pub rights: Vec<(T::IdtyRight, Option<T::AccountId>)>,
@@ -136,9 +136,13 @@ pub mod pallet {
         pub data: T::IdtyData,
     }
     impl<T: Config> IdtyValue<T> {
-        pub fn new_valid(owner_key: T::AccountId, rights: Vec<T::IdtyRight>) -> Self {
+        pub fn new_valid(
+            did: T::IdtyDid,
+            owner_key: T::AccountId,
+            rights: Vec<T::IdtyRight>,
+        ) -> Self {
             Self {
-                index: Default::default(),
+                did,
                 owner_key,
                 removable_on: None,
                 rights: rights.into_iter().map(|right| (right, None)).collect(),
@@ -150,7 +154,7 @@ pub mod pallet {
     impl<T: Config> Default for IdtyValue<T> {
         fn default() -> Self {
             Self {
-                index: Default::default(),
+                did: Default::default(),
                 owner_key: Default::default(),
                 removable_on: None,
                 rights: Default::default(),
@@ -186,13 +190,13 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn identity)]
     pub type Identities<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::IdtyDid, IdtyValue<T>, ValueQuery>;
+        StorageMap<_, Blake2_128Concat, T::IdtyIndex, IdtyValue<T>, ValueQuery>;
 
-    /// IdentitiesByIndex
+    /// IdentitiesByDid
     #[pallet::storage]
-    #[pallet::getter(fn identity_did_of_index)]
-    pub type IdentitiesByIndex<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::IdtyIndex, T::IdtyDid, ValueQuery>;
+    #[pallet::getter(fn identity_by_did)]
+    pub type IdentitiesByDid<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::IdtyDid, T::IdtyIndex, ValueQuery>;
 
     #[pallet::storage]
     pub(super) type NextIdtyIndex<T: Config> = StorageValue<_, T::IdtyIndex, ValueQuery>;
@@ -204,14 +208,19 @@ pub mod pallet {
     /// Identities by removed block
     #[pallet::storage]
     #[pallet::getter(fn removable_on)]
-    pub type IdentitiesRemovableOn<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::BlockNumber, Vec<(T::IdtyDid, IdtyStatus)>, ValueQuery>;
+    pub type IdentitiesRemovableOn<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        T::BlockNumber,
+        Vec<(T::IdtyIndex, IdtyStatus)>,
+        ValueQuery,
+    >;
 
     // GENESIS //
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub identities: BTreeMap<T::IdtyDid, IdtyValue<T>>,
+        pub identities: Vec<IdtyValue<T>>,
     }
 
     #[cfg(feature = "std")]
@@ -226,7 +235,13 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            for idty_value in self.identities.values() {
+            let mut dids = BTreeSet::new();
+            for idty_value in &self.identities {
+                assert!(
+                    !dids.contains(&idty_value.did),
+                    "Did {:?} is present twice",
+                    idty_value.did
+                );
                 if idty_value.status == IdtyStatus::Validated {
                     if idty_value.rights.is_empty() {
                         assert!(idty_value.removable_on.is_some());
@@ -237,15 +252,20 @@ pub mod pallet {
                     assert!(idty_value.removable_on.is_some());
                     assert!(idty_value.rights.is_empty())
                 }
+                dids.insert(idty_value.did);
             }
 
             <StorageVersion<T>>::put(Releases::V1_0_0);
             <IdentitiesCount<T>>::put(self.identities.len() as u64);
-            for (idty_did, idty_value) in &self.identities {
+            for idty_value in &self.identities {
+                let idty_index = Pallet::<T>::get_next_idty_index();
                 if let Some(removable_on) = idty_value.removable_on {
-                    <IdentitiesRemovableOn<T>>::append(removable_on, (idty_did, idty_value.status))
+                    <IdentitiesRemovableOn<T>>::append(
+                        removable_on,
+                        (idty_index, idty_value.status),
+                    )
                 }
-                <Identities<T>>::insert(idty_did, idty_value);
+                <Identities<T>>::insert(idty_index, idty_value);
             }
         }
     }
@@ -309,14 +329,14 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn create_identity(
             origin: OriginFor<T>,
-            creator: T::IdtyDid,
+            creator: T::IdtyIndex,
             idty_did: T::IdtyDid,
             owner_key: T::AccountId,
         ) -> DispatchResultWithPostInfo {
-            if !T::EnsureIdtyCallAllowed::create_identity(origin, &creator, &idty_did, &owner_key) {
+            if !T::EnsureIdtyCallAllowed::create_identity(origin, creator, &idty_did, &owner_key) {
                 return Err(Error::<T>::IdtyCreationNotAllowed.into());
             }
-            if <Identities<T>>::contains_key(&idty_did) {
+            if <IdentitiesByDid<T>>::contains_key(&idty_did) {
                 return Err(Error::<T>::IdtyAlreadyExist.into());
             }
 
@@ -325,16 +345,16 @@ pub mod pallet {
 
             let idty_index = Self::get_next_idty_index();
             <Identities<T>>::insert(
-                idty_did,
+                idty_index,
                 IdtyValue {
-                    index: idty_index,
+                    did: idty_did,
                     owner_key: owner_key.clone(),
                     removable_on: Some(removable_on),
                     ..Default::default()
                 },
             );
-            <IdentitiesByIndex<T>>::insert(idty_index, idty_did);
-            IdentitiesRemovableOn::<T>::append(removable_on, (idty_did, IdtyStatus::Created));
+            <IdentitiesByDid<T>>::insert(idty_did, idty_index);
+            IdentitiesRemovableOn::<T>::append(removable_on, (idty_index, IdtyStatus::Created));
             Self::inc_identities_counter();
             Self::deposit_event(Event::IdtyCreated(idty_did, owner_key));
             Ok(().into())
@@ -343,10 +363,11 @@ pub mod pallet {
         pub fn confirm_identity(
             origin: OriginFor<T>,
             idty_did: T::IdtyDid,
+            idty_index: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_did) {
+            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_index) {
                 if who == idty_value.owner_key {
                     if idty_value.status != IdtyStatus::Created {
                         return Err(Error::<T>::IdtyAlreadyConfirmed.into());
@@ -358,10 +379,10 @@ pub mod pallet {
                     idty_value.status = IdtyStatus::ConfirmedByOwner;
                     let owner_key = idty_value.owner_key.clone();
 
-                    <Identities<T>>::insert(idty_did, idty_value);
+                    <Identities<T>>::insert(idty_index, idty_value);
                     IdentitiesRemovableOn::<T>::append(
                         removable_on,
-                        (idty_did, IdtyStatus::ConfirmedByOwner),
+                        (idty_index, IdtyStatus::ConfirmedByOwner),
                     );
                     Self::deposit_event(Event::IdtyConfirmed(idty_did));
                     T::OnIdtyConfirmed::on_idty_confirmed(idty_did, owner_key, removable_on);
@@ -376,11 +397,11 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn validate_identity(
             origin: OriginFor<T>,
-            idty_did: T::IdtyDid,
+            idty_index: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
             T::IdtyValidationOrigin::ensure_origin(origin)?;
 
-            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_did) {
+            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_index) {
                 match idty_value.status {
                     IdtyStatus::Created => Err(Error::<T>::IdtyNotConfirmedByOwner.into()),
                     IdtyStatus::ConfirmedByOwner => {
@@ -389,14 +410,15 @@ pub mod pallet {
                         idty_value.removable_on = Some(removable_on);
                         idty_value.status = IdtyStatus::Validated;
                         let owner_key = idty_value.owner_key.clone();
+                        let did = idty_value.did;
 
-                        <Identities<T>>::insert(idty_did, idty_value);
+                        <Identities<T>>::insert(idty_index, idty_value);
                         <IdentitiesRemovableOn<T>>::append(
                             removable_on,
-                            (idty_did, IdtyStatus::Validated),
+                            (idty_index, IdtyStatus::Validated),
                         );
-                        Self::deposit_event(Event::IdtyValidated(idty_did));
-                        T::OnIdtyValidated::on_idty_validated(idty_did, owner_key)?;
+                        Self::deposit_event(Event::IdtyValidated(did));
+                        T::OnIdtyValidated::on_idty_validated(idty_index, owner_key)?;
                         Ok(().into())
                     }
                     IdtyStatus::Validated => Err(Error::<T>::IdtyAlreadyValidated.into()),
@@ -408,12 +430,12 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn validate_identity_and_add_rights(
             origin: OriginFor<T>,
-            idty_did: T::IdtyDid,
+            idty_index: T::IdtyIndex,
             rights: Vec<T::IdtyRight>,
         ) -> DispatchResultWithPostInfo {
             T::IdtyValidationOrigin::ensure_origin(origin)?;
 
-            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_did) {
+            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_index) {
                 match idty_value.status {
                     IdtyStatus::Created => Err(Error::<T>::IdtyNotConfirmedByOwner.into()),
                     IdtyStatus::ConfirmedByOwner => {
@@ -421,13 +443,14 @@ pub mod pallet {
                         idty_value.rights = rights.iter().map(|right| (*right, None)).collect();
                         idty_value.status = IdtyStatus::Validated;
                         let owner_key = idty_value.owner_key.clone();
+                        let did = idty_value.did;
 
-                        <Identities<T>>::insert(idty_did, idty_value);
-                        Self::deposit_event(Event::IdtyValidated(idty_did));
+                        <Identities<T>>::insert(idty_index, idty_value);
+                        Self::deposit_event(Event::IdtyValidated(did));
                         for right in rights {
-                            Self::deposit_event(Event::IdtyAcquireRight(idty_did, right));
+                            Self::deposit_event(Event::IdtyAcquireRight(did, right));
                         }
-                        T::OnIdtyValidated::on_idty_validated(idty_did, owner_key)?;
+                        T::OnIdtyValidated::on_idty_validated(idty_index, owner_key)?;
                         Ok(().into())
                     }
                     IdtyStatus::Validated => Err(Error::<T>::IdtyAlreadyValidated.into()),
@@ -439,12 +462,12 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn add_right(
             origin: OriginFor<T>,
-            idty_did: T::IdtyDid,
+            idty_index: T::IdtyIndex,
             right: T::IdtyRight,
         ) -> DispatchResultWithPostInfo {
             T::AddRightOrigin::ensure_origin(origin)?;
 
-            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_did) {
+            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_index) {
                 if idty_value.status != IdtyStatus::Validated {
                     return Err(Error::<T>::IdtyNotValidated.into());
                 }
@@ -453,19 +476,19 @@ pub mod pallet {
                     .rights
                     .binary_search_by(|(right_, _)| right.cmp(right_))
                 {
-                    idty_value.removable_on = None;
-                    idty_value.rights.insert(index, (right, None));
-
+                    let did = idty_value.did;
                     let new_key = if right.allow_owner_key() {
                         Some(idty_value.owner_key.clone())
                     } else {
                         None
                     };
 
-                    <Identities<T>>::insert(idty_did, idty_value);
-                    Self::deposit_event(Event::<T>::IdtyAcquireRight(idty_did, right));
+                    idty_value.removable_on = None;
+                    idty_value.rights.insert(index, (right, None));
+                    <Identities<T>>::insert(idty_index, idty_value);
+                    Self::deposit_event(Event::<T>::IdtyAcquireRight(did, right));
                     if new_key.is_some() {
-                        T::OnRightKeyChange::on_right_key_change(idty_did, right, None, new_key);
+                        T::OnRightKeyChange::on_right_key_change(idty_index, right, None, new_key);
                     }
                     Ok(().into())
                 } else {
@@ -478,12 +501,12 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn del_right(
             origin: OriginFor<T>,
-            idty_did: T::IdtyDid,
+            idty_index: T::IdtyIndex,
             right: T::IdtyRight,
         ) -> DispatchResultWithPostInfo {
             T::DelRightOrigin::ensure_origin(origin)?;
 
-            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_did) {
+            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_index) {
                 if idty_value.status != IdtyStatus::Validated {
                     return Err(Error::<T>::IdtyNotValidated.into());
                 }
@@ -492,6 +515,7 @@ pub mod pallet {
                     .rights
                     .binary_search_by(|(right_, _)| right.cmp(right_))
                 {
+                    let did = idty_value.did;
                     let old_key_opt = if let Some(ref subkey) = idty_value.rights[index].1 {
                         Some(subkey.clone())
                     } else if right.allow_owner_key() {
@@ -507,15 +531,15 @@ pub mod pallet {
                         idty_value.removable_on = Some(removable_on);
                         <IdentitiesRemovableOn<T>>::append(
                             removable_on,
-                            (idty_did, IdtyStatus::Validated),
+                            (idty_index, IdtyStatus::Validated),
                         );
                     }
 
-                    <Identities<T>>::insert(idty_did, idty_value);
-                    Self::deposit_event(Event::<T>::IdtyLostRight(idty_did, right));
+                    <Identities<T>>::insert(idty_index, idty_value);
+                    Self::deposit_event(Event::<T>::IdtyLostRight(did, right));
                     if old_key_opt.is_some() {
                         T::OnRightKeyChange::on_right_key_change(
-                            idty_did,
+                            idty_index,
                             right,
                             old_key_opt,
                             None,
@@ -532,13 +556,13 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn set_right_subkey(
             origin: OriginFor<T>,
-            idty_did: T::IdtyDid,
+            idty_index: T::IdtyIndex,
             right: T::IdtyRight,
             subkey_opt: Option<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_did) {
+            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_index) {
                 if who == idty_value.owner_key {
                     if idty_value.status != IdtyStatus::Validated {
                         return Err(Error::<T>::IdtyNotValidated.into());
@@ -548,6 +572,7 @@ pub mod pallet {
                         .rights
                         .binary_search_by(|(right_, _)| right.cmp(right_))
                     {
+                        let did = idty_value.did;
                         let old_subkey_opt = idty_value.rights[index].1.clone();
                         idty_value.rights[index].1 = subkey_opt.clone();
                         let new_key = if let Some(ref subkey) = subkey_opt {
@@ -558,15 +583,15 @@ pub mod pallet {
                             None
                         };
 
-                        <Identities<T>>::insert(idty_did, idty_value);
+                        <Identities<T>>::insert(idty_index, idty_value);
                         Self::deposit_event(Event::<T>::IdtySetRightSubKey(
-                            idty_did,
+                            did,
                             right,
                             old_subkey_opt.clone(),
                             subkey_opt,
                         ));
                         T::OnRightKeyChange::on_right_key_change(
-                            idty_did,
+                            idty_index,
                             right,
                             old_subkey_opt,
                             new_key,
@@ -643,15 +668,20 @@ pub mod pallet {
             if let Some(identities) = IdentitiesRemovableOn::<T>::from_query_to_optional_value(
                 IdentitiesRemovableOn::<T>::take(block_number),
             ) {
-                for (idty_did, idty_status) in identities {
-                    if let Ok(idty_val) = <Identities<T>>::try_get(idty_did) {
+                for (idty_index, idty_status) in identities {
+                    if let Ok(idty_val) = <Identities<T>>::try_get(idty_index) {
                         if idty_val.removable_on == Some(block_number)
                             && idty_val.status == idty_status
                         {
-                            <Identities<T>>::remove(idty_did);
+                            let did = idty_val.did;
+                            <Identities<T>>::remove(idty_index);
+                            <IdentitiesByDid<T>>::remove(did);
                             Self::dec_identities_counter();
-                            total_weight +=
-                                T::OnIdtyRemoved::on_idty_removed(idty_did, idty_val.owner_key);
+                            total_weight += T::OnIdtyRemoved::on_idty_removed(
+                                idty_index,
+                                did,
+                                idty_val.owner_key,
+                            );
                         }
                     }
                 }

@@ -21,11 +21,10 @@ use crate::Error;
 use frame_support::assert_err;
 use frame_support::assert_ok;
 use frame_system::{EventRecord, Phase};
-use std::collections::BTreeMap;
 
 #[test]
 fn test_no_identity() {
-    let identities = BTreeMap::new();
+    let identities = Vec::with_capacity(0);
     new_test_ext(IdentityConfig { identities }).execute_with(|| {
         assert_eq!(Identity::identities_count(), 0);
     });
@@ -33,29 +32,25 @@ fn test_no_identity() {
 
 #[test]
 fn test_two_identities() {
-    let mut identities = BTreeMap::new();
-    identities.insert(
-        Did(1),
+    let identities = vec![
         crate::IdtyValue {
-            index: 0,
+            did: Did(0),
             owner_key: 1,
             removable_on: None,
             rights: vec![(Right::Right2, Some(10))],
             status: crate::IdtyStatus::Validated,
             data: (),
         },
-    );
-    identities.insert(
-        Did(2),
         crate::IdtyValue {
-            index: 1,
+            did: Did(1),
             owner_key: 2,
             removable_on: None,
             rights: vec![(Right::Right1, Some(20))],
             status: crate::IdtyStatus::Validated,
             data: (),
         },
-    );
+    ];
+
     new_test_ext(IdentityConfig { identities }).execute_with(|| {
         // Should have two identities
         assert_eq!(Identity::identities_count(), 2);
@@ -63,44 +58,44 @@ fn test_two_identities() {
         // We need to initialize at least one block before any call
         run_to_block(1);
 
-        // Add right Right1 for Did(1)
+        // Add right Right1 for Did(0)
         // Should succes and trigger the correct event
-        assert_ok!(Identity::add_right(Origin::root(), Did(1), Right::Right1));
+        assert_ok!(Identity::add_right(Origin::root(), 0, Right::Right1));
         let events = System::events();
         assert_eq!(events.len(), 1);
         assert_eq!(
             events[0],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyAcquireRight(Did(1), Right::Right1)),
+                event: Event::Identity(crate::Event::IdtyAcquireRight(Did(0), Right::Right1)),
                 topics: vec![],
             }
         );
-        // Add right Right2 for Did(1)
-        // Should fail because Did(1) already have this right
+        // Add right Right2 for Did(0)
+        // Should fail because Did(0) already have this right
         assert_err!(
-            Identity::add_right(Origin::root(), Did(1), Right::Right2),
+            Identity::add_right(Origin::root(), 0, Right::Right2),
             Error::<Test>::RightAlreadyAdded
         );
 
         run_to_block(3);
 
-        // Delete right Right1 for Did(2)
+        // Delete right Right1 for Did(1)
         // Should succes and trigger the correct event
-        assert_ok!(Identity::del_right(Origin::root(), Did(2), Right::Right1));
+        assert_ok!(Identity::del_right(Origin::root(), 1, Right::Right1));
         let events = System::events();
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyLostRight(Did(2), Right::Right1)),
+                event: Event::Identity(crate::Event::IdtyLostRight(Did(1), Right::Right1)),
                 topics: vec![],
             }
         );
 
-        // The Did(2) identity has no more rights, the inactivity period must start to run
-        let idty2 = Identity::identity(Did(2));
+        // The Did(1) identity has no more rights, the inactivity period must start to run
+        let idty2 = Identity::identity(1);
         assert!(idty2.rights.is_empty());
         assert_eq!(idty2.removable_on, Some(7));
     });

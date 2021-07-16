@@ -26,7 +26,7 @@ use std::fmt::Debug;
 pub trait EnsureIdtyCallAllowed<T: Config> {
     fn create_identity(
         origin: T::Origin,
-        creator: &T::IdtyDid,
+        creator: T::IdtyIndex,
         idty_did: &T::IdtyDid,
         idty_owner_key: &T::AccountId,
     ) -> bool;
@@ -34,7 +34,7 @@ pub trait EnsureIdtyCallAllowed<T: Config> {
 impl<T: Config> EnsureIdtyCallAllowed<T> for () {
     fn create_identity(
         origin: T::Origin,
-        _creator: &T::IdtyDid,
+        _creator: T::IdtyIndex,
         _idty_did: &T::IdtyDid,
         _idty_owner_key: &T::AccountId,
     ) -> bool {
@@ -93,13 +93,13 @@ impl<T: Config> OnIdtyConfirmed<T> for () {
 
 pub trait OnIdtyValidated<T: Config> {
     fn on_idty_validated(
-        idty_did: T::IdtyDid,
+        idty_index: T::IdtyIndex,
         owner_key: T::AccountId,
     ) -> DispatchResultWithPostInfo;
 }
 impl<T: Config> OnIdtyValidated<T> for () {
     fn on_idty_validated(
-        _idty_did: T::IdtyDid,
+        _idty_index: T::IdtyIndex,
         _owner_key: T::AccountId,
     ) -> DispatchResultWithPostInfo {
         Ok(().into())
@@ -107,17 +107,25 @@ impl<T: Config> OnIdtyValidated<T> for () {
 }
 
 pub trait OnIdtyRemoved<T: Config> {
-    fn on_idty_removed(idty_did: T::IdtyDid, owner_key: T::AccountId) -> Weight;
+    fn on_idty_removed(
+        idty_index: T::IdtyIndex,
+        idty_did: T::IdtyDid,
+        owner_key: T::AccountId,
+    ) -> Weight;
 }
 impl<T: Config> OnIdtyRemoved<T> for () {
-    fn on_idty_removed(_idty_did: T::IdtyDid, _owner_key: T::AccountId) -> Weight {
+    fn on_idty_removed(
+        _idty_index: T::IdtyIndex,
+        _idty_did: T::IdtyDid,
+        _owner_key: T::AccountId,
+    ) -> Weight {
         0
     }
 }
 
 pub trait OnRightKeyChange<T: Config> {
     fn on_right_key_change(
-        idty_did: T::IdtyDid,
+        idty_index: T::IdtyIndex,
         right: T::IdtyRight,
         old_key: Option<T::AccountId>,
         new_key: Option<T::AccountId>,
@@ -126,7 +134,7 @@ pub trait OnRightKeyChange<T: Config> {
 
 impl<T: Config> OnRightKeyChange<T> for () {
     fn on_right_key_change(
-        _idty_did: T::IdtyDid,
+        _idty_index: T::IdtyIndex,
         _right: T::IdtyRight,
         _old_key: Option<T::AccountId>,
         _new_key: Option<T::AccountId>,

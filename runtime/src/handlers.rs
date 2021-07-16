@@ -14,20 +14,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use super::{AccountId, Identity, IdtyDid, IdtyRight, Origin, Runtime, UdAccountsStorage};
+use super::{AccountId, Identity, IdtyIndex, IdtyRight, Origin, Runtime, UdAccountsStorage};
 use frame_support::pallet_prelude::DispatchResultWithPostInfo;
 
 pub struct OnIdtyValidatedHandler;
 impl pallet_identity::traits::OnIdtyValidated<Runtime> for OnIdtyValidatedHandler {
-    fn on_idty_validated(idty_did: IdtyDid, _owner_key: AccountId) -> DispatchResultWithPostInfo {
-        Identity::add_right(Origin::root(), idty_did, IdtyRight::Ud)
+    fn on_idty_validated(
+        idty_index: IdtyIndex,
+        _owner_key: AccountId,
+    ) -> DispatchResultWithPostInfo {
+        Identity::add_right(Origin::root(), idty_index, IdtyRight::Ud)
     }
 }
 
 pub struct OnRightKeyChangeHandler;
 impl pallet_identity::traits::OnRightKeyChange<Runtime> for OnRightKeyChangeHandler {
     fn on_right_key_change(
-        _idty_did: IdtyDid,
+        _idty_index: IdtyIndex,
         right: IdtyRight,
         old_key_opt: Option<AccountId>,
         new_key_opt: Option<AccountId>,

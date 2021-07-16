@@ -184,10 +184,7 @@ fn testnet_genesis(
             identities: initial_identities
                 .iter()
                 .map(|(did, account)| {
-                    (
-                        *did,
-                        IdtyValue::new_valid(account.clone(), vec![IdtyRight::Ud]),
-                    )
+                    IdtyValue::new_valid(*did, account.clone(), vec![IdtyRight::Ud])
                 })
                 .collect(),
         },

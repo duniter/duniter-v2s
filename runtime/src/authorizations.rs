@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{AccountId, Identity, IdtyDid, IdtyRight, Origin, Runtime};
+use crate::{AccountId, Identity, IdtyDid, IdtyIndex, IdtyRight, Origin, Runtime};
 
 pub struct EnsureIdtyCallAllowedImpl;
 impl pallet_identity::traits::EnsureIdtyCallAllowed<Runtime> for EnsureIdtyCallAllowedImpl {
     fn create_identity(
         origin: Origin,
-        creator: &IdtyDid,
+        creator: IdtyIndex,
         _idty_did: &IdtyDid,
         _idty_owner_key: &AccountId,
     ) -> bool {
