@@ -21,19 +21,23 @@ pub mod traits;
 #[cfg(test)]
 mod mock;
 
+#[cfg(test)]
+mod tests;
+
 pub use pallet::*;
 
 use crate::traits::*;
 use codec::Codec;
 use sp_runtime::traits::{AtLeast32BitUnsigned, Zero};
-use sp_std::collections::btree_map::BTreeMap;
-use sp_std::collections::btree_set::BTreeSet;
-use sp_std::fmt::Debug;
+use sp_std::{
+    collections::{btree_map::BTreeMap, btree_set::BTreeSet},
+    fmt::Debug,
+    vec::Vec,
+};
 
 pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
-    //use frame_system::pallet_prelude::*;
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     pub trait Config<I: Instance = DefaultInstance>: frame_system::Config {
@@ -166,7 +170,7 @@ pub mod pallet {
                 let mut certs_by_receiver = BTreeMap::<T::IdtyIndex, Vec<T::IdtyIndex>>::new();
                 for (issuer, receivers) in &config.certs_by_issuer {
                     assert!(!receivers.contains(issuer), "Identity cannot tcertify it-self.");
-                    assert!(!receivers.len() <= T::MaxByIssuer::get() as usize, "Identity n°{:?} exceed MaxByIssuer.", issuer);
+                    assert!(!receivers.len() >= T::MaxByIssuer::get() as usize, "Identity n°{:?} exceed MaxByIssuer.", issuer);
 
                     cert_meta_by_issuer.insert(*issuer, IdtyCertMeta {
                         issued_count: receivers.len() as u8,
@@ -221,11 +225,13 @@ pub mod pallet {
             #[weight = 0]
             pub fn add_cert(origin, issuer: T::IdtyIndex, receiver: T::IdtyIndex) {
                 T::AddCertOrigin::ensure_origin((origin, issuer, receiver))?;
+                frame_support::runtime_print!("add_cert({:?}, {:?}): origin OK", issuer, receiver);
 
                 let block_number = frame_system::pallet::Pallet::<T>::block_number();
 
                 let (create, issuer_issued_count) = if let Ok(mut issuer_idty_cert_meta) = <StorageIdtyCertMeta<T, I>>::try_get(issuer) {
                     // Verify rules CertPeriod and MaxByIssuer
+                    frame_support::runtime_print!("add_cert({:?}, {:?}): Verify rules CertPeriod and MaxByIssuer", issuer, receiver);
                     if issuer_idty_cert_meta.next_issuable_on > block_number {
                         return Err(Error::<T, I>::NotRespectCertPeriod.into());
                     } else if issuer_idty_cert_meta.issued_count >= T::MaxByIssuer::get() {
@@ -233,6 +239,7 @@ pub mod pallet {
                     }
 
                     // Verify rule RenewablePeriod
+                    frame_support::runtime_print!("add_cert({:?}, {:?}): Verify rule RenewablePeriod", issuer, receiver);
                     let create = if let Ok(CertValue { chainable_on, .. }) = <StorageCertsByIssuer<T, I>>::try_get(issuer, receiver) {
                         if chainable_on > block_number {
                             return Err(Error::<T, I>::NotRespectRenewablePeriod.into());
@@ -255,6 +262,7 @@ pub mod pallet {
                 };
 
                 // Write StorageIdtyCertMeta for receiver
+                frame_support::runtime_print!("add_cert({:?}, {:?}): Write StorageIdtyCertMeta for receiver", issuer, receiver);
                 let receiver_received_count = <StorageIdtyCertMeta<T, I>>::mutate_exists(receiver, |cert_meta_opt| {
                     let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());
                     cert_meta.received_count = cert_meta.received_count.saturating_add(1);
@@ -273,7 +281,7 @@ pub mod pallet {
                 if create {
                     // Write StorageCertsByReceiver
                     <StorageCertsByReceiver<T, I>>::mutate_exists(receiver, |issuers_opt| {
-                        let issuers = issuers_opt.get_or_insert(vec![]);
+                        let issuers = issuers_opt.get_or_insert(Vec::with_capacity(0));
                         if let Err(index) = issuers.binary_search(&issuer) {
                             issuers.insert(index, issuer);
                         }

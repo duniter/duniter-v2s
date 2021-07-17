@@ -1,9 +1,16 @@
 {
     "Balance": "u64",
-    "Planet": {
-        "_enum": [
-            "Earth"
-        ]
+    "CertValue": {
+        "chainable_on": "BlockNumber",
+        "removable_on": "BlockNumber"
+    },
+    "IdtyCertMeta": {
+        "issued_count": "u8",
+        "next_issuable_on": "BlockNumber",
+        "received_count": "u32"
+    },
+    "IdtyData": {
+        "can_create_on": "BlockNumber"
     },
     "IdtyCertMeta": {
         "issued_count": "u8",
@@ -34,9 +41,17 @@
     },
     "IdtyValue": {
         "did": "IdtyDid",
+        "expire_on": "BlockNumber",
         "owner_key": "AccountId",
-        "removable_on": "Option<BlockNumber>",
+        "removable_on": "BlockNumber",
+        "renewable_on": "BlockNumber",
         "rights": "Vec<(T::IdtyRight, Option<T::AccountId>)>",
         "status": "IdtyStatus",
+        "data":  "IdtyData"
+    },
+    "Planet": {
+        "_enum": [
+            "Earth"
+        ]
     }
 }

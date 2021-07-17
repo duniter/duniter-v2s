@@ -14,89 +14,70 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::mock::IdtyIndex;
 use crate::mock::*;
 use crate::Error;
-use frame_support::assert_err;
 use frame_support::assert_ok;
 use frame_system::{EventRecord, Phase};
+use maplit::{btreemap, btreeset};
+use sp_std::collections::btree_map::BTreeMap;
 
 #[test]
-fn test_no_certs() {
-    let certifications = Vec::with_capacity(0);
-    new_test_ext(DefaultCertificationConfig { certifications }).execute_with(|| {
-        //assert_eq!(DefaultCertification::identities_count(), 0);
+fn test_must_receive_cert_before_can_issue() {
+    new_test_ext(DefaultCertificationConfig {
+        certs_by_issuer: BTreeMap::new(),
+        phantom: core::marker::PhantomData,
+    })
+    .execute_with(|| {
+        assert_eq!(
+            DefaultCertification::add_cert(Origin::root(), 0, 1),
+            Err(Error::<Test, _>::IdtyMustReceiveCertsBeforeCanIssue.into())
+        );
     });
 }
-/*
+
 #[test]
-fn test_two_identities() {
-    let identities = vec![
-        crate::IdtyValue {
-            did: Did(0),
-            owner_key: 1,
-            removable_on: None,
-            rights: vec![(Right::Right2, Some(10))],
-            status: crate::IdtyStatus::Validated,
-            data: (),
-        },
-        crate::IdtyValue {
-            did: Did(1),
-            owner_key: 2,
-            removable_on: None,
-            rights: vec![(Right::Right1, Some(20))],
-            status: crate::IdtyStatus::Validated,
-            data: (),
-        },
-    ];
-
-    new_test_ext(IdentityConfig { identities }).execute_with(|| {
-        // Should have two identities
-        assert_eq!(Identity::identities_count(), 2);
-
-        // We need to initialize at least one block before any call
-        run_to_block(1);
-
-        // Add right Right1 for Did(0)
-        // Should succes and trigger the correct event
-        assert_ok!(Identity::add_right(Origin::root(), 0, Right::Right1));
-        let events = System::events();
-        assert_eq!(events.len(), 1);
+fn test_cert_period() {
+    new_test_ext(DefaultCertificationConfig {
+        certs_by_issuer: btreemap![0 => btreeset![1]],
+        phantom: core::marker::PhantomData,
+    })
+    .execute_with(|| {
         assert_eq!(
-            events[0],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyAcquireRight(Did(0), Right::Right1)),
-                topics: vec![],
-            }
+            DefaultCertification::add_cert(Origin::root(), 0, 2),
+            Err(Error::<Test, _>::NotRespectCertPeriod.into())
         );
-        // Add right Right2 for Did(0)
-        // Should fail because Did(0) already have this right
-        assert_err!(
-            Identity::add_right(Origin::root(), 0, Right::Right2),
-            Error::<Test>::RightAlreadyAdded
-        );
-
-        run_to_block(3);
-
-        // Delete right Right1 for Did(1)
-        // Should succes and trigger the correct event
-        assert_ok!(Identity::del_right(Origin::root(), 1, Right::Right1));
-        let events = System::events();
-        assert_eq!(events.len(), 2);
+        run_to_block(CertPeriod::get());
+        assert_ok!(DefaultCertification::add_cert(Origin::root(), 0, 2));
+        run_to_block(CertPeriod::get() + 1);
         assert_eq!(
-            events[1],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyLostRight(Did(1), Right::Right1)),
-                topics: vec![],
-            }
+            DefaultCertification::add_cert(Origin::root(), 0, 3),
+            Err(Error::<Test, _>::NotRespectCertPeriod.into())
         );
-
-        // The Did(1) identity has no more rights, the inactivity period must start to run
-        let idty2 = Identity::identity(1);
-        assert!(idty2.rights.is_empty());
-        assert_eq!(idty2.removable_on, Some(7));
+        run_to_block((2 * CertPeriod::get()) + 1);
+        assert_ok!(DefaultCertification::add_cert(Origin::root(), 0, 3));
     });
 }
-*/
+
+#[test]
+fn test_renewable_period() {
+    new_test_ext(DefaultCertificationConfig {
+        certs_by_issuer: btreemap![0 => btreeset![1]],
+        phantom: core::marker::PhantomData,
+    })
+    .execute_with(|| {
+        run_to_block(CertPeriod::get());
+        assert_eq!(
+            DefaultCertification::add_cert(Origin::root(), 0, 1),
+            Err(Error::<Test, _>::NotRespectRenewablePeriod.into())
+        );
+        run_to_block(RenewablePeriod::get());
+        assert_ok!(DefaultCertification::add_cert(Origin::root(), 0, 1));
+        run_to_block(RenewablePeriod::get() + CertPeriod::get());
+        assert_eq!(
+            DefaultCertification::add_cert(Origin::root(), 0, 1),
+            Err(Error::<Test, _>::NotRespectRenewablePeriod.into())
+        );
+        run_to_block((2 * RenewablePeriod::get()) + 1);
+        assert_ok!(DefaultCertification::add_cert(Origin::root(), 0, 1));
+    });
+}

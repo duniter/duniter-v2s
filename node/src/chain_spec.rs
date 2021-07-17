@@ -1,7 +1,7 @@
 use lc_core_runtime::{
     AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, IdentityConfig, IdtyDid,
-    IdtyRight, IdtyValue, Planet, Signature, SudoConfig, SystemConfig, UdAccountsStorageConfig,
-    UniversalDividendConfig, WASM_BINARY,
+    IdtyIndex, IdtyRight, IdtyValue, Planet, Signature, StrongCertConfig, SudoConfig, SystemConfig,
+    UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use maplit::btreemap;
 use sc_service::ChainType;
@@ -9,7 +9,7 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -183,10 +183,25 @@ fn testnet_genesis(
         identity: IdentityConfig {
             identities: initial_identities
                 .iter()
-                .map(|(did, account)| {
-                    IdtyValue::new_valid(*did, account.clone(), vec![IdtyRight::Ud])
+                .map(|(did, account)| IdtyValue {
+                    did: *did,
+                    expire_on: lc_core_runtime::MaxInactivityPeriod::get(),
+                    owner_key: account.clone(),
+                    removable_on: 0,
+                    renewable_on: lc_core_runtime::StrongCertRenewablePeriod::get(),
+                    rights: vec![
+                        (IdtyRight::CreateIdty, None),
+                        (IdtyRight::StrongCert, None),
+                        (IdtyRight::Ud, None),
+                    ],
+                    status: lc_core_runtime::IdtyStatus::Validated,
+                    data: Default::default(),
                 })
                 .collect(),
+        },
+        strong_cert: StrongCertConfig {
+            certs_by_issuer: clique_wot(initial_identities.len()),
+            phantom: std::marker::PhantomData,
         },
         ud_accounts_storage: UdAccountsStorageConfig {
             ud_accounts: initial_identities.values().cloned().collect(),
@@ -196,4 +211,17 @@ fn testnet_genesis(
             initial_monetary_mass: 0,
         },
     }
+}
+
+fn clique_wot(initial_identities_len: usize) -> BTreeMap<IdtyIndex, BTreeSet<IdtyIndex>> {
+    let mut certs_by_issuer = BTreeMap::new();
+    for i in 1..=initial_identities_len {
+        certs_by_issuer.insert(
+            i as IdtyIndex,
+            (1..=initial_identities_len)
+                .filter_map(|j| if i != j { Some(j as IdtyIndex) } else { None })
+                .collect(),
+        );
+    }
+    certs_by_issuer
 }

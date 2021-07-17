@@ -35,6 +35,8 @@ std = [
     'frame-system/std',
     'pallet-aura/std',
     'pallet-balances/std',
+    'pallet-certification/std',
+    'pallet-identity/std',
     'pallet-grandpa/std',
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
@@ -115,6 +117,10 @@ default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2021-07'
 version = '3.0.0'
+
+[dependencies.pallet-certification]
+default-features = false
+path = '../pallets/certification'
 
 [dependencies.pallet-grandpa]
 default-features = false

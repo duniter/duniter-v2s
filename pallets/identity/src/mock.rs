@@ -101,7 +101,9 @@ impl system::Config for Test {
 
 parameter_types! {
     pub const ConfirmPeriod: u64 = 2;
-    pub const MaxInactivityPeriod: u64 = 4;
+    pub const MaxInactivityPeriod: u64 = 5;
+    pub const MaxNoRightPeriod: u64 = 4;
+    pub const RenewablePeriod: u64 = 3;
     pub const ValidationPeriod: u64 = 2;
 }
 
@@ -116,11 +118,11 @@ impl pallet_identity::Config for Test {
     type IdtyIndex = u64;
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
     type IdtyRight = IdtyRight;
-    type OnIdtyConfirmed = ();
-    type OnIdtyRemoved = ();
-    type OnIdtyValidated = ();
+    type OnIdtyChange = ();
     type OnRightKeyChange = ();
     type MaxInactivityPeriod = MaxInactivityPeriod;
+    type MaxNoRightPeriod = MaxNoRightPeriod;
+    type RenewablePeriod = RenewablePeriod;
     type ValidationPeriod = ValidationPeriod;
 }
 

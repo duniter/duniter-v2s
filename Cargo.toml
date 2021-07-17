@@ -7,5 +7,7 @@ members = [
     'pallets/universal-dividend',
     'runtime',
 ]
+[profile.dev]
+opt-level = 3
 [profile.release]
 panic = 'unwind'

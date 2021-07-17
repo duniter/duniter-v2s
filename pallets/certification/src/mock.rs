@@ -30,7 +30,7 @@ use sp_runtime::{
 type AccountId = u64;
 type BlockNumber = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
-type IdtyIndex = u64;
+pub type IdtyIndex = u64;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
 // Configure a mock runtime to test the pallet.
@@ -76,23 +76,25 @@ impl system::Config for Test {
     type OnSetCode = ();
 }
 
-parameter_types! {
-    pub const MaxByIssuer: u8 = 3;
-    pub const RenewablePeriod: BlockNumber = 2;
-    pub const CertPeriod: u64 = 2;
-    pub const ValidityPeriod: u64 = 5;
-}
-
 pub struct EnsureRoot;
 impl frame_support::traits::EnsureOrigin<(Origin, IdtyIndex, IdtyIndex)> for EnsureRoot {
     type Success = ();
 
-    fn try_origin(o: (Origin, IdtyIndex, IdtyIndex)) -> Result<Self::Success, (Origin, IdtyIndex, IdtyIndex)> {
+    fn try_origin(
+        o: (Origin, IdtyIndex, IdtyIndex),
+    ) -> Result<Self::Success, (Origin, IdtyIndex, IdtyIndex)> {
         match o.0.clone().into() {
             Ok(system::RawOrigin::Root) => Ok(()),
             _ => Err(o),
         }
     }
+}
+
+parameter_types! {
+    pub const MaxByIssuer: u8 = 3;
+    pub const RenewablePeriod: BlockNumber = 4;
+    pub const CertPeriod: u64 = 2;
+    pub const ValidityPeriod: u64 = 10;
 }
 
 impl pallet_certification::Config for Test {

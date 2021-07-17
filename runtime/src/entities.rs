@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
+use crate::BlockNumber;
 use frame_support::pallet_prelude::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -35,8 +36,8 @@ impl Default for IdtyRight {
 impl pallet_identity::traits::IdtyRight for IdtyRight {
     fn allow_owner_key(self) -> bool {
         match self {
-            Self::CreateIdty | Self::LightCert | Self::Ud => true,
-            IdtyRight::StrongCert => false,
+            Self::CreateIdty | Self::LightCert | IdtyRight::StrongCert | Self::Ud => true,
+            //IdtyRight::StrongCert => false,
             //_ => false,
         }
     }
@@ -83,6 +84,12 @@ impl Ord for IdtyDid {
     }
 }
 impl pallet_identity::traits::IdtyDid for IdtyDid {}
+
+#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
+#[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
+pub struct IdtyData {
+    pub can_create_on: BlockNumber,
+}
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug)]

@@ -15,7 +15,7 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use frame_support::pallet_prelude::*;
+use frame_support::{dispatch::DispatchError, pallet_prelude::*};
 use frame_system::pallet_prelude::*;
 use sp_runtime::traits::MaybeSerializeDeserialize;
 use sp_std::fmt::Debug;
@@ -26,7 +26,7 @@ pub trait EnsureIdtyCallAllowed<T: Config> {
         creator: T::IdtyIndex,
         idty_did: &T::IdtyDid,
         idty_owner_key: &T::AccountId,
-    ) -> bool;
+    ) -> Result<T::IdtyData, DispatchError>;
 }
 impl<T: Config> EnsureIdtyCallAllowed<T> for () {
     fn create_identity(
@@ -34,20 +34,13 @@ impl<T: Config> EnsureIdtyCallAllowed<T> for () {
         _creator: T::IdtyIndex,
         _idty_did: &T::IdtyDid,
         _idty_owner_key: &T::AccountId,
-    ) -> bool {
-        ensure_root(origin).is_ok()
+    ) -> Result<T::IdtyData, DispatchError> {
+        match ensure_root(origin) {
+            Ok(()) => Ok(T::IdtyData::default()),
+            Err(_) => Err(DispatchError::BadOrigin),
+        }
     }
 }
-
-pub trait IdtyData:
-    frame_support::Parameter
-    + frame_support::pallet_prelude::Member
-    + MaybeSerializeDeserialize
-    + Debug
-    + Default
-{
-}
-impl IdtyData for () {}
 
 pub trait IdtyDid:
     frame_support::Parameter
@@ -72,50 +65,19 @@ pub trait IdtyRight:
     fn allow_owner_key(self) -> bool;
 }
 
-pub trait OnIdtyConfirmed<T: Config> {
-    fn on_idty_confirmed(
-        idty_did: T::IdtyDid,
-        owner_key: T::AccountId,
-        removable_on: T::BlockNumber,
-    );
-}
-impl<T: Config> OnIdtyConfirmed<T> for () {
-    fn on_idty_confirmed(
-        _idty_did: T::IdtyDid,
-        _owner_key: T::AccountId,
-        _removable_on: T::BlockNumber,
-    ) {
-    }
+pub enum IdtyEvent<T: Config> {
+    Created { creator: T::IdtyIndex },
+    Confirmed,
+    Validated,
+    Expired,
+    Removed,
 }
 
-pub trait OnIdtyValidated<T: Config> {
-    fn on_idty_validated(
-        idty_index: T::IdtyIndex,
-        owner_key: T::AccountId,
-    ) -> DispatchResultWithPostInfo;
+pub trait OnIdtyChange<T: Config> {
+    fn on_idty_change(idty_index: T::IdtyIndex, idty_event: IdtyEvent<T>) -> Weight;
 }
-impl<T: Config> OnIdtyValidated<T> for () {
-    fn on_idty_validated(
-        _idty_index: T::IdtyIndex,
-        _owner_key: T::AccountId,
-    ) -> DispatchResultWithPostInfo {
-        Ok(().into())
-    }
-}
-
-pub trait OnIdtyRemoved<T: Config> {
-    fn on_idty_removed(
-        idty_index: T::IdtyIndex,
-        idty_did: T::IdtyDid,
-        owner_key: T::AccountId,
-    ) -> Weight;
-}
-impl<T: Config> OnIdtyRemoved<T> for () {
-    fn on_idty_removed(
-        _idty_index: T::IdtyIndex,
-        _idty_did: T::IdtyDid,
-        _owner_key: T::AccountId,
-    ) -> Weight {
+impl<T: Config> OnIdtyChange<T> for () {
+    fn on_idty_change(_idty_index: T::IdtyIndex, _idty_event: IdtyEvent<T>) -> Weight {
         0
     }
 }

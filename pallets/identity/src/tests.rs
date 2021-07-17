@@ -35,16 +35,20 @@ fn test_two_identities() {
     let identities = vec![
         crate::IdtyValue {
             did: Did(0),
+            expire_on: 5,
             owner_key: 1,
-            removable_on: None,
+            removable_on: 0,
+            renewable_on: 3,
             rights: vec![(Right::Right2, Some(10))],
             status: crate::IdtyStatus::Validated,
             data: (),
         },
         crate::IdtyValue {
             did: Did(1),
+            expire_on: 5,
             owner_key: 2,
-            removable_on: None,
+            removable_on: 0,
+            renewable_on: 3,
             rights: vec![(Right::Right1, Some(20))],
             status: crate::IdtyStatus::Validated,
             data: (),
@@ -97,6 +101,6 @@ fn test_two_identities() {
         // The Did(1) identity has no more rights, the inactivity period must start to run
         let idty2 = Identity::identity(1);
         assert!(idty2.rights.is_empty());
-        assert_eq!(idty2.removable_on, Some(7));
+        assert_eq!(idty2.removable_on, 7);
     });
 }

@@ -14,16 +14,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use super::{AccountId, Identity, IdtyIndex, IdtyRight, Origin, Runtime, UdAccountsStorage};
-use frame_support::pallet_prelude::DispatchResultWithPostInfo;
+use super::{
+    AccountId, Identity, IdtyIndex, IdtyRight, Origin, Runtime, StrongCert, UdAccountsStorage,
+    Weight,
+};
+use pallet_identity::traits::IdtyEvent;
 
-pub struct OnIdtyValidatedHandler;
-impl pallet_identity::traits::OnIdtyValidated<Runtime> for OnIdtyValidatedHandler {
-    fn on_idty_validated(
-        idty_index: IdtyIndex,
-        _owner_key: AccountId,
-    ) -> DispatchResultWithPostInfo {
-        Identity::add_right(Origin::root(), idty_index, IdtyRight::Ud)
+const MIN_STRONG_CERT_FOR_UD: u32 = 2;
+const MIN_STRONG_CERT_FOR_STRONG_CERT: u32 = 3;
+
+pub struct OnIdtyChangeHandler;
+impl pallet_identity::traits::OnIdtyChange<Runtime> for OnIdtyChangeHandler {
+    fn on_idty_change(idty_index: IdtyIndex, idty_event: IdtyEvent<Runtime>) -> Weight {
+        let total_weight = 0;
+        match idty_event {
+            IdtyEvent::Created { creator } => {
+                // totad_weight += StrongCert::WeightInfo::add_cert();
+                let _ = StrongCert::add_cert(Origin::root(), creator, idty_index);
+            }
+            IdtyEvent::Confirmed => {}
+            IdtyEvent::Validated => {}
+            IdtyEvent::Expired => {}
+            IdtyEvent::Removed => {}
+        };
+        total_weight
     }
 }
 
@@ -41,5 +55,51 @@ impl pallet_identity::traits::OnRightKeyChange<Runtime> for OnRightKeyChangeHand
             IdtyRight::LightCert => 0,
             IdtyRight::StrongCert => 0,
         };
+    }
+}
+
+pub struct OnNewStrongCertHandler;
+impl pallet_certification::traits::OnNewcert<IdtyIndex> for OnNewStrongCertHandler {
+    fn on_new_cert(
+        _issuer: IdtyIndex,
+        _issuer_issued_count: u8,
+        receiver: IdtyIndex,
+        receiver_received_count: u32,
+    ) -> frame_support::dispatch::Weight {
+        let total_weight = 0;
+        match receiver_received_count {
+            MIN_STRONG_CERT_FOR_UD => {
+                // total_weight += Identity::WeightInfo::add_right();
+                let _ = Identity::validate_identity_and_add_rights(
+                    Origin::root(),
+                    receiver,
+                    sp_std::vec![IdtyRight::Ud],
+                );
+            }
+            MIN_STRONG_CERT_FOR_STRONG_CERT => {
+                // total_weight += Identity::WeightInfo::add_right();
+                let _ = Identity::add_right(Origin::root(), receiver, IdtyRight::StrongCert);
+            }
+            _ => {}
+        }
+        total_weight
+    }
+}
+
+pub struct OnRemovedStrongCertHandler;
+impl pallet_certification::traits::OnRemovedCert<IdtyIndex> for OnRemovedStrongCertHandler {
+    fn on_removed_cert(
+        _issuer: IdtyIndex,
+        _issuer_issued_count: u8,
+        receiver: IdtyIndex,
+        receiver_received_count: u32,
+        _expiration: bool,
+    ) -> frame_support::dispatch::Weight {
+        let total_weight = 0;
+        if receiver_received_count < MIN_STRONG_CERT_FOR_UD {
+            // total_weight += Identity::WeightInfo::del_right();
+            let _ = Identity::del_right(Origin::root(), receiver, IdtyRight::Ud);
+        }
+        total_weight
     }
 }

@@ -26,9 +26,9 @@ mod authorizations;
 mod entities;
 mod handlers;
 
-pub use crate::entities::{IdtyDid, IdtyRight, Planet};
+pub use crate::entities::{IdtyData, IdtyDid, IdtyRight, Planet};
 pub use pallet_balances::Call as BalancesCall;
-pub use pallet_identity::IdtyValue;
+pub use pallet_identity::{IdtyStatus, IdtyValue};
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
 pub use pallet_universal_dividend;
@@ -140,6 +140,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 ///
 /// Change this to adjust the block time.
 pub const MILLISECS_PER_BLOCK: u64 = 6000;
+pub const SECS_PER_BLOCK: u64 = MILLISECS_PER_BLOCK / 1_000;
 
 // NOTE: Currently it is not possible to change the slot duration after the chain has started.
 //       Attempting to do so will brick block production.
@@ -149,8 +150,9 @@ pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
-pub const MONTHS: BlockNumber = DAYS * 30;
-pub const YEARS: BlockNumber = MONTHS * 12;
+const SECS_PER_YEAR: u64 = 31_557_600; // (365.25 * 24 * 60 * 60)
+pub const MONTHS: BlockNumber = (SECS_PER_YEAR / (12 * SECS_PER_BLOCK)) as BlockNumber;
+pub const YEARS: BlockNumber = (SECS_PER_YEAR / SECS_PER_BLOCK) as BlockNumber;
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -321,7 +323,9 @@ impl pallet_sudo::Config for Runtime {
 
 parameter_types! {
     pub const ConfirmPeriod: BlockNumber = 12 * HOURS;
-    pub const MaxInactivityPeriod: BlockNumber = 1 * YEARS;
+    pub const MaxInactivityPeriod: BlockNumber = YEARS;
+    pub const MaxNoRightPeriod: BlockNumber = YEARS;
+    pub const IdtyRenewablePeriod: BlockNumber = 6 * MONTHS;
     pub const ValidationPeriod: BlockNumber = 2 * MONTHS;
 }
 
@@ -332,17 +336,40 @@ impl pallet_identity::Config for Runtime {
     type AddRightOrigin = EnsureRoot<Self::AccountId>;
     type DelRightOrigin = EnsureRoot<Self::AccountId>;
     type EnsureIdtyCallAllowed = crate::authorizations::EnsureIdtyCallAllowedImpl;
-    type IdtyData = ();
+    type IdtyData = IdtyData;
     type IdtyDid = IdtyDid;
     type IdtyIndex = IdtyIndex;
     type IdtyValidationOrigin = EnsureRoot<Self::AccountId>;
     type IdtyRight = IdtyRight;
-    type OnIdtyConfirmed = ();
-    type OnIdtyRemoved = ();
-    type OnIdtyValidated = crate::handlers::OnIdtyValidatedHandler;
+    type OnIdtyChange = crate::handlers::OnIdtyChangeHandler;
     type OnRightKeyChange = OnRightKeyChangeHandler;
     type MaxInactivityPeriod = MaxInactivityPeriod;
+    type MaxNoRightPeriod = MaxNoRightPeriod;
+    type RenewablePeriod = IdtyRenewablePeriod;
     type ValidationPeriod = ValidationPeriod;
+}
+
+// PALLET CERTIFICATION
+
+parameter_types! {
+    pub const CertPeriod: BlockNumber = 15;
+    pub const MaxByIssuer: u8 = 100;
+    pub const StrongCertRenewablePeriod: BlockNumber = 50;//6 * MONTHS;
+    pub const ValidityPeriod: BlockNumber = 200;//2 * YEARS;
+}
+
+/// Configure the pallet certification
+impl pallet_certification::Config for Runtime {
+    type AddCertOrigin = crate::authorizations::AddStrongCertOrigin;
+    type CertPeriod = CertPeriod;
+    type DelCertOrigin = crate::authorizations::DelStrongCertOrigin;
+    type Event = Event;
+    type IdtyIndex = IdtyIndex;
+    type MaxByIssuer = MaxByIssuer;
+    type OnNewcert = crate::handlers::OnNewStrongCertHandler;
+    type OnRemovedCert = crate::handlers::OnRemovedStrongCertHandler;
+    type RenewablePeriod = StrongCertRenewablePeriod;
+    type ValidityPeriod = ValidityPeriod;
 }
 
 // PALLET UNIVERSAL DIVIDEND
@@ -365,7 +392,7 @@ impl Get<Vec<AccountId>> for UdAccountsProvider {
 
 /// Configure the pallet universal-dividend in pallets/universal-dividend.
 impl pallet_universal_dividend::Config for Runtime {
-    const UD_CREATION_PERIOD: Self::BlockNumber = 10;
+    const UD_CREATION_PERIOD: Self::BlockNumber = 20;
     const UD_REEVAL_PERIOD: Balance = 10;
     const UD_REEVAL_PERIOD_IN_BLOCKS: Self::BlockNumber =
         Self::UD_CREATION_PERIOD * Self::UD_REEVAL_PERIOD as Self::BlockNumber;
@@ -398,6 +425,7 @@ construct_runtime!(
         UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage},
         UniversalDividend: pallet_universal_dividend::{Pallet, Config<T>, Storage, Event<T>},
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>},
+        StrongCert: pallet_certification::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
 );
 

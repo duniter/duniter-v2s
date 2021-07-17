@@ -60,7 +60,7 @@ pub mod pallet {
         /// Management of the authorizations of the different calls. (The default implementation only allows root)
         type EnsureIdtyCallAllowed: EnsureIdtyCallAllowed<Self>;
         ///  Identity custom data
-        type IdtyData: IdtyData;
+        type IdtyData: Parameter + Member + MaybeSerializeDeserialize + Debug + Default;
         /// Identity decentralized identifier
         type IdtyDid: IdtyDid;
         /// A short identity index.
@@ -78,16 +78,17 @@ pub mod pallet {
         /// Rights that an identity can have
         type IdtyRight: IdtyRight;
         /// On identity confirmed by it's owner
-        type OnIdtyConfirmed: OnIdtyConfirmed<Self>;
-        /// On identity removed
-        type OnIdtyRemoved: OnIdtyRemoved<Self>;
-        /// On identity validated
-        type OnIdtyValidated: OnIdtyValidated<Self>;
+        type OnIdtyChange: OnIdtyChange<Self>;
         /// On right key change
         type OnRightKeyChange: OnRightKeyChange<Self>;
         #[pallet::constant]
         /// Maximum period of inactivity, after this period, the identity is permanently deleted
         type MaxInactivityPeriod: Get<Self::BlockNumber>;
+        #[pallet::constant]
+        /// Maximum period with no rights, after this period, the identity is permanently deleted
+        type MaxNoRightPeriod: Get<Self::BlockNumber>;
+        /// Duration after which an identity is renewable
+        type RenewablePeriod: Get<Self::BlockNumber>;
         #[pallet::constant]
         /// Period after which a non-validated identity is deleted
         type ValidationPeriod: Get<Self::BlockNumber>;
@@ -118,6 +119,7 @@ pub mod pallet {
         Created,
         ConfirmedByOwner,
         Validated,
+        Expired,
     }
     impl Default for IdtyStatus {
         fn default() -> Self {
@@ -129,34 +131,23 @@ pub mod pallet {
     #[derive(Encode, Decode, Clone, PartialEq, Eq)]
     pub struct IdtyValue<T: Config> {
         pub did: T::IdtyDid,
+        pub expire_on: T::BlockNumber,
         pub owner_key: T::AccountId,
-        pub removable_on: Option<T::BlockNumber>,
+        pub removable_on: T::BlockNumber,
+        pub renewable_on: T::BlockNumber,
         pub rights: Vec<(T::IdtyRight, Option<T::AccountId>)>,
         pub status: IdtyStatus,
         pub data: T::IdtyData,
-    }
-    impl<T: Config> IdtyValue<T> {
-        pub fn new_valid(
-            did: T::IdtyDid,
-            owner_key: T::AccountId,
-            rights: Vec<T::IdtyRight>,
-        ) -> Self {
-            Self {
-                did,
-                owner_key,
-                removable_on: None,
-                rights: rights.into_iter().map(|right| (right, None)).collect(),
-                status: IdtyStatus::Validated,
-                data: T::IdtyData::default(),
-            }
-        }
     }
     impl<T: Config> Default for IdtyValue<T> {
         fn default() -> Self {
             Self {
                 did: Default::default(),
+                expire_on: frame_system::Pallet::<T>::block_number()
+                    + T::MaxInactivityPeriod::get(),
                 owner_key: Default::default(),
-                removable_on: None,
+                removable_on: T::BlockNumber::zero(),
+                renewable_on: frame_system::Pallet::<T>::block_number() + T::RenewablePeriod::get(),
                 rights: Default::default(),
                 status: Default::default(),
                 data: Default::default(),
@@ -167,7 +158,7 @@ pub mod pallet {
         pub fn get_right_key(&self, right: T::IdtyRight) -> Option<T::AccountId> {
             if let Ok(index) = self
                 .rights
-                .binary_search_by(|(right_, _)| right.cmp(right_))
+                .binary_search_by(|(right_, _)| right_.cmp(&right))
             {
                 if self.rights[index].1.is_some() {
                     self.rights[index].1.clone()
@@ -204,6 +195,12 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn identities_count)]
     pub(super) type IdentitiesCount<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+    /// Identities by expiration block
+    #[pallet::storage]
+    #[pallet::getter(fn expire_on)]
+    pub type IdentitiesExpireOn<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::BlockNumber, Vec<T::IdtyIndex>, ValueQuery>;
 
     /// Identities by removed block
     #[pallet::storage]
@@ -244,12 +241,12 @@ pub mod pallet {
                 );
                 if idty_value.status == IdtyStatus::Validated {
                     if idty_value.rights.is_empty() {
-                        assert!(idty_value.removable_on.is_some());
+                        assert!(idty_value.removable_on > T::BlockNumber::zero());
                     } else {
-                        assert!(idty_value.removable_on.is_none());
+                        assert!(idty_value.removable_on == T::BlockNumber::zero());
                     }
                 } else {
-                    assert!(idty_value.removable_on.is_some());
+                    assert!(idty_value.removable_on > T::BlockNumber::zero());
                     assert!(idty_value.rights.is_empty())
                 }
                 dids.insert(idty_value.did);
@@ -263,9 +260,9 @@ pub mod pallet {
             <IdentitiesCount<T>>::put(self.identities.len() as u64);
             for idty_value in &identities {
                 let idty_index = Pallet::<T>::get_next_idty_index();
-                if let Some(removable_on) = idty_value.removable_on {
+                if idty_value.removable_on > T::BlockNumber::zero() {
                     <IdentitiesRemovableOn<T>>::append(
-                        removable_on,
+                        idty_value.removable_on,
                         (idty_index, idty_value.status),
                     )
                 }
@@ -279,7 +276,11 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            Self::prune_identities(n)
+            if n > T::BlockNumber::zero() {
+                Self::expire_identities(n) + Self::prune_identities(n)
+            } else {
+                0
+            }
         }
     }
 
@@ -304,9 +305,9 @@ pub mod pallet {
         /// An identity has been validated
         /// [idty]
         IdtyValidated(T::IdtyDid),
-        /// An identity was declared dead
+        /// An identity was renewed by it's owner
         /// [idty]
-        IdtyDead(T::IdtyDid),
+        IdtyRenewed(T::IdtyDid),
         /// An identity has acquired a new right
         /// [idty, right]
         IdtyAcquireRight(T::IdtyDid, T::IdtyRight),
@@ -337,9 +338,8 @@ pub mod pallet {
             idty_did: T::IdtyDid,
             owner_key: T::AccountId,
         ) -> DispatchResultWithPostInfo {
-            if !T::EnsureIdtyCallAllowed::create_identity(origin, creator, &idty_did, &owner_key) {
-                return Err(Error::<T>::IdtyCreationNotAllowed.into());
-            }
+            let idty_data =
+                T::EnsureIdtyCallAllowed::create_identity(origin, creator, &idty_did, &owner_key)?;
             if <IdentitiesByDid<T>>::contains_key(&idty_did) {
                 return Err(Error::<T>::IdtyAlreadyExist.into());
             }
@@ -352,15 +352,20 @@ pub mod pallet {
                 idty_index,
                 IdtyValue {
                     did: idty_did,
+                    expire_on: T::BlockNumber::zero(),
                     owner_key: owner_key.clone(),
-                    removable_on: Some(removable_on),
-                    ..Default::default()
+                    removable_on,
+                    renewable_on: T::BlockNumber::zero(),
+                    rights: Vec::with_capacity(0),
+                    status: IdtyStatus::Created,
+                    data: idty_data,
                 },
             );
             <IdentitiesByDid<T>>::insert(idty_did, idty_index);
             IdentitiesRemovableOn::<T>::append(removable_on, (idty_index, IdtyStatus::Created));
             Self::inc_identities_counter();
             Self::deposit_event(Event::IdtyCreated(idty_did, owner_key));
+            T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Created { creator });
             Ok(().into())
         }
         #[pallet::weight(0)]
@@ -378,19 +383,65 @@ pub mod pallet {
                     }
 
                     let block_number = frame_system::pallet::Pallet::<T>::block_number();
+                    let expire_on = block_number + T::MaxInactivityPeriod::get();
                     let removable_on = block_number + T::ValidationPeriod::get();
-                    idty_value.removable_on = Some(removable_on);
+                    let renewable_on = block_number + T::RenewablePeriod::get();
+                    idty_value.expire_on = expire_on;
+                    idty_value.removable_on = removable_on;
+                    idty_value.renewable_on = renewable_on;
                     idty_value.status = IdtyStatus::ConfirmedByOwner;
-                    let owner_key = idty_value.owner_key.clone();
 
                     <Identities<T>>::insert(idty_index, idty_value);
+                    IdentitiesExpireOn::<T>::append(expire_on, idty_index);
                     IdentitiesRemovableOn::<T>::append(
                         removable_on,
                         (idty_index, IdtyStatus::ConfirmedByOwner),
                     );
                     Self::deposit_event(Event::IdtyConfirmed(idty_did));
-                    T::OnIdtyConfirmed::on_idty_confirmed(idty_did, owner_key, removable_on);
+                    T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Confirmed);
                     Ok(().into())
+                } else {
+                    Err(Error::<T>::RequireToBeOwner.into())
+                }
+            } else {
+                Err(Error::<T>::IdtyNotFound.into())
+            }
+        }
+        #[pallet::weight(0)]
+        pub fn renew_identity(
+            origin: OriginFor<T>,
+            idty_did: T::IdtyDid,
+            idty_index: T::IdtyIndex,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_index) {
+                if who == idty_value.owner_key {
+                    match idty_value.status {
+                        IdtyStatus::Created | IdtyStatus::ConfirmedByOwner => {
+                            Err(Error::<T>::IdtyNotValidated.into())
+                        }
+                        IdtyStatus::Validated | IdtyStatus::Expired => {
+                            let block_number = frame_system::pallet::Pallet::<T>::block_number();
+                            if idty_value.renewable_on > block_number {
+                                return Err(Error::<T>::IdtyNotYetRenewable.into());
+                            }
+                            let expire_on = block_number + T::MaxInactivityPeriod::get();
+                            let renewable_on = block_number + T::RenewablePeriod::get();
+                            idty_value.expire_on = expire_on;
+                            idty_value.renewable_on = renewable_on;
+                            let old_status = idty_value.status;
+                            idty_value.status = IdtyStatus::Validated;
+
+                            <Identities<T>>::insert(idty_index, idty_value);
+                            IdentitiesExpireOn::<T>::append(expire_on, idty_index);
+                            Self::deposit_event(Event::IdtyRenewed(idty_did));
+                            if old_status == IdtyStatus::Expired {
+                                T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Validated);
+                            }
+                            Ok(().into())
+                        }
+                    }
                 } else {
                     Err(Error::<T>::RequireToBeOwner.into())
                 }
@@ -410,10 +461,9 @@ pub mod pallet {
                     IdtyStatus::Created => Err(Error::<T>::IdtyNotConfirmedByOwner.into()),
                     IdtyStatus::ConfirmedByOwner => {
                         let block_number = frame_system::pallet::Pallet::<T>::block_number();
-                        let removable_on = block_number + T::MaxInactivityPeriod::get();
-                        idty_value.removable_on = Some(removable_on);
+                        let removable_on = block_number + T::MaxNoRightPeriod::get();
+                        idty_value.removable_on = removable_on;
                         idty_value.status = IdtyStatus::Validated;
-                        let owner_key = idty_value.owner_key.clone();
                         let did = idty_value.did;
 
                         <Identities<T>>::insert(idty_index, idty_value);
@@ -422,10 +472,12 @@ pub mod pallet {
                             (idty_index, IdtyStatus::Validated),
                         );
                         Self::deposit_event(Event::IdtyValidated(did));
-                        T::OnIdtyValidated::on_idty_validated(idty_index, owner_key)?;
+                        T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Validated);
                         Ok(().into())
                     }
-                    IdtyStatus::Validated => Err(Error::<T>::IdtyAlreadyValidated.into()),
+                    IdtyStatus::Validated | IdtyStatus::Expired => {
+                        Err(Error::<T>::IdtyAlreadyValidated.into())
+                    }
                 }
             } else {
                 Err(Error::<T>::IdtyNotFound.into())
@@ -443,21 +495,31 @@ pub mod pallet {
                 match idty_value.status {
                     IdtyStatus::Created => Err(Error::<T>::IdtyNotConfirmedByOwner.into()),
                     IdtyStatus::ConfirmedByOwner => {
-                        idty_value.removable_on = None;
+                        idty_value.removable_on = T::BlockNumber::zero();
                         idty_value.rights = rights.iter().map(|right| (*right, None)).collect();
                         idty_value.status = IdtyStatus::Validated;
-                        let owner_key = idty_value.owner_key.clone();
                         let did = idty_value.did;
+                        let owner_key = idty_value.owner_key.clone();
 
                         <Identities<T>>::insert(idty_index, idty_value);
                         Self::deposit_event(Event::IdtyValidated(did));
+                        T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Validated);
                         for right in rights {
                             Self::deposit_event(Event::IdtyAcquireRight(did, right));
+                            if right.allow_owner_key() {
+                                T::OnRightKeyChange::on_right_key_change(
+                                    idty_index,
+                                    right,
+                                    None,
+                                    Some(owner_key.clone()),
+                                );
+                            }
                         }
-                        T::OnIdtyValidated::on_idty_validated(idty_index, owner_key)?;
                         Ok(().into())
                     }
-                    IdtyStatus::Validated => Err(Error::<T>::IdtyAlreadyValidated.into()),
+                    IdtyStatus::Validated | IdtyStatus::Expired => {
+                        Err(Error::<T>::IdtyAlreadyValidated.into())
+                    }
                 }
             } else {
                 Err(Error::<T>::IdtyNotFound.into())
@@ -478,7 +540,7 @@ pub mod pallet {
 
                 if let Err(index) = idty_value
                     .rights
-                    .binary_search_by(|(right_, _)| right.cmp(right_))
+                    .binary_search_by(|(right_, _)| right_.cmp(&right))
                 {
                     let did = idty_value.did;
                     let new_key = if right.allow_owner_key() {
@@ -487,7 +549,7 @@ pub mod pallet {
                         None
                     };
 
-                    idty_value.removable_on = None;
+                    idty_value.removable_on = T::BlockNumber::zero();
                     idty_value.rights.insert(index, (right, None));
                     <Identities<T>>::insert(idty_index, idty_value);
                     Self::deposit_event(Event::<T>::IdtyAcquireRight(did, right));
@@ -517,7 +579,7 @@ pub mod pallet {
 
                 if let Ok(index) = idty_value
                     .rights
-                    .binary_search_by(|(right_, _)| right.cmp(right_))
+                    .binary_search_by(|(right_, _)| right_.cmp(&right))
                 {
                     let did = idty_value.did;
                     let old_key_opt = if let Some(ref subkey) = idty_value.rights[index].1 {
@@ -531,8 +593,8 @@ pub mod pallet {
 
                     if idty_value.rights.is_empty() {
                         let block_number = frame_system::pallet::Pallet::<T>::block_number();
-                        let removable_on = block_number + T::MaxInactivityPeriod::get();
-                        idty_value.removable_on = Some(removable_on);
+                        let removable_on = block_number + T::MaxNoRightPeriod::get();
+                        idty_value.removable_on = removable_on;
                         <IdentitiesRemovableOn<T>>::append(
                             removable_on,
                             (idty_index, IdtyStatus::Validated),
@@ -574,7 +636,7 @@ pub mod pallet {
 
                     if let Ok(index) = idty_value
                         .rights
-                        .binary_search_by(|(right_, _)| right.cmp(right_))
+                        .binary_search_by(|(right_, _)| right_.cmp(&right))
                     {
                         let did = idty_value.did;
                         let old_subkey_opt = idty_value.rights[index].1.clone();
@@ -631,12 +693,24 @@ pub mod pallet {
         IdtyNotFound,
         /// Identity not validated
         IdtyNotValidated,
+        /// Identity not yet renewable
+        IdtyNotYetRenewable,
         /// This operation requires to be the owner of the identity
         RequireToBeOwner,
         /// Right already added
         RightAlreadyAdded,
         /// Right not exist
         RightNotExist,
+    }
+
+    // PUBLIC FUNCTIONS //
+
+    impl<T: Config> Pallet<T> {
+        pub fn set_idty_data(idty_index: T::IdtyIndex, idty_data: T::IdtyData) {
+            Identities::<T>::mutate_exists(idty_index, |idty_val| {
+                idty_val.get_or_insert(IdtyValue::default()).data = idty_data;
+            });
+        }
     }
 
     // INTERNAL FUNCTIONS //
@@ -654,8 +728,8 @@ pub mod pallet {
                 <NextIdtyIndex<T>>::put(next_index.saturating_add(T::IdtyIndex::one()));
                 next_index
             } else {
-                <NextIdtyIndex<T>>::put(T::IdtyIndex::one());
-                T::IdtyIndex::zero()
+                <NextIdtyIndex<T>>::put(T::IdtyIndex::one() + T::IdtyIndex::one());
+                T::IdtyIndex::one()
             }
         }
         fn inc_identities_counter() {
@@ -664,6 +738,31 @@ pub mod pallet {
             } else {
                 <IdentitiesCount<T>>::put(1);
             }
+        }
+        fn expire_identities(block_number: T::BlockNumber) -> Weight {
+            let mut total_weight: Weight = 0;
+
+            use frame_support::storage::generator::StorageMap as _;
+            if let Some(identities_index) = IdentitiesExpireOn::<T>::from_query_to_optional_value(
+                IdentitiesExpireOn::<T>::take(block_number),
+            ) {
+                for idty_index in identities_index {
+                    if let Ok(idty_val) = <Identities<T>>::try_get(idty_index) {
+                        if idty_val.expire_on == block_number {
+                            <Identities<T>>::mutate_exists(idty_index, |idty_val_opt| {
+                                idty_val_opt.get_or_insert(IdtyValue::default()).rights =
+                                    Vec::with_capacity(0);
+                                idty_val_opt.get_or_insert(IdtyValue::default()).status =
+                                    IdtyStatus::Expired;
+                            });
+                            total_weight +=
+                                T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Expired);
+                        }
+                    }
+                }
+            }
+
+            total_weight
         }
         fn prune_identities(block_number: T::BlockNumber) -> Weight {
             let mut total_weight: Weight = 0;
@@ -674,18 +773,13 @@ pub mod pallet {
             ) {
                 for (idty_index, idty_status) in identities {
                     if let Ok(idty_val) = <Identities<T>>::try_get(idty_index) {
-                        if idty_val.removable_on == Some(block_number)
-                            && idty_val.status == idty_status
-                        {
+                        if idty_val.removable_on == block_number && idty_val.status == idty_status {
                             let did = idty_val.did;
                             <Identities<T>>::remove(idty_index);
                             <IdentitiesByDid<T>>::remove(did);
                             Self::dec_identities_counter();
-                            total_weight += T::OnIdtyRemoved::on_idty_removed(
-                                idty_index,
-                                did,
-                                idty_val.owner_key,
-                            );
+                            total_weight +=
+                                T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Removed);
                         }
                     }
                 }
