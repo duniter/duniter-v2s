@@ -18,10 +18,7 @@ use crate::*;
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use sp_runtime::traits::MaybeSerializeDeserialize;
-#[cfg(not(feature = "std"))]
 use sp_std::fmt::Debug;
-#[cfg(feature = "std")]
-use std::fmt::Debug;
 
 pub trait EnsureIdtyCallAllowed<T: Config> {
     fn create_identity(
