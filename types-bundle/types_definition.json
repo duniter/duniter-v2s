@@ -5,12 +5,21 @@
             "Earth"
         ]
     },
+    "IdtyCertMeta": {
+        "issued_count": "u8",
+        "next_issuable_on": "BlockNumber",
+        "received_count": "u32"
+    },
+    "IdtyData": {
+        "can_create_on": "BlockNumber"
+    },
     "IdtyDid": {
         "hash": "[u8; 32]",
         "planet": "Planet",
         "latitude": "u32",
         "longitude": "u32"
     },
+    "IdtyIndex": "u64",
     "IdtyRight": {
         "_enum": [
             "CreateIdty",
@@ -27,9 +36,13 @@
         ]
     },
     "IdtyValue": {
+        "did": "IdtyDid",
+        "expire_on": "BlockNumber",
         "owner_key": "AccountId",
-        "removable_on": "Option<u32>",
-        "rights": "Vec<(IdtyRight, Option<AccountId>)>",
-        "status": "IdtyStatus"
+        "removable_on": "BlockNumber",
+        "renewable_on": "BlockNumber",
+        "rights": "Vec<(T::IdtyRight, Option<T::AccountId>)>",
+        "status": "IdtyStatus",
+        "data":  "IdtyData"
     }
 }
