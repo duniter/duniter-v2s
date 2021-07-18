@@ -64,7 +64,7 @@ fn test_two_identities() {
 
         // Add right Right1 for Did(0)
         // Should succes and trigger the correct event
-        assert_ok!(Identity::add_right(Origin::root(), 0, Right::Right1));
+        assert_ok!(Identity::add_right(Origin::root(), 1, Right::Right1));
         let events = System::events();
         assert_eq!(events.len(), 1);
         assert_eq!(
@@ -78,7 +78,7 @@ fn test_two_identities() {
         // Add right Right2 for Did(0)
         // Should fail because Did(0) already have this right
         assert_err!(
-            Identity::add_right(Origin::root(), 0, Right::Right2),
+            Identity::add_right(Origin::root(), 1, Right::Right2),
             Error::<Test>::RightAlreadyAdded
         );
 
@@ -86,7 +86,7 @@ fn test_two_identities() {
 
         // Delete right Right1 for Did(1)
         // Should succes and trigger the correct event
-        assert_ok!(Identity::del_right(Origin::root(), 1, Right::Right1));
+        assert_ok!(Identity::del_right(Origin::root(), 2, Right::Right1));
         let events = System::events();
         assert_eq!(events.len(), 2);
         assert_eq!(
@@ -99,7 +99,7 @@ fn test_two_identities() {
         );
 
         // The Did(1) identity has no more rights, the inactivity period must start to run
-        let idty2 = Identity::identity(1);
+        let idty2 = Identity::identity(2);
         assert!(idty2.rights.is_empty());
         assert_eq!(idty2.removable_on, 7);
     });

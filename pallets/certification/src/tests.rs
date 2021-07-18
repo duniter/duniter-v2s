@@ -17,7 +17,7 @@
 use crate::mock::*;
 use crate::Error;
 use frame_support::assert_ok;
-use frame_system::{EventRecord, Phase};
+//use frame_system::{EventRecord, Phase};
 use maplit::{btreemap, btreeset};
 use sp_std::collections::btree_map::BTreeMap;
 
