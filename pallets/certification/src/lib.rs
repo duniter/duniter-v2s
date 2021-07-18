@@ -117,7 +117,7 @@ pub mod pallet {
 
     #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
     pub struct CertValue<T: Config<I>, I: Instance> {
-        chainable_on: T::BlockNumber,
+        renewable_on: T::BlockNumber,
         removable_on: T::BlockNumber,
         phantom: PhantomData<I>,
     }
@@ -185,8 +185,9 @@ pub mod pallet {
 
                 <StorageVersion<I>>::put(Releases::V1_0_0);
                 // Write StorageCertsByReceiver
-                for (receiver, issuers) in certs_by_receiver {
+                for (receiver, mut issuers) in certs_by_receiver {
                     cert_meta_by_issuer.entry(receiver).and_modify(|cert_meta| cert_meta.received_count = issuers.len() as u32);
+                    issuers.sort();
                     <StorageCertsByReceiver<T, I>>::insert(receiver, issuers);
                 }
                 // Write StorageIdtyCertMeta
@@ -199,7 +200,7 @@ pub mod pallet {
                     for receiver in receivers {
                         all_couples.push((*issuer, *receiver));
                         <StorageCertsByIssuer<T, I>>::insert(issuer, receiver, CertValue {
-                            chainable_on: T::RenewablePeriod::get(),
+                            renewable_on: T::RenewablePeriod::get(),
                             removable_on: T::ValidityPeriod::get(),
                             phantom: PhantomData,
                         });
@@ -240,8 +241,8 @@ pub mod pallet {
 
                     // Verify rule RenewablePeriod
                     frame_support::runtime_print!("add_cert({:?}, {:?}): Verify rule RenewablePeriod", issuer, receiver);
-                    let create = if let Ok(CertValue { chainable_on, .. }) = <StorageCertsByIssuer<T, I>>::try_get(issuer, receiver) {
-                        if chainable_on > block_number {
+                    let create = if let Ok(CertValue { renewable_on, .. }) = <StorageCertsByIssuer<T, I>>::try_get(issuer, receiver) {
+                        if renewable_on > block_number {
                             return Err(Error::<T, I>::NotRespectRenewablePeriod.into());
                         }
                         false
@@ -271,7 +272,7 @@ pub mod pallet {
 
                 // Write StorageCertsRemovableOn and StorageCertsByIssuer
                 let cert_value = CertValue {
-                    chainable_on: block_number + T::RenewablePeriod::get(),
+                    renewable_on: block_number + T::RenewablePeriod::get(),
                     removable_on: block_number + T::ValidityPeriod::get(),
                     phantom: PhantomData,
                 };
@@ -358,6 +359,12 @@ pub mod pallet {
                 }
             });
             if removed {
+                <StorageCertsByReceiver<T, I>>::mutate_exists(receiver, |issuers_opt| {
+                    let issuers = issuers_opt.get_or_insert(Vec::with_capacity(0));
+                    if let Ok(index) = issuers.binary_search(&issuer) {
+                        issuers.remove(index);
+                    }
+                });
                 let issuer_issued_count =
                     <StorageIdtyCertMeta<T, I>>::mutate_exists(issuer, |cert_meta_opt| {
                         let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());
