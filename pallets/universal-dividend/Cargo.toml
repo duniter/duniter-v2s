@@ -17,6 +17,7 @@ std = [
     'frame-system/std',
     'frame-benchmarking/std',
     "sp-arithmetic/std",
+    "sp-io/std",
 	"sp-std/std",
 ]
 try-runtime = ['frame-support/try-runtime']
@@ -44,6 +45,11 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2021-07'
 
 [dependencies.sp-arithmetic]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'
+
+[dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2021-07'

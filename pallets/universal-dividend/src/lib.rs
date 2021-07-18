@@ -31,6 +31,8 @@ use frame_support::traits::Currency;
 use sp_arithmetic::{per_things::Permill, traits::Zero};
 use sp_std::prelude::*;
 
+const OFFCHAIN_PREFIX_UD_HISTORY: &[u8] = b"ud::history::";
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -154,9 +156,10 @@ pub mod pallet {
             if (n % T::UD_CREATION_PERIOD).is_zero() {
                 let current_members_count = T::MembersCount::get();
                 if (n % T::UD_REEVAL_PERIOD_IN_BLOCKS).is_zero() {
-                    Self::reeval_ud(current_members_count) + Self::create_ud(current_members_count)
+                    Self::reeval_ud(current_members_count)
+                        + Self::create_ud(current_members_count, n)
                 } else {
-                    Self::create_ud(current_members_count)
+                    Self::create_ud(current_members_count, n)
                 }
             } else {
                 0
@@ -182,7 +185,7 @@ pub mod pallet {
 
     // INTERNAL FUNCTIONS //
     impl<T: Config> Pallet<T> {
-        fn create_ud(current_members_count: BalanceOf<T>) -> Weight {
+        fn create_ud(current_members_count: BalanceOf<T>, n: T::BlockNumber) -> Weight {
             let total_weight: Weight = 0;
 
             let LastReeval { ud_amount, .. } =
@@ -192,6 +195,7 @@ pub mod pallet {
             for account_id in T::MembersIds::get() {
                 T::Currency::deposit_creating(&account_id, ud_amount);
                 monetary_mass += ud_amount;
+                Self::write_ud_history(n, account_id, ud_amount);
             }
 
             <MonetaryMassStorage<T>>::put(monetary_mass);
@@ -244,6 +248,13 @@ pub mod pallet {
         ) -> BalanceOf<T> {
             // UD(t+1) = UD(t) + c² (M(t) / N(t)) / (dt/udFrequency)
             ud_t + c_square * monetary_mass / (members_count * count_uds_beetween_two_reevals)
+        }
+        fn write_ud_history(n: T::BlockNumber, account_id: T::AccountId, ud_amount: BalanceOf<T>) {
+            let mut key = Vec::with_capacity(57);
+            key.extend_from_slice(OFFCHAIN_PREFIX_UD_HISTORY);
+            account_id.encode_to(&mut key);
+            n.encode_to(&mut key);
+            sp_io::offchain_index::set(key.as_ref(), ud_amount.encode().as_ref());
         }
     }
 }
