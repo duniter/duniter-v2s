@@ -12,11 +12,6 @@
     "IdtyData": {
         "can_create_on": "BlockNumber"
     },
-    "IdtyCertMeta": {
-        "issued_count": "u8",
-        "next_issuable_on": "BlockNumber",
-        "received_count": "u32"
-    },
     "IdtyDid": {
         "hash": "[u8; 32]",
         "planet": "Planet",
