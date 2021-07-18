@@ -10,9 +10,6 @@
         "next_issuable_on": "BlockNumber",
         "received_count": "u32"
     },
-    "IdtyData": {
-        "can_create_on": "BlockNumber"
-    },
     "IdtyDid": {
         "hash": "[u8; 32]",
         "planet": "Planet",
@@ -37,12 +34,9 @@
     },
     "IdtyValue": {
         "did": "IdtyDid",
-        "expire_on": "BlockNumber",
         "owner_key": "AccountId",
-        "removable_on": "BlockNumber",
-        "renewable_on": "BlockNumber",
+        "removable_on": "Option<BlockNumber>",
         "rights": "Vec<(T::IdtyRight, Option<T::AccountId>)>",
         "status": "IdtyStatus",
-        "data":  "IdtyData"
     }
 }
