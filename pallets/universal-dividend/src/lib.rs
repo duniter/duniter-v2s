@@ -233,7 +233,7 @@ pub mod pallet {
             members_count: BalanceOf<T>,
             count_uds_beetween_two_reevals: BalanceOf<T>, // =(dt/udFrequency)
         ) -> BalanceOf<T> {
-            // UD(t+1) = UD(t) + c² (M(t) / N(t)) / (dt/udFrequency)
+            // UD(t+1) = UD(t) + c² (M(t+1) / N(t+1)) / (dt/udFrequency)
             ud_t + c_square * monetary_mass / (members_count * count_uds_beetween_two_reevals)
         }
         fn write_ud_history(n: T::BlockNumber, account_id: T::AccountId, ud_amount: BalanceOf<T>) {
