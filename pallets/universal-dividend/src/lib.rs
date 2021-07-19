@@ -109,8 +109,8 @@ pub mod pallet {
 
     /// Last reevaluation
     #[pallet::storage]
-    #[pallet::getter(fn last_reeval)]
-    pub type LastReevalStorage<T: Config> = StorageValue<_, LastReeval<T>, ValueQuery>;
+    #[pallet::getter(fn current_ud)]
+    pub type CurrentUdStorage<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     /// Total quantity of money created by universal dividend (does not take into account the possible destruction of money)
     #[pallet::storage]
@@ -142,11 +142,7 @@ pub mod pallet {
             assert!(self.initial_monetary_mass >= T::Currency::total_issuance());
 
             <StorageVersion<T>>::put(Releases::V1_0_0);
-            <LastReevalStorage<T>>::put(LastReeval {
-                monetary_mass: T::Currency::total_issuance(),
-                members_count: T::MembersCount::get(),
-                ud_amount: self.first_ud,
-            });
+            <CurrentUdStorage<T>>::put(self.first_ud);
             <MonetaryMassStorage<T>>::put(self.initial_monetary_mass);
         }
     }
@@ -188,11 +184,10 @@ pub mod pallet {
 
     // INTERNAL FUNCTIONS //
     impl<T: Config> Pallet<T> {
-        fn create_ud(current_members_count: BalanceOf<T>, n: T::BlockNumber) -> Weight {
+        fn create_ud(members_count: BalanceOf<T>, n: T::BlockNumber) -> Weight {
             let total_weight: Weight = 0;
 
-            let LastReeval { ud_amount, .. } =
-                <LastReevalStorage<T>>::try_get().expect("corrupted storage");
+            let ud_amount = <CurrentUdStorage<T>>::try_get().expect("corrupted storage");
             let mut monetary_mass = <MonetaryMassStorage<T>>::try_get().expect("corrupted storage");
 
             for account_id in T::MembersIds::get() {
@@ -202,22 +197,16 @@ pub mod pallet {
             }
 
             <MonetaryMassStorage<T>>::put(monetary_mass);
-            Self::deposit_event(Event::NewUdCreated(ud_amount, current_members_count));
+            Self::deposit_event(Event::NewUdCreated(ud_amount, members_count));
 
             total_weight
         }
-        fn reeval_ud(current_members_count: BalanceOf<T>) -> Weight {
+        fn reeval_ud(members_count: BalanceOf<T>) -> Weight {
             let total_weight: Weight = 0;
 
-            let LastReeval {
-                members_count,
-                mut monetary_mass,
-                ud_amount,
-            } = <LastReevalStorage<T>>::try_get().expect("corrupted storage");
+            let ud_amount = <CurrentUdStorage<T>>::try_get().expect("corrupted storage");
 
-            if monetary_mass.is_zero() {
-                monetary_mass = ud_amount * members_count;
-            }
+            let monetary_mass = <MonetaryMassStorage<T>>::try_get().expect("corrupted storage");
 
             let new_ud_amount = Self::reeval_ud_formula(
                 ud_amount,
@@ -227,18 +216,13 @@ pub mod pallet {
                 T::UdReevalPeriod::get(),
             );
 
+            <CurrentUdStorage<T>>::put(new_ud_amount);
+
             Self::deposit_event(Event::UdReevalued(
                 new_ud_amount,
                 monetary_mass,
                 members_count,
             ));
-
-            let monetary_mass = <MonetaryMassStorage<T>>::try_get().expect("corrupted storage");
-            <LastReevalStorage<T>>::put(LastReeval {
-                members_count: current_members_count,
-                monetary_mass,
-                ud_amount: new_ud_amount,
-            });
 
             total_weight
         }

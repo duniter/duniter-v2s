@@ -82,26 +82,26 @@ fn test_ud_creation() {
 
         // Block #8 should cause a re-evaluation of UD
         run_to_block(8);
-        assert_eq!(Balances::free_balance(1), 4_025);
-        assert_eq!(Balances::free_balance(2), 4_025);
-        assert_eq!(Balances::free_balance(3), 4_025);
+        assert_eq!(Balances::free_balance(1), 4_075);
+        assert_eq!(Balances::free_balance(2), 4_075);
+        assert_eq!(Balances::free_balance(3), 4_075);
         assert_eq!(Balances::free_balance(4), 0);
-        assert_eq!(UniversalDividend::total_money_created(), 12_075);
+        assert_eq!(UniversalDividend::total_money_created(), 12_225);
 
         // Block #10 #12 and #14should creates the reevalued UD
         run_to_block(14);
-        assert_eq!(Balances::free_balance(1), 7_100);
-        assert_eq!(Balances::free_balance(2), 7_100);
-        assert_eq!(Balances::free_balance(3), 7_100);
+        assert_eq!(Balances::free_balance(1), 7_300);
+        assert_eq!(Balances::free_balance(2), 7_300);
+        assert_eq!(Balances::free_balance(3), 7_300);
         assert_eq!(Balances::free_balance(4), 0);
-        assert_eq!(UniversalDividend::total_money_created(), 21_300);
+        assert_eq!(UniversalDividend::total_money_created(), 21_900);
 
         // Block #16 should cause a second re-evaluation of UD
         run_to_block(16);
-        assert_eq!(Balances::free_balance(1), 8_200);
-        assert_eq!(Balances::free_balance(2), 8_200);
-        assert_eq!(Balances::free_balance(3), 8_200);
+        assert_eq!(Balances::free_balance(1), 8_557);
+        assert_eq!(Balances::free_balance(2), 8_557);
+        assert_eq!(Balances::free_balance(3), 8_557);
         assert_eq!(Balances::free_balance(4), 0);
-        assert_eq!(UniversalDividend::total_money_created(), 24_600);
+        assert_eq!(UniversalDividend::total_money_created(), 25_671);
     });
 }
