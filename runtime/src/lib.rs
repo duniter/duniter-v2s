@@ -376,6 +376,9 @@ impl pallet_certification::Config for Runtime {
 
 parameter_types! {
     pub const SquareMoneyGrowthRate: Permill = Permill::one();
+    pub const UdCreationPeriod: BlockNumber = 20;
+    pub const UdReevalPeriod: Balance = 10;
+    pub const UdReevalPeriodInBlocks: BlockNumber = 20 * 10;
 }
 
 pub struct UdAccountsProvider;
@@ -392,16 +395,14 @@ impl Get<Vec<AccountId>> for UdAccountsProvider {
 
 /// Configure the pallet universal-dividend in pallets/universal-dividend.
 impl pallet_universal_dividend::Config for Runtime {
-    const UD_CREATION_PERIOD: Self::BlockNumber = 20;
-    const UD_REEVAL_PERIOD: Balance = 10;
-    const UD_REEVAL_PERIOD_IN_BLOCKS: Self::BlockNumber =
-        Self::UD_CREATION_PERIOD * Self::UD_REEVAL_PERIOD as Self::BlockNumber;
-
     type Currency = pallet_balances::Pallet<Runtime>;
     type Event = Event;
     type MembersCount = UdAccountsProvider;
     type MembersIds = UdAccountsProvider;
     type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
+    type UdCreationPeriod = UdCreationPeriod;
+    type UdReevalPeriod = UdReevalPeriod;
+    type UdReevalPeriodInBlocks = UdReevalPeriodInBlocks;
 }
 
 /// Configure the pallet ud-accounts-storage

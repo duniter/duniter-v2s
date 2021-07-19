@@ -44,13 +44,16 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
+        #[pallet::constant]
         /// Universal dividend creation period
-        const UD_CREATION_PERIOD: Self::BlockNumber;
+        type UdCreationPeriod: Get<Self::BlockNumber>;
+        #[pallet::constant]
         /// Universal dividend reevaluation period (in number of creation period)
-        const UD_REEVAL_PERIOD: BalanceOf<Self>;
+        type UdReevalPeriod: Get<BalanceOf<Self>>;
+        #[pallet::constant]
         /// Universal dividend reevaluation period in number of blocks
-        /// Must be equal to UD_CREATION_PERIOD * UD_REEVAl_PERIOD
-        const UD_REEVAL_PERIOD_IN_BLOCKS: Self::BlockNumber;
+        /// Must be equal to UdReevalPeriod * UdCreationPeriod
+        type UdReevalPeriodInBlocks: Get<Self::BlockNumber>;
 
         // The currency
         type Currency: Currency<Self::AccountId>;
@@ -153,9 +156,9 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            if (n % T::UD_CREATION_PERIOD).is_zero() {
+            if (n % T::UdCreationPeriod::get()).is_zero() {
                 let current_members_count = T::MembersCount::get();
-                if (n % T::UD_REEVAL_PERIOD_IN_BLOCKS).is_zero() {
+                if (n % T::UdReevalPeriodInBlocks::get()).is_zero() {
                     Self::reeval_ud(current_members_count)
                         + Self::create_ud(current_members_count, n)
                 } else {
@@ -221,7 +224,7 @@ pub mod pallet {
                 T::SquareMoneyGrowthRate::get(),
                 monetary_mass,
                 members_count,
-                T::UD_REEVAL_PERIOD,
+                T::UdReevalPeriod::get(),
             );
 
             Self::deposit_event(Event::UdReevalued(

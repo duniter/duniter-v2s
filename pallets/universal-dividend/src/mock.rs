@@ -29,6 +29,7 @@ use sp_runtime::{
 };
 
 type Balance = u64;
+type BlockNumber = u64;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -96,6 +97,9 @@ impl pallet_balances::Config for Test {
 parameter_types! {
     pub const MembersCount: u64 = 3;
     pub const SquareMoneyGrowthRate: Permill = Permill::from_percent(10);
+    pub const UdCreationPeriod: BlockNumber = 2;
+    pub const UdReevalPeriod: Balance = 4;
+    pub const UdReevalPeriodInBlocks: BlockNumber = 8; // 2 * 4
 }
 
 pub struct FakeWot;
@@ -106,15 +110,14 @@ impl Get<Vec<u64>> for FakeWot {
 }
 
 impl pallet_universal_dividend::Config for Test {
-    const UD_CREATION_PERIOD: Self::BlockNumber = 2;
-    const UD_REEVAL_PERIOD: Balance = 4;
-    const UD_REEVAL_PERIOD_IN_BLOCKS: Self::BlockNumber = 8; // 2 * 4
-
     type Currency = pallet_balances::Pallet<Test>;
     type Event = Event;
     type MembersCount = MembersCount;
     type MembersIds = FakeWot;
     type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
+    type UdCreationPeriod = UdCreationPeriod;
+    type UdReevalPeriod = UdReevalPeriod;
+    type UdReevalPeriodInBlocks = UdReevalPeriodInBlocks;
 }
 
 // Build genesis storage according to the mock runtime.
