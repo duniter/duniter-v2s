@@ -28,7 +28,10 @@ mod tests;
 mod benchmarking;
 
 use frame_support::traits::Currency;
-use sp_arithmetic::{per_things::Permill, traits::Zero};
+use sp_arithmetic::{
+    per_things::Permill,
+    traits::{One, Zero},
+};
 use sp_std::prelude::*;
 
 const OFFCHAIN_PREFIX_UD_HISTORY: &[u8] = b"ud::history::";
@@ -230,9 +233,14 @@ pub mod pallet {
             ud_t: BalanceOf<T>,
             c_square: Permill,
             monetary_mass: BalanceOf<T>,
-            members_count: BalanceOf<T>,
+            mut members_count: BalanceOf<T>,
             count_uds_beetween_two_reevals: BalanceOf<T>, // =(dt/udFrequency)
         ) -> BalanceOf<T> {
+            // Ensure that we not divide by zero
+            if members_count.is_zero() {
+                members_count = One::one();
+            }
+
             // UD(t+1) = UD(t) + c² (M(t+1) / N(t+1)) / (dt/udFrequency)
             ud_t + c_square * monetary_mass / (members_count * count_uds_beetween_two_reevals)
         }
