@@ -24,8 +24,11 @@ Use Rust's native `cargo` command to build and launch the node:
 cargo run --release -- --dev --tmp
 ```
 
+## Contribute
 
-### Embedded Docs
+Before any contribution, please read carefully the [CONTRIBUTING](./CONTRIBUTING.md) file and our [git conventions](./docs/dev/git-conventions.md).
+
+## Embedded Docs
 
 Once the project has been built, the following command can be used to explore all parameters and
 subcommands:
@@ -34,13 +37,7 @@ subcommands:
 ./target/release/lc-core -h
 ```
 
-## Run
-
-The provided `cargo run` command will launch a temporary node and its state will be discarded after
-you terminate the process. After the project has been built, there are other ways to launch the
-node.
-
-### Single-Node Development Chain
+## Single-Node Development Chain
 
 This command will start the single-node development chain with persistent state:
 
@@ -60,7 +57,7 @@ Start the development chain with detailed logging:
 RUST_LOG=debug RUST_BACKTRACE=1 ./target/release/lc-core -lruntime=debug --dev
 ```
 
-### Connect with Polkadot-JS Apps Front-end
+## Connect with Polkadot-JS Apps Front-end
 
 Once the node template is running locally, you can connect it with **Polkadot-JS Apps** front-end
 to interact with your chain. [Click here](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944) connecting the Apps to your local node template.
@@ -69,12 +66,12 @@ CAUTION: In order for **Polkadot-JS Apps** to be able to fully understand the in
 
 ![js-app-custom-types](./images/js-app-custom-types.png)
 
-### Multi-Node Local Testnet
+## Multi-Node Local Testnet
 
 If you want to see the multi-node consensus algorithm in action, refer to
 [our Start a Private Network tutorial](https://substrate.dev/docs/en/tutorials/start-a-private-network/).
 
-## Template Structure
+## Project Structure
 
 A Substrate project such as this consists of a number of components that are spread across a few
 directories.
@@ -165,7 +162,7 @@ A FRAME pallet is compromised of a number of blockchain primitives:
 -   Config: The `Config` configuration interface is used to define the types and parameters upon
     which a FRAME pallet depends.
 
-### Run in Docker
+## Run in Docker
 
 First, install [Docker](https://docs.docker.com/get-docker/) and
 [Docker Compose](https://docs.docker.com/compose/install/).
