@@ -46,7 +46,6 @@ use common_runtime::{
         OnRightKeyChangeHandler,
     },
 };
-use frame_support::traits::Get;
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -143,18 +142,6 @@ common_runtime::pallets_config! {
     impl pallet_sudo::Config for Runtime {
         type Event = Event;
         type Call = Call;
-    }
-}
-
-pub struct UdAccountsProvider;
-impl Get<u64> for UdAccountsProvider {
-    fn get() -> u64 {
-        UdAccountsStorage::ud_accounts_count()
-    }
-}
-impl Get<Vec<AccountId>> for UdAccountsProvider {
-    fn get() -> Vec<AccountId> {
-        UdAccountsStorage::account_list()
     }
 }
 

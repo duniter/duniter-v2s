@@ -146,8 +146,8 @@ macro_rules! pallets_config {
         impl pallet_universal_dividend::Config for Runtime {
             type Currency = pallet_balances::Pallet<Runtime>;
             type Event = Event;
-            type MembersCount = UdAccountsProvider;
-            type MembersIds = UdAccountsProvider;
+            type MembersCount = common_runtime::providers::UdAccountsProvider<Runtime>;
+            type MembersIds = common_runtime::providers::UdAccountsProvider<Runtime>;
             type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
             type UdCreationPeriod = UdCreationPeriod;
             type UdReevalPeriod = UdReevalPeriod;
