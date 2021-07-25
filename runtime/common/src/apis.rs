@@ -15,7 +15,7 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 #[macro_export]
-macro_rules! impl_runtime_apis_plus_common {
+macro_rules! runtime_apis {
 	{$($custom:tt)*} => {
 		impl_runtime_apis! {
 			$($custom)*

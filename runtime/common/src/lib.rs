@@ -22,6 +22,7 @@ pub mod constants;
 pub mod entities;
 pub mod fees;
 pub mod handlers;
+mod pallets_config;
 
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
