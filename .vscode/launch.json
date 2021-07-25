@@ -1,162 +1,130 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in library 'lc-core'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=lc-core"
-                ],
-                "filter": {
-                    "name": "lc-core",
-                    "kind": "lib"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug executable 'lc-core'",
-            "cargo": {
-                "args": [
-                    "build"
-                ],
-                "filter": {
-                    "name": "lc-core",
-                    "kind": "bin"
-                }
-            },
-            "args": [
-                "--tmp",
-                "--dev",
-                "--execution",
-                "Native"
-            ],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'lc-core'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=lc-core",
-                    "--package=lc-core"
-                ],
-                "filter": {
-                    "name": "lc-core",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in library 'lc-core-runtime'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=lc-core-runtime"
-                ],
-                "filter": {
-                    "name": "lc-core-runtime",
-                    "kind": "lib"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in library 'pallet-certification'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=pallet-certification"
-                ],
-                "filter": {
-                    "name": "pallet-certification",
-                    "kind": "lib"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in library 'pallet-identity'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=pallet-identity"
-                ],
-                "filter": {
-                    "name": "pallet-identity",
-                    "kind": "lib"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in library 'pallet-ud-accounts-storage'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=pallet-ud-accounts-storage"
-                ],
-                "filter": {
-                    "name": "pallet-ud-accounts-storage",
-                    "kind": "lib"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in library 'pallet-universal-dividend'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=pallet-universal-dividend"
-                ],
-                "filter": {
-                    "name": "pallet-universal-dividend",
-                    "kind": "lib"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'lc-core'",
+      "cargo": {
+        "args": ["test", "--no-run", "--lib", "--package=lc-core"],
+        "filter": {
+          "name": "lc-core",
+          "kind": "lib"
         }
-    ]
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'lc-core'",
+      "cargo": {
+        "args": ["build"],
+        "filter": {
+          "name": "lc-core",
+          "kind": "bin"
+        }
+      },
+      "args": ["--tmp", "--dev", "--execution", "Native"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'lc-core'",
+      "cargo": {
+        "args": ["test", "--no-run", "--bin=lc-core", "--package=lc-core"],
+        "filter": {
+          "name": "lc-core",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'gdev-runtime'",
+      "cargo": {
+        "args": ["test", "--no-run", "--lib", "--package=gdev-runtime"],
+        "filter": {
+          "name": "gdev-runtime",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'pallet-certification'",
+      "cargo": {
+        "args": ["test", "--no-run", "--lib", "--package=pallet-certification"],
+        "filter": {
+          "name": "pallet-certification",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'pallet-identity'",
+      "cargo": {
+        "args": ["test", "--no-run", "--lib", "--package=pallet-identity"],
+        "filter": {
+          "name": "pallet-identity",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'pallet-ud-accounts-storage'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=pallet-ud-accounts-storage"
+        ],
+        "filter": {
+          "name": "pallet-ud-accounts-storage",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'pallet-universal-dividend'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=pallet-universal-dividend"
+        ],
+        "filter": {
+          "name": "pallet-universal-dividend",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
 }
