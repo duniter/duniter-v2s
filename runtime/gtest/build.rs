@@ -14,16 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-//! lc-core CLI library.
-#![warn(missing_docs)]
+use substrate_wasm_builder::WasmBuilder;
 
-mod chain_spec;
-#[macro_use]
-mod service;
-pub(crate) mod cli;
-mod command;
-mod rpc;
-
-fn main() -> sc_cli::Result<()> {
-    command::run()
+fn main() {
+    WasmBuilder::new()
+        .with_current_project()
+        .export_heap_base()
+        .import_memory()
+        .build()
 }

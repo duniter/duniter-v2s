@@ -1,3 +1,19 @@
+// Copyright 2021 Axiom-Team
+//
+// This file is part of Substrate-Libre-Currency.
+//
+// Substrate-Libre-Currency is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, version 3 of the License.
+//
+// Substrate-Libre-Currency is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
+
 //! A collection of node-specific RPC methods.
 //! Substrate provides the `sc-rpc` crate, which defines the core RPC layer
 //! used by Substrate nodes. This file extends those RPC definitions with
@@ -5,14 +21,16 @@
 
 #![warn(missing_docs)]
 
-use std::sync::Arc;
-
-use lc_core_runtime::{opaque::Block, AccountId, Balance, Index};
 pub use sc_rpc_api::DenyUnsafe;
+
+use common_runtime::Block;
+use common_runtime::{AccountId, Balance, Index};
+use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_transaction_pool::TransactionPool;
+use std::sync::Arc;
 
 /// Full client dependencies.
 pub struct FullDeps<C, P> {
@@ -22,6 +40,10 @@ pub struct FullDeps<C, P> {
     pub pool: Arc<P>,
     /// Whether to deny unsafe calls
     pub deny_unsafe: DenyUnsafe,
+    /// Manual seal command sink
+    pub command_sink_opt: Option<
+        futures::channel::mpsc::Sender<sc_consensus_manual_seal::EngineCommand<sp_core::H256>>,
+    >,
 }
 
 /// Instantiate all full RPC extensions.
@@ -43,6 +65,7 @@ where
         client,
         pool,
         deny_unsafe,
+        command_sink_opt,
     } = deps;
 
     io.extend_with(SystemApi::to_delegate(FullSystem::new(
@@ -54,6 +77,14 @@ where
     io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
         client,
     )));
+
+    if let Some(command_sink) = command_sink_opt {
+        io.extend_with(
+            // We provide the rpc handler with the sending end of the channel to allow the rpc
+            // send EngineCommands to the background block authorship task.
+            ManualSealApi::to_delegate(ManualSeal::new(command_sink)),
+        );
+    };
 
     // Extend this RPC with a custom API by using the following syntax.
     // `YourRpcStruct` should have a reference to a client, which is needed

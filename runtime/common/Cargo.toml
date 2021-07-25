@@ -1,0 +1,83 @@
+[package]
+name = 'common-runtime'
+description = 'Common code shared between runtimes'
+license = 'GPL-3.0-only'
+version = '0.8.0-dev'
+authors = ['Axiom-Team Developers <https://axiom-team.fr>']
+edition = '2018'
+
+[features]
+runtime-benchmarks = [
+    'frame-support/runtime-benchmarks',
+    'frame-system/runtime-benchmarks',
+    'pallet-certification/runtime-benchmarks',
+    'pallet-identity/runtime-benchmarks',
+    'pallet-ud-accounts-storage/runtime-benchmarks',
+    'sp-runtime/runtime-benchmarks',
+]
+std = [
+    'codec/std',
+    'frame-support/std',
+    'frame-system/std',
+    'pallet-certification/std',
+    'pallet-identity/std',
+    'pallet-ud-accounts-storage/std',
+    'serde',
+    'sp-arithmetic/std',
+    'sp-core/std',
+    'sp-runtime/std',
+    'sp-std/std'
+]
+
+[dependencies]
+pallet-certification = { path = '../../pallets/certification', default-features = false }
+pallet-identity = { path = '../../pallets/identity', default-features = false }
+pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
+smallvec = "1.6.1"
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '2.1.0'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'
+version = '3.0.0'
+
+[dependencies.frame-system]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'
+version = '3.0.0'
+
+[dependencies.serde]
+version = "1.0.101"
+optional = true
+features = ["derive"]
+
+[dependencies.sp-arithmetic]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'
+version = '3.0.0'
+
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'
+version = '3.0.0'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'
+version = '3.0.0'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-07'
+version = '3.0.0'

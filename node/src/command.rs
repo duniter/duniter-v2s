@@ -16,10 +16,10 @@
 // limitations under the License.
 
 use crate::cli::{Cli, Subcommand};
+use crate::service::{GDevExecutor, GTestExecutor, IdentifyVariant};
 use crate::{chain_spec, service};
-use lc_core_runtime::Block;
+use gdev_runtime::Block;
 use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
-use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
@@ -43,21 +43,50 @@ impl SubstrateCli for Cli {
     }
 
     fn copyright_start_year() -> i32 {
-        2017
+        2021
     }
 
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         Ok(match id {
-            "dev" => Box::new(chain_spec::development_config()?),
-            "" | "local" => Box::new(chain_spec::local_testnet_config()?),
-            path => Box::new(chain_spec::ChainSpec::from_json_file(
-                std::path::PathBuf::from(path),
-            )?),
+            "dev" | "gdev" => Box::new(chain_spec::gdev::development_chain_spec()?),
+            "gtest_dev" => Box::new(chain_spec::gtest::development_chain_spec()?),
+            "local" | "gtest_local" => Box::new(chain_spec::gtest::local_testnet_config()?),
+            // Specs provided as json specify which runtime to use in their file name. For example,
+            // `g1-custom.json` uses the g1 runtime.
+            // `gdev-workshop.json` uses the gdev runtime.
+            path => {
+                let path = std::path::PathBuf::from(path);
+
+                let starts_with = |prefix: &str| {
+                    path.file_name()
+                        .map(|f| f.to_str().map(|s| s.starts_with(&prefix)))
+                        .flatten()
+                        .unwrap_or(false)
+                };
+
+                if starts_with("g1") {
+                    Box::new(chain_spec::g1::ChainSpec::from_json_file(path)?)
+                } else if starts_with("gtest") {
+                    Box::new(chain_spec::gtest::ChainSpec::from_json_file(path)?)
+                } else if starts_with("gdev") {
+                    Box::new(chain_spec::gdev::ChainSpec::from_json_file(path)?)
+                } else {
+                    panic!("unknown runtime")
+                }
+            }
         })
     }
 
-    fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        &lc_core_runtime::VERSION
+    fn native_runtime_version(spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+        if spec.is_main() {
+            todo!() //return &g1_runtime::VERSION;
+        } else if spec.is_test() {
+            &gtest_runtime::VERSION
+        } else if spec.is_dev() {
+            &gdev_runtime::VERSION
+        } else {
+            panic!("unknown runtime")
+        }
     }
 }
 
@@ -69,51 +98,56 @@ pub fn run() -> sc_cli::Result<()> {
         Some(Subcommand::Key(cmd)) => cmd.run(&cli),
         Some(Subcommand::BuildSpec(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
+            runner.sync_run(|config| {
+                if cmd.shared_params.dev {
+                    if config.chain_spec.is_main() {
+                        cmd.run(
+                            Box::new(chain_spec::g1::development_chain_spec()?),
+                            config.network,
+                        )
+                    } else if config.chain_spec.is_test() {
+                        cmd.run(
+                            Box::new(chain_spec::gtest::development_chain_spec()?),
+                            config.network,
+                        )
+                    } else if config.chain_spec.is_dev() {
+                        cmd.run(
+                            Box::new(chain_spec::gdev::development_chain_spec()?),
+                            config.network,
+                        )
+                    } else {
+                        panic!("unknown runtime")
+                    }
+                } else {
+                    cmd.run(config.chain_spec, config.network)
+                }
+            })
         }
         Some(Subcommand::CheckBlock(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents {
-                    client,
-                    task_manager,
-                    import_queue,
-                    ..
-                } = service::new_partial(&config)?;
+            runner.async_run(|mut config| {
+                let (client, _, import_queue, task_manager) = service::new_chain_ops(&mut config)?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
         Some(Subcommand::ExportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents {
-                    client,
-                    task_manager,
-                    ..
-                } = service::new_partial(&config)?;
+            runner.async_run(|mut config| {
+                let (client, _, _, task_manager) = service::new_chain_ops(&mut config)?;
                 Ok((cmd.run(client, config.database), task_manager))
             })
         }
         Some(Subcommand::ExportState(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents {
-                    client,
-                    task_manager,
-                    ..
-                } = service::new_partial(&config)?;
+            runner.async_run(|mut config| {
+                let (client, _, _, task_manager) = service::new_chain_ops(&mut config)?;
                 Ok((cmd.run(client, config.chain_spec), task_manager))
             })
         }
         Some(Subcommand::ImportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents {
-                    client,
-                    task_manager,
-                    import_queue,
-                    ..
-                } = service::new_partial(&config)?;
+            runner.async_run(|mut config| {
+                let (client, _, import_queue, task_manager) = service::new_chain_ops(&mut config)?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
@@ -123,21 +157,25 @@ pub fn run() -> sc_cli::Result<()> {
         }
         Some(Subcommand::Revert(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents {
-                    client,
-                    task_manager,
-                    backend,
-                    ..
-                } = service::new_partial(&config)?;
+            runner.async_run(|mut config| {
+                let (client, backend, _, task_manager) = service::new_chain_ops(&mut config)?;
                 Ok((cmd.run(client, backend), task_manager))
             })
         }
         Some(Subcommand::Benchmark(cmd)) => {
             if cfg!(feature = "runtime-benchmarks") {
                 let runner = cli.create_runner(cmd)?;
+                let chain_spec = &runner.config().chain_spec;
 
-                runner.sync_run(|config| cmd.run::<Block, service::Executor>(config))
+                if chain_spec.is_main() {
+                    todo!()
+                } else if chain_spec.is_test() {
+                    runner.sync_run(|config| cmd.run::<Block, GTestExecutor>(config))
+                } else if chain_spec.is_dev() {
+                    runner.sync_run(|config| cmd.run::<Block, GDevExecutor>(config))
+                } else {
+                    unreachable!()
+                }
             } else {
                 Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
@@ -147,11 +185,27 @@ pub fn run() -> sc_cli::Result<()> {
         None => {
             let runner = cli.create_runner(&cli.run)?;
             runner.run_node_until_exit(|config| async move {
-                match config.role {
-                    Role::Light => service::new_light(config),
-                    _ => service::new_full(config),
+                if config.chain_spec.is_main() {
+                    todo!()
+                } else if config.chain_spec.is_test() {
+                    match config.role {
+                        Role::Light => {
+                            service::new_light::<gtest_runtime::RuntimeApi, GTestExecutor>(config)
+                        }
+                        _ => service::new_full::<gtest_runtime::RuntimeApi, GTestExecutor>(
+                            config, None,
+                        ),
+                    }
+                    .map_err(sc_cli::Error::Service)
+                } else if config.chain_spec.is_dev() {
+                    service::new_full::<gdev_runtime::RuntimeApi, GDevExecutor>(
+                        config,
+                        Some(cli.sealing),
+                    )
+                    .map_err(sc_cli::Error::Service)
+                } else {
+                    Err(sc_cli::Error::Application("unknown runtime".into()))
                 }
-                .map_err(sc_cli::Error::Service)
             })
         }
     }

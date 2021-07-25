@@ -14,16 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-//! lc-core CLI library.
-#![warn(missing_docs)]
+pub type ChainSpec = sc_service::GenericChainSpec<g1_runtime::GenesisConfig>;
 
-mod chain_spec;
-#[macro_use]
-mod service;
-pub(crate) mod cli;
-mod command;
-mod rpc;
-
-fn main() -> sc_cli::Result<()> {
-    command::run()
+pub fn development_chain_spec() -> Result<ChainSpec, String> {
+    todo!()
 }

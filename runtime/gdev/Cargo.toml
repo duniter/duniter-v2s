@@ -4,11 +4,11 @@ tag = 'monthly-2021-07'
 version = '4.0.0'
 
 [package]
-authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>']
+authors = ['Axiom-Team Developers <https://axiom-team.fr>']
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'AGPL-3.0'
-name = 'lc-core-runtime'
+name = 'gdev-runtime'
 repository = 'https://git.duniter.org/nodes/rust/lc-core-substrate'
 version = '3.0.0'
 [package.metadata.docs.rs]
@@ -23,8 +23,9 @@ runtime-benchmarks = [
     'frame-system/runtime-benchmarks',
     'hex-literal',
     'pallet-balances/runtime-benchmarks',
+    'pallet-identity/runtime-benchmarks',
     'pallet-universal-dividend/runtime-benchmarks',
-    'pallet-timestamp/runtime-benchmarks',
+    'common-runtime/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
 ]
 std = [
@@ -41,9 +42,9 @@ std = [
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
     'pallet-universal-dividend/std',
-    'pallet-timestamp/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',
+    'common-runtime/std',
     'serde',
     'sp-api/std',
     'sp-arithmetic/std',
@@ -58,6 +59,14 @@ std = [
     'sp-transaction-pool/std',
     'sp-version/std',
 ]
+
+[dependencies]
+pallet-certification = { path = '../../pallets/certification', default-features = false }
+pallet-identity = { path = '../../pallets/identity', default-features = false }
+pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
+pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
+common-runtime = { path = "../common", default-features = false }
+
 [dependencies.codec]
 default-features = false
 features = ['derive']
@@ -118,10 +127,6 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2021-07'
 version = '3.0.0'
 
-[dependencies.pallet-certification]
-default-features = false
-path = '../pallets/certification'
-
 [dependencies.pallet-grandpa]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -135,24 +140,6 @@ tag = 'monthly-2021-07'
 version = '3.0.0'
 
 [dependencies.pallet-sudo]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-07'
-version = '3.0.0'
-
-[dependencies.pallet-identity]
-default-features = false
-path = '../pallets/identity'
-
-[dependencies.pallet-ud-accounts-storage]
-default-features = false
-path = '../pallets/ud-accounts-storage'
-
-[dependencies.pallet-universal-dividend]
-default-features = false
-path = '../pallets/universal-dividend'
-
-[dependencies.pallet-timestamp]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2021-07'
@@ -174,9 +161,6 @@ version = '3.0.0'
 version = "1.0.101"
 optional = true
 features = ["derive"]
-
-[dependencies.smallvec]
-version = "1.6.1"
 
 [dependencies.sp-api]
 default-features = false

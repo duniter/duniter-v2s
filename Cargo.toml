@@ -5,7 +5,9 @@ members = [
     'pallets/identity',
     'pallets/ud-accounts-storage',
     'pallets/universal-dividend',
-    'runtime',
+    'runtime/common',
+    'runtime/gdev',
+    'runtime/gtest'
 ]
 [profile.dev]
 opt-level = 3

@@ -14,16 +14,25 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-//! lc-core CLI library.
-#![warn(missing_docs)]
+pub use frame_support::weights::{
+    Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+};
+use sp_arithmetic::traits::{BaseArithmetic, Unsigned};
 
-mod chain_spec;
-#[macro_use]
-mod service;
-pub(crate) mod cli;
-mod command;
-mod rpc;
+pub struct WeightToFeeImpl<T>(sp_std::marker::PhantomData<T>);
 
-fn main() -> sc_cli::Result<()> {
-    command::run()
+impl<T> WeightToFeePolynomial for WeightToFeeImpl<T>
+where
+    T: BaseArithmetic + From<u32> + Copy + Unsigned,
+{
+    type Balance = T;
+
+    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+        smallvec::smallvec!(WeightToFeeCoefficient {
+            coeff_integer: 0u32.into(),
+            coeff_frac: sp_runtime::Perbill::from_parts(1),
+            negative: false,
+            degree: 1,
+        })
+    }
 }

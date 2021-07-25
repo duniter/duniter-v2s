@@ -163,6 +163,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d6e24d2cce90c53b948c46271bfb053e4bdc2db9b5d3f65e20f8cf28a1b7fc3"
 
 [[package]]
+name = "assert_matches"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
+
+[[package]]
 name = "async-channel"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -805,6 +811,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 dependencies = [
  "bitflags",
+]
+
+[[package]]
+name = "common-runtime"
+version = "0.8.0-dev"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-certification",
+ "pallet-identity",
+ "pallet-ud-accounts-storage",
+ "parity-scale-codec",
+ "serde",
+ "smallvec 1.6.1",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -1893,10 +1917,92 @@ dependencies = [
 ]
 
 [[package]]
+name = "g1-runtime"
+version = "3.0.0"
+dependencies = [
+ "common-runtime",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "frame-system-rpc-runtime-api",
+ "hex-literal",
+ "pallet-aura",
+ "pallet-balances",
+ "pallet-certification",
+ "pallet-grandpa",
+ "pallet-identity",
+ "pallet-randomness-collective-flip",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-ud-accounts-storage",
+ "pallet-universal-dividend",
+ "parity-scale-codec",
+ "serde",
+ "smallvec 1.6.1",
+ "sp-api",
+ "sp-arithmetic",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder",
+]
+
+[[package]]
 name = "gcc"
 version = "0.3.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f5f3913fa0bfe7ee1fd8248b6b9f42a5af4b9d65ec2dd2c3c26132b950ecfc2"
+
+[[package]]
+name = "gdev-runtime"
+version = "3.0.0"
+dependencies = [
+ "common-runtime",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "frame-system-rpc-runtime-api",
+ "hex-literal",
+ "pallet-aura",
+ "pallet-balances",
+ "pallet-certification",
+ "pallet-grandpa",
+ "pallet-identity",
+ "pallet-randomness-collective-flip",
+ "pallet-sudo",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-ud-accounts-storage",
+ "pallet-universal-dividend",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-arithmetic",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder",
+]
 
 [[package]]
 name = "generic-array"
@@ -1990,6 +2096,48 @@ dependencies = [
  "js-sys",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "gtest-runtime"
+version = "3.0.0"
+dependencies = [
+ "common-runtime",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "frame-system-rpc-runtime-api",
+ "hex-literal",
+ "pallet-aura",
+ "pallet-balances",
+ "pallet-certification",
+ "pallet-grandpa",
+ "pallet-identity",
+ "pallet-randomness-collective-flip",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-ud-accounts-storage",
+ "pallet-universal-dividend",
+ "parity-scale-codec",
+ "serde",
+ "smallvec 1.6.1",
+ "sp-api",
+ "sp-arithmetic",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder",
 ]
 
 [[package]]
@@ -2693,17 +2841,27 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 name = "lc-core"
 version = "3.0.0"
 dependencies = [
+ "async-io",
+ "common-runtime",
  "frame-benchmarking",
  "frame-benchmarking-cli",
+ "futures 0.3.15",
+ "g1-runtime",
+ "gdev-runtime",
+ "gtest-runtime",
  "jsonrpc-core",
- "lc-core-runtime",
+ "log",
  "maplit",
+ "pallet-grandpa",
  "pallet-transaction-payment-rpc",
+ "pallet-transaction-payment-rpc-runtime-api",
  "sc-basic-authorship",
+ "sc-chain-spec",
  "sc-cli",
  "sc-client-api",
  "sc-consensus",
  "sc-consensus-aura",
+ "sc-consensus-manual-seal",
  "sc-executor",
  "sc-finality-grandpa",
  "sc-keystore",
@@ -2721,53 +2879,16 @@ dependencies = [
  "sp-core",
  "sp-finality-grandpa",
  "sp-inherents",
- "sp-runtime",
- "sp-timestamp",
- "sp-transaction-pool",
- "structopt",
- "substrate-build-script-utils",
- "substrate-frame-rpc-system",
-]
-
-[[package]]
-name = "lc-core-runtime"
-version = "3.0.0"
-dependencies = [
- "frame-benchmarking",
- "frame-executive",
- "frame-support",
- "frame-system",
- "frame-system-benchmarking",
- "frame-system-rpc-runtime-api",
- "hex-literal",
- "pallet-aura",
- "pallet-balances",
- "pallet-certification",
- "pallet-grandpa",
- "pallet-identity",
- "pallet-randomness-collective-flip",
- "pallet-sudo",
- "pallet-timestamp",
- "pallet-transaction-payment",
- "pallet-transaction-payment-rpc-runtime-api",
- "pallet-ud-accounts-storage",
- "pallet-universal-dividend",
- "parity-scale-codec",
- "serde",
- "smallvec 1.6.1",
- "sp-api",
- "sp-arithmetic",
- "sp-block-builder",
- "sp-consensus-aura",
- "sp-core",
- "sp-inherents",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
- "sp-std",
+ "sp-storage",
+ "sp-timestamp",
  "sp-transaction-pool",
- "sp-version",
- "substrate-wasm-builder",
+ "sp-trie",
+ "structopt",
+ "substrate-build-script-utils",
+ "substrate-frame-rpc-system",
 ]
 
 [[package]]
@@ -5473,6 +5594,41 @@ dependencies = [
  "sc-consensus",
  "sp-blockchain",
  "sp-runtime",
+]
+
+[[package]]
+name = "sc-consensus-manual-seal"
+version = "0.9.0"
+source = "git+https://github.com/paritytech/substrate.git?tag=monthly-2021-07#83808aa815a9fbc528b76cd25ae1dec57e269771"
+dependencies = [
+ "assert_matches",
+ "async-trait",
+ "derive_more",
+ "futures 0.3.15",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "log",
+ "parity-scale-codec",
+ "parking_lot 0.11.1",
+ "sc-client-api",
+ "sc-consensus-babe",
+ "sc-consensus-epochs",
+ "sc-transaction-pool",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-babe",
+ "sp-consensus-slots",
+ "sp-core",
+ "sp-inherents",
+ "sp-keyring",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-timestamp",
+ "sp-transaction-pool",
+ "substrate-prometheus-endpoint",
 ]
 
 [[package]]
