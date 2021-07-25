@@ -22,6 +22,9 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+mod parameters;
+
+pub use self::parameters::*;
 pub use common_runtime::{
     constants::*,
     entities::{IdtyData, IdtyDid, IdtyRight, Planet},
@@ -78,15 +81,6 @@ pub use frame_support::{
 pub mod opaque {
     use super::*;
 
-    pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
-
-    /// Opaque block header type.
-    pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-    /// Opaque block type.
-    pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-    /// Opaque block identifier type.
-    pub type BlockId = generic::BlockId<Block>;
-
     impl_opaque_keys! {
         pub struct SessionKeys {
             pub aura: Aura,
@@ -99,8 +93,8 @@ pub mod opaque {
 //   https://substrate.dev/docs/en/knowledgebase/runtime/upgrades#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("lc-core"),
-    impl_name: create_runtime_str!("lc-core"),
+    spec_name: create_runtime_str!("g1"),
+    impl_name: create_runtime_str!("g1"),
     authoring_version: 1,
     // The version of the runtime specification. A full node will not attempt to use its native
     //   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
@@ -211,10 +205,6 @@ impl pallet_grandpa::Config for Runtime {
     type WeightInfo = ();
 }
 
-parameter_types! {
-    pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
-}
-
 impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
@@ -223,27 +213,17 @@ impl pallet_timestamp::Config for Runtime {
     type WeightInfo = ();
 }
 
-parameter_types! {
-    pub const ExistentialDeposit: Balance = 500;
-    pub const MaxLocks: u32 = 50;
-}
-
 impl pallet_balances::Config for Runtime {
     type MaxLocks = MaxLocks;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     /// The type for recording an account's balance.
     type Balance = Balance;
-    /// The ubiquitous event type.
     type Event = Event;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
-    pub const TransactionByteFee: Balance = 0;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -259,16 +239,6 @@ impl pallet_sudo::Config for Runtime {
 }
 
 // PALLET IDENTITY
-
-const IDTY_CREATE_PERIOD: BlockNumber = 100;
-
-parameter_types! {
-    pub const ConfirmPeriod: BlockNumber = 12 * HOURS;
-    pub const MaxInactivityPeriod: BlockNumber = YEARS;
-    pub const MaxNoRightPeriod: BlockNumber = YEARS;
-    pub const IdtyRenewablePeriod: BlockNumber = 6 * MONTHS;
-    pub const ValidationPeriod: BlockNumber = 2 * MONTHS;
-}
 
 /// Configure the pallet identity
 impl pallet_identity::Config for Runtime {
@@ -292,16 +262,6 @@ impl pallet_identity::Config for Runtime {
 
 // PALLET CERTIFICATION
 
-const MIN_STRONG_CERT_FOR_UD: u32 = 2;
-const MIN_STRONG_CERT_FOR_STRONG_CERT: u32 = 3;
-
-parameter_types! {
-    pub const CertPeriod: BlockNumber = 15;
-    pub const MaxByIssuer: u8 = 100;
-    pub const StrongCertRenewablePeriod: BlockNumber = 50;//6 * MONTHS;
-    pub const ValidityPeriod: BlockNumber = 200;//2 * YEARS;
-}
-
 /// Configure the pallet certification
 impl pallet_certification::Config for Runtime {
     type AddCertOrigin = AddStrongCertOrigin<Runtime>;
@@ -318,13 +278,6 @@ impl pallet_certification::Config for Runtime {
 }
 
 // PALLET UNIVERSAL DIVIDEND
-
-parameter_types! {
-    pub const SquareMoneyGrowthRate: Permill = Permill::one();
-    pub const UdCreationPeriod: BlockNumber = 20;
-    pub const UdReevalPeriod: Balance = 10;
-    pub const UdReevalPeriodInBlocks: BlockNumber = 20 * 10;
-}
 
 pub struct UdAccountsProvider;
 impl Get<u64> for UdAccountsProvider {

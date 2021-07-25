@@ -22,6 +22,9 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+mod parameters;
+
+pub use self::parameters::*;
 pub use common_runtime::{
     constants::*,
     entities::{IdtyData, IdtyDid, IdtyRight, Planet},
@@ -196,11 +199,6 @@ impl pallet_grandpa::Config for Runtime {
     type WeightInfo = ();
 }
 
-parameter_types! {
-    pub const ExistentialDeposit: Balance = 500;
-    pub const MaxLocks: u32 = 50;
-}
-
 impl pallet_balances::Config for Runtime {
     type MaxLocks = MaxLocks;
     type MaxReserves = ();
@@ -213,10 +211,6 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
-    pub const TransactionByteFee: Balance = 0;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -232,16 +226,6 @@ impl pallet_sudo::Config for Runtime {
 }
 
 // PALLET IDENTITY
-
-const IDTY_CREATE_PERIOD: BlockNumber = 100;
-
-parameter_types! {
-    pub const ConfirmPeriod: BlockNumber = 12 * HOURS;
-    pub const MaxInactivityPeriod: BlockNumber = YEARS;
-    pub const MaxNoRightPeriod: BlockNumber = YEARS;
-    pub const IdtyRenewablePeriod: BlockNumber = 6 * MONTHS;
-    pub const ValidationPeriod: BlockNumber = 2 * MONTHS;
-}
 
 /// Configure the pallet identity
 impl pallet_identity::Config for Runtime {
@@ -265,16 +249,6 @@ impl pallet_identity::Config for Runtime {
 
 // PALLET CERTIFICATION
 
-const MIN_STRONG_CERT_FOR_UD: u32 = 2;
-const MIN_STRONG_CERT_FOR_STRONG_CERT: u32 = 3;
-
-parameter_types! {
-    pub const CertPeriod: BlockNumber = 15;
-    pub const MaxByIssuer: u8 = 100;
-    pub const StrongCertRenewablePeriod: BlockNumber = 50;//6 * MONTHS;
-    pub const ValidityPeriod: BlockNumber = 200;//2 * YEARS;
-}
-
 /// Configure the pallet certification
 impl pallet_certification::Config for Runtime {
     type AddCertOrigin = AddStrongCertOrigin<Runtime>;
@@ -291,13 +265,6 @@ impl pallet_certification::Config for Runtime {
 }
 
 // PALLET UNIVERSAL DIVIDEND
-
-parameter_types! {
-    pub const SquareMoneyGrowthRate: Permill = Permill::one();
-    pub const UdCreationPeriod: BlockNumber = 20;
-    pub const UdReevalPeriod: Balance = 10;
-    pub const UdReevalPeriodInBlocks: BlockNumber = 20 * 10;
-}
 
 pub struct UdAccountsProvider;
 impl Get<u64> for UdAccountsProvider {
