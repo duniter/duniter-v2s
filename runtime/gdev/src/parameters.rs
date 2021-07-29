@@ -30,6 +30,13 @@ frame_support::parameter_types! {
     pub const TransactionByteFee: Balance = 0;
 }
 
+// Multisig
+parameter_types! {
+    pub const DepositBase: Balance = 1000;
+    pub const DepositFactor: Balance = 10;
+    pub const MaxSignatories: u16 = 5;
+}
+
 // Identity
 pub const IDTY_CREATE_PERIOD: BlockNumber = 100;
 frame_support::parameter_types! {

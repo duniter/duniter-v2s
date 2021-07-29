@@ -132,6 +132,16 @@ common_runtime::pallets_config! {
         type Event = Event;
         type Call = Call;
     }
+
+    impl pallet_multisig::Config for Runtime {
+        type Event = Event;
+        type Call = Call;
+        type Currency = Balances;
+        type DepositBase = DepositBase;
+        type DepositFactor = DepositFactor;
+        type MaxSignatories = MaxSignatories;
+        type WeightInfo = pallet_multisig::weights::SubstrateWeight<Self>;
+    }
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -145,6 +155,7 @@ construct_runtime!(
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
         Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
         UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage},

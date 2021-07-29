@@ -2008,6 +2008,7 @@ dependencies = [
  "pallet-certification",
  "pallet-grandpa",
  "pallet-identity",
+ "pallet-multisig",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-transaction-payment",
@@ -4073,6 +4074,20 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-multisig"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git?tag=monthly-2021-08#4d28ebeb8b027ca0227fe7779c5beb70a7b56467"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
  "sp-core",
  "sp-io",
  "sp-runtime",
