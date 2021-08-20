@@ -31,7 +31,8 @@
         "_enum": [
             "Created",
             "ConfirmedByOwner",
-            "Validated"
+            "Validated",
+            "Expired"
         ]
     },
     "IdtyValue": {
