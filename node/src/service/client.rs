@@ -199,6 +199,23 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
         }
     }
 
+    fn child_storage_keys_iter<'a>(
+        &self,
+        id: &BlockId<Block>,
+        child_info: ChildInfo,
+        prefix: Option<&'a StorageKey>,
+        start_key: Option<&StorageKey>,
+    ) -> sp_blockchain::Result<
+        KeyIterator<'a, <super::FullBackend as sc_client_api::Backend<Block>>::State, Block>,
+    > {
+        match self {
+            Self::GTest(client) => {
+                client.child_storage_keys_iter(id, child_info, prefix, start_key)
+            }
+            Self::GDev(client) => client.child_storage_keys_iter(id, child_info, prefix, start_key),
+        }
+    }
+
     fn child_storage_hash(
         &self,
         id: &BlockId<Block>,

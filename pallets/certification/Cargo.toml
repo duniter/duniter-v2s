@@ -6,7 +6,7 @@ homepage = 'https://substrate.dev'
 license = 'AGPL-3.0'
 name = 'pallet-certification'
 readme = 'README.md'
-repository = 'https://git.duniter.org/nodes/rust/lc-core-substrate' 
+repository = 'https://git.duniter.org/nodes/rust/lc-core-substrate'
 version = '3.0.0'
 
 [features]
@@ -28,23 +28,23 @@ try-runtime = ['frame-support/try-runtime']
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
-version = '2.1.0'
+version = '2.2.0'
 
 [dependencies.frame-benchmarking]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 optional = true
-tag = 'monthly-2021-07'
+tag = 'monthly-2021-08'
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-07'
+tag = 'monthly-2021-08'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-07'
+tag = 'monthly-2021-08'
 
 [dependencies.serde]
 version = "1.0.101"
@@ -54,17 +54,17 @@ features = ["derive"]
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-07'
+tag = 'monthly-2021-08'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-07'
+tag = 'monthly-2021-08'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-07'
+tag = 'monthly-2021-08'
 
 ### DOC ###
 
@@ -81,4 +81,4 @@ version = '1.0.2'
 [dev-dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-07'
+tag = 'monthly-2021-08'

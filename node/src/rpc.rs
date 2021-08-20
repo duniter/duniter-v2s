@@ -26,10 +26,10 @@ pub use sc_rpc_api::DenyUnsafe;
 use common_runtime::Block;
 use common_runtime::{AccountId, Balance, Index};
 use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
+use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-use sp_transaction_pool::TransactionPool;
 use std::sync::Arc;
 
 /// Full client dependencies.

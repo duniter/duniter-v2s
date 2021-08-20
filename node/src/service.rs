@@ -95,7 +95,7 @@ pub fn new_chain_ops(
     (
         Arc<Client>,
         Arc<FullBackend>,
-        sp_consensus::import_queue::BasicQueue<Block, sp_trie::PrefixedMemoryDB<BlakeTwo256>>,
+        sc_consensus::BasicQueue<Block, sp_trie::PrefixedMemoryDB<BlakeTwo256>>,
         TaskManager,
     ),
     ServiceError,
@@ -144,7 +144,7 @@ pub fn new_partial<RuntimeApi, Executor>(
         FullClient<RuntimeApi, Executor>,
         FullBackend,
         FullSelectChain,
-        sp_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
+        sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
         sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>,
         (
             sc_finality_grandpa::GrandpaBlockImport<
@@ -386,7 +386,7 @@ where
                     block_import,
                     env: proposer_factory,
                     client: client.clone(),
-                    pool: transaction_pool.pool().clone(),
+                    pool: transaction_pool.clone(),
                     commands_stream,
                     select_chain,
                     consensus_data_provider: None,

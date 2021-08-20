@@ -19,7 +19,7 @@ use crate::{self as pallet_identity};
 use frame_support::{
     codec::{Decode, Encode},
     parameter_types,
-    traits::{OnFinalize, OnInitialize},
+    traits::{AllowAll, OnFinalize, OnInitialize},
     RuntimeDebug,
 };
 use frame_system as system;
@@ -74,7 +74,7 @@ parameter_types! {
 }
 
 impl system::Config for Test {
-    type BaseCallFilter = ();
+    type BaseCallFilter = AllowAll;
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();

@@ -67,8 +67,9 @@ macro_rules! runtime_apis {
                 fn validate_transaction(
                     source: TransactionSource,
                     tx: <Block as BlockT>::Extrinsic,
+					block_hash: <Block as BlockT>::Hash,
                 ) -> TransactionValidity {
-                    Executive::validate_transaction(source, tx)
+                    Executive::validate_transaction(source, tx, block_hash)
                 }
             }
 

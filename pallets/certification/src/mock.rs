@@ -17,7 +17,7 @@
 use crate::{self as pallet_certification};
 use frame_support::{
     parameter_types,
-    traits::{OnFinalize, OnInitialize},
+    traits::{AllowAll, OnFinalize, OnInitialize},
 };
 use frame_system as system;
 use sp_core::H256;
@@ -51,7 +51,7 @@ parameter_types! {
 }
 
 impl system::Config for Test {
-    type BaseCallFilter = ();
+    type BaseCallFilter = AllowAll;
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
