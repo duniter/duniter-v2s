@@ -53,7 +53,7 @@ parameter_types! {
 // Universal dividend
 parameter_types! {
     pub const SquareMoneyGrowthRate: Permill = Permill::one();
-    pub const UdCreationPeriod: BlockNumber = 20;
+    pub const UdCreationPeriod: BlockNumber = 10;
     pub const UdReevalPeriod: Balance = 10;
     pub const UdReevalPeriodInBlocks: BlockNumber = 20 * 10;
 }
