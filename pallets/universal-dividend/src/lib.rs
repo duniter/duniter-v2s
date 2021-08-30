@@ -202,15 +202,14 @@ pub mod pallet {
             let total_weight: Weight = 0;
 
             let ud_amount = <CurrentUdStorage<T>>::try_get().expect("corrupted storage");
-            let mut monetary_mass = <MonetaryMassStorage<T>>::try_get().expect("corrupted storage");
+            let monetary_mass = <MonetaryMassStorage<T>>::try_get().expect("corrupted storage");
 
             for account_id in T::MembersIds::get() {
                 T::Currency::deposit_creating(&account_id, ud_amount);
-                monetary_mass += ud_amount;
                 Self::write_ud_history(n, account_id, ud_amount);
             }
 
-            <MonetaryMassStorage<T>>::put(monetary_mass);
+            <MonetaryMassStorage<T>>::put(monetary_mass + (ud_amount * members_count));
             Self::deposit_event(Event::NewUdCreated(ud_amount, members_count));
 
             total_weight
@@ -271,7 +270,7 @@ pub mod pallet {
             }
 
             // UD(t+1) = UD(t) + c² (M(t+1) / N(t+1)) / (dt/udFrequency)
-            ud_t + c_square * monetary_mass / (members_count * count_uds_beetween_two_reevals)
+            ud_t + (c_square * monetary_mass) / (members_count * count_uds_beetween_two_reevals)
         }
         fn write_ud_history(n: T::BlockNumber, account_id: T::AccountId, ud_amount: BalanceOf<T>) {
             let mut key = Vec::with_capacity(57);
