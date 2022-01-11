@@ -36,7 +36,7 @@ macro_rules! runtime_apis {
 
 			impl sp_api::Metadata<Block> for Runtime {
 				fn metadata() -> OpaqueMetadata {
-					Runtime::metadata().into()
+					OpaqueMetadata::new(Runtime::metadata().into())
 				}
 			}
 
@@ -95,6 +95,10 @@ macro_rules! runtime_apis {
                 fn grandpa_authorities() -> GrandpaAuthorityList {
                     Grandpa::grandpa_authorities()
                 }
+
+				fn current_set_id() -> fg_primitives::SetId {
+					Grandpa::current_set_id()
+				}
 
                 fn submit_report_equivocation_unsigned_extrinsic(
                     _equivocation_proof: fg_primitives::EquivocationProof<

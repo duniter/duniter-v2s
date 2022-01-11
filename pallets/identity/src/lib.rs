@@ -15,8 +15,10 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::type_complexity)]
 
 pub mod traits;
+mod types;
 
 #[cfg(test)]
 mod mock;
@@ -28,14 +30,12 @@ mod tests;
 mod benchmarking;*/
 
 pub use pallet::*;
+pub use types::*;
 
 use crate::traits::*;
 use codec::Codec;
 use frame_support::dispatch::Weight;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
 use sp_runtime::traits::{AtLeast32BitUnsigned, One, Saturating, Zero};
-use sp_std::collections::btree_set::BTreeSet;
 use sp_std::fmt::Debug;
 use sp_std::prelude::*;
 
@@ -44,6 +44,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use scale_info::TypeInfo;
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -61,6 +62,8 @@ pub mod pallet {
         type EnsureIdtyCallAllowed: EnsureIdtyCallAllowed<Self>;
         ///  Identity custom data
         type IdtyData: Parameter + Member + MaybeSerializeDeserialize + Debug + Default;
+        ///  Identity custom data provider
+        type IdtyDataProvider: ProvideIdtyData<Self>;
         /// Identity decentralized identifier
         type IdtyDid: IdtyDid;
         /// A short identity index.
@@ -103,73 +106,13 @@ pub mod pallet {
     // A value placed in storage that represents the current version of the Balances storage.
     // This value is used by the `on_runtime_upgrade` logic to determine whether we run
     // storage migration logic. This should match directly with the semantic versions of the Rust crate.
-    #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
+    #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
     pub enum Releases {
         V1_0_0,
     }
     impl Default for Releases {
         fn default() -> Self {
             Releases::V1_0_0
-        }
-    }
-
-    #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-    #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
-    pub enum IdtyStatus {
-        Created,
-        ConfirmedByOwner,
-        Validated,
-        Expired,
-    }
-    impl Default for IdtyStatus {
-        fn default() -> Self {
-            IdtyStatus::Created
-        }
-    }
-
-    #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-    #[derive(Encode, Decode, Clone, PartialEq, Eq)]
-    pub struct IdtyValue<T: Config> {
-        pub did: T::IdtyDid,
-        pub expire_on: T::BlockNumber,
-        pub owner_key: T::AccountId,
-        pub removable_on: T::BlockNumber,
-        pub renewable_on: T::BlockNumber,
-        pub rights: Vec<(T::IdtyRight, Option<T::AccountId>)>,
-        pub status: IdtyStatus,
-        pub data: T::IdtyData,
-    }
-    impl<T: Config> Default for IdtyValue<T> {
-        fn default() -> Self {
-            Self {
-                did: Default::default(),
-                expire_on: frame_system::Pallet::<T>::block_number()
-                    + T::MaxInactivityPeriod::get(),
-                owner_key: Default::default(),
-                removable_on: T::BlockNumber::zero(),
-                renewable_on: frame_system::Pallet::<T>::block_number() + T::RenewablePeriod::get(),
-                rights: Default::default(),
-                status: Default::default(),
-                data: Default::default(),
-            }
-        }
-    }
-    impl<T: Config> IdtyValue<T> {
-        pub fn get_right_key(&self, right: T::IdtyRight) -> Option<T::AccountId> {
-            if let Ok(index) = self
-                .rights
-                .binary_search_by(|(right_, _)| right_.cmp(&right))
-            {
-                if self.rights[index].1.is_some() {
-                    self.rights[index].1.clone()
-                } else if right.allow_owner_key() {
-                    Some(self.owner_key.clone())
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
         }
     }
 
@@ -180,8 +123,13 @@ pub mod pallet {
     /// Identities
     #[pallet::storage]
     #[pallet::getter(fn identity)]
-    pub type Identities<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::IdtyIndex, IdtyValue<T>, ValueQuery>;
+    pub type Identities<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        T::IdtyIndex,
+        IdtyValue<T::AccountId, T::BlockNumber, T::IdtyData, T::IdtyDid, T::IdtyRight>,
+        OptionQuery,
+    >;
 
     /// IdentitiesByDid
     #[pallet::storage]
@@ -214,10 +162,10 @@ pub mod pallet {
     >;
 
     // GENESIS //
-
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub identities: Vec<IdtyValue<T>>,
+        pub identities:
+            Vec<IdtyValue<T::AccountId, T::BlockNumber, T::IdtyData, T::IdtyDid, T::IdtyRight>>,
     }
 
     #[cfg(feature = "std")]
@@ -232,7 +180,7 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            let mut dids = BTreeSet::new();
+            let mut dids = sp_std::collections::btree_set::BTreeSet::new();
             for idty_value in &self.identities {
                 assert!(
                     !dids.contains(&idty_value.did),
@@ -290,11 +238,6 @@ pub mod pallet {
     // https://substrate.dev/docs/en/knowledgebase/runtime/events
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
-    #[pallet::metadata(
-        T::IdtyDid = "IdtyDid",
-        T::IdtyRight = "IdtyRight",
-        T::AccountId = "AccountId"
-    )]
     pub enum Event<T: Config> {
         /// A new identity has been created
         /// [idty, owner_key]
@@ -338,8 +281,9 @@ pub mod pallet {
             idty_did: T::IdtyDid,
             owner_key: T::AccountId,
         ) -> DispatchResultWithPostInfo {
+            T::EnsureIdtyCallAllowed::can_create_identity(origin, creator, &idty_did, &owner_key)?;
             let idty_data =
-                T::EnsureIdtyCallAllowed::create_identity(origin, creator, &idty_did, &owner_key)?;
+                T::IdtyDataProvider::provide_identity_data(creator, &idty_did, &owner_key);
             if <IdentitiesByDid<T>>::contains_key(&idty_did) {
                 return Err(Error::<T>::IdtyAlreadyExist.into());
             }
@@ -707,8 +651,10 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         pub fn set_idty_data(idty_index: T::IdtyIndex, idty_data: T::IdtyData) {
-            Identities::<T>::mutate_exists(idty_index, |idty_val| {
-                idty_val.get_or_insert(IdtyValue::default()).data = idty_data;
+            Identities::<T>::mutate_exists(idty_index, |idty_val_opt| {
+                if let Some(ref mut idty_val) = idty_val_opt {
+                    idty_val.data = idty_data;
+                }
             });
         }
     }
@@ -750,10 +696,10 @@ pub mod pallet {
                     if let Ok(idty_val) = <Identities<T>>::try_get(idty_index) {
                         if idty_val.expire_on == block_number {
                             <Identities<T>>::mutate_exists(idty_index, |idty_val_opt| {
-                                idty_val_opt.get_or_insert(IdtyValue::default()).rights =
-                                    Vec::with_capacity(0);
-                                idty_val_opt.get_or_insert(IdtyValue::default()).status =
-                                    IdtyStatus::Expired;
+                                if let Some(ref mut idty_val) = idty_val_opt {
+                                    idty_val.rights = Vec::with_capacity(0);
+                                    idty_val.status = IdtyStatus::Expired;
+                                }
                             });
                             total_weight +=
                                 T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Expired);

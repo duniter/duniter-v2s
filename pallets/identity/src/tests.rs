@@ -99,7 +99,7 @@ fn test_two_identities() {
         );
 
         // The Did(1) identity has no more rights, the inactivity period must start to run
-        let idty2 = Identity::identity(2);
+        let idty2 = Identity::identity(2).expect("idty not found");
         assert!(idty2.rights.is_empty());
         assert_eq!(idty2.removable_on, 7);
     });

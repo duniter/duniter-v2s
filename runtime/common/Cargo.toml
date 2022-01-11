@@ -35,21 +35,24 @@ pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
 smallvec = "1.6.1"
 
+# substrate
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+
 [dependencies.codec]
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
-version = '2.2.0'
+version = '2.3.1'
 
 [dependencies.frame-support]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.frame-system]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.serde]
 version = "1.0.101"
@@ -58,20 +61,20 @@ features = ["derive"]
 
 [dependencies.sp-arithmetic]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-core]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-runtime]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-std]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'

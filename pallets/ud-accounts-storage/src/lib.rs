@@ -32,10 +32,9 @@ use sp_std::prelude::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use sp_std::collections::btree_set::BTreeSet;
-
     use super::*;
     use frame_support::pallet_prelude::*;
+    use scale_info::TypeInfo;
 
     // CONFIG //
 
@@ -51,7 +50,7 @@ pub mod pallet {
     // A value placed in storage that represents the current version of the Balances storage.
     // This value is used by the `on_runtime_upgrade` logic to determine whether we run
     // storage migration logic. This should match directly with the semantic versions of the Rust crate.
-    #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
+    #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
     pub enum Releases {
         V1_0_0,
     }
@@ -77,7 +76,7 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub ud_accounts: BTreeSet<T::AccountId>,
+        pub ud_accounts: sp_std::collections::btree_set::BTreeSet<T::AccountId>,
     }
 
     #[cfg(feature = "std")]

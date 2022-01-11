@@ -45,6 +45,7 @@ use common_runtime::{
         OnIdtyChangeHandler, OnNewStrongCertHandler, OnRemovedStrongCertHandler,
         OnRightKeyChangeHandler,
     },
+    providers::IdtyDataProvider,
 };
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
@@ -104,6 +105,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
+    state_version: 1,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -131,6 +133,8 @@ common_runtime::pallets_config! {
     impl pallet_randomness_collective_flip::Config for Runtime {}
     impl pallet_aura::Config for Runtime {
         type AuthorityId = sp_consensus_aura::sr25519::AuthorityId;
+        type DisabledValidators = ();
+        type MaxAuthorities = frame_support::pallet_prelude::ConstU32<32>;
     }
     impl pallet_timestamp::Config for Runtime {
         /// A timestamp: milliseconds since the unix epoch.
@@ -152,18 +156,37 @@ construct_runtime!(
         NodeBlock = common_runtime::Block,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Aura: pallet_aura::{Pallet, Config<T>},
-        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
-        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-        UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage},
-        UniversalDividend: pallet_universal_dividend::{Pallet, Config<T>, Storage, Event<T>},
-        Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>},
-        StrongCert: pallet_certification::{Pallet, Call, Config<T>, Storage, Event<T>},
+        // Basic stuff
+        System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
+        Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 1,
+
+        // Must be before session.
+        Aura: pallet_aura::{Pallet, Config<T>} = 2,
+
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
+        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
+        TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 32,
+
+        // Consensus support.
+        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event} = 10,
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 11,
+
+        // Governance stuff.
+        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
+
+        // Cunning utilities.
+        Utility: pallet_utility::{Pallet, Call, Event} = 30,
+
+        // Universal dividend.
+        UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage} = 40,
+        UniversalDividend: pallet_universal_dividend::{Pallet, Config<T>, Storage, Event<T>} = 41,
+
+        // Web Of Trust
+        Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 50,
+        StrongCert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 51,
+
+        // Multisig dispatch.
+        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 60,
     }
 );
 
@@ -187,7 +210,7 @@ pub type Executive = frame_executive::Executive<
     Block,
     frame_system::ChainContext<Runtime>,
     Runtime,
-    AllPallets,
+    AllPalletsWithSystem,
 >;
 
 // All of our runtimes share most of their Runtime API implementations.
@@ -207,7 +230,7 @@ common_runtime::runtime_apis! {
         }
 
         fn authorities() -> Vec<sp_consensus_aura::sr25519::AuthorityId> {
-            Aura::authorities()
+            Aura::authorities().into_inner()
         }
     }
 }

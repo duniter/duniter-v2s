@@ -19,9 +19,11 @@ macro_rules! pallets_config {
 	{$($custom:tt)*} => {
 		$($custom)*
 
+		// SYSTEM //
+
         impl frame_system::Config for Runtime {
             /// The basic call filter to use in dispatchable.
-            type BaseCallFilter = frame_support::traits::AllowAll;
+            type BaseCallFilter = frame_support::traits::Everything;
             /// Block & extrinsics weights: base values and limits.
             type BlockWeights = BlockWeights;
             /// The maximum length of a block (in bytes).
@@ -68,7 +70,66 @@ macro_rules! pallets_config {
             type SS58Prefix = SS58Prefix;
             /// The set code logic, just the default since we're not a parachain.
             type OnSetCode = ();
+			type MaxConsumers = frame_support::traits::ConstU32<16>;
         }
+
+		// SCHEDULER //
+
+		parameter_types! {
+			pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+				BlockWeights::get().max_block;
+			pub const MaxScheduledPerBlock: u32 = 50;
+		}
+		/// Used the compare the privilege of an origin inside the scheduler.
+		pub struct OriginPrivilegeCmp;
+		impl frame_support::traits::PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
+			fn cmp_privilege(left: &OriginCaller, right: &OriginCaller) -> Option<core::cmp::Ordering> {
+				if left == right {
+					Some(core::cmp::Ordering::Equal)
+				} else {
+					None
+				}
+			}
+		}
+		impl pallet_scheduler::Config for Runtime {
+			type Event = Event;
+			type Origin = Origin;
+			type PalletsOrigin = OriginCaller;
+			type Call = Call;
+			type MaximumWeight = MaximumSchedulerWeight;
+			type ScheduleOrigin = frame_system::EnsureSigned<AccountId>;
+			type OriginPrivilegeCmp = OriginPrivilegeCmp;
+			type MaxScheduledPerBlock = MaxScheduledPerBlock;
+			type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+			type PreimageProvider = ();
+			type NoPreimagePostponement = ();
+		}
+
+		// MONEY //
+
+		impl pallet_balances::Config for Runtime {
+            type MaxLocks = MaxLocks;
+            type MaxReserves = ();
+            type ReserveIdentifier = [u8; 8];
+            /// The type for recording an account's balance.
+            type Balance = Balance;
+            /// The ubiquitous event type.
+            type Event = Event;
+            type DustRemoval = ();
+            type ExistentialDeposit = ExistentialDeposit;
+            type AccountStore = System;
+            type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+        }
+
+        impl pallet_transaction_payment::Config for Runtime {
+            type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+            type TransactionByteFee = TransactionByteFee;
+			type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
+            type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance>;
+            type FeeMultiplierUpdate = ();
+        }
+
+		// CONSENSUS  //
 
         impl pallet_grandpa::Config for Runtime {
             type Event = Event;
@@ -87,35 +148,45 @@ macro_rules! pallets_config {
             type HandleEquivocation = ();
 
             type WeightInfo = ();
+
+			type MaxAuthorities = MaxAuthorities;
         }
 
-        impl pallet_balances::Config for Runtime {
-            type MaxLocks = MaxLocks;
-            type MaxReserves = ();
-            type ReserveIdentifier = [u8; 8];
-            /// The type for recording an account's balance.
-            type Balance = Balance;
-            /// The ubiquitous event type.
+		// UTILITY //
+
+		impl pallet_utility::Config for Runtime {
+			type Event = Event;
+			type Call = Call;
+			type PalletsOrigin = OriginCaller;
+			type WeightInfo = pallet_utility::weights::SubstrateWeight<Self>;
+		}
+
+		// MONEY CREATION //
+
+        impl pallet_universal_dividend::Config for Runtime {
+            type Currency = pallet_balances::Pallet<Runtime>;
             type Event = Event;
-            type DustRemoval = ();
-            type ExistentialDeposit = ExistentialDeposit;
-            type AccountStore = System;
-            type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+            type MembersCount = common_runtime::providers::UdAccountsProvider<Runtime>;
+            type MembersIds = common_runtime::providers::UdAccountsProvider<Runtime>;
+            type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
+            type UdCreationPeriod = UdCreationPeriod;
+			type UdFirstReeval = UdFirstReeval;
+            type UdReevalPeriod = UdReevalPeriod;
+            type UdReevalPeriodInBlocks = UdReevalPeriodInBlocks;
+			type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
         }
 
-        impl pallet_transaction_payment::Config for Runtime {
-            type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
-            type TransactionByteFee = TransactionByteFee;
-            type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance>;
-            type FeeMultiplierUpdate = ();
-        }
+        impl pallet_ud_accounts_storage::Config for Runtime {}
 
-        impl pallet_identity::Config for Runtime {
+		// WEB OF TRUST //
+
+		impl pallet_identity::Config for Runtime {
             type ConfirmPeriod = ConfirmPeriod;
             type Event = Event;
             type AddRightOrigin = EnsureRoot<Self::AccountId>;
             type DelRightOrigin = EnsureRoot<Self::AccountId>;
-            type EnsureIdtyCallAllowed = EnsureIdtyCallAllowedImpl<Runtime, IDTY_CREATE_PERIOD>;
+            type EnsureIdtyCallAllowed = EnsureIdtyCallAllowedImpl<Runtime, StrongCert>;
+			type IdtyDataProvider = IdtyDataProvider<Runtime, IDTY_CREATE_PERIOD>;
             type IdtyData = IdtyData;
             type IdtyDid = IdtyDid;
             type IdtyIndex = IdtyIndex;
@@ -129,7 +200,7 @@ macro_rules! pallets_config {
             type ValidationPeriod = ValidationPeriod;
         }
 
-        impl pallet_certification::Config for Runtime {
+        impl pallet_certification::Config<frame_support::instances::Instance1> for Runtime {
             type AddCertOrigin = AddStrongCertOrigin<Runtime>;
             type CertPeriod = CertPeriod;
             type DelCertOrigin = DelStrongCertOrigin<Runtime>;
@@ -139,21 +210,20 @@ macro_rules! pallets_config {
             type OnNewcert =
                 OnNewStrongCertHandler<Runtime, MIN_STRONG_CERT_FOR_UD, MIN_STRONG_CERT_FOR_STRONG_CERT>;
             type OnRemovedCert = OnRemovedStrongCertHandler<Runtime, MIN_STRONG_CERT_FOR_UD>;
-            type RenewablePeriod = StrongCertRenewablePeriod;
+            type CertRenewablePeriod = StrongCertRenewablePeriod;
             type ValidityPeriod = ValidityPeriod;
         }
 
-        impl pallet_universal_dividend::Config for Runtime {
-            type Currency = pallet_balances::Pallet<Runtime>;
-            type Event = Event;
-            type MembersCount = common_runtime::providers::UdAccountsProvider<Runtime>;
-            type MembersIds = common_runtime::providers::UdAccountsProvider<Runtime>;
-            type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
-            type UdCreationPeriod = UdCreationPeriod;
-            type UdReevalPeriod = UdReevalPeriod;
-            type UdReevalPeriodInBlocks = UdReevalPeriodInBlocks;
-        }
+		// MUNTISIG //
 
-        impl pallet_ud_accounts_storage::Config for Runtime {}
+		impl pallet_multisig::Config for Runtime {
+			type Event = Event;
+			type Call = Call;
+			type Currency = Balances;
+			type DepositBase = DepositBase;
+			type DepositFactor = DepositFactor;
+			type MaxSignatories = MaxSignatories;
+			type WeightInfo = pallet_multisig::weights::SubstrateWeight<Self>;
+		}
 	};
 }

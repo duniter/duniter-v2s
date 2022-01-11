@@ -16,10 +16,10 @@
 // limitations under the License.
 
 use crate::cli::{Cli, Subcommand};
-use crate::service::{GDevExecutor, GTestExecutor, IdentifyVariant};
+use crate::service::{G1Executor, GDevExecutor, GTestExecutor, IdentifyVariant};
 use crate::{chain_spec, service};
 use gdev_runtime::Block;
-use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
+use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
@@ -168,7 +168,7 @@ pub fn run() -> sc_cli::Result<()> {
                 let chain_spec = &runner.config().chain_spec;
 
                 if chain_spec.is_main() {
-                    todo!()
+                    runner.sync_run(|config| cmd.run::<Block, G1Executor>(config))
                 } else if chain_spec.is_test() {
                     runner.sync_run(|config| cmd.run::<Block, GTestExecutor>(config))
                 } else if chain_spec.is_dev() {
@@ -186,17 +186,11 @@ pub fn run() -> sc_cli::Result<()> {
             let runner = cli.create_runner(&cli.run)?;
             runner.run_node_until_exit(|config| async move {
                 if config.chain_spec.is_main() {
-                    todo!()
+                    service::new_full::<gtest_runtime::RuntimeApi, G1Executor>(config, None)
+                        .map_err(sc_cli::Error::Service)
                 } else if config.chain_spec.is_test() {
-                    match config.role {
-                        Role::Light => {
-                            service::new_light::<gtest_runtime::RuntimeApi, GTestExecutor>(config)
-                        }
-                        _ => service::new_full::<gtest_runtime::RuntimeApi, GTestExecutor>(
-                            config, None,
-                        ),
-                    }
-                    .map_err(sc_cli::Error::Service)
+                    service::new_full::<gtest_runtime::RuntimeApi, GTestExecutor>(config, None)
+                        .map_err(sc_cli::Error::Service)
                 } else if config.chain_spec.is_dev() {
                     service::new_full::<gdev_runtime::RuntimeApi, GDevExecutor>(
                         config,

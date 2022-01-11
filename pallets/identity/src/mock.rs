@@ -19,10 +19,12 @@ use crate::{self as pallet_identity};
 use frame_support::{
     codec::{Decode, Encode},
     parameter_types,
-    traits::{AllowAll, OnFinalize, OnInitialize},
+    traits::{Everything, OnFinalize, OnInitialize},
     RuntimeDebug,
 };
 use frame_system as system;
+use scale_info::TypeInfo;
+use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
@@ -34,13 +36,38 @@ type AccountId = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug)]
+#[derive(
+    Encode,
+    Decode,
+    Default,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    RuntimeDebug,
+    Deserialize,
+    Serialize,
+    TypeInfo,
+)]
 pub struct IdtyDid(pub u64);
 impl pallet_identity::traits::IdtyDid for IdtyDid {}
 
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug)]
+#[derive(
+    Encode,
+    Decode,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    RuntimeDebug,
+    Deserialize,
+    Serialize,
+    TypeInfo,
+)]
 pub enum IdtyRight {
     Right1,
     Right2,
@@ -53,6 +80,9 @@ impl Default for IdtyRight {
 impl pallet_identity::traits::IdtyRight for IdtyRight {
     fn allow_owner_key(self) -> bool {
         self == Self::Right1
+    }
+    fn create_idty_right() -> Self {
+        Self::Right1
     }
 }
 
@@ -74,7 +104,7 @@ parameter_types! {
 }
 
 impl system::Config for Test {
-    type BaseCallFilter = AllowAll;
+    type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
@@ -97,6 +127,7 @@ impl system::Config for Test {
     type SystemWeightInfo = ();
     type SS58Prefix = SS58Prefix;
     type OnSetCode = ();
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -114,6 +145,7 @@ impl pallet_identity::Config for Test {
     type DelRightOrigin = system::EnsureRoot<AccountId>;
     type EnsureIdtyCallAllowed = ();
     type IdtyData = ();
+    type IdtyDataProvider = ();
     type IdtyDid = IdtyDid;
     type IdtyIndex = u64;
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;

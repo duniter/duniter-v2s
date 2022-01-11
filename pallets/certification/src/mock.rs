@@ -17,7 +17,7 @@
 use crate::{self as pallet_certification};
 use frame_support::{
     parameter_types,
-    traits::{AllowAll, OnFinalize, OnInitialize},
+    traits::{Everything, OnFinalize, OnInitialize},
 };
 use frame_system as system;
 use sp_core::H256;
@@ -51,7 +51,7 @@ parameter_types! {
 }
 
 impl system::Config for Test {
-    type BaseCallFilter = AllowAll;
+    type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
@@ -74,6 +74,7 @@ impl system::Config for Test {
     type SystemWeightInfo = ();
     type SS58Prefix = SS58Prefix;
     type OnSetCode = ();
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 pub struct EnsureRoot;
@@ -106,7 +107,7 @@ impl pallet_certification::Config for Test {
     type MaxByIssuer = MaxByIssuer;
     type OnNewcert = ();
     type OnRemovedCert = ();
-    type RenewablePeriod = RenewablePeriod;
+    type CertRenewablePeriod = RenewablePeriod;
     type ValidityPeriod = ValidityPeriod;
 }
 

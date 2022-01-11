@@ -23,23 +23,50 @@ use sp_runtime::{
     traits::{BlakeTwo256, Block as BlockT},
     Justifications,
 };
-use sp_storage::{ChildInfo, PrefixedStorageKey, StorageData, StorageKey};
+use sp_storage::{ChildInfo, StorageData, StorageKey};
 use std::sync::Arc;
 
 /// A client instance.
 #[derive(Clone)]
 pub enum Client {
-    //G1(Arc<super::FullClient<g1_runtime::RuntimeApi, super::G1Executor>>),
+    G1(Arc<super::FullClient<g1_runtime::RuntimeApi, super::G1Executor>>),
     GTest(Arc<super::FullClient<gtest_runtime::RuntimeApi, super::GTestExecutor>>),
     GDev(Arc<super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>>),
 }
 
+impl From<Arc<super::FullClient<g1_runtime::RuntimeApi, super::G1Executor>>> for Client {
+    fn from(client: Arc<super::FullClient<g1_runtime::RuntimeApi, super::G1Executor>>) -> Self {
+        Self::G1(client)
+    }
+}
+
+impl From<Arc<super::FullClient<gtest_runtime::RuntimeApi, super::GTestExecutor>>> for Client {
+    fn from(
+        client: Arc<super::FullClient<gtest_runtime::RuntimeApi, super::GTestExecutor>>,
+    ) -> Self {
+        Self::GTest(client)
+    }
+}
+
+impl From<Arc<super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>>> for Client {
+    fn from(client: Arc<super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>>) -> Self {
+        Self::GDev(client)
+    }
+}
+
+macro_rules! match_client {
+	($self:ident, $method:ident($($param:ident),*)) => {
+		match $self {
+			Self::G1(client) => client.$method($($param),*),
+			Self::GTest(client) => client.$method($($param),*),
+			Self::GDev(client) => client.$method($($param),*),
+		}
+	};
+}
+
 impl sc_client_api::UsageProvider<Block> for Client {
     fn usage_info(&self) -> sc_client_api::ClientInfo<Block> {
-        match self {
-            Self::GTest(client) => client.usage_info(),
-            Self::GDev(client) => client.usage_info(),
-        }
+        match_client!(self, usage_info())
     }
 }
 
@@ -48,71 +75,47 @@ impl sc_client_api::BlockBackend<Block> for Client {
         &self,
         id: &BlockId<Block>,
     ) -> sp_blockchain::Result<Option<Vec<<Block as BlockT>::Extrinsic>>> {
-        match self {
-            Self::GTest(client) => client.block_body(id),
-            Self::GDev(client) => client.block_body(id),
-        }
+        match_client!(self, block_body(id))
     }
 
     fn block_indexed_body(
         &self,
         id: &BlockId<Block>,
     ) -> sp_blockchain::Result<Option<Vec<Vec<u8>>>> {
-        match self {
-            Self::GTest(client) => client.block_indexed_body(id),
-            Self::GDev(client) => client.block_indexed_body(id),
-        }
+        match_client!(self, block_indexed_body(id))
     }
 
     fn block(&self, id: &BlockId<Block>) -> sp_blockchain::Result<Option<SignedBlock<Block>>> {
-        match self {
-            Self::GTest(client) => client.block(id),
-            Self::GDev(client) => client.block(id),
-        }
+        match_client!(self, block(id))
     }
 
     fn block_status(&self, id: &BlockId<Block>) -> sp_blockchain::Result<BlockStatus> {
-        match self {
-            Self::GTest(client) => client.block_status(id),
-            Self::GDev(client) => client.block_status(id),
-        }
+        match_client!(self, block_status(id))
     }
 
     fn justifications(&self, id: &BlockId<Block>) -> sp_blockchain::Result<Option<Justifications>> {
-        match self {
-            Self::GTest(client) => client.justifications(id),
-            Self::GDev(client) => client.justifications(id),
-        }
+        match_client!(self, justifications(id))
     }
 
     fn block_hash(
         &self,
         number: NumberFor<Block>,
     ) -> sp_blockchain::Result<Option<<Block as BlockT>::Hash>> {
-        match self {
-            Self::GTest(client) => client.block_hash(number),
-            Self::GDev(client) => client.block_hash(number),
-        }
+        match_client!(self, block_hash(number))
     }
 
     fn indexed_transaction(
         &self,
         hash: &<Block as BlockT>::Hash,
     ) -> sp_blockchain::Result<Option<Vec<u8>>> {
-        match self {
-            Self::GTest(client) => client.indexed_transaction(hash),
-            Self::GDev(client) => client.indexed_transaction(hash),
-        }
+        match_client!(self, indexed_transaction(hash))
     }
 
     fn has_indexed_transaction(
         &self,
         hash: &<Block as BlockT>::Hash,
     ) -> sp_blockchain::Result<bool> {
-        match self {
-            Self::GTest(client) => client.has_indexed_transaction(hash),
-            Self::GDev(client) => client.has_indexed_transaction(hash),
-        }
+        match_client!(self, has_indexed_transaction(hash))
     }
 }
 
@@ -122,10 +125,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
         id: &BlockId<Block>,
         key: &StorageKey,
     ) -> sp_blockchain::Result<Option<StorageData>> {
-        match self {
-            Self::GTest(client) => client.storage(id, key),
-            Self::GDev(client) => client.storage(id, key),
-        }
+        match_client!(self, storage(id, key))
     }
 
     fn storage_keys(
@@ -133,10 +133,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
         id: &BlockId<Block>,
         key_prefix: &StorageKey,
     ) -> sp_blockchain::Result<Vec<StorageKey>> {
-        match self {
-            Self::GTest(client) => client.storage_keys(id, key_prefix),
-            Self::GDev(client) => client.storage_keys(id, key_prefix),
-        }
+        match_client!(self, storage_keys(id, key_prefix))
     }
 
     fn storage_hash(
@@ -144,10 +141,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
         id: &BlockId<Block>,
         key: &StorageKey,
     ) -> sp_blockchain::Result<Option<<Block as BlockT>::Hash>> {
-        match self {
-            Self::GTest(client) => client.storage_hash(id, key),
-            Self::GDev(client) => client.storage_hash(id, key),
-        }
+        match_client!(self, storage_hash(id, key))
     }
 
     fn storage_pairs(
@@ -155,10 +149,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
         id: &BlockId<Block>,
         key_prefix: &StorageKey,
     ) -> sp_blockchain::Result<Vec<(StorageKey, StorageData)>> {
-        match self {
-            Self::GTest(client) => client.storage_pairs(id, key_prefix),
-            Self::GDev(client) => client.storage_pairs(id, key_prefix),
-        }
+        match_client!(self, storage_pairs(id, key_prefix))
     }
 
     fn storage_keys_iter<'a>(
@@ -169,10 +160,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
     ) -> sp_blockchain::Result<
         KeyIterator<'a, <super::FullBackend as sc_client_api::Backend<Block>>::State, Block>,
     > {
-        match self {
-            Self::GTest(client) => client.storage_keys_iter(id, prefix, start_key),
-            Self::GDev(client) => client.storage_keys_iter(id, prefix, start_key),
-        }
+        match_client!(self, storage_keys_iter(id, prefix, start_key))
     }
 
     fn child_storage(
@@ -181,10 +169,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
         child_info: &ChildInfo,
         key: &StorageKey,
     ) -> sp_blockchain::Result<Option<StorageData>> {
-        match self {
-            Self::GTest(client) => client.child_storage(id, child_info, key),
-            Self::GDev(client) => client.child_storage(id, child_info, key),
-        }
+        match_client!(self, child_storage(id, child_info, key))
     }
 
     fn child_storage_keys(
@@ -193,10 +178,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
         child_info: &ChildInfo,
         key_prefix: &StorageKey,
     ) -> sp_blockchain::Result<Vec<StorageKey>> {
-        match self {
-            Self::GTest(client) => client.child_storage_keys(id, child_info, key_prefix),
-            Self::GDev(client) => client.child_storage_keys(id, child_info, key_prefix),
-        }
+        match_client!(self, child_storage_keys(id, child_info, key_prefix))
     }
 
     fn child_storage_keys_iter<'a>(
@@ -208,12 +190,10 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
     ) -> sp_blockchain::Result<
         KeyIterator<'a, <super::FullBackend as sc_client_api::Backend<Block>>::State, Block>,
     > {
-        match self {
-            Self::GTest(client) => {
-                client.child_storage_keys_iter(id, child_info, prefix, start_key)
-            }
-            Self::GDev(client) => client.child_storage_keys_iter(id, child_info, prefix, start_key),
-        }
+        match_client!(
+            self,
+            child_storage_keys_iter(id, child_info, prefix, start_key)
+        )
     }
 
     fn child_storage_hash(
@@ -222,70 +202,29 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
         child_info: &ChildInfo,
         key: &StorageKey,
     ) -> sp_blockchain::Result<Option<<Block as BlockT>::Hash>> {
-        match self {
-            Self::GTest(client) => client.child_storage_hash(id, child_info, key),
-            Self::GDev(client) => client.child_storage_hash(id, child_info, key),
-        }
-    }
-
-    fn max_key_changes_range(
-        &self,
-        first: NumberFor<Block>,
-        last: BlockId<Block>,
-    ) -> sp_blockchain::Result<Option<(NumberFor<Block>, BlockId<Block>)>> {
-        match self {
-            Self::GTest(client) => client.max_key_changes_range(first, last),
-            Self::GDev(client) => client.max_key_changes_range(first, last),
-        }
-    }
-
-    fn key_changes(
-        &self,
-        first: NumberFor<Block>,
-        last: BlockId<Block>,
-        storage_key: Option<&PrefixedStorageKey>,
-        key: &StorageKey,
-    ) -> sp_blockchain::Result<Vec<(NumberFor<Block>, u32)>> {
-        match self {
-            Self::GTest(client) => client.key_changes(first, last, storage_key, key),
-            Self::GDev(client) => client.key_changes(first, last, storage_key, key),
-        }
+        match_client!(self, child_storage_hash(id, child_info, key))
     }
 }
 
 impl sp_blockchain::HeaderBackend<Block> for Client {
     fn header(&self, id: BlockId<Block>) -> sp_blockchain::Result<Option<Header>> {
-        match self {
-            Self::GTest(client) => client.header(&id),
-            Self::GDev(client) => client.header(&id),
-        }
+        let id = &id;
+        match_client!(self, header(id))
     }
     fn info(&self) -> sp_blockchain::Info<Block> {
-        match self {
-            Self::GTest(client) => client.info(),
-            Self::GDev(client) => client.info(),
-        }
+        match_client!(self, info())
     }
 
     fn status(&self, id: BlockId<Block>) -> sp_blockchain::Result<sp_blockchain::BlockStatus> {
-        match self {
-            Self::GTest(client) => client.status(id),
-            Self::GDev(client) => client.status(id),
-        }
+        match_client!(self, status(id))
     }
 
     fn number(&self, hash: Hash) -> sp_blockchain::Result<Option<BlockNumber>> {
-        match self {
-            Self::GTest(client) => client.number(hash),
-            Self::GDev(client) => client.number(hash),
-        }
+        match_client!(self, number(hash))
     }
 
     fn hash(&self, number: BlockNumber) -> sp_blockchain::Result<Option<Hash>> {
-        match self {
-            Self::GTest(client) => client.hash(number),
-            Self::GDev(client) => client.hash(number),
-        }
+        match_client!(self, hash(number))
     }
 }
 

@@ -41,9 +41,10 @@ fn test_ud_creation() {
 
         // Block #2 must generate 7 events, 2 events per new account fed, plus 1 event for the creation of the UD.
         let events = System::events();
-        assert_eq!(events.len(), 7);
+        println!("events: {:#?}", events);
+        assert_eq!(events.len(), 10);
         assert_eq!(
-            events[6],
+            events[9],
             EventRecord {
                 phase: Phase::Initialization,
                 event: Event::UniversalDividend(crate::Event::NewUdCreated(1000, 3)),

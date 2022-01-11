@@ -27,11 +27,12 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-use frame_support::traits::Currency;
+use frame_support::traits::{tokens::ExistenceRequirement, Currency};
 use sp_arithmetic::{
     per_things::Permill,
-    traits::{One, Zero},
+    traits::{CheckedSub, One, Saturating, Zero},
 };
+use sp_runtime::traits::StaticLookup;
 use sp_std::prelude::*;
 
 const OFFCHAIN_PREFIX_UD_HISTORY: &[u8] = b"ud::history::";
@@ -41,23 +42,13 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use scale_info::TypeInfo;
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        #[pallet::constant]
-        /// Universal dividend creation period
-        type UdCreationPeriod: Get<Self::BlockNumber>;
-        #[pallet::constant]
-        /// Universal dividend reevaluation period (in number of creation period)
-        type UdReevalPeriod: Get<BalanceOf<Self>>;
-        #[pallet::constant]
-        /// Universal dividend reevaluation period in number of blocks
-        /// Must be equal to UdReevalPeriod * UdCreationPeriod
-        type UdReevalPeriodInBlocks: Get<Self::BlockNumber>;
-
         // The currency
         type Currency: Currency<Self::AccountId>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
@@ -69,6 +60,25 @@ pub mod pallet {
         #[pallet::constant]
         /// Square of the money growth rate per ud reevaluation period
         type SquareMoneyGrowthRate: Get<Permill>;
+        #[pallet::constant]
+        /// Universal dividend creation period
+        type UdCreationPeriod: Get<Self::BlockNumber>;
+        #[pallet::constant]
+        /// Universal dividend first reevaluation (in block number)
+        /// Must be leess than UdReevalPeriodInBlocks
+        type UdFirstReeval: Get<Self::BlockNumber>;
+        #[pallet::constant]
+        /// Universal dividend reevaluation period (in number of creation period)
+        type UdReevalPeriod: Get<BalanceOf<Self>>;
+        #[pallet::constant]
+        /// Universal dividend reevaluation period in number of blocks
+        /// Must be equal to UdReevalPeriod * UdCreationPeriod
+        type UdReevalPeriodInBlocks: Get<Self::BlockNumber>;
+        #[pallet::constant]
+        /// The number of units to divide the amounts expressed in number of UDs
+        /// Example: If you wish to express the UD amounts with a maximum precision of the order
+        /// of the milliUD, choose 1000
+        type UnitsPerUd: Get<BalanceOf<Self>>;
     }
 
     // STORAGE //
@@ -80,7 +90,7 @@ pub mod pallet {
     // A value placed in storage that represents the current version of the Balances storage.
     // This value is used by the `on_runtime_upgrade` logic to determine whether we run
     // storage migration logic. This should match directly with the semantic versions of the Rust crate.
-    #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
+    #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
     pub enum Releases {
         V1_0_0,
     }
@@ -94,7 +104,7 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type StorageVersion<T: Config> = StorageValue<_, Releases, ValueQuery>;
 
-    #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
+    #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
     pub struct LastReeval<T: Config> {
         members_count: BalanceOf<T>,
         monetary_mass: BalanceOf<T>,
@@ -157,7 +167,9 @@ pub mod pallet {
         fn on_initialize(n: T::BlockNumber) -> Weight {
             if (n % T::UdCreationPeriod::get()).is_zero() {
                 let current_members_count = T::MembersCount::get();
-                if (n % T::UdReevalPeriodInBlocks::get()).is_zero() {
+                if (n % T::UdReevalPeriodInBlocks::get()).checked_sub(&T::UdFirstReeval::get())
+                    == Some(Zero::zero())
+                {
                     Self::reeval_ud(current_members_count)
                         + Self::create_ud(current_members_count, n)
                 } else {
@@ -175,7 +187,6 @@ pub mod pallet {
     // https://substrate.dev/docs/en/knowledgebase/runtime/events
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
-    #[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
     pub enum Event<T: Config> {
         /// A new universal dividend is created
         /// [ud_amout, members_count]
@@ -203,6 +214,24 @@ pub mod pallet {
             Self::deposit_event(Event::NewUdCreated(ud_amount, members_count));
 
             total_weight
+        }
+        fn do_transfer_ud(
+            origin: OriginFor<T>,
+            dest: <T::Lookup as StaticLookup>::Source,
+            value: BalanceOf<T>,
+            existence_requirement: ExistenceRequirement,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            let dest = T::Lookup::lookup(dest)?;
+            let ud_amount = <CurrentUdStorage<T>>::try_get()
+                .map_err(|_| DispatchError::Other("corrupted storage"))?;
+            T::Currency::transfer(
+                &who,
+                &dest,
+                value.saturating_mul(ud_amount) / T::UnitsPerUd::get(),
+                existence_requirement,
+            )?;
+            Ok(().into())
         }
         fn reeval_ud(members_count: BalanceOf<T>) -> Weight {
             let total_weight: Weight = 0;
@@ -250,6 +279,31 @@ pub mod pallet {
             account_id.encode_to(&mut key);
             n.encode_to(&mut key);
             sp_io::offchain_index::set(key.as_ref(), ud_amount.encode().as_ref());
+        }
+    }
+
+    // CALLS //
+
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        /// Transfer some liquid free balance to another account, in milliUD.
+        #[pallet::weight(0)]
+        pub fn transfer_ud(
+            origin: OriginFor<T>,
+            dest: <T::Lookup as StaticLookup>::Source,
+            #[pallet::compact] value: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            Self::do_transfer_ud(origin, dest, value, ExistenceRequirement::AllowDeath)
+        }
+
+        /// Transfer some liquid free balance to another account, in milliUD.
+        #[pallet::weight(0)]
+        pub fn transfer_ud_keep_alive(
+            origin: OriginFor<T>,
+            dest: <T::Lookup as StaticLookup>::Source,
+            #[pallet::compact] value: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            Self::do_transfer_ud(origin, dest, value, ExistenceRequirement::KeepAlive)
         }
     }
 }

@@ -1,6 +1,6 @@
 [build-dependencies.substrate-wasm-builder]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [package]
 authors = ['Axiom-Team Developers <https://axiom-team.fr>']
@@ -66,43 +66,46 @@ pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', defau
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
 common-runtime = { path = "../common", default-features = false }
 
+# substrate
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+
 [dependencies.codec]
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
-version = '2.2.0'
+version = '2.3.1'
 
 [dependencies.frame-benchmarking]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/librelois/substrate.git'
 optional = true
-tag = 'monthly-2021-08'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.frame-executive]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.frame-support]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.frame-system]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.frame-system-benchmarking]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/librelois/substrate.git'
 optional = true
-tag = 'monthly-2021-08'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.frame-system-rpc-runtime-api]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.hex-literal]
 optional = true
@@ -110,43 +113,58 @@ version = '0.3.1'
 
 [dependencies.pallet-aura]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.pallet-balances]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.pallet-grandpa]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
+
+[dependencies.pallet-multisig]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.pallet-randomness-collective-flip]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
+
+[dependencies.pallet-scheduler]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.pallet-sudo]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.pallet-timestamp]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.pallet-transaction-payment]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.pallet-transaction-payment-rpc-runtime-api]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
+
+[dependencies.pallet-utility]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.serde]
 version = "1.0.101"
@@ -158,60 +176,60 @@ version = "1.6.1"
 
 [dependencies.sp-api]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-arithmetic]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-block-builder]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-consensus-aura]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-core]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-inherents]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-offchain]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-runtime]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-session]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-std]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-transaction-pool]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.sp-version]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-08'
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'

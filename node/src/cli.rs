@@ -82,8 +82,9 @@ impl FromStr for Sealing {
             "instant" => Self::Instant,
             "manual" => Self::Manual,
             s => {
-                let millis =
-                    u64::from_str_radix(s, 10).map_err(|_| "couldn't decode sealing param")?;
+                let millis = s
+                    .parse::<u64>()
+                    .map_err(|_| "couldn't decode sealing param")?;
                 Self::Interval(millis)
             }
         })

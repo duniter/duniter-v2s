@@ -15,23 +15,23 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::entities::IdtyRight;
+use frame_support::instances::Instance1;
 use frame_support::weights::Weight;
 use pallet_identity::traits::IdtyEvent;
 
-type IdtyIndex<T> = <T as pallet_identity::Config>::IdtyIndex;
-
 pub struct OnIdtyChangeHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<
-        II,
-        Runtime: pallet_identity::Config<IdtyIndex = II> + pallet_certification::Config<IdtyIndex = II>,
+        IdtyIndex,
+        Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex>
+            + pallet_certification::Config<Instance1, IdtyIndex = IdtyIndex>,
     > pallet_identity::traits::OnIdtyChange<Runtime> for OnIdtyChangeHandler<Runtime>
 {
-    fn on_idty_change(idty_index: IdtyIndex<Runtime>, idty_event: IdtyEvent<Runtime>) -> Weight {
+    fn on_idty_change(idty_index: IdtyIndex, idty_event: IdtyEvent<Runtime>) -> Weight {
         let total_weight = 0;
         match idty_event {
             IdtyEvent::Created { creator } => {
                 // totad_weight += StrongCert::WeightInfo::add_cert();
-                let _ = <pallet_certification::Pallet<Runtime>>::add_cert(
+                let _ = <pallet_certification::Pallet<Runtime, Instance1>>::add_cert(
                     frame_system::Origin::<Runtime>::Root.into(),
                     creator,
                     idty_index,
@@ -48,11 +48,13 @@ impl<
 
 pub struct OnRightKeyChangeHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<
-        Runtime: pallet_identity::Config<IdtyRight = IdtyRight> + pallet_ud_accounts_storage::Config,
+        IdtyIndex,
+        Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex, IdtyRight = IdtyRight>
+            + pallet_ud_accounts_storage::Config,
     > pallet_identity::traits::OnRightKeyChange<Runtime> for OnRightKeyChangeHandler<Runtime>
 {
     fn on_right_key_change(
-        _idty_index: IdtyIndex<Runtime>,
+        _idty_index: IdtyIndex,
         right: Runtime::IdtyRight,
         old_key_opt: Option<Runtime::AccountId>,
         new_key_opt: Option<Runtime::AccountId>,
@@ -75,16 +77,17 @@ pub struct OnNewStrongCertHandler<
     const MIN_STRONG_CERT_FOR_STRONG_CERT: u32,
 >(core::marker::PhantomData<Runtime>);
 impl<
-        Runtime: pallet_identity::Config<IdtyRight = IdtyRight>,
+        IdtyIndex,
+        Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex, IdtyRight = IdtyRight>,
         const MIN_STRONG_CERT_FOR_UD: u32,
         const MIN_STRONG_CERT_FOR_STRONG_CERT: u32,
-    > pallet_certification::traits::OnNewcert<IdtyIndex<Runtime>>
+    > pallet_certification::traits::OnNewcert<IdtyIndex>
     for OnNewStrongCertHandler<Runtime, MIN_STRONG_CERT_FOR_UD, MIN_STRONG_CERT_FOR_STRONG_CERT>
 {
     fn on_new_cert(
-        _issuer: IdtyIndex<Runtime>,
+        _issuer: IdtyIndex,
         _issuer_issued_count: u8,
-        receiver: IdtyIndex<Runtime>,
+        receiver: IdtyIndex,
         receiver_received_count: u32,
     ) -> frame_support::dispatch::Weight {
         let total_weight = 0;
@@ -111,15 +114,16 @@ pub struct OnRemovedStrongCertHandler<Runtime, const MIN_STRONG_CERT_FOR_UD: u32
     core::marker::PhantomData<Runtime>,
 );
 impl<
-        Runtime: pallet_identity::Config<IdtyRight = IdtyRight>,
+        IdtyIndex,
+        Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex, IdtyRight = IdtyRight>,
         const MIN_STRONG_CERT_FOR_UD: u32,
-    > pallet_certification::traits::OnRemovedCert<IdtyIndex<Runtime>>
+    > pallet_certification::traits::OnRemovedCert<IdtyIndex>
     for OnRemovedStrongCertHandler<Runtime, MIN_STRONG_CERT_FOR_UD>
 {
     fn on_removed_cert(
-        _issuer: IdtyIndex<Runtime>,
+        _issuer: IdtyIndex,
         _issuer_issued_count: u8,
-        receiver: IdtyIndex<Runtime>,
+        receiver: IdtyIndex,
         receiver_received_count: u32,
         _expiration: bool,
     ) -> frame_support::dispatch::Weight {

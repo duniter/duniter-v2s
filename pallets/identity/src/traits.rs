@@ -21,24 +21,46 @@ use sp_runtime::traits::MaybeSerializeDeserialize;
 use sp_std::fmt::Debug;
 
 pub trait EnsureIdtyCallAllowed<T: Config> {
-    fn create_identity(
+    fn can_create_identity(
         origin: T::Origin,
         creator: T::IdtyIndex,
         idty_did: &T::IdtyDid,
         idty_owner_key: &T::AccountId,
-    ) -> Result<T::IdtyData, DispatchError>;
+    ) -> Result<(), DispatchError>;
 }
+
 impl<T: Config> EnsureIdtyCallAllowed<T> for () {
-    fn create_identity(
+    fn can_create_identity(
         origin: T::Origin,
         _creator: T::IdtyIndex,
         _idty_did: &T::IdtyDid,
         _idty_owner_key: &T::AccountId,
-    ) -> Result<T::IdtyData, DispatchError> {
+    ) -> Result<(), DispatchError> {
         match ensure_root(origin) {
-            Ok(()) => Ok(T::IdtyData::default()),
+            Ok(()) => Ok(()),
             Err(_) => Err(DispatchError::BadOrigin),
         }
+    }
+}
+
+pub trait ProvideIdtyData<T: Config> {
+    fn provide_identity_data(
+        creator: T::IdtyIndex,
+        idty_did: &T::IdtyDid,
+        idty_owner_key: &T::AccountId,
+    ) -> T::IdtyData;
+}
+
+impl<T: Config> ProvideIdtyData<T> for ()
+where
+    T::IdtyData: Default,
+{
+    fn provide_identity_data(
+        _creator: T::IdtyIndex,
+        _idty_did: &T::IdtyDid,
+        _idty_owner_key: &T::AccountId,
+    ) -> T::IdtyData {
+        Default::default()
     }
 }
 
@@ -63,6 +85,7 @@ pub trait IdtyRight:
     + Ord
 {
     fn allow_owner_key(self) -> bool;
+    fn create_idty_right() -> Self;
 }
 
 pub enum IdtyEvent<T: Config> {

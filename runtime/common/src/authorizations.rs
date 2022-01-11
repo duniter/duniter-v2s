@@ -18,10 +18,11 @@ use crate::entities::{IdtyData, IdtyDid, IdtyRight};
 use crate::{BlockNumber, IdtyIndex};
 use frame_support::pallet_prelude::DispatchError;
 use frame_support::traits::EnsureOrigin;
+use pallet_certification::traits::IsIdtyAllowedToCreateCert;
 use pallet_identity::IdtyStatus;
 
-pub struct EnsureIdtyCallAllowedImpl<Runtime, const IDTY_CREATE_PERIOD: BlockNumber>(
-    core::marker::PhantomData<Runtime>,
+pub struct EnsureIdtyCallAllowedImpl<Runtime, IsIdtyAllowedToCreateCertImpl>(
+    core::marker::PhantomData<(Runtime, IsIdtyAllowedToCreateCertImpl)>,
 );
 impl<
         Runtime: frame_system::Config<BlockNumber = BlockNumber>
@@ -30,47 +31,46 @@ impl<
                 IdtyDid = IdtyDid,
                 IdtyIndex = IdtyIndex,
                 IdtyRight = IdtyRight,
-            > + pallet_certification::Config<IdtyIndex = IdtyIndex>,
-        const IDTY_CREATE_PERIOD: BlockNumber,
+            >,
+        IsIdtyAllowedToCreateCertImpl: IsIdtyAllowedToCreateCert<IdtyIndex>,
     > pallet_identity::traits::EnsureIdtyCallAllowed<Runtime>
-    for EnsureIdtyCallAllowedImpl<Runtime, IDTY_CREATE_PERIOD>
+    for EnsureIdtyCallAllowedImpl<Runtime, IsIdtyAllowedToCreateCertImpl>
 {
-    fn create_identity(
+    fn can_create_identity(
         origin: Runtime::Origin,
         creator: IdtyIndex,
         _idty_did: &IdtyDid,
         _idty_owner_key: &Runtime::AccountId,
-    ) -> Result<IdtyData, DispatchError> {
-        let block_number = frame_system::Pallet::<Runtime>::block_number();
-        let creator_idty_data = IdtyData {
-            can_create_on: block_number + IDTY_CREATE_PERIOD,
-        };
-        let new_idty_data = IdtyData { can_create_on: 0 };
+    ) -> Result<(), DispatchError> {
         match origin.into() {
-            Ok(frame_system::RawOrigin::Root) => {
-                pallet_identity::Pallet::<Runtime>::set_idty_data(creator, creator_idty_data);
-                Ok(new_idty_data)
-            }
+            Ok(frame_system::RawOrigin::Root) => Ok(()),
             Ok(frame_system::RawOrigin::Signed(signer)) => {
-                let creator_idty = pallet_identity::Pallet::<Runtime>::identity(creator);
-
-                if let Some(authorized_key) = creator_idty.get_right_key(IdtyRight::CreateIdty) {
-                    if signer != authorized_key {
-                        frame_support::runtime_print!("signer != authorized_key");
-                        Err(DispatchError::Other("signer != authorized_key"))
-                    } else if !pallet_certification::Pallet::<Runtime>::is_idty_allowed_to_create_cert(creator) {
-                        frame_support::runtime_print!("not allowed to create cert");
-                        Err(DispatchError::Other("not allowed to create cert"))
-                    } else if creator_idty.data.can_create_on > frame_system::Pallet::<Runtime>::block_number() {
-                        frame_support::runtime_print!("Not respect IdtyCreatePeriod");
-                        Err(DispatchError::Other("Not respect IdtyCreatePeriod"))
+                if let Some(creator_idty) = pallet_identity::Pallet::<Runtime>::identity(creator) {
+                    if let Some(authorized_key) = creator_idty.get_right_key(IdtyRight::CreateIdty)
+                    {
+                        if signer != authorized_key {
+                            frame_support::runtime_print!("signer != authorized_key");
+                            Err(DispatchError::Other("signer != authorized_key"))
+                        } else if !IsIdtyAllowedToCreateCertImpl::is_idty_allowed_to_create_cert(
+                            creator,
+                        ) {
+                            frame_support::runtime_print!("not allowed to create cert");
+                            Err(DispatchError::Other("not allowed to create cert"))
+                        } else if creator_idty.data.can_create_on
+                            > frame_system::Pallet::<Runtime>::block_number()
+                        {
+                            frame_support::runtime_print!("Not respect IdtyCreatePeriod");
+                            Err(DispatchError::Other("Not respect IdtyCreatePeriod"))
+                        } else {
+                            Ok(())
+                        }
                     } else {
-                        pallet_identity::Pallet::<Runtime>::set_idty_data(creator, creator_idty_data);
-                        Ok(new_idty_data)
+                        frame_support::runtime_print!("Idty not have right CreateIdty");
+                        Err(DispatchError::Other("Idty not have right CreateIdty"))
                     }
                 } else {
-                    frame_support::runtime_print!("Idty not have right CreateIdty");
-                    Err(DispatchError::Other("Idty not have right CreateIdty"))
+                    frame_support::runtime_print!("Idty not found");
+                    Err(DispatchError::Other("Idty not found"))
                 }
             }
             _ => {
@@ -93,20 +93,30 @@ impl<Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex, IdtyRight = IdtyRig
         match o.0.clone().into() {
             Ok(frame_system::RawOrigin::Root) => Ok(()),
             Ok(frame_system::RawOrigin::Signed(who)) => {
-                let issuer = pallet_identity::Pallet::<Runtime>::identity(o.1);
-                if let Some(allowed_key) = issuer.get_right_key(IdtyRight::StrongCert) {
-                    if who == allowed_key {
-                        let receiver = pallet_identity::Pallet::<Runtime>::identity(o.2);
-                        match receiver.status {
-                            IdtyStatus::ConfirmedByOwner | IdtyStatus::Validated => Ok(()),
-                            IdtyStatus::Created | IdtyStatus::Expired => Err(o),
+                if let Some(issuer) = pallet_identity::Pallet::<Runtime>::identity(o.1) {
+                    if let Some(allowed_key) = issuer.get_right_key(IdtyRight::StrongCert) {
+                        if who == allowed_key {
+                            if let Some(receiver) =
+                                pallet_identity::Pallet::<Runtime>::identity(o.2)
+                            {
+                                match receiver.status {
+                                    IdtyStatus::ConfirmedByOwner | IdtyStatus::Validated => Ok(()),
+                                    IdtyStatus::Created | IdtyStatus::Expired => Err(o),
+                                }
+                            } else {
+                                // Receiver not found
+                                Err(o)
+                            }
+                        } else {
+                            // Bad key
+                            Err(o)
                         }
                     } else {
-                        // Bad key
+                        // Issuer has not right StrongCert
                         Err(o)
                     }
                 } else {
-                    // Issuer has not right StrongCert
+                    // Issuer not found
                     Err(o)
                 }
             }

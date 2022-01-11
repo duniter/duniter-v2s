@@ -98,10 +98,13 @@ fn devnet_genesis(
         system: SystemConfig {
             // Add Wasm runtime to storage.
             code: wasm_binary.to_vec(),
-            changes_trie_config: Default::default(),
         },
         balances: BalancesConfig {
-            balances: Vec::with_capacity(0),
+            balances: initial_identities
+                .values()
+                .cloned()
+                .map(|account_id| (account_id, 1_000))
+                .collect(),
         },
         grandpa: GrandpaConfig {
             authorities: initial_authorities
@@ -111,7 +114,7 @@ fn devnet_genesis(
         },
         sudo: SudoConfig {
             // Assign network admin rights.
-            key: root_key,
+            key: Some(root_key),
         },
         identity: IdentityConfig {
             identities: initial_identities
@@ -141,7 +144,7 @@ fn devnet_genesis(
         },
         universal_dividend: UniversalDividendConfig {
             first_ud: 1_000,
-            initial_monetary_mass: 0,
+            initial_monetary_mass: initial_identities.len() as u64 * 1_000,
         },
     }
 }

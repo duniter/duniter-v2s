@@ -25,16 +25,14 @@ frame_support::parameter_types! {
     pub const MaxLocks: u32 = 50;
 }
 
+// Consensus
+parameter_types! {
+    pub const MaxAuthorities: u32 = 10;
+}
+
 // Transaction payment
 frame_support::parameter_types! {
     pub const TransactionByteFee: Balance = 0;
-}
-
-// Multisig
-parameter_types! {
-    pub const DepositBase: Balance = 1000;
-    pub const DepositFactor: Balance = 10;
-    pub const MaxSignatories: u16 = 5;
 }
 
 // Identity
@@ -61,6 +59,14 @@ parameter_types! {
 parameter_types! {
     pub const SquareMoneyGrowthRate: Permill = Permill::one();
     pub const UdCreationPeriod: BlockNumber = 10;
+    pub const UdFirstReeval: BlockNumber = 100;
     pub const UdReevalPeriod: Balance = 10;
     pub const UdReevalPeriodInBlocks: BlockNumber = 20 * 10;
+}
+
+// Multisig
+parameter_types! {
+    pub const DepositBase: Balance = 1000;
+    pub const DepositFactor: Balance = 10;
+    pub const MaxSignatories: u16 = 5;
 }

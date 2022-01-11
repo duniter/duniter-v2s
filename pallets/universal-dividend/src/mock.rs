@@ -18,7 +18,7 @@ use super::*;
 use crate::{self as pallet_universal_dividend};
 use frame_support::{
     parameter_types,
-    traits::{AllowAll, Get, OnFinalize, OnInitialize},
+    traits::{Everything, Get, OnFinalize, OnInitialize},
 };
 use frame_system as system;
 use sp_core::H256;
@@ -52,7 +52,7 @@ parameter_types! {
 }
 
 impl system::Config for Test {
-    type BaseCallFilter = AllowAll;
+    type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
@@ -75,6 +75,7 @@ impl system::Config for Test {
     type SystemWeightInfo = ();
     type SS58Prefix = SS58Prefix;
     type OnSetCode = ();
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -98,6 +99,7 @@ parameter_types! {
     pub const MembersCount: u64 = 3;
     pub const SquareMoneyGrowthRate: Permill = Permill::from_percent(10);
     pub const UdCreationPeriod: BlockNumber = 2;
+    pub const UdFirstReeval: BlockNumber = 0;
     pub const UdReevalPeriod: Balance = 4;
     pub const UdReevalPeriodInBlocks: BlockNumber = 8; // 2 * 4
 }
@@ -116,8 +118,10 @@ impl pallet_universal_dividend::Config for Test {
     type MembersIds = FakeWot;
     type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
     type UdCreationPeriod = UdCreationPeriod;
+    type UdFirstReeval = UdFirstReeval;
     type UdReevalPeriod = UdReevalPeriod;
     type UdReevalPeriodInBlocks = UdReevalPeriodInBlocks;
+    type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
 }
 
 // Build genesis storage according to the mock runtime.

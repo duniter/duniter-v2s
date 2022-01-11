@@ -24,6 +24,11 @@ parameter_types! {
     pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
+// Consensus
+parameter_types! {
+    pub const MaxAuthorities: u32 = 32;
+}
+
 // Balances
 frame_support::parameter_types! {
     pub const ExistentialDeposit: Balance = 500;
@@ -59,6 +64,14 @@ parameter_types! {
 parameter_types! {
     pub const SquareMoneyGrowthRate: Permill = Permill::from_parts(2_381_440); // 0.002_381_440 = 0.0488^2
     pub const UdCreationPeriod: BlockNumber = DAYS;
+    pub const UdFirstReeval: BlockNumber = 2 * DAYS;
     pub const UdReevalPeriod: Balance = 7;
     pub const UdReevalPeriodInBlocks: BlockNumber = 100800; // 86400 *7 / 6
+}
+
+// Multisig
+parameter_types! {
+    pub const DepositBase: Balance = 1000;
+    pub const DepositFactor: Balance = 10;
+    pub const MaxSignatories: u16 = 5;
 }

@@ -14,9 +14,34 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::AccountId;
+use crate::entities::{IdtyData, IdtyDid};
+use crate::{AccountId, BlockNumber, IdtyIndex};
 use frame_support::traits::Get;
 use sp_std::vec::Vec;
+
+pub struct IdtyDataProvider<Runtime, const IDTY_CREATE_PERIOD: BlockNumber>(
+    core::marker::PhantomData<Runtime>,
+);
+impl<Runtime, const IDTY_CREATE_PERIOD: BlockNumber>
+    pallet_identity::traits::ProvideIdtyData<Runtime>
+    for IdtyDataProvider<Runtime, IDTY_CREATE_PERIOD>
+where
+    Runtime: frame_system::Config<AccountId = AccountId, BlockNumber = BlockNumber>
+        + pallet_identity::Config<IdtyData = IdtyData, IdtyDid = IdtyDid, IdtyIndex = IdtyIndex>,
+{
+    fn provide_identity_data(
+        creator: IdtyIndex,
+        _idty_did: &IdtyDid,
+        _idty_owner_key: &AccountId,
+    ) -> IdtyData {
+        let block_number = frame_system::Pallet::<Runtime>::block_number();
+        let creator_idty_data = IdtyData {
+            can_create_on: block_number + IDTY_CREATE_PERIOD,
+        };
+        pallet_identity::Pallet::<Runtime>::set_idty_data(creator, creator_idty_data);
+        Default::default()
+    }
+}
 
 pub struct UdAccountsProvider<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime: pallet_ud_accounts_storage::Config> Get<u64> for UdAccountsProvider<Runtime> {

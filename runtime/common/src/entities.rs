@@ -16,12 +16,13 @@
 
 use crate::BlockNumber;
 use frame_support::pallet_prelude::*;
+use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug, TypeInfo)]
 pub enum IdtyRight {
     CreateIdty,
     LightCert,
@@ -41,10 +42,13 @@ impl pallet_identity::traits::IdtyRight for IdtyRight {
             //_ => false,
         }
     }
+    fn create_idty_right() -> Self {
+        Self::CreateIdty
+    }
 }
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct IdtyDid {
     pub hash: H256,
     pub planet: Planet,
@@ -86,13 +90,13 @@ impl Ord for IdtyDid {
 impl pallet_identity::traits::IdtyDid for IdtyDid {}
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct IdtyData {
     pub can_create_on: BlockNumber,
 }
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug, TypeInfo)]
 pub enum Planet {
     Earth,
 }
