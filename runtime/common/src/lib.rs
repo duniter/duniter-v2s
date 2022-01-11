@@ -60,3 +60,10 @@ pub type Index = u32;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = sp_runtime::MultiSignature;
+
+pub struct IdtyNameValidatorImpl;
+impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorImpl {
+    fn validate(idty_name: &pallet_identity::IdtyName) -> bool {
+        idty_name.0.len() <= 64
+    }
+}

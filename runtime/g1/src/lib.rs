@@ -27,8 +27,9 @@ mod parameters;
 pub use self::parameters::*;
 pub use common_runtime::{
     constants::*,
-    entities::{IdtyData, IdtyDid, IdtyRight, Planet},
-    AccountId, Address, Balance, BlockNumber, Hash, Header, IdtyIndex, Index, Signature,
+    entities::{IdtyData, IdtyRight},
+    AccountId, Address, Balance, BlockNumber, Hash, Header, IdtyIndex, IdtyNameValidatorImpl,
+    Index, Signature,
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_identity::{IdtyStatus, IdtyValue};

@@ -24,6 +24,12 @@ use serde::{Deserialize, Serialize};
 use sp_std::vec::Vec;
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
+#[derive(
+    Encode, Decode, Default, Clone, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug, TypeInfo,
+)]
+pub struct IdtyName(pub sp_std::vec::Vec<u8>);
+
+#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum IdtyStatus {
     Created,
@@ -43,10 +49,9 @@ pub struct IdtyValue<
     AccountId: Decode + Encode + TypeInfo,
     BlockNumber: Decode + Encode + TypeInfo,
     IdtyData: Decode + Encode + TypeInfo,
-    IdtyDid: Decode + Encode + TypeInfo,
     IdtyRight: Decode + Encode + TypeInfo,
 > {
-    pub did: IdtyDid,
+    pub name: IdtyName,
     pub expire_on: BlockNumber,
     pub owner_key: AccountId,
     pub removable_on: BlockNumber,
@@ -56,13 +61,12 @@ pub struct IdtyValue<
     pub data: IdtyData,
 }
 
-impl<AccountId, BlockNumber, IdtyData, IdtyDid, IdtyRight>
-    IdtyValue<AccountId, BlockNumber, IdtyData, IdtyDid, IdtyRight>
+impl<AccountId, BlockNumber, IdtyData, IdtyRight>
+    IdtyValue<AccountId, BlockNumber, IdtyData, IdtyRight>
 where
     AccountId: Clone + Decode + Encode + TypeInfo,
     BlockNumber: Decode + Encode + TypeInfo,
     IdtyData: Decode + Encode + TypeInfo,
-    IdtyDid: Decode + Encode + TypeInfo,
     IdtyRight: crate::traits::IdtyRight + Decode + Encode + TypeInfo,
 {
     pub fn get_right_key(&self, right: IdtyRight) -> Option<AccountId> {

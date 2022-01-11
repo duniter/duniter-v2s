@@ -39,24 +39,6 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 #[derive(
     Encode,
     Decode,
-    Default,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    RuntimeDebug,
-    Deserialize,
-    Serialize,
-    TypeInfo,
-)]
-pub struct IdtyDid(pub u64);
-impl pallet_identity::traits::IdtyDid for IdtyDid {}
-
-#[derive(
-    Encode,
-    Decode,
     Clone,
     Copy,
     PartialEq,
@@ -138,6 +120,13 @@ parameter_types! {
     pub const ValidationPeriod: u64 = 2;
 }
 
+pub struct IdtyNameValidatorTestImpl;
+impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
+    fn validate(idty_name: &pallet_identity::IdtyName) -> bool {
+        idty_name.0.len() == 1
+    }
+}
+
 impl pallet_identity::Config for Test {
     type ConfirmPeriod = ConfirmPeriod;
     type Event = Event;
@@ -146,7 +135,7 @@ impl pallet_identity::Config for Test {
     type EnsureIdtyCallAllowed = ();
     type IdtyData = ();
     type IdtyDataProvider = ();
-    type IdtyDid = IdtyDid;
+    type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = u64;
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
     type IdtyRight = IdtyRight;

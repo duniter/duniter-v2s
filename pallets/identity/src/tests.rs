@@ -14,10 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::mock::IdtyDid as Did;
 use crate::mock::IdtyRight as Right;
 use crate::mock::*;
-use crate::Error;
+use crate::{Error, IdtyName};
 use frame_support::assert_err;
 use frame_support::assert_ok;
 use frame_system::{EventRecord, Phase};
@@ -34,7 +33,7 @@ fn test_no_identity() {
 fn test_two_identities() {
     let identities = vec![
         crate::IdtyValue {
-            did: Did(0),
+            name: IdtyName(vec![0]),
             expire_on: 5,
             owner_key: 1,
             removable_on: 0,
@@ -44,7 +43,7 @@ fn test_two_identities() {
             data: (),
         },
         crate::IdtyValue {
-            did: Did(1),
+            name: IdtyName(vec![1]),
             expire_on: 5,
             owner_key: 2,
             removable_on: 0,
@@ -62,7 +61,7 @@ fn test_two_identities() {
         // We need to initialize at least one block before any call
         run_to_block(1);
 
-        // Add right Right1 for Did(0)
+        // Add right Right1 for IdtyName(vec![0])
         // Should succes and trigger the correct event
         assert_ok!(Identity::add_right(Origin::root(), 1, Right::Right1));
         let events = System::events();
@@ -71,12 +70,12 @@ fn test_two_identities() {
             events[0],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyAcquireRight(Did(0), Right::Right1)),
+                event: Event::Identity(crate::Event::IdtyAcquireRight(IdtyName(vec![0]), Right::Right1)),
                 topics: vec![],
             }
         );
-        // Add right Right2 for Did(0)
-        // Should fail because Did(0) already have this right
+        // Add right Right2 for IdtyName(vec![0])
+        // Should fail because IdtyName(vec![0]) already have this right
         assert_err!(
             Identity::add_right(Origin::root(), 1, Right::Right2),
             Error::<Test>::RightAlreadyAdded
@@ -84,7 +83,7 @@ fn test_two_identities() {
 
         run_to_block(3);
 
-        // Delete right Right1 for Did(1)
+        // Delete right Right1 for IdtyName(vec![1])
         // Should succes and trigger the correct event
         assert_ok!(Identity::del_right(Origin::root(), 2, Right::Right1));
         let events = System::events();
@@ -93,12 +92,12 @@ fn test_two_identities() {
             events[1],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyLostRight(Did(1), Right::Right1)),
+                event: Event::Identity(crate::Event::IdtyLostRight(IdtyName(vec![1]), Right::Right1)),
                 topics: vec![],
             }
         );
 
-        // The Did(1) identity has no more rights, the inactivity period must start to run
+        // The IdtyName(vec![1]) identity has no more rights, the inactivity period must start to run
         let idty2 = Identity::identity(2).expect("idty not found");
         assert!(idty2.rights.is_empty());
         assert_eq!(idty2.removable_on, 7);

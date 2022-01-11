@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::entities::{IdtyData, IdtyDid};
+use crate::entities::IdtyData;
 use crate::{AccountId, BlockNumber, IdtyIndex};
 use frame_support::traits::Get;
 use sp_std::vec::Vec;
@@ -27,11 +27,11 @@ impl<Runtime, const IDTY_CREATE_PERIOD: BlockNumber>
     for IdtyDataProvider<Runtime, IDTY_CREATE_PERIOD>
 where
     Runtime: frame_system::Config<AccountId = AccountId, BlockNumber = BlockNumber>
-        + pallet_identity::Config<IdtyData = IdtyData, IdtyDid = IdtyDid, IdtyIndex = IdtyIndex>,
+        + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>,
 {
     fn provide_identity_data(
         creator: IdtyIndex,
-        _idty_did: &IdtyDid,
+        _idty_name: &pallet_identity::IdtyName,
         _idty_owner_key: &AccountId,
     ) -> IdtyData {
         let block_number = frame_system::Pallet::<Runtime>::block_number();

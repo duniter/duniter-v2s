@@ -19,10 +19,7 @@ pub mod gdev;
 pub mod gtest;
 
 use common_runtime::IdtyIndex;
-use common_runtime::{
-    entities::{IdtyDid, Planet},
-    AccountId, Signature,
-};
+use common_runtime::{entities::IdtyName, AccountId, Signature};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::collections::{BTreeMap, BTreeSet};
@@ -65,12 +62,7 @@ fn clique_wot(initial_identities_len: usize) -> BTreeMap<IdtyIndex, BTreeSet<Idt
     certs_by_issuer
 }
 
-/// Create a fake did (for dev and testnet)
-fn did(u8_: u8) -> IdtyDid {
-    IdtyDid {
-        hash: sp_core::H256::repeat_byte(u8_),
-        planet: Planet::Earth,
-        latitude: 0,
-        longitude: 0,
-    }
+/// Create a fake IdtyName (for dev and testnet)
+fn idty_name(u8_: u8) -> IdtyName {
+    IdtyName(vec![u8_])
 }

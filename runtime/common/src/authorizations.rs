@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::entities::{IdtyData, IdtyDid, IdtyRight};
+use crate::entities::{IdtyData, IdtyRight};
 use crate::{BlockNumber, IdtyIndex};
 use frame_support::pallet_prelude::DispatchError;
 use frame_support::traits::EnsureOrigin;
@@ -28,7 +28,6 @@ impl<
         Runtime: frame_system::Config<BlockNumber = BlockNumber>
             + pallet_identity::Config<
                 IdtyData = IdtyData,
-                IdtyDid = IdtyDid,
                 IdtyIndex = IdtyIndex,
                 IdtyRight = IdtyRight,
             >,
@@ -39,7 +38,7 @@ impl<
     fn can_create_identity(
         origin: Runtime::Origin,
         creator: IdtyIndex,
-        _idty_did: &IdtyDid,
+        _idty_name: &pallet_identity::IdtyName,
         _idty_owner_key: &Runtime::AccountId,
     ) -> Result<(), DispatchError> {
         match origin.into() {

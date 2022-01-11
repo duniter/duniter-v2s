@@ -24,7 +24,7 @@ pub trait EnsureIdtyCallAllowed<T: Config> {
     fn can_create_identity(
         origin: T::Origin,
         creator: T::IdtyIndex,
-        idty_did: &T::IdtyDid,
+        idty_name: &IdtyName,
         idty_owner_key: &T::AccountId,
     ) -> Result<(), DispatchError>;
 }
@@ -33,7 +33,7 @@ impl<T: Config> EnsureIdtyCallAllowed<T> for () {
     fn can_create_identity(
         origin: T::Origin,
         _creator: T::IdtyIndex,
-        _idty_did: &T::IdtyDid,
+        _idty_name: &IdtyName,
         _idty_owner_key: &T::AccountId,
     ) -> Result<(), DispatchError> {
         match ensure_root(origin) {
@@ -46,7 +46,7 @@ impl<T: Config> EnsureIdtyCallAllowed<T> for () {
 pub trait ProvideIdtyData<T: Config> {
     fn provide_identity_data(
         creator: T::IdtyIndex,
-        idty_did: &T::IdtyDid,
+        idty_name: &IdtyName,
         idty_owner_key: &T::AccountId,
     ) -> T::IdtyData;
 }
@@ -57,22 +57,15 @@ where
 {
     fn provide_identity_data(
         _creator: T::IdtyIndex,
-        _idty_did: &T::IdtyDid,
+        _idty_name: &IdtyName,
         _idty_owner_key: &T::AccountId,
     ) -> T::IdtyData {
         Default::default()
     }
 }
 
-pub trait IdtyDid:
-    frame_support::Parameter
-    + frame_support::pallet_prelude::Member
-    + MaybeSerializeDeserialize
-    + Debug
-    + Default
-    + Copy
-    + Ord
-{
+pub trait IdtyNameValidator {
+    fn validate(idty_name: &IdtyName) -> bool;
 }
 
 pub trait IdtyRight:

@@ -15,10 +15,11 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
+use common_runtime::entities::IdtyName;
 use gdev_runtime::{
-    AccountId, BalancesConfig, GenesisConfig, GrandpaConfig, IdentityConfig, IdtyDid, IdtyRight,
-    IdtyValue, StrongCertConfig, SudoConfig, SystemConfig, UdAccountsStorageConfig,
-    UniversalDividendConfig, WASM_BINARY,
+    AccountId, BalancesConfig, GenesisConfig, GrandpaConfig, IdentityConfig, IdtyRight, IdtyValue,
+    StrongCertConfig, SudoConfig, SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig,
+    WASM_BINARY,
 };
 use maplit::btreemap;
 use sc_service::ChainType;
@@ -57,9 +58,9 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
                 vec![authority_keys_from_seed("Alice")],
                 // Inital identities
                 btreemap![
-                    did(1) => get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    did(2) => get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    did(3) => get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                    idty_name(1) => get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    idty_name(2) => get_account_id_from_seed::<sr25519::Public>("Bob"),
+                    idty_name(3) => get_account_id_from_seed::<sr25519::Public>("Charlie"),
                 ],
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -90,7 +91,7 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
 fn devnet_genesis(
     wasm_binary: &[u8],
     initial_authorities: Vec<(sp_consensus_aura::sr25519::AuthorityId, GrandpaId)>,
-    initial_identities: BTreeMap<IdtyDid, AccountId>,
+    initial_identities: BTreeMap<IdtyName, AccountId>,
     root_key: AccountId,
     _enable_println: bool,
 ) -> gdev_runtime::GenesisConfig {
@@ -119,8 +120,8 @@ fn devnet_genesis(
         identity: IdentityConfig {
             identities: initial_identities
                 .iter()
-                .map(|(did, account)| IdtyValue {
-                    did: *did,
+                .map(|(name, account)| IdtyValue {
+                    name: name.clone(),
                     expire_on: gdev_runtime::MaxInactivityPeriod::get(),
                     owner_key: account.clone(),
                     removable_on: 0,
