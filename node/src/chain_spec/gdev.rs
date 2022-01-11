@@ -101,11 +101,7 @@ fn devnet_genesis(
             code: wasm_binary.to_vec(),
         },
         balances: BalancesConfig {
-            balances: initial_identities
-                .values()
-                .cloned()
-                .map(|account_id| (account_id, 1_000))
-                .collect(),
+            balances: Default::default(),
         },
         grandpa: GrandpaConfig {
             authorities: initial_authorities
@@ -145,7 +141,7 @@ fn devnet_genesis(
         },
         universal_dividend: UniversalDividendConfig {
             first_ud: 1_000,
-            initial_monetary_mass: initial_identities.len() as u64 * 1_000,
+            initial_monetary_mass: 0,
         },
     }
 }

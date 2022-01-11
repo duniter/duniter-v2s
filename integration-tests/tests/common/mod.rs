@@ -14,15 +14,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
+#![allow(clippy::enum_variant_names)]
+
+pub mod balances;
+
 #[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
 pub mod node_runtime {}
 
 use serde_json::Value;
+use sp_keyring::AccountKeyring;
 use std::process::Command;
 use subxt::{ClientBuilder, DefaultConfig, DefaultExtra};
 
 pub type Api = node_runtime::RuntimeApi<DefaultConfig, DefaultExtra<DefaultConfig>>;
 pub type Client = subxt::Client<DefaultConfig>;
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+pub const SUDO_ACCOUNT: AccountKeyring = AccountKeyring::Alice;
 
 pub struct Process(std::process::Child);
 
@@ -67,10 +75,24 @@ pub async fn spawn_node() -> (Api, Client, Process) {
     (api, client, process)
 }
 
+/*pub async fn create_empty_block(client: &Client) -> Result<(), subxt::Error> {
+    // Create an empty block
+    let _: Value = client
+        .rpc()
+        .client
+        .request(
+            "engine_createBlock",
+            &[Value::Bool(true), Value::Bool(false), Value::Null],
+        )
+        .await?;
+
+    Ok(())
+}*/
+
 pub async fn create_block_with_extrinsic(
     client: &Client,
     extrinsic: subxt::UncheckedExtrinsic<DefaultConfig, DefaultExtra<DefaultConfig>>,
-) -> Result<subxt::TransactionEvents<DefaultConfig>, subxt::Error> {
+) -> Result<subxt::TransactionEvents<DefaultConfig>> {
     // Get a hash of the extrinsic (we'll need this later).
     use subxt::sp_runtime::traits::Hash as _;
     let ext_hash = <DefaultConfig as subxt::Config>::Hashing::hash_of(&extrinsic);
@@ -89,5 +111,10 @@ pub async fn create_block_with_extrinsic(
         .await?;
 
     // Get extrinsic events
-    watcher.wait_for_in_block().await?.fetch_events().await
+    watcher
+        .wait_for_in_block()
+        .await?
+        .fetch_events()
+        .await
+        .map_err(Into::into)
 }

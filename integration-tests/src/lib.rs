@@ -13,8 +13,3 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
-
-#[cfg(test)]
-mod balance_transfer;
-#[cfg(test)]
-pub mod common;

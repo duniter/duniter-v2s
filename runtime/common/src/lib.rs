@@ -64,6 +64,6 @@ pub type Signature = sp_runtime::MultiSignature;
 pub struct IdtyNameValidatorImpl;
 impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorImpl {
     fn validate(idty_name: &pallet_identity::IdtyName) -> bool {
-        idty_name.0.len() <= 64
+        idty_name.0.len() >= 3 && idty_name.0.len() <= 64
     }
 }

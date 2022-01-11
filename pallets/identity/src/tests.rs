@@ -70,7 +70,10 @@ fn test_two_identities() {
             events[0],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyAcquireRight(IdtyName(vec![0]), Right::Right1)),
+                event: Event::Identity(crate::Event::IdtyAcquireRight(
+                    IdtyName(vec![0]),
+                    Right::Right1
+                )),
                 topics: vec![],
             }
         );
@@ -92,7 +95,10 @@ fn test_two_identities() {
             events[1],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyLostRight(IdtyName(vec![1]), Right::Right1)),
+                event: Event::Identity(crate::Event::IdtyLostRight(
+                    IdtyName(vec![1]),
+                    Right::Right1
+                )),
                 topics: vec![],
             }
         );
