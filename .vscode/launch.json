@@ -7,11 +7,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in library 'lc-core'",
+      "name": "Debug unit tests in library 'duniter'",
       "cargo": {
-        "args": ["test", "--no-run", "--lib", "--package=lc-core"],
+        "args": ["test", "--no-run", "--lib", "--package=duniter"],
         "filter": {
-          "name": "lc-core",
+          "name": "duniter",
           "kind": "lib"
         }
       },
@@ -21,11 +21,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'lc-core'",
+      "name": "Debug executable 'duniter'",
       "cargo": {
         "args": ["build"],
         "filter": {
-          "name": "lc-core",
+          "name": "duniter",
           "kind": "bin"
         }
       },
@@ -35,11 +35,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in executable 'lc-core'",
+      "name": "Debug unit tests in executable 'duniter'",
       "cargo": {
-        "args": ["test", "--no-run", "--bin=lc-core", "--package=lc-core"],
+        "args": ["test", "--no-run", "--bin=duniter", "--package=duniter"],
         "filter": {
-          "name": "lc-core",
+          "name": "duniter",
           "kind": "bin"
         }
       },

@@ -23,7 +23,7 @@ use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
-        "Substrate Node".into()
+        "Duniter".into()
     }
 
     fn impl_version() -> String {

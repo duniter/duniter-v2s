@@ -6,7 +6,7 @@ homepage = 'https://substrate.dev'
 license = 'AGPL-3.0'
 name = 'pallet-identity'
 readme = 'README.md'
-repository = 'https://git.duniter.org/nodes/rust/lc-core-substrate'
+repository = 'https://git.duniter.org/nodes/rust/duniter-substrate'
 version = '3.0.0'
 
 [features]

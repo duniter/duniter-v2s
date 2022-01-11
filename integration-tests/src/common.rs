@@ -37,7 +37,7 @@ pub async fn spawn_node() -> (Api, Client, Process) {
     let rpc_port = portpicker::pick_unused_port().expect("No ports free");
     let ws_port = portpicker::pick_unused_port().expect("No ports free");
     let process = Process(
-        Command::new("../target/debug/lc-core")
+        Command::new("../target/debug/duniter")
             .args([
                 "--execution=Native",
                 "--no-telemetry",

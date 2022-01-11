@@ -1,6 +1,6 @@
-# Libre currency based on Substrate framework
+# Duniter v2s
 
-A FRAME-based [Substrate](https://www.substrate.io/) libre currency implementation.
+A rewriting of duniter based on [Substrate](https://www.substrate.io/) framework.
 
 ## Setup
 
@@ -13,7 +13,7 @@ NOTE: You must first follow the instructions in the [Setup] section (#setup).
 Use the following command to build the node without launching it:
 
 ```sh
-cargo build --release
+cargo build
 ```
 
 ## Run
@@ -21,7 +21,7 @@ cargo build --release
 Use Rust's native `cargo` command to build and launch the node:
 
 ```sh
-cargo run --release -- --dev --tmp
+cargo run -- --dev --tmp
 ```
 
 ## Contribute
@@ -34,7 +34,7 @@ Once the project has been built, the following command can be used to explore al
 subcommands:
 
 ```sh
-./target/release/lc-core -h
+./target/release/duniter -h
 ```
 
 ## Single-Node Development Chain
@@ -42,19 +42,19 @@ subcommands:
 This command will start the single-node development chain with persistent state:
 
 ```bash
-./target/release/lc-core --dev
+./target/debug/duniter --dev
 ```
 
 Purge the development chain's state:
 
 ```bash
-./target/release/lc-core purge-chain --dev
+./target/debug/duniter purge-chain --dev
 ```
 
 Start the development chain with detailed logging:
 
 ```bash
-RUST_LOG=debug RUST_BACKTRACE=1 ./target/release/lc-core -lruntime=debug --dev
+RUST_LOG=debug RUST_BACKTRACE=1 ./target/debug/duniter -lruntime=debug --dev
 ```
 
 ## Connect with Polkadot-JS Apps Front-end
@@ -74,15 +74,15 @@ If you want to see the multi-node consensus algorithm in action, refer to
 ### Purge previous lacal testnet
 
 ```
-./target/release/lc-core purge-chain --base-path /tmp/alice --chain local
-./target/release/lc-core purge-chain --base-path /tmp/bob --chain local
+./target/debug/duniter purge-chain --base-path /tmp/alice --chain local
+./target/debug/duniter purge-chain --base-path /tmp/bob --chain local
 
 ```
 
 ### Start Alice's node
 
 ```bash
-./target/release/lc-core \
+./target/debug/duniter \
   --base-path /tmp/alice \
   --chain local \
   --alice \
@@ -96,7 +96,7 @@ If you want to see the multi-node consensus algorithm in action, refer to
 ### Start Bob's node
 
 ```bash
-./target/release/lc-core \
+./target/debug/duniter \
   --base-path /tmp/bob \
   --chain local \
   --bob \
@@ -150,7 +150,7 @@ After the node has been [built](#build), refer to the embedded documentation to 
 capabilities and configuration parameters that it exposes:
 
 ```shell
-./target/release/lc-core --help
+./target/debug/duniter --help
 ```
 
 ### Runtime
@@ -210,15 +210,15 @@ Then run the following command to start a single node development chain.
 ```
 
 This command will firstly compile your code, and then start a local development network. You can
-also replace the default command (`cargo build --release && ./target/release/lc-core --dev --ws-external`)
+also replace the default command (`cargo build && ./target/debug/duniter --dev --ws-external`)
 by appending your own. A few useful ones are as follow.
 
 ```bash
-# Run Substrate node without re-compiling
-./scripts/docker_run.sh ./target/release/lc-core --dev --ws-external
+# Run duniter node without re-compiling
+./scripts/docker_run.sh ./target/debug/duniter --dev --ws-external
 
 # Purge the local dev chain
-./scripts/docker_run.sh ./target/release/lc-core purge-chain --dev
+./scripts/docker_run.sh ./target/debug/duniter purge-chain --dev
 
 # Check whether the code is compilable
 ./scripts/docker_run.sh cargo check

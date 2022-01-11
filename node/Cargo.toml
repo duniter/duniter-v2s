@@ -1,19 +1,19 @@
 [package]
 authors = ['Axiom-Team Developers <https://axiom-team.fr>']
 build = 'build.rs'
-description = 'A fresh FRAME-based Substrate node, ready for hacking.'
+description = 'Crypto-currency software (based on Substrate framework) to operate Ğ1 libre currency'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'AGPL-3.0'
-name = 'lc-core'
-repository = 'https://git.duniter.org/nodes/rust/lc-core-substrate'
+name = 'duniter'
+repository = 'https://git.duniter.org/nodes/rust/duniter-substrate'
 version = '3.0.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
 [[bin]]
-name = 'lc-core'
+name = 'duniter'
 
 [features]
 runtime-benchmarks = ['gdev-runtime/runtime-benchmarks']

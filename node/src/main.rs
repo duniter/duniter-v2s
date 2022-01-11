@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-//! lc-core CLI library.
+//! duniter CLI library.
 #![warn(missing_docs)]
 
 mod chain_spec;

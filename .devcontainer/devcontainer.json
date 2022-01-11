@@ -1,5 +1,5 @@
 {
-  "name": "Substrate Node template",
+  "name": "Duniter node",
   "context": "..",
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash",
@@ -10,16 +10,15 @@
     "bungcip.better-toml",
     "vadimcn.vscode-lldb"
   ],
-  "forwardPorts": [
-    3000,
-    9944
-  ],
+  "forwardPorts": [3000, 9944],
   "preCreateCommand": ["cargo build", "cargo check"],
-  "postStartCommand": "./target/debug/lc-core --dev --ws-external",
+  "postStartCommand": "./target/debug/duniter --dev --ws-external",
   "menuActions": [
-    {"id": "polkadotjs",
-     "label": "Open PolkadotJS Apps",
-     "type": "external-preview",
-     "args": ["https://polkadot.js.org/apps/?rpc=wss%3A%2F%2F/$HOST/wss"]}
+    {
+      "id": "polkadotjs",
+      "label": "Open PolkadotJS Apps",
+      "type": "external-preview",
+      "args": ["https://polkadot.js.org/apps/?rpc=wss%3A%2F%2F/$HOST/wss"]
+    }
   ]
 }

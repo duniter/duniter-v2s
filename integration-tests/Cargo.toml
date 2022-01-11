@@ -1,11 +1,11 @@
 [package]
 authors = ['Axiom-Team Developers <https://axiom-team.fr>']
-description = 'lc-core integration tests.'
+description = 'duniter integration tests.'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'AGPL-3.0'
-name = 'lc-core-integration-tests'
-repository = 'https://git.duniter.org/nodes/rust/lc-core-substrate'
+name = 'duniter-integration-tests'
+repository = 'https://git.duniter.org/nodes/rust/duniter-substrate'
 version = '3.0.0'
 
 [dev-dependencies]
