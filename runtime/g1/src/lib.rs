@@ -182,7 +182,7 @@ construct_runtime!(
 
         // Money creation
         UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage} = 40,
-        UniversalDividend: pallet_universal_dividend::{Pallet, Config<T>, Storage, Event<T>} = 41,
+        UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
 
         // Web Of Trust
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 50,
