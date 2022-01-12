@@ -42,6 +42,8 @@ tests:
     - if: '$CI_MERGE_REQUEST_ID ||$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^release/'
     - when: manual
   stage: tests
+  variables:
+    DUNITER_INTEGRATION_TESTS_SPAWN_NODE_DURATION: "10"
   script:
     - cargo build
     - cargo test

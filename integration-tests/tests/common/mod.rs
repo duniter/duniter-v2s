@@ -63,7 +63,14 @@ pub async fn spawn_node() -> (Api, Client, Process) {
             .spawn()
             .expect("failed to spawn node"),
     );
-    std::thread::sleep(std::time::Duration::from_secs(4));
+    let duration_secs = if let Ok(duration_string) =
+        std::env::var("DUNITER_INTEGRATION_TESTS_SPAWN_NODE_DURATION")
+    {
+        duration_string.parse().unwrap_or(4)
+    } else {
+        4
+    };
+    std::thread::sleep(std::time::Duration::from_secs(duration_secs));
 
     let client = ClientBuilder::new()
         .set_url(format!("ws://127.0.0.1:{}", ws_port))
