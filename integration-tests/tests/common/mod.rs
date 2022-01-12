@@ -82,7 +82,7 @@ pub async fn spawn_node() -> (Api, Client, Process) {
     (api, client, process)
 }
 
-/*pub async fn create_empty_block(client: &Client) -> Result<(), subxt::Error> {
+pub async fn create_empty_block(client: &Client) -> Result<()> {
     // Create an empty block
     let _: Value = client
         .rpc()
@@ -94,7 +94,7 @@ pub async fn spawn_node() -> (Api, Client, Process) {
         .await?;
 
     Ok(())
-}*/
+}
 
 pub async fn create_block_with_extrinsic(
     client: &Client,

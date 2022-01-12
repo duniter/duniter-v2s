@@ -83,6 +83,14 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
     Ok(())
 }
 
+#[when(regex = r"(\d+) blocks? later")]
+async fn n_blocks_later(world: &mut DuniterWorld, n: usize) -> Result<()> {
+    for _ in 0..n {
+        common::create_empty_block(&world.client).await?;
+    }
+    Ok(())
+}
+
 #[when(regex = r"([a-zA-Z]+) send (\d+) (ĞD|cĞD|UD|mUD) to ([a-zA-Z]+)")]
 async fn transfer(
     world: &mut DuniterWorld,
@@ -125,22 +133,33 @@ async fn should_have(world: &mut DuniterWorld, who: String, amount: u64) -> Resu
     Ok(())
 }
 
-#[then(regex = r"current UD amount should be (\d+).(\d+)")]
+#[then(regex = r"Current UD amount should be (\d+).(\d+)")]
 async fn current_ud_amount_should_be(
     world: &mut DuniterWorld,
     amount: u64,
     cents: u64,
 ) -> Result<()> {
-    // Parse inputs
-    let expected_amount = amount + (cents * 100);
-
-    let current_ud_amount = world
+    let expected = (amount * 100) + cents;
+    let actual = world
         .api
         .storage()
         .universal_dividend()
         .current_ud_storage(None)
         .await?;
-    assert_eq!(current_ud_amount, expected_amount);
+    assert_eq!(actual, expected);
+    Ok(())
+}
+
+#[then(regex = r"Monetary mass should be (\d+).(\d+)")]
+async fn monetary_mass_should_be(world: &mut DuniterWorld, amount: u64, cents: u64) -> Result<()> {
+    let expected = (amount * 100) + cents;
+    let actual = world
+        .api
+        .storage()
+        .universal_dividend()
+        .monetary_mass_storage(None)
+        .await?;
+    assert_eq!(actual, expected);
     Ok(())
 }
 

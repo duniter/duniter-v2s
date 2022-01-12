@@ -2,7 +2,7 @@
 
 ## cucumber functionnal tests
 
-We use [cucumber] to be able to describe test cases in human language.
+We use [cucumber] to be able to describe test scenarios in human language.
 
 Cucumber is a specification for running tests in a [BDD] (behavior-driven development) style
 workflow.
@@ -22,7 +22,7 @@ Feature: Balance transfer
 
 ### create a new functional test
 
-To create a new test case, simply create a new file with a name of your choice in the `/features`
+To create a new test scenario, simply create a new file with a name of your choice in the `/features`
 folder and give it the extension `.feature`.
 
 Read in the sections below which users are available and which operations you can write.
@@ -91,6 +91,13 @@ List of possible actions:
     Usage: `Current UD amount should be {amount}.{cents} ĞD`
 
     Example: `Current UD amount should be 10.00 ĞD`
+
+
+-  Check the monetary mass
+
+    Usage: `Monetary mass should be {amount}.{cents} ĞD`
+
+    Example: `Monetary mass should be 30.00 ĞD`
 
 ### Contribute to the code that runs the tests
 
