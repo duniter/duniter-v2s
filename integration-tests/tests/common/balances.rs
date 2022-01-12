@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use super::*;
 use super::node_runtime::runtime_types::gdev_runtime;
 use super::node_runtime::runtime_types::pallet_balances;
+use super::*;
 use sp_keyring::AccountKeyring;
-use subxt::{sp_runtime::MultiAddress,PairSigner};
+use subxt::{sp_runtime::MultiAddress, PairSigner};
 
 pub async fn set_balance(
     api: &Api,
@@ -26,10 +26,9 @@ pub async fn set_balance(
     who: AccountKeyring,
     amount: u64,
 ) -> Result<()> {
-	let _events = create_block_with_extrinsic(
+    let _events = create_block_with_extrinsic(
         &client,
-        api
-            .tx()
+        api.tx()
             .sudo()
             .sudo(gdev_runtime::Call::Balances(
                 pallet_balances::pallet::Call::set_balance {
@@ -80,8 +79,7 @@ pub async fn transfer_all(
 
     let _events = create_block_with_extrinsic(
         &client,
-        api
-            .tx()
+        api.tx()
             .balances()
             .transfer_all(to.clone().into(), false)
             .create_signed(&from, ())

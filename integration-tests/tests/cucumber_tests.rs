@@ -52,45 +52,55 @@ impl World for DuniterWorld {
 }
 
 fn parse_amount(amount: u64, unit: &str) -> (u64, bool) {
-	match unit {
-		"ĞD" => (amount * 100, false),
-		"cĞD" => (amount, false),
-		"UD" => (amount * 1_000, true),
-		"mUD" => (amount, true),
-		_ => unreachable!(),
-	}
+    match unit {
+        "ĞD" => (amount * 100, false),
+        "cĞD" => (amount, false),
+        "UD" => (amount * 1_000, true),
+        "mUD" => (amount, true),
+        _ => unreachable!(),
+    }
 }
 
 #[given(regex = r"([a-zA-Z]+) have (\d+) (ĞD|cĞD|UD|mUD)")]
 async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: String) -> Result<()> {
     // Parse inputs
-    let who = AccountKeyring::from_str(&who)
-        .expect("unknown to");
-	let (mut amount, is_ud) = parse_amount(amount, &unit);
+    let who = AccountKeyring::from_str(&who).expect("unknown to");
+    let (mut amount, is_ud) = parse_amount(amount, &unit);
 
-	if is_ud {
-		let current_ud_amount = world.api.storage().universal_dividend().current_ud_storage(None).await?;
-		amount = (amount * current_ud_amount) / 1_000;
-	}
+    if is_ud {
+        let current_ud_amount = world
+            .api
+            .storage()
+            .universal_dividend()
+            .current_ud_storage(None)
+            .await?;
+        amount = (amount * current_ud_amount) / 1_000;
+    }
 
     // Create {amount} ĞD for {who}
-	common::balances::set_balance(&world.api, &world.client, who, amount).await?;
+    common::balances::set_balance(&world.api, &world.client, who, amount).await?;
 
     Ok(())
 }
 
 #[when(regex = r"([a-zA-Z]+) send (\d+) (ĞD|cĞD|UD|mUD) to ([a-zA-Z]+)")]
-async fn transfer(world: &mut DuniterWorld, from: String, amount: u64, unit: String, to: String) -> Result<()> {
+async fn transfer(
+    world: &mut DuniterWorld,
+    from: String,
+    amount: u64,
+    unit: String,
+    to: String,
+) -> Result<()> {
     // Parse inputs
     let from = AccountKeyring::from_str(&from).expect("unknown from");
     let to = AccountKeyring::from_str(&to).expect("unknown to");
-	let (amount, is_ud) = parse_amount(amount, &unit);
+    let (amount, is_ud) = parse_amount(amount, &unit);
 
-	if is_ud {
-		common::balances::transfer_ud(&world.api, &world.client, from, amount, to).await
-	} else {
-		common::balances::transfer(&world.api, &world.client, from, amount, to).await
-	}
+    if is_ud {
+        common::balances::transfer_ud(&world.api, &world.client, from, amount, to).await
+    } else {
+        common::balances::transfer(&world.api, &world.client, from, amount, to).await
+    }
 }
 
 #[when(regex = r"([a-zA-Z]+) sends all (?:his|her) (?:ĞDs?|DUs?) to ([a-zA-Z]+)")]
@@ -99,7 +109,7 @@ async fn send_all_to(world: &mut DuniterWorld, from: String, to: String) -> Resu
     let from = AccountKeyring::from_str(&from).expect("unknown from");
     let to = AccountKeyring::from_str(&to).expect("unknown to");
 
-	common::balances::transfer_all(&world.api, &world.client, from, to).await
+    common::balances::transfer_all(&world.api, &world.client, from, to).await
 }
 
 #[then(regex = r"([a-zA-Z]+) should have (\d+) ĞD")]
@@ -116,11 +126,20 @@ async fn should_have(world: &mut DuniterWorld, who: String, amount: u64) -> Resu
 }
 
 #[then(regex = r"current UD amount should be (\d+).(\d+)")]
-async fn current_ud_amount_should_be(world: &mut DuniterWorld, amount: u64, cents: u64) -> Result<()> {
+async fn current_ud_amount_should_be(
+    world: &mut DuniterWorld,
+    amount: u64,
+    cents: u64,
+) -> Result<()> {
     // Parse inputs
     let expected_amount = amount + (cents * 100);
 
-    let current_ud_amount = world.api.storage().universal_dividend().current_ud_storage(None).await?;
+    let current_ud_amount = world
+        .api
+        .storage()
+        .universal_dividend()
+        .current_ud_storage(None)
+        .await?;
     assert_eq!(current_ud_amount, expected_amount);
     Ok(())
 }
