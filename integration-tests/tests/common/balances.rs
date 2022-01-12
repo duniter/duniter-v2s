@@ -27,7 +27,7 @@ pub async fn set_balance(
     amount: u64,
 ) -> Result<()> {
     let _events = create_block_with_extrinsic(
-        &client,
+        client,
         api.tx()
             .sudo()
             .sudo(gdev_runtime::Call::Balances(
@@ -78,7 +78,7 @@ pub async fn transfer_all(
     let to = to.to_account_id();
 
     let _events = create_block_with_extrinsic(
-        &client,
+        client,
         api.tx()
             .balances()
             .transfer_all(to.clone().into(), false)
