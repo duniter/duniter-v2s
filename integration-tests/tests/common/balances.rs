@@ -15,8 +15,36 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
+use super::node_runtime::runtime_types::gdev_runtime;
+use super::node_runtime::runtime_types::pallet_balances;
 use sp_keyring::AccountKeyring;
-use subxt::PairSigner;
+use subxt::{sp_runtime::MultiAddress,PairSigner};
+
+pub async fn set_balance(
+    api: &Api,
+    client: &Client,
+    who: AccountKeyring,
+    amount: u64,
+) -> Result<()> {
+	let _events = create_block_with_extrinsic(
+        &client,
+        api
+            .tx()
+            .sudo()
+            .sudo(gdev_runtime::Call::Balances(
+                pallet_balances::pallet::Call::set_balance {
+                    who: MultiAddress::Id(who.to_account_id()),
+                    new_free: amount,
+                    new_reserved: 0,
+                },
+            ))
+            .create_signed(&PairSigner::new(SUDO_ACCOUNT.pair()), ())
+            .await?,
+    )
+    .await?;
+
+    Ok(())
+}
 
 pub async fn transfer(
     api: &Api,
@@ -33,6 +61,52 @@ pub async fn transfer(
         api.tx()
             .balances()
             .transfer(to.clone().into(), amount)
+            .create_signed(&from, ())
+            .await?,
+    )
+    .await?;
+
+    Ok(())
+}
+
+pub async fn transfer_all(
+    api: &Api,
+    client: &Client,
+    from: AccountKeyring,
+    to: AccountKeyring,
+) -> Result<()> {
+    let from = PairSigner::new(from.pair());
+    let to = to.to_account_id();
+
+    let _events = create_block_with_extrinsic(
+        &client,
+        api
+            .tx()
+            .balances()
+            .transfer_all(to.clone().into(), false)
+            .create_signed(&from, ())
+            .await?,
+    )
+    .await?;
+
+    Ok(())
+}
+
+pub async fn transfer_ud(
+    api: &Api,
+    client: &Client,
+    from: AccountKeyring,
+    amount: u64,
+    to: AccountKeyring,
+) -> Result<()> {
+    let from = PairSigner::new(from.pair());
+    let to = to.to_account_id();
+
+    let _events = create_block_with_extrinsic(
+        client,
+        api.tx()
+            .universal_dividend()
+            .transfer_ud(to.clone().into(), amount)
             .create_signed(&from, ())
             .await?,
     )
