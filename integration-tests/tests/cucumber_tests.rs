@@ -168,7 +168,7 @@ async fn main() {
     //env_logger::init();
 
     DuniterWorld::cucumber()
-        .fail_on_skipped()
+        //.fail_on_skipped()
         .max_concurrent_scenarios(4)
         .run("features")
         .await;

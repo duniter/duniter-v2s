@@ -27,14 +27,22 @@ folder and give it the extension `.feature`.
 
 Read in the sections below which users are available and which operations you can write.
 
-If you want to write things that are not yet interpreted, consider adding the `@allow.skipped` tag above your script:
+If you want to write things that are not yet interpreted, make sure you standardize as much as
+possible the way you write actions and assertions,  in order to facilitate their future technical
+interpretation.
+
+Feel free to add comments to explain your scenario:
 
 ```gherkin
 Feature: My awesome feature
 
-  @allow.skipped
   Scenario: If something like this happens, then we should observe that
     Given Something
+     """
+      This is a comment, you can write whatever you want here, this part of the text will not be
+      interpreted, but it allows you to explain your scenario so that the developers interpret
+      it correctly.
+      """
     When Something's happening
     Then We should observe that
 ```
