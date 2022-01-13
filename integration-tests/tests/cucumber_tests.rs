@@ -148,5 +148,8 @@ async fn current_ud_amount_should_be(
 async fn main() {
     //env_logger::init();
 
-    DuniterWorld::run("features").await
+    DuniterWorld::cucumber()
+		.fail_on_skipped()
+		.max_concurrent_scenarios(4)
+		.run("features").await;
 }

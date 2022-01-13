@@ -27,7 +27,17 @@ folder and give it the extension `.feature`.
 
 Read in the sections below which users are available and which operations you can write.
 
- [Cucumber Rust Book]
+If you want to write things that are not yet interpreted, consider adding the `@allow.skipped` tag above your script:
+
+```gherkin
+Feature: My awesome feature
+
+  @allow.skipped
+  Scenario: If something like this happens, then we should observe that
+    Given Something
+    When Something's happening
+    Then We should observe that
+```
 
 ### Test users
 
