@@ -66,7 +66,7 @@ impl SubstrateCli for Cli {
 
                 if starts_with("g1") {
                     Box::new(chain_spec::g1::ChainSpec::from_json_file(path)?)
-                } else if starts_with("gtest") {
+                } else if starts_with("gdem") || starts_with("gtest") {
                     Box::new(chain_spec::gtest::ChainSpec::from_json_file(path)?)
                 } else if starts_with("gdev") {
                     Box::new(chain_spec::gdev::ChainSpec::from_json_file(path)?)

@@ -114,7 +114,7 @@ impl IdentifyVariant for Box<dyn sc_chain_spec::ChainSpec> {
     }
 
     fn is_test(&self) -> bool {
-        self.id().starts_with("gtest")
+        self.id().starts_with("gdem") || self.id().starts_with("gtest")
     }
 
     fn is_dev(&self) -> bool {
