@@ -22,7 +22,7 @@ use common_runtime::IdtyIndex;
 use common_runtime::{entities::IdtyName, AccountId, Signature};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 pub type AccountPublic = <Signature as Verify>::Signer;
 
@@ -49,13 +49,22 @@ where
     AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
-fn clique_wot(initial_identities_len: usize) -> BTreeMap<IdtyIndex, BTreeSet<IdtyIndex>> {
+fn clique_wot(
+    initial_identities_len: usize,
+    cert_validity_period: common_runtime::BlockNumber,
+) -> BTreeMap<IdtyIndex, BTreeMap<IdtyIndex, common_runtime::BlockNumber>> {
     let mut certs_by_issuer = BTreeMap::new();
     for i in 1..=initial_identities_len {
         certs_by_issuer.insert(
             i as IdtyIndex,
             (1..=initial_identities_len)
-                .filter_map(|j| if i != j { Some(j as IdtyIndex) } else { None })
+                .filter_map(|j| {
+                    if i != j {
+                        Some((j as IdtyIndex, cert_validity_period))
+                    } else {
+                        None
+                    }
+                })
                 .collect(),
         );
     }

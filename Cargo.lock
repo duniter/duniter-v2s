@@ -1403,6 +1403,7 @@ dependencies = [
  "jsonrpc-core",
  "log",
  "maplit",
+ "pallet-certification",
  "pallet-grandpa",
  "pallet-transaction-payment-rpc",
  "pallet-transaction-payment-rpc-runtime-api",

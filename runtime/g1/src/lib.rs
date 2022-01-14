@@ -22,7 +22,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-mod parameters;
+pub mod parameters;
 
 pub use self::parameters::*;
 pub use common_runtime::{

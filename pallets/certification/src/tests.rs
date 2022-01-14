@@ -14,11 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
+use crate::mock::Event as RuntimeEvent;
 use crate::mock::*;
-use crate::Error;
+use crate::{Error, Event};
 use frame_support::assert_ok;
 //use frame_system::{EventRecord, Phase};
-use maplit::{btreemap, btreeset};
+use maplit::btreemap;
 use sp_std::collections::btree_map::BTreeMap;
 
 #[test]
@@ -36,9 +37,83 @@ fn test_must_receive_cert_before_can_issue() {
 }
 
 #[test]
+fn test_genesis_build() {
+    new_test_ext(DefaultCertificationConfig {
+        certs_by_issuer: btreemap![
+            0 => btreemap![
+                1 => 10,
+                2 => 5,
+            ],
+            1 => btreemap![
+                0 => 7,
+                2 => 4,
+            ],
+            2 => btreemap![
+                0 => 9,
+                1 => 3,
+            ],
+        ],
+        phantom: core::marker::PhantomData,
+    })
+    .execute_with(|| {
+        run_to_block(1);
+        // Verify state of idty 0
+        assert_eq!(
+            DefaultCertification::idty_cert_meta(0),
+            Some(crate::IdtyCertMeta {
+                issued_count: 2,
+                next_issuable_on: 2,
+                received_count: 2,
+            })
+        );
+        // Verify state of idty 1
+        assert_eq!(
+            DefaultCertification::idty_cert_meta(1),
+            Some(crate::IdtyCertMeta {
+                issued_count: 2,
+                next_issuable_on: 0,
+                received_count: 2,
+            })
+        );
+        // Verify state of idty 2
+        assert_eq!(
+            DefaultCertification::idty_cert_meta(2),
+            Some(crate::IdtyCertMeta {
+                issued_count: 2,
+                next_issuable_on: 1,
+                received_count: 2,
+            })
+        );
+        // Cert 2->1 must be removable at block #3
+        assert_eq!(
+            DefaultCertification::certs_removable_on(3),
+            Some(vec![(2, 1)]),
+        );
+        // Cert 2->0 cannot be renewed before #5
+        assert_eq!(
+            DefaultCertification::add_cert(Origin::root(), 2, 0),
+            Err(Error::<Test, _>::NotRespectRenewablePeriod.into())
+        );
+
+        run_to_block(3);
+        // Cert 2->1 must have expired
+        assert_eq!(
+            System::events()[0].event,
+            RuntimeEvent::DefaultCertification(Event::RemovedCert {
+                issuer: 2,
+                issuer_issued_count: 1,
+                receiver: 1,
+                receiver_received_count: 1,
+                expiration: true,
+            },)
+        );
+    });
+}
+
+#[test]
 fn test_cert_period() {
     new_test_ext(DefaultCertificationConfig {
-        certs_by_issuer: btreemap![0 => btreeset![1]],
+        certs_by_issuer: btreemap![0 => btreemap![1 => 10]],
         phantom: core::marker::PhantomData,
     })
     .execute_with(|| {
@@ -61,7 +136,7 @@ fn test_cert_period() {
 #[test]
 fn test_renewable_period() {
     new_test_ext(DefaultCertificationConfig {
-        certs_by_issuer: btreemap![0 => btreeset![1]],
+        certs_by_issuer: btreemap![0 => btreemap![1 => 10]],
         phantom: core::marker::PhantomData,
     })
     .execute_with(|| {

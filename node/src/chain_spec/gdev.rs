@@ -133,7 +133,10 @@ fn devnet_genesis(
                 .collect(),
         },
         strong_cert: StrongCertConfig {
-            certs_by_issuer: clique_wot(initial_identities.len()),
+            certs_by_issuer: clique_wot(
+                initial_identities.len(),
+                gdev_runtime::parameters::ValidityPeriod::get(),
+            ),
             phantom: std::marker::PhantomData,
         },
         ud_accounts_storage: UdAccountsStorageConfig {

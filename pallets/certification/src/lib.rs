@@ -39,7 +39,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
+    use sp_std::collections::btree_map::BTreeMap;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -87,7 +87,7 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
-        pub certs_by_issuer: BTreeMap<T::IdtyIndex, BTreeSet<T::IdtyIndex>>,
+        pub certs_by_issuer: BTreeMap<T::IdtyIndex, BTreeMap<T::IdtyIndex, T::BlockNumber>>,
         pub phantom: PhantomData<I>,
     }
 
@@ -109,7 +109,7 @@ pub mod pallet {
             let mut certs_by_receiver = BTreeMap::<T::IdtyIndex, Vec<T::IdtyIndex>>::new();
             for (issuer, receivers) in &self.certs_by_issuer {
                 assert!(
-                    !receivers.contains(issuer),
+                    !receivers.contains_key(issuer),
                     "Identity cannot certify it-self."
                 );
                 assert!(
@@ -122,11 +122,11 @@ pub mod pallet {
                     *issuer,
                     IdtyCertMeta {
                         issued_count: receivers.len() as u8,
-                        next_issuable_on: T::CertPeriod::get(),
+                        next_issuable_on: sp_runtime::traits::Zero::zero(),
                         received_count: 0,
                     },
                 );
-                for receiver in receivers {
+                for receiver in receivers.keys() {
                     certs_by_receiver
                         .entry(*receiver)
                         .or_default()
@@ -142,26 +142,47 @@ pub mod pallet {
                 issuers.sort();
                 <StorageCertsByReceiver<T, I>>::insert(receiver, issuers);
             }
-            // Write StorageIdtyCertMeta
-            for (issuer, cert_meta) in cert_meta_by_issuer {
-                <StorageIdtyCertMeta<T, I>>::insert(issuer, cert_meta);
-            }
-            // Write StorageCertsByIssuer && StorageCertsRemovableOn
-            let mut all_couples = Vec::new();
+            // Write StorageCertsByIssuer
+            let mut certs_removable_on =
+                BTreeMap::<T::BlockNumber, Vec<(T::IdtyIndex, T::IdtyIndex)>>::new();
             for (issuer, receivers) in &self.certs_by_issuer {
-                for receiver in receivers {
-                    all_couples.push((*issuer, *receiver));
+                for (receiver, removable_on) in receivers {
+                    certs_removable_on
+                        .entry(*removable_on)
+                        .or_default()
+                        .push((*issuer, *receiver));
+
+                    use sp_runtime::traits::Saturating as _;
+                    let issuer_next_issuable_on = removable_on
+                        .saturating_add(T::CertPeriod::get())
+                        .saturating_sub(T::ValidityPeriod::get());
+                    if let Some(cert_meta) = cert_meta_by_issuer.get_mut(issuer) {
+                        if cert_meta.next_issuable_on < issuer_next_issuable_on {
+                            cert_meta.next_issuable_on = issuer_next_issuable_on;
+                        }
+                    }
+                    let renewable_on = removable_on.saturating_sub(
+                        T::ValidityPeriod::get().saturating_sub(T::CertRenewablePeriod::get()),
+                    );
+
                     <StorageCertsByIssuer<T, I>>::insert(
                         issuer,
                         receiver,
                         CertValue {
-                            renewable_on: T::CertRenewablePeriod::get(),
-                            removable_on: T::ValidityPeriod::get(),
+                            renewable_on,
+                            removable_on: *removable_on,
                         },
                     );
                 }
             }
-            <StorageCertsRemovableOn<T, I>>::insert(T::ValidityPeriod::get(), all_couples);
+            // Write StorageIdtyCertMeta
+            for (issuer, cert_meta) in cert_meta_by_issuer {
+                <StorageIdtyCertMeta<T, I>>::insert(issuer, cert_meta);
+            }
+            // Write storage StorageCertsRemovableOn
+            for (removable_on, certs) in certs_removable_on {
+                <StorageCertsRemovableOn<T, I>>::insert(removable_on, certs);
+            }
         }
     }
 
