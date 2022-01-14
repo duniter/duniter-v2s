@@ -48,6 +48,12 @@ build_debug:
   artifacts:
     paths:
       - build/
+  cache:
+    - key:
+        files:
+          - Cargo.lock
+      paths:
+        - target/debug
 
 build_release:
   extends: .env
