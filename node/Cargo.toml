@@ -16,7 +16,18 @@ targets = ['x86_64-unknown-linux-gnu']
 name = 'duniter'
 
 [features]
-runtime-benchmarks = ['gdev-runtime/runtime-benchmarks']
+default = ["gdev"]
+g1 = ["g1-runtime"]
+gdev = ["gdev-runtime"]
+gtest = ["gtest-runtime"]
+runtime-benchmarks = [
+	'g1-runtime',
+	'g1-runtime/runtime-benchmarks',
+	'gdev-runtime',
+	'gdev-runtime/runtime-benchmarks',
+	'gtest-runtime',
+	'gtest-runtime/runtime-benchmarks',
+]
 
 [build-dependencies]
 substrate-build-script-utils = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-01' }
@@ -28,9 +39,9 @@ sp-keyring = { git = "https://github.com/librelois/substrate.git", branch = "dun
 
 # local dependencies
 common-runtime = { path = '../runtime/common' }
-g1-runtime = { path = '../runtime/g1' }
-gdev-runtime = { path = '../runtime/gdev' }
-gtest-runtime = { path = '../runtime/gtest' }
+g1-runtime = { path = '../runtime/g1', optional = true }
+gdev-runtime = { path = '../runtime/gdev', optional = true }
+gtest-runtime = { path = '../runtime/gtest', optional = true }
 pallet-certification = { path = '../pallets/certification' }
 
 # crates.io dependencies

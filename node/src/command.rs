@@ -16,9 +16,14 @@
 // limitations under the License.
 
 use crate::cli::{Cli, Subcommand};
-use crate::service::{G1Executor, GDevExecutor, GTestExecutor, IdentifyVariant};
+#[cfg(feature = "g1")]
+use crate::service::G1Executor;
+#[cfg(feature = "gdev")]
+use crate::service::GDevExecutor;
+#[cfg(feature = "gtest")]
+use crate::service::GTestExecutor;
+use crate::service::IdentifyVariant;
 use crate::{chain_spec, service};
-use gdev_runtime::Block;
 use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 
 impl SubstrateCli for Cli {
@@ -48,9 +53,13 @@ impl SubstrateCli for Cli {
 
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         Ok(match id {
+            #[cfg(feature = "gdev")]
             "dev" | "gdev" => Box::new(chain_spec::gdev::development_chain_spec()?),
+            #[cfg(feature = "gtest")]
             "gtest_dev" => Box::new(chain_spec::gtest::development_chain_spec()?),
+            #[cfg(feature = "gtest")]
             "local" | "gtest_local" => Box::new(chain_spec::gtest::local_testnet_config(2)?),
+            #[cfg(feature = "gtest")]
             "local4" | "gtest_local4" => Box::new(chain_spec::gtest::local_testnet_config(4)?),
             // Specs provided as json specify which runtime to use in their file name. For example,
             // `g1-custom.json` uses the g1 runtime.
@@ -65,28 +74,48 @@ impl SubstrateCli for Cli {
                         .unwrap_or(false)
                 };
 
-                if starts_with("g1") {
-                    Box::new(chain_spec::g1::ChainSpec::from_json_file(path)?)
+                enum RuntimeType {
+                    G1,
+                    GDev,
+                    GTest,
+                }
+
+                let runtime_type = if starts_with("g1") {
+                    RuntimeType::G1
                 } else if starts_with("gdem") || starts_with("gtest") {
-                    Box::new(chain_spec::gtest::ChainSpec::from_json_file(path)?)
+                    RuntimeType::GDev
                 } else if starts_with("gdev") {
-                    Box::new(chain_spec::gdev::ChainSpec::from_json_file(path)?)
+                    RuntimeType::GTest
                 } else {
                     panic!("unknown runtime")
+                };
+
+                match runtime_type {
+                    #[cfg(feature = "g1")]
+                    RuntimeType::G1 => Box::new(chain_spec::g1::ChainSpec::from_json_file(path)?),
+                    #[cfg(feature = "gdev")]
+                    RuntimeType::GDev => {
+                        Box::new(chain_spec::gdev::ChainSpec::from_json_file(path)?)
+                    }
+                    #[cfg(feature = "gtest")]
+                    RuntimeType::GTest => {
+                        Box::new(chain_spec::gtest::ChainSpec::from_json_file(path)?)
+                    }
+                    _ => panic!("unknown runtime"),
                 }
             }
         })
     }
 
     fn native_runtime_version(spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        if spec.is_main() {
-            todo!() //return &g1_runtime::VERSION;
-        } else if spec.is_test() {
-            &gtest_runtime::VERSION
-        } else if spec.is_dev() {
-            &gdev_runtime::VERSION
-        } else {
-            panic!("unknown runtime")
+        match spec {
+            #[cfg(feature = "g1")]
+            spec if spec.is_main() => &g1_runtime::VERSION,
+            #[cfg(feature = "gtest")]
+            spec if spec.is_test() => &gtest_runtime::VERSION,
+            #[cfg(feature = "gdev")]
+            spec if spec.is_dev() => &gdev_runtime::VERSION,
+            _ => panic!("unknown runtime"),
         }
     }
 }
@@ -101,23 +130,23 @@ pub fn run() -> sc_cli::Result<()> {
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| {
                 if cmd.shared_params.dev {
-                    if config.chain_spec.is_main() {
-                        cmd.run(
+                    match &config.chain_spec {
+                        #[cfg(feature = "g1")]
+                        chain_spec if chain_spec.is_main() => cmd.run(
                             Box::new(chain_spec::g1::development_chain_spec()?),
                             config.network,
-                        )
-                    } else if config.chain_spec.is_test() {
-                        cmd.run(
+                        ),
+                        #[cfg(feature = "gtest")]
+                        chain_spec if chain_spec.is_test() => cmd.run(
                             Box::new(chain_spec::gtest::development_chain_spec()?),
                             config.network,
-                        )
-                    } else if config.chain_spec.is_dev() {
-                        cmd.run(
+                        ),
+                        #[cfg(feature = "gdev")]
+                        chain_spec if chain_spec.is_dev() => cmd.run(
                             Box::new(chain_spec::gdev::development_chain_spec()?),
                             config.network,
-                        )
-                    } else {
-                        panic!("unknown runtime")
+                        ),
+                        _ => panic!("unknown runtime"),
                     }
                 } else {
                     cmd.run(config.chain_spec, config.network)
@@ -168,14 +197,18 @@ pub fn run() -> sc_cli::Result<()> {
                 let runner = cli.create_runner(cmd)?;
                 let chain_spec = &runner.config().chain_spec;
 
-                if chain_spec.is_main() {
-                    runner.sync_run(|config| cmd.run::<Block, G1Executor>(config))
-                } else if chain_spec.is_test() {
-                    runner.sync_run(|config| cmd.run::<Block, GTestExecutor>(config))
-                } else if chain_spec.is_dev() {
-                    runner.sync_run(|config| cmd.run::<Block, GDevExecutor>(config))
-                } else {
-                    unreachable!()
+                match chain_spec {
+                    #[cfg(feature = "g1")]
+                    chain_spec if chain_spec.is_main() => {
+                        runner.sync_run(|config| cmd.run::<g1_runtime::Block, G1Executor>(config))
+                    }
+                    #[cfg(feature = "gtest")]
+                    chain_spec if chain_spec.is_test() => runner
+                        .sync_run(|config| cmd.run::<gtest_runtime::Block, GTestExecutor>(config)),
+                    #[cfg(feature = "gdev")]
+                    chain_spec if chain_spec.is_dev() => runner
+                        .sync_run(|config| cmd.run::<gdev_runtime::Block, GDevExecutor>(config)),
+                    _ => Err(sc_cli::Error::Application("unknown runtime".into())),
                 }
             } else {
                 Err("Benchmarking wasn't enabled when building the node. \
@@ -186,20 +219,26 @@ pub fn run() -> sc_cli::Result<()> {
         None => {
             let runner = cli.create_runner(&cli.run)?;
             runner.run_node_until_exit(|config| async move {
-                if config.chain_spec.is_main() {
-                    service::new_full::<gtest_runtime::RuntimeApi, G1Executor>(config, None)
+                match &config.chain_spec {
+                    #[cfg(feature = "g1")]
+                    chain_spec if chain_spec.is_main() => {
+                        service::new_full::<g1_runtime::RuntimeApi, G1Executor>(config, None)
+                            .map_err(sc_cli::Error::Service)
+                    }
+                    #[cfg(feature = "gtest")]
+                    chain_spec if chain_spec.is_test() => {
+                        service::new_full::<gtest_runtime::RuntimeApi, GTestExecutor>(config, None)
+                            .map_err(sc_cli::Error::Service)
+                    }
+                    #[cfg(feature = "gdev")]
+                    chain_spec if chain_spec.is_dev() => {
+                        service::new_full::<gdev_runtime::RuntimeApi, GDevExecutor>(
+                            config,
+                            Some(cli.sealing),
+                        )
                         .map_err(sc_cli::Error::Service)
-                } else if config.chain_spec.is_test() {
-                    service::new_full::<gtest_runtime::RuntimeApi, GTestExecutor>(config, None)
-                        .map_err(sc_cli::Error::Service)
-                } else if config.chain_spec.is_dev() {
-                    service::new_full::<gdev_runtime::RuntimeApi, GDevExecutor>(
-                        config,
-                        Some(cli.sealing),
-                    )
-                    .map_err(sc_cli::Error::Service)
-                } else {
-                    Err(sc_cli::Error::Application("unknown runtime".into()))
+                    }
+                    _ => Err(sc_cli::Error::Application("unknown runtime".into())),
                 }
             })
         }

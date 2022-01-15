@@ -14,8 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
+#[cfg(feature = "g1")]
 pub mod g1;
+#[cfg(feature = "gdev")]
 pub mod gdev;
+#[cfg(feature = "gtest")]
 pub mod gtest;
 
 use common_runtime::{AccountId, IdtyIndex, Signature};

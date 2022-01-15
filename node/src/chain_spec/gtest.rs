@@ -117,7 +117,7 @@ fn devnet_genesis(
         strong_cert: StrongCertConfig {
             certs_by_issuer: clique_wot(
                 initial_identities.len(),
-                gdev_runtime::parameters::ValidityPeriod::get(),
+                gtest_runtime::parameters::ValidityPeriod::get(),
             ),
         },
         ud_accounts_storage: UdAccountsStorageConfig {
@@ -310,7 +310,7 @@ fn testnet_genesis(
         strong_cert: StrongCertConfig {
             certs_by_issuer: clique_wot(
                 initial_identities.len(),
-                gdev_runtime::parameters::ValidityPeriod::get(),
+                gtest_runtime::parameters::ValidityPeriod::get(),
             ),
         },
         ud_accounts_storage: UdAccountsStorageConfig {

@@ -29,17 +29,22 @@ use std::sync::Arc;
 /// A client instance.
 #[derive(Clone)]
 pub enum Client {
+    #[cfg(feature = "g1")]
     G1(Arc<super::FullClient<g1_runtime::RuntimeApi, super::G1Executor>>),
+    #[cfg(feature = "gtest")]
     GTest(Arc<super::FullClient<gtest_runtime::RuntimeApi, super::GTestExecutor>>),
+    #[cfg(feature = "gdev")]
     GDev(Arc<super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>>),
 }
 
+#[cfg(feature = "g1")]
 impl From<Arc<super::FullClient<g1_runtime::RuntimeApi, super::G1Executor>>> for Client {
     fn from(client: Arc<super::FullClient<g1_runtime::RuntimeApi, super::G1Executor>>) -> Self {
         Self::G1(client)
     }
 }
 
+#[cfg(feature = "gtest")]
 impl From<Arc<super::FullClient<gtest_runtime::RuntimeApi, super::GTestExecutor>>> for Client {
     fn from(
         client: Arc<super::FullClient<gtest_runtime::RuntimeApi, super::GTestExecutor>>,
@@ -48,6 +53,7 @@ impl From<Arc<super::FullClient<gtest_runtime::RuntimeApi, super::GTestExecutor>
     }
 }
 
+#[cfg(feature = "gdev")]
 impl From<Arc<super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>>> for Client {
     fn from(client: Arc<super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>>) -> Self {
         Self::GDev(client)
@@ -57,8 +63,11 @@ impl From<Arc<super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>>>
 macro_rules! match_client {
 	($self:ident, $method:ident($($param:ident),*)) => {
 		match $self {
+			#[cfg(feature = "g1")]
 			Self::G1(client) => client.$method($($param),*),
+			#[cfg(feature = "gtest")]
 			Self::GTest(client) => client.$method($($param),*),
+			#[cfg(feature = "gdev")]
 			Self::GDev(client) => client.$method($($param),*),
 		}
 	};

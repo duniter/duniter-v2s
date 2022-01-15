@@ -38,7 +38,9 @@ type FullClient<RuntimeApi, Executor> =
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
+#[cfg(feature = "gdev")]
 pub struct GDevExecutor;
+#[cfg(feature = "gdev")]
 impl sc_executor::NativeExecutionDispatch for GDevExecutor {
     /// Only enable the benchmarking host functions when we actually want to benchmark.
     #[cfg(feature = "runtime-benchmarks")]
@@ -56,7 +58,9 @@ impl sc_executor::NativeExecutionDispatch for GDevExecutor {
     }
 }
 
+#[cfg(feature = "gtest")]
 pub struct GTestExecutor;
+#[cfg(feature = "gtest")]
 impl sc_executor::NativeExecutionDispatch for GTestExecutor {
     /// Only enable the benchmarking host functions when we actually want to benchmark.
     #[cfg(feature = "runtime-benchmarks")]
@@ -74,7 +78,9 @@ impl sc_executor::NativeExecutionDispatch for GTestExecutor {
     }
 }
 
+#[cfg(feature = "g1")]
 pub struct G1Executor;
+#[cfg(feature = "g1")]
 impl sc_executor::NativeExecutionDispatch for G1Executor {
     /// Only enable the benchmarking host functions when we actually want to benchmark.
     #[cfg(feature = "runtime-benchmarks")]
@@ -132,50 +138,56 @@ pub fn new_chain_ops(
     ),
     ServiceError,
 > {
-    if config.chain_spec.is_main() {
-        let PartialComponents {
-            client,
-            backend,
-            import_queue,
-            task_manager,
-            ..
-        } = new_partial::<g1_runtime::RuntimeApi, G1Executor>(config, false)?;
-        Ok((
-            Arc::new(Client::G1(client)),
-            backend,
-            import_queue,
-            task_manager,
-        ))
-    } else if config.chain_spec.is_test() {
-        let PartialComponents {
-            client,
-            backend,
-            import_queue,
-            task_manager,
-            ..
-        } = new_partial::<gtest_runtime::RuntimeApi, GTestExecutor>(config, false)?;
-        Ok((
-            Arc::new(Client::GTest(client)),
-            backend,
-            import_queue,
-            task_manager,
-        ))
-    } else if config.chain_spec.is_dev() {
-        let PartialComponents {
-            client,
-            backend,
-            import_queue,
-            task_manager,
-            ..
-        } = new_partial::<gdev_runtime::RuntimeApi, GDevExecutor>(config, true)?;
-        Ok((
-            Arc::new(Client::GDev(client)),
-            backend,
-            import_queue,
-            task_manager,
-        ))
-    } else {
-        unreachable!()
+    match &config.chain_spec {
+        #[cfg(feature = "g1")]
+        chain_spec if chain_spec.is_main() => {
+            let PartialComponents {
+                client,
+                backend,
+                import_queue,
+                task_manager,
+                ..
+            } = new_partial::<g1_runtime::RuntimeApi, G1Executor>(config, false)?;
+            Ok((
+                Arc::new(Client::G1(client)),
+                backend,
+                import_queue,
+                task_manager,
+            ))
+        }
+        #[cfg(feature = "gtest")]
+        chain_spec if chain_spec.is_test() => {
+            let PartialComponents {
+                client,
+                backend,
+                import_queue,
+                task_manager,
+                ..
+            } = new_partial::<gtest_runtime::RuntimeApi, GTestExecutor>(config, false)?;
+            Ok((
+                Arc::new(Client::GTest(client)),
+                backend,
+                import_queue,
+                task_manager,
+            ))
+        }
+        #[cfg(feature = "gdev")]
+        chain_spec if chain_spec.is_dev() => {
+            let PartialComponents {
+                client,
+                backend,
+                import_queue,
+                task_manager,
+                ..
+            } = new_partial::<gdev_runtime::RuntimeApi, GDevExecutor>(config, true)?;
+            Ok((
+                Arc::new(Client::GDev(client)),
+                backend,
+                import_queue,
+                task_manager,
+            ))
+        }
+        _ => panic!("unknown runtime"),
     }
 }
 
