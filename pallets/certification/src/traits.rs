@@ -57,3 +57,10 @@ impl<IdtyIndex> OnRemovedCert<IdtyIndex> for () {
         0
     }
 }
+
+pub trait SetNextIssuableOn<BlockNumber, IdtyIndex> {
+    fn set_next_issuable_on(
+        idty_index: IdtyIndex,
+        next_issuable_on: BlockNumber,
+    ) -> frame_support::dispatch::Weight;
+}

@@ -199,15 +199,6 @@ common_runtime::runtime_apis! {
     impl sp_consensus_babe::BabeApi<Block> for Runtime {
         fn configuration() -> sp_consensus_babe::BabeGenesisConfiguration {
             unimplemented!()
-            // TODO: we should return a value or see how can force the client to not call this API
-            /*sp_consensus_babe::BabeGenesisConfiguration {
-                slot_duration: 0,
-                epoch_length: 0,
-                c: BABE_GENESIS_EPOCH_CONFIG.c,
-                genesis_authorities: vec![],
-                randomness: Babe::randomness(),
-                allowed_slots: BABE_GENESIS_EPOCH_CONFIG.allowed_slots,
-            }*/
         }
 
         fn current_epoch_start() -> sp_consensus_babe::Slot {

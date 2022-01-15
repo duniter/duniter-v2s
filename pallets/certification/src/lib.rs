@@ -30,7 +30,7 @@ pub use types::*;
 
 use crate::traits::*;
 use codec::Codec;
-use frame_support::traits::{Instance, StorageVersion};
+use frame_support::traits::StorageVersion;
 use sp_runtime::traits::AtLeast32BitUnsigned;
 use sp_std::{fmt::Debug, vec::Vec};
 
@@ -390,19 +390,19 @@ pub mod pallet {
             Self::remove_cert_inner(issuer, receiver, None);
             Ok(().into())
         }
-    }
 
-    // PUBLIC FUNCTIONS //
-
-    impl<T: Config<I>, I: Instance> Pallet<T, I> {
-        pub fn on_idty_removed(idty_index: T::IdtyIndex) -> Weight {
-            let mut total_weight: Weight = 0;
+        #[pallet::weight(0)]
+        pub fn remove_all_certs_received_by(
+            origin: OriginFor<T>,
+            idty_index: T::IdtyIndex,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
             if let Ok(issuers) = <StorageCertsByReceiver<T, I>>::try_get(idty_index) {
                 for issuer in issuers {
-                    total_weight += Self::remove_cert_inner(issuer, idty_index, None);
+                    Self::remove_cert_inner(issuer, idty_index, None);
                 }
             }
-            total_weight
+            Ok(().into())
         }
     }
 
@@ -489,5 +489,18 @@ impl<T: Config<I>, I: 'static> IsIdtyAllowedToCreateCert<T::IdtyIndex> for Palle
         } else {
             true
         }
+    }
+}
+
+impl<T: Config<I>, I: 'static> SetNextIssuableOn<T::BlockNumber, T::IdtyIndex> for Pallet<T, I> {
+    fn set_next_issuable_on(
+        idty_index: T::IdtyIndex,
+        next_issuable_on: T::BlockNumber,
+    ) -> frame_support::pallet_prelude::Weight {
+        <StorageIdtyCertMeta<T, I>>::mutate_exists(idty_index, |cert_meta_opt| {
+            let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());
+            cert_meta.next_issuable_on = next_issuable_on;
+        });
+        0
     }
 }

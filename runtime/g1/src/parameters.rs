@@ -96,9 +96,10 @@ parameter_types! {
 pub const IDTY_CREATE_PERIOD: BlockNumber = 100;
 frame_support::parameter_types! {
     pub const ConfirmPeriod: BlockNumber = 3 * DAYS;
+    pub const FirstIssuableOn: BlockNumber = 30* DAYS;
+    pub const IdtyRenewablePeriod: BlockNumber = 6 * MONTHS;
     pub const MaxInactivityPeriod: BlockNumber = YEARS;
     pub const MaxNoRightPeriod: BlockNumber = YEARS;
-    pub const IdtyRenewablePeriod: BlockNumber = 6 * MONTHS;
     pub const ValidationPeriod: BlockNumber = YEARS;
 }
 

@@ -15,7 +15,9 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::entities::IdtyRight;
+use crate::BlockNumber;
 use frame_support::instances::Instance1;
+use frame_support::pallet_prelude::Get;
 use frame_support::weights::Weight;
 use pallet_identity::traits::IdtyEvent;
 
@@ -72,17 +74,28 @@ impl<
 }
 
 pub struct OnNewStrongCertHandler<
+    FirstIssuableOn,
     Runtime,
+    SetNextIssuableOnImpl,
     const MIN_STRONG_CERT_FOR_UD: u32,
     const MIN_STRONG_CERT_FOR_STRONG_CERT: u32,
->(core::marker::PhantomData<Runtime>);
+>(core::marker::PhantomData<(FirstIssuableOn, Runtime, SetNextIssuableOnImpl)>);
 impl<
-        IdtyIndex,
-        Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex, IdtyRight = IdtyRight>,
+        FirstIssuableOn: Get<BlockNumber>,
+        IdtyIndex: Copy,
+        Runtime: frame_system::Config<BlockNumber = BlockNumber>
+            + pallet_identity::Config<IdtyIndex = IdtyIndex, IdtyRight = IdtyRight>,
+        SetNextIssuableOnImpl: pallet_certification::traits::SetNextIssuableOn<BlockNumber, IdtyIndex>,
         const MIN_STRONG_CERT_FOR_UD: u32,
         const MIN_STRONG_CERT_FOR_STRONG_CERT: u32,
     > pallet_certification::traits::OnNewcert<IdtyIndex>
-    for OnNewStrongCertHandler<Runtime, MIN_STRONG_CERT_FOR_UD, MIN_STRONG_CERT_FOR_STRONG_CERT>
+    for OnNewStrongCertHandler<
+        FirstIssuableOn,
+        Runtime,
+        SetNextIssuableOnImpl,
+        MIN_STRONG_CERT_FOR_UD,
+        MIN_STRONG_CERT_FOR_STRONG_CERT,
+    >
 {
     fn on_new_cert(
         _issuer: IdtyIndex,
@@ -104,6 +117,10 @@ impl<
                 frame_system::Origin::<Runtime>::Root.into(),
                 receiver,
                 IdtyRight::StrongCert,
+            );
+            let _ = SetNextIssuableOnImpl::set_next_issuable_on(
+                receiver,
+                frame_system::Pallet::<Runtime>::block_number() + FirstIssuableOn::get(),
             );
         }
         total_weight

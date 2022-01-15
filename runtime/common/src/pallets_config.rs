@@ -212,7 +212,7 @@ macro_rules! pallets_config {
             type IdtyIndex = IdtyIndex;
             type MaxByIssuer = MaxByIssuer;
             type OnNewcert =
-                OnNewStrongCertHandler<Runtime, MIN_STRONG_CERT_FOR_UD, MIN_STRONG_CERT_FOR_STRONG_CERT>;
+                OnNewStrongCertHandler<FirstIssuableOn, Runtime, StrongCert, MIN_STRONG_CERT_FOR_UD, MIN_STRONG_CERT_FOR_STRONG_CERT>;
             type OnRemovedCert = OnRemovedStrongCertHandler<Runtime, MIN_STRONG_CERT_FOR_UD>;
             type CertRenewablePeriod = StrongCertRenewablePeriod;
             type ValidityPeriod = ValidityPeriod;
