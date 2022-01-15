@@ -1,6 +1,6 @@
 [package]
-name = 'common-runtime'
-description = 'Common code shared between all runtimes'
+name = 'common-runtime-except-gdev'
+description = 'Common code shared between all runtimes except gdev'
 license = 'GPL-3.0-only'
 version = '0.8.0-dev'
 authors = ['Axiom-Team Developers <https://axiom-team.fr>']
@@ -13,6 +13,7 @@ runtime-benchmarks = [
     'pallet-certification/runtime-benchmarks',
     'pallet-identity/runtime-benchmarks',
     'pallet-ud-accounts-storage/runtime-benchmarks',
+    'common-runtime/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
 ]
 std = [
@@ -22,6 +23,7 @@ std = [
     'pallet-certification/std',
     'pallet-identity/std',
     'pallet-ud-accounts-storage/std',
+    'common-runtime/std',
     'serde',
     'sp-arithmetic/std',
     'sp-core/std',
@@ -30,6 +32,7 @@ std = [
 ]
 
 [dependencies]
+common-runtime = { path = '../common', default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }

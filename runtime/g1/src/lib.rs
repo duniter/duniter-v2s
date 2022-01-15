@@ -59,7 +59,7 @@ use sp_core::OpaqueMetadata;
 use sp_runtime::traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
-    transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
+    transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult,
 };
 use sp_std::prelude::*;
@@ -118,101 +118,30 @@ pub fn native_version() -> NativeVersion {
     }
 }
 
-parameter_types! {
-    pub const Version: RuntimeVersion = VERSION;
-    pub const BlockHashCount: BlockNumber = 2400;
-    /// We allow for 2 seconds of compute with a 6 second average block time.
-    pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
-        ::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
-    pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
-        ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-    pub const SS58Prefix: u16 = 42;
-    pub const UncleGenerations: u32 = 0;
-}
+/// Block type as expected by this runtime.
+pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
+/// Unchecked extrinsic type as expected by this runtime.
+pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+/// The SignedExtension to the basic transaction logic.
+pub type SignedExtra = (
+    frame_system::CheckSpecVersion<Runtime>,
+    frame_system::CheckTxVersion<Runtime>,
+    frame_system::CheckGenesis<Runtime>,
+    frame_system::CheckEra<Runtime>,
+    frame_system::CheckNonce<Runtime>,
+    frame_system::CheckWeight<Runtime>,
+    pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+);
+/// Executive: handles dispatch to the various modules.
+pub type Executive = frame_executive::Executive<
+    Runtime,
+    Block,
+    frame_system::ChainContext<Runtime>,
+    Runtime,
+    AllPalletsWithSystem,
+>;
 
-// Configure FRAME pallets to include in runtime.
-common_runtime::pallets_config! {
-    impl pallet_authority_discovery::Config for Runtime {
-        type MaxAuthorities = MaxAuthorities;
-    }
-    impl pallet_authorship::Config for Runtime {
-        type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
-        type UncleGenerations = UncleGenerations;
-        type FilterUncle = ();
-        type EventHandler = ImOnline;
-    }
-    impl pallet_babe::Config for Runtime {
-        type EpochDuration = EpochDuration;
-        type ExpectedBlockTime = ExpectedBlockTime;
-
-        // session module is the trigger
-        type EpochChangeTrigger = pallet_babe::ExternalTrigger;
-
-        type DisabledValidators = Session;
-
-        type KeyOwnerProofSystem = Historical;
-
-        type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-            KeyTypeId,
-            pallet_babe::AuthorityId,
-        )>>::Proof;
-
-        type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-            KeyTypeId,
-            pallet_babe::AuthorityId,
-        )>>::IdentificationTuple;
-
-        type HandleEquivocation =
-            pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
-
-        type WeightInfo = ();
-
-        type MaxAuthorities = MaxAuthorities;
-    }
-    parameter_types! {
-        pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
-        pub const MaxKeys: u32 = 10_000;
-        pub const MaxPeerInHeartbeats: u32 = 10_000;
-        pub const MaxPeerDataEncodingSize: u32 = 1_000;
-    }
-    impl pallet_im_online::Config for Runtime {
-        type AuthorityId = ImOnlineId;
-        type Event = Event;
-        type ValidatorSet = Historical;
-        type NextSessionRotation = Babe;
-        type ReportUnresponsiveness = Offences;
-        type UnsignedPriority = ImOnlineUnsignedPriority;
-        type WeightInfo = ();
-        type MaxKeys = MaxKeys;
-        type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
-        type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
-    }
-    impl pallet_offences::Config for Runtime {
-        type Event = Event;
-        type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
-        type OnOffenceHandler = ();
-    }
-    impl pallet_session::Config for Runtime {
-        type Event = Event;
-        type ValidatorId = AccountId;
-        type ValidatorIdOf = sp_runtime::traits::ConvertInto;
-        type ShouldEndSession = Babe;
-        type NextSessionRotation = Babe;
-        type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, SessionManagerImpl>;
-        type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
-        type Keys = opaque::SessionKeys;
-        type WeightInfo = ();
-    }
-    impl pallet_session::historical::Config for Runtime {
-        type FullIdentification = ValidatorFullIdentification;
-        type FullIdentificationOf = FullIdentificationOfImpl;
-    }
-    impl pallet_timestamp::Config for Runtime {
-        type Moment = u64;
-        type OnTimestampSet = Babe;
-        type MinimumPeriod = MinimumPeriod;
-        type WeightInfo = ();
-    }
+common_runtime_except_gdev::pallets_config! {
     impl pallet_sudo::Config for Runtime {
         type Event = Event;
         type Call = Call;
@@ -267,29 +196,6 @@ construct_runtime!(
     }
 );
 
-/// Block type as expected by this runtime.
-pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
-/// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
-/// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = (
-    frame_system::CheckSpecVersion<Runtime>,
-    frame_system::CheckTxVersion<Runtime>,
-    frame_system::CheckGenesis<Runtime>,
-    frame_system::CheckEra<Runtime>,
-    frame_system::CheckNonce<Runtime>,
-    frame_system::CheckWeight<Runtime>,
-    pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-);
-/// Executive: handles dispatch to the various modules.
-pub type Executive = frame_executive::Executive<
-    Runtime,
-    Block,
-    frame_system::ChainContext<Runtime>,
-    Runtime,
-    AllPalletsWithSystem,
->;
-
 impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
 where
     Call: From<C>,
@@ -308,63 +214,4 @@ where
 //     // Specific impls provided to the `runtime_apis!` macro.
 // }
 // ```
-common_runtime::runtime_apis! {
-    impl sp_authority_discovery::AuthorityDiscoveryApi<Block> for Runtime {
-        fn authorities() -> Vec<sp_authority_discovery::AuthorityId> {
-            AuthorityDiscovery::authorities()
-        }
-    }
-
-    impl sp_consensus_babe::BabeApi<Block> for Runtime {
-        fn configuration() -> sp_consensus_babe::BabeGenesisConfiguration {
-            // The choice of `c` parameter (where `1 - c` represents the
-            // probability of a slot being empty), is done in accordance to the
-            // slot duration and expected target block time, for safely
-            // resisting network delays of maximum two seconds.
-            // <https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results>
-            sp_consensus_babe::BabeGenesisConfiguration {
-                slot_duration: Babe::slot_duration(),
-                epoch_length: EpochDuration::get(),
-                c: BABE_GENESIS_EPOCH_CONFIG.c,
-                genesis_authorities: Babe::authorities().to_vec(),
-                randomness: Babe::randomness(),
-                allowed_slots: BABE_GENESIS_EPOCH_CONFIG.allowed_slots,
-            }
-        }
-
-        fn current_epoch_start() -> sp_consensus_babe::Slot {
-            Babe::current_epoch_start()
-        }
-
-        fn current_epoch() -> sp_consensus_babe::Epoch {
-            Babe::current_epoch()
-        }
-
-        fn next_epoch() -> sp_consensus_babe::Epoch {
-            Babe::next_epoch()
-        }
-
-        fn generate_key_ownership_proof(
-            _slot: sp_consensus_babe::Slot,
-            authority_id: sp_consensus_babe::AuthorityId,
-        ) -> Option<sp_consensus_babe::OpaqueKeyOwnershipProof> {
-            use codec::Encode;
-
-            Historical::prove((sp_consensus_babe::KEY_TYPE, authority_id))
-                .map(|p| p.encode())
-                .map(sp_consensus_babe::OpaqueKeyOwnershipProof::new)
-        }
-
-        fn submit_report_equivocation_unsigned_extrinsic(
-            equivocation_proof: sp_consensus_babe::EquivocationProof<<Block as BlockT>::Header>,
-            key_owner_proof: sp_consensus_babe::OpaqueKeyOwnershipProof,
-        ) -> Option<()> {
-            let key_owner_proof = key_owner_proof.decode()?;
-
-            Babe::submit_unsigned_equivocation_report(
-                equivocation_proof,
-                key_owner_proof,
-            )
-        }
-    }
-}
+common_runtime_except_gdev::runtime_apis! {}

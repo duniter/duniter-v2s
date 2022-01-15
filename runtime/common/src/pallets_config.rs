@@ -21,6 +21,10 @@ macro_rules! pallets_config {
 
 		// SYSTEM //
 
+		parameter_types! {
+			pub const Version: RuntimeVersion = VERSION;
+		}
+
         impl frame_system::Config for Runtime {
             /// The basic call filter to use in dispatchable.
             type BaseCallFilter = frame_support::traits::Everything;

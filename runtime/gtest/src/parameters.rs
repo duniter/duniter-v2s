@@ -17,7 +17,24 @@
 use common_runtime::constants::*;
 use common_runtime::{Balance, BlockNumber};
 use frame_support::parameter_types;
+use frame_support::weights::constants::WEIGHT_PER_SECOND;
 use sp_arithmetic::Permill;
+use sp_runtime::transaction_validity::TransactionPriority;
+
+parameter_types! {
+    pub const BlockHashCount: BlockNumber = 2400;
+    /// We allow for 2 seconds of compute with a 6 second average block time.
+    pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
+        ::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
+    pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
+        ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+    pub const SS58Prefix: u16 = 42;
+    pub const UncleGenerations: u32 = 0;
+}
+
+/*************/
+/* CONSENSUS */
+/*************/
 
 // Authority discovery
 parameter_types! {
@@ -37,6 +54,18 @@ parameter_types! {
     pub const ReportLongevity: u64 = 168 * EpochDuration::get();
 }
 
+// ImOnline
+parameter_types! {
+    pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+    pub const MaxKeys: u32 = 10_000;
+    pub const MaxPeerInHeartbeats: u32 = 10_000;
+    pub const MaxPeerDataEncodingSize: u32 = 1_000;
+}
+
+/*********/
+/* MONEY */
+/*********/
+
 // Balances
 frame_support::parameter_types! {
     pub const ExistentialDeposit: Balance = 500;
@@ -47,6 +76,20 @@ frame_support::parameter_types! {
 frame_support::parameter_types! {
     pub const TransactionByteFee: Balance = 0;
 }
+
+// Universal dividend
+parameter_types! {
+    // 0.002_381_440 = 0.0488^2
+    pub const SquareMoneyGrowthRate: Permill = Permill::from_parts(2_381_440);
+    pub const UdCreationPeriod: BlockNumber = DAYS;
+    pub const UdFirstReeval: BlockNumber = 2 * DAYS;
+    pub const UdReevalPeriod: Balance = 7;
+    pub const UdReevalPeriodInBlocks: BlockNumber = 100800; // 86400 *7 / 6
+}
+
+/*******/
+/* WOT */
+/*******/
 
 // Identity
 pub const IDTY_CREATE_PERIOD: BlockNumber = 100;
@@ -66,15 +109,6 @@ parameter_types! {
     pub const MaxByIssuer: u8 = 100;
     pub const StrongCertRenewablePeriod: BlockNumber = 12 * DAYS;
     pub const ValidityPeriod: BlockNumber = 146 * DAYS;
-}
-
-// Universal dividend
-parameter_types! {
-    pub const SquareMoneyGrowthRate: Permill = Permill::from_parts(2_381_440); // 0.002_381_440 = 0.0488^2
-    pub const UdCreationPeriod: BlockNumber = DAYS;
-    pub const UdFirstReeval: BlockNumber = 2 * DAYS;
-    pub const UdReevalPeriod: Balance = 7;
-    pub const UdReevalPeriodInBlocks: BlockNumber = 100800; // 86400 *7 / 6
 }
 
 // Multisig

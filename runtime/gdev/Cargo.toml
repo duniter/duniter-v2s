@@ -47,6 +47,7 @@ std = [
     'serde',
     'sp-api/std',
     'sp-arithmetic/std',
+	'sp-authority-discovery/std',
     'sp-block-builder/std',
     'sp-consensus-babe/std',
     'sp-core/std',

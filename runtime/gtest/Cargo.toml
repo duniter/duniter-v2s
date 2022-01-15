@@ -47,9 +47,11 @@ std = [
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',
     'common-runtime/std',
+    'common-runtime-except-gdev/std',
     'serde',
     'sp-api/std',
     'sp-arithmetic/std',
+	'sp-authority-discovery/std',
     'sp-block-builder/std',
     'sp-consensus-babe/std',
     'sp-core/std',
@@ -68,6 +70,7 @@ pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
 common-runtime = { path = "../common", default-features = false }
+common-runtime-except-gdev = { path = "../common-except-gdev", default-features = false }
 
 # substrate
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
