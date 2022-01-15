@@ -98,30 +98,32 @@ impl sc_executor::NativeExecutionDispatch for G1Executor {
     }
 }
 
-/// Can be called for a `Configuration` to check if it is a configuration for
-/// a particular network.
-pub trait IdentifyVariant {
-    /// Returns `true` if this is a configuration for the `main` network.
-    fn is_main(&self) -> bool;
-
-    /// Returns `true` if this is a configuration for the `test` network.
-    fn is_test(&self) -> bool;
-
-    /// Returns `true` if this is a configuration for a dev network.
-    fn is_dev(&self) -> bool;
+pub enum RuntimeType {
+    G1,
+    GDev,
+    GTest,
 }
 
-impl IdentifyVariant for Box<dyn sc_chain_spec::ChainSpec> {
-    fn is_main(&self) -> bool {
-        self.id().starts_with("g1")
-    }
+/// Can be called for a `Configuration` to check if it is a configuration for
+/// a particular runtime type.
+pub trait IdentifyRuntimeType {
+    /// Returns the runtime type
+    fn runtime_type(&self) -> RuntimeType;
+}
 
-    fn is_test(&self) -> bool {
-        self.id().starts_with("gdem") || self.id().starts_with("gtest")
-    }
-
-    fn is_dev(&self) -> bool {
-        self.id().starts_with("dev") || self.id().starts_with("gdev")
+impl IdentifyRuntimeType for Box<dyn sc_chain_spec::ChainSpec> {
+    fn runtime_type(&self) -> RuntimeType {
+        if self.id().starts_with("g1") {
+            RuntimeType::G1
+        } else if self.id().starts_with("gdem") {
+            RuntimeType::GTest
+        } else if self.id().starts_with("dev") || self.id().starts_with("gdev") {
+            RuntimeType::GDev
+        } else if self.id().starts_with("gt") {
+            RuntimeType::GTest
+        } else {
+            panic!("unknown runtime")
+        }
     }
 }
 
@@ -138,9 +140,9 @@ pub fn new_chain_ops(
     ),
     ServiceError,
 > {
-    match &config.chain_spec {
+    match config.chain_spec.runtime_type() {
         #[cfg(feature = "g1")]
-        chain_spec if chain_spec.is_main() => {
+        RuntimeType::G1::G1 => {
             let PartialComponents {
                 client,
                 backend,
@@ -156,7 +158,7 @@ pub fn new_chain_ops(
             ))
         }
         #[cfg(feature = "gtest")]
-        chain_spec if chain_spec.is_test() => {
+        RuntimeType::GTest => {
             let PartialComponents {
                 client,
                 backend,
@@ -172,7 +174,7 @@ pub fn new_chain_ops(
             ))
         }
         #[cfg(feature = "gdev")]
-        chain_spec if chain_spec.is_dev() => {
+        RuntimeType::GDev => {
             let PartialComponents {
                 client,
                 backend,
