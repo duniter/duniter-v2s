@@ -1,10 +1,10 @@
 [package]
 authors = ['librelois <c@elo.tf>']
-description = 'FRAME pallet identity.'
+description = 'FRAME pallet membership.'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'AGPL-3.0'
-name = 'pallet-identity'
+name = 'pallet-membership'
 readme = 'README.md'
 repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
 version = '3.0.0'
@@ -79,6 +79,9 @@ targets = ['x86_64-unknown-linux-gnu']
 version = '1.0.119'
 
 ### DEV ###
+
+[dev-dependencies.maplit]
+version = '1.0.2'
 
 [dev-dependencies.sp-io]
 default-features = false

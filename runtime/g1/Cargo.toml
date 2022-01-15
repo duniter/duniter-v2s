@@ -8,7 +8,7 @@ edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'AGPL-3.0'
 name = 'g1-runtime'
-repository = 'https://git.duniter.org/nodes/rust/duniter-substrate'
+repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
 version = '3.0.0'
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']

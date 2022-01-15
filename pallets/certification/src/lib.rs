@@ -85,6 +85,8 @@ pub mod pallet {
         type ValidityPeriod: Get<Self::BlockNumber>;
     }
 
+    // GENESIS STUFF //
+
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
         pub certs_by_issuer: BTreeMap<T::IdtyIndex, BTreeMap<T::IdtyIndex, T::BlockNumber>>,

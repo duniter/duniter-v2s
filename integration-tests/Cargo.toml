@@ -5,7 +5,7 @@ edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'AGPL-3.0'
 name = 'duniter-integration-tests'
-repository = 'https://git.duniter.org/nodes/rust/duniter-substrate'
+repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
 version = '3.0.0'
 
 [dev-dependencies]

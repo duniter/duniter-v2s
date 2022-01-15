@@ -6,6 +6,7 @@ members = [
     'node',
     'pallets/certification',
     'pallets/identity',
+	'pallets/membership',
     'pallets/ud-accounts-storage',
     'pallets/universal-dividend',
 ]

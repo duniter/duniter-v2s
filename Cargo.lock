@@ -4573,6 +4573,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-membership"
+version = "3.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "maplit",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-multisig"
 version = "4.0.0-dev"
 source = "git+https://github.com/librelois/substrate.git?branch=duniter-monthly-2022-01#104c497435848265e58eeeea7b82c63b2f7ee13c"
