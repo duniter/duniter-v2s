@@ -74,10 +74,6 @@ pub use frame_support::{
     StorageValue,
 };
 
-/// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
-/// the specifics of the runtime. They can then be made to be agnostic over specific formats
-/// of data like extrinsics, allowing for them to continue syncing the network through upgrades
-/// to even the core data structures.
 pub mod opaque {
     use super::*;
 
@@ -129,8 +125,6 @@ parameter_types! {
 
 // Configure FRAME pallets to include in runtime.
 common_runtime::pallets_config! {
-    impl pallet_randomness_collective_flip::Config for Runtime {}
-
     impl pallet_sudo::Config for Runtime {
         type Event = Event;
         type Call = Call;
@@ -153,7 +147,6 @@ construct_runtime!(
 
         // Consensus support.
         Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event} = 10,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 11,
 
         // Governance stuff.
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
@@ -208,13 +201,50 @@ pub type Executive = frame_executive::Executive<
 // }
 // ```
 common_runtime::runtime_apis! {
-    impl sp_consensus_aura::AuraApi<Block, sp_consensus_aura::sr25519::AuthorityId> for Runtime {
-        fn slot_duration() -> sp_consensus_aura::SlotDuration {
-            sp_consensus_aura::SlotDuration::from_millis(0)
+    impl sp_authority_discovery::AuthorityDiscoveryApi<Block> for Runtime {
+        fn authorities() -> Vec<sp_authority_discovery::AuthorityId> {
+            unimplemented!()
+        }
+    }
+
+    impl sp_consensus_babe::BabeApi<Block> for Runtime {
+        fn configuration() -> sp_consensus_babe::BabeGenesisConfiguration {
+            unimplemented!()
+            // TODO: we should return a value or see how can force the client to not call this API
+            /*sp_consensus_babe::BabeGenesisConfiguration {
+                slot_duration: 0,
+                epoch_length: 0,
+                c: BABE_GENESIS_EPOCH_CONFIG.c,
+                genesis_authorities: vec![],
+                randomness: Babe::randomness(),
+                allowed_slots: BABE_GENESIS_EPOCH_CONFIG.allowed_slots,
+            }*/
         }
 
-        fn authorities() -> Vec<sp_consensus_aura::sr25519::AuthorityId> {
-            vec![]
+        fn current_epoch_start() -> sp_consensus_babe::Slot {
+            unimplemented!()
+        }
+
+        fn current_epoch() -> sp_consensus_babe::Epoch {
+            unimplemented!()
+        }
+
+        fn next_epoch() -> sp_consensus_babe::Epoch {
+            unimplemented!()
+        }
+
+        fn generate_key_ownership_proof(
+            _slot: sp_consensus_babe::Slot,
+            _authority_id: sp_consensus_babe::AuthorityId,
+        ) -> Option<sp_consensus_babe::OpaqueKeyOwnershipProof> {
+            unimplemented!()
+        }
+
+        fn submit_report_equivocation_unsigned_extrinsic(
+            _equivocation_proof: sp_consensus_babe::EquivocationProof<<Block as BlockT>::Header>,
+            _key_owner_proof: sp_consensus_babe::OpaqueKeyOwnershipProof,
+        ) -> Option<()> {
+            unimplemented!()
         }
     }
 }

@@ -137,7 +137,7 @@ There are several files in the `node` directory - take special note of the follo
   the libraries that this file imports and the names of the functions it invokes. In particular,
   there are references to consensus-related topics, such as the
   [longest chain rule](https://substrate.dev/docs/en/knowledgebase/advanced/consensus#longest-chain-rule),
-  the [Aura](https://substrate.dev/docs/en/knowledgebase/advanced/consensus#aura) block authoring
+  the [Babe](https://substrate.dev/docs/en/knowledgebase/advanced/consensus#babe) block authoring
   mechanism and the
   [GRANDPA](https://substrate.dev/docs/en/knowledgebase/advanced/consensus#grandpa) finality
   gadget.

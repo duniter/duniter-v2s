@@ -88,7 +88,6 @@ pub mod pallet {
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
         pub certs_by_issuer: BTreeMap<T::IdtyIndex, BTreeMap<T::IdtyIndex, T::BlockNumber>>,
-        pub phantom: PhantomData<I>,
     }
 
     #[cfg(feature = "std")]
@@ -96,7 +95,6 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 certs_by_issuer: Default::default(),
-                phantom: Default::default(),
             }
         }
     }

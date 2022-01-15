@@ -33,13 +33,12 @@ std = [
     'frame-support/std',
     'frame-system-rpc-runtime-api/std',
     'frame-system/std',
-    'pallet-aura/std',
+    'pallet-babe/std',
     'pallet-balances/std',
     'pallet-certification/std',
     'pallet-identity/std',
     'pallet-grandpa/std',
     'pallet-multisig/std',
-    'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
     'pallet-universal-dividend/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
@@ -49,7 +48,7 @@ std = [
     'sp-api/std',
     'sp-arithmetic/std',
     'sp-block-builder/std',
-    'sp-consensus-aura/std',
+    'sp-consensus-babe/std',
     'sp-core/std',
     'sp-inherents/std',
     'sp-offchain/std',
@@ -112,7 +111,7 @@ branch = 'duniter-monthly-2022-01'
 optional = true
 version = '0.3.1'
 
-[dependencies.pallet-aura]
+[dependencies.pallet-babe]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
@@ -128,11 +127,6 @@ git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
 
 [dependencies.pallet-multisig]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
-
-[dependencies.pallet-randomness-collective-flip]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
@@ -177,12 +171,17 @@ default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
 
+[dependencies.sp-authority-discovery]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
+
 [dependencies.sp-block-builder]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
 
-[dependencies.sp-consensus-aura]
+[dependencies.sp-consensus-babe]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'

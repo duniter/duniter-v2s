@@ -34,12 +34,9 @@ const TOKEN_SYMBOL: &str = "ĞD";
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
-/// Generate an Aura authority key.
-pub fn authority_keys_from_seed(s: &str) -> (sp_consensus_aura::sr25519::AuthorityId, GrandpaId) {
-    (
-        get_from_seed::<sp_consensus_aura::sr25519::AuthorityId>(s),
-        get_from_seed::<GrandpaId>(s),
-    )
+/// Generate an authority keys.
+pub fn get_authority_keys_from_seed(s: &str) -> GrandpaId {
+    get_from_seed::<GrandpaId>(s)
 }
 
 pub fn development_chain_spec() -> Result<ChainSpec, String> {
@@ -54,13 +51,13 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
         move || {
             devnet_genesis(
                 wasm_binary,
-                // Initial PoA authorities
-                vec![authority_keys_from_seed("Alice")],
+                // Initial authorities
+                vec![get_authority_keys_from_seed("Alice")],
                 // Inital identities
                 btreemap![
-                    idty_name(1) => get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    idty_name(2) => get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    idty_name(3) => get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                    IdtyName::from("Alice") => get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    IdtyName::from("Bob") => get_account_id_from_seed::<sr25519::Public>("Bob"),
+                    IdtyName::from("Charlie") => get_account_id_from_seed::<sr25519::Public>("Charlie"),
                 ],
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -90,7 +87,7 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
 
 fn devnet_genesis(
     wasm_binary: &[u8],
-    initial_authorities: Vec<(sp_consensus_aura::sr25519::AuthorityId, GrandpaId)>,
+    initial_authorities: Vec<GrandpaId>,
     initial_identities: BTreeMap<IdtyName, AccountId>,
     root_key: AccountId,
     _enable_println: bool,
@@ -104,10 +101,7 @@ fn devnet_genesis(
             balances: Default::default(),
         },
         grandpa: GrandpaConfig {
-            authorities: initial_authorities
-                .iter()
-                .map(|x| (x.1.clone(), 1))
-                .collect(),
+            authorities: initial_authorities.iter().map(|x| (x.clone(), 1)).collect(),
         },
         sudo: SudoConfig {
             // Assign network admin rights.
@@ -137,7 +131,6 @@ fn devnet_genesis(
                 initial_identities.len(),
                 gdev_runtime::parameters::ValidityPeriod::get(),
             ),
-            phantom: std::marker::PhantomData,
         },
         ud_accounts_storage: UdAccountsStorageConfig {
             ud_accounts: initial_identities.values().cloned().collect(),

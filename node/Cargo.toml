@@ -86,11 +86,16 @@ branch = 'duniter-monthly-2022-01'
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
 
-[dependencies.sc-consensus-aura]
+[dependencies.babe]
+package = "sc-consensus-babe"
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
 
 [dependencies.sc-consensus-manual-seal]
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
+
+[dependencies.sc-consensus-uncles]
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
 
@@ -136,6 +141,10 @@ branch = 'duniter-monthly-2022-01'
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
 
+[dependencies.sp-authority-discovery]
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
+
 [dependencies.sp-block-builder]
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
@@ -148,7 +157,7 @@ branch = 'duniter-monthly-2022-01'
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
 
-[dependencies.sp-consensus-aura]
+[dependencies.sp-consensus-babe]
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
 

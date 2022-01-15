@@ -53,3 +53,9 @@ impl pallet_identity::traits::IdtyRight for IdtyRight {
 pub struct IdtyData {
     pub can_create_on: BlockNumber,
 }
+
+#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
+#[derive(
+    Encode, Decode, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug, TypeInfo,
+)]
+pub struct ValidatorFullIdentification;

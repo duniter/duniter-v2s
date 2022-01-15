@@ -19,14 +19,22 @@ use common_runtime::{Balance, BlockNumber};
 use frame_support::parameter_types;
 use sp_arithmetic::Permill;
 
+// Authority discovery
+parameter_types! {
+    pub const MaxAuthorities: u32 = 100;
+}
+
 // Timestamp
 parameter_types! {
     pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
-// Consensus
+// Babe
+pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 4 * HOURS;
 parameter_types! {
-    pub const MaxAuthorities: u32 = 100;
+    pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS as u64;
+    pub const ExpectedBlockTime: u64 = MILLISECS_PER_BLOCK;
+    pub const ReportLongevity: u64 = 168 * EpochDuration::get();
 }
 
 // Balances

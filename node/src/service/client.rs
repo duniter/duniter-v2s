@@ -233,32 +233,34 @@ impl sp_blockchain::HeaderBackend<Block> for Client {
 /// This trait has no methods or associated type. It is a concise marker for all the trait bounds
 /// that it contains.
 pub trait RuntimeApiCollection:
-    sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
-    + sp_api::ApiExt<Block>
-    + sp_block_builder::BlockBuilder<Block>
-    + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>
-    + pallet_grandpa::fg_primitives::GrandpaApi<Block>
+    pallet_grandpa::fg_primitives::GrandpaApi<Block>
     + pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>
+    + sp_api::ApiExt<Block>
+    + sp_authority_discovery::AuthorityDiscoveryApi<Block>
+    + sp_block_builder::BlockBuilder<Block>
     + sp_api::Metadata<Block>
-    + sp_consensus_aura::AuraApi<Block, sp_consensus_aura::sr25519::AuthorityId>
+    + sp_consensus_babe::BabeApi<Block>
     + sp_offchain::OffchainWorkerApi<Block>
     + sp_session::SessionKeys<Block>
+    + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+    + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>
 where
     <Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
 }
 impl<Api> RuntimeApiCollection for Api
 where
-    Api: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
-        + sp_api::ApiExt<Block>
-        + sp_block_builder::BlockBuilder<Block>
-        + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>
-        + pallet_grandpa::fg_primitives::GrandpaApi<Block>
+    Api: pallet_grandpa::fg_primitives::GrandpaApi<Block>
         + pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>
+        + sp_api::ApiExt<Block>
+        + sp_authority_discovery::AuthorityDiscoveryApi<Block>
+        + sp_block_builder::BlockBuilder<Block>
         + sp_api::Metadata<Block>
-        + sp_consensus_aura::AuraApi<Block, sp_consensus_aura::sr25519::AuthorityId>
+        + sp_consensus_babe::BabeApi<Block>
         + sp_offchain::OffchainWorkerApi<Block>
-        + sp_session::SessionKeys<Block>,
+        + sp_session::SessionKeys<Block>
+        + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+        + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
     <Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
 }

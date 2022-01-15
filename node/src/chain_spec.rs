@@ -18,8 +18,7 @@ pub mod g1;
 pub mod gdev;
 pub mod gtest;
 
-use common_runtime::IdtyIndex;
-use common_runtime::{entities::IdtyName, AccountId, Signature};
+use common_runtime::{AccountId, IdtyIndex, Signature};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::collections::BTreeMap;
@@ -69,9 +68,4 @@ fn clique_wot(
         );
     }
     certs_by_issuer
-}
-
-/// Create a fake IdtyName (for dev and testnet)
-fn idty_name(u8_: u8) -> IdtyName {
-    IdtyName(vec![u8_])
 }

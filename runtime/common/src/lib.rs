@@ -67,3 +67,45 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorImpl {
         idty_name.0.len() >= 3 && idty_name.0.len() <= 64
     }
 }
+
+pub struct FullIdentificationOfImpl;
+impl sp_runtime::traits::Convert<AccountId, Option<entities::ValidatorFullIdentification>>
+    for FullIdentificationOfImpl
+{
+    fn convert(_: AccountId) -> Option<entities::ValidatorFullIdentification> {
+        Some(entities::ValidatorFullIdentification)
+    }
+}
+
+/// The implementation of SessionManager traits
+/// For the moment, the implementation does nothing, which means that the set of authorities
+/// remains eternally the same as the one defined in the chain spec.
+// TODO: When we will have implemented the smith sub-wot, we will have to fill this implementation
+// with a real logic based on the smith sub-wot.
+pub struct SessionManagerImpl;
+use crate::entities::ValidatorFullIdentification;
+use sp_staking::SessionIndex;
+impl pallet_session::SessionManager<AccountId> for SessionManagerImpl {
+    fn new_session(_new_index: SessionIndex) -> Option<sp_std::vec::Vec<AccountId>> {
+        None
+    }
+    fn start_session(_start_index: SessionIndex) {}
+    fn end_session(_end_index: SessionIndex) {}
+}
+
+impl pallet_session::historical::SessionManager<AccountId, ValidatorFullIdentification>
+    for SessionManagerImpl
+{
+    fn new_session(
+        _new_index: SessionIndex,
+    ) -> Option<sp_std::vec::Vec<(AccountId, ValidatorFullIdentification)>> {
+        None
+    }
+    fn new_session_genesis(
+        new_index: SessionIndex,
+    ) -> Option<sp_std::vec::Vec<(AccountId, ValidatorFullIdentification)>> {
+        <Self as pallet_session::historical::SessionManager<_, _>>::new_session(new_index)
+    }
+    fn start_session(_start_index: SessionIndex) {}
+    fn end_session(_end_index: SessionIndex) {}
+}

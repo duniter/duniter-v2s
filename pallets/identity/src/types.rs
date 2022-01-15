@@ -23,11 +23,39 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::vec::Vec;
 
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(
-    Encode, Decode, Default, Clone, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug, TypeInfo,
-)]
-pub struct IdtyName(pub sp_std::vec::Vec<u8>);
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug)]
+pub struct IdtyName(pub Vec<u8>);
+
+impl scale_info::TypeInfo for IdtyName {
+    type Identity = str;
+
+    fn type_info() -> scale_info::Type {
+        Self::Identity::type_info()
+    }
+}
+
+#[cfg(feature = "std")]
+impl From<&str> for IdtyName {
+    fn from(s: &str) -> Self {
+        Self(s.as_bytes().to_vec())
+    }
+}
+
+#[cfg(feature = "std")]
+impl serde::Serialize for IdtyName {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        std::str::from_utf8(&self.0)
+            .map_err(|e| serde::ser::Error::custom(format!("{:?}", e)))?
+            .serialize(serializer)
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'de> serde::Deserialize<'de> for IdtyName {
+    fn deserialize<D: serde::Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
+        Ok(Self(String::deserialize(de)?.as_bytes().to_vec()))
+    }
+}
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
