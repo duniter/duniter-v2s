@@ -345,6 +345,9 @@ pub mod pallet {
                     if idty_value.status != IdtyStatus::Created {
                         return Err(Error::<T>::IdtyAlreadyConfirmed.into());
                     }
+                    if idty_value.name != idty_name {
+                        return Err(Error::<T>::NotSameIdtyName.into());
+                    }
                     T::Membership::request_membership_(RawOrigin::Signed(who).into(), idty_index)?;
 
                     idty_value.status = IdtyStatus::ConfirmedByOwner;
@@ -654,6 +657,8 @@ pub mod pallet {
         IdtyNotValidated,
         /// Identity not yet renewable
         IdtyNotYetRenewable,
+        /// Not same identity name
+        NotSameIdtyName,
         /// This operation requires to be the owner of the identity
         RequireToBeOwner,
         /// Right already added
