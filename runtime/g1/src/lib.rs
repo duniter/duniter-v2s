@@ -140,6 +140,17 @@ pub type Executive = frame_executive::Executive<
     AllPalletsWithSystem,
 >;
 
+pub struct BaseCallFilter;
+impl frame_support::traits::Contains<Call> for BaseCallFilter {
+    fn contains(call: &Call) -> bool {
+        match call {
+            Call::Membership(_) => false,
+            Call::Session(_) => false,
+            _ => true,
+        }
+    }
+}
+
 common_runtime_except_gdev::pallets_config! {
     impl pallet_sudo::Config for Runtime {
         type Event = Event;

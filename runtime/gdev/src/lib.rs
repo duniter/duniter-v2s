@@ -132,6 +132,16 @@ pub type Executive = frame_executive::Executive<
     AllPalletsWithSystem,
 >;
 
+pub struct BaseCallFilter;
+impl frame_support::traits::Contains<Call> for BaseCallFilter {
+    fn contains(call: &Call) -> bool {
+        match call {
+            Call::Membership(_) => false,
+            _ => true,
+        }
+    }
+}
+
 // Configure FRAME pallets to include in runtime.
 common_runtime::pallets_config! {
     impl pallet_sudo::Config for Runtime {

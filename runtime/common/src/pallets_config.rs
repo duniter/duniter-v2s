@@ -27,7 +27,7 @@ macro_rules! pallets_config {
 
         impl frame_system::Config for Runtime {
             /// The basic call filter to use in dispatchable.
-            type BaseCallFilter = frame_support::traits::Everything;
+            type BaseCallFilter = BaseCallFilter;
             /// Block & extrinsics weights: base values and limits.
             type BlockWeights = BlockWeights;
             /// The maximum length of a block (in bytes).
