@@ -49,12 +49,13 @@ frame_support::parameter_types! {
 // Identity
 pub const IDTY_CREATE_PERIOD: BlockNumber = 100;
 frame_support::parameter_types! {
-    pub const ConfirmPeriod: BlockNumber = 12 * HOURS;
-    pub const FirstIssuableOn: BlockNumber = 10;
-    pub const IdtyRenewablePeriod: BlockNumber = 6 * MONTHS;
-    pub const MaxInactivityPeriod: BlockNumber = YEARS;
-    pub const MaxNoRightPeriod: BlockNumber = YEARS;
-    pub const ValidationPeriod: BlockNumber = 2 * MONTHS;
+    pub const ConfirmPeriod: BlockNumber = 40;
+    pub const FirstIssuableOn: BlockNumber = 20;
+    pub const IdtyCreationPeriod: BlockNumber = 50;
+    pub const IdtyRenewablePeriod: BlockNumber = 50;
+    pub const MaxInactivityPeriod: BlockNumber = 1_000;
+    pub const MaxNoRightPeriod: BlockNumber = 1_000;
+    pub const ValidationPeriod: BlockNumber = 500;
 }
 
 // Certification

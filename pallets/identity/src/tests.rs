@@ -33,24 +33,26 @@ fn test_no_identity() {
 fn test_two_identities() {
     let identities = vec![
         crate::IdtyValue {
-            name: IdtyName(vec![0]),
+            data: (),
             expire_on: 5,
             owner_key: 1,
+            name: IdtyName(vec![0]),
+            next_creatable_identity_on: 0,
             removable_on: 0,
             renewable_on: 3,
             rights: vec![(Right::Right2, Some(10))],
             status: crate::IdtyStatus::Validated,
-            data: (),
         },
         crate::IdtyValue {
-            name: IdtyName(vec![1]),
+            data: (),
             expire_on: 5,
             owner_key: 2,
+            name: IdtyName(vec![1]),
+            next_creatable_identity_on: 0,
             removable_on: 0,
             renewable_on: 3,
             rights: vec![(Right::Right1, Some(20))],
             status: crate::IdtyStatus::Validated,
-            data: (),
         },
     ];
 

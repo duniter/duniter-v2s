@@ -114,6 +114,7 @@ impl system::Config for Test {
 
 parameter_types! {
     pub const ConfirmPeriod: u64 = 2;
+    pub const IdtyCreationPeriod: u64 = 3;
     pub const MaxInactivityPeriod: u64 = 5;
     pub const MaxNoRightPeriod: u64 = 4;
     pub const RenewablePeriod: u64 = 3;
@@ -133,6 +134,7 @@ impl pallet_identity::Config for Test {
     type AddRightOrigin = system::EnsureRoot<AccountId>;
     type DelRightOrigin = system::EnsureRoot<AccountId>;
     type EnsureIdtyCallAllowed = ();
+    type IdtyCreationPeriod = IdtyCreationPeriod;
     type IdtyData = ();
     type IdtyDataProvider = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;

@@ -60,6 +60,8 @@ pub mod pallet {
         type DelRightOrigin: EnsureOrigin<Self::Origin>;
         /// Management of the authorizations of the different calls. (The default implementation only allows root)
         type EnsureIdtyCallAllowed: EnsureIdtyCallAllowed<Self>;
+        /// Minimum duration between the creation of 2 identities by the same creator
+        type IdtyCreationPeriod: Get<Self::BlockNumber>;
         ///  Identity custom data
         type IdtyData: Parameter + Member + MaybeSerializeDeserialize + Debug + Default;
         ///  Identity custom data provider
@@ -280,7 +282,25 @@ pub mod pallet {
             idty_name: IdtyName,
             owner_key: T::AccountId,
         ) -> DispatchResultWithPostInfo {
-            T::EnsureIdtyCallAllowed::can_create_identity(origin, creator, &idty_name, &owner_key)?;
+            let creator_idty_val =
+                Identities::<T>::try_get(&creator).map_err(|_| Error::<T>::CreatorNotExist)?;
+
+            let block_number = frame_system::pallet::Pallet::<T>::block_number();
+
+            if creator_idty_val.next_creatable_identity_on
+                > block_number + T::IdtyCreationPeriod::get()
+            {
+                return Err(Error::<T>::NotRespectIdtyCreationPeriod.into());
+            }
+
+            T::EnsureIdtyCallAllowed::can_create_identity(
+                origin,
+                creator,
+                creator_idty_val,
+                &idty_name,
+                &owner_key,
+            )?;
+
             if !T::IdtyNameValidator::validate(&idty_name) {
                 return Err(Error::<T>::IdtyNameInvalid.into());
             }
@@ -290,15 +310,15 @@ pub mod pallet {
                 return Err(Error::<T>::IdtyNameAlreadyExist.into());
             }
 
-            let block_number = frame_system::pallet::Pallet::<T>::block_number();
             let removable_on = block_number + T::ConfirmPeriod::get();
 
             let idty_index = Self::get_next_idty_index();
             <Identities<T>>::insert(
                 idty_index,
                 IdtyValue {
-                    name: idty_name.clone(),
                     expire_on: T::BlockNumber::zero(),
+                    name: idty_name.clone(),
+                    next_creatable_identity_on: T::BlockNumber::zero(),
                     owner_key: owner_key.clone(),
                     removable_on,
                     renewable_on: T::BlockNumber::zero(),
@@ -625,6 +645,8 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        /// Creator not exist
+        CreatorNotExist,
         /// Identity already confirmed
         IdtyAlreadyConfirmed,
         /// Identity already validated
@@ -649,6 +671,8 @@ pub mod pallet {
         RightAlreadyAdded,
         /// Right not exist
         RightNotExist,
+        /// Not respect IdtyCreationPeriod
+        NotRespectIdtyCreationPeriod,
     }
 
     // PUBLIC FUNCTIONS //
@@ -672,7 +696,7 @@ pub mod pallet {
             } else {
                 panic!("storage corrupted")
             }
-        } //NextIdtyIndex
+        }
         fn get_next_idty_index() -> T::IdtyIndex {
             if let Ok(next_index) = <NextIdtyIndex<T>>::try_get() {
                 <NextIdtyIndex<T>>::put(next_index.saturating_add(T::IdtyIndex::one()));

@@ -38,38 +38,38 @@ impl<
     fn can_create_identity(
         origin: Runtime::Origin,
         creator: IdtyIndex,
+        creator_idty: pallet_identity::IdtyValue<
+            Runtime::AccountId,
+            BlockNumber,
+            IdtyData,
+            IdtyRight,
+        >,
         _idty_name: &pallet_identity::IdtyName,
         _idty_owner_key: &Runtime::AccountId,
     ) -> Result<(), DispatchError> {
         match origin.into() {
             Ok(frame_system::RawOrigin::Root) => Ok(()),
             Ok(frame_system::RawOrigin::Signed(signer)) => {
-                if let Some(creator_idty) = pallet_identity::Pallet::<Runtime>::identity(creator) {
-                    if let Some(authorized_key) = creator_idty.get_right_key(IdtyRight::CreateIdty)
+                if let Some(authorized_key) = creator_idty.get_right_key(IdtyRight::CreateIdty) {
+                    if signer != authorized_key {
+                        frame_support::runtime_print!("signer != authorized_key");
+                        Err(DispatchError::Other("signer != authorized_key"))
+                    } else if !IsIdtyAllowedToCreateCertImpl::is_idty_allowed_to_create_cert(
+                        creator,
+                    ) {
+                        frame_support::runtime_print!("not allowed to create cert");
+                        Err(DispatchError::Other("not allowed to create cert"))
+                    } else if creator_idty.data.can_create_on
+                        > frame_system::Pallet::<Runtime>::block_number()
                     {
-                        if signer != authorized_key {
-                            frame_support::runtime_print!("signer != authorized_key");
-                            Err(DispatchError::Other("signer != authorized_key"))
-                        } else if !IsIdtyAllowedToCreateCertImpl::is_idty_allowed_to_create_cert(
-                            creator,
-                        ) {
-                            frame_support::runtime_print!("not allowed to create cert");
-                            Err(DispatchError::Other("not allowed to create cert"))
-                        } else if creator_idty.data.can_create_on
-                            > frame_system::Pallet::<Runtime>::block_number()
-                        {
-                            frame_support::runtime_print!("Not respect IdtyCreatePeriod");
-                            Err(DispatchError::Other("Not respect IdtyCreatePeriod"))
-                        } else {
-                            Ok(())
-                        }
+                        frame_support::runtime_print!("Not respect IdtyCreatePeriod");
+                        Err(DispatchError::Other("Not respect IdtyCreatePeriod"))
                     } else {
-                        frame_support::runtime_print!("Idty not have right CreateIdty");
-                        Err(DispatchError::Other("Idty not have right CreateIdty"))
+                        Ok(())
                     }
                 } else {
-                    frame_support::runtime_print!("Idty not found");
-                    Err(DispatchError::Other("Idty not found"))
+                    frame_support::runtime_print!("Idty not have right CreateIdty");
+                    Err(DispatchError::Other("Idty not have right CreateIdty"))
                 }
             }
             _ => {

@@ -111,9 +111,11 @@ fn devnet_genesis(
             identities: initial_identities
                 .iter()
                 .map(|(name, account)| IdtyValue {
-                    name: name.clone(),
+                    data: Default::default(),
                     expire_on: gdev_runtime::MaxInactivityPeriod::get(),
                     owner_key: account.clone(),
+                    name: name.clone(),
+                    next_creatable_identity_on: Default::default(),
                     removable_on: 0,
                     renewable_on: gdev_runtime::StrongCertRenewablePeriod::get(),
                     rights: vec![
@@ -122,7 +124,6 @@ fn devnet_genesis(
                         (IdtyRight::Ud, None),
                     ],
                     status: gdev_runtime::IdtyStatus::Validated,
-                    data: Default::default(),
                 })
                 .collect(),
         },

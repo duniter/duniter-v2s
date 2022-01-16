@@ -479,7 +479,7 @@ impl<T: Config<I>, I: 'static> IsInPendingMemberships<T::IdtyId> for Pallet<T, I
 
 impl<T: Config<I>, I: 'static> IsMember<T::IdtyId> for Pallet<T, I> {
     fn is_member(idty_id: &T::IdtyId) -> bool {
-        Self::is_member_inner(&idty_id)
+        Self::is_member_inner(idty_id)
     }
 }
 

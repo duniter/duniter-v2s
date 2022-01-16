@@ -190,6 +190,7 @@ macro_rules! pallets_config {
             type AddRightOrigin = EnsureRoot<Self::AccountId>;
             type DelRightOrigin = EnsureRoot<Self::AccountId>;
             type EnsureIdtyCallAllowed = EnsureIdtyCallAllowedImpl<Runtime, StrongCert>;
+			type IdtyCreationPeriod = IdtyCreationPeriod;
 			type IdtyDataProvider = IdtyDataProvider<Runtime, IDTY_CREATE_PERIOD>;
             type IdtyData = IdtyData;
             type IdtyNameValidator = IdtyNameValidatorImpl;

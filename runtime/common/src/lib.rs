@@ -53,7 +53,7 @@ pub type Hash = sp_core::H256;
 pub type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>;
 
 /// Index of an identity
-pub type IdtyIndex = u64;
+pub type IdtyIndex = u32;
 
 /// Index of a transaction in the chain.
 pub type Index = u32;
