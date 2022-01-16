@@ -26,10 +26,8 @@ pub mod parameters;
 
 pub use self::parameters::*;
 pub use common_runtime::{
-    constants::*,
-    entities::{IdtyData, IdtyRight},
-    AccountId, Address, Balance, BlockNumber, Hash, Header, IdtyIndex, IdtyNameValidatorImpl,
-    Index, Signature,
+    constants::*, entities::IdtyRight, AccountId, Address, Balance, BlockNumber, Hash, Header,
+    IdtyIndex, IdtyNameValidatorImpl, Index, Signature,
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_identity::{IdtyStatus, IdtyValue};
@@ -45,7 +43,6 @@ use common_runtime::{
         OnIdtyChangeHandler, OnNewStrongCertHandler, OnRemovedStrongCertHandler,
         OnRightKeyChangeHandler,
     },
-    providers::IdtyDataProvider,
 };
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
@@ -172,7 +169,8 @@ construct_runtime!(
 
         // Web Of Trust
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 50,
-        StrongCert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 51,
+        Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 51,
+        StrongCert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
 
         // Multisig dispatch.
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 60,

@@ -43,6 +43,7 @@ g1-runtime = { path = '../runtime/g1', optional = true }
 gdev-runtime = { path = '../runtime/gdev', optional = true }
 gtest-runtime = { path = '../runtime/gtest', optional = true }
 pallet-certification = { path = '../pallets/certification' }
+sp-membership = { path = '../primitives/membership' }
 
 # crates.io dependencies
 async-io = "1.3"

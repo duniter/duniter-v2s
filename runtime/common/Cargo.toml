@@ -12,6 +12,7 @@ runtime-benchmarks = [
     'frame-system/runtime-benchmarks',
     'pallet-certification/runtime-benchmarks',
     'pallet-identity/runtime-benchmarks',
+    'pallet-membership/runtime-benchmarks',
     'pallet-ud-accounts-storage/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
 ]
@@ -21,6 +22,7 @@ std = [
     'frame-system/std',
     'pallet-certification/std',
     'pallet-identity/std',
+    'pallet-membership/std',
     'pallet-ud-accounts-storage/std',
     'serde',
     'sp-arithmetic/std',
@@ -32,6 +34,7 @@ std = [
 [dependencies]
 pallet-certification = { path = '../../pallets/certification', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
+pallet-membership = { path = '../../pallets/membership', default-features = false }
 pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
 smallvec = "1.6.1"
 

@@ -17,9 +17,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
-pub mod traits;
-pub mod types;
-
 #[cfg(test)]
 mod mock;
 
@@ -31,10 +28,10 @@ mod benchmarking;*/
 
 pub use pallet::*;
 
-use crate::traits::*;
-use crate::types::{MembershipData, OriginPermission};
 use frame_support::dispatch::Weight;
 use frame_support::pallet_prelude::DispatchResultWithPostInfo;
+use sp_membership::traits::*;
+use sp_membership::{MembershipData, OriginPermission};
 use sp_runtime::traits::Zero;
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -183,15 +180,17 @@ pub mod pallet {
     pub enum Error<T, I = ()> {
         /// Identity not allowed to claim membership
         IdtyNotAllowedToClaimMembership,
-        /// Identity not allowed to renew membership
-        IdtyNotAllowedToRenewMembership,
         /// Identity not allowed to request membership
         IdtyNotAllowedToRequestMembership,
-        /// Origin not allowed to use this identity
+        /// Identity not allowed to renew membership
+        IdtyNotAllowedToRenewMembership,
+        /// Membership already acquired
+        MembershipAlreadyAcquired,
         /// Membership not yet renewable
         MembershipNotYetRenewable,
         /// Membership not found
         MembershipNotFound,
+        /// Origin not allowed to use this identity
         OriginNotAllowedToUseIdty,
         /// Membership request not found
         MembershipRequestNotFound,
@@ -239,6 +238,9 @@ pub mod pallet {
             if !allowed {
                 return Err(Error::<T, I>::IdtyNotAllowedToRequestMembership.into());
             }
+            if Membership::<T, I>::contains_key(&idty_id) {
+                return Err(Error::<T, I>::MembershipAlreadyAcquired.into());
+            }
             if RevokedMembership::<T, I>::contains_key(&idty_id) {
                 return Err(Error::<T, I>::MembershipRevokedRecently.into());
             }
@@ -249,7 +251,7 @@ pub mod pallet {
             PendingMembership::<T, I>::insert(idty_id, ());
             PendingMembershipsExpireOn::<T, I>::append(expire_on, idty_id);
             Self::deposit_event(Event::MembershipRequested(idty_id));
-            T::OnEvent::on_event(crate::types::Event::MembershipRequested(idty_id));
+            T::OnEvent::on_event(sp_membership::Event::MembershipRequested(idty_id));
 
             Ok(().into())
         }
@@ -346,13 +348,13 @@ pub mod pallet {
             PendingMembership::<T, I>::remove(&idty_id);
             total_weight += Self::do_renew_membership_inner(idty_id);
             Self::deposit_event(Event::MembershipAcquired(idty_id));
-            T::OnEvent::on_event(crate::types::Event::MembershipAcquired(idty_id));
+            T::OnEvent::on_event(sp_membership::Event::MembershipAcquired(idty_id));
             total_weight
         }
         pub(super) fn do_renew_membership(idty_id: T::IdtyId) -> Weight {
             let total_weight = Self::do_renew_membership_inner(idty_id);
             Self::deposit_event(Event::MembershipRenewed(idty_id));
-            T::OnEvent::on_event(crate::types::Event::MembershipRenewed(idty_id));
+            T::OnEvent::on_event(sp_membership::Event::MembershipRenewed(idty_id));
             total_weight
         }
         fn do_renew_membership_inner(idty_id: T::IdtyId) -> Weight {
@@ -371,14 +373,17 @@ pub mod pallet {
             0
         }
         pub(super) fn do_revoke_membership(idty_id: T::IdtyId) -> Weight {
-            let block_number = frame_system::pallet::Pallet::<T>::block_number();
-            let pruned_on = block_number + T::RevocationPeriod::get();
-
             Self::remove_membership(&idty_id);
-            RevokedMembership::<T, I>::insert(idty_id, ());
-            RevokedMembershipsPrunedOn::<T, I>::append(pruned_on, idty_id);
+            if T::RevocationPeriod::get() > Zero::zero() {
+                let block_number = frame_system::pallet::Pallet::<T>::block_number();
+                let pruned_on = block_number + T::RevocationPeriod::get();
+
+                RevokedMembership::<T, I>::insert(idty_id, ());
+                RevokedMembershipsPrunedOn::<T, I>::append(pruned_on, idty_id);
+            }
             Self::deposit_event(Event::MembershipRevoked(idty_id));
-            T::OnEvent::on_event(crate::types::Event::MembershipRevoked(idty_id));
+            T::OnEvent::on_event(sp_membership::Event::MembershipRevoked(idty_id));
+
             0
         }
         fn expire_memberships(block_number: T::BlockNumber) -> Weight {
@@ -394,7 +399,7 @@ pub mod pallet {
                             Self::remove_membership(&idty_id);
                             Self::deposit_event(Event::MembershipExpired(idty_id));
                             total_weight += T::OnEvent::on_event(
-                                crate::types::Event::MembershipExpired(idty_id),
+                                sp_membership::Event::MembershipExpired(idty_id),
                             );
                         }
                     }
@@ -416,7 +421,7 @@ pub mod pallet {
                     PendingMembership::<T, I>::remove(&idty_id);
                     Self::deposit_event(Event::PendingMembershipExpired(idty_id));
                     total_weight += T::OnEvent::on_event(
-                        crate::types::Event::PendingMembershipExpired(idty_id),
+                        sp_membership::Event::PendingMembershipExpired(idty_id),
                     );
                 }
             }

@@ -16,11 +16,11 @@
 
 use crate::mock::Event as RuntimeEvent;
 use crate::mock::*;
-use crate::traits::{IsInPendingMemberships, IsMember};
-use crate::types::MembershipData;
 use crate::{Error, Event};
 use frame_support::assert_ok;
 use maplit::btreemap;
+use sp_membership::traits::{IsInPendingMemberships, IsMember};
+use sp_membership::MembershipData;
 
 fn default_gen_conf() -> DefaultMembershipConfig {
     DefaultMembershipConfig {

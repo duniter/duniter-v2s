@@ -52,10 +52,14 @@ frame_support::parameter_types! {
     pub const ConfirmPeriod: BlockNumber = 40;
     pub const FirstIssuableOn: BlockNumber = 20;
     pub const IdtyCreationPeriod: BlockNumber = 50;
-    pub const IdtyRenewablePeriod: BlockNumber = 50;
-    pub const MaxInactivityPeriod: BlockNumber = 1_000;
     pub const MaxNoRightPeriod: BlockNumber = 1_000;
-    pub const ValidationPeriod: BlockNumber = 500;
+}
+
+// Membership
+parameter_types! {
+    pub const MembershipPeriod: BlockNumber = 1_000;
+    pub const PendingMembershipPeriod: BlockNumber = 500;
+    pub const RenewablePeriod: BlockNumber = 50;
 }
 
 // Certification

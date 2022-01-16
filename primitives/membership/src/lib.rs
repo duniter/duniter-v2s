@@ -14,7 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-//! Various basic types for use in the membership pallet.
+//! Defines types and traits for users of pallet membership.
+
+#![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::type_complexity)]
+
+pub mod traits;
 
 use codec::{Decode, Encode};
 use frame_support::RuntimeDebug;
@@ -24,22 +29,16 @@ use serde::{Deserialize, Serialize};
 
 pub enum Event<IdtyId> {
     /// A membership has acquired
-    /// [idty_id]
     MembershipAcquired(IdtyId),
     /// A membership has expired
-    /// [idty_id]
     MembershipExpired(IdtyId),
     /// A membership has renewed
-    /// [idty_id]
     MembershipRenewed(IdtyId),
     /// An identity requested membership
-    /// [idty_id]
     MembershipRequested(IdtyId),
     /// A membership has revoked
-    /// [idty_id]
     MembershipRevoked(IdtyId),
     /// A pending membership request has expired
-    /// [idty_id]
     PendingMembershipExpired(IdtyId),
 }
 

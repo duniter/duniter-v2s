@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::traits::IsOriginAllowedToUseIdty;
-use crate::types::OriginPermission;
 use crate::{self as pallet_membership};
 use frame_support::{
     parameter_types,
@@ -23,6 +21,8 @@ use frame_support::{
 };
 use frame_system as system;
 use sp_core::H256;
+use sp_membership::traits::IsOriginAllowedToUseIdty;
+use sp_membership::OriginPermission;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},

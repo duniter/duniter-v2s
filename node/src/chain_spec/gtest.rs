@@ -19,8 +19,8 @@ use common_runtime::constants::*;
 use common_runtime::entities::IdtyName;
 use gtest_runtime::{
     opaque::SessionKeys, AccountId, BabeConfig, BalancesConfig, GenesisConfig, IdentityConfig,
-    IdtyRight, IdtyValue, ImOnlineId, SessionConfig, StrongCertConfig, SudoConfig, SystemConfig,
-    UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
+    IdtyRight, IdtyValue, ImOnlineId, MembershipConfig, SessionConfig, StrongCertConfig,
+    SudoConfig, SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use maplit::btreemap;
 use sc_service::ChainType;
@@ -28,6 +28,7 @@ use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::sr25519;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_membership::MembershipData;
 use std::collections::BTreeMap;
 
 pub type AuthorityKeys = (
@@ -99,18 +100,29 @@ fn devnet_genesis(
             identities: initial_identities
                 .iter()
                 .map(|(name, account)| IdtyValue {
+                    data: Default::default(),
                     name: name.clone(),
-                    expire_on: gtest_runtime::MaxInactivityPeriod::get(),
                     owner_key: account.clone(),
                     removable_on: 0,
-                    renewable_on: gtest_runtime::StrongCertRenewablePeriod::get(),
                     rights: vec![
                         (IdtyRight::CreateIdty, None),
                         (IdtyRight::StrongCert, None),
                         (IdtyRight::Ud, None),
                     ],
                     status: gtest_runtime::IdtyStatus::Validated,
-                    data: Default::default(),
+                })
+                .collect(),
+        },
+        membership: MembershipConfig {
+            memberships: (1..=initial_identities.len())
+                .map(|i| {
+                    (
+                        i as u32,
+                        MembershipData {
+                            expire_on: gtest_runtime::MembershipPeriod::get(),
+                            renewable_on: gtest_runtime::RenewablePeriod::get(),
+                        },
+                    )
                 })
                 .collect(),
         },
@@ -292,18 +304,29 @@ fn testnet_genesis(
             identities: initial_identities
                 .iter()
                 .map(|(name, account)| IdtyValue {
+                    data: Default::default(),
                     name: name.clone(),
-                    expire_on: gtest_runtime::MaxInactivityPeriod::get(),
                     owner_key: account.clone(),
                     removable_on: 0,
-                    renewable_on: gtest_runtime::StrongCertRenewablePeriod::get(),
                     rights: vec![
                         (IdtyRight::CreateIdty, None),
                         (IdtyRight::StrongCert, None),
                         (IdtyRight::Ud, None),
                     ],
                     status: gtest_runtime::IdtyStatus::Validated,
-                    data: Default::default(),
+                })
+                .collect(),
+        },
+        membership: MembershipConfig {
+            memberships: (1..=initial_identities.len())
+                .map(|i| {
+                    (
+                        i as u32,
+                        MembershipData {
+                            expire_on: gtest_runtime::MembershipPeriod::get(),
+                            renewable_on: gtest_runtime::RenewablePeriod::get(),
+                        },
+                    )
                 })
                 .collect(),
         },

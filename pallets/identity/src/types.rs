@@ -80,12 +80,10 @@ pub struct IdtyValue<
     IdtyRight: Decode + Encode + TypeInfo,
 > {
     pub data: IdtyData,
-    pub expire_on: BlockNumber,
     pub owner_key: AccountId,
     pub name: IdtyName,
     pub next_creatable_identity_on: BlockNumber,
     pub removable_on: BlockNumber,
-    pub renewable_on: BlockNumber,
     pub rights: Vec<(IdtyRight, Option<AccountId>)>,
     pub status: IdtyStatus,
 }

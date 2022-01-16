@@ -19,12 +19,14 @@ std = [
     'frame-benchmarking/std',
     'serde',
     'sp-core/std',
+    'sp-membership/std',
     'sp-runtime/std',
 	'sp-std/std',
 ]
 try-runtime = ['frame-support/try-runtime']
 
 [dependencies]
+sp-membership = { path = "../../primitives/membership", default-features = false }
 
 # substrate
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }

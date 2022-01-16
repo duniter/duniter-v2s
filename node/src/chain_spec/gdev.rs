@@ -18,13 +18,14 @@ use super::*;
 use common_runtime::entities::IdtyName;
 use gdev_runtime::{
     AccountId, BalancesConfig, GenesisConfig, GrandpaConfig, IdentityConfig, IdtyRight, IdtyValue,
-    StrongCertConfig, SudoConfig, SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig,
-    WASM_BINARY,
+    MembershipConfig, StrongCertConfig, SudoConfig, SystemConfig, UdAccountsStorageConfig,
+    UniversalDividendConfig, WASM_BINARY,
 };
 use maplit::btreemap;
 use sc_service::ChainType;
 use sp_core::sr25519;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_membership::MembershipData;
 use std::collections::BTreeMap;
 
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -112,18 +113,29 @@ fn devnet_genesis(
                 .iter()
                 .map(|(name, account)| IdtyValue {
                     data: Default::default(),
-                    expire_on: gdev_runtime::MaxInactivityPeriod::get(),
                     owner_key: account.clone(),
                     name: name.clone(),
                     next_creatable_identity_on: Default::default(),
                     removable_on: 0,
-                    renewable_on: gdev_runtime::StrongCertRenewablePeriod::get(),
                     rights: vec![
                         (IdtyRight::CreateIdty, None),
                         (IdtyRight::StrongCert, None),
                         (IdtyRight::Ud, None),
                     ],
                     status: gdev_runtime::IdtyStatus::Validated,
+                })
+                .collect(),
+        },
+        membership: MembershipConfig {
+            memberships: (1..=initial_identities.len())
+                .map(|i| {
+                    (
+                        i as u32,
+                        MembershipData {
+                            expire_on: gdev_runtime::MembershipPeriod::get(),
+                            renewable_on: gdev_runtime::RenewablePeriod::get(),
+                        },
+                    )
                 })
                 .collect(),
         },

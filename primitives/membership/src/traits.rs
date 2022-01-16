@@ -14,9 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::types::OriginPermission;
 use crate::*;
-use frame_support::pallet_prelude::DispatchResultWithPostInfo;
+use frame_support::pallet_prelude::{DispatchResultWithPostInfo, TypeInfo, Weight};
 
 pub trait IsIdtyAllowedToClaimMembership<IdtyId> {
     fn is_idty_allowed_to_claim_membership(idty_id: &IdtyId) -> bool;
@@ -73,11 +72,11 @@ impl<IdtyId> IsMember<IdtyId> for () {
 }
 
 pub trait OnEvent<IdtyId> {
-    fn on_event(event: crate::types::Event<IdtyId>) -> Weight;
+    fn on_event(event: crate::Event<IdtyId>) -> Weight;
 }
 
 impl<IdtyId> OnEvent<IdtyId> for () {
-    fn on_event(_: crate::types::Event<IdtyId>) -> Weight {
+    fn on_event(_: crate::Event<IdtyId>) -> Weight {
         0
     }
 }
@@ -92,6 +91,30 @@ pub trait MembershipAction<IdtyId, Origin> {
     fn force_revoke_membership(idty_id: IdtyId) -> Weight;
 }
 
+impl<IdtyId, Origin> MembershipAction<IdtyId, Origin> for () {
+    fn request_membership_(_: Origin, _: IdtyId) -> DispatchResultWithPostInfo {
+        Ok(().into())
+    }
+    fn claim_membership_(_: Origin, _: IdtyId) -> DispatchResultWithPostInfo {
+        Ok(().into())
+    }
+    fn renew_membership_(_: Origin, _: IdtyId) -> DispatchResultWithPostInfo {
+        Ok(().into())
+    }
+    fn revoke_membership_(_: Origin, _: IdtyId) -> DispatchResultWithPostInfo {
+        Ok(().into())
+    }
+    fn force_claim_membership(_: IdtyId) -> Weight {
+        0
+    }
+    fn force_renew_membership(_: IdtyId) -> Weight {
+        0
+    }
+    fn force_revoke_membership(_: IdtyId) -> Weight {
+        0
+    }
+}
+
 pub trait MembershipExternalStorage<BlockNumber: Decode + Encode + TypeInfo, IdtyId>:
     IsMember<IdtyId>
 {
@@ -100,8 +123,6 @@ pub trait MembershipExternalStorage<BlockNumber: Decode + Encode + TypeInfo, Idt
     fn remove(idty_id: &IdtyId);
 }
 
-use codec::{Decode, Encode};
-use frame_support::pallet_prelude::TypeInfo;
 static INVALID_CONF_MSG: &str = "invalid pallet configuration: if `MembershipExternalStorage` = (), you must set `ExternalizeMembershipStorage` to `false`.";
 
 impl<BlockNumber: Decode + Encode + TypeInfo, IdtyId> MembershipExternalStorage<BlockNumber, IdtyId>

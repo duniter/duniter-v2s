@@ -38,6 +38,7 @@ std = [
     'pallet-certification/std',
     'pallet-grandpa/std',
     'pallet-identity/std',
+    'pallet-membership/std',
     'pallet-im-online/std',
     'pallet-multisig/std',
     'pallet-session/std',
@@ -67,6 +68,7 @@ std = [
 [dependencies]
 pallet-certification = { path = '../../pallets/certification', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
+pallet-membership = { path = '../../pallets/membership', default-features = false }
 pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
 common-runtime = { path = "../common", default-features = false }

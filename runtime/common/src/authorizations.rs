@@ -14,9 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::entities::{IdtyData, IdtyRight};
+use crate::entities::IdtyRight;
 use crate::{BlockNumber, IdtyIndex};
-use frame_support::pallet_prelude::DispatchError;
 use frame_support::traits::EnsureOrigin;
 use pallet_certification::traits::IsIdtyAllowedToCreateCert;
 use pallet_identity::IdtyStatus;
@@ -26,57 +25,13 @@ pub struct EnsureIdtyCallAllowedImpl<Runtime, IsIdtyAllowedToCreateCertImpl>(
 );
 impl<
         Runtime: frame_system::Config<BlockNumber = BlockNumber>
-            + pallet_identity::Config<
-                IdtyData = IdtyData,
-                IdtyIndex = IdtyIndex,
-                IdtyRight = IdtyRight,
-            >,
+            + pallet_identity::Config<IdtyIndex = IdtyIndex>,
         IsIdtyAllowedToCreateCertImpl: IsIdtyAllowedToCreateCert<IdtyIndex>,
     > pallet_identity::traits::EnsureIdtyCallAllowed<Runtime>
     for EnsureIdtyCallAllowedImpl<Runtime, IsIdtyAllowedToCreateCertImpl>
 {
-    fn can_create_identity(
-        origin: Runtime::Origin,
-        creator: IdtyIndex,
-        creator_idty: pallet_identity::IdtyValue<
-            Runtime::AccountId,
-            BlockNumber,
-            IdtyData,
-            IdtyRight,
-        >,
-        _idty_name: &pallet_identity::IdtyName,
-        _idty_owner_key: &Runtime::AccountId,
-    ) -> Result<(), DispatchError> {
-        match origin.into() {
-            Ok(frame_system::RawOrigin::Root) => Ok(()),
-            Ok(frame_system::RawOrigin::Signed(signer)) => {
-                if let Some(authorized_key) = creator_idty.get_right_key(IdtyRight::CreateIdty) {
-                    if signer != authorized_key {
-                        frame_support::runtime_print!("signer != authorized_key");
-                        Err(DispatchError::Other("signer != authorized_key"))
-                    } else if !IsIdtyAllowedToCreateCertImpl::is_idty_allowed_to_create_cert(
-                        creator,
-                    ) {
-                        frame_support::runtime_print!("not allowed to create cert");
-                        Err(DispatchError::Other("not allowed to create cert"))
-                    } else if creator_idty.data.can_create_on
-                        > frame_system::Pallet::<Runtime>::block_number()
-                    {
-                        frame_support::runtime_print!("Not respect IdtyCreatePeriod");
-                        Err(DispatchError::Other("Not respect IdtyCreatePeriod"))
-                    } else {
-                        Ok(())
-                    }
-                } else {
-                    frame_support::runtime_print!("Idty not have right CreateIdty");
-                    Err(DispatchError::Other("Idty not have right CreateIdty"))
-                }
-            }
-            _ => {
-                frame_support::runtime_print!("Origin neither root or signed");
-                Err(DispatchError::Other("Origin neither root or signed"))
-            }
-        }
+    fn can_create_identity(creator: IdtyIndex) -> bool {
+        IsIdtyAllowedToCreateCertImpl::is_idty_allowed_to_create_cert(creator)
     }
 }
 

@@ -16,7 +16,6 @@
 
 pub use pallet_identity::IdtyName;
 
-use crate::BlockNumber;
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
@@ -46,12 +45,6 @@ impl pallet_identity::traits::IdtyRight for IdtyRight {
     fn create_idty_right() -> Self {
         Self::CreateIdty
     }
-}
-
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct IdtyData {
-    pub can_create_on: BlockNumber,
 }
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]

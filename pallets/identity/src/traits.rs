@@ -15,33 +15,17 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use frame_support::{dispatch::DispatchError, pallet_prelude::*};
-use frame_system::pallet_prelude::*;
+use frame_support::pallet_prelude::*;
 use sp_runtime::traits::MaybeSerializeDeserialize;
 use sp_std::fmt::Debug;
 
 pub trait EnsureIdtyCallAllowed<T: Config> {
-    fn can_create_identity(
-        origin: T::Origin,
-        creator: T::IdtyIndex,
-        creator_idty: IdtyValue<T::AccountId, T::BlockNumber, T::IdtyData, T::IdtyRight>,
-        idty_name: &IdtyName,
-        idty_owner_key: &T::AccountId,
-    ) -> Result<(), DispatchError>;
+    fn can_create_identity(creator: T::IdtyIndex) -> bool;
 }
 
 impl<T: Config> EnsureIdtyCallAllowed<T> for () {
-    fn can_create_identity(
-        origin: T::Origin,
-        _creator: T::IdtyIndex,
-        _creator_idty: IdtyValue<T::AccountId, T::BlockNumber, T::IdtyData, T::IdtyRight>,
-        _idty_name: &IdtyName,
-        _idty_owner_key: &T::AccountId,
-    ) -> Result<(), DispatchError> {
-        match ensure_root(origin) {
-            Ok(()) => Ok(()),
-            Err(_) => Err(DispatchError::BadOrigin),
-        }
+    fn can_create_identity(_creator: T::IdtyIndex) -> bool {
+        true
     }
 }
 

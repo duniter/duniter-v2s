@@ -855,6 +855,7 @@ dependencies = [
  "frame-system",
  "pallet-certification",
  "pallet-identity",
+ "pallet-membership",
  "pallet-session",
  "pallet-ud-accounts-storage",
  "parity-scale-codec",
@@ -1461,6 +1462,7 @@ dependencies = [
  "sp-finality-grandpa",
  "sp-inherents",
  "sp-keyring",
+ "sp-membership",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -2120,6 +2122,7 @@ dependencies = [
  "pallet-grandpa",
  "pallet-identity",
  "pallet-im-online",
+ "pallet-membership",
  "pallet-multisig",
  "pallet-offences",
  "pallet-scheduler",
@@ -2174,6 +2177,7 @@ dependencies = [
  "pallet-certification",
  "pallet-grandpa",
  "pallet-identity",
+ "pallet-membership",
  "pallet-multisig",
  "pallet-scheduler",
  "pallet-sudo",
@@ -2363,6 +2367,7 @@ dependencies = [
  "pallet-grandpa",
  "pallet-identity",
  "pallet-im-online",
+ "pallet-membership",
  "pallet-multisig",
  "pallet-offences",
  "pallet-scheduler",
@@ -4549,6 +4554,7 @@ dependencies = [
  "serde",
  "sp-core",
  "sp-io",
+ "sp-membership",
  "sp-runtime",
  "sp-std",
 ]
@@ -4585,6 +4591,7 @@ dependencies = [
  "serde",
  "sp-core",
  "sp-io",
+ "sp-membership",
  "sp-runtime",
  "sp-std",
 ]
@@ -7390,6 +7397,17 @@ version = "4.1.0-dev"
 source = "git+https://github.com/librelois/substrate.git?branch=duniter-monthly-2022-01#104c497435848265e58eeeea7b82c63b2f7ee13c"
 dependencies = [
  "zstd",
+]
+
+[[package]]
+name = "sp-membership"
+version = "3.0.0"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-std",
 ]
 
 [[package]]

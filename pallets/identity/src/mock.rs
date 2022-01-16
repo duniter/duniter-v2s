@@ -124,7 +124,7 @@ parameter_types! {
 pub struct IdtyNameValidatorTestImpl;
 impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
     fn validate(idty_name: &pallet_identity::IdtyName) -> bool {
-        idty_name.0.len() == 1
+        idty_name.0.len() < 16
     }
 }
 
@@ -143,10 +143,8 @@ impl pallet_identity::Config for Test {
     type IdtyRight = IdtyRight;
     type OnIdtyChange = ();
     type OnRightKeyChange = ();
-    type MaxInactivityPeriod = MaxInactivityPeriod;
     type MaxNoRightPeriod = MaxNoRightPeriod;
-    type RenewablePeriod = RenewablePeriod;
-    type ValidationPeriod = ValidationPeriod;
+    type Membership = ();
 }
 
 // Build genesis storage according to the mock runtime.
@@ -164,6 +162,7 @@ pub fn run_to_block(n: u64) {
     while System::block_number() < n {
         Identity::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
+        System::reset_events();
         System::set_block_number(System::block_number() + 1);
         System::on_initialize(System::block_number());
         Identity::on_initialize(System::block_number());

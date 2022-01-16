@@ -191,19 +191,33 @@ macro_rules! pallets_config {
             type DelRightOrigin = EnsureRoot<Self::AccountId>;
             type EnsureIdtyCallAllowed = EnsureIdtyCallAllowedImpl<Runtime, StrongCert>;
 			type IdtyCreationPeriod = IdtyCreationPeriod;
-			type IdtyDataProvider = IdtyDataProvider<Runtime, IDTY_CREATE_PERIOD>;
-            type IdtyData = IdtyData;
+			type IdtyDataProvider = ();
+            type IdtyData = ();
             type IdtyNameValidator = IdtyNameValidatorImpl;
             type IdtyIndex = IdtyIndex;
             type IdtyValidationOrigin = EnsureRoot<Self::AccountId>;
             type IdtyRight = IdtyRight;
             type OnIdtyChange = OnIdtyChangeHandler<Runtime>;
             type OnRightKeyChange = OnRightKeyChangeHandler<Runtime>;
-            type MaxInactivityPeriod = MaxInactivityPeriod;
             type MaxNoRightPeriod = MaxNoRightPeriod;
-            type RenewablePeriod = IdtyRenewablePeriod;
-            type ValidationPeriod = ValidationPeriod;
+			type Membership = Membership;
         }
+
+		impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {
+			type IsIdtyAllowedToClaimMembership = ();
+			type IsIdtyAllowedToRenewMembership = ();
+			type IsIdtyAllowedToRequestMembership = ();
+			type IsOriginAllowedToUseIdty = Identity;
+			type Event = Event;
+			type ExternalizeMembershipStorage = frame_support::traits::ConstBool<false>;
+			type IdtyId = IdtyIndex;
+			type OnEvent = Identity;
+			type MembershipExternalStorage = ();
+			type MembershipPeriod = MembershipPeriod;
+			type PendingMembershipPeriod = PendingMembershipPeriod;
+			type RenewablePeriod = RenewablePeriod;
+			type RevocationPeriod = frame_support::traits::ConstU32<0>;
+		}
 
         impl pallet_certification::Config<frame_support::instances::Instance1> for Runtime {
             type AddCertOrigin = AddStrongCertOrigin<Runtime>;
