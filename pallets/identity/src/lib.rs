@@ -405,6 +405,7 @@ pub mod pallet {
         pub fn validate_identity(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
+            idty_rights: Vec<T::IdtyRight>,
         ) -> DispatchResultWithPostInfo {
             T::IdtyValidationOrigin::ensure_origin(origin.clone())?;
 
@@ -414,51 +415,25 @@ pub mod pallet {
                     IdtyStatus::ConfirmedByOwner => {
                         let _post_info = T::Membership::claim_membership_(origin, idty_index)?;
 
-                        let block_number = frame_system::pallet::Pallet::<T>::block_number();
-                        let removable_on = block_number + T::MaxNoRightPeriod::get();
-                        idty_value.removable_on = removable_on;
-                        idty_value.status = IdtyStatus::Validated;
-                        let name = idty_value.name.clone();
-
-                        <Identities<T>>::insert(idty_index, idty_value);
-                        <IdentitiesRemovableOn<T>>::append(
-                            removable_on,
-                            (idty_index, IdtyStatus::Validated),
-                        );
-                        Self::deposit_event(Event::IdtyValidated(name));
-                        T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Validated);
-                        Ok(().into())
-                    }
-                    IdtyStatus::Validated | IdtyStatus::Expired => {
-                        Err(Error::<T>::IdtyAlreadyValidated.into())
-                    }
-                }
-            } else {
-                Err(Error::<T>::IdtyNotFound.into())
-            }
-        }
-        #[pallet::weight(0)]
-        pub fn validate_identity_and_add_rights(
-            origin: OriginFor<T>,
-            idty_index: T::IdtyIndex,
-            rights: Vec<T::IdtyRight>,
-        ) -> DispatchResultWithPostInfo {
-            T::IdtyValidationOrigin::ensure_origin(origin)?;
-
-            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_index) {
-                match idty_value.status {
-                    IdtyStatus::Created => Err(Error::<T>::IdtyNotConfirmedByOwner.into()),
-                    IdtyStatus::ConfirmedByOwner => {
                         idty_value.removable_on = T::BlockNumber::zero();
-                        idty_value.rights = rights.iter().map(|right| (*right, None)).collect();
+                        idty_value.rights =
+                            idty_rights.iter().map(|right| (*right, None)).collect();
                         idty_value.status = IdtyStatus::Validated;
                         let name = idty_value.name.clone();
                         let owner_key = idty_value.owner_key.clone();
 
                         <Identities<T>>::insert(idty_index, idty_value);
+                        if idty_rights.is_empty() {
+                            let block_number = frame_system::pallet::Pallet::<T>::block_number();
+                            let removable_on = block_number + T::MaxNoRightPeriod::get();
+                            <IdentitiesRemovableOn<T>>::append(
+                                removable_on,
+                                (idty_index, IdtyStatus::Validated),
+                            );
+                        }
                         Self::deposit_event(Event::IdtyValidated(name.clone()));
                         T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Validated);
-                        for right in rights {
+                        for right in idty_rights {
                             Self::deposit_event(Event::IdtyAcquireRight(name.clone(), right));
                             if right.allow_owner_key() {
                                 T::OnRightKeyChange::on_right_key_change(

@@ -106,7 +106,7 @@ impl<
         let total_weight = 0;
         if receiver_received_count == MIN_STRONG_CERT_FOR_UD {
             // total_weight += Identity::WeightInfo::add_right();
-            let _ = <pallet_identity::Pallet<Runtime>>::validate_identity_and_add_rights(
+            let _ = <pallet_identity::Pallet<Runtime>>::validate_identity(
                 frame_system::Origin::<Runtime>::Root.into(),
                 receiver,
                 sp_std::vec![IdtyRight::Ud],
