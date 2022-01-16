@@ -143,11 +143,7 @@ pub type Executive = frame_executive::Executive<
 pub struct BaseCallFilter;
 impl frame_support::traits::Contains<Call> for BaseCallFilter {
     fn contains(call: &Call) -> bool {
-        match call {
-            Call::Membership(_) => false,
-            Call::Session(_) => false,
-            _ => true,
-        }
+        matches!(call, Call::Membership(_) | Call::Session(_))
     }
 }
 
