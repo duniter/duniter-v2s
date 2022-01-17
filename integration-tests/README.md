@@ -122,7 +122,16 @@ functions defined in `integration-tests/tests/common`.
 
 To realize the RPC requests, we use the rust crate [subxt](https://github.com/paritytech/subxt).
 
+#### Upgrade metadata
 
+To work, the integration tests need to have the runtime metadata up to date, here is how to update
+them:
+
+```bash
+subxt metadata -f bytes > resources/metadata.scale
+```
+
+If you don't have subxt, install it: `cargo install subxt-cli`
 
 [BDD]: https://en.wikipedia.org/wiki/Behavior-driven_development
 [cucumber]: https://cucumber.io/
