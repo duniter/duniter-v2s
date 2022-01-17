@@ -107,6 +107,20 @@ List of possible actions:
 
     Example: `Monetary mass should be 30.00 ĞD`
 
+### Run cucumber functionnal tests
+
+To run the cucumber tests, you will need to have the rust toolchain installed locally.
+
+To run all the scenarios (there are many) use the command: `cargo cucumber`
+
+You can filter the `.feature` files to run with the option `i`, for instante:
+
+```
+cargo cucumber -i monetary*
+```
+
+Will only run `.feature` files that start with `monetary`.
+
 ### Contribute to the code that runs the tests
 
 Cucumber is not magic, we have to write code that interprets the Gherkin text and performs the right
