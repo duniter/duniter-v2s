@@ -42,6 +42,7 @@ build_debug:
     - when: manual
   stage: build
   script:
+    - cargo clean -p dunite
     - cargo build
     - mkdir build
     - mv target/debug/duniter build/duniter
