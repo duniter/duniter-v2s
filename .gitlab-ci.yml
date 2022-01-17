@@ -22,6 +22,8 @@ workflow:
 fmt_and_clippy:
   extends: .env
   rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
+      when: manual
     - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH == "master"'
       when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
