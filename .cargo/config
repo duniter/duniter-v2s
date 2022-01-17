@@ -1,0 +1,2 @@
+[alias]
+cucumber = "test -p duniter-integration-tests --test cucumber_tests --"
