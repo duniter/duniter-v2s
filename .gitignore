@@ -17,3 +17,6 @@
 
 # node modules
 **/node_modules/**
+
+# build folder
+build
