@@ -117,7 +117,9 @@ tests_debug:
     DUNITER_BINARY_PATH: "../build/duniter"
     DUNITER_INTEGRATION_TESTS_SPAWN_NODE_DURATION: "20"
   script:
-    - cargo test
+    - cargo test --workspace --exclude duniter-integration-tests
+    - cargo cucumber -i monetary*
+    - cargo cucumber -i *transfer*
   dependencies:
     - build_debug
 
@@ -131,7 +133,9 @@ tests_release:
     DUNITER_BINARY_PATH: "../build/duniter"
     DUNITER_INTEGRATION_TESTS_SPAWN_NODE_DURATION: "10"
   script:
-    - cargo test
+    - cargo test --workspace --exclude duniter-integration-tests
+    - cargo cucumber -i monetary*
+    - cargo cucumber -i *transfer*
   dependencies:
     - build_release
 
