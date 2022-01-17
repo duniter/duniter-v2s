@@ -102,6 +102,7 @@ fn devnet_genesis(
                 .map(|(name, account)| IdtyValue {
                     data: Default::default(),
                     name: name.clone(),
+                    next_creatable_identity_on: Default::default(),
                     owner_key: account.clone(),
                     removable_on: 0,
                     rights: vec![
@@ -306,6 +307,7 @@ fn testnet_genesis(
                 .map(|(name, account)| IdtyValue {
                     data: Default::default(),
                     name: name.clone(),
+                    next_creatable_identity_on: Default::default(),
                     owner_key: account.clone(),
                     removable_on: 0,
                     rights: vec![
