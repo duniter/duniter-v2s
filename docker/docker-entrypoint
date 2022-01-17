@@ -1,0 +1,37 @@
+#!/bin/bash
+
+function boolean () {
+  echo "$1" | sed -E 's/^(true|yes|1)$/true/i'
+}
+
+function ternary () {
+  if [ $(boolean "$1") = true ]; then
+    echo "$2"
+  else
+    echo "$3"
+  fi
+}
+
+if [ -n "$DUNITER_INSTANCE_NAME" ]; then
+  set -- "$@" --name "$DUNITER_INSTANCE_NAME"
+fi
+
+DUNITER_DISABLE_PROMETHEUS=$(boolean "${DUNITER_DISABLE_PROMETHEUS:-false}")
+
+DUNITER_CHAIN_NAME="${DUNITER_CHAIN_NAME:-dev}"
+case "$DUNITER_CHAIN_NAME" in
+  dev)
+    chain=(--dev)
+    ;;
+  *)
+    chain=(--chain "$DUNITER_CHAIN_NAME")
+    ;;
+esac
+
+set -- "$@" \
+  "${chain[@]}" \
+  $(ternary "$DUNITER_DISABLE_PROMETHEUS" --no-prometheus) \
+  --unsafe-ws-external -d /var/lib/duniter
+
+echo "Starting duniter with parameters:" "$@"
+exec duniter "$@"

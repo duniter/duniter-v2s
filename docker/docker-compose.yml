@@ -1,0 +1,24 @@
+version: "3.5"
+
+services:
+  duniter-v2s:
+    container_name: duniter-v2s
+    image: duniter-v2s
+    ports:
+      # telemetry
+      - "127.0.0.1:9615:9615"
+      # rpc
+      - "127.0.0.1:9933:9933"
+      # rpc-ws
+      - "127.0.0.1:9944:9944"
+      # p2p
+      - "30333:30333"
+    environment:
+      DUNITER_INSTANCE_NAME: "my_instance"
+      DUNITER_CHAIN_NAME: "dev"
+      #DUNITER_DISABLE_PROMETHEUS: "false"
+    volumes:
+      - data:/var/lib/lc-core
+
+volumes:
+  data:
