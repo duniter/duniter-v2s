@@ -16,7 +16,7 @@ targets = ['x86_64-unknown-linux-gnu']
 name = 'duniter'
 
 [features]
-default = ["gdev"]
+default = ["gdev", "gtest"]
 g1 = ["g1-runtime"]
 gdev = ["gdev-runtime"]
 gtest = ["gtest-runtime"]
