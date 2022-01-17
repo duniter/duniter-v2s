@@ -8,12 +8,14 @@
 FROM rust:1-buster as build
 WORKDIR /root
 
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y \
-        clang
-
 # Copy source tree
 COPY . .
+
+RUN test -x build/duniter || \
+    ( \
+        apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y clang \
+    )
 
 # build duniter
 ARG threads=1
@@ -40,7 +42,7 @@ COPY --from=build /root/build/duniter /usr/local/bin/duniter
 COPY docker/docker-entrypoint /usr/local/bin/
 
 # Configuration
-# rpc, rpc-ws, p2p, telemetry
+# rpc, rpc-ws, p2p, telemetry 
 EXPOSE 9933 9944 30333 9615
 VOLUME /var/lib/duniter
 ENTRYPOINT ["docker-entrypoint"]
