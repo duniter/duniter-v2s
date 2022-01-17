@@ -96,6 +96,7 @@ pub mod pallet {
     }
 
     // GENESIS STUFF //
+
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub identities: Vec<IdtyValue<T::AccountId, T::BlockNumber, T::IdtyData>>,

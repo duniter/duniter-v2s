@@ -34,6 +34,7 @@ std = [
     'frame-system-rpc-runtime-api/std',
     'frame-system/std',
 	'pallet-authority-discovery/std',
+	'pallet-authority-members/std',
     'pallet-babe/std',
     'pallet-balances/std',
     'pallet-certification/std',
@@ -70,6 +71,7 @@ std = [
 
 [dependencies]
 common-runtime = { path = "../common", default-features = false }
+pallet-authority-members = { path = '../../pallets/authority-members', default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
 pallet-duniter-test-parameters = { path = '../../pallets/duniter-test-parameters', default-features = false }
 pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }

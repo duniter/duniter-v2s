@@ -104,6 +104,7 @@ members = [
     'pallets/duniter-wot',
     'pallets/identity',
 	'pallets/membership',
+	'pallets/authority-members',
     'pallets/ud-accounts-storage',
     'pallets/universal-dividend',
     'primitives/membership',
