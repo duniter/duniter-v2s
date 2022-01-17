@@ -37,12 +37,15 @@ LABEL maintainer="Gilles Filippini <gilles.filippini@pini.fr>"
 LABEL version="0.0.0"
 LABEL description="Crypto-currency software (based on Substrate framework) to operate Ğ1 libre currency"
 
-# Intall
-COPY --from=build /root/build/duniter /usr/local/bin/duniter
-COPY docker/docker-entrypoint /usr/local/bin/
+RUN adduser --home /var/lib/duniter duniter
 
 # Configuration
 # rpc, rpc-ws, p2p, telemetry 
 EXPOSE 9933 9944 30333 9615
 VOLUME /var/lib/duniter
 ENTRYPOINT ["docker-entrypoint"]
+USER duniter
+
+# Intall
+COPY --from=build /root/build/duniter /usr/local/bin/duniter
+COPY docker/docker-entrypoint /usr/local/bin/
