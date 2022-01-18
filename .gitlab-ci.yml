@@ -139,5 +139,5 @@ deploy_docker_debug:
       when: never
     - if: $CI_COMMIT_BRANCH == "master"
   variables:
-    DOCKERFILE_PATH: "docker/duniter-debug.Dockerfile"
+    DOCKERFILE_PATH: "docker/Dockerfile"
     IMAGE_TAG: "debug-sha-$CI_COMMIT_SHORT_SHA"
