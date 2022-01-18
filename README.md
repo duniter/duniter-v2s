@@ -17,11 +17,13 @@ For the moment, duniter-v2s does not have a first release yet.
 At each commit on master, an image with the tag `debug-sha-********` is published, where `********`
 corresponds to the first 8 hash characters of the commit.
 
-Usage example:
+Usage:
 
 ```docker
-docker run -it -p9944:9944 --name duniter-v2s duniter/duniter-v2s:debug-sha-9bc16904 --dev --ws-external
+docker run -it -p9944:9944 --name duniter-v2s duniter/duniter-v2s:debug-sha-cc648aaf
 ```
+
+Then open `https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944` in a browser.
 
 ### Docker compose
 
