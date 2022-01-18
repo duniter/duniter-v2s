@@ -41,11 +41,13 @@ build_debug:
     - if: $CI_COMMIT_TAG
       when: never
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "master"'
+      changes:
+      - Cargo.lock
     - when: manual
   stage: build
   script:
     - cargo clean -p duniter
-    - cargo build
+    - cargo build --locked
     - mkdir build
     - mv target/debug/duniter build/duniter
   artifacts:
@@ -57,6 +59,34 @@ build_debug:
           - Cargo.lock
       paths:
         - target/debug
+      policy: push
+
+build_debug_with_cache:
+  extends: .env
+  rules:
+    - changes:
+      - Cargo.lock
+      when: never
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "master"'
+    - when: manual
+  stage: build
+  script:
+    - cargo clean -p duniter
+    - cargo build --locked
+    - mkdir build
+    - mv target/debug/duniter build/duniter
+  artifacts:
+    paths:
+      - build/
+  cache:
+    - key:
+        files:
+          - Cargo.lock
+      paths:
+        - target/debug
+      policy: pull
 
 build_release:
   extends: .env
@@ -65,7 +95,7 @@ build_release:
     - when: never
   stage: build
   script:
-    - cargo build --release
+    - cargo build --locked --release
     - mkdir build
     - mv target/release/duniter build/duniter
   artifacts:
@@ -128,7 +158,6 @@ deploy_docker_test_image:
       when: manual
     - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH == "master"'
       when: never
-    - if: $CI_MERGE_REQUEST_ID
     - when: manual
   variables:
     DOCKERFILE_PATH: "docker/Dockerfile"
