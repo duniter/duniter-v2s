@@ -2,6 +2,36 @@
 
 A rewriting of duniter based on [Substrate](https://www.substrate.io/) framework.
 
+## Usage
+
+### Docker
+
+The easiest way to use duniter-v2s is to use the docker image.
+
+#### Releases images
+
+For the moment, duniter-v2s does not have a first release yet.
+
+#### Test images
+
+At each commit on master, an image with the tag `debug-sha-********` is published, where `********`
+corresponds to the first 8 hash characters of the commit.
+
+Usage example:
+
+```docker
+docker run -it -p9944:9944 --name duniter-v2s duniter/duniter-v2s:debug-sha-9bc16904 --dev --ws-external
+```
+
+### Docker compose
+
+This repository contains a docker-compose file at the root of the repository, it is configured to
+be able to launch a development node on the ğdev currency (single-node currency).
+
+Other docker-compose files are suggested in the `docker/compose-examples` folder:
+
+- `gtest-local2.docker-compose.yml`: Configured to launch 2 validators on ğdem currency.
+
 ## Setup
 
 First, complete the [basic setup instructions](./docs/setup.md).
