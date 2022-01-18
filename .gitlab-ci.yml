@@ -119,6 +119,19 @@ tests_release:
     - docker tag "$CI_REGISTRY_IMAGE:$IMAGE_TAG" "duniter/duniter-v2s:$IMAGE_TAG"
     - docker push "duniter/duniter-v2s:$IMAGE_TAG"
 
+deploy_docker_test_image:
+  extends: .docker-build-app-image
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
+      when: manual
+    - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH == "master"'
+      when: never
+    - if: $CI_MERGE_REQUEST_ID
+    - when: manual
+  variables:
+    DOCKERFILE_PATH: "docker/Dockerfile"
+    IMAGE_TAG: "test-image-$CI_COMMIT_SHORT_SHA"
+
 deploy_docker_debug:
   extends: .docker-build-app-image
   rules:
