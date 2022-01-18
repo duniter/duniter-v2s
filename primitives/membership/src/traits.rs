@@ -61,16 +61,6 @@ pub trait IsInPendingMemberships<IdtyId> {
     fn is_in_pending_memberships(idty_id: IdtyId) -> bool;
 }
 
-pub trait IsMember<IdtyId> {
-    fn is_member(idty_id: &IdtyId) -> bool;
-}
-
-impl<IdtyId> IsMember<IdtyId> for () {
-    fn is_member(_: &IdtyId) -> bool {
-        false
-    }
-}
-
 pub trait OnEvent<IdtyId> {
     fn on_event(event: crate::Event<IdtyId>) -> Weight;
 }
@@ -116,7 +106,7 @@ impl<IdtyId, Origin> MembershipAction<IdtyId, Origin> for () {
 }
 
 pub trait MembershipExternalStorage<BlockNumber: Decode + Encode + TypeInfo, IdtyId>:
-    IsMember<IdtyId>
+    sp_runtime::traits::IsMember<IdtyId>
 {
     fn insert(idty_id: IdtyId, membership_data: MembershipData<BlockNumber>);
     fn get(idty_id: &IdtyId) -> Option<MembershipData<BlockNumber>>;
@@ -125,8 +115,14 @@ pub trait MembershipExternalStorage<BlockNumber: Decode + Encode + TypeInfo, Idt
 
 static INVALID_CONF_MSG: &str = "invalid pallet configuration: if `MembershipExternalStorage` = (), you must set `ExternalizeMembershipStorage` to `false`.";
 
+pub struct NoExternalStorage;
+impl<IdtyId> sp_runtime::traits::IsMember<IdtyId> for NoExternalStorage {
+    fn is_member(_: &IdtyId) -> bool {
+        panic!("{}", INVALID_CONF_MSG)
+    }
+}
 impl<BlockNumber: Decode + Encode + TypeInfo, IdtyId> MembershipExternalStorage<BlockNumber, IdtyId>
-    for ()
+    for NoExternalStorage
 {
     fn insert(_: IdtyId, _: MembershipData<BlockNumber>) {
         panic!("{}", INVALID_CONF_MSG)

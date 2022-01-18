@@ -109,7 +109,7 @@ impl pallet_membership::Config for Test {
     type ExternalizeMembershipStorage = ExternalizeMembershipStorage;
     type IdtyId = IdtyId;
     type OnEvent = ();
-    type MembershipExternalStorage = ();
+    type MembershipExternalStorage = crate::NoExternalStorage;
     type MembershipPeriod = MembershipPeriod;
     type PendingMembershipPeriod = PendingMembershipPeriod;
     type RenewablePeriod = RenewablePeriod;

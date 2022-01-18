@@ -21,10 +21,18 @@ use sp_std::fmt::Debug;
 
 pub trait EnsureIdtyCallAllowed<T: Config> {
     fn can_create_identity(creator: T::IdtyIndex) -> bool;
+    fn can_confirm_identity(idty_index: T::IdtyIndex) -> bool;
+    fn can_validate_identity(idty_index: T::IdtyIndex) -> bool;
 }
 
 impl<T: Config> EnsureIdtyCallAllowed<T> for () {
-    fn can_create_identity(_creator: T::IdtyIndex) -> bool {
+    fn can_create_identity(_: T::IdtyIndex) -> bool {
+        true
+    }
+    fn can_confirm_identity(_: T::IdtyIndex) -> bool {
+        true
+    }
+    fn can_validate_identity(_: T::IdtyIndex) -> bool {
         true
     }
 }
@@ -65,14 +73,6 @@ pub trait IdtyRight:
 {
     fn allow_owner_key(self) -> bool;
     fn create_idty_right() -> Self;
-}
-
-pub enum IdtyEvent<T: Config> {
-    Created { creator: T::IdtyIndex },
-    Confirmed,
-    Validated,
-    Expired,
-    Removed,
 }
 
 pub trait OnIdtyChange<T: Config> {

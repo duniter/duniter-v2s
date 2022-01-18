@@ -14,10 +14,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-pub trait IsIdtyAllowedToCreateCert<IdtyIndex> {
-    fn is_idty_allowed_to_create_cert(idty_index: IdtyIndex) -> bool;
-}
-
 pub trait OnNewcert<IdtyIndex> {
     fn on_new_cert(
         issuer: IdtyIndex,

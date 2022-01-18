@@ -17,7 +17,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod apis;
-pub mod authorizations;
 pub mod constants;
 pub mod entities;
 pub mod fees;

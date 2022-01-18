@@ -43,6 +43,7 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_support::traits::StorageVersion;
     use frame_system::pallet_prelude::*;
+    use sp_runtime::traits::IsMember;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -132,7 +133,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn pending_membership)]
     pub type PendingMembership<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_128Concat, T::IdtyId, (), OptionQuery>;
+        StorageMap<_, Blake2_128Concat, T::IdtyId, T::BlockNumber, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn pending_memberships_expire_on)]
@@ -186,6 +187,8 @@ pub mod pallet {
         IdtyNotAllowedToRenewMembership,
         /// Membership already acquired
         MembershipAlreadyAcquired,
+        /// Membership already requested
+        MembershipAlreadyRequested,
         /// Membership not yet renewable
         MembershipNotYetRenewable,
         /// Membership not found
@@ -238,6 +241,9 @@ pub mod pallet {
             if !allowed {
                 return Err(Error::<T, I>::IdtyNotAllowedToRequestMembership.into());
             }
+            if PendingMembership::<T, I>::contains_key(&idty_id) {
+                return Err(Error::<T, I>::MembershipAlreadyRequested.into());
+            }
             if Membership::<T, I>::contains_key(&idty_id) {
                 return Err(Error::<T, I>::MembershipAlreadyAcquired.into());
             }
@@ -248,7 +254,7 @@ pub mod pallet {
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             let expire_on = block_number + T::PendingMembershipPeriod::get();
 
-            PendingMembership::<T, I>::insert(idty_id, ());
+            PendingMembership::<T, I>::insert(idty_id, expire_on);
             PendingMembershipsExpireOn::<T, I>::append(expire_on, idty_id);
             Self::deposit_event(Event::MembershipRequested(idty_id));
             T::OnEvent::on_event(sp_membership::Event::MembershipRequested(idty_id));
@@ -261,6 +267,9 @@ pub mod pallet {
             origin: OriginFor<T>,
             idty_id: T::IdtyId,
         ) -> DispatchResultWithPostInfo {
+            if Membership::<T, I>::contains_key(&idty_id) {
+                return Err(Error::<T, I>::MembershipAlreadyAcquired.into());
+            }
             let allowed =
                 match T::IsOriginAllowedToUseIdty::is_origin_allowed_to_use_idty(&origin, &idty_id)
                 {
@@ -482,7 +491,7 @@ impl<T: Config<I>, I: 'static> IsInPendingMemberships<T::IdtyId> for Pallet<T, I
     }
 }
 
-impl<T: Config<I>, I: 'static> IsMember<T::IdtyId> for Pallet<T, I> {
+impl<T: Config<I>, I: 'static> sp_runtime::traits::IsMember<T::IdtyId> for Pallet<T, I> {
     fn is_member(idty_id: &T::IdtyId) -> bool {
         Self::is_member_inner(idty_id)
     }

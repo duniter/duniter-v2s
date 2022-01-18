@@ -836,6 +836,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-certification",
+ "pallet-duniter-wot",
  "pallet-identity",
  "pallet-membership",
  "pallet-session",
@@ -1894,6 +1895,7 @@ dependencies = [
  "pallet-babe",
  "pallet-balances",
  "pallet-certification",
+ "pallet-duniter-wot",
  "pallet-grandpa",
  "pallet-identity",
  "pallet-im-online",
@@ -1920,6 +1922,7 @@ dependencies = [
  "sp-consensus-babe",
  "sp-core",
  "sp-inherents",
+ "sp-membership",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -1944,6 +1947,7 @@ dependencies = [
  "pallet-babe",
  "pallet-balances",
  "pallet-certification",
+ "pallet-duniter-wot",
  "pallet-grandpa",
  "pallet-identity",
  "pallet-membership",
@@ -1965,6 +1969,7 @@ dependencies = [
  "sp-consensus-babe",
  "sp-core",
  "sp-inherents",
+ "sp-membership",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -2122,6 +2127,7 @@ dependencies = [
  "pallet-babe",
  "pallet-balances",
  "pallet-certification",
+ "pallet-duniter-wot",
  "pallet-grandpa",
  "pallet-identity",
  "pallet-im-online",
@@ -2148,6 +2154,7 @@ dependencies = [
  "sp-consensus-babe",
  "sp-core",
  "sp-inherents",
+ "sp-membership",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -4226,6 +4233,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-duniter-wot"
+version = "3.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-certification",
+ "pallet-identity",
+ "pallet-membership",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-membership",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-grandpa"
 version = "4.0.0-dev"
 source = "git+https://github.com/librelois/substrate.git?branch=duniter-monthly-2022-01#104c497435848265e58eeeea7b82c63b2f7ee13c"
@@ -4260,7 +4287,6 @@ dependencies = [
  "serde",
  "sp-core",
  "sp-io",
- "sp-membership",
  "sp-runtime",
  "sp-std",
 ]
@@ -7020,6 +7046,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-runtime",
  "sp-std",
 ]
 

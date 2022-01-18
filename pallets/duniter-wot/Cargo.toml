@@ -1,10 +1,10 @@
 [package]
 authors = ['librelois <c@elo.tf>']
-description = 'FRAME pallet identity.'
+description = 'FRAME pallet duniter wot.'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'AGPL-3.0'
-name = 'pallet-identity'
+name = 'pallet-duniter-wot'
 readme = 'README.md'
 repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
 version = '3.0.0'
@@ -17,14 +17,22 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'frame-benchmarking/std',
+    'pallet-certification/std',
+    'pallet-identity/std',
+    'pallet-membership/std',
     'serde',
     'sp-core/std',
+    'sp-membership/std',
     'sp-runtime/std',
 	'sp-std/std',
 ]
 try-runtime = ['frame-support/try-runtime']
 
 [dependencies]
+pallet-certification = { path = "../certification", default-features = false }
+pallet-identity = { path = "../identity", default-features = false }
+pallet-membership = { path = "../membership", default-features = false }
+sp-membership = { path = "../../primitives/membership", default-features = false }
 
 # substrate
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }

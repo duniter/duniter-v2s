@@ -98,6 +98,7 @@ resolver = "2"
 members = [
 	'integration-tests',
     'pallets/certification',
+    'pallets/duniter-wot',
     'pallets/identity',
 	'pallets/membership',
     'pallets/ud-accounts-storage',

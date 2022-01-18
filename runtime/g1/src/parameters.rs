@@ -92,6 +92,12 @@ parameter_types! {
 /* WOT */
 /*******/
 
+parameter_types! {
+    pub MinCertForUdRight: u8 = 5;
+    pub MinCertForCertRight: u8 = 5;
+    pub MinCertForCreateIdtyRight: u8 = 5;
+}
+
 // Identity
 pub const IDTY_CREATE_PERIOD: BlockNumber = 100;
 parameter_types! {

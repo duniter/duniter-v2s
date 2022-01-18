@@ -14,39 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::entities::IdtyRight;
-use crate::BlockNumber;
-use frame_support::instances::Instance1;
-use frame_support::pallet_prelude::Get;
-use frame_support::weights::Weight;
-use pallet_identity::traits::IdtyEvent;
-
-pub struct OnIdtyChangeHandler<Runtime>(core::marker::PhantomData<Runtime>);
-impl<
-        IdtyIndex,
-        Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex>
-            + pallet_certification::Config<Instance1, IdtyIndex = IdtyIndex>,
-    > pallet_identity::traits::OnIdtyChange<Runtime> for OnIdtyChangeHandler<Runtime>
-{
-    fn on_idty_change(idty_index: IdtyIndex, idty_event: IdtyEvent<Runtime>) -> Weight {
-        let total_weight = 0;
-        match idty_event {
-            IdtyEvent::Created { creator } => {
-                // totad_weight += StrongCert::WeightInfo::add_cert();
-                let _ = <pallet_certification::Pallet<Runtime, Instance1>>::add_cert(
-                    frame_system::Origin::<Runtime>::Root.into(),
-                    creator,
-                    idty_index,
-                );
-            }
-            IdtyEvent::Confirmed => {}
-            IdtyEvent::Validated => {}
-            IdtyEvent::Expired => {}
-            IdtyEvent::Removed => {}
-        };
-        total_weight
-    }
-}
+use pallet_duniter_wot::IdtyRight;
 
 pub struct OnRightKeyChangeHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<
@@ -70,89 +38,5 @@ impl<
             IdtyRight::LightCert => 0,
             IdtyRight::StrongCert => 0,
         };
-    }
-}
-
-pub struct OnNewStrongCertHandler<
-    FirstIssuableOn,
-    Runtime,
-    SetNextIssuableOnImpl,
-    const MIN_STRONG_CERT_FOR_UD: u32,
-    const MIN_STRONG_CERT_FOR_STRONG_CERT: u32,
->(core::marker::PhantomData<(FirstIssuableOn, Runtime, SetNextIssuableOnImpl)>);
-impl<
-        FirstIssuableOn: Get<BlockNumber>,
-        IdtyIndex: Copy,
-        Runtime: frame_system::Config<BlockNumber = BlockNumber>
-            + pallet_identity::Config<IdtyIndex = IdtyIndex, IdtyRight = IdtyRight>,
-        SetNextIssuableOnImpl: pallet_certification::traits::SetNextIssuableOn<BlockNumber, IdtyIndex>,
-        const MIN_STRONG_CERT_FOR_UD: u32,
-        const MIN_STRONG_CERT_FOR_STRONG_CERT: u32,
-    > pallet_certification::traits::OnNewcert<IdtyIndex>
-    for OnNewStrongCertHandler<
-        FirstIssuableOn,
-        Runtime,
-        SetNextIssuableOnImpl,
-        MIN_STRONG_CERT_FOR_UD,
-        MIN_STRONG_CERT_FOR_STRONG_CERT,
-    >
-{
-    fn on_new_cert(
-        _issuer: IdtyIndex,
-        _issuer_issued_count: u8,
-        receiver: IdtyIndex,
-        receiver_received_count: u32,
-    ) -> frame_support::dispatch::Weight {
-        let total_weight = 0;
-        if receiver_received_count == MIN_STRONG_CERT_FOR_UD {
-            // total_weight += Identity::WeightInfo::add_right();
-            let _ = <pallet_identity::Pallet<Runtime>>::validate_identity(
-                frame_system::Origin::<Runtime>::Root.into(),
-                receiver,
-                sp_std::vec![IdtyRight::Ud],
-            );
-        } else if receiver_received_count == MIN_STRONG_CERT_FOR_STRONG_CERT {
-            // total_weight += Identity::WeightInfo::add_right();
-            let _ = <pallet_identity::Pallet<Runtime>>::add_right(
-                frame_system::Origin::<Runtime>::Root.into(),
-                receiver,
-                IdtyRight::StrongCert,
-            );
-            let _ = SetNextIssuableOnImpl::set_next_issuable_on(
-                receiver,
-                frame_system::Pallet::<Runtime>::block_number() + FirstIssuableOn::get(),
-            );
-        }
-        total_weight
-    }
-}
-
-pub struct OnRemovedStrongCertHandler<Runtime, const MIN_STRONG_CERT_FOR_UD: u32>(
-    core::marker::PhantomData<Runtime>,
-);
-impl<
-        IdtyIndex,
-        Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex, IdtyRight = IdtyRight>,
-        const MIN_STRONG_CERT_FOR_UD: u32,
-    > pallet_certification::traits::OnRemovedCert<IdtyIndex>
-    for OnRemovedStrongCertHandler<Runtime, MIN_STRONG_CERT_FOR_UD>
-{
-    fn on_removed_cert(
-        _issuer: IdtyIndex,
-        _issuer_issued_count: u8,
-        receiver: IdtyIndex,
-        receiver_received_count: u32,
-        _expiration: bool,
-    ) -> frame_support::dispatch::Weight {
-        let total_weight = 0;
-        if receiver_received_count < MIN_STRONG_CERT_FOR_UD {
-            // total_weight += Identity::WeightInfo::del_right();
-            let _ = <pallet_identity::Pallet<Runtime>>::del_right(
-                frame_system::Origin::<Runtime>::Root.into(),
-                receiver,
-                IdtyRight::Ud,
-            );
-        }
-        total_weight
     }
 }

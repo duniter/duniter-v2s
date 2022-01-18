@@ -46,6 +46,13 @@ frame_support::parameter_types! {
     pub const TransactionByteFee: Balance = 0;
 }
 
+// Wot
+parameter_types! {
+    pub MinCertForUdRight: u8 = 2;
+    pub MinCertForCertRight: u8 = 3;
+    pub MinCertForCreateIdtyRight: u8 = 3;
+}
+
 // Identity
 pub const IDTY_CREATE_PERIOD: BlockNumber = 100;
 frame_support::parameter_types! {
@@ -69,7 +76,7 @@ parameter_types! {
     pub const CertPeriod: BlockNumber = 15;
     pub const MaxByIssuer: u8 = 100;
     pub const StrongCertRenewablePeriod: BlockNumber = 50;//6 * MONTHS;
-    pub const ValidityPeriod: BlockNumber = 200;//2 * YEARS;
+    pub const ValidityPeriod: BlockNumber = 2_000;//2 * YEARS;
 }
 
 // Universal dividend

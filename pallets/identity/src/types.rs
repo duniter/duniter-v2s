@@ -23,6 +23,13 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::vec::Vec;
 
+pub enum IdtyEvent<T: crate::Config> {
+    Created { creator: T::IdtyIndex },
+    Confirmed,
+    Validated,
+    Removed,
+}
+
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug)]
 pub struct IdtyName(pub Vec<u8>);
 
@@ -63,7 +70,6 @@ pub enum IdtyStatus {
     Created,
     ConfirmedByOwner,
     Validated,
-    Expired,
 }
 impl Default for IdtyStatus {
     fn default() -> Self {

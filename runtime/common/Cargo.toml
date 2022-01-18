@@ -11,6 +11,7 @@ runtime-benchmarks = [
     'frame-support/runtime-benchmarks',
     'frame-system/runtime-benchmarks',
     'pallet-certification/runtime-benchmarks',
+    'pallet-duniter-wot/runtime-benchmarks',
     'pallet-identity/runtime-benchmarks',
     'pallet-membership/runtime-benchmarks',
     'pallet-ud-accounts-storage/runtime-benchmarks',
@@ -21,6 +22,7 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'pallet-certification/std',
+    'pallet-duniter-wot/std',
     'pallet-identity/std',
     'pallet-membership/std',
     'pallet-ud-accounts-storage/std',
@@ -33,12 +35,15 @@ std = [
 
 [dependencies]
 pallet-certification = { path = '../../pallets/certification', default-features = false }
+pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-membership = { path = '../../pallets/membership', default-features = false }
 pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
+
+# Crates.io
 smallvec = "1.6.1"
 
-# substrate
+# Substrate
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 
 [dependencies.codec]

@@ -482,18 +482,6 @@ pub mod pallet {
     }
 }
 
-impl<T: Config<I>, I: 'static> IsIdtyAllowedToCreateCert<T::IdtyIndex> for Pallet<T, I> {
-    fn is_idty_allowed_to_create_cert(idty_index: T::IdtyIndex) -> bool {
-        if let Ok(cert_meta) = <StorageIdtyCertMeta<T, I>>::try_get(idty_index) {
-            use frame_support::traits::Get as _;
-            cert_meta.next_issuable_on <= frame_system::pallet::Pallet::<T>::block_number()
-                && cert_meta.issued_count < T::MaxByIssuer::get()
-        } else {
-            true
-        }
-    }
-}
-
 impl<T: Config<I>, I: 'static> SetNextIssuableOn<T::BlockNumber, T::IdtyIndex> for Pallet<T, I> {
     fn set_next_issuable_on(
         idty_index: T::IdtyIndex,

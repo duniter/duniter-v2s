@@ -26,10 +26,11 @@ pub mod parameters;
 
 pub use self::parameters::*;
 pub use common_runtime::{
-    constants::*, entities::IdtyRight, AccountId, Address, Balance, BlockNumber, Hash, Header,
-    IdtyIndex, IdtyNameValidatorImpl, Index, Signature,
+    constants::*, AccountId, Address, Balance, BlockNumber, Hash, Header, IdtyIndex,
+    IdtyNameValidatorImpl, Index, Signature,
 };
 pub use pallet_balances::Call as BalancesCall;
+pub use pallet_duniter_wot::IdtyRight;
 pub use pallet_identity::{IdtyStatus, IdtyValue};
 use pallet_transaction_payment::CurrencyAdapter;
 pub use pallet_universal_dividend;
@@ -37,13 +38,7 @@ pub use pallet_universal_dividend;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-use common_runtime::{
-    authorizations::{AddStrongCertOrigin, DelStrongCertOrigin, EnsureIdtyCallAllowedImpl},
-    handlers::{
-        OnIdtyChangeHandler, OnNewStrongCertHandler, OnRemovedStrongCertHandler,
-        OnRightKeyChangeHandler,
-    },
-};
+use common_runtime::handlers::OnRightKeyChangeHandler;
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -135,7 +130,13 @@ pub type Executive = frame_executive::Executive<
 pub struct BaseCallFilter;
 impl frame_support::traits::Contains<Call> for BaseCallFilter {
     fn contains(call: &Call) -> bool {
-        !matches!(call, Call::Membership(_))
+        !matches!(
+            call,
+            Call::Membership(
+                pallet_membership::Call::claim_membership { .. }
+                    | pallet_membership::Call::revoke_membership { .. }
+            )
+        )
     }
 }
 
@@ -175,9 +176,10 @@ construct_runtime!(
         UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
 
         // Web Of Trust
-        Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 50,
-        Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 51,
-        StrongCert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
+        DuniterWot: pallet_duniter_wot::{Pallet} = 50,
+        Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 51,
+        Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
+        StrongCert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
 
         // Multisig dispatch.
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 60,

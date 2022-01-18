@@ -19,8 +19,9 @@ use crate::mock::*;
 use crate::{Error, Event};
 use frame_support::assert_ok;
 use maplit::btreemap;
-use sp_membership::traits::{IsInPendingMemberships, IsMember};
+use sp_membership::traits::IsInPendingMemberships;
 use sp_membership::MembershipData;
+use sp_runtime::traits::IsMember;
 
 fn default_gen_conf() -> DefaultMembershipConfig {
     DefaultMembershipConfig {
@@ -61,12 +62,24 @@ fn test_membership_not_yet_renewable() {
 }
 
 #[test]
-fn test_membership_request_not_found() {
+fn test_membership_already_acquired() {
     new_test_ext(default_gen_conf()).execute_with(|| {
         run_to_block(1);
         // Merbership 0 cannot be reclaimed
         assert_eq!(
             DefaultMembership::claim_membership(Origin::signed(0), 0),
+            Err(Error::<Test, _>::MembershipAlreadyAcquired.into())
+        );
+    });
+}
+
+#[test]
+fn test_membership_request_not_found() {
+    new_test_ext(default_gen_conf()).execute_with(|| {
+        run_to_block(1);
+        // Merbership 0 cannot be reclaimed
+        assert_eq!(
+            DefaultMembership::claim_membership(Origin::signed(1), 1),
             Err(Error::<Test, _>::MembershipRequestNotFound.into())
         );
     });

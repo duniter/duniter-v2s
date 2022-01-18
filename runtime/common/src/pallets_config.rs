@@ -184,12 +184,19 @@ macro_rules! pallets_config {
 
 		// WEB OF TRUST //
 
+		impl pallet_duniter_wot::Config for Runtime {
+			type MinCertForUdRight = MinCertForUdRight;
+			type MinCertForCertRight = MinCertForCertRight;
+			type MinCertForCreateIdtyRight = MinCertForCreateIdtyRight;
+			type FirstIssuableOn = FirstIssuableOn;
+		}
+
 		impl pallet_identity::Config for Runtime {
             type ConfirmPeriod = ConfirmPeriod;
             type Event = Event;
             type AddRightOrigin = EnsureRoot<Self::AccountId>;
             type DelRightOrigin = EnsureRoot<Self::AccountId>;
-            type EnsureIdtyCallAllowed = EnsureIdtyCallAllowedImpl<Runtime, StrongCert>;
+            type EnsureIdtyCallAllowed = DuniterWot;
 			type IdtyCreationPeriod = IdtyCreationPeriod;
 			type IdtyDataProvider = ();
             type IdtyData = ();
@@ -197,22 +204,22 @@ macro_rules! pallets_config {
             type IdtyIndex = IdtyIndex;
             type IdtyValidationOrigin = EnsureRoot<Self::AccountId>;
             type IdtyRight = IdtyRight;
-            type OnIdtyChange = OnIdtyChangeHandler<Runtime>;
+			type IsMember = Membership;
+            type OnIdtyChange = DuniterWot;
             type OnRightKeyChange = OnRightKeyChangeHandler<Runtime>;
             type MaxNoRightPeriod = MaxNoRightPeriod;
-			type Membership = Membership;
         }
 
 		impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {
-			type IsIdtyAllowedToClaimMembership = ();
-			type IsIdtyAllowedToRenewMembership = ();
-			type IsIdtyAllowedToRequestMembership = ();
-			type IsOriginAllowedToUseIdty = Identity;
+			type IsIdtyAllowedToClaimMembership = DuniterWot;
+			type IsIdtyAllowedToRenewMembership = DuniterWot;
+			type IsIdtyAllowedToRequestMembership = DuniterWot;
+			type IsOriginAllowedToUseIdty = DuniterWot;
 			type Event = Event;
 			type ExternalizeMembershipStorage = frame_support::traits::ConstBool<false>;
 			type IdtyId = IdtyIndex;
-			type OnEvent = Identity;
-			type MembershipExternalStorage = ();
+			type OnEvent = DuniterWot;
+			type MembershipExternalStorage = sp_membership::traits::NoExternalStorage;
 			type MembershipPeriod = MembershipPeriod;
 			type PendingMembershipPeriod = PendingMembershipPeriod;
 			type RenewablePeriod = RenewablePeriod;
@@ -220,20 +227,19 @@ macro_rules! pallets_config {
 		}
 
         impl pallet_certification::Config<frame_support::instances::Instance1> for Runtime {
-            type AddCertOrigin = AddStrongCertOrigin<Runtime>;
+            type AddCertOrigin = pallet_duniter_wot::AddStrongCertOrigin<Runtime>;
             type CertPeriod = CertPeriod;
-            type DelCertOrigin = DelStrongCertOrigin<Runtime>;
+            type DelCertOrigin = pallet_duniter_wot::DelStrongCertOrigin<Runtime>;
             type Event = Event;
             type IdtyIndex = IdtyIndex;
             type MaxByIssuer = MaxByIssuer;
-            type OnNewcert =
-                OnNewStrongCertHandler<FirstIssuableOn, Runtime, StrongCert, MIN_STRONG_CERT_FOR_UD, MIN_STRONG_CERT_FOR_STRONG_CERT>;
-            type OnRemovedCert = OnRemovedStrongCertHandler<Runtime, MIN_STRONG_CERT_FOR_UD>;
+            type OnNewcert = DuniterWot;
+            type OnRemovedCert = DuniterWot;
             type CertRenewablePeriod = StrongCertRenewablePeriod;
             type ValidityPeriod = ValidityPeriod;
         }
 
-		// MUNTISIG //
+		// MULTISIG //
 
 		impl pallet_multisig::Config for Runtime {
 			type Event = Event;

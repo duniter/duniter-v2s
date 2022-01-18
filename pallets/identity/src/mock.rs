@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, IdentityLookup, IsMember},
     BuildStorage,
 };
 
@@ -128,6 +128,13 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
     }
 }
 
+pub struct IsMemberTestImpl;
+impl IsMember<u64> for IsMemberTestImpl {
+    fn is_member(_: &u64) -> bool {
+        true
+    }
+}
+
 impl pallet_identity::Config for Test {
     type ConfirmPeriod = ConfirmPeriod;
     type Event = Event;
@@ -141,10 +148,10 @@ impl pallet_identity::Config for Test {
     type IdtyIndex = u64;
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
     type IdtyRight = IdtyRight;
+    type IsMember = IsMemberTestImpl;
     type OnIdtyChange = ();
     type OnRightKeyChange = ();
     type MaxNoRightPeriod = MaxNoRightPeriod;
-    type Membership = ();
 }
 
 // Build genesis storage according to the mock runtime.

@@ -36,6 +36,7 @@ std = [
     'pallet-babe/std',
     'pallet-balances/std',
     'pallet-certification/std',
+    'pallet-duniter-wot/std',
     'pallet-grandpa/std',
     'pallet-identity/std',
     'pallet-im-online/std',
@@ -58,6 +59,7 @@ std = [
     'sp-core/std',
     'sp-inherents/std',
     'sp-offchain/std',
+    'sp-membership/std',
     'sp-runtime/std',
     'sp-session/std',
     'sp-std/std',
@@ -66,13 +68,15 @@ std = [
 ]
 
 [dependencies]
+common-runtime = { path = "../common", default-features = false }
+common-runtime-except-gdev = { path = "../common-except-gdev", default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
+pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-membership = { path = '../../pallets/membership', default-features = false }
 pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
-common-runtime = { path = "../common", default-features = false }
-common-runtime-except-gdev = { path = "../common-except-gdev", default-features = false }
+sp-membership = { path = '../../primitives/membership', default-features = false }
 
 # substrate
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }

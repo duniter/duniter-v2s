@@ -22,32 +22,6 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug, TypeInfo)]
-pub enum IdtyRight {
-    CreateIdty,
-    LightCert,
-    StrongCert,
-    Ud,
-}
-impl Default for IdtyRight {
-    fn default() -> Self {
-        Self::Ud
-    }
-}
-impl pallet_identity::traits::IdtyRight for IdtyRight {
-    fn allow_owner_key(self) -> bool {
-        match self {
-            Self::CreateIdty | Self::LightCert | IdtyRight::StrongCert | Self::Ud => true,
-            //IdtyRight::StrongCert => false,
-            //_ => false,
-        }
-    }
-    fn create_idty_right() -> Self {
-        Self::CreateIdty
-    }
-}
-
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(
     Encode, Decode, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug, TypeInfo,
 )]
