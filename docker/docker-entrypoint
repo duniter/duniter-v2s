@@ -28,12 +28,10 @@ case "$DUNITER_CHAIN_NAME" in
     ;;
 esac
 
-DUNITER_OPTS="${DUNITER_OPTS:---unsafe-ws-external}"
-
 set -- "$@" \
   "${chain[@]}" \
   $(ternary "$DUNITER_DISABLE_PROMETHEUS" --no-prometheus) \
-  -d /var/lib/duniter
+  -d /var/lib/duniter --unsafe-ws-external
 
 echo "Starting duniter with parameters:" "$@"
-exec duniter "$DUNITER_OPTS" "$@"
+exec duniter "$@"
