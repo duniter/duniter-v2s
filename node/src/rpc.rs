@@ -25,7 +25,7 @@ pub use sc_rpc_api::DenyUnsafe;
 
 use common_runtime::Block;
 use common_runtime::{AccountId, Balance, Index};
-use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
+use manual_seal::rpc::{ManualSeal, ManualSealApi};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
@@ -41,9 +41,8 @@ pub struct FullDeps<C, P> {
     /// Whether to deny unsafe calls
     pub deny_unsafe: DenyUnsafe,
     /// Manual seal command sink
-    pub command_sink_opt: Option<
-        futures::channel::mpsc::Sender<sc_consensus_manual_seal::EngineCommand<sp_core::H256>>,
-    >,
+    pub command_sink_opt:
+        Option<futures::channel::mpsc::Sender<manual_seal::EngineCommand<sp_core::H256>>>,
 }
 
 /// Instantiate all full RPC extensions.

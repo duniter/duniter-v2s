@@ -22,8 +22,8 @@ use self::client::{Client, RuntimeApiCollection};
 use async_io::Timer;
 use common_runtime::Block;
 use futures::{Stream, StreamExt};
+use manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
 use sc_client_api::ExecutorProvider;
-use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
 pub use sc_executor::NativeElseWasmExecutor;
 use sc_finality_grandpa::SharedVoterState;
 use sc_keystore::LocalKeystore;
@@ -212,15 +212,12 @@ pub fn new_partial<RuntimeApi, Executor>(
         sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
         sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>,
         (
-            Option<(
-                babe::BabeBlockImport<
-                    Block,
-                    FullClient<RuntimeApi, Executor>,
-                    FullGrandpaBlockImport<RuntimeApi, Executor>,
-                >,
-                babe::BabeLink<Block>,
-            )>,
-            FullGrandpaBlockImport<RuntimeApi, Executor>,
+            babe::BabeBlockImport<
+                Block,
+                FullClient<RuntimeApi, Executor>,
+                FullGrandpaBlockImport<RuntimeApi, Executor>,
+            >,
+            babe::BabeLink<Block>,
             sc_finality_grandpa::LinkHalf<Block, FullClient<RuntimeApi, Executor>, FullSelectChain>,
             Option<Telemetry>,
         ),
@@ -294,45 +291,40 @@ where
 
     let justification_import = grandpa_block_import.clone();
 
-    let (babe_setup_opt, import_queue) = if consensus_manual {
-        (
-            None,
-            sc_consensus_manual_seal::import_queue(
-                Box::new(grandpa_block_import.clone()),
-                &task_manager.spawn_essential_handle(),
-                config.prometheus_registry(),
-            ),
+    let babe_config = babe::Config::get(&*client)?;
+    let (babe_block_import, babe_link) =
+        babe::block_import(babe_config, grandpa_block_import.clone(), client.clone())?;
+
+    let import_queue = if consensus_manual {
+        manual_seal::import_queue(
+            Box::new(babe_block_import.clone()),
+            &task_manager.spawn_essential_handle(),
+            config.prometheus_registry(),
         )
     } else {
-        let babe_config = babe::Config::get(&*client)?;
-        let (babe_block_import, babe_link) =
-            babe::block_import(babe_config, grandpa_block_import.clone(), client.clone())?;
         let slot_duration = babe_link.config().slot_duration();
-        (
-            Some((babe_block_import.clone(), babe_link.clone())),
-            babe::import_queue(
-                babe_link,
-                babe_block_import,
-                Some(Box::new(justification_import)),
-                client.clone(),
-                select_chain.clone(),
-                move |_, ()| async move {
-                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+        babe::import_queue(
+            babe_link.clone(),
+            babe_block_import.clone(),
+            Some(Box::new(justification_import)),
+            client.clone(),
+            select_chain.clone(),
+            move |_, ()| async move {
+                let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-                    let slot =
+                let slot =
                     sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_duration(
                         *timestamp,
                         slot_duration,
                     );
 
-                    Ok((timestamp, slot))
-                },
-                &task_manager.spawn_essential_handle(),
-                config.prometheus_registry(),
-                sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
-                telemetry.as_ref().map(|x| x.handle()),
-            )?,
-        )
+                Ok((timestamp, slot))
+            },
+            &task_manager.spawn_essential_handle(),
+            config.prometheus_registry(),
+            sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
+            telemetry.as_ref().map(|x| x.handle()),
+        )?
     };
 
     Ok(sc_service::PartialComponents {
@@ -343,12 +335,7 @@ where
         keystore_container,
         select_chain,
         transaction_pool,
-        other: (
-            babe_setup_opt,
-            grandpa_block_import,
-            grandpa_link,
-            telemetry,
-        ),
+        other: (babe_block_import, babe_link, grandpa_link, telemetry),
     })
 }
 
@@ -381,7 +368,7 @@ where
         mut keystore_container,
         select_chain,
         transaction_pool,
-        other: (babe_setup_opt, block_import, grandpa_link, mut telemetry),
+        other: (block_import, babe_link, grandpa_link, mut telemetry),
     } = new_partial::<RuntimeApi, Executor>(&config, sealing_opt.is_some())?;
 
     if let Some(url) = &config.keystore_remote {
@@ -478,8 +465,23 @@ where
                     )),
                 };
 
+            let babe_consensus_data_provider =
+                manual_seal::consensus::babe::BabeConsensusDataProvider::new(
+                    client.clone(),
+                    keystore_container.sync_keystore(),
+                    babe_link.epoch_changes().clone(),
+                    vec![(
+                        sp_consensus_babe::AuthorityId::from(
+                            sp_keyring::sr25519::Keyring::Alice.public(),
+                        ),
+                        1000,
+                    )],
+                )
+                .expect("failed to create BabeConsensusDataProvider");
+
+            let client_clone = client.clone();
             task_manager.spawn_essential_handle().spawn_blocking(
-                "authorship_task",
+                "manual-seal",
                 Some("block-authoring"),
                 run_manual_seal(ManualSealParams {
                     block_import,
@@ -488,11 +490,24 @@ where
                     pool: transaction_pool.clone(),
                     commands_stream,
                     select_chain,
-                    consensus_data_provider: None,
-                    create_inherent_data_providers: move |_, ()| async move { Ok(()) },
+                    consensus_data_provider: Some(Box::new(babe_consensus_data_provider)),
+                    create_inherent_data_providers: move |_, _| {
+                        let client = client_clone.clone();
+                        async move {
+                            let timestamp =
+                                manual_seal::consensus::babe::SlotTimestampProvider::new(
+                                    client.clone(),
+                                )
+                                .map_err(|err| format!("{:?}", err))?;
+                            let babe = sp_consensus_babe::inherents::InherentDataProvider::new(
+                                timestamp.slot().into(),
+                            );
+                            Ok((timestamp, babe))
+                        }
+                    },
                 }),
             );
-        } else if let Some((babe_block_import, babe_link)) = babe_setup_opt {
+        } else {
             let can_author_with =
                 sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
 
@@ -502,7 +517,7 @@ where
                 keystore: keystore_container.sync_keystore(),
                 client: client.clone(),
                 select_chain,
-                block_import: babe_block_import,
+                block_import,
                 env: proposer_factory,
                 sync_oracle: network.clone(),
                 justification_sync_link: network.clone(),
@@ -518,10 +533,10 @@ where
                         let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                         let slot =
-							sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_duration(
-								*timestamp,
-								slot_duration,
-							);
+						sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_duration(
+                                *timestamp,
+                                slot_duration,
+                            );
 
                         Ok((timestamp, slot, uncles))
                     }
@@ -543,8 +558,6 @@ where
                 Some("block-authoring"),
                 babe,
             );
-        } else {
-            panic!("We must have babe or manual seal")
         }
     }
 

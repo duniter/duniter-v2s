@@ -57,6 +57,53 @@ pub fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
     )
 }
 
+pub fn development_chain_spec() -> Result<ChainSpec, String> {
+    let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
+
+    Ok(ChainSpec::from_genesis(
+        // Name
+        "Ğtest Development",
+        // ID
+        "gtest_dev",
+        ChainType::Development,
+        move || {
+            devnet_genesis(
+                wasm_binary,
+                // Initial authorities
+                vec![get_authority_keys_from_seed("Alice")],
+                // Inital identities
+                btreemap![
+                    IdtyName::from("Alice") => get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    IdtyName::from("Bob") => get_account_id_from_seed::<sr25519::Public>("Bob"),
+                    IdtyName::from("Charlie") => get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                ],
+                // Sudo account
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                true,
+            )
+        },
+        // Bootnodes
+        vec![],
+        // Telemetry
+        None,
+        // Protocol ID
+        None,
+        // Properties
+        Some(
+            serde_json::json!({
+                    "tokenDecimals": TOKEN_DECIMALS,
+                    "tokenSymbol": TOKEN_SYMBOL,
+            })
+            .as_object()
+            .expect("must be a map")
+            .clone(),
+        ),
+        // Extensions
+        None,
+    ))
+}
+
+
 fn devnet_genesis(
     wasm_binary: &[u8],
     initial_authorities: Vec<AuthorityKeys>,
@@ -71,7 +118,6 @@ fn devnet_genesis(
         },
         authority_discovery: Default::default(),
         balances: BalancesConfig {
-            // Configure endowed accounts with initial balance of INITIAL_BALANCE.
             balances: Vec::with_capacity(0),
         },
         babe: BabeConfig {
@@ -137,52 +183,6 @@ fn devnet_genesis(
             initial_monetary_mass: 0,
         },
     }
-}
-
-pub fn development_chain_spec() -> Result<ChainSpec, String> {
-    let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
-
-    Ok(ChainSpec::from_genesis(
-        // Name
-        "Ğtest Development",
-        // ID
-        "gtest_dev",
-        ChainType::Development,
-        move || {
-            devnet_genesis(
-                wasm_binary,
-                // Initial PoA authorities
-                vec![get_authority_keys_from_seed("Alice")],
-                // Inital identities
-                btreemap![
-                    IdtyName::from("Alice") => get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    IdtyName::from("Bob") => get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    IdtyName::from("Charlie") => get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                ],
-                // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                true,
-            )
-        },
-        // Bootnodes
-        vec![],
-        // Telemetry
-        None,
-        // Protocol ID
-        None,
-        // Properties
-        Some(
-            serde_json::json!({
-                    "tokenDecimals": TOKEN_DECIMALS,
-                    "tokenSymbol": TOKEN_SYMBOL,
-            })
-            .as_object()
-            .expect("must be a map")
-            .clone(),
-        ),
-        // Extensions
-        None,
-    ))
 }
 
 pub fn local_testnet_config(authorities_count: usize) -> Result<ChainSpec, String> {

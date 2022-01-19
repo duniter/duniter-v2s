@@ -65,7 +65,7 @@ sc-cli = { git = "https://github.com/librelois/substrate.git", branch = "duniter
 sc-client-api = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sc-consensus = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 babe = { package = "sc-consensus-babe", git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-consensus-manual-seal = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
+manual-seal = { package = "sc-consensus-manual-seal", git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sc-consensus-uncles = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sc-executor = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sc-finality-grandpa = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
@@ -84,6 +84,7 @@ sp-consensus-babe = { git = "https://github.com/librelois/substrate.git", branch
 sp-core = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sp-finality-grandpa = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sp-offchain = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
+sp-keyring = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sp-runtime = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sp-session = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sp-storage = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }

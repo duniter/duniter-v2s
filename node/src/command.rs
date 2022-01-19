@@ -215,22 +215,29 @@ pub fn run() -> sc_cli::Result<()> {
         None => {
             let runner = cli.create_runner(&cli.run)?;
             runner.run_node_until_exit(|config| async move {
+                let chain_spec_id = config.chain_spec.id();
+                let sealing_opt = if chain_spec_id.ends_with("dev") && chain_spec_id != "gdev" {
+                    Some(cli.sealing)
+                } else {
+                    None
+                };
                 match config.chain_spec.runtime_type() {
                     #[cfg(feature = "g1")]
                     RuntimeType::G1 => {
-                        service::new_full::<g1_runtime::RuntimeApi, G1Executor>(config, None)
+                        service::new_full::<g1_runtime::RuntimeApi, G1Executor>(config, sealing_opt)
                             .map_err(sc_cli::Error::Service)
                     }
                     #[cfg(feature = "gtest")]
-                    RuntimeType::GTest => {
-                        service::new_full::<gtest_runtime::RuntimeApi, GTestExecutor>(config, None)
-                            .map_err(sc_cli::Error::Service)
-                    }
+                    RuntimeType::GTest => service::new_full::<
+                        gtest_runtime::RuntimeApi,
+                        GTestExecutor,
+                    >(config, sealing_opt)
+                    .map_err(sc_cli::Error::Service),
                     #[cfg(feature = "gdev")]
                     RuntimeType::GDev => {
                         service::new_full::<gdev_runtime::RuntimeApi, GDevExecutor>(
                             config,
-                            Some(cli.sealing),
+                            sealing_opt,
                         )
                         .map_err(sc_cli::Error::Service)
                     }

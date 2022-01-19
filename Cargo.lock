@@ -1289,6 +1289,7 @@ dependencies = [
  "sp-consensus-babe",
  "sp-core",
  "sp-finality-grandpa",
+ "sp-keyring",
  "sp-membership",
  "sp-offchain",
  "sp-runtime",
