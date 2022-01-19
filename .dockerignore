@@ -1,3 +1,7 @@
-Dockerfile
+.editorconfig
+.envrc
+.git*
+.vscode
+docker/Dockerfile
 docker-compose.yml
 target
