@@ -30,9 +30,9 @@ pub use common_runtime::{
     IdtyNameValidatorImpl, Index, Signature,
 };
 pub use pallet_balances::Call as BalancesCall;
+pub use pallet_duniter_test_parameters::Parameters as GenesisParameters;
 pub use pallet_duniter_wot::IdtyRight;
 pub use pallet_identity::{IdtyStatus, IdtyValue};
-use pallet_transaction_payment::CurrencyAdapter;
 pub use pallet_universal_dividend;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -42,6 +42,7 @@ use common_runtime::handlers::OnRightKeyChangeHandler;
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
+use pallet_transaction_payment::CurrencyAdapter;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor};
@@ -142,6 +143,30 @@ impl frame_support::traits::Contains<Call> for BaseCallFilter {
 
 // Configure FRAME pallets to include in runtime.
 common_runtime::pallets_config! {
+    // Dynamic parameters
+    pub type CertPeriod = pallet_duniter_test_parameters::CertPeriod<Runtime>;
+    pub type MaxByIssuer = pallet_duniter_test_parameters::CertMaxByIssuer<Runtime>;
+    pub type StrongCertRenewablePeriod = pallet_duniter_test_parameters::CertRenewablePeriod<Runtime>;
+    pub type ValidityPeriod = pallet_duniter_test_parameters::CertValidityPeriod<Runtime>;
+    pub type ConfirmPeriod = pallet_duniter_test_parameters::IdtyConfirmPeriod<Runtime>;
+    pub type IdtyCreationPeriod = pallet_duniter_test_parameters::IdtyCreationPeriod<Runtime>;
+    pub type MaxNoRightPeriod = pallet_duniter_test_parameters::IdtyMaxNoRightPeriod<Runtime>;
+    pub type MembershipPeriod = pallet_duniter_test_parameters::MembershipPeriod<Runtime>;
+    pub type RenewablePeriod = pallet_duniter_test_parameters::MembershipRenewablePeriod<Runtime>;
+    pub type PendingMembershipPeriod = pallet_duniter_test_parameters::PendingMembershipPeriod<Runtime>;
+    pub type UdCreationPeriod = pallet_duniter_test_parameters::UdCreationPeriod<Runtime>;
+    pub type UdFirstReeval = pallet_duniter_test_parameters::UdFirstReeval<Runtime>;
+    pub type UdReevalPeriod = pallet_duniter_test_parameters::UdReevalPeriod<Runtime>;
+    pub type UdReevalPeriodInBlocks = pallet_duniter_test_parameters::UdReevalPeriodInBlocks<Runtime>;
+    pub type WotFirstCertIssuableOn = pallet_duniter_test_parameters::WotFirstCertIssuableOn<Runtime>;
+    pub type WotMinCertForUdRight = pallet_duniter_test_parameters::WotMinCertForUdRight<Runtime>;
+    pub type WotMinCertForCertRight = pallet_duniter_test_parameters::WotMinCertForCertRight<Runtime>;
+    pub type WotMinCertForCreateIdtyRight = pallet_duniter_test_parameters::WotMinCertForCreateIdtyRight<Runtime>;
+
+    impl pallet_duniter_test_parameters::Config for Runtime {
+        type CertCount = u8;
+        type PeriodCount = Balance;
+    }
     impl pallet_sudo::Config for Runtime {
         type Event = Event;
         type Call = Call;
@@ -158,6 +183,9 @@ construct_runtime!(
         // Basic stuff
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 1,
+
+        // Test parameters
+        Parameters: pallet_duniter_test_parameters::{Pallet, Config<T>, Storage} = 2,
 
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 32,

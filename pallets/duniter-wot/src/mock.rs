@@ -212,6 +212,7 @@ pub fn new_test_ext(initial_identities_len: usize) -> sp_io::TestExternalities {
         },
         cert: CertConfig {
             certs_by_issuer: clique_wot(initial_identities_len, ValidityPeriod::get()),
+            apply_cert_period_at_genesis: true,
         },
     }
     .build_storage()

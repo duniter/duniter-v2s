@@ -93,16 +93,16 @@ parameter_types! {
 /*******/
 
 parameter_types! {
-    pub MinCertForUdRight: u8 = 5;
-    pub MinCertForCertRight: u8 = 5;
-    pub MinCertForCreateIdtyRight: u8 = 5;
+    pub WotFirstCertIssuableOn: BlockNumber = 30* DAYS;
+    pub WotMinCertForUdRight: u8 = 5;
+    pub WotMinCertForCertRight: u8 = 5;
+    pub WotMinCertForCreateIdtyRight: u8 = 5;
 }
 
 // Identity
 pub const IDTY_CREATE_PERIOD: BlockNumber = 100;
 parameter_types! {
     pub const ConfirmPeriod: BlockNumber = 14 * DAYS;
-    pub const FirstIssuableOn: BlockNumber = 30* DAYS;
     pub const IdtyCreationPeriod: BlockNumber = MONTHS;
     pub const MaxNoRightPeriod: BlockNumber = YEARS;
     pub const ValidationPeriod: BlockNumber = YEARS;

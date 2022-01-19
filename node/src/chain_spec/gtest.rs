@@ -128,6 +128,7 @@ fn devnet_genesis(
                 .collect(),
         },
         strong_cert: StrongCertConfig {
+            apply_cert_period_at_genesis: false,
             certs_by_issuer: clique_wot(
                 initial_identities.len(),
                 gtest_runtime::parameters::ValidityPeriod::get(),
@@ -333,6 +334,7 @@ fn testnet_genesis(
                 .collect(),
         },
         strong_cert: StrongCertConfig {
+            apply_cert_period_at_genesis: false,
             certs_by_issuer: clique_wot(
                 initial_identities.len(),
                 gtest_runtime::parameters::ValidityPeriod::get(),

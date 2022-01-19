@@ -36,6 +36,7 @@ std = [
     'pallet-babe/std',
     'pallet-balances/std',
     'pallet-certification/std',
+    'pallet-duniter-test-parameters/std',
     'pallet-duniter-wot/std',
     'pallet-identity/std',
     'pallet-membership/std',
@@ -66,6 +67,7 @@ std = [
 [dependencies]
 common-runtime = { path = "../common", default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
+pallet-duniter-test-parameters = { path = '../../pallets/duniter-test-parameters', default-features = false }
 pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-membership = { path = '../../pallets/membership', default-features = false }

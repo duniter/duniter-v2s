@@ -39,6 +39,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use sp_runtime::traits::Saturating;
     use sp_std::collections::btree_map::BTreeMap;
 
     /// The current storage version.
@@ -89,6 +90,7 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+        pub apply_cert_period_at_genesis: bool,
         pub certs_by_issuer: BTreeMap<T::IdtyIndex, BTreeMap<T::IdtyIndex, T::BlockNumber>>,
     }
 
@@ -96,6 +98,7 @@ pub mod pallet {
     impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
         fn default() -> Self {
             Self {
+                apply_cert_period_at_genesis: false,
                 certs_by_issuer: Default::default(),
             }
         }
@@ -152,13 +155,14 @@ pub mod pallet {
                         .or_default()
                         .push((*issuer, *receiver));
 
-                    use sp_runtime::traits::Saturating as _;
-                    let issuer_next_issuable_on = removable_on
-                        .saturating_add(T::CertPeriod::get())
-                        .saturating_sub(T::ValidityPeriod::get());
-                    if let Some(cert_meta) = cert_meta_by_issuer.get_mut(issuer) {
-                        if cert_meta.next_issuable_on < issuer_next_issuable_on {
-                            cert_meta.next_issuable_on = issuer_next_issuable_on;
+                    if self.apply_cert_period_at_genesis {
+                        let issuer_next_issuable_on = removable_on
+                            .saturating_add(T::CertPeriod::get())
+                            .saturating_sub(T::ValidityPeriod::get());
+                        if let Some(cert_meta) = cert_meta_by_issuer.get_mut(issuer) {
+                            if cert_meta.next_issuable_on < issuer_next_issuable_on {
+                                cert_meta.next_issuable_on = issuer_next_issuable_on;
+                            }
                         }
                     }
                     let renewable_on = removable_on.saturating_sub(

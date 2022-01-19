@@ -1,0 +1,18 @@
+[package]
+authors = ['librelois <c@elo.tf>']
+description = 'Duniter test parameters macro.'
+edition = '2018'
+homepage = 'https://substrate.dev'
+license = 'AGPL-3.0'
+name = 'pallet-duniter-test-parameters-macro'
+repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
+version = '3.0.0'
+
+[lib]
+proc-macro = true
+
+[dependencies]
+num_enum = { version = "0.5.3", default-features = false }
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "1.0", features = [ "extra-traits", "fold", "full", "visit" ] }

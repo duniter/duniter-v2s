@@ -46,46 +46,9 @@ frame_support::parameter_types! {
     pub const TransactionByteFee: Balance = 0;
 }
 
-// Wot
-parameter_types! {
-    pub MinCertForUdRight: u8 = 2;
-    pub MinCertForCertRight: u8 = 3;
-    pub MinCertForCreateIdtyRight: u8 = 3;
-}
-
-// Identity
-pub const IDTY_CREATE_PERIOD: BlockNumber = 100;
-frame_support::parameter_types! {
-    pub const ConfirmPeriod: BlockNumber = 40;
-    pub const FirstIssuableOn: BlockNumber = 20;
-    pub const IdtyCreationPeriod: BlockNumber = 50;
-    pub const MaxNoRightPeriod: BlockNumber = 1_000;
-}
-
-// Membership
-parameter_types! {
-    pub const MembershipPeriod: BlockNumber = 1_000;
-    pub const PendingMembershipPeriod: BlockNumber = 500;
-    pub const RenewablePeriod: BlockNumber = 50;
-}
-
-// Certification
-pub const MIN_STRONG_CERT_FOR_UD: u32 = 2;
-pub const MIN_STRONG_CERT_FOR_STRONG_CERT: u32 = 3;
-parameter_types! {
-    pub const CertPeriod: BlockNumber = 15;
-    pub const MaxByIssuer: u8 = 100;
-    pub const StrongCertRenewablePeriod: BlockNumber = 50;//6 * MONTHS;
-    pub const ValidityPeriod: BlockNumber = 2_000;//2 * YEARS;
-}
-
 // Universal dividend
 parameter_types! {
     pub const SquareMoneyGrowthRate: Permill = Permill::one();
-    pub const UdCreationPeriod: BlockNumber = 10;
-    pub const UdFirstReeval: BlockNumber = 100;
-    pub const UdReevalPeriod: Balance = 10;
-    pub const UdReevalPeriodInBlocks: BlockNumber = 20 * 10;
 }
 
 // Multisig

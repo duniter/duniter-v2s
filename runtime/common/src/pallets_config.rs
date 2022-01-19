@@ -185,10 +185,10 @@ macro_rules! pallets_config {
 		// WEB OF TRUST //
 
 		impl pallet_duniter_wot::Config for Runtime {
-			type MinCertForUdRight = MinCertForUdRight;
-			type MinCertForCertRight = MinCertForCertRight;
-			type MinCertForCreateIdtyRight = MinCertForCreateIdtyRight;
-			type FirstIssuableOn = FirstIssuableOn;
+			type FirstIssuableOn = WotFirstCertIssuableOn;
+			type MinCertForUdRight = WotMinCertForUdRight;
+			type MinCertForCertRight = WotMinCertForCertRight;
+			type MinCertForCreateIdtyRight = WotMinCertForCreateIdtyRight;
 		}
 
 		impl pallet_identity::Config for Runtime {

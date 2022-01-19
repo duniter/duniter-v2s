@@ -17,9 +17,9 @@
 use super::*;
 use common_runtime::entities::IdtyName;
 use gdev_runtime::{
-    AccountId, BalancesConfig, GenesisConfig, GrandpaConfig, IdentityConfig, IdtyRight, IdtyValue,
-    MembershipConfig, StrongCertConfig, SudoConfig, SystemConfig, UdAccountsStorageConfig,
-    UniversalDividendConfig, WASM_BINARY,
+    AccountId, BalancesConfig, GenesisConfig, GenesisParameters, GrandpaConfig, IdentityConfig,
+    IdtyRight, IdtyValue, MembershipConfig, ParametersConfig, StrongCertConfig, SudoConfig,
+    SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use maplit::btreemap;
 use sc_service::ChainType;
@@ -86,6 +86,12 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
     ))
 }
 
+fn get_env_u32(env_var_name: &'static str, default_value: u32) -> u32 {
+    std::env::var(env_var_name)
+        .map_or(Ok(default_value), |s| s.parse())
+        .unwrap_or_else(|_| panic!("{} must be a number", env_var_name))
+}
+
 fn devnet_genesis(
     wasm_binary: &[u8],
     initial_authorities: Vec<GrandpaId>,
@@ -93,10 +99,36 @@ fn devnet_genesis(
     root_key: AccountId,
     _enable_println: bool,
 ) -> gdev_runtime::GenesisConfig {
+    let cert_validity_period = get_env_u32("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
+    let membership_period = get_env_u32("DUNITER_MEMBERSHIP_PERIOD", 1_000);
+    let membership_renewable_period = get_env_u32("DUNITER_MEMBERSHIP_RENEWABLE_PERIOD", 50);
+
     gdev_runtime::GenesisConfig {
         system: SystemConfig {
             // Add Wasm runtime to storage.
             code: wasm_binary.to_vec(),
+        },
+        parameters: ParametersConfig {
+            parameters: GenesisParameters {
+                cert_period: 15,
+                cert_max_by_issuer: 10,
+                cert_renewable_period: 50,
+                cert_validity_period: 200,
+                idty_confirm_period: 40,
+                idty_creation_period: 50,
+                idty_max_no_right_period: 1_000,
+                membership_period,
+                membership_renewable_period,
+                pending_membership_period: 500,
+                ud_creation_period: 10,
+                ud_first_reeval: 100,
+                ud_reeval_period: 20,
+                ud_reeval_period_in_blocks: 200,
+                wot_first_cert_issuable_on: 20,
+                wot_min_cert_for_ud_right: 2,
+                wot_min_cert_for_cert_right: 3,
+                wot_min_cert_for_create_idty_right: 3,
+            },
         },
         balances: BalancesConfig {
             balances: Default::default(),
@@ -132,18 +164,16 @@ fn devnet_genesis(
                     (
                         i as u32,
                         MembershipData {
-                            expire_on: gdev_runtime::MembershipPeriod::get(),
-                            renewable_on: gdev_runtime::RenewablePeriod::get(),
+                            expire_on: membership_period,
+                            renewable_on: membership_renewable_period,
                         },
                     )
                 })
                 .collect(),
         },
         strong_cert: StrongCertConfig {
-            certs_by_issuer: clique_wot(
-                initial_identities.len(),
-                gdev_runtime::parameters::ValidityPeriod::get(),
-            ),
+            apply_cert_period_at_genesis: false,
+            certs_by_issuer: clique_wot(initial_identities.len(), cert_validity_period),
         },
         ud_accounts_storage: UdAccountsStorageConfig {
             ud_accounts: initial_identities.values().cloned().collect(),

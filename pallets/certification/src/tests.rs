@@ -25,6 +25,7 @@ use sp_std::collections::btree_map::BTreeMap;
 #[test]
 fn test_must_receive_cert_before_can_issue() {
     new_test_ext(DefaultCertificationConfig {
+        apply_cert_period_at_genesis: true,
         certs_by_issuer: BTreeMap::new(),
     })
     .execute_with(|| {
@@ -38,6 +39,7 @@ fn test_must_receive_cert_before_can_issue() {
 #[test]
 fn test_genesis_build() {
     new_test_ext(DefaultCertificationConfig {
+        apply_cert_period_at_genesis: true,
         certs_by_issuer: btreemap![
             0 => btreemap![
                 1 => 10,
@@ -111,6 +113,7 @@ fn test_genesis_build() {
 #[test]
 fn test_cert_period() {
     new_test_ext(DefaultCertificationConfig {
+        apply_cert_period_at_genesis: true,
         certs_by_issuer: btreemap![0 => btreemap![1 => 10]],
     })
     .execute_with(|| {
@@ -133,6 +136,7 @@ fn test_cert_period() {
 #[test]
 fn test_renewable_period() {
     new_test_ext(DefaultCertificationConfig {
+        apply_cert_period_at_genesis: true,
         certs_by_issuer: btreemap![0 => btreemap![1 => 10]],
     })
     .execute_with(|| {
