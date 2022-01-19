@@ -163,6 +163,7 @@ deploy_docker_test_image:
     - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH == "master"'
       when: never
     - when: manual
+  allow_failure: true
   variables:
     DOCKERFILE_PATH: "docker/Dockerfile"
     IMAGE_TAG: "test-image-$CI_COMMIT_SHORT_SHA"
