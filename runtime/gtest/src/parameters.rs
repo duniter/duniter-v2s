@@ -97,7 +97,7 @@ parameter_types! {
 
 parameter_types! {
     pub WotFirstCertIssuableOn: BlockNumber = DAYS;
-    pub WotMinCertForUdRight: u8 = 5;
+    pub WotMinCertForMembership: u8 = 5;
     pub MinReceivedCertToBeAbleToIssueCert: u8 = 5;
     pub WotMinCertForCreateIdtyRight: u8 = 5;
 }

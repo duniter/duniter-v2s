@@ -268,8 +268,8 @@ macro_rules! pallets_config {
 		use frame_support::instances::Instance1;
 		impl pallet_duniter_wot::Config<Instance1> for Runtime {
 			type FirstIssuableOn = WotFirstCertIssuableOn;
-			type ManageIdentitiesChanges = frame_support::traits::ConstBool<true>;
-			type MinCertForUdRight = WotMinCertForUdRight;
+			type IsSubWot = frame_support::traits::ConstBool<true>;
+			type MinCertForMembership = WotMinCertForMembership;
 			type MinCertForCreateIdtyRight = WotMinCertForCreateIdtyRight;
 		}
 

@@ -167,7 +167,7 @@ common_runtime::pallets_config! {
     pub type UdReevalPeriod = pallet_duniter_test_parameters::UdReevalPeriod<Runtime>;
     pub type UdReevalPeriodInBlocks = pallet_duniter_test_parameters::UdReevalPeriodInBlocks<Runtime>;
     pub type WotFirstCertIssuableOn = pallet_duniter_test_parameters::WotFirstCertIssuableOn<Runtime>;
-    pub type WotMinCertForUdRight = pallet_duniter_test_parameters::WotMinCertForUdRight<Runtime>;
+    pub type WotMinCertForMembership = pallet_duniter_test_parameters::WotMinCertForMembership<Runtime>;
     pub type WotMinCertForCreateIdtyRight = pallet_duniter_test_parameters::WotMinCertForCreateIdtyRight<Runtime>;
 
     impl pallet_duniter_test_parameters::Config for Runtime {

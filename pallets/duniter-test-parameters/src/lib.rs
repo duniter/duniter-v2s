@@ -51,9 +51,9 @@ pub mod types {
         pub ud_reeval_period: PeriodCount,
         pub ud_reeval_period_in_blocks: BlockNumber,
         pub wot_first_cert_issuable_on: BlockNumber,
-        pub wot_min_cert_for_ud_right: CertCount,
         pub wot_min_cert_for_cert_right: CertCount,
         pub wot_min_cert_for_create_idty_right: CertCount,
+        pub wot_min_cert_for_membership: CertCount,
     }
 }
 

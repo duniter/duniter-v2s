@@ -330,7 +330,7 @@ pub mod pallet {
             // remove all member data
             Self::remove_in(member_id);
             Self::remove_online(member_id);
-			Members::<T>::remove(member_id);
+            Members::<T>::remove(member_id);
 
             Self::deposit_event(Event::MemberRemoved(member_id));
             let _ = T::OnRemovedMember::on_removed_member(member_id);

@@ -64,8 +64,8 @@ pub mod pallet {
         + pallet_membership::Config<I, IdtyId = IdtyIndex, MetaData = ()>
     {
         type FirstIssuableOn: Get<Self::BlockNumber>;
-        type ManageIdentitiesChanges: Get<bool>;
-        type MinCertForUdRight: Get<u32>;
+        type IsSubWot: Get<bool>;
+        type MinCertForMembership: Get<u32>;
         type MinCertForCreateIdtyRight: Get<u32>;
     }
 
@@ -80,7 +80,7 @@ pub mod pallet {
             );
         }
         pub(super) fn dispath_idty_call(idty_call: pallet_identity::Call<T>) -> bool {
-            if T::ManageIdentitiesChanges::get() {
+            if !T::IsSubWot::get() {
                 if let Err(e) = idty_call.dispatch_bypass_filter(RawOrigin::Root.into()) {
                     sp_std::if_std! {
                         println!("{:?}", e)
@@ -120,8 +120,16 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::EnsureIdtyCallAllowed<T>
 impl<T: Config<I>, I: 'static> sp_membership::traits::IsIdtyAllowedToClaimMembership<IdtyIndex>
     for Pallet<T, I>
 {
-    fn is_idty_allowed_to_claim_membership(_: &IdtyIndex) -> bool {
-        false
+    fn is_idty_allowed_to_claim_membership(idty_index: &IdtyIndex) -> bool {
+        if T::IsSubWot::get() {
+            if let Some(idty_value) = pallet_identity::Pallet::<T>::identity(idty_index) {
+                idty_value.status == IdtyStatus::Validated
+            } else {
+                false
+            }
+        } else {
+            false
+        }
     }
 }
 
@@ -142,7 +150,11 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::IsIdtyAllowedToRequestMemb
 {
     fn is_idty_allowed_to_request_membership(idty_index: &IdtyIndex) -> bool {
         if let Some(idty_value) = pallet_identity::Pallet::<T>::identity(idty_index) {
-            idty_value.status == IdtyStatus::Disabled
+            if T::IsSubWot::get() {
+                idty_value.status == IdtyStatus::Validated
+            } else {
+                idty_value.status == IdtyStatus::Disabled
+            }
         } else {
             false
         }
@@ -190,8 +202,8 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::OnEvent<IdtyIndex, ()> for
                 {
                     let received_count = idty_cert_meta.received_count;
 
-                    // TODO insert `receiver` in distance queue if received_count >= MinCertForUdRight
-                    if received_count >= T::MinCertForUdRight::get() as u32 {
+                    // TODO insert `receiver` in distance queue if received_count >= MinCertForMembership
+                    if received_count >= T::MinCertForMembership::get() as u32 {
                         // TODO insert `receiver` in distance queue
                         if Self::dispath_idty_call(pallet_identity::Call::validate_identity {
                             idty_index: *idty_index,
@@ -247,7 +259,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex
                 Self::do_apply_first_issuable_on(receiver);
             }
         } else if pallet_membership::Pallet::<T, I>::pending_membership(receiver).is_some()
-            && receiver_received_count >= T::MinCertForUdRight::get()
+            && receiver_received_count >= T::MinCertForMembership::get()
         {
             // TODO insert `receiver` in distance queue
             Self::dispath_idty_call(pallet_identity::Call::validate_identity {
@@ -272,7 +284,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
         receiver_received_count: u32,
         _expiration: bool,
     ) -> Weight {
-        if receiver_received_count < T::MinCertForUdRight::get() {
+        if receiver_received_count < T::MinCertForMembership::get() {
             // Revoke receiver membership and disable his identity
             if let Err(e) = pallet_membership::Pallet::<T, I>::revoke_membership(
                 RawOrigin::Root.into(),
