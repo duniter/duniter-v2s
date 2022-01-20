@@ -16,9 +16,9 @@
 
 use crate::mock::Identity;
 use crate::mock::*;
-use crate::IdtyRight;
 use frame_support::assert_err;
 use frame_support::assert_ok;
+use frame_support::error::BadOrigin;
 use frame_support::instances::Instance1;
 use frame_system::{EventRecord, Phase};
 use pallet_identity::{IdtyName, IdtyStatus};
@@ -55,15 +55,15 @@ fn test_creator_not_allowed_to_create_idty() {
 
 #[test]
 fn test_create_idty_ok() {
-    new_test_ext(3).execute_with(|| {
+    new_test_ext(5).execute_with(|| {
         run_to_block(2);
 
         // Alice should be able te create an identity at block #2
         assert_ok!(Identity::create_identity(
             Origin::signed(1),
             1,
-            IdtyName::from("Dave"),
-            4
+            IdtyName::from("Ferdie"),
+            6
         ));
         // 2 events should have occurred: IdtyCreated and NewCert
         let events = System::events();
@@ -73,8 +73,8 @@ fn test_create_idty_ok() {
             EventRecord {
                 phase: Phase::Initialization,
                 event: Event::Identity(pallet_identity::Event::IdtyCreated(
-                    IdtyName::from("Dave"),
-                    4
+                    IdtyName::from("Ferdie"),
+                    6
                 )),
                 topics: vec![],
             }
@@ -85,54 +85,54 @@ fn test_create_idty_ok() {
                 phase: Phase::Initialization,
                 event: Event::Cert(pallet_certification::Event::NewCert {
                     issuer: 1,
-                    issuer_issued_count: 3,
-                    receiver: 4,
+                    issuer_issued_count: 5,
+                    receiver: 6,
                     receiver_received_count: 1
                 }),
                 topics: vec![],
             }
         );
-        assert_eq!(Identity::identity(4).unwrap().status, IdtyStatus::Created);
-        assert_eq!(Identity::identity(4).unwrap().removable_on, 4);
+        assert_eq!(Identity::identity(6).unwrap().status, IdtyStatus::Created);
+        assert_eq!(Identity::identity(6).unwrap().removable_on, 4);
     });
 }
 
 #[test]
 fn test_ud_right_achievement_ok() {
-    new_test_ext(3).execute_with(|| {
-        // Alice create Dave identity
+    new_test_ext(5).execute_with(|| {
+        // Alice create Ferdie identity
         run_to_block(2);
         assert_ok!(Identity::create_identity(
             Origin::signed(1),
             1,
-            IdtyName::from("Dave"),
-            4
+            IdtyName::from("Ferdie"),
+            6
         ));
 
-        // Dave confirm it's identity
+        // Ferdie confirm it's identity
         run_to_block(3);
         assert_ok!(Identity::confirm_identity(
-            Origin::signed(4),
-            IdtyName::from("Dave"),
-            4
+            Origin::signed(6),
+            IdtyName::from("Ferdie"),
+            6
         ));
 
-        // Bob should be able to certify Dave
+        // Bob should be able to certify Ferdie
         run_to_block(4);
-        assert_ok!(Cert::add_cert(Origin::signed(2), 2, 4));
+        assert_ok!(Cert::add_cert(Origin::signed(2), 2, 6));
 
         let events = System::events();
         // 3 events should have occurred: NewCert, MembershipAcquired, IdtyValidated and IdtyAcquireRight
-        assert_eq!(events.len(), 4);
-        println!("{:?}", events[2]);
+        assert_eq!(events.len(), 3);
+        //println!("{:?}", events[2]);
         assert_eq!(
             events[0],
             EventRecord {
                 phase: Phase::Initialization,
                 event: Event::Cert(pallet_certification::Event::NewCert {
                     issuer: 2,
-                    issuer_issued_count: 3,
-                    receiver: 4,
+                    issuer_issued_count: 5,
+                    receiver: 6,
                     receiver_received_count: 2
                 }),
                 topics: vec![],
@@ -142,7 +142,7 @@ fn test_ud_right_achievement_ok() {
             events[1],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Membership(pallet_membership::Event::MembershipAcquired(4)),
+                event: Event::Membership(pallet_membership::Event::MembershipAcquired(6)),
                 topics: vec![],
             }
         );
@@ -151,19 +151,8 @@ fn test_ud_right_achievement_ok() {
             EventRecord {
                 phase: Phase::Initialization,
                 event: Event::Identity(pallet_identity::Event::IdtyValidated(IdtyName::from(
-                    "Dave"
+                    "Ferdie"
                 ),)),
-                topics: vec![],
-            }
-        );
-        assert_eq!(
-            events[3],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyAcquireRight(
-                    IdtyName::from("Dave"),
-                    IdtyRight::Ud
-                )),
                 topics: vec![],
             }
         );
@@ -172,24 +161,24 @@ fn test_ud_right_achievement_ok() {
 
 #[test]
 fn test_confirm_idty_ok() {
-    new_test_ext(3).execute_with(|| {
+    new_test_ext(5).execute_with(|| {
         run_to_block(2);
 
-        // Alice create Dave identity
+        // Alice create Ferdie identity
         assert_ok!(Identity::create_identity(
             Origin::signed(1),
             1,
-            IdtyName::from("Dave"),
-            4
+            IdtyName::from("Ferdie"),
+            6
         ));
 
         run_to_block(3);
 
-        // Dave should be able to confirm it's identity
+        // Ferdie should be able to confirm it's identity
         assert_ok!(Identity::confirm_identity(
-            Origin::signed(4),
-            IdtyName::from("Dave"),
-            4
+            Origin::signed(6),
+            IdtyName::from("Ferdie"),
+            6
         ));
         let events = System::events();
         // 2 events should have occurred: MembershipRequested and IdtyConfirmed
@@ -199,7 +188,7 @@ fn test_confirm_idty_ok() {
             events[0],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Membership(pallet_membership::Event::MembershipRequested(4)),
+                event: Event::Membership(pallet_membership::Event::MembershipRequested(6)),
                 topics: vec![],
             }
         );
@@ -208,8 +197,74 @@ fn test_confirm_idty_ok() {
             EventRecord {
                 phase: Phase::Initialization,
                 event: Event::Identity(pallet_identity::Event::IdtyConfirmed(IdtyName::from(
-                    "Dave"
+                    "Ferdie"
                 ),)),
+                topics: vec![],
+            }
+        );
+    });
+}
+
+#[test]
+fn test_idty_membership_expire_them_requested() {
+    new_test_ext(3).execute_with(|| {
+        run_to_block(4);
+
+        // Alice renew her membership
+        assert_ok!(Membership::renew_membership(Origin::signed(1), 1));
+        // Bob renew his membership
+        assert_ok!(Membership::renew_membership(Origin::signed(2), 2));
+
+        // Charlie's membership should expire at block #5
+        run_to_block(5);
+        assert!(Membership::membership(3).is_none());
+        let events = System::events();
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0],
+            EventRecord {
+                phase: Phase::Initialization,
+                event: Event::Membership(pallet_membership::Event::MembershipExpired(3)),
+                topics: vec![],
+            }
+        );
+
+        // Charlie's identity should be disabled at block #5
+        assert_eq!(Identity::identity(3).unwrap().status, IdtyStatus::Disabled);
+
+        // Alice can't renew it's cert to Charlie
+        assert_err!(Cert::add_cert(Origin::signed(1), 1, 3), BadOrigin);
+
+        // Charlie should be able to request membership
+        run_to_block(6);
+        assert_ok!(Membership::request_membership(Origin::signed(3), 3, ()));
+
+        // Charlie should re-enter in the wot immediatly
+        let events = System::events();
+        assert_eq!(events.len(), 3);
+        assert_eq!(
+            events[0],
+            EventRecord {
+                phase: Phase::Initialization,
+                event: Event::Membership(pallet_membership::Event::MembershipRequested(3)),
+                topics: vec![],
+            }
+        );
+        assert_eq!(
+            events[1],
+            EventRecord {
+                phase: Phase::Initialization,
+                event: Event::Membership(pallet_membership::Event::MembershipAcquired(3)),
+                topics: vec![],
+            }
+        );
+        assert_eq!(
+            events[2],
+            EventRecord {
+                phase: Phase::Initialization,
+                event: Event::Identity(pallet_identity::Event::IdtyValidated(IdtyName::from(
+                    "Charlie"
+                ))),
                 topics: vec![],
             }
         );

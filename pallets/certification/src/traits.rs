@@ -17,7 +17,7 @@
 pub trait OnNewcert<IdtyIndex> {
     fn on_new_cert(
         issuer: IdtyIndex,
-        issuer_issued_count: u8,
+        issuer_issued_count: u32,
         receiver: IdtyIndex,
         receiver_received_count: u32,
     ) -> frame_support::dispatch::Weight;
@@ -25,7 +25,7 @@ pub trait OnNewcert<IdtyIndex> {
 impl<IdtyIndex> OnNewcert<IdtyIndex> for () {
     fn on_new_cert(
         _issuer: IdtyIndex,
-        _issuer_issued_count: u8,
+        _issuer_issued_count: u32,
         _receiver: IdtyIndex,
         _receiver_received_count: u32,
     ) -> frame_support::dispatch::Weight {
@@ -36,7 +36,7 @@ impl<IdtyIndex> OnNewcert<IdtyIndex> for () {
 pub trait OnRemovedCert<IdtyIndex> {
     fn on_removed_cert(
         issuer: IdtyIndex,
-        issuer_issued_count: u8,
+        issuer_issued_count: u32,
         receiver: IdtyIndex,
         receiver_received_count: u32,
         expiration: bool,
@@ -45,7 +45,7 @@ pub trait OnRemovedCert<IdtyIndex> {
 impl<IdtyIndex> OnRemovedCert<IdtyIndex> for () {
     fn on_removed_cert(
         _issuer: IdtyIndex,
-        _issuer_issued_count: u8,
+        _issuer_issued_count: u32,
         _receiver: IdtyIndex,
         _receiver_received_count: u32,
         _expiration: bool,

@@ -17,9 +17,9 @@
 use super::*;
 use common_runtime::entities::IdtyName;
 use gdev_runtime::{
-    AccountId, BalancesConfig, GenesisConfig, GenesisParameters, GrandpaConfig, IdentityConfig,
-    IdtyRight, IdtyValue, MembershipConfig, ParametersConfig, StrongCertConfig, SudoConfig,
-    SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
+    AccountId, BalancesConfig, CertConfig, GenesisConfig, GenesisParameters, GrandpaConfig,
+    IdentityConfig, IdtyValue, MembershipConfig, ParametersConfig, SudoConfig, SystemConfig,
+    UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use maplit::btreemap;
 use sc_service::ChainType;
@@ -113,10 +113,10 @@ fn devnet_genesis(
                 cert_period: 15,
                 cert_max_by_issuer: 10,
                 cert_renewable_period: 50,
-                cert_validity_period: 200,
+                cert_validity_period,
                 idty_confirm_period: 40,
                 idty_creation_period: 50,
-                idty_max_no_right_period: 1_000,
+                idty_max_disabled_period: 1_000,
                 membership_period,
                 membership_renewable_period,
                 pending_membership_period: 500,
@@ -126,8 +126,8 @@ fn devnet_genesis(
                 ud_reeval_period_in_blocks: 200,
                 wot_first_cert_issuable_on: 20,
                 wot_min_cert_for_ud_right: 2,
-                wot_min_cert_for_cert_right: 3,
-                wot_min_cert_for_create_idty_right: 3,
+                wot_min_cert_for_cert_right: 2,
+                wot_min_cert_for_create_idty_right: 2,
             },
         },
         balances: BalancesConfig {
@@ -149,11 +149,6 @@ fn devnet_genesis(
                     name: name.clone(),
                     next_creatable_identity_on: Default::default(),
                     removable_on: 0,
-                    rights: vec![
-                        (IdtyRight::CreateIdty, None),
-                        (IdtyRight::StrongCert, None),
-                        (IdtyRight::Ud, None),
-                    ],
                     status: gdev_runtime::IdtyStatus::Validated,
                 })
                 .collect(),
@@ -171,7 +166,7 @@ fn devnet_genesis(
                 })
                 .collect(),
         },
-        strong_cert: StrongCertConfig {
+        cert: CertConfig {
             apply_cert_period_at_genesis: false,
             certs_by_issuer: clique_wot(initial_identities.len(), cert_validity_period),
         },

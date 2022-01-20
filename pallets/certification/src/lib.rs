@@ -73,7 +73,10 @@ pub mod pallet {
             + MaxEncodedLen;
         #[pallet::constant]
         /// Maximum number of active certifications by issuer
-        type MaxByIssuer: Get<u8>;
+        type MaxByIssuer: Get<u32>;
+        /// Minimum number of certifications that must be received to be able to issue
+        /// certifications.
+        type MinReceivedCertToBeAbleToIssueCert: Get<u32>;
         /// Handler for NewCert event
         type OnNewcert: OnNewcert<Self::IdtyIndex>;
         /// Handler for Removed event
@@ -124,7 +127,7 @@ pub mod pallet {
                 cert_meta_by_issuer.insert(
                     *issuer,
                     IdtyCertMeta {
-                        issued_count: receivers.len() as u8,
+                        issued_count: receivers.len() as u32,
                         next_issuable_on: sp_runtime::traits::Zero::zero(),
                         received_count: 0,
                     },
@@ -238,7 +241,7 @@ pub mod pallet {
         /// [issuer, issuer_issued_count, receiver, receiver_received_count]
         NewCert {
             issuer: T::IdtyIndex,
-            issuer_issued_count: u8,
+            issuer_issued_count: u32,
             receiver: T::IdtyIndex,
             receiver_received_count: u32,
         },
@@ -246,7 +249,7 @@ pub mod pallet {
         /// [issuer, issuer_issued_count, receiver, receiver_received_count, expiration]
         RemovedCert {
             issuer: T::IdtyIndex,
-            issuer_issued_count: u8,
+            issuer_issued_count: u32,
             receiver: T::IdtyIndex,
             receiver_received_count: u32,
             expiration: bool,
@@ -265,6 +268,8 @@ pub mod pallet {
         IdtyMustReceiveCertsBeforeCanIssue,
         /// This identity has already issued the maximum number of certifications
         IssuedTooManyCert,
+        /// Not enough certifications received
+        NotEnoughCertReceived,
         /// This certification has already been issued or renewed recently
         NotRespectRenewablePeriod,
         /// This identity has already issued a certification too recently
@@ -302,7 +307,12 @@ pub mod pallet {
                     issuer,
                     receiver
                 );
-                if issuer_idty_cert_meta.next_issuable_on > block_number {
+
+                if issuer_idty_cert_meta.received_count
+                    < T::MinReceivedCertToBeAbleToIssueCert::get()
+                {
+                    return Err(Error::<T, I>::NotEnoughCertReceived.into());
+                } else if issuer_idty_cert_meta.next_issuable_on > block_number {
                     return Err(Error::<T, I>::NotRespectCertPeriod.into());
                 } else if issuer_idty_cert_meta.issued_count >= T::MaxByIssuer::get() {
                     return Err(Error::<T, I>::IssuedTooManyCert.into());

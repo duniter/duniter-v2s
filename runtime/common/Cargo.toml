@@ -29,6 +29,7 @@ std = [
     'serde',
     'sp-arithmetic/std',
     'sp-core/std',
+    'sp-membership/std',
     'sp-runtime/std',
     'sp-std/std'
 ]
@@ -39,6 +40,7 @@ pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = fa
 pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-membership = { path = '../../pallets/membership', default-features = false }
 pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
+sp-membership = { path = '../../primitives/membership', default-features = false }
 
 # Crates.io
 smallvec = "1.6.1"

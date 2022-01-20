@@ -61,30 +61,23 @@ pub trait IsInPendingMemberships<IdtyId> {
     fn is_in_pending_memberships(idty_id: IdtyId) -> bool;
 }
 
-pub trait OnEvent<IdtyId> {
-    fn on_event(event: crate::Event<IdtyId>) -> Weight;
+pub trait OnEvent<IdtyId, MetaData> {
+    fn on_event(event: &crate::Event<IdtyId, MetaData>) -> Weight;
 }
 
-impl<IdtyId> OnEvent<IdtyId> for () {
-    fn on_event(_: crate::Event<IdtyId>) -> Weight {
+impl<IdtyId, MetaData> OnEvent<IdtyId, MetaData> for () {
+    fn on_event(_: &crate::Event<IdtyId, MetaData>) -> Weight {
         0
     }
 }
 
 pub trait MembershipAction<IdtyId, Origin> {
-    fn request_membership_(origin: Origin, idty_id: IdtyId) -> DispatchResultWithPostInfo;
     fn claim_membership_(origin: Origin, idty_id: IdtyId) -> DispatchResultWithPostInfo;
     fn renew_membership_(origin: Origin, idty_id: IdtyId) -> DispatchResultWithPostInfo;
     fn revoke_membership_(origin: Origin, idty_id: IdtyId) -> DispatchResultWithPostInfo;
-    fn force_claim_membership(idty_id: IdtyId) -> Weight;
-    fn force_renew_membership(idty_id: IdtyId) -> Weight;
-    fn force_revoke_membership(idty_id: IdtyId) -> Weight;
 }
 
 impl<IdtyId, Origin> MembershipAction<IdtyId, Origin> for () {
-    fn request_membership_(_: Origin, _: IdtyId) -> DispatchResultWithPostInfo {
-        Ok(().into())
-    }
     fn claim_membership_(_: Origin, _: IdtyId) -> DispatchResultWithPostInfo {
         Ok(().into())
     }
@@ -93,15 +86,6 @@ impl<IdtyId, Origin> MembershipAction<IdtyId, Origin> for () {
     }
     fn revoke_membership_(_: Origin, _: IdtyId) -> DispatchResultWithPostInfo {
         Ok(().into())
-    }
-    fn force_claim_membership(_: IdtyId) -> Weight {
-        0
-    }
-    fn force_renew_membership(_: IdtyId) -> Weight {
-        0
-    }
-    fn force_revoke_membership(_: IdtyId) -> Weight {
-        0
     }
 }
 

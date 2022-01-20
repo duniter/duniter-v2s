@@ -1,2 +1,3 @@
 [alias]
 cucumber = "test -p duniter-integration-tests --test cucumber_tests --"
+tu = "test --workspace --exclude duniter-integration-tests"

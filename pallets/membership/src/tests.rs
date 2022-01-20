@@ -128,13 +128,17 @@ fn test_membership_revocation() {
         // Membership 0 can't request membership before the end of RevokePeriod (1 + 4 = 5)
         run_to_block(2);
         assert_eq!(
-            DefaultMembership::request_membership(Origin::signed(0), 0),
+            DefaultMembership::request_membership(Origin::signed(0), 0, ()),
             Err(Error::<Test, _>::MembershipRevokedRecently.into())
         );
 
         // Membership 0 can request membership after the end of RevokePeriod (1 + 4 = 5)
         run_to_block(5);
-        assert_ok!(DefaultMembership::request_membership(Origin::signed(0), 0),);
+        assert_ok!(DefaultMembership::request_membership(
+            Origin::signed(0),
+            0,
+            ()
+        ),);
         assert_eq!(
             System::events()[0].event,
             RuntimeEvent::DefaultMembership(Event::MembershipRequested(0))
@@ -147,7 +151,11 @@ fn test_pending_membership_expiration() {
     new_test_ext(Default::default()).execute_with(|| {
         // Idty 0 request membership
         run_to_block(1);
-        assert_ok!(DefaultMembership::request_membership(Origin::signed(0), 0),);
+        assert_ok!(DefaultMembership::request_membership(
+            Origin::signed(0),
+            0,
+            ()
+        ),);
         assert_eq!(
             System::events()[0].event,
             RuntimeEvent::DefaultMembership(Event::MembershipRequested(0))
@@ -172,7 +180,11 @@ fn test_membership_workflow() {
     new_test_ext(Default::default()).execute_with(|| {
         // Idty 0 request membership
         run_to_block(1);
-        assert_ok!(DefaultMembership::request_membership(Origin::signed(0), 0),);
+        assert_ok!(DefaultMembership::request_membership(
+            Origin::signed(0),
+            0,
+            ()
+        ),);
         assert_eq!(
             System::events()[0].event,
             RuntimeEvent::DefaultMembership(Event::MembershipRequested(0))

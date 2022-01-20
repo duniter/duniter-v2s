@@ -16,8 +16,6 @@
 
 use crate::*;
 use frame_support::pallet_prelude::*;
-use sp_runtime::traits::MaybeSerializeDeserialize;
-use sp_std::fmt::Debug;
 
 pub trait EnsureIdtyCallAllowed<T: Config> {
     fn can_create_identity(creator: T::IdtyIndex) -> bool;
@@ -62,43 +60,11 @@ pub trait IdtyNameValidator {
     fn validate(idty_name: &IdtyName) -> bool;
 }
 
-pub trait IdtyRight:
-    frame_support::Parameter
-    + frame_support::pallet_prelude::Member
-    + MaybeSerializeDeserialize
-    + Debug
-    + Default
-    + Copy
-    + Ord
-{
-    fn allow_owner_key(self) -> bool;
-    fn create_idty_right() -> Self;
-}
-
 pub trait OnIdtyChange<T: Config> {
     fn on_idty_change(idty_index: T::IdtyIndex, idty_event: IdtyEvent<T>) -> Weight;
 }
 impl<T: Config> OnIdtyChange<T> for () {
     fn on_idty_change(_idty_index: T::IdtyIndex, _idty_event: IdtyEvent<T>) -> Weight {
         0
-    }
-}
-
-pub trait OnRightKeyChange<T: Config> {
-    fn on_right_key_change(
-        idty_index: T::IdtyIndex,
-        right: T::IdtyRight,
-        old_key: Option<T::AccountId>,
-        new_key: Option<T::AccountId>,
-    );
-}
-
-impl<T: Config> OnRightKeyChange<T> for () {
-    fn on_right_key_change(
-        _idty_index: T::IdtyIndex,
-        _right: T::IdtyRight,
-        _old_key: Option<T::AccountId>,
-        _new_key: Option<T::AccountId>,
-    ) {
     }
 }

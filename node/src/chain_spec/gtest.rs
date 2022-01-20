@@ -18,9 +18,9 @@ use super::*;
 use common_runtime::constants::*;
 use common_runtime::entities::IdtyName;
 use gtest_runtime::{
-    opaque::SessionKeys, AccountId, BabeConfig, BalancesConfig, GenesisConfig, IdentityConfig,
-    IdtyRight, IdtyValue, ImOnlineId, MembershipConfig, SessionConfig, StrongCertConfig,
-    SudoConfig, SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
+    opaque::SessionKeys, AccountId, BabeConfig, BalancesConfig, CertConfig, GenesisConfig,
+    IdentityConfig, IdtyValue, ImOnlineId, MembershipConfig, SessionConfig, SudoConfig,
+    SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use maplit::btreemap;
 use sc_service::ChainType;
@@ -105,11 +105,6 @@ fn devnet_genesis(
                     next_creatable_identity_on: Default::default(),
                     owner_key: account.clone(),
                     removable_on: 0,
-                    rights: vec![
-                        (IdtyRight::CreateIdty, None),
-                        (IdtyRight::StrongCert, None),
-                        (IdtyRight::Ud, None),
-                    ],
                     status: gtest_runtime::IdtyStatus::Validated,
                 })
                 .collect(),
@@ -127,7 +122,7 @@ fn devnet_genesis(
                 })
                 .collect(),
         },
-        strong_cert: StrongCertConfig {
+        cert: CertConfig {
             apply_cert_period_at_genesis: false,
             certs_by_issuer: clique_wot(
                 initial_identities.len(),
@@ -311,11 +306,7 @@ fn testnet_genesis(
                     next_creatable_identity_on: Default::default(),
                     owner_key: account.clone(),
                     removable_on: 0,
-                    rights: vec![
-                        (IdtyRight::CreateIdty, None),
-                        (IdtyRight::StrongCert, None),
-                        (IdtyRight::Ud, None),
-                    ],
+
                     status: gtest_runtime::IdtyStatus::Validated,
                 })
                 .collect(),
@@ -333,7 +324,7 @@ fn testnet_genesis(
                 })
                 .collect(),
         },
-        strong_cert: StrongCertConfig {
+        cert: CertConfig {
             apply_cert_period_at_genesis: false,
             certs_by_issuer: clique_wot(
                 initial_identities.len(),

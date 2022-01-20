@@ -848,6 +848,7 @@ dependencies = [
  "sp-arithmetic",
  "sp-consensus-babe",
  "sp-core",
+ "sp-membership",
  "sp-runtime",
  "sp-staking",
  "sp-std",

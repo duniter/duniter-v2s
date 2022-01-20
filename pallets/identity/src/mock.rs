@@ -17,14 +17,10 @@
 use super::*;
 use crate::{self as pallet_identity};
 use frame_support::{
-    codec::{Decode, Encode},
     parameter_types,
     traits::{Everything, OnFinalize, OnInitialize},
-    RuntimeDebug,
 };
 use frame_system as system;
-use scale_info::TypeInfo;
-use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
@@ -35,38 +31,6 @@ use sp_runtime::{
 type AccountId = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-
-#[derive(
-    Encode,
-    Decode,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    RuntimeDebug,
-    Deserialize,
-    Serialize,
-    TypeInfo,
-)]
-pub enum IdtyRight {
-    Right1,
-    Right2,
-}
-impl Default for IdtyRight {
-    fn default() -> Self {
-        IdtyRight::Right1
-    }
-}
-impl pallet_identity::traits::IdtyRight for IdtyRight {
-    fn allow_owner_key(self) -> bool {
-        self == Self::Right1
-    }
-    fn create_idty_right() -> Self {
-        Self::Right1
-    }
-}
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -116,7 +80,7 @@ parameter_types! {
     pub const ConfirmPeriod: u64 = 2;
     pub const IdtyCreationPeriod: u64 = 3;
     pub const MaxInactivityPeriod: u64 = 5;
-    pub const MaxNoRightPeriod: u64 = 4;
+    pub const MaxDisabledPeriod: u64 = 4;
     pub const RenewablePeriod: u64 = 3;
     pub const ValidationPeriod: u64 = 2;
 }
@@ -138,8 +102,6 @@ impl IsMember<u64> for IsMemberTestImpl {
 impl pallet_identity::Config for Test {
     type ConfirmPeriod = ConfirmPeriod;
     type Event = Event;
-    type AddRightOrigin = system::EnsureRoot<AccountId>;
-    type DelRightOrigin = system::EnsureRoot<AccountId>;
     type EnsureIdtyCallAllowed = ();
     type IdtyCreationPeriod = IdtyCreationPeriod;
     type IdtyData = ();
@@ -147,11 +109,9 @@ impl pallet_identity::Config for Test {
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = u64;
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
-    type IdtyRight = IdtyRight;
     type IsMember = IsMemberTestImpl;
     type OnIdtyChange = ();
-    type OnRightKeyChange = ();
-    type MaxNoRightPeriod = MaxNoRightPeriod;
+    type MaxDisabledPeriod = MaxDisabledPeriod;
 }
 
 // Build genesis storage according to the mock runtime.

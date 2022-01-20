@@ -26,11 +26,11 @@ pub mod parameters;
 
 pub use self::parameters::*;
 pub use common_runtime::{
-    constants::*, entities::ValidatorFullIdentification, AccountId, Address, Balance, BlockNumber,
-    FullIdentificationOfImpl, Hash, Header, IdtyIndex, IdtyNameValidatorImpl, Index, Signature,
+    constants::*, entities::ValidatorFullIdentification, handlers::OnMembershipEventHandler,
+    AccountId, Address, Balance, BlockNumber, FullIdentificationOfImpl, Hash, Header, IdtyIndex,
+    IdtyNameValidatorImpl, Index, SessionManagerImpl, Signature,
 };
 pub use pallet_balances::Call as BalancesCall;
-pub use pallet_duniter_wot::IdtyRight;
 pub use pallet_identity::{IdtyStatus, IdtyValue};
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as session_historical;
@@ -41,7 +41,6 @@ pub use pallet_universal_dividend;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 
-use common_runtime::{handlers::OnRightKeyChangeHandler, SessionManagerImpl};
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -192,10 +191,10 @@ construct_runtime!(
         UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
 
         // Web Of Trust
-        DuniterWot: pallet_duniter_wot::{Pallet} = 50,
+        DuniterWot: pallet_duniter_wot::<Instance1>::{Pallet} = 50,
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 51,
         Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
-        StrongCert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
+        Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
 
         // Multisig dispatch.
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 60,

@@ -14,29 +14,40 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use pallet_duniter_wot::IdtyRight;
+use frame_support::pallet_prelude::Weight;
+use frame_support::Parameter;
 
-pub struct OnRightKeyChangeHandler<Runtime>(core::marker::PhantomData<Runtime>);
+pub struct OnMembershipEventHandler<Inner, Runtime>(core::marker::PhantomData<(Inner, Runtime)>);
+
 impl<
-        IdtyIndex,
-        Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex, IdtyRight = IdtyRight>
-            + pallet_ud_accounts_storage::Config,
-    > pallet_identity::traits::OnRightKeyChange<Runtime> for OnRightKeyChangeHandler<Runtime>
+        IdtyIndex: Parameter,
+        Inner: sp_membership::traits::OnEvent<IdtyIndex, ()>,
+        Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex> + pallet_ud_accounts_storage::Config,
+    > sp_membership::traits::OnEvent<IdtyIndex, ()> for OnMembershipEventHandler<Inner, Runtime>
 {
-    fn on_right_key_change(
-        _idty_index: IdtyIndex,
-        right: Runtime::IdtyRight,
-        old_key_opt: Option<Runtime::AccountId>,
-        new_key_opt: Option<Runtime::AccountId>,
-    ) {
-        match right {
-            IdtyRight::Ud => <pallet_ud_accounts_storage::Pallet<Runtime>>::replace_account(
-                old_key_opt,
-                new_key_opt,
-            ),
-            IdtyRight::CreateIdty => 0,
-            IdtyRight::LightCert => 0,
-            IdtyRight::StrongCert => 0,
-        };
+    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) -> Weight {
+        (match membership_event {
+            sp_membership::Event::<IdtyIndex>::MembershipAcquired(idty_index) => {
+                if let Some(idty_value) = pallet_identity::Pallet::<Runtime>::identity(idty_index) {
+                    <pallet_ud_accounts_storage::Pallet<Runtime>>::replace_account(
+                        None,
+                        Some(idty_value.owner_key),
+                    )
+                } else {
+                    0
+                }
+            }
+            sp_membership::Event::<IdtyIndex>::MembershipRevoked(idty_index) => {
+                if let Some(idty_value) = pallet_identity::Pallet::<Runtime>::identity(idty_index) {
+                    <pallet_ud_accounts_storage::Pallet<Runtime>>::replace_account(
+                        Some(idty_value.owner_key),
+                        None,
+                    )
+                } else {
+                    0
+                }
+            }
+            _ => 0,
+        }) + Inner::on_event(membership_event)
     }
 }

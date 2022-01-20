@@ -114,7 +114,11 @@ fn test_genesis_build() {
 fn test_cert_period() {
     new_test_ext(DefaultCertificationConfig {
         apply_cert_period_at_genesis: true,
-        certs_by_issuer: btreemap![0 => btreemap![1 => 10]],
+        certs_by_issuer: btreemap![
+            0 => btreemap![1 => 10],
+            2 => btreemap![0 => 10],
+            3 => btreemap![0 => 10],
+        ],
     })
     .execute_with(|| {
         assert_eq!(
@@ -137,7 +141,11 @@ fn test_cert_period() {
 fn test_renewable_period() {
     new_test_ext(DefaultCertificationConfig {
         apply_cert_period_at_genesis: true,
-        certs_by_issuer: btreemap![0 => btreemap![1 => 10]],
+        certs_by_issuer: btreemap![
+            0 => btreemap![1 => 10],
+            2 => btreemap![0 => 10],
+            3 => btreemap![0 => 10],
+        ],
     })
     .execute_with(|| {
         run_to_block(CertPeriod::get());

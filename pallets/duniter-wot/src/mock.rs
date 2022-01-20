@@ -38,7 +38,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        DuniterWot: pallet_duniter_wot::{Pallet},
+        DuniterWot: pallet_duniter_wot::<Instance1>::{Pallet},
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>},
         Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>},
         Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -80,15 +80,14 @@ impl system::Config for Test {
 
 // DuniterWot
 parameter_types! {
-    pub const MinCertForUdRight: u8 = 2;
-    pub const MinCertForCertRight: u8 = 3;
-    pub const MinCertForCreateIdtyRigh: u8 = 4;
+    pub const MinCertForUdRight: u32 = 2;
+    pub const MinCertForCreateIdtyRigh: u32 = 4;
     pub const FirstIssuableOn: u64 = 2;
 }
 
-impl pallet_duniter_wot::Config for Test {
+impl pallet_duniter_wot::Config<Instance1> for Test {
+    type ManageIdentitiesChanges = frame_support::traits::ConstBool<true>;
     type MinCertForUdRight = MinCertForUdRight;
-    type MinCertForCertRight = MinCertForCertRight;
     type MinCertForCreateIdtyRight = MinCertForCreateIdtyRigh;
     type FirstIssuableOn = FirstIssuableOn;
 }
@@ -97,8 +96,7 @@ impl pallet_duniter_wot::Config for Test {
 parameter_types! {
     pub const ConfirmPeriod: u64 = 2;
     pub const IdtyCreationPeriod: u64 = 3;
-    pub const MaxInactivityPeriod: u64 = 5;
-    pub const MaxNoRightPeriod: u64 = 4;
+    pub const MaxDisabledPeriod: u64 = 4;
     pub const ValidationPeriod: u64 = 2;
 }
 
@@ -112,8 +110,6 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
 impl pallet_identity::Config for Test {
     type ConfirmPeriod = ConfirmPeriod;
     type Event = Event;
-    type AddRightOrigin = system::EnsureRoot<AccountId>;
-    type DelRightOrigin = system::EnsureRoot<AccountId>;
     type EnsureIdtyCallAllowed = DuniterWot;
     type IdtyCreationPeriod = IdtyCreationPeriod;
     type IdtyData = ();
@@ -121,11 +117,9 @@ impl pallet_identity::Config for Test {
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = IdtyIndex;
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
-    type IdtyRight = IdtyRight;
     type IsMember = Membership;
     type OnIdtyChange = DuniterWot;
-    type OnRightKeyChange = ();
-    type MaxNoRightPeriod = MaxNoRightPeriod;
+    type MaxDisabledPeriod = MaxDisabledPeriod;
 }
 
 // Membership
@@ -145,9 +139,10 @@ impl pallet_membership::Config<Instance1> for Test {
     type Event = Event;
     type ExternalizeMembershipStorage = ExternalizeMembershipStorage;
     type IdtyId = IdtyIndex;
-    type OnEvent = DuniterWot;
     type MembershipExternalStorage = sp_membership::traits::NoExternalStorage;
     type MembershipPeriod = MembershipPeriod;
+    type MetaData = ();
+    type OnEvent = DuniterWot;
     type PendingMembershipPeriod = PendingMembershipPeriod;
     type RenewablePeriod = RenewablePeriod;
     type RevocationPeriod = RevocationPeriod;
@@ -155,19 +150,21 @@ impl pallet_membership::Config<Instance1> for Test {
 
 // Cert
 parameter_types! {
-    pub const MaxByIssuer: u8 = 3;
+    pub const MaxByIssuer: u8 = 8;
+    pub const MinReceivedCertToBeAbleToIssueCert: u32 = 3;
     pub const CertRenewablePeriod: u64 = 4;
     pub const CertPeriod: u64 = 2;
     pub const ValidityPeriod: u64 = 10;
 }
 
 impl pallet_certification::Config<Instance1> for Test {
-    type AddCertOrigin = pallet_duniter_wot::AddStrongCertOrigin<Test>;
+    type AddCertOrigin = pallet_duniter_wot::AddCertOrigin<Test, Instance1>;
     type CertPeriod = CertPeriod;
-    type DelCertOrigin = pallet_duniter_wot::DelStrongCertOrigin<Test>;
+    type DelCertOrigin = pallet_duniter_wot::DelCertOrigin<Test, Instance1>;
     type Event = Event;
     type IdtyIndex = IdtyIndex;
     type MaxByIssuer = MaxByIssuer;
+    type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = DuniterWot;
     type OnRemovedCert = DuniterWot;
     type CertRenewablePeriod = CertRenewablePeriod;
@@ -185,14 +182,9 @@ pub fn new_test_ext(initial_identities_len: usize) -> sp_io::TestExternalities {
                 .map(|i| pallet_identity::IdtyValue {
                     data: (),
                     owner_key: i as u64,
-                    name: pallet_identity::IdtyName::from(NAMES[i]),
+                    name: pallet_identity::IdtyName::from(NAMES[i - 1]),
                     next_creatable_identity_on: 0,
                     removable_on: 0,
-                    rights: vec![
-                        (IdtyRight::CreateIdty, None),
-                        (IdtyRight::StrongCert, None),
-                        (IdtyRight::Ud, None),
-                    ],
                     status: pallet_identity::IdtyStatus::Validated,
                 })
                 .collect(),

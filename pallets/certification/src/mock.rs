@@ -92,7 +92,8 @@ impl frame_support::traits::EnsureOrigin<(Origin, IdtyIndex, IdtyIndex)> for Ens
 }
 
 parameter_types! {
-    pub const MaxByIssuer: u8 = 3;
+    pub const MaxByIssuer: u32 = 3;
+    pub const MinReceivedCertToBeAbleToIssueCert: u32 = 2;
     pub const RenewablePeriod: BlockNumber = 4;
     pub const CertPeriod: u64 = 2;
     pub const ValidityPeriod: u64 = 10;
@@ -105,6 +106,7 @@ impl pallet_certification::Config for Test {
     type Event = Event;
     type IdtyIndex = IdtyIndex;
     type MaxByIssuer = MaxByIssuer;
+    type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = ();
     type OnRemovedCert = ();
     type CertRenewablePeriod = RenewablePeriod;

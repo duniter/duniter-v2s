@@ -26,19 +26,17 @@ pub mod parameters;
 
 pub use self::parameters::*;
 pub use common_runtime::{
-    constants::*, AccountId, Address, Balance, BlockNumber, Hash, Header, IdtyIndex,
-    IdtyNameValidatorImpl, Index, Signature,
+    constants::*, handlers::OnMembershipEventHandler, AccountId, Address, Balance, BlockNumber,
+    Hash, Header, IdtyIndex, IdtyNameValidatorImpl, Index, Signature,
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_duniter_test_parameters::Parameters as GenesisParameters;
-pub use pallet_duniter_wot::IdtyRight;
 pub use pallet_identity::{IdtyStatus, IdtyValue};
 pub use pallet_universal_dividend;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-use common_runtime::handlers::OnRightKeyChangeHandler;
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -146,12 +144,13 @@ common_runtime::pallets_config! {
     // Dynamic parameters
     pub type CertPeriod = pallet_duniter_test_parameters::CertPeriod<Runtime>;
     pub type MaxByIssuer = pallet_duniter_test_parameters::CertMaxByIssuer<Runtime>;
-    pub type StrongCertRenewablePeriod = pallet_duniter_test_parameters::CertRenewablePeriod<Runtime>;
+    pub type CertRenewablePeriod = pallet_duniter_test_parameters::CertRenewablePeriod<Runtime>;
     pub type ValidityPeriod = pallet_duniter_test_parameters::CertValidityPeriod<Runtime>;
     pub type ConfirmPeriod = pallet_duniter_test_parameters::IdtyConfirmPeriod<Runtime>;
     pub type IdtyCreationPeriod = pallet_duniter_test_parameters::IdtyCreationPeriod<Runtime>;
-    pub type MaxNoRightPeriod = pallet_duniter_test_parameters::IdtyMaxNoRightPeriod<Runtime>;
+    pub type MaxDisabledPeriod = pallet_duniter_test_parameters::IdtyMaxDisabledPeriod<Runtime>;
     pub type MembershipPeriod = pallet_duniter_test_parameters::MembershipPeriod<Runtime>;
+    pub type MinReceivedCertToBeAbleToIssueCert = pallet_duniter_test_parameters::WotMinCertForCertRight<Runtime>;
     pub type RenewablePeriod = pallet_duniter_test_parameters::MembershipRenewablePeriod<Runtime>;
     pub type PendingMembershipPeriod = pallet_duniter_test_parameters::PendingMembershipPeriod<Runtime>;
     pub type UdCreationPeriod = pallet_duniter_test_parameters::UdCreationPeriod<Runtime>;
@@ -160,11 +159,10 @@ common_runtime::pallets_config! {
     pub type UdReevalPeriodInBlocks = pallet_duniter_test_parameters::UdReevalPeriodInBlocks<Runtime>;
     pub type WotFirstCertIssuableOn = pallet_duniter_test_parameters::WotFirstCertIssuableOn<Runtime>;
     pub type WotMinCertForUdRight = pallet_duniter_test_parameters::WotMinCertForUdRight<Runtime>;
-    pub type WotMinCertForCertRight = pallet_duniter_test_parameters::WotMinCertForCertRight<Runtime>;
     pub type WotMinCertForCreateIdtyRight = pallet_duniter_test_parameters::WotMinCertForCreateIdtyRight<Runtime>;
 
     impl pallet_duniter_test_parameters::Config for Runtime {
-        type CertCount = u8;
+        type CertCount = u32;
         type PeriodCount = Balance;
     }
     impl pallet_sudo::Config for Runtime {
@@ -204,10 +202,10 @@ construct_runtime!(
         UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
 
         // Web Of Trust
-        DuniterWot: pallet_duniter_wot::{Pallet} = 50,
+        DuniterWot: pallet_duniter_wot::<Instance1>::{Pallet} = 50,
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 51,
         Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
-        StrongCert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
+        Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
 
         // Multisig dispatch.
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 60,

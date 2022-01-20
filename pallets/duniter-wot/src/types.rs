@@ -17,15 +17,13 @@
 use pallet_identity::IdtyStatus;
 
 use crate::{Config, IdtyIndex};
-use frame_support::instances::Instance1;
 use frame_support::pallet_prelude::*;
-use scale_info::TypeInfo;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
 use sp_runtime::traits::IsMember;
 
-pub struct AddStrongCertOrigin<T>(core::marker::PhantomData<T>);
-impl<T: Config> EnsureOrigin<(T::Origin, IdtyIndex, IdtyIndex)> for AddStrongCertOrigin<T> {
+pub struct AddCertOrigin<T, I>(core::marker::PhantomData<(T, I)>);
+impl<T: Config<I>, I: 'static> EnsureOrigin<(T::Origin, IdtyIndex, IdtyIndex)>
+    for AddCertOrigin<T, I>
+{
     type Success = ();
 
     fn try_origin(
@@ -35,32 +33,39 @@ impl<T: Config> EnsureOrigin<(T::Origin, IdtyIndex, IdtyIndex)> for AddStrongCer
             Ok(frame_system::RawOrigin::Root) => Ok(()),
             Ok(frame_system::RawOrigin::Signed(who)) => {
                 if let Some(issuer) = pallet_identity::Pallet::<T>::identity(o.1) {
-                    if let Some(allowed_key) = issuer.get_right_key(IdtyRight::StrongCert) {
-                        if who == allowed_key {
-                            if let Some(receiver) = pallet_identity::Pallet::<T>::identity(o.2) {
-                                match receiver.status {
-                                    IdtyStatus::ConfirmedByOwner => Ok(()),
-                                    IdtyStatus::Validated => {
-                                        if pallet_membership::Pallet::<T, Instance1>::is_member(
-                                            &o.2,
-                                        ) || pallet_membership::Pallet::<T, Instance1>::pending_membership(&o.2).is_some() {
-                                            Ok(())
-                                        } else {
-                                            Err(o)
-                                        }
+                    if who == issuer.owner_key {
+                        if let Some(receiver) = pallet_identity::Pallet::<T>::identity(o.2) {
+                            match receiver.status {
+                                IdtyStatus::ConfirmedByOwner => Ok(()),
+                                IdtyStatus::Created => Err(o),
+                                IdtyStatus::Disabled => {
+                                    if pallet_membership::Pallet::<T, I>::pending_membership(&o.2)
+                                        .is_some()
+                                    {
+                                        Ok(())
+                                    } else {
+                                        Err(o)
                                     }
-                                    IdtyStatus::Created => Err(o),
                                 }
-                            } else {
-                                // Receiver not found
-                                Err(o)
+                                IdtyStatus::Validated => {
+                                    if pallet_membership::Pallet::<T, I>::is_member(&o.2)
+                                        || pallet_membership::Pallet::<T, I>::pending_membership(
+                                            &o.2,
+                                        )
+                                        .is_some()
+                                    {
+                                        Ok(())
+                                    } else {
+                                        Err(o)
+                                    }
+                                }
                             }
                         } else {
-                            // Bad key
+                            // Receiver not found
                             Err(o)
                         }
                     } else {
-                        // Issuer has not right StrongCert
+                        // Bad key
                         Err(o)
                     }
                 } else {
@@ -73,8 +78,10 @@ impl<T: Config> EnsureOrigin<(T::Origin, IdtyIndex, IdtyIndex)> for AddStrongCer
     }
 }
 
-pub struct DelStrongCertOrigin<T>(core::marker::PhantomData<T>);
-impl<T: Config> EnsureOrigin<(T::Origin, IdtyIndex, IdtyIndex)> for DelStrongCertOrigin<T> {
+pub struct DelCertOrigin<T, I>(core::marker::PhantomData<(T, I)>);
+impl<T: Config<I>, I: 'static> EnsureOrigin<(T::Origin, IdtyIndex, IdtyIndex)>
+    for DelCertOrigin<T, I>
+{
     type Success = ();
 
     fn try_origin(
@@ -84,31 +91,5 @@ impl<T: Config> EnsureOrigin<(T::Origin, IdtyIndex, IdtyIndex)> for DelStrongCer
             Ok(frame_system::Origin::<T>::Root) => Ok(()),
             _ => Err(o),
         }
-    }
-}
-
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug, TypeInfo)]
-pub enum IdtyRight {
-    CreateIdty,
-    LightCert,
-    StrongCert,
-    Ud,
-}
-impl Default for IdtyRight {
-    fn default() -> Self {
-        Self::Ud
-    }
-}
-impl pallet_identity::traits::IdtyRight for IdtyRight {
-    fn allow_owner_key(self) -> bool {
-        match self {
-            Self::CreateIdty | Self::LightCert | IdtyRight::StrongCert | Self::Ud => true,
-            //IdtyRight::StrongCert => false,
-            //_ => false,
-        }
-    }
-    fn create_idty_right() -> Self {
-        Self::CreateIdty
     }
 }

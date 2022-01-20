@@ -69,6 +69,7 @@ impl<'de> serde::Deserialize<'de> for IdtyName {
 pub enum IdtyStatus {
     Created,
     ConfirmedByOwner,
+    Disabled,
     Validated,
 }
 impl Default for IdtyStatus {
@@ -83,39 +84,11 @@ pub struct IdtyValue<
     AccountId: Decode + Encode + TypeInfo,
     BlockNumber: Decode + Encode + TypeInfo,
     IdtyData: Decode + Encode + TypeInfo,
-    IdtyRight: Decode + Encode + TypeInfo,
 > {
     pub data: IdtyData,
     pub owner_key: AccountId,
     pub name: IdtyName,
     pub next_creatable_identity_on: BlockNumber,
     pub removable_on: BlockNumber,
-    pub rights: Vec<(IdtyRight, Option<AccountId>)>,
     pub status: IdtyStatus,
-}
-
-impl<AccountId, BlockNumber, IdtyData, IdtyRight>
-    IdtyValue<AccountId, BlockNumber, IdtyData, IdtyRight>
-where
-    AccountId: Clone + Decode + Encode + TypeInfo,
-    BlockNumber: Decode + Encode + TypeInfo,
-    IdtyData: Decode + Encode + TypeInfo,
-    IdtyRight: crate::traits::IdtyRight + Decode + Encode + TypeInfo,
-{
-    pub fn get_right_key(&self, right: IdtyRight) -> Option<AccountId> {
-        if let Ok(index) = self
-            .rights
-            .binary_search_by(|(right_, _)| right_.cmp(&right))
-        {
-            if self.rights[index].1.is_some() {
-                self.rights[index].1.clone()
-            } else if right.allow_owner_key() {
-                Some(self.owner_key.clone())
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    }
 }

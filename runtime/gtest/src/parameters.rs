@@ -94,7 +94,7 @@ parameter_types! {
 parameter_types! {
     pub WotFirstCertIssuableOn: BlockNumber = DAYS;
     pub WotMinCertForUdRight: u8 = 5;
-    pub WotMinCertForCertRight: u8 = 5;
+    pub MinReceivedCertToBeAbleToIssueCert: u8 = 5;
     pub WotMinCertForCreateIdtyRight: u8 = 5;
 }
 
@@ -103,7 +103,7 @@ pub const IDTY_CREATE_PERIOD: BlockNumber = 100;
 frame_support::parameter_types! {
     pub const ConfirmPeriod: BlockNumber = 8 * HOURS;
     pub const IdtyCreationPeriod: BlockNumber = DAYS;
-    pub const MaxNoRightPeriod: BlockNumber = 73 * DAYS;
+    pub const MaxDisabledPeriod: BlockNumber = 73 * DAYS;
 }
 
 // Membership
@@ -119,7 +119,7 @@ pub const MIN_STRONG_CERT_FOR_STRONG_CERT: u32 = 5;
 parameter_types! {
     pub const CertPeriod: BlockNumber = DAYS;
     pub const MaxByIssuer: u8 = 100;
-    pub const StrongCertRenewablePeriod: BlockNumber = 12 * DAYS;
+    pub const CertRenewablePeriod: BlockNumber = 12 * DAYS;
     pub const ValidityPeriod: BlockNumber = 146 * DAYS;
 }
 
