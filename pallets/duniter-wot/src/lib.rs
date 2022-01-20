@@ -61,7 +61,7 @@ pub mod pallet {
         frame_system::Config
         + pallet_certification::Config<I, IdtyIndex = IdtyIndex>
         + pallet_identity::Config<IdtyIndex = IdtyIndex>
-        + pallet_membership::Config<I, IdtyId = IdtyIndex, MetaData = ()>
+        + pallet_membership::Config<I, IdtyId = IdtyIndex>
     {
         type FirstIssuableOn: Get<Self::BlockNumber>;
         type IsSubWot: Get<bool>;
@@ -93,7 +93,10 @@ pub mod pallet {
     }
 }
 
-impl<T: Config<I>, I: 'static> pallet_identity::traits::EnsureIdtyCallAllowed<T> for Pallet<T, I> {
+impl<T: Config<I>, I: 'static> pallet_identity::traits::EnsureIdtyCallAllowed<T> for Pallet<T, I>
+where
+    T: pallet_membership::Config<I, MetaData = ()>,
+{
     fn can_create_identity(creator: IdtyIndex) -> bool {
         if let Some(cert_meta) = pallet_certification::Pallet::<T, I>::idty_cert_meta(creator) {
             cert_meta.received_count >= T::MinCertForCreateIdtyRight::get()
@@ -104,15 +107,11 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::EnsureIdtyCallAllowed<T>
         }
     }
     fn can_confirm_identity(idty_index: IdtyIndex) -> bool {
-        pallet_membership::Pallet::<T, I>::request_membership(
-            RawOrigin::Root.into(),
-            idty_index,
-            (),
-        )
-        .is_ok()
+        pallet_membership::Pallet::<T, I>::request_membership(RawOrigin::Root.into(), idty_index)
+            .is_ok()
     }
     fn can_validate_identity(idty_index: IdtyIndex) -> bool {
-        pallet_membership::Pallet::<T, I>::claim_membership(RawOrigin::Root.into(), idty_index)
+        pallet_membership::Pallet::<T, I>::claim_membership(RawOrigin::Root.into(), idty_index, ())
             .is_ok()
     }
 }
@@ -186,17 +185,21 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::IsOriginAllowedToUseIdty<T
     }
 }
 
-impl<T: Config<I>, I: 'static> sp_membership::traits::OnEvent<IdtyIndex, ()> for Pallet<T, I> {
-    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) -> Weight {
+impl<T: Config<I>, I: 'static, MetaData> sp_membership::traits::OnEvent<IdtyIndex, MetaData>
+    for Pallet<T, I>
+where
+    T: pallet_membership::Config<I, MetaData = MetaData>,
+{
+    fn on_event(membership_event: &sp_membership::Event<IdtyIndex, MetaData>) -> Weight {
         match membership_event {
-            sp_membership::Event::<IdtyIndex>::MembershipAcquired(_) => {}
-            sp_membership::Event::<IdtyIndex>::MembershipExpired(idty_index) => {
+            sp_membership::Event::<IdtyIndex, MetaData>::MembershipAcquired(_, _) => {}
+            sp_membership::Event::<IdtyIndex, MetaData>::MembershipExpired(idty_index) => {
                 Self::dispath_idty_call(pallet_identity::Call::disable_identity {
                     idty_index: *idty_index,
                 });
             }
-            sp_membership::Event::<IdtyIndex>::MembershipRenewed(_) => {}
-            sp_membership::Event::<IdtyIndex>::MembershipRequested(idty_index, _) => {
+            sp_membership::Event::<IdtyIndex, MetaData>::MembershipRenewed(_) => {}
+            sp_membership::Event::<IdtyIndex, MetaData>::MembershipRequested(idty_index) => {
                 if let Some(idty_cert_meta) =
                     pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index)
                 {
@@ -214,8 +217,8 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::OnEvent<IdtyIndex, ()> for
                     }
                 }
             }
-            sp_membership::Event::<IdtyIndex>::MembershipRevoked(_) => {}
-            sp_membership::Event::<IdtyIndex>::PendingMembershipExpired(idty_index) => {
+            sp_membership::Event::<IdtyIndex, MetaData>::MembershipRevoked(_) => {}
+            sp_membership::Event::<IdtyIndex, MetaData>::PendingMembershipExpired(idty_index) => {
                 Self::dispath_idty_call(pallet_identity::Call::remove_identity {
                     idty_index: *idty_index,
                 });

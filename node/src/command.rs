@@ -58,9 +58,11 @@ impl SubstrateCli for Cli {
             #[cfg(feature = "gtest")]
             "gtest_dev" => Box::new(chain_spec::gtest::development_chain_spec()?),
             #[cfg(feature = "gtest")]
-            "local" | "gtest_local" => Box::new(chain_spec::gtest::local_testnet_config(2)?),
+            "local" | "gtest_local" => Box::new(chain_spec::gtest::local_testnet_config(2, 3)?),
             #[cfg(feature = "gtest")]
-            "local4" | "gtest_local4" => Box::new(chain_spec::gtest::local_testnet_config(4)?),
+            "local3" | "gtest_local3" => Box::new(chain_spec::gtest::local_testnet_config(3, 4)?),
+            #[cfg(feature = "gtest")]
+            "local4" | "gtest_local4" => Box::new(chain_spec::gtest::local_testnet_config(4, 5)?),
             // Specs provided as json specify which runtime to use in their file name. For example,
             // `g1-custom.json` uses the g1 runtime.
             // `gdev-workshop.json` uses the gdev runtime.

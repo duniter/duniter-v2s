@@ -34,7 +34,6 @@ fn test_genesis_build() {
             AuthorityMembers::member(3),
             Some(MemberData {
                 expire_on_session: 0,
-                session_keys_provided: true,
                 validator_id: 3,
             })
         );
@@ -42,7 +41,6 @@ fn test_genesis_build() {
             AuthorityMembers::member(6),
             Some(MemberData {
                 expire_on_session: 0,
-                session_keys_provided: true,
                 validator_id: 6,
             })
         );
@@ -50,7 +48,6 @@ fn test_genesis_build() {
             AuthorityMembers::member(9),
             Some(MemberData {
                 expire_on_session: 0,
-                session_keys_provided: true,
                 validator_id: 9,
             })
         );
@@ -87,7 +84,6 @@ fn test_go_offline() {
             AuthorityMembers::member(9),
             Some(MemberData {
                 expire_on_session: 0,
-                session_keys_provided: true,
                 validator_id: 9,
             })
         );
@@ -98,7 +94,6 @@ fn test_go_offline() {
             AuthorityMembers::member(9),
             Some(MemberData {
                 expire_on_session: 4,
-                session_keys_provided: true,
                 validator_id: 9,
             })
         );
@@ -138,7 +133,6 @@ fn test_go_online() {
             AuthorityMembers::member(12),
             Some(MemberData {
                 expire_on_session: 2,
-                session_keys_provided: true,
                 validator_id: 12,
             })
         );
@@ -154,7 +148,6 @@ fn test_go_online() {
             AuthorityMembers::member(12),
             Some(MemberData {
                 expire_on_session: 2,
-                session_keys_provided: true,
                 validator_id: 12,
             })
         );
@@ -198,12 +191,11 @@ fn test_go_online_then_go_offline_in_same_session() {
         // Verify state
         assert_eq!(AuthorityMembers::incoming(), EMPTY);
         assert_eq!(AuthorityMembers::online(), vec![3, 6, 9]);
-        assert_eq!(AuthorityMembers::outgoing(), vec![12]);
+        assert_eq!(AuthorityMembers::outgoing(), EMPTY);
         assert_eq!(
             AuthorityMembers::member(12),
             Some(MemberData {
                 expire_on_session: 2,
-                session_keys_provided: true,
                 validator_id: 12,
             })
         );
@@ -231,7 +223,6 @@ fn test_go_offline_then_go_online_in_same_session() {
             AuthorityMembers::member(9),
             Some(MemberData {
                 expire_on_session: 0,
-                session_keys_provided: true,
                 validator_id: 9,
             })
         );

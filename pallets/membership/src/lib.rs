@@ -226,7 +226,6 @@ pub mod pallet {
         pub fn request_membership(
             origin: OriginFor<T>,
             idty_id: T::IdtyId,
-            metadata: T::MetaData,
         ) -> DispatchResultWithPostInfo {
             let allowed =
                 match T::IsOriginAllowedToUseIdty::is_origin_allowed_to_use_idty(&origin, &idty_id)
@@ -260,9 +259,7 @@ pub mod pallet {
             PendingMembership::<T, I>::insert(idty_id, expire_on);
             PendingMembershipsExpireOn::<T, I>::append(expire_on, idty_id);
             Self::deposit_event(Event::MembershipRequested(idty_id));
-            T::OnEvent::on_event(&sp_membership::Event::MembershipRequested(
-                idty_id, metadata,
-            ));
+            T::OnEvent::on_event(&sp_membership::Event::MembershipRequested(idty_id));
 
             Ok(().into())
         }
@@ -271,6 +268,7 @@ pub mod pallet {
         pub fn claim_membership(
             origin: OriginFor<T>,
             idty_id: T::IdtyId,
+            metadata: T::MetaData,
         ) -> DispatchResultWithPostInfo {
             if Membership::<T, I>::contains_key(&idty_id) {
                 return Err(Error::<T, I>::MembershipAlreadyAcquired.into());
@@ -296,7 +294,7 @@ pub mod pallet {
                 return Err(Error::<T, I>::MembershipRequestNotFound.into());
             }
 
-            let _ = Self::do_claim_membership(idty_id);
+            let _ = Self::do_claim_membership(idty_id, metadata);
 
             Ok(().into())
         }
@@ -357,12 +355,12 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
-        pub(super) fn do_claim_membership(idty_id: T::IdtyId) -> Weight {
+        pub(super) fn do_claim_membership(idty_id: T::IdtyId, metadata: T::MetaData) -> Weight {
             let mut total_weight = 1;
             PendingMembership::<T, I>::remove(&idty_id);
             total_weight += Self::do_renew_membership_inner(idty_id);
             Self::deposit_event(Event::MembershipAcquired(idty_id));
-            T::OnEvent::on_event(&sp_membership::Event::MembershipAcquired(idty_id));
+            T::OnEvent::on_event(&sp_membership::Event::MembershipAcquired(idty_id, metadata));
             total_weight
         }
         pub(super) fn do_renew_membership(idty_id: T::IdtyId) -> Weight {
@@ -493,17 +491,5 @@ impl<T: Config<I>, I: 'static> IsInPendingMemberships<T::IdtyId> for Pallet<T, I
 impl<T: Config<I>, I: 'static> sp_runtime::traits::IsMember<T::IdtyId> for Pallet<T, I> {
     fn is_member(idty_id: &T::IdtyId) -> bool {
         Self::is_member_inner(idty_id)
-    }
-}
-
-impl<T: Config<I>, I: 'static> MembershipAction<T::IdtyId, T::Origin> for Pallet<T, I> {
-    fn claim_membership_(origin: T::Origin, idty_id: T::IdtyId) -> DispatchResultWithPostInfo {
-        Pallet::<T, I>::claim_membership(origin, idty_id)
-    }
-    fn renew_membership_(origin: T::Origin, idty_id: T::IdtyId) -> DispatchResultWithPostInfo {
-        Pallet::<T, I>::renew_membership(origin, idty_id)
-    }
-    fn revoke_membership_(origin: T::Origin, idty_id: T::IdtyId) -> DispatchResultWithPostInfo {
-        Pallet::<T, I>::revoke_membership(origin, idty_id)
     }
 }

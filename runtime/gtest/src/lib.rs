@@ -26,9 +26,8 @@ pub mod parameters;
 
 pub use self::parameters::*;
 pub use common_runtime::{
-    constants::*, entities::ValidatorFullIdentification, handlers::OnMembershipEventHandler,
-    AccountId, Address, Balance, BlockNumber, FullIdentificationOfImpl, Hash, Header, IdtyIndex,
-    IdtyNameValidatorImpl, Index, SessionManagerImpl, Signature,
+    constants::*, entities::ValidatorFullIdentification, handlers::*, AccountId, Address, Balance,
+    BlockNumber, FullIdentificationOfImpl, Hash, Header, IdtyIndex, Index, Signature,
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_identity::{IdtyStatus, IdtyValue};
@@ -41,6 +40,7 @@ pub use pallet_universal_dividend;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 
+use common_runtime::{IdtyNameValidatorImpl, OwnerKeyOfImpl};
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -146,10 +146,10 @@ impl frame_support::traits::Contains<Call> for BaseCallFilter {
 }
 
 common_runtime::pallets_config! {
-    impl pallet_sudo::Config for Runtime {
-        type Event = Event;
-        type Call = Call;
-    }
+impl pallet_sudo::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+}
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -179,6 +179,7 @@ construct_runtime!(
         Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event} = 14,
         ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 15,
         AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 16,
+        AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 17,
 
         // Governance stuff.
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
@@ -191,13 +192,18 @@ construct_runtime!(
         UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
 
         // Web Of Trust
-        DuniterWot: pallet_duniter_wot::<Instance1>::{Pallet} = 50,
+        Wot: pallet_duniter_wot::<Instance1>::{Pallet} = 50,
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 51,
         Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
         Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
 
+        // Smiths Sub-Wot
+        SmithsSubWot: pallet_duniter_wot::<Instance2>::{Pallet} = 60,
+        SmithsMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 62,
+        SmithsCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 63,
+
         // Multisig dispatch.
-        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 60,
+        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 70,
     }
 );
 

@@ -18,11 +18,11 @@ use super::*;
 use common_runtime::constants::*;
 use common_runtime::entities::IdtyName;
 use gtest_runtime::{
-    opaque::SessionKeys, AccountId, BabeConfig, BalancesConfig, CertConfig, GenesisConfig,
-    IdentityConfig, IdtyValue, ImOnlineId, MembershipConfig, SessionConfig, SudoConfig,
-    SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
+    opaque::SessionKeys, AccountId, AuthorityMembersConfig, BabeConfig, BalancesConfig, CertConfig,
+    GenesisConfig, IdentityConfig, IdtyValue, ImOnlineId, MembershipConfig, SessionConfig,
+    SmithsCertConfig, SmithsMembershipConfig, SudoConfig, SystemConfig, UdAccountsStorageConfig,
+    UniversalDividendConfig, WASM_BINARY,
 };
-use maplit::btreemap;
 use sc_service::ChainType;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
@@ -67,16 +67,12 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
         "gtest_dev",
         ChainType::Development,
         move || {
-            devnet_genesis(
+            gen_genesis_conf(
                 wasm_binary,
                 // Initial authorities
-                vec![get_authority_keys_from_seed("Alice")],
+                1,
                 // Inital identities
-                btreemap![
-                    IdtyName::from("Alice") => get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    IdtyName::from("Bob") => get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    IdtyName::from("Charlie") => get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                ],
+                3,
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 true,
@@ -103,19 +99,83 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
     ))
 }
 
-fn devnet_genesis(
+pub fn local_testnet_config(
+    initial_authorities_len: usize,
+    initial_identities_len: usize,
+) -> Result<ChainSpec, String> {
+    let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
+
+    Ok(ChainSpec::from_genesis(
+        // Name
+        "Ğtest Local Testnet",
+        // ID
+        "gtest_local_testnet",
+        ChainType::Local,
+        move || {
+            gen_genesis_conf(
+                wasm_binary,
+                // Initial authorities len
+                initial_authorities_len,
+                // Initial identities len
+                initial_identities_len,
+                // Sudo account
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                true,
+            )
+        },
+        // Bootnodes
+        vec![],
+        // Telemetry
+        None,
+        // Protocol ID
+        None,
+        // Properties
+        Some(
+            serde_json::json!({
+                    "tokenDecimals": TOKEN_DECIMALS,
+                    "tokenSymbol": TOKEN_SYMBOL,
+            })
+            .as_object()
+            .expect("must be a map")
+            .clone(),
+        ),
+        // Extensions
+        None,
+    ))
+}
+
+fn gen_genesis_conf(
     wasm_binary: &[u8],
-    initial_authorities: Vec<AuthorityKeys>,
-    initial_identities: BTreeMap<IdtyName, AccountId>,
+    initial_authorities_len: usize,
+    initial_identities_len: usize,
     root_key: AccountId,
     _enable_println: bool,
 ) -> GenesisConfig {
+    let initial_authorities = (0..initial_authorities_len)
+        .map(|i| get_authority_keys_from_seed(NAMES[i]))
+        .collect::<Vec<AuthorityKeys>>();
+    let initial_identities = (0..initial_identities_len)
+        .map(|i| {
+            (
+                IdtyName::from(NAMES[i]),
+                get_account_id_from_seed::<sr25519::Public>(NAMES[i]),
+            )
+        })
+        .collect::<BTreeMap<IdtyName, AccountId>>();
+
     GenesisConfig {
         system: SystemConfig {
             // Add Wasm runtime to storage.
             code: wasm_binary.to_vec(),
         },
         authority_discovery: Default::default(),
+        authority_members: AuthorityMembersConfig {
+            initial_authorities: initial_authorities
+                .iter()
+                .enumerate()
+                .map(|(i, keys)| (i as u32 + 1, (keys.0.clone(), true)))
+                .collect(),
+        },
         balances: BalancesConfig {
             balances: Vec::with_capacity(0),
         },
@@ -174,6 +234,26 @@ fn devnet_genesis(
                 gtest_runtime::parameters::ValidityPeriod::get(),
             ),
         },
+        smiths_membership: SmithsMembershipConfig {
+            memberships: (1..=initial_authorities_len)
+                .map(|i| {
+                    (
+                        i as u32,
+                        MembershipData {
+                            expire_on: gtest_runtime::SmithMembershipPeriod::get(),
+                            renewable_on: gtest_runtime::SmithRenewablePeriod::get(),
+                        },
+                    )
+                })
+                .collect(),
+        },
+        smiths_cert: SmithsCertConfig {
+            apply_cert_period_at_genesis: false,
+            certs_by_issuer: clique_wot(
+                initial_authorities_len,
+                gtest_runtime::parameters::SmithValidityPeriod::get(),
+            ),
+        },
         ud_accounts_storage: UdAccountsStorageConfig {
             ud_accounts: initial_identities.values().cloned().collect(),
         },
@@ -182,65 +262,6 @@ fn devnet_genesis(
             initial_monetary_mass: 0,
         },
     }
-}
-
-pub fn local_testnet_config(authorities_count: usize) -> Result<ChainSpec, String> {
-    let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
-
-    let mut authorities = vec![
-        get_authority_keys_from_seed("Alice"),
-        get_authority_keys_from_seed("Bob"),
-        get_authority_keys_from_seed("Charlie"),
-        get_authority_keys_from_seed("Dave"),
-        get_authority_keys_from_seed("Eve"),
-        get_authority_keys_from_seed("Ferdie"),
-    ];
-    authorities.truncate(authorities_count);
-
-    Ok(ChainSpec::from_genesis(
-        // Name
-        "Ğtest Local Testnet",
-        // ID
-        "gtest_local_testnet",
-        ChainType::Local,
-        move || {
-            testnet_genesis(
-                wasm_binary,
-                // Initial authorities
-                authorities.clone(),
-                // Initial identities
-                btreemap![
-                    IdtyName::from("Alice") => get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    IdtyName::from("Bob") => get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    IdtyName::from("Charlie") => get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    IdtyName::from("Dave") => get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    IdtyName::from("Eve") => get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    IdtyName::from("Ferdie") => get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-                ],
-                // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                true,
-            )
-        },
-        // Bootnodes
-        vec![],
-        // Telemetry
-        None,
-        // Protocol ID
-        None,
-        // Properties
-        Some(
-            serde_json::json!({
-                    "tokenDecimals": TOKEN_DECIMALS,
-                    "tokenSymbol": TOKEN_SYMBOL,
-            })
-            .as_object()
-            .expect("must be a map")
-            .clone(),
-        ),
-        // Extensions
-        None,
-    ))
 }
 
 fn session_keys(
@@ -254,88 +275,5 @@ fn session_keys(
         grandpa,
         im_online,
         authority_discovery,
-    }
-}
-
-fn testnet_genesis(
-    wasm_binary: &[u8],
-    initial_authorities: Vec<AuthorityKeys>,
-    initial_identities: BTreeMap<IdtyName, AccountId>,
-    root_key: AccountId,
-    _enable_println: bool,
-) -> GenesisConfig {
-    GenesisConfig {
-        system: SystemConfig {
-            // Add Wasm runtime to storage.
-            code: wasm_binary.to_vec(),
-        },
-        authority_discovery: Default::default(),
-        balances: BalancesConfig {
-            // Configure endowed accounts with initial balance of INITIAL_BALANCE.
-            balances: Vec::with_capacity(0),
-        },
-        babe: BabeConfig {
-            authorities: Vec::with_capacity(0),
-            epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
-        },
-        grandpa: Default::default(),
-        im_online: Default::default(),
-        session: SessionConfig {
-            keys: initial_authorities
-                .iter()
-                .map(|x| {
-                    (
-                        x.0.clone(),
-                        x.0.clone(),
-                        session_keys(x.1.clone(), x.2.clone(), x.3.clone(), x.4.clone()),
-                    )
-                })
-                .collect::<Vec<_>>(),
-        },
-        sudo: SudoConfig {
-            // Assign network admin rights.
-            key: Some(root_key),
-        },
-        identity: IdentityConfig {
-            identities: initial_identities
-                .iter()
-                .map(|(name, account)| IdtyValue {
-                    data: Default::default(),
-                    name: name.clone(),
-                    next_creatable_identity_on: Default::default(),
-                    owner_key: account.clone(),
-                    removable_on: 0,
-
-                    status: gtest_runtime::IdtyStatus::Validated,
-                })
-                .collect(),
-        },
-        membership: MembershipConfig {
-            memberships: (1..=initial_identities.len())
-                .map(|i| {
-                    (
-                        i as u32,
-                        MembershipData {
-                            expire_on: gtest_runtime::MembershipPeriod::get(),
-                            renewable_on: gtest_runtime::RenewablePeriod::get(),
-                        },
-                    )
-                })
-                .collect(),
-        },
-        cert: CertConfig {
-            apply_cert_period_at_genesis: false,
-            certs_by_issuer: clique_wot(
-                initial_identities.len(),
-                gtest_runtime::parameters::ValidityPeriod::get(),
-            ),
-        },
-        ud_accounts_storage: UdAccountsStorageConfig {
-            ud_accounts: initial_identities.values().cloned().collect(),
-        },
-        universal_dividend: UniversalDividendConfig {
-            first_ud: 1_000,
-            initial_monetary_mass: 0,
-        },
     }
 }

@@ -26,7 +26,6 @@ use sp_staking::SessionIndex;
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 pub struct MemberData<ValidatorId: Decode + Encode + TypeInfo> {
     pub expire_on_session: SessionIndex,
-    pub session_keys_provided: bool,
     pub validator_id: ValidatorId,
 }
 
@@ -34,14 +33,12 @@ impl<ValidatorId: Decode + Encode + TypeInfo> MemberData<ValidatorId> {
     pub fn new(validator_id: ValidatorId, expire_on_session: SessionIndex) -> Self {
         MemberData {
             expire_on_session,
-            session_keys_provided: false,
             validator_id,
         }
     }
     pub fn new_genesis(validator_id: ValidatorId) -> Self {
         MemberData {
             expire_on_session: 0,
-            session_keys_provided: true,
             validator_id,
         }
     }

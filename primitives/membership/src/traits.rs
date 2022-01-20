@@ -15,7 +15,7 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use frame_support::pallet_prelude::{DispatchResultWithPostInfo, TypeInfo, Weight};
+use frame_support::pallet_prelude::{TypeInfo, Weight};
 
 pub trait IsIdtyAllowedToClaimMembership<IdtyId> {
     fn is_idty_allowed_to_claim_membership(idty_id: &IdtyId) -> bool;
@@ -68,24 +68,6 @@ pub trait OnEvent<IdtyId, MetaData> {
 impl<IdtyId, MetaData> OnEvent<IdtyId, MetaData> for () {
     fn on_event(_: &crate::Event<IdtyId, MetaData>) -> Weight {
         0
-    }
-}
-
-pub trait MembershipAction<IdtyId, Origin> {
-    fn claim_membership_(origin: Origin, idty_id: IdtyId) -> DispatchResultWithPostInfo;
-    fn renew_membership_(origin: Origin, idty_id: IdtyId) -> DispatchResultWithPostInfo;
-    fn revoke_membership_(origin: Origin, idty_id: IdtyId) -> DispatchResultWithPostInfo;
-}
-
-impl<IdtyId, Origin> MembershipAction<IdtyId, Origin> for () {
-    fn claim_membership_(_: Origin, _: IdtyId) -> DispatchResultWithPostInfo {
-        Ok(().into())
-    }
-    fn renew_membership_(_: Origin, _: IdtyId) -> DispatchResultWithPostInfo {
-        Ok(().into())
-    }
-    fn revoke_membership_(_: Origin, _: IdtyId) -> DispatchResultWithPostInfo {
-        Ok(().into())
     }
 }
 

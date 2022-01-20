@@ -21,6 +21,7 @@ std = [
     'codec/std',
     'frame-support/std',
     'frame-system/std',
+    'pallet-authority-members/std',
     'pallet-certification/std',
     'pallet-duniter-wot/std',
     'pallet-identity/std',
@@ -35,6 +36,7 @@ std = [
 ]
 
 [dependencies]
+pallet-authority-members = { path = '../../pallets/authority-members', default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
 pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }

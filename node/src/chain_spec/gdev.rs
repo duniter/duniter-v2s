@@ -18,12 +18,11 @@ use super::*;
 use common_runtime::constants::*;
 use common_runtime::entities::IdtyName;
 use gdev_runtime::{
-    opaque::SessionKeys, AccountId, BabeConfig, BalancesConfig, CertConfig, GenesisConfig,
-    GenesisParameters, IdentityConfig, IdtyValue, ImOnlineId, MembershipConfig, ParametersConfig,
-    SessionConfig, SudoConfig, SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig,
-    WASM_BINARY,
+    opaque::SessionKeys, AccountId, AuthorityMembersConfig, BabeConfig, BalancesConfig, CertConfig,
+    GenesisConfig, GenesisParameters, IdentityConfig, IdtyValue, ImOnlineId, MembershipConfig,
+    ParametersConfig, SessionConfig, SmithsCertConfig, SmithsMembershipConfig, SudoConfig,
+    SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
 };
-use maplit::btreemap;
 use sc_service::ChainType;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
@@ -70,14 +69,12 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
         move || {
             devnet_genesis(
                 wasm_binary,
-                // Initial authorities
-                vec![get_authority_keys_from_seed("Alice")],
-                // Inital identities
-                btreemap![
-                    IdtyName::from("Alice") => get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    IdtyName::from("Bob") => get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    IdtyName::from("Charlie") => get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                ],
+                // Initial authorities len
+                1,
+                // Initial smiths members len
+                3,
+                // Inital identities len
+                4,
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 true,
@@ -106,14 +103,35 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
 
 fn devnet_genesis(
     wasm_binary: &[u8],
-    initial_authorities: Vec<AuthorityKeys>,
-    initial_identities: BTreeMap<IdtyName, AccountId>,
+    initial_authorities_len: usize,
+    initial_smiths_len: usize,
+    initial_identities_len: usize,
     root_key: AccountId,
     _enable_println: bool,
 ) -> gdev_runtime::GenesisConfig {
+    assert!(initial_identities_len <= 6);
+    assert!(initial_smiths_len <= initial_identities_len);
+    assert!(initial_authorities_len <= initial_smiths_len);
+
     let cert_validity_period = get_env_u32("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
     let membership_period = get_env_u32("DUNITER_MEMBERSHIP_PERIOD", 1_000);
     let membership_renewable_period = get_env_u32("DUNITER_MEMBERSHIP_RENEWABLE_PERIOD", 50);
+    let smith_cert_validity_period = get_env_u32("DUNITER_SMITH_CERT_VALIDITY_PERIOD", 1_000);
+    let smith_membership_renewable_period =
+        get_env_u32("DUNITER_SMITH_MEMBERSHIP_RENEWABLE_PERIOD", 20);
+    let smith_membership_period = get_env_u32("DUNITER_SMITH_MEMBERSHIP_PERIOD", 1_000);
+
+    let initial_smiths = (0..initial_smiths_len)
+        .map(|i| get_authority_keys_from_seed(NAMES[i]))
+        .collect::<Vec<AuthorityKeys>>();
+    let initial_identities = (0..initial_smiths_len)
+        .map(|i| {
+            (
+                IdtyName::from(NAMES[i]),
+                get_account_id_from_seed::<sr25519::Public>(NAMES[i]),
+            )
+        })
+        .collect::<BTreeMap<IdtyName, AccountId>>();
 
     gdev_runtime::GenesisConfig {
         system: SystemConfig {
@@ -124,6 +142,7 @@ fn devnet_genesis(
             parameters: GenesisParameters {
                 cert_period: 15,
                 cert_max_by_issuer: 10,
+                cert_min_received_cert_to_issue_cert: 2,
                 cert_renewable_period: 50,
                 cert_validity_period,
                 idty_confirm_period: 40,
@@ -136,13 +155,29 @@ fn devnet_genesis(
                 ud_first_reeval: 100,
                 ud_reeval_period: 20,
                 ud_reeval_period_in_blocks: 200,
+                smith_cert_period: 15,
+                smith_cert_max_by_issuer: 8,
+                smith_cert_min_received_cert_to_issue_cert: 3,
+                smith_cert_renewable_period: 50,
+                smith_cert_validity_period: 1_000,
+                smith_membership_period: 1_000,
+                smith_membership_renewable_period: 50,
+                smith_pending_membership_period: 500,
+                smiths_wot_first_cert_issuable_on: 20,
+                smiths_wot_min_cert_for_membership: 2,
                 wot_first_cert_issuable_on: 20,
-                wot_min_cert_for_cert_right: 2,
                 wot_min_cert_for_create_idty_right: 2,
                 wot_min_cert_for_membership: 2,
             },
         },
         authority_discovery: Default::default(),
+        authority_members: AuthorityMembersConfig {
+            initial_authorities: initial_smiths
+                .iter()
+                .enumerate()
+                .map(|(i, keys)| (i as u32 + 1, (keys.0.clone(), i < initial_authorities_len)))
+                .collect(),
+        },
         balances: BalancesConfig {
             balances: Default::default(),
         },
@@ -153,7 +188,7 @@ fn devnet_genesis(
         grandpa: Default::default(),
         im_online: Default::default(),
         session: SessionConfig {
-            keys: initial_authorities
+            keys: initial_smiths
                 .iter()
                 .map(|x| {
                     (
@@ -197,6 +232,23 @@ fn devnet_genesis(
         cert: CertConfig {
             apply_cert_period_at_genesis: false,
             certs_by_issuer: clique_wot(initial_identities.len(), cert_validity_period),
+        },
+        smiths_membership: SmithsMembershipConfig {
+            memberships: (1..=initial_smiths_len)
+                .map(|i| {
+                    (
+                        i as u32,
+                        MembershipData {
+                            expire_on: smith_membership_period,
+                            renewable_on: smith_membership_renewable_period,
+                        },
+                    )
+                })
+                .collect(),
+        },
+        smiths_cert: SmithsCertConfig {
+            apply_cert_period_at_genesis: false,
+            certs_by_issuer: clique_wot(initial_smiths_len, smith_cert_validity_period),
         },
         ud_accounts_storage: UdAccountsStorageConfig {
             ud_accounts: initial_identities.values().cloned().collect(),

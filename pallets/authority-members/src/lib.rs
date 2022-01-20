@@ -41,6 +41,7 @@ pub mod pallet {
     use super::*;
     use crate::traits::OnRemovedMember;
     use frame_support::pallet_prelude::*;
+    use frame_support::traits::ValidatorRegistration;
     use frame_support::traits::{StorageVersion, UnfilteredDispatchable};
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::{Convert, IsMember};
@@ -57,7 +58,9 @@ pub mod pallet {
     // CONFIG //
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_session::Config {
+    pub trait Config:
+        frame_system::Config + pallet_session::Config + pallet_session::historical::Config
+    {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type IsMember: IsMember<Self::MemberId>;
         type OnRemovedMember: OnRemovedMember<Self::MemberId>;
@@ -73,7 +76,7 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub initial_authorities: BTreeMap<T::MemberId, T::ValidatorId>,
+        pub initial_authorities: BTreeMap<T::MemberId, (T::ValidatorId, bool)>,
     }
 
     #[cfg(feature = "std")]
@@ -88,13 +91,21 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            for (member_id, validator_id) in &self.initial_authorities {
+            for (member_id, (validator_id, _is_online)) in &self.initial_authorities {
                 Members::<T>::insert(member_id, MemberData::new_genesis(validator_id.clone()));
             }
             let mut members_ids = self
                 .initial_authorities
-                .keys()
-                .copied()
+                .iter()
+                .filter_map(
+                    |(member_id, (_validator_id, is_online))| {
+                        if *is_online {
+                            Some(*member_id)
+                        } else {
+                            None
+                        }
+                    },
+                )
                 .collect::<Vec<T::MemberId>>();
             members_ids.sort();
 
@@ -163,6 +174,8 @@ pub mod pallet {
         AlreadyOutgoing,
         /// Not found owner key
         OwnerKeyNotFound,
+        /// Member not found
+        MemberNotFound,
         /// Neither online nor scheduled
         NotOnlineNorIncoming,
         /// Not owner
@@ -186,22 +199,26 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             Self::verify_ownership_and_membership(&who, member_id)?;
 
-            let member_data =
-                Members::<T>::try_get(member_id).map_err(|_| Error::<T>::SessionKeysNotProvided)?;
-            if !member_data.session_keys_provided {
+            let member_data = Members::<T>::get(member_id).ok_or(Error::<T>::MemberNotFound)?;
+            if !pallet_session::Pallet::<T>::is_registered(&member_data.validator_id) {
                 return Err(Error::<T>::SessionKeysNotProvided.into());
             }
-            if !Self::is_online(member_id) && !Self::is_incoming(member_id) {
+            if Self::is_outgoing(member_id) {
+                return Err(Error::<T>::AlreadyOutgoing.into());
+            }
+            let is_incoming = Self::is_incoming(member_id);
+            if !is_incoming && !Self::is_online(member_id) {
                 return Err(Error::<T>::NotOnlineNorIncoming.into());
             }
 
             // Apply phase //
-            if !Self::insert_out(member_id) {
-                Err(Error::<T>::AlreadyOutgoing.into())
-            } else {
+            if is_incoming {
                 Self::remove_in(member_id);
-                Ok(().into())
+            } else {
+                Self::insert_out(member_id);
             }
+
+            Ok(().into())
         }
         #[pallet::weight(0)]
         pub fn go_online(
@@ -212,28 +229,27 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             Self::verify_ownership_and_membership(&who, member_id)?;
 
-            let member_data =
-                Members::<T>::try_get(member_id).map_err(|_| Error::<T>::SessionKeysNotProvided)?;
-            if !member_data.session_keys_provided {
+            let member_data = Members::<T>::get(member_id).ok_or(Error::<T>::MemberNotFound)?;
+            if !pallet_session::Pallet::<T>::is_registered(&member_data.validator_id) {
                 return Err(Error::<T>::SessionKeysNotProvided.into());
             }
 
-            // Apply phase //
-            if Self::is_online(member_id) {
-                if Self::is_outgoing(member_id) {
-                    Self::remove_out(member_id);
-                    Ok(().into())
-                } else {
-                    Err(Error::<T>::AlreadyOnline.into())
-                }
-            } else if Self::is_outgoing(member_id) {
-                Self::remove_out(member_id);
-                Ok(().into())
-            } else if !Self::insert_in(member_id) {
-                Err(Error::<T>::AlreadyIncoming.into())
-            } else {
-                Ok(().into())
+			if Self::is_incoming(member_id) {
+                return Err(Error::<T>::AlreadyIncoming.into());
             }
+			let is_outgoing = Self::is_outgoing(member_id);
+            if Self::is_online(member_id) && !is_outgoing {
+                return Err(Error::<T>::AlreadyOnline.into());
+            }
+
+            // Apply phase //
+            if is_outgoing {
+                Self::remove_out(member_id);
+            } else {
+                Self::insert_in(member_id);
+            }
+
+            Ok(().into())
         }
 
         #[pallet::weight(0)]
@@ -260,10 +276,8 @@ pub mod pallet {
             Members::<T>::mutate_exists(member_id, |member_data_opt| {
                 let mut member_data = member_data_opt.get_or_insert(MemberData {
                     expire_on_session,
-                    session_keys_provided: true,
                     validator_id: validator_id.clone(),
                 });
-                member_data.session_keys_provided = true;
                 member_data.validator_id = validator_id;
             });
 
@@ -394,7 +408,7 @@ pub mod pallet {
                 if let Ok(index) = members_ids.binary_search(&member_id) {
                     members_ids.remove(index);
                 }
-            });
+            })
         }
         fn remove_online(member_id: T::MemberId) {
             OnlineAuthorities::<T>::mutate(|members_ids| {
@@ -491,11 +505,14 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
         )
     }
     /// Same as `new_session`, but it this should only be called at genesis.
-    ///
-    /// The session manager might decide to treat this in a different way. Default impl is simply
-    /// using [`new_session`](Self::new_session).
     fn new_session_genesis(_new_index: SessionIndex) -> Option<Vec<T::ValidatorId>> {
-        None
+        Some(
+            OnlineAuthorities::<T>::get()
+                .iter()
+                .filter_map(Members::<T>::get)
+                .map(|member_data| member_data.validator_id)
+                .collect(),
+        )
     }
     /// End the session.
     ///
@@ -507,5 +524,46 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
     /// The session start to be used for validation.
     fn start_session(start_index: SessionIndex) {
         Self::expire_memberships(start_index);
+    }
+}
+
+fn add_full_identification<T: Config>(
+    validator_id: T::ValidatorId,
+) -> Option<(T::ValidatorId, T::FullIdentification)> {
+    use sp_runtime::traits::Convert as _;
+    T::FullIdentificationOf::convert(validator_id.clone())
+        .map(|full_ident| (validator_id, full_ident))
+}
+
+impl<T: Config> pallet_session::historical::SessionManager<T::ValidatorId, T::FullIdentification>
+    for Pallet<T>
+{
+    fn new_session(
+        new_index: SessionIndex,
+    ) -> Option<sp_std::vec::Vec<(T::ValidatorId, T::FullIdentification)>> {
+        <Self as pallet_session::SessionManager<_>>::new_session(new_index).map(|validators_ids| {
+            validators_ids
+                .into_iter()
+                .filter_map(add_full_identification::<T>)
+                .collect()
+        })
+    }
+    fn new_session_genesis(
+        new_index: SessionIndex,
+    ) -> Option<sp_std::vec::Vec<(T::ValidatorId, T::FullIdentification)>> {
+        <Self as pallet_session::SessionManager<_>>::new_session_genesis(new_index).map(
+            |validators_ids| {
+                validators_ids
+                    .into_iter()
+                    .filter_map(add_full_identification::<T>)
+                    .collect()
+            },
+        )
+    }
+    fn start_session(start_index: SessionIndex) {
+        <Self as pallet_session::SessionManager<_>>::start_session(start_index)
+    }
+    fn end_session(end_index: SessionIndex) {
+        <Self as pallet_session::SessionManager<_>>::end_session(end_index)
     }
 }

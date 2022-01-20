@@ -129,6 +129,17 @@ impl pallet_session::Config for Test {
     type WeightInfo = ();
 }
 
+pub struct FullIdentificationOfImpl;
+impl sp_runtime::traits::Convert<AccountId, Option<()>> for FullIdentificationOfImpl {
+    fn convert(_: AccountId) -> Option<()> {
+        Some(())
+    }
+}
+impl pallet_session::historical::Config for Test {
+    type FullIdentification = ();
+    type FullIdentificationOf = FullIdentificationOfImpl;
+}
+
 pub struct TestIsSmithMember;
 impl IsMember<u64> for TestIsSmithMember {
     fn is_member(member_id: &u64) -> bool {
@@ -150,7 +161,7 @@ impl pallet_authority_members::Config for Test {
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext(initial_authorities_len: u64) -> sp_io::TestExternalities {
     let initial_authorities = (1..=initial_authorities_len)
-        .map(|i| (i * 3, i * 3))
+        .map(|i| (i * 3, (i * 3, true)))
         .collect();
     let keys: Vec<_> = (1..=initial_authorities_len)
         .map(|i| (i * 3, i * 3, UintAuthorityId(i * 3).into()))

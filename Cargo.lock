@@ -835,6 +835,7 @@ version = "0.8.0-dev"
 dependencies = [
  "frame-support",
  "frame-system",
+ "pallet-authority-members",
  "pallet-certification",
  "pallet-duniter-wot",
  "pallet-identity",
@@ -1869,6 +1870,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "hex-literal",
  "pallet-authority-discovery",
+ "pallet-authority-members",
  "pallet-authorship",
  "pallet-babe",
  "pallet-balances",
@@ -2108,6 +2110,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "hex-literal",
  "pallet-authority-discovery",
+ "pallet-authority-members",
  "pallet-authorship",
  "pallet-babe",
  "pallet-balances",

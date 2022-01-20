@@ -60,13 +60,6 @@ pub type Index = u32;
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = sp_runtime::MultiSignature;
 
-pub struct IdtyNameValidatorImpl;
-impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorImpl {
-    fn validate(idty_name: &pallet_identity::IdtyName) -> bool {
-        idty_name.0.len() >= 3 && idty_name.0.len() <= 64
-    }
-}
-
 pub struct FullIdentificationOfImpl;
 impl sp_runtime::traits::Convert<AccountId, Option<entities::ValidatorFullIdentification>>
     for FullIdentificationOfImpl
@@ -76,35 +69,22 @@ impl sp_runtime::traits::Convert<AccountId, Option<entities::ValidatorFullIdenti
     }
 }
 
-/// The implementation of SessionManager traits
-/// For the moment, the implementation does nothing, which means that the set of authorities
-/// remains eternally the same as the one defined in the chain spec.
-// TODO: When we will have implemented the smith sub-wot, we will have to fill this implementation
-// with a real logic based on the smith sub-wot.
-pub struct SessionManagerImpl;
-use crate::entities::ValidatorFullIdentification;
-use sp_staking::SessionIndex;
-impl pallet_session::SessionManager<AccountId> for SessionManagerImpl {
-    fn new_session(_new_index: SessionIndex) -> Option<sp_std::vec::Vec<AccountId>> {
-        None
+pub struct IdtyNameValidatorImpl;
+impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorImpl {
+    fn validate(idty_name: &pallet_identity::IdtyName) -> bool {
+        idty_name.0.len() >= 3 && idty_name.0.len() <= 64
     }
-    fn start_session(_start_index: SessionIndex) {}
-    fn end_session(_end_index: SessionIndex) {}
 }
 
-impl pallet_session::historical::SessionManager<AccountId, ValidatorFullIdentification>
-    for SessionManagerImpl
+pub struct OwnerKeyOfImpl<Runtime>(core::marker::PhantomData<Runtime>);
+
+impl<
+        Runtime: frame_system::Config<AccountId = AccountId>
+            + pallet_identity::Config<IdtyIndex = IdtyIndex>,
+    > sp_runtime::traits::Convert<IdtyIndex, Option<AccountId>> for OwnerKeyOfImpl<Runtime>
 {
-    fn new_session(
-        _new_index: SessionIndex,
-    ) -> Option<sp_std::vec::Vec<(AccountId, ValidatorFullIdentification)>> {
-        None
+    fn convert(idty_index: IdtyIndex) -> Option<AccountId> {
+        pallet_identity::Pallet::<Runtime>::identity(idty_index)
+            .map(|idty_value| idty_value.owner_key)
     }
-    fn new_session_genesis(
-        new_index: SessionIndex,
-    ) -> Option<sp_std::vec::Vec<(AccountId, ValidatorFullIdentification)>> {
-        <Self as pallet_session::historical::SessionManager<_, _>>::new_session(new_index)
-    }
-    fn start_session(_start_index: SessionIndex) {}
-    fn end_session(_end_index: SessionIndex) {}
 }

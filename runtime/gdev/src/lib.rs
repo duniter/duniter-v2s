@@ -26,9 +26,8 @@ pub mod parameters;
 
 pub use self::parameters::*;
 pub use common_runtime::{
-    constants::*, entities::ValidatorFullIdentification, handlers::OnMembershipEventHandler,
-    AccountId, Address, Balance, BlockNumber, FullIdentificationOfImpl, Hash, Header, IdtyIndex,
-    IdtyNameValidatorImpl, Index, Signature,
+    constants::*, entities::ValidatorFullIdentification, handlers::*, AccountId, Address, Balance,
+    BlockNumber, FullIdentificationOfImpl, Hash, Header, IdtyIndex, Index, Signature,
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_duniter_test_parameters::Parameters as GenesisParameters;
@@ -42,7 +41,7 @@ pub use pallet_universal_dividend;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 
-use common_runtime::SessionManagerImpl;
+use common_runtime::{IdtyNameValidatorImpl, OwnerKeyOfImpl};
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -153,13 +152,13 @@ common_runtime::pallets_config! {
     // Dynamic parameters
     pub type CertPeriod = pallet_duniter_test_parameters::CertPeriod<Runtime>;
     pub type MaxByIssuer = pallet_duniter_test_parameters::CertMaxByIssuer<Runtime>;
+    pub type MinReceivedCertToBeAbleToIssueCert = pallet_duniter_test_parameters::CertMinReceivedCertToIssueCert<Runtime>;
     pub type CertRenewablePeriod = pallet_duniter_test_parameters::CertRenewablePeriod<Runtime>;
     pub type ValidityPeriod = pallet_duniter_test_parameters::CertValidityPeriod<Runtime>;
     pub type ConfirmPeriod = pallet_duniter_test_parameters::IdtyConfirmPeriod<Runtime>;
     pub type IdtyCreationPeriod = pallet_duniter_test_parameters::IdtyCreationPeriod<Runtime>;
     pub type MaxDisabledPeriod = pallet_duniter_test_parameters::IdtyMaxDisabledPeriod<Runtime>;
     pub type MembershipPeriod = pallet_duniter_test_parameters::MembershipPeriod<Runtime>;
-    pub type MinReceivedCertToBeAbleToIssueCert = pallet_duniter_test_parameters::WotMinCertForCertRight<Runtime>;
     pub type RenewablePeriod = pallet_duniter_test_parameters::MembershipRenewablePeriod<Runtime>;
     pub type PendingMembershipPeriod = pallet_duniter_test_parameters::PendingMembershipPeriod<Runtime>;
     pub type UdCreationPeriod = pallet_duniter_test_parameters::UdCreationPeriod<Runtime>;
@@ -169,6 +168,16 @@ common_runtime::pallets_config! {
     pub type WotFirstCertIssuableOn = pallet_duniter_test_parameters::WotFirstCertIssuableOn<Runtime>;
     pub type WotMinCertForMembership = pallet_duniter_test_parameters::WotMinCertForMembership<Runtime>;
     pub type WotMinCertForCreateIdtyRight = pallet_duniter_test_parameters::WotMinCertForCreateIdtyRight<Runtime>;
+    pub type SmithCertPeriod = pallet_duniter_test_parameters::SmithCertPeriod<Runtime>;
+    pub type SmithMaxByIssuer = pallet_duniter_test_parameters::SmithCertMaxByIssuer<Runtime>;
+    pub type SmithMinReceivedCertToBeAbleToIssueCert = pallet_duniter_test_parameters::SmithCertMinReceivedCertToIssueCert<Runtime>;
+    pub type SmithCertRenewablePeriod = pallet_duniter_test_parameters::SmithCertRenewablePeriod<Runtime>;
+    pub type SmithValidityPeriod = pallet_duniter_test_parameters::SmithCertValidityPeriod<Runtime>;
+    pub type SmithMembershipPeriod = pallet_duniter_test_parameters::SmithMembershipPeriod<Runtime>;
+    pub type SmithPendingMembershipPeriod = pallet_duniter_test_parameters::SmithPendingMembershipPeriod<Runtime>;
+    pub type SmithRenewablePeriod = pallet_duniter_test_parameters::SmithMembershipRenewablePeriod<Runtime>;
+    pub type SmithsWotFirstCertIssuableOn = pallet_duniter_test_parameters::SmithsWotFirstCertIssuableOn<Runtime>;
+    pub type SmithsWotMinCertForMembership = pallet_duniter_test_parameters::SmithsWotMinCertForMembership<Runtime>;
 
     impl pallet_duniter_test_parameters::Config for Runtime {
         type CertCount = u32;
@@ -203,13 +212,14 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 32,
 
         // Consensus support
-        Authorship: pallet_authorship::{Pallet, Call, Storage} = 10,
-        Offences: pallet_offences::{Pallet, Storage, Event} = 11,
-        Historical: session_historical::{Pallet} = 12,
-        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 13,
-        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event} = 14,
-        ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 15,
-        AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 16,
+        AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
+        Authorship: pallet_authorship::{Pallet, Call, Storage} = 11,
+        Offences: pallet_offences::{Pallet, Storage, Event} = 12,
+        Historical: session_historical::{Pallet} = 13,
+        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 14,
+        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event} = 15,
+        ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 16,
+        AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 17,
 
         // Governance stuff
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
@@ -222,13 +232,18 @@ construct_runtime!(
         UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
 
         // Web Of Trust
-        DuniterWot: pallet_duniter_wot::<Instance1>::{Pallet} = 50,
+        Wot: pallet_duniter_wot::<Instance1>::{Pallet} = 50,
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 51,
         Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
         Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
 
-        // Multisig dispatch
-        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 60,
+        // Smiths Sub-Wot
+        SmithsSubWot: pallet_duniter_wot::<Instance2>::{Pallet} = 60,
+        SmithsMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 62,
+        SmithsCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 63,
+
+        // Multisig dispatch.
+        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 70,
     }
 );
 

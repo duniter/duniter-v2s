@@ -29,13 +29,13 @@ use serde::{Deserialize, Serialize};
 
 pub enum Event<IdtyId, MetaData = ()> {
     /// A membership has acquired
-    MembershipAcquired(IdtyId),
+    MembershipAcquired(IdtyId, MetaData),
     /// A membership has expired
     MembershipExpired(IdtyId),
     /// A membership has renewed
     MembershipRenewed(IdtyId),
     /// An identity requested membership
-    MembershipRequested(IdtyId, MetaData),
+    MembershipRequested(IdtyId),
     /// A membership has revoked
     MembershipRevoked(IdtyId),
     /// A pending membership request has expired

@@ -97,14 +97,12 @@ parameter_types! {
 /*******/
 
 parameter_types! {
-    pub WotFirstCertIssuableOn: BlockNumber = 30* DAYS;
-    pub WotMinCertForMembership: u8 = 5;
-    pub MinReceivedCertToBeAbleToIssueCert: u8 = 5;
-    pub WotMinCertForCreateIdtyRight: u8 = 5;
+    pub const WotFirstCertIssuableOn: BlockNumber = 30 * DAYS;
+    pub const WotMinCertForMembership: u32 = 5;
+    pub const WotMinCertForCreateIdtyRight: u32 = 5;
 }
 
 // Identity
-pub const IDTY_CREATE_PERIOD: BlockNumber = 100;
 parameter_types! {
     pub const ConfirmPeriod: BlockNumber = 14 * DAYS;
     pub const IdtyCreationPeriod: BlockNumber = MONTHS;
@@ -120,13 +118,37 @@ parameter_types! {
 }
 
 // Certification
-pub const MIN_STRONG_CERT_FOR_UD: u32 = 5;
-pub const MIN_STRONG_CERT_FOR_STRONG_CERT: u32 = 5;
 parameter_types! {
     pub const CertPeriod: BlockNumber = 5 * DAYS;
-    pub const MaxByIssuer: u8 = 100;
+    pub const MaxByIssuer: u32 = 100;
+    pub const MinReceivedCertToBeAbleToIssueCert: u32 = 5;
     pub const CertRenewablePeriod: BlockNumber = 6 * MONTHS;
     pub const ValidityPeriod: BlockNumber = 2 * YEARS;
+}
+
+/******************/
+/* SMITHS SUB-WOT */
+/******************/
+
+parameter_types! {
+    pub const SmithsWotFirstCertIssuableOn: BlockNumber = 30 * DAYS;
+    pub const SmithsWotMinCertForMembership: u32 = 3;
+}
+
+// Membership
+parameter_types! {
+    pub const SmithMembershipPeriod: BlockNumber = 73 * DAYS;
+    pub const SmithPendingMembershipPeriod: BlockNumber = 12 * DAYS;
+    pub const SmithRenewablePeriod: BlockNumber = 12 * DAYS;
+}
+
+// Certification
+parameter_types! {
+    pub const SmithCertPeriod: BlockNumber = 5 * DAYS;
+    pub const SmithMaxByIssuer: u32 = 12;
+    pub const SmithMinReceivedCertToBeAbleToIssueCert: u32 = 5;
+    pub const SmithCertRenewablePeriod: BlockNumber = 12 * DAYS;
+    pub const SmithValidityPeriod: BlockNumber = 146 * DAYS;
 }
 
 // Multisig
