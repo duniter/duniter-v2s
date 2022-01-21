@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use pallet_identity::IdtyStatus;
-
 use crate::{Config, IdtyIndex};
 use frame_support::pallet_prelude::*;
+use pallet_identity::IdtyStatus;
+use sp_membership::traits::IsInPendingMemberships;
 use sp_runtime::traits::IsMember;
 
 pub struct AddCertOrigin<T, I>(core::marker::PhantomData<(T, I)>);
@@ -39,8 +39,7 @@ impl<T: Config<I>, I: 'static> EnsureOrigin<(T::Origin, IdtyIndex, IdtyIndex)>
                                 IdtyStatus::ConfirmedByOwner => Ok(()),
                                 IdtyStatus::Created => Err(o),
                                 IdtyStatus::Disabled => {
-                                    if pallet_membership::Pallet::<T, I>::pending_membership(&o.2)
-                                        .is_some()
+                                    if pallet_membership::Pallet::<T, I>::is_in_pending_memberships(o.2)
                                     {
                                         Ok(())
                                     } else {
@@ -49,10 +48,9 @@ impl<T: Config<I>, I: 'static> EnsureOrigin<(T::Origin, IdtyIndex, IdtyIndex)>
                                 }
                                 IdtyStatus::Validated => {
                                     if pallet_membership::Pallet::<T, I>::is_member(&o.2)
-                                        || pallet_membership::Pallet::<T, I>::pending_membership(
-                                            &o.2,
+                                        || pallet_membership::Pallet::<T, I>::is_in_pending_memberships(
+                                            o.2,
                                         )
-                                        .is_some()
                                     {
                                         Ok(())
                                     } else {

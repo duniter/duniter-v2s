@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
+use super::entities::SmithsMembershipMetaData;
 use super::IdtyIndex;
 use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::instances::Instance2;
@@ -62,19 +63,21 @@ pub struct OnSmithMembershipEventHandler<Inner, Runtime>(
 impl<
         IdtyIndex: Copy + Parameter,
         SessionKeys: Clone,
-        Inner: sp_membership::traits::OnEvent<IdtyIndex, SessionKeys>,
+        Inner: sp_membership::traits::OnEvent<IdtyIndex, SmithsMembershipMetaData<SessionKeys>>,
         Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex>
             + pallet_authority_members::Config<MemberId = IdtyIndex>
-            + pallet_membership::Config<Instance2, MetaData = SessionKeys>
+            + pallet_membership::Config<Instance2, MetaData = SmithsMembershipMetaData<SessionKeys>>
             + pallet_session::Config<Keys = SessionKeys>,
-    > sp_membership::traits::OnEvent<IdtyIndex, SessionKeys>
+    > sp_membership::traits::OnEvent<IdtyIndex, SmithsMembershipMetaData<SessionKeys>>
     for OnSmithMembershipEventHandler<Inner, Runtime>
 {
-    fn on_event(membership_event: &sp_membership::Event<IdtyIndex, SessionKeys>) -> Weight {
+    fn on_event(
+        membership_event: &sp_membership::Event<IdtyIndex, SmithsMembershipMetaData<SessionKeys>>,
+    ) -> Weight {
         (match membership_event {
-            sp_membership::Event::<IdtyIndex, SessionKeys>::MembershipAcquired(
+            sp_membership::Event::MembershipAcquired(
                 idty_index,
-                session_keys,
+                SmithsMembershipMetaData { session_keys, .. },
             ) => {
                 if let Some(idty_value) = pallet_identity::Pallet::<Runtime>::identity(idty_index) {
                     let call = pallet_authority_members::Call::<Runtime>::set_session_keys {

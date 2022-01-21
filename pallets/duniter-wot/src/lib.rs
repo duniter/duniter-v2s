@@ -36,6 +36,7 @@ use frame_support::pallet_prelude::*;
 use frame_system::RawOrigin;
 use pallet_certification::traits::SetNextIssuableOn;
 use pallet_identity::{IdtyEvent, IdtyStatus};
+use sp_membership::traits::IsInPendingMemberships;
 use sp_runtime::traits::IsMember;
 
 type IdtyIndex = u32;
@@ -107,11 +108,15 @@ where
         }
     }
     fn can_confirm_identity(idty_index: IdtyIndex) -> bool {
-        pallet_membership::Pallet::<T, I>::request_membership(RawOrigin::Root.into(), idty_index)
-            .is_ok()
+        pallet_membership::Pallet::<T, I>::request_membership(
+            RawOrigin::Root.into(),
+            idty_index,
+            (),
+        )
+        .is_ok()
     }
     fn can_validate_identity(idty_index: IdtyIndex) -> bool {
-        pallet_membership::Pallet::<T, I>::claim_membership(RawOrigin::Root.into(), idty_index, ())
+        pallet_membership::Pallet::<T, I>::claim_membership(RawOrigin::Root.into(), idty_index)
             .is_ok()
     }
 }
@@ -261,7 +266,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex
             if receiver_received_count == T::MinReceivedCertToBeAbleToIssueCert::get() {
                 Self::do_apply_first_issuable_on(receiver);
             }
-        } else if pallet_membership::Pallet::<T, I>::pending_membership(receiver).is_some()
+        } else if pallet_membership::Pallet::<T, I>::is_in_pending_memberships(receiver)
             && receiver_received_count >= T::MinCertForMembership::get()
         {
             // TODO insert `receiver` in distance queue

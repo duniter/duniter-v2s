@@ -350,7 +350,7 @@ macro_rules! pallets_config {
 			type IdtyId = IdtyIndex;
 			type MembershipExternalStorage = sp_membership::traits::NoExternalStorage;
 			type MembershipPeriod = SmithMembershipPeriod;
-			type MetaData = opaque::SessionKeys;
+			type MetaData = SmithsMembershipMetaData<opaque::SessionKeys>;
 			type OnEvent = OnSmithMembershipEventHandler<SmithsSubWot, Runtime>;
 			type PendingMembershipPeriod = SmithPendingMembershipPeriod;
 			type RenewablePeriod = SmithRenewablePeriod;

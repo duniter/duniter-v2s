@@ -135,7 +135,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn pending_membership)]
     pub type PendingMembership<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_128Concat, T::IdtyId, T::BlockNumber, OptionQuery>;
+        StorageMap<_, Blake2_128Concat, T::IdtyId, T::MetaData, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn pending_memberships_expire_on)]
@@ -226,6 +226,7 @@ pub mod pallet {
         pub fn request_membership(
             origin: OriginFor<T>,
             idty_id: T::IdtyId,
+            metadata: T::MetaData,
         ) -> DispatchResultWithPostInfo {
             let allowed =
                 match T::IsOriginAllowedToUseIdty::is_origin_allowed_to_use_idty(&origin, &idty_id)
@@ -256,7 +257,7 @@ pub mod pallet {
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             let expire_on = block_number + T::PendingMembershipPeriod::get();
 
-            PendingMembership::<T, I>::insert(idty_id, expire_on);
+            PendingMembership::<T, I>::insert(idty_id, metadata);
             PendingMembershipsExpireOn::<T, I>::append(expire_on, idty_id);
             Self::deposit_event(Event::MembershipRequested(idty_id));
             T::OnEvent::on_event(&sp_membership::Event::MembershipRequested(idty_id));
@@ -268,8 +269,8 @@ pub mod pallet {
         pub fn claim_membership(
             origin: OriginFor<T>,
             idty_id: T::IdtyId,
-            metadata: T::MetaData,
         ) -> DispatchResultWithPostInfo {
+            // Verify phase
             if Membership::<T, I>::contains_key(&idty_id) {
                 return Err(Error::<T, I>::MembershipAlreadyAcquired.into());
             }
@@ -290,11 +291,13 @@ pub mod pallet {
                 return Err(Error::<T, I>::IdtyNotAllowedToClaimMembership.into());
             }
 
-            if !PendingMembership::<T, I>::contains_key(&idty_id) {
-                return Err(Error::<T, I>::MembershipRequestNotFound.into());
-            }
+            let metadata = PendingMembership::<T, I>::take(&idty_id)
+                .ok_or(Error::<T, I>::MembershipRequestNotFound)?;
 
-            let _ = Self::do_claim_membership(idty_id, metadata);
+            // Apply phase
+            Self::do_renew_membership_inner(idty_id);
+            Self::deposit_event(Event::MembershipAcquired(idty_id));
+            T::OnEvent::on_event(&sp_membership::Event::MembershipAcquired(idty_id, metadata));
 
             Ok(().into())
         }
@@ -355,14 +358,6 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
-        pub(super) fn do_claim_membership(idty_id: T::IdtyId, metadata: T::MetaData) -> Weight {
-            let mut total_weight = 1;
-            PendingMembership::<T, I>::remove(&idty_id);
-            total_weight += Self::do_renew_membership_inner(idty_id);
-            Self::deposit_event(Event::MembershipAcquired(idty_id));
-            T::OnEvent::on_event(&sp_membership::Event::MembershipAcquired(idty_id, metadata));
-            total_weight
-        }
         pub(super) fn do_renew_membership(idty_id: T::IdtyId) -> Weight {
             let total_weight = Self::do_renew_membership_inner(idty_id);
             Self::deposit_event(Event::MembershipRenewed(idty_id));

@@ -237,7 +237,7 @@ fn test_idty_membership_expire_them_requested() {
 
         // Charlie should be able to request membership
         run_to_block(6);
-        assert_ok!(Membership::request_membership(Origin::signed(3), 3));
+        assert_ok!(Membership::request_membership(Origin::signed(3), 3, ()));
 
         // Charlie should re-enter in the wot immediatly
         let events = System::events();

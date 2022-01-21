@@ -22,6 +22,13 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
+#[derive(Clone, Encode, Decode, Default, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+pub struct SmithsMembershipMetaData<SessionKeys> {
+    pub peer_id: [u8; 32],
+    pub session_keys: SessionKeys,
+}
+
+#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(
     Encode, Decode, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug, TypeInfo,
 )]
