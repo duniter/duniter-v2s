@@ -131,6 +131,7 @@ impl IdentifyRuntimeType for Box<dyn sc_chain_spec::ChainSpec> {
 #[allow(clippy::type_complexity)]
 pub fn new_chain_ops(
     config: &mut Configuration,
+    manual_consensus: bool,
 ) -> Result<
     (
         Arc<Client>,
@@ -149,7 +150,7 @@ pub fn new_chain_ops(
                 import_queue,
                 task_manager,
                 ..
-            } = new_partial::<g1_runtime::RuntimeApi, G1Executor>(config, false)?;
+            } = new_partial::<g1_runtime::RuntimeApi, G1Executor>(config, manual_consensus)?;
             Ok((
                 Arc::new(Client::G1(client)),
                 backend,
@@ -165,7 +166,7 @@ pub fn new_chain_ops(
                 import_queue,
                 task_manager,
                 ..
-            } = new_partial::<gtest_runtime::RuntimeApi, GTestExecutor>(config, false)?;
+            } = new_partial::<gtest_runtime::RuntimeApi, GTestExecutor>(config, manual_consensus)?;
             Ok((
                 Arc::new(Client::GTest(client)),
                 backend,
@@ -181,7 +182,7 @@ pub fn new_chain_ops(
                 import_queue,
                 task_manager,
                 ..
-            } = new_partial::<gdev_runtime::RuntimeApi, GDevExecutor>(config, true)?;
+            } = new_partial::<gdev_runtime::RuntimeApi, GDevExecutor>(config, manual_consensus)?;
             Ok((
                 Arc::new(Client::GDev(client)),
                 backend,
@@ -293,7 +294,7 @@ where
 
     let babe_config = babe::Config::get(&*client)?;
     let (babe_block_import, babe_link) =
-        babe::block_import(babe_config, grandpa_block_import.clone(), client.clone())?;
+        babe::block_import(babe_config, grandpa_block_import, client.clone())?;
 
     let import_queue = if consensus_manual {
         manual_seal::import_queue(
@@ -349,7 +350,7 @@ fn remote_keystore(_url: &str) -> Result<Arc<LocalKeystore>, &'static str> {
 /// Builds a new service for a full client.
 pub fn new_full<RuntimeApi, Executor>(
     mut config: Configuration,
-    sealing_opt: Option<crate::cli::Sealing>,
+    sealing: crate::cli::Sealing,
 ) -> Result<TaskManager, ServiceError>
 where
     RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
@@ -369,7 +370,7 @@ where
         select_chain,
         transaction_pool,
         other: (block_import, babe_link, grandpa_link, mut telemetry),
-    } = new_partial::<RuntimeApi, Executor>(&config, sealing_opt.is_some())?;
+    } = new_partial::<RuntimeApi, Executor>(&config, sealing.is_manual_consensus())?;
 
     if let Some(url) = &config.keystore_remote {
         match remote_keystore(url) {
@@ -430,7 +431,7 @@ where
             telemetry.as_ref().map(|x| x.handle()),
         );
 
-        if let Some(sealing) = sealing_opt {
+        if sealing.is_manual_consensus() {
             let commands_stream: Box<dyn Stream<Item = EngineCommand<H256>> + Send + Sync + Unpin> =
                 match sealing {
                     crate::cli::Sealing::Instant => {
@@ -463,6 +464,7 @@ where
                             sender: None,
                         },
                     )),
+                    crate::cli::Sealing::Production => unreachable!(),
                 };
 
             let babe_consensus_data_provider =
@@ -533,10 +535,10 @@ where
                         let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                         let slot =
-						sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_duration(
-                                *timestamp,
-                                slot_duration,
-                            );
+							sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_duration(
+									*timestamp,
+									slot_duration,
+								);
 
                         Ok((timestamp, slot, uncles))
                     }

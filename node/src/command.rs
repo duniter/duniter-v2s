@@ -152,28 +152,32 @@ pub fn run() -> sc_cli::Result<()> {
         Some(Subcommand::CheckBlock(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|mut config| {
-                let (client, _, import_queue, task_manager) = service::new_chain_ops(&mut config)?;
+                let (client, _, import_queue, task_manager) =
+                    service::new_chain_ops(&mut config, cli.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
         Some(Subcommand::ExportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|mut config| {
-                let (client, _, _, task_manager) = service::new_chain_ops(&mut config)?;
+                let (client, _, _, task_manager) =
+                    service::new_chain_ops(&mut config, cli.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, config.database), task_manager))
             })
         }
         Some(Subcommand::ExportState(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|mut config| {
-                let (client, _, _, task_manager) = service::new_chain_ops(&mut config)?;
+                let (client, _, _, task_manager) =
+                    service::new_chain_ops(&mut config, cli.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, config.chain_spec), task_manager))
             })
         }
         Some(Subcommand::ImportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|mut config| {
-                let (client, _, import_queue, task_manager) = service::new_chain_ops(&mut config)?;
+                let (client, _, import_queue, task_manager) =
+                    service::new_chain_ops(&mut config, cli.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
@@ -184,7 +188,8 @@ pub fn run() -> sc_cli::Result<()> {
         Some(Subcommand::Revert(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|mut config| {
-                let (client, backend, _, task_manager) = service::new_chain_ops(&mut config)?;
+                let (client, backend, _, task_manager) =
+                    service::new_chain_ops(&mut config, cli.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, backend), task_manager))
             })
         }
@@ -215,29 +220,23 @@ pub fn run() -> sc_cli::Result<()> {
         None => {
             let runner = cli.create_runner(&cli.run)?;
             runner.run_node_until_exit(|config| async move {
-                let chain_spec_id = config.chain_spec.id();
-                let sealing_opt = if chain_spec_id.ends_with("dev") && chain_spec_id != "gdev" {
-                    Some(cli.sealing)
-                } else {
-                    None
-                };
                 match config.chain_spec.runtime_type() {
                     #[cfg(feature = "g1")]
                     RuntimeType::G1 => {
-                        service::new_full::<g1_runtime::RuntimeApi, G1Executor>(config, sealing_opt)
+                        service::new_full::<g1_runtime::RuntimeApi, G1Executor>(config, cli.sealing)
                             .map_err(sc_cli::Error::Service)
                     }
                     #[cfg(feature = "gtest")]
                     RuntimeType::GTest => service::new_full::<
                         gtest_runtime::RuntimeApi,
                         GTestExecutor,
-                    >(config, sealing_opt)
+                    >(config, cli.sealing)
                     .map_err(sc_cli::Error::Service),
                     #[cfg(feature = "gdev")]
                     RuntimeType::GDev => {
                         service::new_full::<gdev_runtime::RuntimeApi, GDevExecutor>(
                             config,
-                            sealing_opt,
+                            cli.sealing,
                         )
                         .map_err(sc_cli::Error::Service)
                     }

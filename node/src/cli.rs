@@ -28,8 +28,8 @@ pub struct Cli {
 
     /// When blocks should be sealed in the dev service.
     ///
-    /// Options are "instant", "manual", or timer interval in milliseconds
-    #[structopt(long, default_value = "6000")]
+    /// Options are "production", "instant", "manual", or timer interval in milliseconds
+    #[structopt(long, default_value = "production")]
     pub sealing: Sealing,
 }
 
@@ -63,9 +63,11 @@ pub enum Subcommand {
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 }
 
-/// Block authoring scheme to be used by the dev service.
-#[derive(Debug)]
+/// Block authoring scheme to be used by the node
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Sealing {
+    /// Author a block using normal runtime behavior (mandatory for production networks)
+    Production,
     /// Author a block immediately upon receiving a transaction into the transaction pool
     Instant,
     /// Author a block upon receiving an RPC command
@@ -74,11 +76,18 @@ pub enum Sealing {
     Interval(u64),
 }
 
+impl Sealing {
+    pub fn is_manual_consensus(self) -> bool {
+        self != Self::Production
+    }
+}
+
 impl FromStr for Sealing {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
+            "production" => Self::Production,
             "instant" => Self::Instant,
             "manual" => Self::Manual,
             s => {
