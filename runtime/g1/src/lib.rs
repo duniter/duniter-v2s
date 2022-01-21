@@ -172,14 +172,14 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 32,
 
         // Consensus support.
-        Authorship: pallet_authorship::{Pallet, Call, Storage} = 10,
-        Offences: pallet_offences::{Pallet, Storage, Event} = 11,
-        Historical: session_historical::{Pallet} = 12,
-        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 13,
-        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event} = 14,
-        ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 15,
-        AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 16,
-        AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 17,
+        AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
+        Authorship: pallet_authorship::{Pallet, Call, Storage} = 11,
+        Offences: pallet_offences::{Pallet, Storage, Event} = 12,
+        Historical: session_historical::{Pallet} = 13,
+        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 14,
+        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event} = 15,
+        ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 16,
+        AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 17,
 
         // Governance stuff.
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
