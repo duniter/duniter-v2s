@@ -144,7 +144,7 @@ impl frame_support::traits::Contains<Call> for BaseCallFilter {
     }
 }
 
-common_runtime_except_gdev::pallets_config! {
+common_runtime::pallets_config! {
     impl pallet_sudo::Config for Runtime {
         type Event = Event;
         type Call = Call;
@@ -219,4 +219,4 @@ where
 //     // Specific impls provided to the `runtime_apis!` macro.
 // }
 // ```
-common_runtime_except_gdev::runtime_apis! {}
+common_runtime::runtime_apis! {}

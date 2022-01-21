@@ -49,7 +49,6 @@ std = [
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',
     'common-runtime/std',
-    'common-runtime-except-gdev/std',
     'serde',
     'sp-api/std',
     'sp-arithmetic/std',
@@ -69,7 +68,6 @@ std = [
 
 [dependencies]
 common-runtime = { path = "../common", default-features = false }
-common-runtime-except-gdev = { path = "../common-except-gdev", default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
 pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }

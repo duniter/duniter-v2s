@@ -29,7 +29,6 @@ parameter_types! {
     pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
         ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
     pub const SS58Prefix: u16 = 42;
-    pub const UncleGenerations: u32 = 0;
 }
 
 /*************/
@@ -39,6 +38,11 @@ parameter_types! {
 // Authority discovery
 parameter_types! {
     pub const MaxAuthorities: u32 = 32;
+}
+
+// Authorship
+parameter_types! {
+    pub const UncleGenerations: u32 = 0;
 }
 
 // Timestamp

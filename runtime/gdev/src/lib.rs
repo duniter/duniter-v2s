@@ -26,24 +26,29 @@ pub mod parameters;
 
 pub use self::parameters::*;
 pub use common_runtime::{
-    constants::*, handlers::OnMembershipEventHandler, AccountId, Address, Balance, BlockNumber,
-    Hash, Header, IdtyIndex, IdtyNameValidatorImpl, Index, Signature,
+    constants::*, entities::ValidatorFullIdentification, handlers::OnMembershipEventHandler,
+    AccountId, Address, Balance, BlockNumber, FullIdentificationOfImpl, Hash, Header, IdtyIndex,
+    IdtyNameValidatorImpl, Index, Signature,
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_duniter_test_parameters::Parameters as GenesisParameters;
 pub use pallet_identity::{IdtyStatus, IdtyValue};
+pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
+use pallet_session::historical as session_historical;
+pub use pallet_timestamp::Call as TimestampCall;
+use pallet_transaction_payment::CurrencyAdapter;
 pub use pallet_universal_dividend;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{Perbill, Permill};
+pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 
+use common_runtime::SessionManagerImpl;
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
-use pallet_transaction_payment::CurrencyAdapter;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor};
+use sp_core::OpaqueMetadata;
+use sp_runtime::traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     transaction_validity::{TransactionSource, TransactionValidity},
@@ -71,6 +76,9 @@ pub mod opaque {
     impl_opaque_keys! {
         pub struct SessionKeys {
             pub grandpa: Grandpa,
+            pub babe: Babe,
+            pub im_online: ImOnline,
+            pub authority_discovery: AuthorityDiscovery,
         }
     }
 }
@@ -117,6 +125,7 @@ pub type SignedExtra = (
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -134,7 +143,7 @@ impl frame_support::traits::Contains<Call> for BaseCallFilter {
             Call::Membership(
                 pallet_membership::Call::claim_membership { .. }
                     | pallet_membership::Call::revoke_membership { .. }
-            )
+            ) | Call::Session(_)
         )
     }
 }
@@ -182,22 +191,33 @@ construct_runtime!(
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 1,
 
-        // Test parameters
-        Parameters: pallet_duniter_test_parameters::{Pallet, Config<T>, Storage} = 2,
+        // Block creation
+        Babe: pallet_babe::{Pallet, Call, Storage, Config, ValidateUnsigned} = 2,
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 
+        // Test parameters
+        Parameters: pallet_duniter_test_parameters::{Pallet, Config<T>, Storage} = 4,
+
+        // Money management
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 32,
 
-        // Consensus support.
-        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event} = 10,
+        // Consensus support
+        Authorship: pallet_authorship::{Pallet, Call, Storage} = 10,
+        Offences: pallet_offences::{Pallet, Storage, Event} = 11,
+        Historical: session_historical::{Pallet} = 12,
+        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 13,
+        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event} = 14,
+        ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 15,
+        AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 16,
 
-        // Governance stuff.
+        // Governance stuff
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
 
-        // Cunning utilities.
+        // Cunning utilities
         Utility: pallet_utility::{Pallet, Call, Event} = 30,
 
-        // Universal dividend.
+        // Universal dividend
         UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage} = 40,
         UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
 
@@ -207,10 +227,18 @@ construct_runtime!(
         Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
         Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
 
-        // Multisig dispatch.
+        // Multisig dispatch
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 60,
     }
 );
+
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+where
+    Call: From<C>,
+{
+    type Extrinsic = UncheckedExtrinsic;
+    type OverarchingCall = Call;
+}
 
 // All of our runtimes share most of their Runtime API implementations.
 // We use a macro to implement this common part and add runtime-specific additional implementations.
@@ -222,42 +250,4 @@ construct_runtime!(
 //     // Specific impls provided to the `runtime_apis!` macro.
 // }
 // ```
-common_runtime::runtime_apis! {
-    impl sp_authority_discovery::AuthorityDiscoveryApi<Block> for Runtime {
-        fn authorities() -> Vec<sp_authority_discovery::AuthorityId> {
-            unimplemented!()
-        }
-    }
-
-    impl sp_consensus_babe::BabeApi<Block> for Runtime {
-        fn configuration() -> sp_consensus_babe::BabeGenesisConfiguration {
-            unimplemented!()
-        }
-
-        fn current_epoch_start() -> sp_consensus_babe::Slot {
-            unimplemented!()
-        }
-
-        fn current_epoch() -> sp_consensus_babe::Epoch {
-            unimplemented!()
-        }
-
-        fn next_epoch() -> sp_consensus_babe::Epoch {
-            unimplemented!()
-        }
-
-        fn generate_key_ownership_proof(
-            _slot: sp_consensus_babe::Slot,
-            _authority_id: sp_consensus_babe::AuthorityId,
-        ) -> Option<sp_consensus_babe::OpaqueKeyOwnershipProof> {
-            unimplemented!()
-        }
-
-        fn submit_report_equivocation_unsigned_extrinsic(
-            _equivocation_proof: sp_consensus_babe::EquivocationProof<<Block as BlockT>::Header>,
-            _key_owner_proof: sp_consensus_babe::OpaqueKeyOwnershipProof,
-        ) -> Option<()> {
-            unimplemented!()
-        }
-    }
-}
+common_runtime::runtime_apis! {}

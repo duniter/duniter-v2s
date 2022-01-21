@@ -122,6 +122,7 @@ pub type SignedExtra = (
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -144,7 +145,7 @@ impl frame_support::traits::Contains<Call> for BaseCallFilter {
     }
 }
 
-common_runtime_except_gdev::pallets_config! {
+common_runtime::pallets_config! {
     impl pallet_sudo::Config for Runtime {
         type Event = Event;
         type Call = Call;
@@ -162,9 +163,8 @@ construct_runtime!(
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 1,
 
-        // Babe must be before session.
+        // Block creation
         Babe: pallet_babe::{Pallet, Call, Storage, Config, ValidateUnsigned} = 2,
-
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 
         // Money management
@@ -219,4 +219,4 @@ where
 //     // Specific impls provided to the `runtime_apis!` macro.
 // }
 // ```
-common_runtime_except_gdev::runtime_apis! {}
+common_runtime::runtime_apis! {}

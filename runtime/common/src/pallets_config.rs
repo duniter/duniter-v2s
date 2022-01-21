@@ -109,7 +109,45 @@ macro_rules! pallets_config {
 			type NoPreimagePostponement = ();
 		}
 
-		// MONEY //
+		// BLOCK CREATION //
+
+		impl pallet_babe::Config for Runtime {
+			type EpochDuration = EpochDuration;
+			type ExpectedBlockTime = ExpectedBlockTime;
+
+			// session module is the trigger
+			type EpochChangeTrigger = pallet_babe::ExternalTrigger;
+
+			type DisabledValidators = Session;
+
+			type KeyOwnerProofSystem = Historical;
+
+			type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
+				KeyTypeId,
+				pallet_babe::AuthorityId,
+			)>>::Proof;
+
+			type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
+				KeyTypeId,
+				pallet_babe::AuthorityId,
+			)>>::IdentificationTuple;
+
+			type HandleEquivocation =
+				pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
+
+			type WeightInfo = ();
+
+			type MaxAuthorities = MaxAuthorities;
+		}
+
+		impl pallet_timestamp::Config for Runtime {
+			type Moment = u64;
+			type OnTimestampSet = Babe;
+			type MinimumPeriod = MinimumPeriod;
+			type WeightInfo = ();
+		}
+
+		// MONEY MANAGEMENT //
 
 		impl pallet_balances::Config for Runtime {
             type MaxLocks = MaxLocks;
@@ -135,6 +173,49 @@ macro_rules! pallets_config {
 
 		// CONSENSUS  //
 
+		impl pallet_authority_discovery::Config for Runtime {
+			type MaxAuthorities = MaxAuthorities;
+		}
+		impl pallet_authorship::Config for Runtime {
+			type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
+			type UncleGenerations = UncleGenerations;
+			type FilterUncle = ();
+			type EventHandler = ImOnline;
+		}
+
+		impl pallet_im_online::Config for Runtime {
+			type AuthorityId = ImOnlineId;
+			type Event = Event;
+			type ValidatorSet = Historical;
+			type NextSessionRotation = Babe;
+			type ReportUnresponsiveness = Offences;
+			type UnsignedPriority = ImOnlineUnsignedPriority;
+			type WeightInfo = ();
+			type MaxKeys = MaxKeys;
+			type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
+			type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
+		}
+		impl pallet_offences::Config for Runtime {
+			type Event = Event;
+			type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
+			type OnOffenceHandler = ();
+		}
+		impl pallet_session::Config for Runtime {
+			type Event = Event;
+			type ValidatorId = AccountId;
+			type ValidatorIdOf = sp_runtime::traits::ConvertInto;
+			type ShouldEndSession = Babe;
+			type NextSessionRotation = Babe;
+			type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, SessionManagerImpl>;
+			type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
+			type Keys = opaque::SessionKeys;
+			type WeightInfo = ();
+		}
+		impl pallet_session::historical::Config for Runtime {
+			type FullIdentification = ValidatorFullIdentification;
+			type FullIdentificationOf = FullIdentificationOfImpl;
+		}
+
         impl pallet_grandpa::Config for Runtime {
             type Event = Event;
             type Call = Call;
@@ -156,7 +237,7 @@ macro_rules! pallets_config {
 			type MaxAuthorities = MaxAuthorities;
         }
 
-		// UTILITY //
+		// UTILITIES //
 
 		impl pallet_utility::Config for Runtime {
 			type Event = Event;
@@ -165,7 +246,7 @@ macro_rules! pallets_config {
 			type WeightInfo = pallet_utility::weights::SubstrateWeight<Self>;
 		}
 
-		// MONEY CREATION //
+		// UNIVERSAL DIVIDEND //
 
         impl pallet_universal_dividend::Config for Runtime {
             type Currency = pallet_balances::Pallet<Runtime>;

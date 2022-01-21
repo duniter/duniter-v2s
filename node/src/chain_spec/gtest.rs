@@ -103,7 +103,6 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
     ))
 }
 
-
 fn devnet_genesis(
     wasm_binary: &[u8],
     initial_authorities: Vec<AuthorityKeys>,

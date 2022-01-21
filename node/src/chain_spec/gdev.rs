@@ -15,18 +15,30 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
+use common_runtime::constants::*;
 use common_runtime::entities::IdtyName;
 use gdev_runtime::{
-    AccountId, BalancesConfig, CertConfig, GenesisConfig, GenesisParameters, GrandpaConfig,
-    IdentityConfig, IdtyValue, MembershipConfig, ParametersConfig, SudoConfig, SystemConfig,
-    UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
+    opaque::SessionKeys, AccountId, BabeConfig, BalancesConfig, CertConfig, GenesisConfig,
+    GenesisParameters, IdentityConfig, IdtyValue, ImOnlineId, MembershipConfig, ParametersConfig,
+    SessionConfig, SudoConfig, SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig,
+    WASM_BINARY,
 };
 use maplit::btreemap;
 use sc_service::ChainType;
+use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
+use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::sr25519;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_membership::MembershipData;
 use std::collections::BTreeMap;
+
+pub type AuthorityKeys = (
+    AccountId,
+    BabeId,
+    GrandpaId,
+    ImOnlineId,
+    AuthorityDiscoveryId,
+);
 
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
 
@@ -36,8 +48,14 @@ const TOKEN_SYMBOL: &str = "ĞD";
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 /// Generate an authority keys.
-pub fn get_authority_keys_from_seed(s: &str) -> GrandpaId {
-    get_from_seed::<GrandpaId>(s)
+pub fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
+    (
+        get_account_id_from_seed::<sr25519::Public>(s),
+        get_from_seed::<BabeId>(s),
+        get_from_seed::<GrandpaId>(s),
+        get_from_seed::<ImOnlineId>(s),
+        get_from_seed::<AuthorityDiscoveryId>(s),
+    )
 }
 
 pub fn development_chain_spec() -> Result<ChainSpec, String> {
@@ -86,15 +104,9 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
     ))
 }
 
-fn get_env_u32(env_var_name: &'static str, default_value: u32) -> u32 {
-    std::env::var(env_var_name)
-        .map_or(Ok(default_value), |s| s.parse())
-        .unwrap_or_else(|_| panic!("{} must be a number", env_var_name))
-}
-
 fn devnet_genesis(
     wasm_binary: &[u8],
-    initial_authorities: Vec<GrandpaId>,
+    initial_authorities: Vec<AuthorityKeys>,
     initial_identities: BTreeMap<IdtyName, AccountId>,
     root_key: AccountId,
     _enable_println: bool,
@@ -130,11 +142,27 @@ fn devnet_genesis(
                 wot_min_cert_for_create_idty_right: 2,
             },
         },
+        authority_discovery: Default::default(),
         balances: BalancesConfig {
             balances: Default::default(),
         },
-        grandpa: GrandpaConfig {
-            authorities: initial_authorities.iter().map(|x| (x.clone(), 1)).collect(),
+        babe: BabeConfig {
+            authorities: Vec::with_capacity(0),
+            epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
+        },
+        grandpa: Default::default(),
+        im_online: Default::default(),
+        session: SessionConfig {
+            keys: initial_authorities
+                .iter()
+                .map(|x| {
+                    (
+                        x.0.clone(),
+                        x.0.clone(),
+                        session_keys(x.1.clone(), x.2.clone(), x.3.clone(), x.4.clone()),
+                    )
+                })
+                .collect::<Vec<_>>(),
         },
         sudo: SudoConfig {
             // Assign network admin rights.
@@ -177,5 +205,25 @@ fn devnet_genesis(
             first_ud: 1_000,
             initial_monetary_mass: 0,
         },
+    }
+}
+
+fn get_env_u32(env_var_name: &'static str, default_value: u32) -> u32 {
+    std::env::var(env_var_name)
+        .map_or(Ok(default_value), |s| s.parse())
+        .unwrap_or_else(|_| panic!("{} must be a number", env_var_name))
+}
+
+fn session_keys(
+    babe: BabeId,
+    grandpa: GrandpaId,
+    im_online: ImOnlineId,
+    authority_discovery: AuthorityDiscoveryId,
+) -> SessionKeys {
+    SessionKeys {
+        babe,
+        grandpa,
+        im_online,
+        authority_discovery,
     }
 }

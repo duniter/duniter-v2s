@@ -855,29 +855,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "common-runtime-except-gdev"
-version = "0.8.0-dev"
-dependencies = [
- "common-runtime",
- "frame-support",
- "frame-system",
- "pallet-certification",
- "pallet-identity",
- "pallet-session",
- "pallet-ud-accounts-storage",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "smallvec",
- "sp-arithmetic",
- "sp-consensus-babe",
- "sp-core",
- "sp-runtime",
- "sp-staking",
- "sp-std",
-]
-
-[[package]]
 name = "concurrent-queue"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1884,7 +1861,6 @@ name = "g1-runtime"
 version = "3.0.0"
 dependencies = [
  "common-runtime",
- "common-runtime-except-gdev",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1946,6 +1922,8 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex-literal",
+ "pallet-authority-discovery",
+ "pallet-authorship",
  "pallet-babe",
  "pallet-balances",
  "pallet-certification",
@@ -1953,10 +1931,14 @@ dependencies = [
  "pallet-duniter-wot",
  "pallet-grandpa",
  "pallet-identity",
+ "pallet-im-online",
  "pallet-membership",
  "pallet-multisig",
+ "pallet-offences",
  "pallet-scheduler",
+ "pallet-session",
  "pallet-sudo",
+ "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-ud-accounts-storage",
@@ -2117,7 +2099,6 @@ name = "gtest-runtime"
 version = "3.0.0"
 dependencies = [
  "common-runtime",
- "common-runtime-except-gdev",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
