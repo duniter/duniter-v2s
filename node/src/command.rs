@@ -54,15 +54,38 @@ impl SubstrateCli for Cli {
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         Ok(match id {
             #[cfg(feature = "gdev")]
-            "dev" | "gdev" => Box::new(chain_spec::gdev::development_chain_spec()?),
+            "dev" => Box::new(chain_spec::gdev::development_chain_spec()?),
+            #[cfg(feature = "gdev")]
+            "local" => Box::new(chain_spec::gdev::local_testnet_config(1, 3, 4)?),
+            #[cfg(feature = "gdev")]
+            "local2" => Box::new(chain_spec::gdev::local_testnet_config(2, 3, 4)?),
+            #[cfg(feature = "gdev")]
+            "local3" => Box::new(chain_spec::gdev::local_testnet_config(3, 3, 4)?),
+            #[cfg(feature = "gdev")]
+            "local4" => Box::new(chain_spec::gdev::local_testnet_config(4, 4, 5)?),
+            #[cfg(feature = "gdev")]
+            "gdev" => {
+                unimplemented!()
+                //Box::new(chain_spec::gdev::ChainSpec::from_json_file(file_path)?)
+            }
             #[cfg(feature = "gtest")]
             "gtest_dev" => Box::new(chain_spec::gtest::development_chain_spec()?),
             #[cfg(feature = "gtest")]
-            "local" | "gtest_local" => Box::new(chain_spec::gtest::local_testnet_config(2, 3)?),
+            "gtest_local" => Box::new(chain_spec::gtest::local_testnet_config(2, 3)?),
             #[cfg(feature = "gtest")]
-            "local3" | "gtest_local3" => Box::new(chain_spec::gtest::local_testnet_config(3, 4)?),
+            "gtest_local3" => Box::new(chain_spec::gtest::local_testnet_config(3, 4)?),
             #[cfg(feature = "gtest")]
-            "local4" | "gtest_local4" => Box::new(chain_spec::gtest::local_testnet_config(4, 5)?),
+            "gtest_local4" => Box::new(chain_spec::gtest::local_testnet_config(4, 5)?),
+            #[cfg(feature = "gtest")]
+            "gtest" => {
+                unimplemented!()
+                //Box::new(chain_spec::gtest::ChainSpec::from_json_file(file_path)?)
+            }
+            #[cfg(feature = "g1")]
+            "g1" => {
+                unimplemented!()
+                //Box::new(chain_spec::g1::ChainSpec::from_json_file(file_path)?)
+            }
             // Specs provided as json specify which runtime to use in their file name. For example,
             // `g1-custom.json` uses the g1 runtime.
             // `gdev-workshop.json` uses the gdev runtime.

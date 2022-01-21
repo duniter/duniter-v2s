@@ -101,6 +101,54 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
     ))
 }
 
+pub fn local_testnet_config(
+    initial_authorities_len: usize,
+    initial_smiths_len: usize,
+    initial_identities_len: usize,
+) -> Result<ChainSpec, String> {
+    let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
+
+    Ok(ChainSpec::from_genesis(
+        // Name
+        "Ğdev Local Testnet",
+        // ID
+        "gdev_local_testnet",
+        ChainType::Local,
+        move || {
+            gen_genesis_conf(
+                wasm_binary,
+                // Initial authorities len
+                initial_authorities_len,
+                // Initial smiths len,
+                initial_smiths_len,
+                // Initial identities len
+                initial_identities_len,
+                // Sudo account
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                true,
+            )
+        },
+        // Bootnodes
+        vec![],
+        // Telemetry
+        None,
+        // Protocol ID
+        None,
+        // Properties
+        Some(
+            serde_json::json!({
+                    "tokenDecimals": TOKEN_DECIMALS,
+                    "tokenSymbol": TOKEN_SYMBOL,
+            })
+            .as_object()
+            .expect("must be a map")
+            .clone(),
+        ),
+        // Extensions
+        None,
+    ))
+}
+
 fn gen_genesis_conf(
     wasm_binary: &[u8],
     initial_authorities_len: usize,
