@@ -36,6 +36,7 @@ pub mod types {
         CertCount: Default + Parameter,
         PeriodCount: Default + Parameter,
     > {
+        pub babe_epoch_duration: PeriodCount,
         pub cert_period: BlockNumber,
         pub cert_max_by_issuer: CertCount,
         pub cert_min_received_cert_to_issue_cert: CertCount,

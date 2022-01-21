@@ -67,7 +67,7 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
         "gdev",
         ChainType::Development,
         move || {
-            devnet_genesis(
+            gen_genesis_conf(
                 wasm_binary,
                 // Initial authorities len
                 1,
@@ -101,7 +101,7 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
     ))
 }
 
-fn devnet_genesis(
+fn gen_genesis_conf(
     wasm_binary: &[u8],
     initial_authorities_len: usize,
     initial_smiths_len: usize,
@@ -113,6 +113,7 @@ fn devnet_genesis(
     assert!(initial_smiths_len <= initial_identities_len);
     assert!(initial_authorities_len <= initial_smiths_len);
 
+    let babe_epoch_duration = get_env_u32("DUNITER_BABE_EPOCH_DURATION", 600) as u64;
     let cert_validity_period = get_env_u32("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
     let membership_period = get_env_u32("DUNITER_MEMBERSHIP_PERIOD", 1_000);
     let membership_renewable_period = get_env_u32("DUNITER_MEMBERSHIP_RENEWABLE_PERIOD", 50);
@@ -140,6 +141,7 @@ fn devnet_genesis(
         },
         parameters: ParametersConfig {
             parameters: GenesisParameters {
+                babe_epoch_duration,
                 cert_period: 15,
                 cert_max_by_issuer: 10,
                 cert_min_received_cert_to_issue_cert: 2,

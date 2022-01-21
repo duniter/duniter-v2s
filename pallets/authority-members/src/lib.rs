@@ -234,10 +234,10 @@ pub mod pallet {
                 return Err(Error::<T>::SessionKeysNotProvided.into());
             }
 
-			if Self::is_incoming(member_id) {
+            if Self::is_incoming(member_id) {
                 return Err(Error::<T>::AlreadyIncoming.into());
             }
-			let is_outgoing = Self::is_outgoing(member_id);
+            let is_outgoing = Self::is_outgoing(member_id);
             if Self::is_online(member_id) && !is_outgoing {
                 return Err(Error::<T>::AlreadyOnline.into());
             }

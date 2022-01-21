@@ -150,6 +150,7 @@ impl frame_support::traits::Contains<Call> for BaseCallFilter {
 // Configure FRAME pallets to include in runtime.
 common_runtime::pallets_config! {
     // Dynamic parameters
+    pub type EpochDuration = pallet_duniter_test_parameters::BabeEpochDuration<Runtime>;
     pub type CertPeriod = pallet_duniter_test_parameters::CertPeriod<Runtime>;
     pub type MaxByIssuer = pallet_duniter_test_parameters::CertMaxByIssuer<Runtime>;
     pub type MinReceivedCertToBeAbleToIssueCert = pallet_duniter_test_parameters::CertMinReceivedCertToIssueCert<Runtime>;

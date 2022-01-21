@@ -51,11 +51,9 @@ parameter_types! {
 }
 
 // Babe
-pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = HOURS;
 parameter_types! {
-    pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS as u64;
     pub const ExpectedBlockTime: u64 = MILLISECS_PER_BLOCK;
-    pub const ReportLongevity: u64 = 168 * EpochDuration::get();
+    pub const ReportLongevity: u64 = 168 * HOURS as u64;
 }
 
 // ImOnline
