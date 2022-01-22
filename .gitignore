@@ -17,3 +17,6 @@
 
 # build folder
 build
+
+# Temporary files
+tmp
