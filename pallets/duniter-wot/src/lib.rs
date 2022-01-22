@@ -269,10 +269,21 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex
         } else if pallet_membership::Pallet::<T, I>::is_in_pending_memberships(receiver)
             && receiver_received_count >= T::MinCertForMembership::get()
         {
-            // TODO insert `receiver` in distance queue
-            Self::dispath_idty_call(pallet_identity::Call::validate_identity {
-                idty_index: receiver,
-            });
+			if T::IsSubWot::get() {
+				if let Err(e) = pallet_membership::Pallet::<T, I>::claim_membership(
+					RawOrigin::Root.into(),
+					receiver,
+				) {
+					sp_std::if_std! {
+						println!("{:?}", e)
+					}
+				}
+			} else {
+				// TODO insert `receiver` in distance queue
+				Self::dispath_idty_call(pallet_identity::Call::validate_identity {
+					idty_index: receiver,
+				});
+			}
 
             if receiver_received_count == T::MinReceivedCertToBeAbleToIssueCert::get() {
                 Self::do_apply_first_issuable_on(receiver);
