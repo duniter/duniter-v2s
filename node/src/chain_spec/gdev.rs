@@ -207,7 +207,7 @@ fn gen_genesis_conf(
                 ud_reeval_period_in_blocks: 200,
                 smith_cert_period: 15,
                 smith_cert_max_by_issuer: 8,
-                smith_cert_min_received_cert_to_issue_cert: 3,
+                smith_cert_min_received_cert_to_issue_cert: 2,
                 smith_cert_renewable_period: 50,
                 smith_cert_validity_period: 1_000,
                 smith_membership_period: 1_000,
