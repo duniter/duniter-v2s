@@ -18,7 +18,7 @@ name = 'duniter'
 path = "node/src/main.rs"
 
 [features]
-default = ["gdev", "gtest"]
+default = ["gdev"]
 g1 = ["g1-runtime"]
 gdev = ["gdev-runtime"]
 gtest = ["gtest-runtime"]
