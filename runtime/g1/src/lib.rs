@@ -130,6 +130,7 @@ impl frame_support::traits::Contains<Call> for BaseCallFilter {
                 pallet_membership::Call::claim_membership { .. }
                     | pallet_membership::Call::revoke_membership { .. }
             ) | Call::Session(_)
+                | Call::SmithsMembership(pallet_membership::Call::claim_membership { .. })
         )
     }
 }
