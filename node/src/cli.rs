@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
+pub mod key;
+
 use sc_cli::RunCmd;
 use std::str::FromStr;
 use structopt::StructOpt;
@@ -26,7 +28,7 @@ pub struct Cli {
     #[structopt(flatten)]
     pub run: RunCmd,
 
-    /// When blocks should be sealed in the dev service.
+    /// How blocks should be sealed
     ///
     /// Options are "production", "instant", "manual", or timer interval in milliseconds
     #[structopt(long, default_value = "production")]
@@ -36,7 +38,7 @@ pub struct Cli {
 #[derive(Debug, StructOpt)]
 pub enum Subcommand {
     /// Key management cli utilities
-    Key(sc_cli::KeySubcommand),
+    Key(key::KeySubcommand),
     /// Build a chain specification.
     BuildSpec(sc_cli::BuildSpecCmd),
 
