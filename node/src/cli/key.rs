@@ -19,7 +19,7 @@ use sc_cli::{
 };
 use sc_keystore::LocalKeystore;
 use sc_service::config::{BasePath, KeystoreConfig};
-use sp_core::crypto::{KeyTypeId, SecretString};
+use sp_core::crypto::{AccountId32, KeyTypeId, SecretString};
 use sp_keystore::{SyncCryptoStore, SyncCryptoStorePtr};
 use std::sync::Arc;
 use structopt::StructOpt;
@@ -80,7 +80,7 @@ impl GenSessionKeysCmd {
         let chain_spec = cli.load_spec(&chain_id)?;
         let config_dir = base_path.config_dir(chain_spec.id());
 
-        let mut public_keys = Vec::with_capacity(128);
+        let mut public_keys_bytes = Vec::with_capacity(128);
         for (key_type_id, crypto_scheme) in KEY_TYPES {
             let (keystore, public) = match self.keystore_params.keystore_config(&config_dir)? {
                 (_, KeystoreConfig::Path { path, password }) => {
@@ -96,11 +96,20 @@ impl GenSessionKeysCmd {
             SyncCryptoStore::insert_unknown(&*keystore, key_type_id, &suri, &public[..])
                 .map_err(|_| Error::KeyStoreOperation)?;
 
-            public_keys.extend_from_slice(&public[..]);
+            public_keys_bytes.extend_from_slice(&public[..]);
         }
 
-        println!("Session Keys: 0x{}", hex::encode(public_keys));
+        let mut buffer = [0; 32];
+        buffer.copy_from_slice(&public_keys_bytes[..32]);
+        println!("grandpa: {}", AccountId32::new(buffer));
+        buffer.copy_from_slice(&public_keys_bytes[32..64]);
+        println!("babe: {}", AccountId32::new(buffer));
+        buffer.copy_from_slice(&public_keys_bytes[64..96]);
+        println!("im_online: {}", AccountId32::new(buffer));
+        buffer.copy_from_slice(&public_keys_bytes[96..]);
+        println!("authority_discovery: {}", AccountId32::new(buffer));
 
+        println!("Session Keys: 0x{}", hex::encode(public_keys_bytes));
         Ok(())
     }
 }
