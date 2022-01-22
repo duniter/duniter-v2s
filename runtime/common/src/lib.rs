@@ -107,9 +107,9 @@ macro_rules! declare_session_keys {
 			#[derive(Clone, codec::Decode, Debug, codec::Encode, Eq, PartialEq)]
 			pub struct SessionKeysWrapper(pub SessionKeys);
 
-			impl Into<SessionKeys> for SessionKeysWrapper {
-				fn into(self) -> SessionKeys {
-					self.0
+			impl From<SessionKeysWrapper> for SessionKeys {
+				fn from(keys_wrapper: SessionKeysWrapper) -> SessionKeys {
+					keys_wrapper.0
 				}
 			}
 

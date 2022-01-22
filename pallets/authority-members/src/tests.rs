@@ -115,13 +115,13 @@ fn test_max_keys_life_rule() {
         assert_eq!(AuthorityMembers::online(), vec![3, 6]);
         assert_eq!(AuthorityMembers::member(9), None);
 
-		// Member 9 should be "deprogrammed" but still in the authorities set for 1 session
+        // Member 9 should be "deprogrammed" but still in the authorities set for 1 session
         assert_eq!(Session::queued_keys().len(), 2);
         assert_eq!(Session::queued_keys()[0].0, 3);
         assert_eq!(Session::queued_keys()[1].0, 6);
         assert_eq!(Session::validators(), vec![3, 6, 9]);
 
-		// Member 9 should be **effectively** out at session 6
+        // Member 9 should be **effectively** out at session 6
         run_to_block(31);
         assert_eq!(Session::current_index(), 6);
         assert_eq!(Session::validators(), vec![3, 6]);
