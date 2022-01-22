@@ -1268,6 +1268,7 @@ dependencies = [
  "sp-consensus-babe",
  "sp-core",
  "sp-finality-grandpa",
+ "sp-io",
  "sp-keyring",
  "sp-keystore",
  "sp-membership",

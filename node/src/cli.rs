@@ -15,6 +15,7 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 pub mod key;
+pub mod utils;
 
 use sc_cli::RunCmd;
 use std::str::FromStr;
@@ -59,6 +60,9 @@ pub enum Subcommand {
 
     /// Revert the chain to a previous state.
     Revert(sc_cli::RevertCmd),
+
+    /// Some tools for developers and advanced testers
+    Utils(utils::UtilsSubCommand),
 
     /// The custom benchmark subcommmand benchmarking runtime pallets.
     #[structopt(name = "benchmark", about = "Benchmark runtime pallets.")]
