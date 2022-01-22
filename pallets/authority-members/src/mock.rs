@@ -149,6 +149,7 @@ impl IsMember<u64> for TestIsSmithMember {
 
 impl pallet_authority_members::Config for Test {
     type Event = Event;
+	type KeysWrapper = MockSessionKeys;
     type IsMember = TestIsSmithMember;
     type MaxOfflineSessions = ConstU32<2>;
     type MemberId = u64;

@@ -88,3 +88,38 @@ impl<
             .map(|idty_value| idty_value.owner_key)
     }
 }
+
+#[macro_export]
+macro_rules! declare_session_keys {
+	{} => {
+		pub mod opaque {
+			use super::*;
+
+			impl_opaque_keys! {
+				pub struct SessionKeys {
+					pub grandpa: Grandpa,
+					pub babe: Babe,
+					pub im_online: ImOnline,
+					pub authority_discovery: AuthorityDiscovery,
+				}
+			}
+
+			#[derive(Clone, codec::Decode, Debug, codec::Encode, Eq, PartialEq)]
+			pub struct SessionKeysWrapper(pub SessionKeys);
+
+			impl Into<SessionKeys> for SessionKeysWrapper {
+				fn into(self) -> SessionKeys {
+					self.0
+				}
+			}
+
+			impl scale_info::TypeInfo for SessionKeysWrapper {
+				type Identity = [u8; 128];
+
+				fn type_info() -> scale_info::Type {
+					Self::Identity::type_info()
+				}
+			}
+		}
+	}
+}

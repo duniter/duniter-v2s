@@ -62,6 +62,7 @@ pub mod pallet {
         frame_system::Config + pallet_session::Config + pallet_session::historical::Config
     {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type KeysWrapper: Parameter + Into<Self::Keys>;
         type IsMember: IsMember<Self::MemberId>;
         type OnRemovedMember: OnRemovedMember<Self::MemberId>;
         type OwnerKeyOf: Convert<Self::MemberId, Option<Self::AccountId>>;
@@ -256,7 +257,7 @@ pub mod pallet {
         pub fn set_session_keys(
             origin: OriginFor<T>,
             member_id: T::MemberId,
-            keys: T::Keys,
+            keys: T::KeysWrapper,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin.clone())?;
             Self::verify_ownership_and_membership(&who, member_id)?;
@@ -265,7 +266,7 @@ pub mod pallet {
                 .ok_or(pallet_session::Error::<T>::NoAssociatedValidatorId)?;
 
             let _post_info = pallet_session::Call::<T>::set_keys {
-                keys,
+                keys: keys.into(),
                 proof: vec![],
             }
             .dispatch_bypass_filter(origin)?;

@@ -239,6 +239,7 @@ macro_rules! pallets_config {
 
 		impl pallet_authority_members::Config for Runtime {
 			type Event = Event;
+			type KeysWrapper = opaque::SessionKeysWrapper;
 			type IsMember = SmithsMembership;
 			type OnRemovedMember = OnRemovedAUthorityMemberHandler<Runtime>;
 			type OwnerKeyOf = OwnerKeyOfImpl<Runtime>;
@@ -350,7 +351,7 @@ macro_rules! pallets_config {
 			type IdtyId = IdtyIndex;
 			type MembershipExternalStorage = sp_membership::traits::NoExternalStorage;
 			type MembershipPeriod = SmithMembershipPeriod;
-			type MetaData = SmithsMembershipMetaData<opaque::SessionKeys>;
+			type MetaData = SmithsMembershipMetaData<opaque::SessionKeysWrapper>;
 			type OnEvent = OnSmithMembershipEventHandler<SmithsSubWot, Runtime>;
 			type PendingMembershipPeriod = SmithPendingMembershipPeriod;
 			type RenewablePeriod = SmithRenewablePeriod;

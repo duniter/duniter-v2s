@@ -68,17 +68,7 @@ pub use frame_support::{
     StorageValue,
 };
 
-pub mod opaque {
-    use super::*;
-    impl_opaque_keys! {
-        pub struct SessionKeys {
-            pub grandpa: Grandpa,
-            pub babe: Babe,
-            pub im_online: ImOnline,
-            pub authority_discovery: AuthorityDiscovery,
-        }
-    }
-}
+common_runtime::declare_session_keys! {}
 
 // To learn more about runtime versioning and what each of the following value means:
 //   https://substrate.dev/docs/en/knowledgebase/runtime/upgrades#runtime-versioning
@@ -146,10 +136,10 @@ impl frame_support::traits::Contains<Call> for BaseCallFilter {
 }
 
 common_runtime::pallets_config! {
-impl pallet_sudo::Config for Runtime {
-    type Event = Event;
-    type Call = Call;
-}
+    impl pallet_sudo::Config for Runtime {
+        type Event = Event;
+        type Call = Call;
+    }
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

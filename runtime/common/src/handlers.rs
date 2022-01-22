@@ -62,17 +62,22 @@ pub struct OnSmithMembershipEventHandler<Inner, Runtime>(
 
 impl<
         IdtyIndex: Copy + Parameter,
-        SessionKeys: Clone,
-        Inner: sp_membership::traits::OnEvent<IdtyIndex, SmithsMembershipMetaData<SessionKeys>>,
+        SessionKeysWrapper: Clone,
+        Inner: sp_membership::traits::OnEvent<IdtyIndex, SmithsMembershipMetaData<SessionKeysWrapper>>,
         Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex>
-            + pallet_authority_members::Config<MemberId = IdtyIndex>
-            + pallet_membership::Config<Instance2, MetaData = SmithsMembershipMetaData<SessionKeys>>
-            + pallet_session::Config<Keys = SessionKeys>,
-    > sp_membership::traits::OnEvent<IdtyIndex, SmithsMembershipMetaData<SessionKeys>>
+            + pallet_authority_members::Config<KeysWrapper = SessionKeysWrapper, MemberId = IdtyIndex>
+            + pallet_membership::Config<
+                Instance2,
+                MetaData = SmithsMembershipMetaData<SessionKeysWrapper>,
+            >,
+    > sp_membership::traits::OnEvent<IdtyIndex, SmithsMembershipMetaData<SessionKeysWrapper>>
     for OnSmithMembershipEventHandler<Inner, Runtime>
 {
     fn on_event(
-        membership_event: &sp_membership::Event<IdtyIndex, SmithsMembershipMetaData<SessionKeys>>,
+        membership_event: &sp_membership::Event<
+            IdtyIndex,
+            SmithsMembershipMetaData<SessionKeysWrapper>,
+        >,
     ) -> Weight {
         (match membership_event {
             sp_membership::Event::MembershipAcquired(

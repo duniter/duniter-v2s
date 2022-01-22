@@ -23,9 +23,9 @@ use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Clone, Encode, Decode, Default, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-pub struct SmithsMembershipMetaData<SessionKeys> {
+pub struct SmithsMembershipMetaData<SessionKeysWrapper> {
     pub peer_id: [u8; 32],
-    pub session_keys: SessionKeys,
+    pub session_keys: SessionKeysWrapper,
 }
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
