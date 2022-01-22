@@ -137,17 +137,17 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn member)]
     pub type Members<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::MemberId, MemberData<T::ValidatorId>, OptionQuery>;
+        StorageMap<_, Twox64Concat, T::MemberId, MemberData<T::ValidatorId>, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn members_expire_on)]
     pub type MembersExpireOn<T: Config> =
-        StorageMap<_, Blake2_128Concat, SessionIndex, Vec<T::MemberId>, ValueQuery>;
+        StorageMap<_, Twox64Concat, SessionIndex, Vec<T::MemberId>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn must_rotate_keys_before)]
     pub type MustRotateKeysBefore<T: Config> =
-        StorageMap<_, Blake2_128Concat, SessionIndex, Vec<T::MemberId>, ValueQuery>;
+        StorageMap<_, Twox64Concat, SessionIndex, Vec<T::MemberId>, ValueQuery>;
 
     // HOOKS //
 

@@ -199,7 +199,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn idty_cert_meta)]
     pub type StorageIdtyCertMeta<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_128Concat, T::IdtyIndex, IdtyCertMeta<T::BlockNumber>, OptionQuery>;
+        StorageMap<_, Twox64Concat, T::IdtyIndex, IdtyCertMeta<T::BlockNumber>, OptionQuery>;
 
     /// Certifications by issuer
     #[pallet::storage]
@@ -207,9 +207,9 @@ pub mod pallet {
     /// Certifications by issuer
     pub(super) type StorageCertsByIssuer<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
         _,
-        Identity,
+        Twox64Concat,
         T::IdtyIndex,
-        Identity,
+        Twox64Concat,
         T::IdtyIndex,
         CertValue<T::BlockNumber>,
         OptionQuery,
@@ -226,13 +226,8 @@ pub mod pallet {
     /// Certifications removable on
     #[pallet::storage]
     #[pallet::getter(fn certs_removable_on)]
-    pub type StorageCertsRemovableOn<T: Config<I>, I: 'static = ()> = StorageMap<
-        _,
-        Blake2_128Concat,
-        T::BlockNumber,
-        Vec<(T::IdtyIndex, T::IdtyIndex)>,
-        OptionQuery,
-    >;
+    pub type StorageCertsRemovableOn<T: Config<I>, I: 'static = ()> =
+        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(T::IdtyIndex, T::IdtyIndex)>, OptionQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -428,10 +423,7 @@ pub mod pallet {
         fn prune_certifications(block_number: T::BlockNumber) -> Weight {
             let mut total_weight: Weight = 0;
 
-            use frame_support::storage::generator::StorageMap as _;
-            if let Some(certs) = StorageCertsRemovableOn::<T, I>::from_query_to_optional_value(
-                StorageCertsRemovableOn::<T, I>::take(block_number),
-            ) {
+            if let Some(certs) = StorageCertsRemovableOn::<T, I>::take(block_number) {
                 for (issuer, receiver) in certs {
                     total_weight += Self::remove_cert_inner(issuer, receiver, Some(block_number));
                 }

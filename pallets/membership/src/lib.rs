@@ -125,32 +125,32 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn membership)]
     pub type Membership<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_128Concat, T::IdtyId, MembershipData<T::BlockNumber>, OptionQuery>;
+        StorageMap<_, Twox64Concat, T::IdtyId, MembershipData<T::BlockNumber>, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn memberships_expire_on)]
     pub type MembershipsExpireOn<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_128Concat, T::BlockNumber, Vec<T::IdtyId>, ValueQuery>;
+        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::IdtyId>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn pending_membership)]
     pub type PendingMembership<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_128Concat, T::IdtyId, T::MetaData, OptionQuery>;
+        StorageMap<_, Twox64Concat, T::IdtyId, T::MetaData, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn pending_memberships_expire_on)]
     pub type PendingMembershipsExpireOn<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_128Concat, T::BlockNumber, Vec<T::IdtyId>, ValueQuery>;
+        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::IdtyId>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn revoked_membership)]
     pub type RevokedMembership<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_128Concat, T::IdtyId, (), OptionQuery>;
+        StorageMap<_, Twox64Concat, T::IdtyId, (), OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn revoked_memberships_pruned_on)]
     pub type RevokedMembershipsPrunedOn<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_128Concat, T::BlockNumber, Vec<T::IdtyId>, OptionQuery>;
+        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::IdtyId>, OptionQuery>;
 
     // EVENTS //
 
@@ -412,19 +412,11 @@ pub mod pallet {
         fn expire_pending_memberships(block_number: T::BlockNumber) -> Weight {
             let mut total_weight: Weight = 0;
 
-            use frame_support::storage::generator::StorageMap as _;
-            if let Some(identities_ids) =
-                PendingMembershipsExpireOn::<T, I>::from_query_to_optional_value(
-                    PendingMembershipsExpireOn::<T, I>::take(block_number),
-                )
-            {
-                for idty_id in identities_ids {
-                    PendingMembership::<T, I>::remove(&idty_id);
-                    Self::deposit_event(Event::PendingMembershipExpired(idty_id));
-                    total_weight += T::OnEvent::on_event(
-                        &sp_membership::Event::PendingMembershipExpired(idty_id),
-                    );
-                }
+            for idty_id in PendingMembershipsExpireOn::<T, I>::take(block_number) {
+                PendingMembership::<T, I>::remove(&idty_id);
+                Self::deposit_event(Event::PendingMembershipExpired(idty_id));
+                total_weight +=
+                    T::OnEvent::on_event(&sp_membership::Event::PendingMembershipExpired(idty_id));
             }
 
             total_weight
@@ -432,12 +424,7 @@ pub mod pallet {
         fn prune_revoked_memberships(block_number: T::BlockNumber) -> Weight {
             let total_weight: Weight = 0;
 
-            use frame_support::storage::generator::StorageMap as _;
-            if let Some(identities_ids) =
-                RevokedMembershipsPrunedOn::<T, I>::from_query_to_optional_value(
-                    RevokedMembershipsPrunedOn::<T, I>::take(block_number),
-                )
-            {
+            if let Some(identities_ids) = RevokedMembershipsPrunedOn::<T, I>::take(block_number) {
                 for idty_id in identities_ids {
                     RevokedMembership::<T, I>::remove(idty_id);
                 }

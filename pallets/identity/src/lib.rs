@@ -150,17 +150,16 @@ pub mod pallet {
     #[pallet::getter(fn identity)]
     pub type Identities<T: Config> = StorageMap<
         _,
-        Blake2_128Concat,
+        Twox64Concat,
         T::IdtyIndex,
         IdtyValue<T::AccountId, T::BlockNumber, T::IdtyData>,
         OptionQuery,
     >;
 
-    /// IdentitiesByDid
     #[pallet::storage]
     #[pallet::getter(fn identity_by_did)]
-    pub type IdentitiesByDid<T: Config> =
-        StorageMap<_, Blake2_128Concat, IdtyName, T::IdtyIndex, ValueQuery>;
+    pub type IdentitiesNames<T: Config> =
+        StorageMap<_, Blake2_128, IdtyName, T::IdtyIndex, ValueQuery>;
 
     #[pallet::storage]
     pub(super) type NextIdtyIndex<T: Config> = StorageValue<_, T::IdtyIndex, ValueQuery>;
@@ -172,13 +171,8 @@ pub mod pallet {
     /// Identities by removed block
     #[pallet::storage]
     #[pallet::getter(fn removable_on)]
-    pub type IdentitiesRemovableOn<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        T::BlockNumber,
-        Vec<(T::IdtyIndex, IdtyStatus)>,
-        ValueQuery,
-    >;
+    pub type IdentitiesRemovableOn<T: Config> =
+        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(T::IdtyIndex, IdtyStatus)>, ValueQuery>;
 
     // HOOKS //
 
@@ -248,7 +242,7 @@ pub mod pallet {
             if !T::IdtyNameValidator::validate(&idty_name) {
                 return Err(Error::<T>::IdtyNameInvalid.into());
             }
-            if <IdentitiesByDid<T>>::contains_key(&idty_name) {
+            if <IdentitiesNames<T>>::contains_key(&idty_name) {
                 return Err(Error::<T>::IdtyNameAlreadyExist.into());
             }
 
@@ -278,7 +272,7 @@ pub mod pallet {
                     data: idty_data,
                 },
             );
-            <IdentitiesByDid<T>>::insert(idty_name.clone(), idty_index);
+            <IdentitiesNames<T>>::insert(idty_name.clone(), idty_index);
             IdentitiesRemovableOn::<T>::append(removable_on, (idty_index, IdtyStatus::Created));
             Self::inc_identities_counter();
             Self::deposit_event(Event::IdtyCreated(idty_name, owner_key));
@@ -454,7 +448,7 @@ pub mod pallet {
         }
         pub(super) fn do_remove_identity(idty_index: T::IdtyIndex) -> Weight {
             if let Some(idty_val) = <Identities<T>>::take(idty_index) {
-                <IdentitiesByDid<T>>::remove(idty_val.name);
+                <IdentitiesNames<T>>::remove(idty_val.name);
             }
             Self::dec_identities_counter();
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Removed);
