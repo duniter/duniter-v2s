@@ -176,13 +176,24 @@ macro_rules! pallets_config {
 		impl pallet_authority_discovery::Config for Runtime {
 			type MaxAuthorities = MaxAuthorities;
 		}
+		impl pallet_authority_members::Config for Runtime {
+			type Event = Event;
+			type KeysWrapper = opaque::SessionKeysWrapper;
+			type IsMember = SmithsMembership;
+			type OnRemovedMember = OnRemovedAUthorityMemberHandler<Runtime>;
+			type OwnerKeyOf = OwnerKeyOfImpl<Runtime>;
+			type MemberId = IdtyIndex;
+			type MaxKeysLife = frame_support::pallet_prelude::ConstU32<1_000>;
+			type MaxOfflineSessions = frame_support::pallet_prelude::ConstU32<100>;
+			type RefreshValidatorIdOrigin = EnsureRoot<Self::AccountId>;
+			type RemoveMemberOrigin = EnsureRoot<Self::AccountId>;
+		}
 		impl pallet_authorship::Config for Runtime {
 			type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
 			type UncleGenerations = UncleGenerations;
 			type FilterUncle = ();
 			type EventHandler = ImOnline;
 		}
-
 		impl pallet_im_online::Config for Runtime {
 			type AuthorityId = ImOnlineId;
 			type Event = Event;
@@ -215,7 +226,6 @@ macro_rules! pallets_config {
 			type FullIdentification = ValidatorFullIdentification;
 			type FullIdentificationOf = FullIdentificationOfImpl;
 		}
-
         impl pallet_grandpa::Config for Runtime {
             type Event = Event;
             type Call = Call;
@@ -236,18 +246,6 @@ macro_rules! pallets_config {
 
 			type MaxAuthorities = MaxAuthorities;
         }
-
-		impl pallet_authority_members::Config for Runtime {
-			type Event = Event;
-			type KeysWrapper = opaque::SessionKeysWrapper;
-			type IsMember = SmithsMembership;
-			type OnRemovedMember = OnRemovedAUthorityMemberHandler<Runtime>;
-			type OwnerKeyOf = OwnerKeyOfImpl<Runtime>;
-			type MemberId = IdtyIndex;
-			type MaxOfflineSessions = frame_support::pallet_prelude::ConstU32<100>;
-			type RefreshValidatorIdOrigin = EnsureRoot<Self::AccountId>;
-			type RemoveMemberOrigin = EnsureRoot<Self::AccountId>;
-		}
 
 		// UTILITIES //
 

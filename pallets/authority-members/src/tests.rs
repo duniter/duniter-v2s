@@ -34,6 +34,7 @@ fn test_genesis_build() {
             AuthorityMembers::member(3),
             Some(MemberData {
                 expire_on_session: 0,
+                must_rotate_keys_before: 5,
                 validator_id: 3,
             })
         );
@@ -41,6 +42,7 @@ fn test_genesis_build() {
             AuthorityMembers::member(6),
             Some(MemberData {
                 expire_on_session: 0,
+                must_rotate_keys_before: 5,
                 validator_id: 6,
             })
         );
@@ -48,6 +50,7 @@ fn test_genesis_build() {
             AuthorityMembers::member(9),
             Some(MemberData {
                 expire_on_session: 0,
+                must_rotate_keys_before: 5,
                 validator_id: 9,
             })
         );
@@ -69,6 +72,63 @@ fn test_new_session_shoud_not_change_authorities_set() {
 }
 
 #[test]
+fn test_max_keys_life_rule() {
+    new_test_ext(3).execute_with(|| {
+        run_to_block(11);
+
+        assert_eq!(Session::current_index(), 2);
+        assert_eq!(Session::validators(), vec![3, 6, 9]);
+
+        // Member 3 and 6 rotate their sessions keys
+        assert_ok!(AuthorityMembers::set_session_keys(
+            Origin::signed(3),
+            3,
+            UintAuthorityId(3).into()
+        ),);
+        assert_ok!(AuthorityMembers::set_session_keys(
+            Origin::signed(6),
+            6,
+            UintAuthorityId(6).into()
+        ),);
+
+        // Verify state
+        assert_eq!(
+            AuthorityMembers::member(3),
+            Some(MemberData {
+                expire_on_session: 0,
+                must_rotate_keys_before: 7,
+                validator_id: 3,
+            })
+        );
+        assert_eq!(
+            AuthorityMembers::member(6),
+            Some(MemberData {
+                expire_on_session: 0,
+                must_rotate_keys_before: 7,
+                validator_id: 6,
+            })
+        );
+
+        // Member 9 should expire at session 5
+        run_to_block(26);
+        assert_eq!(Session::current_index(), 5);
+        assert_eq!(AuthorityMembers::online(), vec![3, 6]);
+        assert_eq!(AuthorityMembers::member(9), None);
+
+		// Member 9 should be "deprogrammed" but still in the authorities set for 1 session
+        assert_eq!(Session::queued_keys().len(), 2);
+        assert_eq!(Session::queued_keys()[0].0, 3);
+        assert_eq!(Session::queued_keys()[1].0, 6);
+        assert_eq!(Session::validators(), vec![3, 6, 9]);
+
+		// Member 9 should be **effectively** out at session 6
+        run_to_block(31);
+        assert_eq!(Session::current_index(), 6);
+        assert_eq!(Session::validators(), vec![3, 6]);
+    });
+}
+
+#[test]
 fn test_go_offline() {
     new_test_ext(3).execute_with(|| {
         run_to_block(1);
@@ -84,6 +144,7 @@ fn test_go_offline() {
             AuthorityMembers::member(9),
             Some(MemberData {
                 expire_on_session: 0,
+                must_rotate_keys_before: 5,
                 validator_id: 9,
             })
         );
@@ -94,6 +155,7 @@ fn test_go_offline() {
             AuthorityMembers::member(9),
             Some(MemberData {
                 expire_on_session: 4,
+                must_rotate_keys_before: 5,
                 validator_id: 9,
             })
         );
@@ -133,6 +195,7 @@ fn test_go_online() {
             AuthorityMembers::member(12),
             Some(MemberData {
                 expire_on_session: 2,
+                must_rotate_keys_before: 5,
                 validator_id: 12,
             })
         );
@@ -148,6 +211,7 @@ fn test_go_online() {
             AuthorityMembers::member(12),
             Some(MemberData {
                 expire_on_session: 2,
+                must_rotate_keys_before: 5,
                 validator_id: 12,
             })
         );
@@ -196,6 +260,7 @@ fn test_go_online_then_go_offline_in_same_session() {
             AuthorityMembers::member(12),
             Some(MemberData {
                 expire_on_session: 2,
+                must_rotate_keys_before: 5,
                 validator_id: 12,
             })
         );
@@ -223,6 +288,7 @@ fn test_go_offline_then_go_online_in_same_session() {
             AuthorityMembers::member(9),
             Some(MemberData {
                 expire_on_session: 0,
+                must_rotate_keys_before: 5,
                 validator_id: 9,
             })
         );

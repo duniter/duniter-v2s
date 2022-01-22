@@ -66,9 +66,11 @@ pub mod pallet {
         type IsMember: IsMember<Self::MemberId>;
         type OnRemovedMember: OnRemovedMember<Self::MemberId>;
         type OwnerKeyOf: Convert<Self::MemberId, Option<Self::AccountId>>;
-        type MemberId: Copy + MaybeSerializeDeserialize + Parameter + Ord;
+        #[pallet::constant]
+        type MaxKeysLife: Get<SessionIndex>;
         #[pallet::constant]
         type MaxOfflineSessions: Get<SessionIndex>;
+        type MemberId: Copy + MaybeSerializeDeserialize + Parameter + Ord;
         type RefreshValidatorIdOrigin: EnsureOrigin<Self::Origin>;
         type RemoveMemberOrigin: EnsureOrigin<Self::Origin>;
     }
@@ -93,7 +95,10 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             for (member_id, (validator_id, _is_online)) in &self.initial_authorities {
-                Members::<T>::insert(member_id, MemberData::new_genesis(validator_id.clone()));
+                Members::<T>::insert(
+                    member_id,
+                    MemberData::new_genesis(T::MaxKeysLife::get(), validator_id.clone()),
+                );
             }
             let mut members_ids = self
                 .initial_authorities
@@ -110,7 +115,8 @@ pub mod pallet {
                 .collect::<Vec<T::MemberId>>();
             members_ids.sort();
 
-            OnlineAuthorities::<T>::put(members_ids);
+            OnlineAuthorities::<T>::put(members_ids.clone());
+            MustRotateKeysBefore::<T>::insert(T::MaxKeysLife::get(), members_ids);
         }
     }
 
@@ -136,6 +142,11 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn members_expire_on)]
     pub type MembersExpireOn<T: Config> =
+        StorageMap<_, Blake2_128Concat, SessionIndex, Vec<T::MemberId>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn must_rotate_keys_before)]
+    pub type MustRotateKeysBefore<T: Config> =
         StorageMap<_, Blake2_128Concat, SessionIndex, Vec<T::MemberId>, ValueQuery>;
 
     // HOOKS //
@@ -271,16 +282,22 @@ pub mod pallet {
             }
             .dispatch_bypass_filter(origin)?;
 
-            let expire_on_session = pallet_session::Pallet::<T>::current_index()
-                .saturating_add(T::MaxOfflineSessions::get());
+            let current_session_index = pallet_session::Pallet::<T>::current_index();
+            let expire_on_session =
+                current_session_index.saturating_add(T::MaxOfflineSessions::get());
+            let must_rotate_keys_before =
+                current_session_index.saturating_add(T::MaxKeysLife::get());
 
             Members::<T>::mutate_exists(member_id, |member_data_opt| {
                 let mut member_data = member_data_opt.get_or_insert(MemberData {
                     expire_on_session,
+                    must_rotate_keys_before,
                     validator_id: validator_id.clone(),
                 });
+                member_data.must_rotate_keys_before = must_rotate_keys_before;
                 member_data.validator_id = validator_id;
             });
+            MustRotateKeysBefore::<T>::append(must_rotate_keys_before, member_id);
 
             Ok(().into())
         }
@@ -299,17 +316,14 @@ pub mod pallet {
                 return Err(Error::<T>::NotMember.into());
             }
 
-            let expire_on_session = pallet_session::Pallet::<T>::current_index()
-                .saturating_add(T::MaxOfflineSessions::get());
-
             Members::<T>::mutate(member_id, |member_data_opt| {
-                let validator_id_clone = validator_id.clone();
-                member_data_opt
-                    .get_or_insert(MemberData::new(validator_id, expire_on_session))
-                    .validator_id = validator_id_clone;
-            });
-
-            Ok(().into())
+                if let Some(member_data) = member_data_opt {
+                    member_data.validator_id = validator_id;
+                    Ok(().into())
+                } else {
+                    Err(Error::<T>::MemberNotFound.into())
+                }
+            })
         }
         #[pallet::weight(0)]
         pub fn remove_member(
@@ -356,6 +370,13 @@ pub mod pallet {
             for member_id in MembersExpireOn::<T>::take(current_session_index) {
                 if let Some(member_data) = Members::<T>::get(member_id) {
                     if member_data.expire_on_session == current_session_index {
+                        Self::do_remove_member(member_id);
+                    }
+                }
+            }
+            for member_id in MustRotateKeysBefore::<T>::take(current_session_index) {
+                if let Some(member_data) = Members::<T>::get(member_id) {
+                    if member_data.must_rotate_keys_before == current_session_index {
                         Self::do_remove_member(member_id);
                     }
                 }
