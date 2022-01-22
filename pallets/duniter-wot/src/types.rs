@@ -91,3 +91,19 @@ impl<T: Config<I>, I: 'static> EnsureOrigin<(T::Origin, IdtyIndex, IdtyIndex)>
         }
     }
 }
+
+#[cfg_attr(feature = "std", derive(Debug))]
+#[derive(codec::Decode, codec::Encode, Eq, PartialEq, TypeInfo)]
+pub enum WotDiff {
+    AddNode(IdtyIndex),
+    AddPendingLink(IdtyIndex, IdtyIndex),
+    AddLink(IdtyIndex, IdtyIndex),
+    DelLink(IdtyIndex, IdtyIndex),
+    DisableNode(IdtyIndex),
+}
+
+impl Default for WotDiff {
+    fn default() -> Self {
+        unreachable!()
+    }
+}

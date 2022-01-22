@@ -16,6 +16,7 @@
 
 use crate::mock::Identity;
 use crate::mock::*;
+use crate::WotDiff;
 use frame_support::assert_err;
 use frame_support::assert_ok;
 use frame_support::error::BadOrigin;
@@ -94,11 +95,12 @@ fn test_create_idty_ok() {
         );
         assert_eq!(Identity::identity(6).unwrap().status, IdtyStatus::Created);
         assert_eq!(Identity::identity(6).unwrap().removable_on, 4);
+        assert!(DuniterWot::wot_diffs().is_empty());
     });
 }
 
 #[test]
-fn test_ud_right_achievement_ok() {
+fn test_new_idty_validation() {
     new_test_ext(5).execute_with(|| {
         // Alice create Ferdie identity
         run_to_block(2);
@@ -117,14 +119,16 @@ fn test_ud_right_achievement_ok() {
             6
         ));
 
+        // Ferdie is not yet validated, so there should be no wot diff
+        assert!(DuniterWot::wot_diffs().is_empty());
+
         // Bob should be able to certify Ferdie
         run_to_block(4);
         assert_ok!(Cert::add_cert(Origin::signed(2), 2, 6));
 
         let events = System::events();
-        // 3 events should have occurred: NewCert, MembershipAcquired, IdtyValidated and IdtyAcquireRight
+        // 3 events should have occurred: NewCert, MembershipAcquired and IdtyValidated
         assert_eq!(events.len(), 3);
-        //println!("{:?}", events[2]);
         assert_eq!(
             events[0],
             EventRecord {
@@ -155,6 +159,17 @@ fn test_ud_right_achievement_ok() {
                 ),)),
                 topics: vec![],
             }
+        );
+
+        // Ferdie has just been validated, so the wot diff should contain her entry and all her
+        // certifications
+        assert_eq!(
+            DuniterWot::wot_diffs(),
+            vec![
+                WotDiff::AddNode(6),
+                WotDiff::AddLink(1, 6),
+                WotDiff::AddLink(2, 6)
+            ]
         );
     });
 }
@@ -228,6 +243,7 @@ fn test_idty_membership_expire_them_requested() {
                 topics: vec![],
             }
         );
+        assert_eq!(DuniterWot::wot_diffs(), vec![WotDiff::DisableNode(3),]);
 
         // Charlie's identity should be disabled at block #5
         assert_eq!(Identity::identity(3).unwrap().status, IdtyStatus::Disabled);
@@ -268,5 +284,7 @@ fn test_idty_membership_expire_them_requested() {
                 topics: vec![],
             }
         );
+
+        assert_eq!(DuniterWot::wot_diffs(), vec![WotDiff::AddNode(3),]);
     });
 }

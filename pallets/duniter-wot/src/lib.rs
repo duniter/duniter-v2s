@@ -33,6 +33,7 @@ pub use pallet::*;
 pub use types::*;
 
 use frame_support::pallet_prelude::*;
+use frame_system::pallet_prelude::BlockNumberFor;
 use frame_system::RawOrigin;
 use pallet_certification::traits::SetNextIssuableOn;
 use pallet_identity::{IdtyEvent, IdtyStatus};
@@ -46,6 +47,7 @@ pub mod pallet {
     use super::*;
     use frame_support::dispatch::UnfilteredDispatchable;
     use frame_support::traits::StorageVersion;
+    use sp_std::vec::Vec;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -68,6 +70,34 @@ pub mod pallet {
         type IsSubWot: Get<bool>;
         type MinCertForMembership: Get<u32>;
         type MinCertForCreateIdtyRight: Get<u32>;
+    }
+
+    // STORAGE //
+
+    #[pallet::storage]
+    #[pallet::getter(fn wot_diffs)]
+    pub(super) type WotDiffs<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, Vec<WotDiff>, ValueQuery>;
+
+    // HOOKS //
+
+    #[pallet::hooks]
+    impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
+        fn on_initialize(_: T::BlockNumber) -> Weight {
+            0
+        }
+        fn on_finalize(block_number: T::BlockNumber) {
+            const OFFCHAIN_WOT_DIFFS_KEY: &[u8] = b"ocw/wot-diffs/";
+            let diffs = WotDiffs::<T, I>::take();
+            let key = block_number.using_encoded(|encoded_block_number| {
+                OFFCHAIN_WOT_DIFFS_KEY
+                    .iter()
+                    .chain(encoded_block_number)
+                    .copied()
+                    .collect::<Vec<u8>>()
+            });
+            sp_io::offchain_index::set(&key, &diffs.encode());
+        }
     }
 
     // INTERNAL FUNCTIONS //
@@ -197,11 +227,19 @@ where
 {
     fn on_event(membership_event: &sp_membership::Event<IdtyIndex, MetaData>) -> Weight {
         match membership_event {
-            sp_membership::Event::<IdtyIndex, MetaData>::MembershipAcquired(_, _) => {}
-            sp_membership::Event::<IdtyIndex, MetaData>::MembershipExpired(idty_index) => {
+            sp_membership::Event::<IdtyIndex, MetaData>::MembershipAcquired(idty_index, _) => {
+                if !T::IsSubWot::get() {
+                    WotDiffs::<T, I>::append(WotDiff::AddNode(*idty_index));
+                }
+            }
+            sp_membership::Event::<IdtyIndex, MetaData>::MembershipExpired(idty_index)
+            | sp_membership::Event::<IdtyIndex, MetaData>::MembershipRevoked(idty_index) => {
                 Self::dispath_idty_call(pallet_identity::Call::disable_identity {
                     idty_index: *idty_index,
                 });
+                if !T::IsSubWot::get() {
+                    WotDiffs::<T, I>::append(WotDiff::DisableNode(*idty_index));
+                }
             }
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipRenewed(_) => {}
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipRequested(idty_index) => {
@@ -222,7 +260,6 @@ where
                     }
                 }
             }
-            sp_membership::Event::<IdtyIndex, MetaData>::MembershipRevoked(_) => {}
             sp_membership::Event::<IdtyIndex, MetaData>::PendingMembershipExpired(idty_index) => {
                 Self::dispath_idty_call(pallet_identity::Call::remove_identity {
                     idty_index: *idty_index,
@@ -257,7 +294,7 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pall
 
 impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex> for Pallet<T, I> {
     fn on_new_cert(
-        _issuer: IdtyIndex,
+        issuer: IdtyIndex,
         _issuer_issued_count: u32,
         receiver: IdtyIndex,
         receiver_received_count: u32,
@@ -265,6 +302,9 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex
         if pallet_membership::Pallet::<T, I>::is_member(&receiver) {
             if receiver_received_count == T::MinReceivedCertToBeAbleToIssueCert::get() {
                 Self::do_apply_first_issuable_on(receiver);
+            }
+            if T::IsSubWot::get() {
+                WotDiffs::<T, I>::append(WotDiff::AddLink(issuer, receiver));
             }
         } else if pallet_membership::Pallet::<T, I>::is_in_pending_memberships(receiver)
             && receiver_received_count >= T::MinCertForMembership::get()
@@ -283,6 +323,9 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex
                 Self::dispath_idty_call(pallet_identity::Call::validate_identity {
                     idty_index: receiver,
                 });
+                for issuer in pallet_certification::Pallet::<T, I>::certs_by_receiver(receiver) {
+                    WotDiffs::<T, I>::append(WotDiff::AddLink(issuer, receiver));
+                }
             }
 
             if receiver_received_count == T::MinReceivedCertToBeAbleToIssueCert::get() {
@@ -297,13 +340,15 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
     for Pallet<T, I>
 {
     fn on_removed_cert(
-        _issuer: IdtyIndex,
+        issuer: IdtyIndex,
         _issuer_issued_count: u32,
         receiver: IdtyIndex,
         receiver_received_count: u32,
         _expiration: bool,
     ) -> Weight {
-        if receiver_received_count < T::MinCertForMembership::get() {
+        if receiver_received_count < T::MinCertForMembership::get()
+            && pallet_membership::Pallet::<T, I>::is_member(&receiver)
+        {
             // Revoke receiver membership and disable his identity
             if let Err(e) = pallet_membership::Pallet::<T, I>::revoke_membership(
                 RawOrigin::Root.into(),
@@ -312,11 +357,10 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
                 sp_std::if_std! {
                     println!("{:?}", e)
                 }
-            } else {
-                Self::dispath_idty_call(pallet_identity::Call::disable_identity {
-                    idty_index: receiver,
-                });
             }
+        }
+        if !T::IsSubWot::get() {
+            WotDiffs::<T, I>::append(WotDiff::DelLink(issuer, receiver));
         }
         0
     }

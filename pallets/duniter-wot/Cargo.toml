@@ -22,6 +22,7 @@ std = [
     'pallet-membership/std',
     'serde',
     'sp-core/std',
+    'sp-io/std',
     'sp-membership/std',
     'sp-runtime/std',
 	'sp-std/std',
@@ -65,6 +66,11 @@ optional = true
 features = ["derive"]
 
 [dependencies.sp-core]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
+
+[dependencies.sp-io]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
