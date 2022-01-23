@@ -205,10 +205,8 @@ fn gen_genesis_conf(
             identities: initial_identities
                 .iter()
                 .map(|(name, account)| IdtyValue {
-                    data: Default::default(),
                     name: name.clone(),
                     next_creatable_identity_on: Default::default(),
-                    owner_key: account.clone(),
                     removable_on: 0,
                     status: gtest_runtime::IdtyStatus::Validated,
                 })

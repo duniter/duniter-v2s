@@ -67,10 +67,6 @@ pub mod pallet {
         type EnsureIdtyCallAllowed: EnsureIdtyCallAllowed<Self>;
         /// Minimum duration between the creation of 2 identities by the same creator
         type IdtyCreationPeriod: Get<Self::BlockNumber>;
-        ///  Identity custom data
-        type IdtyData: Parameter + Member + MaybeSerializeDeserialize + Debug + Default;
-        ///  Identity custom data provider
-        type IdtyDataProvider: ProvideIdtyData<Self>;
         /// A short identity index.
         type IdtyIndex: Parameter
             + Member
@@ -99,7 +95,10 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub identities: Vec<IdtyValue<T::AccountId, T::BlockNumber, T::IdtyData>>,
+        pub identities: sp_std::collections::btree_map::BTreeMap<
+            T::AccountId,
+            (IdtyName, IdtyValue<T::BlockNumber>),
+        >,
     }
 
     #[cfg(feature = "std")]
@@ -115,22 +114,18 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             let mut names = sp_std::collections::btree_set::BTreeSet::new();
-            for idty_value in &self.identities {
+            for (idty_name, idty_value) in self.identities.values() {
                 assert!(
-                    !names.contains(&idty_value.name),
+                    !names.contains(&idty_name),
                     "Idty name {:?} is present twice",
-                    &idty_value.name
+                    &idty_name
                 );
                 assert!(idty_value.removable_on == T::BlockNumber::zero());
-                names.insert(idty_value.name.clone());
+                names.insert(idty_name);
             }
 
-            // We need to sort identities to ensure determinisctic result
-            let mut identities = self.identities.clone();
-            identities.sort_by(|idty_val_1, idty_val_2| idty_val_1.name.cmp(&idty_val_2.name));
-
             <IdentitiesCount<T>>::put(self.identities.len() as u64);
-            for idty_value in &identities {
+            for (owner_key, (idty_name, idty_value)) in &self.identities {
                 let idty_index = Pallet::<T>::get_next_idty_index();
                 if idty_value.removable_on > T::BlockNumber::zero() {
                     <IdentitiesRemovableOn<T>>::append(
@@ -139,27 +134,27 @@ pub mod pallet {
                     )
                 }
                 <Identities<T>>::insert(idty_index, idty_value);
+                IdentitiesNames::<T>::insert(idty_name, ());
+                IdentityIndexOf::<T>::insert(owner_key, idty_index);
             }
         }
     }
 
     // STORAGE //
 
-    /// Identities
     #[pallet::storage]
     #[pallet::getter(fn identity)]
-    pub type Identities<T: Config> = StorageMap<
-        _,
-        Twox64Concat,
-        T::IdtyIndex,
-        IdtyValue<T::AccountId, T::BlockNumber, T::IdtyData>,
-        OptionQuery,
-    >;
+    pub type Identities<T: Config> =
+        StorageMap<_, Twox64Concat, T::IdtyIndex, IdtyValue<T::BlockNumber>, OptionQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn identity_index_of)]
+    pub type IdentityIndexOf<T: Config> =
+        StorageMap<_, Blake2_128, T::AccountId, T::IdtyIndex, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn identity_by_did)]
-    pub type IdentitiesNames<T: Config> =
-        StorageMap<_, Blake2_128, IdtyName, T::IdtyIndex, ValueQuery>;
+    pub type IdentitiesNames<T: Config> = StorageMap<_, Blake2_128, IdtyName, (), OptionQuery>;
 
     #[pallet::storage]
     pub(super) type NextIdtyIndex<T: Config> = StorageValue<_, T::IdtyIndex, ValueQuery>;
@@ -195,14 +190,14 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// A new identity has been created
-        /// [idty, owner_key]
-        IdtyCreated(IdtyName, T::AccountId),
+        /// [idty_index, owner_key]
+        IdtyCreated(T::IdtyIndex, T::AccountId),
         /// An identity has been confirmed by it's owner
-        /// [idty]
-        IdtyConfirmed(IdtyName),
+        /// [idty_index, owner_key, name]
+        IdtyConfirmed(T::IdtyIndex, T::AccountId, IdtyName),
         /// An identity has been validated
-        /// [idty]
-        IdtyValidated(IdtyName),
+        /// [idty_index]
+        IdtyValidated(T::IdtyIndex),
     }
 
     // CALLS //
@@ -215,19 +210,15 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn create_identity(
             origin: OriginFor<T>,
-            creator: T::IdtyIndex,
-            idty_name: IdtyName,
             owner_key: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             // Verification phase //
             let who = ensure_signed(origin)?;
 
+            let creator =
+                IdentityIndexOf::<T>::try_get(&who).map_err(|_| Error::<T>::IdtyIndexNotFound)?;
             let creator_idty_val =
-                Identities::<T>::try_get(&creator).map_err(|_| Error::<T>::CreatorNotExist)?;
-
-            if who != creator_idty_val.owner_key {
-                return Err(Error::<T>::RequireToBeOwner.into());
-            }
+                Identities::<T>::try_get(&creator).map_err(|_| Error::<T>::IdtyNotFound)?;
 
             if !T::EnsureIdtyCallAllowed::can_create_identity(creator) {
                 return Err(Error::<T>::CreatorNotAllowedToCreateIdty.into());
@@ -239,13 +230,6 @@ pub mod pallet {
                 return Err(Error::<T>::NotRespectIdtyCreationPeriod.into());
             }
 
-            if !T::IdtyNameValidator::validate(&idty_name) {
-                return Err(Error::<T>::IdtyNameInvalid.into());
-            }
-            if <IdentitiesNames<T>>::contains_key(&idty_name) {
-                return Err(Error::<T>::IdtyNameAlreadyExist.into());
-            }
-
             // Apply phase //
 
             <Identities<T>>::mutate_exists(creator, |idty_val_opt| {
@@ -255,27 +239,21 @@ pub mod pallet {
                 }
             });
 
-            let idty_data =
-                T::IdtyDataProvider::provide_identity_data(creator, &idty_name, &owner_key);
-
             let removable_on = block_number + T::ConfirmPeriod::get();
 
             let idty_index = Self::get_next_idty_index();
             <Identities<T>>::insert(
                 idty_index,
                 IdtyValue {
-                    name: idty_name.clone(),
                     next_creatable_identity_on: T::BlockNumber::zero(),
-                    owner_key: owner_key.clone(),
                     removable_on,
                     status: IdtyStatus::Created,
-                    data: idty_data,
                 },
             );
-            <IdentitiesNames<T>>::insert(idty_name.clone(), idty_index);
             IdentitiesRemovableOn::<T>::append(removable_on, (idty_index, IdtyStatus::Created));
+            IdentityIndexOf::<T>::insert(owner_key.clone(), idty_index);
             Self::inc_identities_counter();
-            Self::deposit_event(Event::IdtyCreated(idty_name, owner_key));
+            Self::deposit_event(Event::IdtyCreated(idty_index, owner_key));
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Created { creator });
             Ok(().into())
         }
@@ -283,64 +261,68 @@ pub mod pallet {
         pub fn confirm_identity(
             origin: OriginFor<T>,
             idty_name: IdtyName,
-            idty_index: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
+            // Verification phase //
             let who = ensure_signed(origin)?;
 
-            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_index) {
-                if who == idty_value.owner_key {
-                    if idty_value.status != IdtyStatus::Created {
-                        return Err(Error::<T>::IdtyAlreadyConfirmed.into());
-                    }
-                    if idty_value.name != idty_name {
-                        return Err(Error::<T>::NotSameIdtyName.into());
-                    }
-                    if !T::EnsureIdtyCallAllowed::can_confirm_identity(idty_index) {
-                        return Err(Error::<T>::NotAllowedToConfirmIdty.into());
-                    }
+            let idty_index =
+                IdentityIndexOf::<T>::try_get(&who).map_err(|_| Error::<T>::IdtyIndexNotFound)?;
 
-                    idty_value.status = IdtyStatus::ConfirmedByOwner;
+            let mut idty_value =
+                Identities::<T>::try_get(idty_index).map_err(|_| Error::<T>::IdtyNotFound)?;
 
-                    <Identities<T>>::insert(idty_index, idty_value);
-                    Self::deposit_event(Event::IdtyConfirmed(idty_name));
-                    T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Confirmed);
-                    Ok(().into())
-                } else {
-                    Err(Error::<T>::RequireToBeOwner.into())
-                }
-            } else {
-                Err(Error::<T>::IdtyNotFound.into())
+            if idty_value.status != IdtyStatus::Created {
+                return Err(Error::<T>::IdtyAlreadyConfirmed.into());
             }
+            if !T::IdtyNameValidator::validate(&idty_name) {
+                return Err(Error::<T>::IdtyNameInvalid.into());
+            }
+            if <IdentitiesNames<T>>::contains_key(&idty_name) {
+                return Err(Error::<T>::IdtyNameAlreadyExist.into());
+            }
+            if !T::EnsureIdtyCallAllowed::can_confirm_identity(idty_index, who.clone()) {
+                return Err(Error::<T>::NotAllowedToConfirmIdty.into());
+            }
+
+            // Apply phase //
+            idty_value.status = IdtyStatus::ConfirmedByOwner;
+
+            <Identities<T>>::insert(idty_index, idty_value);
+            <IdentitiesNames<T>>::insert(idty_name.clone(), ());
+            Self::deposit_event(Event::IdtyConfirmed(idty_index, who, idty_name));
+            T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Confirmed);
+            Ok(().into())
         }
         #[pallet::weight(0)]
         pub fn validate_identity(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
+            // Verification phase //
             T::IdtyValidationOrigin::ensure_origin(origin)?;
 
-            if let Ok(mut idty_value) = <Identities<T>>::try_get(idty_index) {
-                match idty_value.status {
-                    IdtyStatus::Created => Err(Error::<T>::IdtyNotConfirmedByOwner.into()),
-                    IdtyStatus::ConfirmedByOwner | IdtyStatus::Disabled => {
-                        if !T::EnsureIdtyCallAllowed::can_validate_identity(idty_index) {
-                            return Err(Error::<T>::NotAllowedToValidateIdty.into());
-                        }
+            let mut idty_value =
+                Identities::<T>::try_get(idty_index).map_err(|_| Error::<T>::IdtyNotFound)?;
 
-                        idty_value.removable_on = T::BlockNumber::zero();
-                        idty_value.status = IdtyStatus::Validated;
-                        let name = idty_value.name.clone();
-
-                        <Identities<T>>::insert(idty_index, idty_value);
-                        Self::deposit_event(Event::IdtyValidated(name));
-                        T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Validated);
-                        Ok(().into())
+            match idty_value.status {
+                IdtyStatus::Created => return Err(Error::<T>::IdtyNotConfirmedByOwner.into()),
+                IdtyStatus::ConfirmedByOwner | IdtyStatus::Disabled => {
+                    if !T::EnsureIdtyCallAllowed::can_validate_identity(idty_index) {
+                        return Err(Error::<T>::NotAllowedToValidateIdty.into());
                     }
-                    IdtyStatus::Validated => Err(Error::<T>::IdtyAlreadyValidated.into()),
                 }
-            } else {
-                Err(Error::<T>::IdtyNotFound.into())
+                IdtyStatus::Validated => return Err(Error::<T>::IdtyAlreadyValidated.into()),
             }
+
+            // Apply phase //
+            idty_value.removable_on = T::BlockNumber::zero();
+            idty_value.status = IdtyStatus::Validated;
+
+            <Identities<T>>::insert(idty_index, idty_value);
+            Self::deposit_event(Event::IdtyValidated(idty_index));
+            T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Validated);
+
+            Ok(().into())
         }
         #[pallet::weight(0)]
         pub fn disable_identity(
@@ -371,10 +353,49 @@ pub mod pallet {
         pub fn remove_identity(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
+            idty_name: Option<IdtyName>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
             Self::do_remove_identity(idty_index);
+            if let Some(idty_name) = idty_name {
+                <IdentitiesNames<T>>::remove(idty_name);
+            }
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(0)]
+        pub fn prune_item_identities_names(
+            origin: OriginFor<T>,
+            names: Vec<IdtyName>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            for name in names {
+                <IdentitiesNames<T>>::remove(name);
+            }
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(0)]
+        pub fn prune_item_identity_index_of(
+            origin: OriginFor<T>,
+            accounts_ids: Vec<T::AccountId>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            accounts_ids
+                .into_iter()
+                .filter(|account_id| {
+                    if let Ok(idty_index) = IdentityIndexOf::<T>::try_get(&account_id) {
+                        !Identities::<T>::contains_key(&idty_index)
+                    } else {
+                        false
+                    }
+                })
+                .for_each(IdentityIndexOf::<T>::remove);
 
             Ok(().into())
         }
@@ -384,8 +405,6 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Creator not exist
-        CreatorNotExist,
         /// Creator not allowed to create identities
         CreatorNotAllowedToCreateIdty,
         /// Identity already confirmed
@@ -394,6 +413,8 @@ pub mod pallet {
         IdtyAlreadyValidated,
         /// You are not allowed to create a new identity now
         IdtyCreationNotAllowed,
+        /// Identity index not found
+        IdtyIndexNotFound,
         /// Identity name already exist
         IdtyNameAlreadyExist,
         /// Idty name invalid
@@ -414,26 +435,12 @@ pub mod pallet {
         NotAllowedToValidateIdty,
         /// Not same identity name
         NotSameIdtyName,
-        /// This operation requires to be the owner of the identity
-        RequireToBeOwner,
         /// Right already added
         RightAlreadyAdded,
         /// Right not exist
         RightNotExist,
         /// Not respect IdtyCreationPeriod
         NotRespectIdtyCreationPeriod,
-    }
-
-    // PUBLIC FUNCTIONS //
-
-    impl<T: Config> Pallet<T> {
-        pub fn set_idty_data(idty_index: T::IdtyIndex, idty_data: T::IdtyData) {
-            Identities::<T>::mutate_exists(idty_index, |idty_val_opt| {
-                if let Some(ref mut idty_val) = idty_val_opt {
-                    idty_val.data = idty_data;
-                }
-            });
-        }
     }
 
     // INTERNAL FUNCTIONS //
@@ -447,9 +454,7 @@ pub mod pallet {
             }
         }
         pub(super) fn do_remove_identity(idty_index: T::IdtyIndex) -> Weight {
-            if let Some(idty_val) = <Identities<T>>::take(idty_index) {
-                <IdentitiesNames<T>>::remove(idty_val.name);
-            }
+            <Identities<T>>::remove(idty_index);
             Self::dec_identities_counter();
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Removed);
 
@@ -484,5 +489,11 @@ pub mod pallet {
 
             total_weight
         }
+    }
+}
+
+impl<T: Config> sp_runtime::traits::Convert<T::AccountId, Option<T::IdtyIndex>> for Pallet<T> {
+    fn convert(account_id: T::AccountId) -> Option<T::IdtyIndex> {
+        Self::identity_index_of(account_id)
     }
 }

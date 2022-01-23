@@ -48,7 +48,7 @@ fn test_creator_not_allowed_to_create_idty() {
         // Alice should not be able te create an identity before block #2
         // because Alice.next_issuable_on = 2
         assert_err!(
-            Identity::create_identity(Origin::signed(1), 1, IdtyName::from("Dave"), 4),
+            Identity::create_identity(Origin::signed(1), 4),
             pallet_identity::Error::<Test>::CreatorNotAllowedToCreateIdty
         );
     });
@@ -60,12 +60,7 @@ fn test_create_idty_ok() {
         run_to_block(2);
 
         // Alice should be able te create an identity at block #2
-        assert_ok!(Identity::create_identity(
-            Origin::signed(1),
-            1,
-            IdtyName::from("Ferdie"),
-            6
-        ));
+        assert_ok!(Identity::create_identity(Origin::signed(1), 6));
         // 2 events should have occurred: IdtyCreated and NewCert
         let events = System::events();
         assert_eq!(events.len(), 2);
@@ -73,10 +68,7 @@ fn test_create_idty_ok() {
             events[0],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyCreated(
-                    IdtyName::from("Ferdie"),
-                    6
-                )),
+                event: Event::Identity(pallet_identity::Event::IdtyCreated(6, 6)),
                 topics: vec![],
             }
         );
@@ -104,19 +96,13 @@ fn test_new_idty_validation() {
     new_test_ext(5).execute_with(|| {
         // Alice create Ferdie identity
         run_to_block(2);
-        assert_ok!(Identity::create_identity(
-            Origin::signed(1),
-            1,
-            IdtyName::from("Ferdie"),
-            6
-        ));
+        assert_ok!(Identity::create_identity(Origin::signed(1), 6));
 
         // Ferdie confirm it's identity
         run_to_block(3);
         assert_ok!(Identity::confirm_identity(
             Origin::signed(6),
             IdtyName::from("Ferdie"),
-            6
         ));
 
         // Ferdie is not yet validated, so there should be no wot diff
@@ -154,9 +140,7 @@ fn test_new_idty_validation() {
             events[2],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyValidated(IdtyName::from(
-                    "Ferdie"
-                ),)),
+                event: Event::Identity(pallet_identity::Event::IdtyValidated(6,)),
                 topics: vec![],
             }
         );
@@ -180,12 +164,7 @@ fn test_confirm_idty_ok() {
         run_to_block(2);
 
         // Alice create Ferdie identity
-        assert_ok!(Identity::create_identity(
-            Origin::signed(1),
-            1,
-            IdtyName::from("Ferdie"),
-            6
-        ));
+        assert_ok!(Identity::create_identity(Origin::signed(1), 6));
 
         run_to_block(3);
 
@@ -193,7 +172,6 @@ fn test_confirm_idty_ok() {
         assert_ok!(Identity::confirm_identity(
             Origin::signed(6),
             IdtyName::from("Ferdie"),
-            6
         ));
         let events = System::events();
         // 2 events should have occurred: MembershipRequested and IdtyConfirmed
@@ -211,9 +189,11 @@ fn test_confirm_idty_ok() {
             events[1],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyConfirmed(IdtyName::from(
-                    "Ferdie"
-                ),)),
+                event: Event::Identity(pallet_identity::Event::IdtyConfirmed(
+                    6,
+                    6,
+                    IdtyName::from("Ferdie"),
+                )),
                 topics: vec![],
             }
         );
@@ -226,9 +206,9 @@ fn test_idty_membership_expire_them_requested() {
         run_to_block(4);
 
         // Alice renew her membership
-        assert_ok!(Membership::renew_membership(Origin::signed(1), 1));
+        assert_ok!(Membership::renew_membership(Origin::signed(1), None));
         // Bob renew his membership
-        assert_ok!(Membership::renew_membership(Origin::signed(2), 2));
+        assert_ok!(Membership::renew_membership(Origin::signed(2), None));
 
         // Charlie's membership should expire at block #5
         run_to_block(5);
@@ -253,7 +233,11 @@ fn test_idty_membership_expire_them_requested() {
 
         // Charlie should be able to request membership
         run_to_block(6);
-        assert_ok!(Membership::request_membership(Origin::signed(3), 3, ()));
+        assert_ok!(Membership::request_membership(
+            Origin::signed(3),
+            3,
+            crate::MembershipMetaData(3)
+        ));
 
         // Charlie should re-enter in the wot immediatly
         let events = System::events();
@@ -278,9 +262,7 @@ fn test_idty_membership_expire_them_requested() {
             events[2],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyValidated(IdtyName::from(
-                    "Charlie"
-                ))),
+                event: Event::Identity(pallet_identity::Event::IdtyValidated(3)),
                 topics: vec![],
             }
         );

@@ -16,6 +16,7 @@
 
 pub use pallet_identity::IdtyName;
 
+use super::AccountId;
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
@@ -59,8 +60,16 @@ macro_rules! declare_session_keys {
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct SmithsMembershipMetaData<SessionKeysWrapper> {
+    pub owner_key: AccountId,
     pub p2p_endpoint: sp_runtime::RuntimeString,
     pub session_keys: SessionKeysWrapper,
+}
+impl<SessionKeysWrapper> sp_membership::traits::Validate<AccountId>
+    for SmithsMembershipMetaData<SessionKeysWrapper>
+{
+    fn validate(&self, who: &AccountId) -> bool {
+        &self.owner_key == who
+    }
 }
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]

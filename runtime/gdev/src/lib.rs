@@ -41,7 +41,7 @@ pub use pallet_universal_dividend;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 
-use common_runtime::{IdtyNameValidatorImpl, OwnerKeyOfImpl};
+use common_runtime::IdtyNameValidatorImpl;
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -139,45 +139,53 @@ impl frame_support::traits::Contains<Call> for BaseCallFilter {
 
 // Configure FRAME pallets to include in runtime.
 common_runtime::pallets_config! {
-    // Dynamic parameters
-    pub type EpochDuration = pallet_duniter_test_parameters::BabeEpochDuration<Runtime>;
-    pub type CertPeriod = pallet_duniter_test_parameters::CertPeriod<Runtime>;
-    pub type MaxByIssuer = pallet_duniter_test_parameters::CertMaxByIssuer<Runtime>;
-    pub type MinReceivedCertToBeAbleToIssueCert = pallet_duniter_test_parameters::CertMinReceivedCertToIssueCert<Runtime>;
-    pub type CertRenewablePeriod = pallet_duniter_test_parameters::CertRenewablePeriod<Runtime>;
-    pub type ValidityPeriod = pallet_duniter_test_parameters::CertValidityPeriod<Runtime>;
-    pub type ConfirmPeriod = pallet_duniter_test_parameters::IdtyConfirmPeriod<Runtime>;
-    pub type IdtyCreationPeriod = pallet_duniter_test_parameters::IdtyCreationPeriod<Runtime>;
-    pub type MaxDisabledPeriod = pallet_duniter_test_parameters::IdtyMaxDisabledPeriod<Runtime>;
-    pub type MembershipPeriod = pallet_duniter_test_parameters::MembershipPeriod<Runtime>;
-    pub type RenewablePeriod = pallet_duniter_test_parameters::MembershipRenewablePeriod<Runtime>;
-    pub type PendingMembershipPeriod = pallet_duniter_test_parameters::PendingMembershipPeriod<Runtime>;
-    pub type UdCreationPeriod = pallet_duniter_test_parameters::UdCreationPeriod<Runtime>;
-    pub type UdFirstReeval = pallet_duniter_test_parameters::UdFirstReeval<Runtime>;
-    pub type UdReevalPeriod = pallet_duniter_test_parameters::UdReevalPeriod<Runtime>;
-    pub type UdReevalPeriodInBlocks = pallet_duniter_test_parameters::UdReevalPeriodInBlocks<Runtime>;
-    pub type WotFirstCertIssuableOn = pallet_duniter_test_parameters::WotFirstCertIssuableOn<Runtime>;
-    pub type WotMinCertForMembership = pallet_duniter_test_parameters::WotMinCertForMembership<Runtime>;
-    pub type WotMinCertForCreateIdtyRight = pallet_duniter_test_parameters::WotMinCertForCreateIdtyRight<Runtime>;
-    pub type SmithCertPeriod = pallet_duniter_test_parameters::SmithCertPeriod<Runtime>;
-    pub type SmithMaxByIssuer = pallet_duniter_test_parameters::SmithCertMaxByIssuer<Runtime>;
-    pub type SmithMinReceivedCertToBeAbleToIssueCert = pallet_duniter_test_parameters::SmithCertMinReceivedCertToIssueCert<Runtime>;
-    pub type SmithCertRenewablePeriod = pallet_duniter_test_parameters::SmithCertRenewablePeriod<Runtime>;
-    pub type SmithValidityPeriod = pallet_duniter_test_parameters::SmithCertValidityPeriod<Runtime>;
-    pub type SmithMembershipPeriod = pallet_duniter_test_parameters::SmithMembershipPeriod<Runtime>;
-    pub type SmithPendingMembershipPeriod = pallet_duniter_test_parameters::SmithPendingMembershipPeriod<Runtime>;
-    pub type SmithRenewablePeriod = pallet_duniter_test_parameters::SmithMembershipRenewablePeriod<Runtime>;
-    pub type SmithsWotFirstCertIssuableOn = pallet_duniter_test_parameters::SmithsWotFirstCertIssuableOn<Runtime>;
-    pub type SmithsWotMinCertForMembership = pallet_duniter_test_parameters::SmithsWotMinCertForMembership<Runtime>;
+// Dynamic parameters
+pub type EpochDuration = pallet_duniter_test_parameters::BabeEpochDuration<Runtime>;
+pub type CertPeriod = pallet_duniter_test_parameters::CertPeriod<Runtime>;
+pub type MaxByIssuer = pallet_duniter_test_parameters::CertMaxByIssuer<Runtime>;
+pub type MinReceivedCertToBeAbleToIssueCert =
+    pallet_duniter_test_parameters::CertMinReceivedCertToIssueCert<Runtime>;
+pub type CertRenewablePeriod = pallet_duniter_test_parameters::CertRenewablePeriod<Runtime>;
+pub type ValidityPeriod = pallet_duniter_test_parameters::CertValidityPeriod<Runtime>;
+pub type ConfirmPeriod = pallet_duniter_test_parameters::IdtyConfirmPeriod<Runtime>;
+pub type IdtyCreationPeriod = pallet_duniter_test_parameters::IdtyCreationPeriod<Runtime>;
+pub type MaxDisabledPeriod = pallet_duniter_test_parameters::IdtyMaxDisabledPeriod<Runtime>;
+pub type MembershipPeriod = pallet_duniter_test_parameters::MembershipPeriod<Runtime>;
+pub type RenewablePeriod = pallet_duniter_test_parameters::MembershipRenewablePeriod<Runtime>;
+pub type PendingMembershipPeriod = pallet_duniter_test_parameters::PendingMembershipPeriod<Runtime>;
+pub type UdCreationPeriod = pallet_duniter_test_parameters::UdCreationPeriod<Runtime>;
+pub type UdFirstReeval = pallet_duniter_test_parameters::UdFirstReeval<Runtime>;
+pub type UdReevalPeriod = pallet_duniter_test_parameters::UdReevalPeriod<Runtime>;
+pub type UdReevalPeriodInBlocks = pallet_duniter_test_parameters::UdReevalPeriodInBlocks<Runtime>;
+pub type WotFirstCertIssuableOn = pallet_duniter_test_parameters::WotFirstCertIssuableOn<Runtime>;
+pub type WotMinCertForMembership = pallet_duniter_test_parameters::WotMinCertForMembership<Runtime>;
+pub type WotMinCertForCreateIdtyRight =
+    pallet_duniter_test_parameters::WotMinCertForCreateIdtyRight<Runtime>;
+pub type SmithCertPeriod = pallet_duniter_test_parameters::SmithCertPeriod<Runtime>;
+pub type SmithMaxByIssuer = pallet_duniter_test_parameters::SmithCertMaxByIssuer<Runtime>;
+pub type SmithMinReceivedCertToBeAbleToIssueCert =
+    pallet_duniter_test_parameters::SmithCertMinReceivedCertToIssueCert<Runtime>;
+pub type SmithCertRenewablePeriod =
+    pallet_duniter_test_parameters::SmithCertRenewablePeriod<Runtime>;
+pub type SmithValidityPeriod = pallet_duniter_test_parameters::SmithCertValidityPeriod<Runtime>;
+pub type SmithMembershipPeriod = pallet_duniter_test_parameters::SmithMembershipPeriod<Runtime>;
+pub type SmithPendingMembershipPeriod =
+    pallet_duniter_test_parameters::SmithPendingMembershipPeriod<Runtime>;
+pub type SmithRenewablePeriod =
+    pallet_duniter_test_parameters::SmithMembershipRenewablePeriod<Runtime>;
+pub type SmithsWotFirstCertIssuableOn =
+    pallet_duniter_test_parameters::SmithsWotFirstCertIssuableOn<Runtime>;
+pub type SmithsWotMinCertForMembership =
+    pallet_duniter_test_parameters::SmithsWotMinCertForMembership<Runtime>;
 
-    impl pallet_duniter_test_parameters::Config for Runtime {
-        type CertCount = u32;
-        type PeriodCount = Balance;
-    }
-    impl pallet_sudo::Config for Runtime {
-        type Event = Event;
-        type Call = Call;
-    }
+impl pallet_duniter_test_parameters::Config for Runtime {
+    type CertCount = u32;
+    type PeriodCount = Balance;
+}
+impl pallet_sudo::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+}
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

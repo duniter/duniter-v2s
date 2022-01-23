@@ -256,13 +256,18 @@ fn gen_genesis_conf(
         identity: IdentityConfig {
             identities: initial_identities
                 .iter()
-                .map(|(name, account)| IdtyValue {
-                    data: Default::default(),
-                    owner_key: account.clone(),
-                    name: name.clone(),
-                    next_creatable_identity_on: Default::default(),
-                    removable_on: 0,
-                    status: gdev_runtime::IdtyStatus::Validated,
+                .map(|(name, owner_key)| {
+                    (
+                        owner_key.clone(),
+                        (
+                            name.clone(),
+                            IdtyValue {
+                                next_creatable_identity_on: Default::default(),
+                                removable_on: 0,
+                                status: gdev_runtime::IdtyStatus::Validated,
+                            },
+                        ),
+                    )
                 })
                 .collect(),
         },
@@ -301,7 +306,12 @@ fn gen_genesis_conf(
             certs_by_issuer: clique_wot(initial_smiths_len, smith_cert_validity_period),
         },
         ud_accounts_storage: UdAccountsStorageConfig {
-            ud_accounts: initial_identities.values().cloned().collect(),
+            ud_accounts: initial_identities
+                .values()
+                .cloned()
+                .enumerate()
+                .map(|(i, account)| (account, (i + 1) as u32))
+                .collect(),
         },
         universal_dividend: UniversalDividendConfig {
             first_ud: 1_000,

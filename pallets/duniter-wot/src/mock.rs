@@ -112,8 +112,6 @@ impl pallet_identity::Config for Test {
     type Event = Event;
     type EnsureIdtyCallAllowed = DuniterWot;
     type IdtyCreationPeriod = IdtyCreationPeriod;
-    type IdtyData = ();
-    type IdtyDataProvider = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = IdtyIndex;
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
@@ -132,16 +130,15 @@ parameter_types! {
 }
 
 impl pallet_membership::Config<Instance1> for Test {
-    type IsIdtyAllowedToClaimMembership = DuniterWot;
     type IsIdtyAllowedToRenewMembership = DuniterWot;
     type IsIdtyAllowedToRequestMembership = DuniterWot;
-    type IsOriginAllowedToUseIdty = DuniterWot;
     type Event = Event;
     type ExternalizeMembershipStorage = ExternalizeMembershipStorage;
     type IdtyId = IdtyIndex;
+    type IdtyIdOf = Identity;
     type MembershipExternalStorage = sp_membership::traits::NoExternalStorage;
     type MembershipPeriod = MembershipPeriod;
-    type MetaData = ();
+    type MetaData = crate::MembershipMetaData<u64>;
     type OnEvent = DuniterWot;
     type PendingMembershipPeriod = PendingMembershipPeriod;
     type RenewablePeriod = RenewablePeriod;
@@ -179,13 +176,18 @@ pub fn new_test_ext(initial_identities_len: usize) -> sp_io::TestExternalities {
         system: SystemConfig::default(),
         identity: IdentityConfig {
             identities: (1..=initial_identities_len)
-                .map(|i| pallet_identity::IdtyValue {
-                    data: (),
-                    owner_key: i as u64,
-                    name: pallet_identity::IdtyName::from(NAMES[i - 1]),
-                    next_creatable_identity_on: 0,
-                    removable_on: 0,
-                    status: pallet_identity::IdtyStatus::Validated,
+                .map(|i| {
+                    (
+                        i as u64,
+                        (
+                            pallet_identity::IdtyName::from(NAMES[i - 1]),
+                            pallet_identity::IdtyValue {
+                                next_creatable_identity_on: 0,
+                                removable_on: 0,
+                                status: pallet_identity::IdtyStatus::Validated,
+                            },
+                        ),
+                    )
                 })
                 .collect(),
         },

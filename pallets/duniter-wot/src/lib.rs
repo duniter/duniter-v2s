@@ -124,9 +124,11 @@ pub mod pallet {
     }
 }
 
-impl<T: Config<I>, I: 'static> pallet_identity::traits::EnsureIdtyCallAllowed<T> for Pallet<T, I>
+impl<AccountId, T: Config<I>, I: 'static> pallet_identity::traits::EnsureIdtyCallAllowed<T>
+    for Pallet<T, I>
 where
-    T: pallet_membership::Config<I, MetaData = ()>,
+    T: frame_system::Config<AccountId = AccountId>
+        + pallet_membership::Config<I, MetaData = MembershipMetaData<AccountId>>,
 {
     fn can_create_identity(creator: IdtyIndex) -> bool {
         if let Some(cert_meta) = pallet_certification::Pallet::<T, I>::idty_cert_meta(creator) {
@@ -137,33 +139,20 @@ where
             false
         }
     }
-    fn can_confirm_identity(idty_index: IdtyIndex) -> bool {
+    fn can_confirm_identity(idty_index: IdtyIndex, owner_key: AccountId) -> bool {
         pallet_membership::Pallet::<T, I>::request_membership(
             RawOrigin::Root.into(),
             idty_index,
-            (),
+            MembershipMetaData(owner_key),
         )
         .is_ok()
     }
     fn can_validate_identity(idty_index: IdtyIndex) -> bool {
-        pallet_membership::Pallet::<T, I>::claim_membership(RawOrigin::Root.into(), idty_index)
-            .is_ok()
-    }
-}
-
-impl<T: Config<I>, I: 'static> sp_membership::traits::IsIdtyAllowedToClaimMembership<IdtyIndex>
-    for Pallet<T, I>
-{
-    fn is_idty_allowed_to_claim_membership(idty_index: &IdtyIndex) -> bool {
-        if T::IsSubWot::get() {
-            if let Some(idty_value) = pallet_identity::Pallet::<T>::identity(idty_index) {
-                idty_value.status == IdtyStatus::Validated
-            } else {
-                false
-            }
-        } else {
-            false
-        }
+        pallet_membership::Pallet::<T, I>::claim_membership(
+            RawOrigin::Root.into(),
+            Some(idty_index),
+        )
+        .is_ok()
     }
 }
 
@@ -191,31 +180,6 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::IsIdtyAllowedToRequestMemb
             }
         } else {
             false
-        }
-    }
-}
-
-impl<T: Config<I>, I: 'static> sp_membership::traits::IsOriginAllowedToUseIdty<T::Origin, IdtyIndex>
-    for Pallet<T, I>
-{
-    fn is_origin_allowed_to_use_idty(
-        origin: &T::Origin,
-        idty_index: &IdtyIndex,
-    ) -> sp_membership::OriginPermission {
-        match origin.clone().into() {
-            Ok(RawOrigin::Root) => sp_membership::OriginPermission::Root,
-            Ok(RawOrigin::Signed(account_id)) => {
-                if let Some(idty_val) = pallet_identity::Pallet::<T>::identity(idty_index) {
-                    if account_id == idty_val.owner_key {
-                        sp_membership::OriginPermission::Allowed
-                    } else {
-                        sp_membership::OriginPermission::Forbidden
-                    }
-                } else {
-                    sp_membership::OriginPermission::Forbidden
-                }
-            }
-            _ => sp_membership::OriginPermission::Forbidden,
         }
     }
 }
@@ -263,6 +227,7 @@ where
             sp_membership::Event::<IdtyIndex, MetaData>::PendingMembershipExpired(idty_index) => {
                 Self::dispath_idty_call(pallet_identity::Call::remove_identity {
                     idty_index: *idty_index,
+                    idty_name: None,
                 });
             }
         }
@@ -312,7 +277,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex
             if T::IsSubWot::get() {
                 if let Err(e) = pallet_membership::Pallet::<T, I>::claim_membership(
                     RawOrigin::Root.into(),
-                    receiver,
+                    Some(receiver),
                 ) {
                     sp_std::if_std! {
                         println!("{:?}", e)
@@ -352,7 +317,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
             // Revoke receiver membership and disable his identity
             if let Err(e) = pallet_membership::Pallet::<T, I>::revoke_membership(
                 RawOrigin::Root.into(),
-                receiver,
+                Some(receiver),
             ) {
                 sp_std::if_std! {
                     println!("{:?}", e)

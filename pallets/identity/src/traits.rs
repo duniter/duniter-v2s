@@ -19,7 +19,7 @@ use frame_support::pallet_prelude::*;
 
 pub trait EnsureIdtyCallAllowed<T: Config> {
     fn can_create_identity(creator: T::IdtyIndex) -> bool;
-    fn can_confirm_identity(idty_index: T::IdtyIndex) -> bool;
+    fn can_confirm_identity(idty_index: T::IdtyIndex, owner_key: T::AccountId) -> bool;
     fn can_validate_identity(idty_index: T::IdtyIndex) -> bool;
 }
 
@@ -27,32 +27,11 @@ impl<T: Config> EnsureIdtyCallAllowed<T> for () {
     fn can_create_identity(_: T::IdtyIndex) -> bool {
         true
     }
-    fn can_confirm_identity(_: T::IdtyIndex) -> bool {
+    fn can_confirm_identity(_: T::IdtyIndex, _: T::AccountId) -> bool {
         true
     }
     fn can_validate_identity(_: T::IdtyIndex) -> bool {
         true
-    }
-}
-
-pub trait ProvideIdtyData<T: Config> {
-    fn provide_identity_data(
-        creator: T::IdtyIndex,
-        idty_name: &IdtyName,
-        idty_owner_key: &T::AccountId,
-    ) -> T::IdtyData;
-}
-
-impl<T: Config> ProvideIdtyData<T> for ()
-where
-    T::IdtyData: Default,
-{
-    fn provide_identity_data(
-        _creator: T::IdtyIndex,
-        _idty_name: &IdtyName,
-        _idty_owner_key: &T::AccountId,
-    ) -> T::IdtyData {
-        Default::default()
     }
 }
 

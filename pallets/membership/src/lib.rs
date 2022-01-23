@@ -29,9 +29,11 @@ mod benchmarking;*/
 pub use pallet::*;
 
 use frame_support::dispatch::Weight;
-use frame_support::pallet_prelude::DispatchResultWithPostInfo;
+use frame_support::error::BadOrigin;
+use frame_support::pallet_prelude::*;
+use frame_system::RawOrigin;
 use sp_membership::traits::*;
-use sp_membership::{MembershipData, OriginPermission};
+use sp_membership::MembershipData;
 use sp_runtime::traits::Zero;
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -40,10 +42,9 @@ use std::collections::BTreeMap;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
     use frame_support::traits::StorageVersion;
     use frame_system::pallet_prelude::*;
-    use sp_runtime::traits::IsMember;
+    use sp_runtime::traits::{Convert, IsMember};
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -57,10 +58,8 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
-        type IsIdtyAllowedToClaimMembership: IsIdtyAllowedToClaimMembership<Self::IdtyId>;
         type IsIdtyAllowedToRenewMembership: IsIdtyAllowedToRenewMembership<Self::IdtyId>;
         type IsIdtyAllowedToRequestMembership: IsIdtyAllowedToRequestMembership<Self::IdtyId>;
-        type IsOriginAllowedToUseIdty: IsOriginAllowedToUseIdty<Self::Origin, Self::IdtyId>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
         /// Specify true if you want to externalize the storage of memberships, but in this case
@@ -68,8 +67,9 @@ pub mod pallet {
         type ExternalizeMembershipStorage: Get<bool>;
         /// Something that identifies an identity
         type IdtyId: Copy + MaybeSerializeDeserialize + Parameter + Ord;
+        type IdtyIdOf: Convert<Self::AccountId, Option<Self::IdtyId>>;
         /// Optional metadata
-        type MetaData: Parameter;
+        type MetaData: Parameter + Validate<Self::AccountId>;
         /// Provide your implementation of membership storage here, if you want the pallet to
         /// handle the storage for you, specify `()` and set `ExternalizeMembershipStorage` to
         /// `false`.
@@ -181,12 +181,14 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
-        /// Identity not allowed to claim membership
-        IdtyNotAllowedToClaimMembership,
         /// Identity not allowed to request membership
         IdtyNotAllowedToRequestMembership,
         /// Identity not allowed to renew membership
         IdtyNotAllowedToRenewMembership,
+        /// Invalid meta data
+        InvalidMetaData,
+        /// Identity id not found
+        IdtyIdNotFound,
         /// Membership already acquired
         MembershipAlreadyAcquired,
         /// Membership already requested
@@ -228,22 +230,22 @@ pub mod pallet {
             idty_id: T::IdtyId,
             metadata: T::MetaData,
         ) -> DispatchResultWithPostInfo {
-            let allowed =
-                match T::IsOriginAllowedToUseIdty::is_origin_allowed_to_use_idty(&origin, &idty_id)
-                {
-                    OriginPermission::Forbidden => {
-                        return Err(Error::<T, I>::OriginNotAllowedToUseIdty.into())
+            let is_root = match origin.into() {
+                Ok(RawOrigin::Root) => true,
+                Ok(RawOrigin::Signed(account_id)) => {
+                    if let Some(expected_idty_id) = T::IdtyIdOf::convert(account_id.clone()) {
+                        if idty_id != expected_idty_id {
+                            return Err(BadOrigin.into());
+                        } else if !metadata.validate(&account_id) {
+                            return Err(Error::<T, I>::InvalidMetaData.into());
+                        }
+                    } else {
+                        return Err(Error::<T, I>::IdtyIdNotFound.into());
                     }
-                    OriginPermission::Allowed => {
-                        T::IsIdtyAllowedToRequestMembership::is_idty_allowed_to_request_membership(
-                            &idty_id,
-                        )
-                    }
-                    OriginPermission::Root => true,
-                };
-            if !allowed {
-                return Err(Error::<T, I>::IdtyNotAllowedToRequestMembership.into());
-            }
+                    false
+                }
+                _ => return Err(BadOrigin.into()),
+            };
             if PendingMembership::<T, I>::contains_key(&idty_id) {
                 return Err(Error::<T, I>::MembershipAlreadyRequested.into());
             }
@@ -252,6 +254,13 @@ pub mod pallet {
             }
             if RevokedMembership::<T, I>::contains_key(&idty_id) {
                 return Err(Error::<T, I>::MembershipRevokedRecently.into());
+            }
+            if !is_root
+                && !T::IsIdtyAllowedToRequestMembership::is_idty_allowed_to_request_membership(
+                    &idty_id,
+                )
+            {
+                return Err(Error::<T, I>::IdtyNotAllowedToRequestMembership.into());
             }
 
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
@@ -268,27 +277,13 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn claim_membership(
             origin: OriginFor<T>,
-            idty_id: T::IdtyId,
+            maybe_idty_id: Option<T::IdtyId>,
         ) -> DispatchResultWithPostInfo {
             // Verify phase
+            let idty_id = Self::ensure_origin_and_get_idty_id(origin, maybe_idty_id)?;
+
             if Membership::<T, I>::contains_key(&idty_id) {
                 return Err(Error::<T, I>::MembershipAlreadyAcquired.into());
-            }
-            let allowed =
-                match T::IsOriginAllowedToUseIdty::is_origin_allowed_to_use_idty(&origin, &idty_id)
-                {
-                    OriginPermission::Forbidden => {
-                        return Err(Error::<T, I>::OriginNotAllowedToUseIdty.into())
-                    }
-                    OriginPermission::Allowed => {
-                        T::IsIdtyAllowedToClaimMembership::is_idty_allowed_to_claim_membership(
-                            &idty_id,
-                        )
-                    }
-                    OriginPermission::Root => true,
-                };
-            if !allowed {
-                return Err(Error::<T, I>::IdtyNotAllowedToClaimMembership.into());
             }
 
             let metadata = PendingMembership::<T, I>::take(&idty_id)
@@ -305,22 +300,12 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn renew_membership(
             origin: OriginFor<T>,
-            idty_id: T::IdtyId,
+            maybe_idty_id: Option<T::IdtyId>,
         ) -> DispatchResultWithPostInfo {
-            let allowed =
-                match T::IsOriginAllowedToUseIdty::is_origin_allowed_to_use_idty(&origin, &idty_id)
-                {
-                    OriginPermission::Forbidden => {
-                        return Err(Error::<T, I>::OriginNotAllowedToUseIdty.into())
-                    }
-                    OriginPermission::Allowed => {
-                        T::IsIdtyAllowedToRenewMembership::is_idty_allowed_to_renew_membership(
-                            &idty_id,
-                        )
-                    }
-                    OriginPermission::Root => true,
-                };
-            if !allowed {
+            // Verify phase
+            let idty_id = Self::ensure_origin_and_get_idty_id(origin, maybe_idty_id)?;
+
+            if !T::IsIdtyAllowedToRenewMembership::is_idty_allowed_to_renew_membership(&idty_id) {
                 return Err(Error::<T, I>::IdtyNotAllowedToRenewMembership.into());
             }
 
@@ -341,14 +326,12 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn revoke_membership(
             origin: OriginFor<T>,
-            idty_id: T::IdtyId,
+            maybe_idty_id: Option<T::IdtyId>,
         ) -> DispatchResultWithPostInfo {
-            if T::IsOriginAllowedToUseIdty::is_origin_allowed_to_use_idty(&origin, &idty_id)
-                == OriginPermission::Forbidden
-            {
-                return Err(Error::<T, I>::OriginNotAllowedToUseIdty.into());
-            }
+            // Verify phase
+            let idty_id = Self::ensure_origin_and_get_idty_id(origin, maybe_idty_id)?;
 
+            // Apply phase
             let _ = Self::do_revoke_membership(idty_id);
 
             Ok(().into())
@@ -392,6 +375,19 @@ pub mod pallet {
             T::OnEvent::on_event(&sp_membership::Event::MembershipRevoked(idty_id));
 
             0
+        }
+        fn ensure_origin_and_get_idty_id(
+            origin: OriginFor<T>,
+            maybe_idty_id: Option<T::IdtyId>,
+        ) -> Result<T::IdtyId, DispatchError> {
+            match origin.into() {
+                Ok(RawOrigin::Root) => {
+                    maybe_idty_id.ok_or_else(|| Error::<T, I>::IdtyIdNotFound.into())
+                }
+                Ok(RawOrigin::Signed(account_id)) => T::IdtyIdOf::convert(account_id)
+                    .ok_or_else(|| Error::<T, I>::IdtyIdNotFound.into()),
+                _ => Err(BadOrigin.into()),
+            }
         }
         fn expire_memberships(block_number: T::BlockNumber) -> Weight {
             let mut total_weight: Weight = 0;

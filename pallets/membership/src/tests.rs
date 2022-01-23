@@ -55,7 +55,7 @@ fn test_membership_not_yet_renewable() {
         run_to_block(1);
         // Merbership 0 cannot be renewed before #2
         assert_eq!(
-            DefaultMembership::renew_membership(Origin::signed(0), 0),
+            DefaultMembership::renew_membership(Origin::signed(0), None),
             Err(Error::<Test, _>::MembershipNotYetRenewable.into())
         );
     });
@@ -67,7 +67,7 @@ fn test_membership_already_acquired() {
         run_to_block(1);
         // Merbership 0 cannot be reclaimed
         assert_eq!(
-            DefaultMembership::claim_membership(Origin::signed(0), 0),
+            DefaultMembership::claim_membership(Origin::signed(0), None),
             Err(Error::<Test, _>::MembershipAlreadyAcquired.into())
         );
     });
@@ -79,7 +79,7 @@ fn test_membership_request_not_found() {
         run_to_block(1);
         // Merbership 0 cannot be reclaimed
         assert_eq!(
-            DefaultMembership::claim_membership(Origin::signed(1), 1),
+            DefaultMembership::claim_membership(Origin::signed(1), None),
             Err(Error::<Test, _>::MembershipRequestNotFound.into())
         );
     });
@@ -90,7 +90,7 @@ fn test_membership_renewal() {
     new_test_ext(default_gen_conf()).execute_with(|| {
         run_to_block(2);
         // Merbership 0 can be renewable on block #2
-        assert_ok!(DefaultMembership::renew_membership(Origin::signed(0), 0),);
+        assert_ok!(DefaultMembership::renew_membership(Origin::signed(0), None),);
         assert_eq!(
             System::events()[0].event,
             RuntimeEvent::DefaultMembership(Event::MembershipRenewed(0))
@@ -119,7 +119,10 @@ fn test_membership_revocation() {
     new_test_ext(default_gen_conf()).execute_with(|| {
         run_to_block(1);
         // Merbership 0 can be revocable on block #1
-        assert_ok!(DefaultMembership::revoke_membership(Origin::signed(0), 0),);
+        assert_ok!(DefaultMembership::revoke_membership(
+            Origin::signed(0),
+            None
+        ),);
         assert_eq!(
             System::events()[0].event,
             RuntimeEvent::DefaultMembership(Event::MembershipRevoked(0))
@@ -192,7 +195,7 @@ fn test_membership_workflow() {
 
         // Then, idty 0 claim membership
         run_to_block(2);
-        assert_ok!(DefaultMembership::claim_membership(Origin::signed(0), 0,),);
+        assert_ok!(DefaultMembership::claim_membership(Origin::signed(0), None),);
         assert_eq!(
             System::events()[0].event,
             RuntimeEvent::DefaultMembership(Event::MembershipAcquired(0))
@@ -201,13 +204,13 @@ fn test_membership_workflow() {
         // Then, idty 0 claim renewal, should fail
         run_to_block(3);
         assert_eq!(
-            DefaultMembership::renew_membership(Origin::signed(0), 0),
+            DefaultMembership::renew_membership(Origin::signed(0), None),
             Err(Error::<Test, _>::MembershipNotYetRenewable.into())
         );
 
         // Then, idty 0 claim renewal after renewable period, should success
         run_to_block(2 + RenewablePeriod::get());
-        assert_ok!(DefaultMembership::renew_membership(Origin::signed(0), 0),);
+        assert_ok!(DefaultMembership::renew_membership(Origin::signed(0), None),);
 
         // Then, idty 0 shoul still member until membership period ended
         run_to_block(2 + RenewablePeriod::get() + MembershipPeriod::get() - 1);

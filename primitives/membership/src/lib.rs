@@ -42,13 +42,6 @@ pub enum Event<IdtyId, MetaData = ()> {
     PendingMembershipExpired(IdtyId),
 }
 
-#[derive(PartialEq)]
-pub enum OriginPermission {
-    Allowed,
-    Forbidden,
-    Root,
-}
-
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct MembershipData<BlockNumber: Decode + Encode + TypeInfo> {

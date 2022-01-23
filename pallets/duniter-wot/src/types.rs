@@ -32,8 +32,8 @@ impl<T: Config<I>, I: 'static> EnsureOrigin<(T::Origin, IdtyIndex, IdtyIndex)>
         match o.0.clone().into() {
             Ok(frame_system::RawOrigin::Root) => Ok(()),
             Ok(frame_system::RawOrigin::Signed(who)) => {
-                if let Some(issuer) = pallet_identity::Pallet::<T>::identity(o.1) {
-                    if who == issuer.owner_key {
+                if let Some(idty_index) = pallet_identity::Pallet::<T>::identity_index_of(who) {
+                    if o.1 == idty_index {
                         if let Some(receiver) = pallet_identity::Pallet::<T>::identity(o.2) {
                             match receiver.status {
                                 IdtyStatus::ConfirmedByOwner => Ok(()),
@@ -91,6 +91,24 @@ impl<T: Config<I>, I: 'static> EnsureOrigin<(T::Origin, IdtyIndex, IdtyIndex)>
         }
     }
 }
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+pub struct MembershipMetaData<AccountId>(pub AccountId);
+impl<AccountId: Eq> sp_membership::traits::Validate<AccountId> for MembershipMetaData<AccountId> {
+    fn validate(&self, account_id: &AccountId) -> bool {
+        &self.0 == account_id
+    }
+}
+/*impl From<AccountId> for MembershipMetaData {
+    fn from(account_id: AccountId) -> Self {
+        Self(account_id)
+    }
+}*/
+/*impl Into<AccountId> for MembershipMetaData {
+    fn into(self) -> AccountId {
+        self.0
+    }
+}*/
 
 #[cfg_attr(feature = "std", derive(Debug))]
 #[derive(codec::Decode, codec::Encode, Eq, PartialEq, TypeInfo)]

@@ -21,11 +21,9 @@ use frame_support::{
 };
 use frame_system as system;
 use sp_core::H256;
-use sp_membership::traits::IsOriginAllowedToUseIdty;
-use sp_membership::OriginPermission;
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, ConvertInto, IdentityLookup},
     BuildStorage,
 };
 
@@ -79,19 +77,6 @@ impl system::Config for Test {
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-pub struct IsOriginAllowedToUseIdtyImpl;
-impl IsOriginAllowedToUseIdty<Origin, IdtyId> for IsOriginAllowedToUseIdtyImpl {
-    fn is_origin_allowed_to_use_idty(o: &Origin, idty_id: &IdtyId) -> OriginPermission {
-        match o.clone().into() {
-            Ok(system::RawOrigin::Root) => OriginPermission::Root,
-            Ok(system::RawOrigin::Signed(account_id)) if account_id == *idty_id => {
-                OriginPermission::Allowed
-            }
-            _ => OriginPermission::Forbidden,
-        }
-    }
-}
-
 parameter_types! {
     pub const ExternalizeMembershipStorage: bool = false;
     pub const MembershipPeriod: BlockNumber = 5;
@@ -101,13 +86,12 @@ parameter_types! {
 }
 
 impl pallet_membership::Config for Test {
-    type IsIdtyAllowedToClaimMembership = ();
     type IsIdtyAllowedToRenewMembership = ();
     type IsIdtyAllowedToRequestMembership = ();
-    type IsOriginAllowedToUseIdty = IsOriginAllowedToUseIdtyImpl;
     type Event = Event;
     type ExternalizeMembershipStorage = ExternalizeMembershipStorage;
     type IdtyId = IdtyId;
+    type IdtyIdOf = ConvertInto;
     type MembershipExternalStorage = crate::NoExternalStorage;
     type MembershipPeriod = MembershipPeriod;
     type MetaData = ();

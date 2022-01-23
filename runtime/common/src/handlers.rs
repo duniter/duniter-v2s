@@ -14,42 +14,37 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use super::entities::SmithsMembershipMetaData;
-use super::IdtyIndex;
+use super::entities::*;
+use super::{AccountId, IdtyIndex};
 use frame_support::dispatch::UnfilteredDispatchable;
-use frame_support::instances::Instance2;
+use frame_support::instances::{Instance1, Instance2};
 use frame_support::pallet_prelude::Weight;
 use frame_support::Parameter;
 
 pub struct OnMembershipEventHandler<Inner, Runtime>(core::marker::PhantomData<(Inner, Runtime)>);
 
+type MembershipMetaData = pallet_duniter_wot::MembershipMetaData<AccountId>;
+
 impl<
-        IdtyIndex: Parameter,
-        Inner: sp_membership::traits::OnEvent<IdtyIndex, ()>,
-        Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex> + pallet_ud_accounts_storage::Config,
-    > sp_membership::traits::OnEvent<IdtyIndex, ()> for OnMembershipEventHandler<Inner, Runtime>
+        Inner: sp_membership::traits::OnEvent<IdtyIndex, MembershipMetaData>,
+        Runtime: frame_system::Config<AccountId = AccountId>
+            + pallet_identity::Config<IdtyIndex = IdtyIndex>
+            + pallet_membership::Config<Instance1, MetaData = MembershipMetaData>
+            + pallet_ud_accounts_storage::Config,
+    > sp_membership::traits::OnEvent<IdtyIndex, MembershipMetaData>
+    for OnMembershipEventHandler<Inner, Runtime>
 {
-    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) -> Weight {
+    fn on_event(membership_event: &sp_membership::Event<IdtyIndex, MembershipMetaData>) -> Weight {
         (match membership_event {
-            sp_membership::Event::<IdtyIndex>::MembershipAcquired(idty_index, ()) => {
-                if let Some(idty_value) = pallet_identity::Pallet::<Runtime>::identity(idty_index) {
-                    <pallet_ud_accounts_storage::Pallet<Runtime>>::replace_account(
-                        None,
-                        Some(idty_value.owner_key),
-                    )
-                } else {
-                    0
-                }
+            sp_membership::Event::MembershipAcquired(idty_index, owner_key) => {
+                pallet_ud_accounts_storage::Pallet::<Runtime>::replace_account(
+                    None,
+                    Some(owner_key.0.clone()),
+                    *idty_index,
+                )
             }
-            sp_membership::Event::<IdtyIndex>::MembershipRevoked(idty_index) => {
-                if let Some(idty_value) = pallet_identity::Pallet::<Runtime>::identity(idty_index) {
-                    <pallet_ud_accounts_storage::Pallet<Runtime>>::replace_account(
-                        Some(idty_value.owner_key),
-                        None,
-                    )
-                } else {
-                    0
-                }
+            sp_membership::Event::MembershipRevoked(idty_index) => {
+                pallet_ud_accounts_storage::Pallet::<Runtime>::remove_account(*idty_index)
             }
             _ => 0,
         }) + Inner::on_event(membership_event)
@@ -64,7 +59,8 @@ impl<
         IdtyIndex: Copy + Parameter,
         SessionKeysWrapper: Clone,
         Inner: sp_membership::traits::OnEvent<IdtyIndex, SmithsMembershipMetaData<SessionKeysWrapper>>,
-        Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex>
+        Runtime: frame_system::Config<AccountId = AccountId>
+            + pallet_identity::Config<IdtyIndex = IdtyIndex>
             + pallet_authority_members::Config<KeysWrapper = SessionKeysWrapper, MemberId = IdtyIndex>
             + pallet_membership::Config<
                 Instance2,
@@ -82,19 +78,21 @@ impl<
         (match membership_event {
             sp_membership::Event::MembershipAcquired(
                 idty_index,
-                SmithsMembershipMetaData { session_keys, .. },
+                SmithsMembershipMetaData {
+                    owner_key,
+                    session_keys,
+                    ..
+                },
             ) => {
-                if let Some(idty_value) = pallet_identity::Pallet::<Runtime>::identity(idty_index) {
-                    let call = pallet_authority_members::Call::<Runtime>::set_session_keys {
-                        member_id: *idty_index,
-                        keys: session_keys.clone(),
-                    };
-                    if let Err(e) = call.dispatch_bypass_filter(
-                        frame_system::Origin::<Runtime>::Signed(idty_value.owner_key).into(),
-                    ) {
-                        sp_std::if_std! {
-                            println!("{:?}", e)
-                        }
+                let call = pallet_authority_members::Call::<Runtime>::set_session_keys {
+                    member_id: *idty_index,
+                    keys: session_keys.clone(),
+                };
+                if let Err(e) = call.dispatch_bypass_filter(
+                    frame_system::Origin::<Runtime>::Signed(owner_key.clone()).into(),
+                ) {
+                    sp_std::if_std! {
+                        println!("{:?}", e)
                     }
                 }
                 0
@@ -117,16 +115,16 @@ impl<
     }
 }
 
-pub struct OnRemovedAUthorityMemberHandler<Runtime>(core::marker::PhantomData<Runtime>);
+pub struct OnRemovedAuthorityMemberHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_authority_members::traits::OnRemovedMember<IdtyIndex>
-    for OnRemovedAUthorityMemberHandler<Runtime>
+    for OnRemovedAuthorityMemberHandler<Runtime>
 where
     Runtime: frame_system::Config + pallet_membership::Config<Instance2, IdtyId = IdtyIndex>,
 {
     fn on_removed_member(idty_index: IdtyIndex) -> Weight {
         if let Err(e) = pallet_membership::Pallet::<Runtime, Instance2>::revoke_membership(
             frame_system::RawOrigin::Root.into(),
-            idty_index,
+            Some(idty_index),
         ) {
             sp_std::if_std! {
                 println!("{:?}", e)

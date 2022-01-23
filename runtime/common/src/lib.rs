@@ -75,16 +75,3 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorImpl {
         idty_name.0.len() >= 3 && idty_name.0.len() <= 64
     }
 }
-
-pub struct OwnerKeyOfImpl<Runtime>(core::marker::PhantomData<Runtime>);
-
-impl<
-        Runtime: frame_system::Config<AccountId = AccountId>
-            + pallet_identity::Config<IdtyIndex = IdtyIndex>,
-    > sp_runtime::traits::Convert<IdtyIndex, Option<AccountId>> for OwnerKeyOfImpl<Runtime>
-{
-    fn convert(idty_index: IdtyIndex) -> Option<AccountId> {
-        pallet_identity::Pallet::<Runtime>::identity(idty_index)
-            .map(|idty_value| idty_value.owner_key)
-    }
-}

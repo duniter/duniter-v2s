@@ -24,18 +24,16 @@ use sp_staking::SessionIndex;
 
 #[cfg_attr(feature = "std", derive(Debug, Deserialize, Serialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
-pub struct MemberData<ValidatorId: Decode + Encode + TypeInfo> {
+pub struct MemberData {
     pub expire_on_session: SessionIndex,
     pub must_rotate_keys_before: SessionIndex,
-    pub validator_id: ValidatorId,
 }
 
-impl<ValidatorId: Decode + Encode + TypeInfo> MemberData<ValidatorId> {
-    pub fn new_genesis(must_rotate_keys_before: SessionIndex, validator_id: ValidatorId) -> Self {
+impl MemberData {
+    pub fn new_genesis(must_rotate_keys_before: SessionIndex) -> Self {
         MemberData {
             expire_on_session: 0,
             must_rotate_keys_before,
-            validator_id,
         }
     }
 }

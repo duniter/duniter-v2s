@@ -33,6 +33,7 @@ pub use pallet::*;
 pub use types::*;
 
 use frame_support::traits::Get;
+use sp_runtime::traits::Convert;
 use sp_staking::SessionIndex;
 use sp_std::prelude::*;
 
@@ -65,13 +66,12 @@ pub mod pallet {
         type KeysWrapper: Parameter + Into<Self::Keys>;
         type IsMember: IsMember<Self::MemberId>;
         type OnRemovedMember: OnRemovedMember<Self::MemberId>;
-        type OwnerKeyOf: Convert<Self::MemberId, Option<Self::AccountId>>;
         #[pallet::constant]
         type MaxKeysLife: Get<SessionIndex>;
         #[pallet::constant]
         type MaxOfflineSessions: Get<SessionIndex>;
-        type MemberId: Copy + MaybeSerializeDeserialize + Parameter + Ord;
-        type RefreshValidatorIdOrigin: EnsureOrigin<Self::Origin>;
+        type MemberId: Copy + Ord + MaybeSerializeDeserialize + Parameter;
+        type MemberIdOf: Convert<Self::AccountId, Option<Self::MemberId>>;
         type RemoveMemberOrigin: EnsureOrigin<Self::Origin>;
     }
 
@@ -79,7 +79,7 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub initial_authorities: BTreeMap<T::MemberId, (T::ValidatorId, bool)>,
+        pub initial_authorities: BTreeMap<T::MemberId, (T::AccountId, bool)>,
     }
 
     #[cfg(feature = "std")]
@@ -94,17 +94,15 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            for (member_id, (validator_id, _is_online)) in &self.initial_authorities {
-                Members::<T>::insert(
-                    member_id,
-                    MemberData::new_genesis(T::MaxKeysLife::get(), validator_id.clone()),
-                );
+            for (member_id, (account_id, _is_online)) in &self.initial_authorities {
+                AccountIdOf::<T>::insert(member_id, account_id);
+                Members::<T>::insert(member_id, MemberData::new_genesis(T::MaxKeysLife::get()));
             }
             let mut members_ids = self
                 .initial_authorities
                 .iter()
                 .filter_map(
-                    |(member_id, (_validator_id, is_online))| {
+                    |(member_id, (_account_id, is_online))| {
                         if *is_online {
                             Some(*member_id)
                         } else {
@@ -123,6 +121,11 @@ pub mod pallet {
     // STORAGE //
 
     #[pallet::storage]
+    #[pallet::getter(fn account_id_of)]
+    pub type AccountIdOf<T: Config> =
+        StorageMap<_, Twox64Concat, T::MemberId, T::AccountId, OptionQuery>;
+
+    #[pallet::storage]
     #[pallet::getter(fn incoming)]
     pub type IncomingAuthorities<T: Config> = StorageValue<_, Vec<T::MemberId>, ValueQuery>;
 
@@ -136,8 +139,7 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn member)]
-    pub type Members<T: Config> =
-        StorageMap<_, Twox64Concat, T::MemberId, MemberData<T::ValidatorId>, OptionQuery>;
+    pub type Members<T: Config> = StorageMap<_, Twox64Concat, T::MemberId, MemberData, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn members_expire_on)]
@@ -185,7 +187,7 @@ pub mod pallet {
         /// Already outgoing
         AlreadyOutgoing,
         /// Not found owner key
-        OwnerKeyNotFound,
+        MemberIdNotFound,
         /// Member not found
         MemberNotFound,
         /// Neither online nor scheduled
@@ -211,9 +213,8 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             Self::verify_ownership_and_membership(&who, member_id)?;
 
-            let member_data = Members::<T>::get(member_id).ok_or(Error::<T>::MemberNotFound)?;
-            if !pallet_session::Pallet::<T>::is_registered(&member_data.validator_id) {
-                return Err(Error::<T>::SessionKeysNotProvided.into());
+            if !Members::<T>::contains_key(member_id) {
+                return Err(Error::<T>::MemberNotFound.into());
             }
             if Self::is_outgoing(member_id) {
                 return Err(Error::<T>::AlreadyOutgoing.into());
@@ -241,8 +242,12 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             Self::verify_ownership_and_membership(&who, member_id)?;
 
-            let member_data = Members::<T>::get(member_id).ok_or(Error::<T>::MemberNotFound)?;
-            if !pallet_session::Pallet::<T>::is_registered(&member_data.validator_id) {
+            if !Members::<T>::contains_key(member_id) {
+                return Err(Error::<T>::MemberNotFound.into());
+            }
+            let validator_id = T::ValidatorIdOf::convert(who.clone())
+                .ok_or(pallet_session::Error::<T>::NoAssociatedValidatorId)?;
+            if !pallet_session::Pallet::<T>::is_registered(&validator_id) {
                 return Err(Error::<T>::SessionKeysNotProvided.into());
             }
 
@@ -258,7 +263,7 @@ pub mod pallet {
             if is_outgoing {
                 Self::remove_out(member_id);
             } else {
-                Self::insert_in(member_id);
+                Self::insert_in(member_id, who);
             }
 
             Ok(().into())
@@ -272,9 +277,6 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin.clone())?;
             Self::verify_ownership_and_membership(&who, member_id)?;
-
-            let validator_id = T::ValidatorIdOf::convert(who)
-                .ok_or(pallet_session::Error::<T>::NoAssociatedValidatorId)?;
 
             let _post_info = pallet_session::Call::<T>::set_keys {
                 keys: keys.into(),
@@ -292,38 +294,47 @@ pub mod pallet {
                 let mut member_data = member_data_opt.get_or_insert(MemberData {
                     expire_on_session,
                     must_rotate_keys_before,
-                    validator_id: validator_id.clone(),
                 });
                 member_data.must_rotate_keys_before = must_rotate_keys_before;
-                member_data.validator_id = validator_id;
             });
             MustRotateKeysBefore::<T>::append(must_rotate_keys_before, member_id);
 
             Ok(().into())
         }
         #[pallet::weight(0)]
-        pub fn refresh_validator_id(
+        pub fn prune_account_id_of(
             origin: OriginFor<T>,
-            member_id: T::MemberId,
+            members_ids: Vec<T::MemberId>,
         ) -> DispatchResultWithPostInfo {
-            T::RefreshValidatorIdOrigin::ensure_origin(origin)?;
+            ensure_root(origin)?;
 
-            let owner = T::OwnerKeyOf::convert(member_id).ok_or(Error::<T>::OwnerKeyNotFound)?;
-            let validator_id = T::ValidatorIdOf::convert(owner)
-                .ok_or(pallet_session::Error::<T>::NoAssociatedValidatorId)?;
-
-            if !T::IsMember::is_member(&member_id) {
-                return Err(Error::<T>::NotMember.into());
+            for member_id in members_ids {
+                if !Self::is_online(member_id) && !Self::is_incoming(member_id) {
+                    AccountIdOf::<T>::remove(member_id);
+                }
             }
 
-            Members::<T>::mutate(member_id, |member_data_opt| {
-                if let Some(member_data) = member_data_opt {
-                    member_data.validator_id = validator_id;
-                    Ok(().into())
-                } else {
-                    Err(Error::<T>::MemberNotFound.into())
+            Ok(().into())
+        }
+        #[pallet::weight(0)]
+        pub fn purge_old_session_keys(
+            origin: OriginFor<T>,
+            member_id: T::MemberId,
+            accounts_ids: Vec<T::AccountId>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            Self::verify_ownership_and_membership(&who, member_id)?;
+
+            for account_id in accounts_ids {
+                if !T::IsMember::is_member(&member_id) {
+                    let _post_info = pallet_session::Call::<T>::purge_keys {}
+                        .dispatch_bypass_filter(
+                            frame_system::Origin::<T>::Signed(account_id).into(),
+                        )?;
                 }
-            })
+            }
+
+            Ok(().into())
         }
         #[pallet::weight(0)]
         pub fn remove_member(
@@ -334,11 +345,6 @@ pub mod pallet {
 
             if !T::IsMember::is_member(&member_id) {
                 return Err(Error::<T>::NotMember.into());
-            }
-
-            if let Some(owner) = T::OwnerKeyOf::convert(member_id) {
-                let _post_info = pallet_session::Call::<T>::purge_keys {}
-                    .dispatch_bypass_filter(frame_system::Origin::<T>::Signed(owner).into())?;
             }
 
             Self::do_remove_member(member_id);
@@ -382,7 +388,7 @@ pub mod pallet {
                 }
             }
         }
-        fn insert_in(member_id: T::MemberId) -> bool {
+        fn insert_in(member_id: T::MemberId, account_id: T::AccountId) -> bool {
             let not_already_inserted = IncomingAuthorities::<T>::mutate(|members_ids| {
                 if let Err(index) = members_ids.binary_search(&member_id) {
                     members_ids.insert(index, member_id);
@@ -392,6 +398,7 @@ pub mod pallet {
                 }
             });
             if not_already_inserted {
+                AccountIdOf::<T>::insert(member_id, account_id);
                 Self::deposit_event(Event::MemberGoOnline(member_id));
             }
             not_already_inserted
@@ -450,12 +457,12 @@ pub mod pallet {
             who: &T::AccountId,
             member_id: T::MemberId,
         ) -> Result<(), DispatchError> {
-            if let Some(owner) = T::OwnerKeyOf::convert(member_id) {
-                if who != &owner {
+            if let Some(expected_member_id) = T::MemberIdOf::convert(who.clone()) {
+                if expected_member_id != member_id {
                     return Err(Error::<T>::NotOwner.into());
                 }
             } else {
-                return Err(Error::<T>::OwnerKeyNotFound.into());
+                return Err(Error::<T>::MemberIdNotFound.into());
             }
 
             if !T::IsMember::is_member(&member_id) {
@@ -489,8 +496,8 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
             if members_ids_to_del.is_empty() {
                 return None;
             } else {
-                // Apply MaxOfflineSessions rule
                 for member_id in &members_ids_to_del {
+                    // Apply MaxOfflineSessions rule
                     let expire_on_session =
                         session_index.saturating_add(T::MaxOfflineSessions::get());
                     Members::<T>::mutate_exists(member_id, |member_data_opt| {
@@ -499,6 +506,8 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
                         }
                     });
                     MembersExpireOn::<T>::append(expire_on_session, member_id);
+                    // Prune AccountIdOf
+                    AccountIdOf::<T>::remove(member_id);
                 }
                 Self::deposit_event(Event::OutgoingAuthorities(members_ids_to_del.clone()));
             }
@@ -520,9 +529,14 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
                 }
                 members_ids.clone()
             })
-            .iter()
-            .filter_map(Members::<T>::get)
-            .map(|member_data| member_data.validator_id)
+            .into_iter()
+            .filter_map(|member_id| {
+                if let Some(account_id) = AccountIdOf::<T>::get(member_id) {
+                    T::ValidatorIdOf::convert(account_id)
+                } else {
+                    None
+                }
+            })
             .collect(),
         )
     }
@@ -530,9 +544,14 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
     fn new_session_genesis(_new_index: SessionIndex) -> Option<Vec<T::ValidatorId>> {
         Some(
             OnlineAuthorities::<T>::get()
-                .iter()
-                .filter_map(Members::<T>::get)
-                .map(|member_data| member_data.validator_id)
+                .into_iter()
+                .filter_map(|member_id| {
+                    if let Some(account_id) = AccountIdOf::<T>::get(member_id) {
+                        T::ValidatorIdOf::convert(account_id)
+                    } else {
+                        None
+                    }
+                })
                 .collect(),
         )
     }

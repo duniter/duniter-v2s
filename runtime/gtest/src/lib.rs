@@ -40,7 +40,7 @@ pub use pallet_universal_dividend;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 
-use common_runtime::{IdtyNameValidatorImpl, OwnerKeyOfImpl};
+use common_runtime::IdtyNameValidatorImpl;
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};

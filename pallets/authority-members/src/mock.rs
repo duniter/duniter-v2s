@@ -120,7 +120,7 @@ impl ShouldEndSession<u64> for TestShouldEndSession {
 impl pallet_session::Config for Test {
     type Event = Event;
     type ValidatorId = u64;
-    type ValidatorIdOf = sp_runtime::traits::ConvertInto;
+    type ValidatorIdOf = ConvertInto;
     type ShouldEndSession = TestShouldEndSession;
     type NextSessionRotation = ();
     type SessionManager = AuthorityMembers;
@@ -154,9 +154,8 @@ impl pallet_authority_members::Config for Test {
     type MaxKeysLife = ConstU32<5>;
     type MaxOfflineSessions = ConstU32<2>;
     type MemberId = u64;
+    type MemberIdOf = ConvertInto;
     type OnRemovedMember = ();
-    type OwnerKeyOf = ConvertInto;
-    type RefreshValidatorIdOrigin = system::EnsureRoot<u64>;
     type RemoveMemberOrigin = system::EnsureRoot<u64>;
 }
 

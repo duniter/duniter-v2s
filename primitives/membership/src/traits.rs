@@ -17,16 +17,6 @@
 use crate::*;
 use frame_support::pallet_prelude::{TypeInfo, Weight};
 
-pub trait IsIdtyAllowedToClaimMembership<IdtyId> {
-    fn is_idty_allowed_to_claim_membership(idty_id: &IdtyId) -> bool;
-}
-
-impl<IdtyId> IsIdtyAllowedToClaimMembership<IdtyId> for () {
-    fn is_idty_allowed_to_claim_membership(_: &IdtyId) -> bool {
-        true
-    }
-}
-
 pub trait IsIdtyAllowedToRenewMembership<IdtyId> {
     fn is_idty_allowed_to_renew_membership(idty_id: &IdtyId) -> bool;
 }
@@ -44,16 +34,6 @@ pub trait IsIdtyAllowedToRequestMembership<IdtyId> {
 impl<IdtyId> IsIdtyAllowedToRequestMembership<IdtyId> for () {
     fn is_idty_allowed_to_request_membership(_: &IdtyId) -> bool {
         true
-    }
-}
-
-pub trait IsOriginAllowedToUseIdty<Origin, IdtyId> {
-    fn is_origin_allowed_to_use_idty(origin: &Origin, idty_id: &IdtyId) -> OriginPermission;
-}
-
-impl<Origin, IdtyId> IsOriginAllowedToUseIdty<Origin, IdtyId> for () {
-    fn is_origin_allowed_to_use_idty(_: &Origin, _: &IdtyId) -> OriginPermission {
-        OriginPermission::Allowed
     }
 }
 
@@ -98,5 +78,15 @@ impl<BlockNumber: Decode + Encode + TypeInfo, IdtyId> MembershipExternalStorage<
     }
     fn remove(_: &IdtyId) {
         panic!("{}", INVALID_CONF_MSG)
+    }
+}
+
+pub trait Validate<AccountId> {
+    fn validate(&self, account_id: &AccountId) -> bool;
+}
+
+impl<AccountId> Validate<AccountId> for () {
+    fn validate(&self, _account_id: &AccountId) -> bool {
+        true
     }
 }

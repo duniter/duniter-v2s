@@ -35,7 +35,6 @@ fn test_genesis_build() {
             Some(MemberData {
                 expire_on_session: 0,
                 must_rotate_keys_before: 5,
-                validator_id: 3,
             })
         );
         assert_eq!(
@@ -43,7 +42,6 @@ fn test_genesis_build() {
             Some(MemberData {
                 expire_on_session: 0,
                 must_rotate_keys_before: 5,
-                validator_id: 6,
             })
         );
         assert_eq!(
@@ -51,7 +49,6 @@ fn test_genesis_build() {
             Some(MemberData {
                 expire_on_session: 0,
                 must_rotate_keys_before: 5,
-                validator_id: 9,
             })
         );
 
@@ -97,7 +94,6 @@ fn test_max_keys_life_rule() {
             Some(MemberData {
                 expire_on_session: 0,
                 must_rotate_keys_before: 7,
-                validator_id: 3,
             })
         );
         assert_eq!(
@@ -105,7 +101,6 @@ fn test_max_keys_life_rule() {
             Some(MemberData {
                 expire_on_session: 0,
                 must_rotate_keys_before: 7,
-                validator_id: 6,
             })
         );
 
@@ -145,7 +140,6 @@ fn test_go_offline() {
             Some(MemberData {
                 expire_on_session: 0,
                 must_rotate_keys_before: 5,
-                validator_id: 9,
             })
         );
 
@@ -156,7 +150,6 @@ fn test_go_offline() {
             Some(MemberData {
                 expire_on_session: 4,
                 must_rotate_keys_before: 5,
-                validator_id: 9,
             })
         );
         assert_eq!(AuthorityMembers::members_expire_on(4), vec![9],);
@@ -196,7 +189,6 @@ fn test_go_online() {
             Some(MemberData {
                 expire_on_session: 2,
                 must_rotate_keys_before: 5,
-                validator_id: 12,
             })
         );
 
@@ -212,7 +204,6 @@ fn test_go_online() {
             Some(MemberData {
                 expire_on_session: 2,
                 must_rotate_keys_before: 5,
-                validator_id: 12,
             })
         );
 
@@ -261,7 +252,6 @@ fn test_go_online_then_go_offline_in_same_session() {
             Some(MemberData {
                 expire_on_session: 2,
                 must_rotate_keys_before: 5,
-                validator_id: 12,
             })
         );
     });
@@ -289,7 +279,6 @@ fn test_go_offline_then_go_online_in_same_session() {
             Some(MemberData {
                 expire_on_session: 0,
                 must_rotate_keys_before: 5,
-                validator_id: 9,
             })
         );
     });
