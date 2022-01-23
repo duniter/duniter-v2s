@@ -221,7 +221,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn certs_by_receiver)]
     pub type StorageCertsByReceiver<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_128Concat, T::IdtyIndex, Vec<T::IdtyIndex>, ValueQuery>;
+        StorageMap<_, Twox64Concat, T::IdtyIndex, Vec<T::IdtyIndex>, ValueQuery>;
 
     /// Certifications removable on
     #[pallet::storage]
