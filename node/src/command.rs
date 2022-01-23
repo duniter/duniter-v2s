@@ -245,7 +245,13 @@ pub fn run() -> sc_cli::Result<()> {
         }
         None => {
             let runner = cli.create_runner(&cli.run)?;
-            runner.run_node_until_exit(|config| async move {
+            runner.run_node_until_exit(|mut config| async move {
+                // Force offchain worker and offchain indexing if we have the role Authority
+                if config.role.is_authority() {
+                    config.offchain_worker.enabled = true;
+                    config.offchain_worker.indexing_enabled = true;
+                }
+
                 match config.chain_spec.runtime_type() {
                     #[cfg(feature = "g1")]
                     RuntimeType::G1 => {
