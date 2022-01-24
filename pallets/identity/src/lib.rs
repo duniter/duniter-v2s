@@ -93,12 +93,18 @@ pub mod pallet {
 
     // GENESIS STUFF //
 
+    #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+    #[derive(Encode, Decode, Clone, PartialEq, Eq)]
+    pub struct GenesisIdty<T: Config> {
+        pub index: T::IdtyIndex,
+        pub owner_key: T::AccountId,
+        pub name: IdtyName,
+        pub value: IdtyValue<T::BlockNumber>,
+    }
+
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub identities: sp_std::collections::btree_map::BTreeMap<
-            T::AccountId,
-            (IdtyName, IdtyValue<T::BlockNumber>),
-        >,
+        pub identities: Vec<GenesisIdty<T>>,
     }
 
     #[cfg(feature = "std")]
@@ -114,28 +120,31 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             let mut names = sp_std::collections::btree_set::BTreeSet::new();
-            for (idty_name, idty_value) in self.identities.values() {
+            for idty in &self.identities {
                 assert!(
-                    !names.contains(&idty_name),
+                    !names.contains(&idty.name),
                     "Idty name {:?} is present twice",
-                    &idty_name
+                    &idty.name
                 );
-                assert!(idty_value.removable_on == T::BlockNumber::zero());
-                names.insert(idty_name);
+                assert!(idty.value.removable_on == T::BlockNumber::zero());
+                names.insert(idty.name.clone());
             }
 
-            <IdentitiesCount<T>>::put(self.identities.len() as u64);
-            for (owner_key, (idty_name, idty_value)) in &self.identities {
+            let mut identities = self.identities.clone();
+            identities.sort_unstable_by(|a, b| a.index.cmp(&b.index));
+
+            <IdentitiesCount<T>>::put(identities.len() as u64);
+            for idty in identities.into_iter() {
                 let idty_index = Pallet::<T>::get_next_idty_index();
-                if idty_value.removable_on > T::BlockNumber::zero() {
+                if idty.value.removable_on > T::BlockNumber::zero() {
                     <IdentitiesRemovableOn<T>>::append(
-                        idty_value.removable_on,
-                        (idty_index, idty_value.status),
+                        idty.value.removable_on,
+                        (idty_index, idty.value.status),
                     )
                 }
-                <Identities<T>>::insert(idty_index, idty_value);
-                IdentitiesNames::<T>::insert(idty_name, ());
-                IdentityIndexOf::<T>::insert(owner_key, idty_index);
+                <Identities<T>>::insert(idty_index, idty.value.clone());
+                IdentitiesNames::<T>::insert(idty.name.clone(), ());
+                IdentityIndexOf::<T>::insert(idty.owner_key, idty_index);
             }
         }
     }

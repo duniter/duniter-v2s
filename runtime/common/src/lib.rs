@@ -24,6 +24,7 @@ pub mod handlers;
 mod pallets_config;
 pub mod providers;
 
+pub use pallet_identity::{GenesisIdty, IdtyName, IdtyStatus, IdtyValue};
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
 /// Some way of identifying an account on the chain. We intentionally make it equivalent

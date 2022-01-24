@@ -15,30 +15,30 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::mock::*;
-use crate::{Error, IdtyName, IdtyValue};
+use crate::{Error, GenesisIdty, IdtyName, IdtyValue};
 //use frame_support::assert_err;
 use frame_support::assert_ok;
 use frame_system::{EventRecord, Phase};
-use maplit::btreemap;
-use std::collections::BTreeMap;
 
 type IdtyVal = IdtyValue<u64>;
 
-fn alice() -> (IdtyName, IdtyVal) {
-    (
-        IdtyName::from("Alice"),
-        IdtyVal {
+fn alice() -> GenesisIdty<Test> {
+    GenesisIdty {
+        index: 1,
+        owner_key: 1,
+        name: IdtyName::from("Alice"),
+        value: IdtyVal {
             next_creatable_identity_on: 0,
             removable_on: 0,
             status: crate::IdtyStatus::Validated,
         },
-    )
+    }
 }
 
 #[test]
 fn test_no_identity() {
     new_test_ext(IdentityConfig {
-        identities: BTreeMap::new(),
+        identities: Vec::new(),
     })
     .execute_with(|| {
         assert_eq!(Identity::identities_count(), 0);
@@ -48,7 +48,7 @@ fn test_no_identity() {
 #[test]
 fn test_create_identity_ok() {
     new_test_ext(IdentityConfig {
-        identities: btreemap![1 => alice()],
+        identities: vec![alice()],
     })
     .execute_with(|| {
         // We need to initialize at least one block before any call
@@ -72,7 +72,7 @@ fn test_create_identity_ok() {
 #[test]
 fn test_idty_creation_period() {
     new_test_ext(IdentityConfig {
-        identities: btreemap![1 => alice()],
+        identities: vec![alice()],
     })
     .execute_with(|| {
         // We need to initialize at least one block before any call

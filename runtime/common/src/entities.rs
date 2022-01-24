@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-pub use pallet_identity::IdtyName;
-
 use super::AccountId;
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;

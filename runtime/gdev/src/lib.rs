@@ -31,7 +31,6 @@ pub use common_runtime::{
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_duniter_test_parameters::Parameters as GenesisParameters;
-pub use pallet_identity::{IdtyStatus, IdtyValue};
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as session_historical;
 pub use pallet_timestamp::Call as TimestampCall;
