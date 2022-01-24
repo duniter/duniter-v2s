@@ -64,6 +64,8 @@ impl SubstrateCli for Cli {
             #[cfg(feature = "gdev")]
             "local4" => Box::new(chain_spec::gdev::local_testnet_config(4, 4, 5)?),
             #[cfg(feature = "gdev")]
+            "gdev-gl" | "gdev_gl" => Box::new(chain_spec::gdev::gen_live_conf()?),
+            #[cfg(feature = "gdev")]
             "gdev" => {
                 unimplemented!()
                 //Box::new(chain_spec::gdev::ChainSpec::from_json_file(file_path)?)

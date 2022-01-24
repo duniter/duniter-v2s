@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
+pub mod gen_genesis_data;
+
 #[cfg(feature = "g1")]
 pub mod g1;
 #[cfg(feature = "gdev")]

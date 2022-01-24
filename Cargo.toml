@@ -51,6 +51,8 @@ hex = "0.4.3"
 jsonrpc-core = '18.0.0'
 log = "0.4"
 maplit = '1.0.2'
+memmap2 = "0.5.0"
+serde = "1.0"
 serde_json = "1.0.64"
 structopt = '0.3.8'
 
@@ -71,6 +73,7 @@ sc-consensus-uncles = { git = "https://github.com/librelois/substrate.git", bran
 sc-executor = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sc-finality-grandpa = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sc-keystore = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
+sc-network = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sc-rpc-api = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sc-service = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
 sc-telemetry = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
