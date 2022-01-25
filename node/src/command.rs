@@ -145,7 +145,10 @@ impl SubstrateCli for Cli {
 
 /// Parse and run command line arguments
 pub fn run() -> sc_cli::Result<()> {
-    let cli = Cli::from_args();
+    let mut cli = Cli::from_args();
+
+    // Force some cli options
+    force_cli_options(&mut cli);
 
     match &cli.subcommand {
         Some(Subcommand::Key(cmd)) => cmd.run(&cli),
@@ -284,5 +287,26 @@ pub fn run() -> sc_cli::Result<()> {
                 }
             })
         }
+    }
+}
+
+fn force_cli_options(cli: &mut Cli) {
+    match cli.subcommand {
+        Some(Subcommand::CheckBlock(ref mut cmd)) => {
+            cmd.import_params.database_params.database = Some(sc_cli::Database::ParityDb);
+        }
+        Some(Subcommand::ExportBlocks(ref mut cmd)) => {
+            cmd.database_params.database = Some(sc_cli::Database::ParityDb);
+        }
+        Some(Subcommand::ImportBlocks(ref mut cmd)) => {
+            cmd.import_params.database_params.database = Some(sc_cli::Database::ParityDb);
+        }
+        Some(Subcommand::PurgeChain(ref mut cmd)) => {
+            cmd.database_params.database = Some(sc_cli::Database::ParityDb);
+        }
+        None => {
+            cli.run.import_params.database_params.database = Some(sc_cli::Database::ParityDb);
+        }
+        _ => {}
     }
 }
