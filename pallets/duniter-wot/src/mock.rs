@@ -148,18 +148,18 @@ impl pallet_membership::Config<Instance1> for Test {
 // Cert
 parameter_types! {
     pub const MaxByIssuer: u8 = 8;
-    pub const MinReceivedCertToBeAbleToIssueCert: u32 = 3;
+    pub const MinReceivedCertToBeAbleToIssueCert: u32 = 2;
     pub const CertRenewablePeriod: u64 = 4;
     pub const CertPeriod: u64 = 2;
     pub const ValidityPeriod: u64 = 10;
 }
 
 impl pallet_certification::Config<Instance1> for Test {
-    type AddCertOrigin = pallet_duniter_wot::AddCertOrigin<Test, Instance1>;
     type CertPeriod = CertPeriod;
-    type DelCertOrigin = pallet_duniter_wot::DelCertOrigin<Test, Instance1>;
     type Event = Event;
     type IdtyIndex = IdtyIndex;
+    type IdtyIndexOf = Identity;
+    type IsCertAllowed = DuniterWot;
     type MaxByIssuer = MaxByIssuer;
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = DuniterWot;

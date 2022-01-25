@@ -39,7 +39,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use sp_runtime::traits::Saturating;
+    use sp_runtime::traits::{Convert, Saturating};
     use sp_std::collections::btree_map::BTreeMap;
 
     /// The current storage version.
@@ -52,13 +52,9 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
-        /// Origin allowed to add a certification
-        type AddCertOrigin: EnsureOrigin<(Self::Origin, Self::IdtyIndex, Self::IdtyIndex)>;
         #[pallet::constant]
         /// Minimum duration between two certifications issued by the same issuer
         type CertPeriod: Get<Self::BlockNumber>;
-        /// Origin allowed to delete a certification
-        type DelCertOrigin: EnsureOrigin<(Self::Origin, Self::IdtyIndex, Self::IdtyIndex)>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
         /// A short identity index.
@@ -71,6 +67,10 @@ pub mod pallet {
             + MaybeSerializeDeserialize
             + Debug
             + MaxEncodedLen;
+        /// Something that give the IdtyIndex on an account id
+        type IdtyIndexOf: Convert<Self::AccountId, Option<Self::IdtyIndex>>;
+        ///
+        type IsCertAllowed: IsCertAllowed<Self::IdtyIndex>;
         #[pallet::constant]
         /// Maximum number of active certifications by issuer
         type MaxByIssuer: Get<u32>;
@@ -199,7 +199,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn idty_cert_meta)]
     pub type StorageIdtyCertMeta<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Twox64Concat, T::IdtyIndex, IdtyCertMeta<T::BlockNumber>, OptionQuery>;
+        StorageMap<_, Twox64Concat, T::IdtyIndex, IdtyCertMeta<T::BlockNumber>, ValueQuery>;
 
     /// Certifications by issuer
     #[pallet::storage]
@@ -259,10 +259,16 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
+        /// Certification non autorisée
+        CertNotAllowed,
+        /// Issuer not found
+        IssuerNotFound,
         /// An identity must receive certifications before it can issue them.
         IdtyMustReceiveCertsBeforeCanIssue,
         /// This identity has already issued the maximum number of certifications
         IssuedTooManyCert,
+        /// Receiver not found
+        ReceiverNotFound,
         /// Not enough certifications received
         NotEnoughCertReceived,
         /// This certification has already been issued or renewed recently
@@ -283,26 +289,22 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
         #[pallet::weight(0)]
-        pub fn add_cert(
+        pub fn force_add_cert(
             origin: OriginFor<T>,
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
+            verify_rules: bool,
         ) -> DispatchResultWithPostInfo {
-            T::AddCertOrigin::ensure_origin((origin, issuer, receiver))?;
-            frame_support::runtime_print!("add_cert({:?}, {:?}): origin OK", issuer, receiver);
+            ensure_root(origin)?;
 
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
 
-            let (create, issuer_issued_count) = if let Ok(mut issuer_idty_cert_meta) =
-                <StorageIdtyCertMeta<T, I>>::try_get(issuer)
-            {
+            let create = if verify_rules {
+                let issuer_idty_cert_meta = <StorageIdtyCertMeta<T, I>>::get(issuer);
+                if issuer_idty_cert_meta.received_count == 0 {
+                    return Err(Error::<T, I>::IdtyMustReceiveCertsBeforeCanIssue.into());
+                }
                 // Verify rules CertPeriod and MaxByIssuer
-                frame_support::runtime_print!(
-                    "add_cert({:?}, {:?}): Verify rules CertPeriod and MaxByIssuer",
-                    issuer,
-                    receiver
-                );
-
                 if issuer_idty_cert_meta.received_count
                     < T::MinReceivedCertToBeAbleToIssueCert::get()
                 {
@@ -314,12 +316,7 @@ pub mod pallet {
                 }
 
                 // Verify rule CertRenewablePeriod
-                frame_support::runtime_print!(
-                    "add_cert({:?}, {:?}): Verify rule CertRenewablePeriod",
-                    issuer,
-                    receiver
-                );
-                let create = if let Ok(CertValue { renewable_on, .. }) =
+                if let Ok(CertValue { renewable_on, .. }) =
                     <StorageCertsByIssuer<T, I>>::try_get(issuer, receiver)
                 {
                     if renewable_on > block_number {
@@ -328,27 +325,102 @@ pub mod pallet {
                     false
                 } else {
                     true
-                };
-
-                // Write StorageIdtyCertMeta for issuer
-                issuer_idty_cert_meta.issued_count =
-                    issuer_idty_cert_meta.issued_count.saturating_add(1);
-                let issuer_issued_count = issuer_idty_cert_meta.issued_count;
-                issuer_idty_cert_meta.next_issuable_on = block_number + T::CertPeriod::get();
-                <StorageIdtyCertMeta<T, I>>::insert(issuer, issuer_idty_cert_meta);
-
-                (create, issuer_issued_count)
+                }
             } else {
-                // An identity must receive certifications before it can issue them.
-                return Err(Error::<T, I>::IdtyMustReceiveCertsBeforeCanIssue.into());
+                !StorageCertsByIssuer::<T, I>::contains_key(issuer, receiver)
             };
 
+            Self::do_add_cert(block_number, create, issuer, receiver)
+        }
+        #[pallet::weight(0)]
+        pub fn add_cert(
+            origin: OriginFor<T>,
+            receiver: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            let issuer = T::IdtyIndexOf::convert(who).ok_or(Error::<T, I>::IssuerNotFound)?;
+            let receiver =
+                T::IdtyIndexOf::convert(receiver).ok_or(Error::<T, I>::ReceiverNotFound)?;
+            if !T::IsCertAllowed::is_cert_allowed(issuer, receiver) {
+                return Err(Error::<T, I>::CertNotAllowed.into());
+            }
+
+            let issuer_idty_cert_meta = <StorageIdtyCertMeta<T, I>>::get(issuer);
+            if issuer_idty_cert_meta.received_count == 0 {
+                return Err(Error::<T, I>::IdtyMustReceiveCertsBeforeCanIssue.into());
+            }
+
+            let block_number = frame_system::pallet::Pallet::<T>::block_number();
+
+            // Verify rules CertPeriod and MaxByIssuer
+            if issuer_idty_cert_meta.received_count < T::MinReceivedCertToBeAbleToIssueCert::get() {
+                return Err(Error::<T, I>::NotEnoughCertReceived.into());
+            } else if issuer_idty_cert_meta.next_issuable_on > block_number {
+                return Err(Error::<T, I>::NotRespectCertPeriod.into());
+            } else if issuer_idty_cert_meta.issued_count >= T::MaxByIssuer::get() {
+                return Err(Error::<T, I>::IssuedTooManyCert.into());
+            }
+
+            // Verify rule CertRenewablePeriod
+            let create = if let Ok(CertValue { renewable_on, .. }) =
+                <StorageCertsByIssuer<T, I>>::try_get(issuer, receiver)
+            {
+                if renewable_on > block_number {
+                    return Err(Error::<T, I>::NotRespectRenewablePeriod.into());
+                }
+                false
+            } else {
+                true
+            };
+
+            Self::do_add_cert(block_number, create, issuer, receiver)
+        }
+
+        #[pallet::weight(0)]
+        pub fn del_cert(
+            origin: OriginFor<T>,
+            issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+            Self::remove_cert_inner(issuer, receiver, None);
+            Ok(().into())
+        }
+
+        #[pallet::weight(0)]
+        pub fn remove_all_certs_received_by(
+            origin: OriginFor<T>,
+            idty_index: T::IdtyIndex,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+            if let Ok(issuers) = <StorageCertsByReceiver<T, I>>::try_get(idty_index) {
+                for issuer in issuers {
+                    Self::remove_cert_inner(issuer, idty_index, None);
+                }
+            }
+            Ok(().into())
+        }
+    }
+
+    // INTERNAL FUNCTIONS //
+
+    impl<T: Config<I>, I: 'static> Pallet<T, I> {
+        fn do_add_cert(
+            block_number: T::BlockNumber,
+            create: bool,
+            issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
+        ) -> DispatchResultWithPostInfo {
+            // Write StorageIdtyCertMeta for issuer
+            let issuer_issued_count =
+                StorageIdtyCertMeta::<T, I>::mutate(issuer, |issuer_idty_cert_meta| {
+                    issuer_idty_cert_meta.issued_count =
+                        issuer_idty_cert_meta.issued_count.saturating_add(1);
+                    issuer_idty_cert_meta.next_issuable_on = block_number + T::CertPeriod::get();
+                    issuer_idty_cert_meta.issued_count
+                });
+
             // Write StorageIdtyCertMeta for receiver
-            frame_support::runtime_print!(
-                "add_cert({:?}, {:?}): Write StorageIdtyCertMeta for receiver",
-                issuer,
-                receiver
-            );
             let receiver_received_count =
                 <StorageIdtyCertMeta<T, I>>::mutate_exists(receiver, |cert_meta_opt| {
                     let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());
@@ -390,36 +462,6 @@ pub mod pallet {
 
             Ok(().into())
         }
-
-        #[pallet::weight(0)]
-        pub fn del_cert(
-            origin: OriginFor<T>,
-            issuer: T::IdtyIndex,
-            receiver: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
-            T::DelCertOrigin::ensure_origin((origin, issuer, receiver))?;
-            Self::remove_cert_inner(issuer, receiver, None);
-            Ok(().into())
-        }
-
-        #[pallet::weight(0)]
-        pub fn remove_all_certs_received_by(
-            origin: OriginFor<T>,
-            idty_index: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
-            if let Ok(issuers) = <StorageCertsByReceiver<T, I>>::try_get(idty_index) {
-                for issuer in issuers {
-                    Self::remove_cert_inner(issuer, idty_index, None);
-                }
-            }
-            Ok(().into())
-        }
-    }
-
-    // INTERNAL FUNCTIONS //
-
-    impl<T: Config<I>, I: 'static> Pallet<T, I> {
         fn prune_certifications(block_number: T::BlockNumber) -> Weight {
             let mut total_weight: Weight = 0;
 

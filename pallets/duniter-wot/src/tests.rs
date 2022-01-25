@@ -19,7 +19,6 @@ use crate::mock::*;
 use crate::WotDiff;
 use frame_support::assert_err;
 use frame_support::assert_ok;
-use frame_support::error::BadOrigin;
 use frame_support::instances::Instance1;
 use frame_system::{EventRecord, Phase};
 use pallet_identity::{IdtyName, IdtyStatus};
@@ -32,9 +31,7 @@ fn test_genesis_build() {
         assert_eq!(Identity::identities_count(), 3);
         assert_eq!(Identity::identity(1).unwrap().next_creatable_identity_on, 0);
         assert_eq!(
-            pallet_certification::Pallet::<Test, Instance1>::idty_cert_meta(1)
-                .unwrap()
-                .next_issuable_on,
+            pallet_certification::Pallet::<Test, Instance1>::idty_cert_meta(1).next_issuable_on,
             2
         );
     });
@@ -110,7 +107,7 @@ fn test_new_idty_validation() {
 
         // Bob should be able to certify Ferdie
         run_to_block(4);
-        assert_ok!(Cert::add_cert(Origin::signed(2), 2, 6));
+        assert_ok!(Cert::add_cert(Origin::signed(2), 6));
 
         let events = System::events();
         // 3 events should have occurred: NewCert, MembershipAcquired and IdtyValidated
@@ -229,7 +226,10 @@ fn test_idty_membership_expire_them_requested() {
         assert_eq!(Identity::identity(3).unwrap().status, IdtyStatus::Disabled);
 
         // Alice can't renew it's cert to Charlie
-        assert_err!(Cert::add_cert(Origin::signed(1), 1, 3), BadOrigin);
+        assert_err!(
+            Cert::add_cert(Origin::signed(1), 3),
+            pallet_certification::Error::<Test, Instance1>::CertNotAllowed
+        );
 
         // Charlie should be able to request membership
         run_to_block(6);

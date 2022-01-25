@@ -312,11 +312,11 @@ macro_rules! pallets_config {
 		}
 
 		impl pallet_certification::Config<Instance1> for Runtime {
-			type AddCertOrigin = pallet_duniter_wot::AddCertOrigin<Runtime, Instance1>;
 			type CertPeriod = CertPeriod;
-			type DelCertOrigin = pallet_duniter_wot::DelCertOrigin<Runtime, Instance1>;
 			type Event = Event;
 			type IdtyIndex = IdtyIndex;
+			type IdtyIndexOf = Identity;
+			type IsCertAllowed = Wot;
 			type MaxByIssuer = MaxByIssuer;
 			type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
 			type OnNewcert = Wot;
@@ -352,11 +352,11 @@ macro_rules! pallets_config {
 		}
 
 		impl pallet_certification::Config<Instance2> for Runtime {
-			type AddCertOrigin = pallet_duniter_wot::AddCertOrigin<Runtime, Instance2>;
 			type CertPeriod = SmithCertPeriod;
-			type DelCertOrigin = pallet_duniter_wot::DelCertOrigin<Runtime, Instance2>;
 			type Event = Event;
 			type IdtyIndex = IdtyIndex;
+			type IdtyIndexOf = Identity;
+			type IsCertAllowed = SmithsSubWot;
 			type MaxByIssuer = SmithMaxByIssuer;
 			type MinReceivedCertToBeAbleToIssueCert = SmithMinReceivedCertToBeAbleToIssueCert;
 			type OnNewcert = SmithsSubWot;

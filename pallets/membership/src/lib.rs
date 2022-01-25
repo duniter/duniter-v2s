@@ -67,6 +67,7 @@ pub mod pallet {
         type ExternalizeMembershipStorage: Get<bool>;
         /// Something that identifies an identity
         type IdtyId: Copy + MaybeSerializeDeserialize + Parameter + Ord;
+        /// Something that give the IdtyId on an account id
         type IdtyIdOf: Convert<Self::AccountId, Option<Self::IdtyId>>;
         /// Optional metadata
         type MetaData: Parameter + Validate<Self::AccountId>;

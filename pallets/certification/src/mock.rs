@@ -100,11 +100,11 @@ parameter_types! {
 }
 
 impl pallet_certification::Config for Test {
-    type AddCertOrigin = EnsureRoot;
     type CertPeriod = CertPeriod;
-    type DelCertOrigin = EnsureRoot;
     type Event = Event;
     type IdtyIndex = IdtyIndex;
+    type IdtyIndexOf = sp_runtime::traits::ConvertInto;
+    type IsCertAllowed = ();
     type MaxByIssuer = MaxByIssuer;
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = ();

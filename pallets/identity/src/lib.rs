@@ -229,6 +229,10 @@ pub mod pallet {
             let creator_idty_val =
                 Identities::<T>::try_get(&creator).map_err(|_| Error::<T>::IdtyNotFound)?;
 
+            if IdentityIndexOf::<T>::contains_key(&owner_key) {
+                return Err(Error::<T>::IdtyAlreadyCreated.into());
+            }
+
             if !T::EnsureIdtyCallAllowed::can_create_identity(creator) {
                 return Err(Error::<T>::CreatorNotAllowedToCreateIdty.into());
             }
@@ -418,6 +422,8 @@ pub mod pallet {
         CreatorNotAllowedToCreateIdty,
         /// Identity already confirmed
         IdtyAlreadyConfirmed,
+        /// Identity already created
+        IdtyAlreadyCreated,
         /// Identity already validated
         IdtyAlreadyValidated,
         /// You are not allowed to create a new identity now

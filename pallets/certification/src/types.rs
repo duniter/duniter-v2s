@@ -27,7 +27,7 @@ pub struct CertValue<BlockNumber> {
 }
 
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct IdtyCertMeta<BlockNumber> {
+pub struct IdtyCertMeta<BlockNumber: Default> {
     pub issued_count: u32,
     pub next_issuable_on: BlockNumber,
     pub received_count: u32,

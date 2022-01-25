@@ -131,13 +131,10 @@ where
         + pallet_membership::Config<I, MetaData = MembershipMetaData<AccountId>>,
 {
     fn can_create_identity(creator: IdtyIndex) -> bool {
-        if let Some(cert_meta) = pallet_certification::Pallet::<T, I>::idty_cert_meta(creator) {
-            cert_meta.received_count >= T::MinCertForCreateIdtyRight::get()
-                && cert_meta.next_issuable_on <= frame_system::pallet::Pallet::<T>::block_number()
-                && cert_meta.issued_count < T::MaxByIssuer::get()
-        } else {
-            false
-        }
+        let cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(creator);
+        cert_meta.received_count >= T::MinCertForCreateIdtyRight::get()
+            && cert_meta.next_issuable_on <= frame_system::pallet::Pallet::<T>::block_number()
+            && cert_meta.issued_count < T::MaxByIssuer::get()
     }
     fn can_confirm_identity(idty_index: IdtyIndex, owner_key: AccountId) -> bool {
         pallet_membership::Pallet::<T, I>::request_membership(
@@ -153,6 +150,39 @@ where
             Some(idty_index),
         )
         .is_ok()
+    }
+}
+
+impl<T: Config<I>, I: 'static> pallet_certification::traits::IsCertAllowed<IdtyIndex>
+    for Pallet<T, I>
+{
+    fn is_cert_allowed(issuer: IdtyIndex, receiver: IdtyIndex) -> bool {
+        if let Some(issuer_data) = pallet_identity::Pallet::<T>::identity(issuer) {
+            if issuer_data.status != IdtyStatus::Validated {
+                return false;
+            }
+            if let Some(receiver_data) = pallet_identity::Pallet::<T>::identity(receiver) {
+                match receiver_data.status {
+                    IdtyStatus::ConfirmedByOwner => true,
+                    IdtyStatus::Created => false,
+                    IdtyStatus::Disabled => {
+                        pallet_membership::Pallet::<T, I>::is_in_pending_memberships(receiver)
+                    }
+                    IdtyStatus::Validated => {
+                        pallet_membership::Pallet::<T, I>::is_member(&receiver)
+                            || pallet_membership::Pallet::<T, I>::is_in_pending_memberships(
+                                receiver,
+                            )
+                    }
+                }
+            } else {
+                // Receiver not found
+                false
+            }
+        } else {
+            // Issuer not found
+            false
+        }
     }
 }
 
@@ -207,20 +237,18 @@ where
             }
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipRenewed(_) => {}
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipRequested(idty_index) => {
-                if let Some(idty_cert_meta) =
-                    pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index)
-                {
-                    let received_count = idty_cert_meta.received_count;
+                let idty_cert_meta =
+                    pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
+                let received_count = idty_cert_meta.received_count;
 
-                    // TODO insert `receiver` in distance queue if received_count >= MinCertForMembership
-                    if received_count >= T::MinCertForMembership::get() as u32 {
-                        // TODO insert `receiver` in distance queue
-                        if Self::dispath_idty_call(pallet_identity::Call::validate_identity {
-                            idty_index: *idty_index,
-                        }) && received_count == T::MinReceivedCertToBeAbleToIssueCert::get()
-                        {
-                            Self::do_apply_first_issuable_on(*idty_index);
-                        }
+                // TODO insert `receiver` in distance queue if received_count >= MinCertForMembership
+                if received_count >= T::MinCertForMembership::get() as u32 {
+                    // TODO insert `receiver` in distance queue
+                    if Self::dispath_idty_call(pallet_identity::Call::validate_identity {
+                        idty_index: *idty_index,
+                    }) && received_count == T::MinReceivedCertToBeAbleToIssueCert::get()
+                    {
+                        Self::do_apply_first_issuable_on(*idty_index);
                     }
                 }
             }
@@ -239,10 +267,11 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pall
     fn on_idty_change(idty_index: IdtyIndex, idty_event: IdtyEvent<T>) -> Weight {
         match idty_event {
             IdtyEvent::Created { creator } => {
-                if let Err(e) = <pallet_certification::Pallet<T, I>>::add_cert(
+                if let Err(e) = <pallet_certification::Pallet<T, I>>::force_add_cert(
                     frame_system::Origin::<T>::Root.into(),
                     creator,
                     idty_index,
+                    true,
                 ) {
                     sp_std::if_std! {
                         println!("{:?}", e)
