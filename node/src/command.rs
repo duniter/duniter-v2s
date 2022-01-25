@@ -204,6 +204,12 @@ pub fn run() -> sc_cli::Result<()> {
         Some(Subcommand::ImportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|mut config| {
+                // Force offchain worker and offchain indexing if we have the role Authority
+                if config.role.is_authority() {
+                    config.offchain_worker.enabled = true;
+                    config.offchain_worker.indexing_enabled = true;
+                }
+
                 let (client, _, import_queue, task_manager) =
                     service::new_chain_ops(&mut config, cli.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, import_queue), task_manager))
