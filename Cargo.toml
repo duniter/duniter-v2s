@@ -34,6 +34,9 @@ runtime-benchmarks = [
 [build-dependencies]
 substrate-build-script-utils = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-01' }
 
+[dev-dependencies]
+rusty-hook = "^0.11.2"
+
 [dependencies]
 
 # local dependencies
