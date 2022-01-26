@@ -66,6 +66,9 @@ pub mod pallet {
         type KeysWrapper: Parameter + Into<Self::Keys>;
         type IsMember: IsMember<Self::MemberId>;
         type OnRemovedMember: OnRemovedMember<Self::MemberId>;
+        /// Max number of authorities allowed
+        #[pallet::constant]
+        type MaxAuthorities: Get<u32>;
         #[pallet::constant]
         type MaxKeysLife: Get<SessionIndex>;
         #[pallet::constant]
@@ -113,6 +116,7 @@ pub mod pallet {
                 .collect::<Vec<T::MemberId>>();
             members_ids.sort();
 
+            AuthoritiesCounter::<T>::put(members_ids.len() as u32);
             OnlineAuthorities::<T>::put(members_ids.clone());
             MustRotateKeysBefore::<T>::insert(T::MaxKeysLife::get(), members_ids);
         }
@@ -124,6 +128,10 @@ pub mod pallet {
     #[pallet::getter(fn account_id_of)]
     pub type AccountIdOf<T: Config> =
         StorageMap<_, Twox64Concat, T::MemberId, T::AccountId, OptionQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn authorities_counter)]
+    pub type AuthoritiesCounter<T: Config> = StorageValue<_, u32, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn incoming)]
@@ -198,6 +206,8 @@ pub mod pallet {
         NotMember,
         /// Session keys not provided
         SessionKeysNotProvided,
+        /// Too man aAuthorities
+        TooManyAuthorities,
     }
 
     // CALLS //
@@ -257,6 +267,9 @@ pub mod pallet {
             let is_outgoing = Self::is_outgoing(member_id);
             if Self::is_online(member_id) && !is_outgoing {
                 return Err(Error::<T>::AlreadyOnline.into());
+            }
+            if AuthoritiesCounter::<T>::get() >= T::MaxAuthorities::get() {
+                return Err(Error::<T>::TooManyAuthorities.into());
             }
 
             // Apply phase //
@@ -398,6 +411,7 @@ pub mod pallet {
                 }
             });
             if not_already_inserted {
+                AuthoritiesCounter::<T>::mutate(|counter| *counter += 1);
                 AccountIdOf::<T>::insert(member_id, account_id);
                 Self::deposit_event(Event::MemberGoOnline(member_id));
             }
@@ -413,6 +427,11 @@ pub mod pallet {
                 }
             });
             if not_already_inserted {
+                AuthoritiesCounter::<T>::mutate(|counter| {
+                    if *counter > 0 {
+                        *counter -= 1
+                    }
+                });
                 Self::deposit_event(Event::MemberGoOffline(member_id));
             }
             not_already_inserted
@@ -433,6 +452,7 @@ pub mod pallet {
                 .is_ok()
         }
         fn remove_in(member_id: T::MemberId) {
+            AuthoritiesCounter::<T>::mutate(|counter| counter.saturating_sub(1));
             IncomingAuthorities::<T>::mutate(|members_ids| {
                 if let Ok(index) = members_ids.binary_search(&member_id) {
                     members_ids.remove(index);
@@ -440,6 +460,7 @@ pub mod pallet {
             })
         }
         fn remove_online(member_id: T::MemberId) {
+            AuthoritiesCounter::<T>::mutate(|counter| counter.saturating_add(1));
             OnlineAuthorities::<T>::mutate(|members_ids| {
                 if let Ok(index) = members_ids.binary_search(&member_id) {
                     members_ids.remove(index);

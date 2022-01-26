@@ -183,6 +183,7 @@ macro_rules! pallets_config {
 			type OnRemovedMember = OnRemovedAuthorityMemberHandler<Runtime>;
 			type MemberId = IdtyIndex;
 			type MemberIdOf = Identity;
+			type MaxAuthorities = MaxAuthorities;
 			type MaxKeysLife = frame_support::pallet_prelude::ConstU32<1_000>;
 			type MaxOfflineSessions = frame_support::pallet_prelude::ConstU32<100>;
 			type RemoveMemberOrigin = EnsureRoot<Self::AccountId>;

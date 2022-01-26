@@ -17,7 +17,7 @@
 use super::*;
 use crate::mock::*;
 use crate::MemberData;
-use frame_support::assert_ok;
+use frame_support::{assert_err, assert_ok};
 use sp_runtime::testing::UintAuthorityId;
 
 const EMPTY: Vec<u64> = Vec::new();
@@ -221,6 +221,40 @@ fn test_go_online() {
         run_to_block(10);
         assert_eq!(Session::current_index(), 2);
         assert_eq!(Session::validators(), vec![3, 6, 9, 12]);
+    });
+}
+
+#[test]
+fn test_too_many_authorities() {
+    new_test_ext(3).execute_with(|| {
+        run_to_block(1);
+
+        // Member 12 set his session keys then go online
+        assert_ok!(AuthorityMembers::set_session_keys(
+            Origin::signed(12),
+            12,
+            UintAuthorityId(12).into(),
+        ));
+        assert_eq!(AuthorityMembers::authorities_counter(), 3);
+        assert_ok!(AuthorityMembers::go_online(Origin::signed(12), 12),);
+
+        // Member 15 can't go online because there is already 4 authorities "planned"
+        assert_ok!(AuthorityMembers::set_session_keys(
+            Origin::signed(15),
+            15,
+            UintAuthorityId(15).into(),
+        ));
+        assert_eq!(AuthorityMembers::authorities_counter(), 4);
+        assert_err!(
+            AuthorityMembers::go_online(Origin::signed(15), 15),
+            Error::<Test>::TooManyAuthorities,
+        );
+
+        // If member 3 go_offline, member 15 can go_online
+        assert_ok!(AuthorityMembers::go_offline(Origin::signed(3), 3),);
+        assert_eq!(AuthorityMembers::authorities_counter(), 3);
+        assert_ok!(AuthorityMembers::go_online(Origin::signed(15), 15),);
+        assert_eq!(AuthorityMembers::authorities_counter(), 4);
     });
 }
 

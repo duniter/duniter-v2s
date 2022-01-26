@@ -151,6 +151,7 @@ impl pallet_authority_members::Config for Test {
     type Event = Event;
     type KeysWrapper = MockSessionKeys;
     type IsMember = TestIsSmithMember;
+    type MaxAuthorities = ConstU32<4>;
     type MaxKeysLife = ConstU32<5>;
     type MaxOfflineSessions = ConstU32<2>;
     type MemberId = u64;
@@ -175,8 +176,9 @@ pub fn new_test_ext(initial_authorities_len: u64) -> sp_io::TestExternalities {
         for (ref k, ..) in &keys {
             frame_system::Pallet::<Test>::inc_providers(k);
         }
-        // A dedicated test account
+        // Some dedicated test account
         frame_system::Pallet::<Test>::inc_providers(&12);
+        frame_system::Pallet::<Test>::inc_providers(&15);
     });
     pallet_authority_members::GenesisConfig::<Test> {
         initial_authorities,
