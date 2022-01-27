@@ -20,7 +20,7 @@ corresponds to the first 8 hash characters of the commit.
 Usage:
 
 ```docker
-docker run -it -p9944:9944 --name duniter-v2s duniter/duniter-v2s:debug-sha-325c6bd8
+docker run -it -p9944:9944 --name duniter-v2s duniter/duniter-v2s:debug-sha-c305faab
 ```
 
 Then open `https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944` in a browser.
