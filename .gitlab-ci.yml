@@ -53,6 +53,7 @@ build_debug:
   artifacts:
     paths:
       - build/
+    expire_in: 3 day
   cache:
     - key:
         files:
@@ -80,6 +81,7 @@ build_debug_with_cache:
   artifacts:
     paths:
       - build/
+    expire_in: 3 day
   cache:
     - key:
         files:
@@ -101,7 +103,7 @@ build_release:
   artifacts:
     paths:
       - build/
-    expire_in: 1 day
+    expire_in: 3 day
 
 tests_debug:
   extends: .env
@@ -121,8 +123,6 @@ tests_debug:
     - cargo cucumber -i balance*
     - cargo cucumber -i monetary*
     - cargo cucumber -i transfer*
-  dependencies:
-    - build_debug
 
 tests_release:
   extends: .env
