@@ -77,7 +77,7 @@ impl<
     ) -> Weight {
         (match membership_event {
             sp_membership::Event::MembershipAcquired(
-                idty_index,
+                _idty_index,
                 SmithsMembershipMetaData {
                     owner_key,
                     session_keys,
@@ -85,7 +85,6 @@ impl<
                 },
             ) => {
                 let call = pallet_authority_members::Call::<Runtime>::set_session_keys {
-                    member_id: *idty_index,
                     keys: session_keys.clone(),
                 };
                 if let Err(e) = call.dispatch_bypass_filter(

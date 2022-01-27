@@ -215,13 +215,10 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(0)]
-        pub fn go_offline(
-            origin: OriginFor<T>,
-            member_id: T::MemberId,
-        ) -> DispatchResultWithPostInfo {
+        pub fn go_offline(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // Verification phase //
             let who = ensure_signed(origin)?;
-            Self::verify_ownership_and_membership(&who, member_id)?;
+            let member_id = Self::verify_ownership_and_membership(&who)?;
 
             if !Members::<T>::contains_key(member_id) {
                 return Err(Error::<T>::MemberNotFound.into());
@@ -244,13 +241,10 @@ pub mod pallet {
             Ok(().into())
         }
         #[pallet::weight(0)]
-        pub fn go_online(
-            origin: OriginFor<T>,
-            member_id: T::MemberId,
-        ) -> DispatchResultWithPostInfo {
+        pub fn go_online(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // Verification phase //
             let who = ensure_signed(origin)?;
-            Self::verify_ownership_and_membership(&who, member_id)?;
+            let member_id = Self::verify_ownership_and_membership(&who)?;
 
             if !Members::<T>::contains_key(member_id) {
                 return Err(Error::<T>::MemberNotFound.into());
@@ -285,11 +279,10 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn set_session_keys(
             origin: OriginFor<T>,
-            member_id: T::MemberId,
             keys: T::KeysWrapper,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin.clone())?;
-            Self::verify_ownership_and_membership(&who, member_id)?;
+            let member_id = Self::verify_ownership_and_membership(&who)?;
 
             let _post_info = pallet_session::Call::<T>::set_keys {
                 keys: keys.into(),
@@ -332,11 +325,10 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn purge_old_session_keys(
             origin: OriginFor<T>,
-            member_id: T::MemberId,
             accounts_ids: Vec<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            Self::verify_ownership_and_membership(&who, member_id)?;
+            let member_id = Self::verify_ownership_and_membership(&who)?;
 
             for account_id in accounts_ids {
                 if !T::IsMember::is_member(&member_id) {
@@ -476,21 +468,15 @@ pub mod pallet {
         }
         fn verify_ownership_and_membership(
             who: &T::AccountId,
-            member_id: T::MemberId,
-        ) -> Result<(), DispatchError> {
-            if let Some(expected_member_id) = T::MemberIdOf::convert(who.clone()) {
-                if expected_member_id != member_id {
-                    return Err(Error::<T>::NotOwner.into());
-                }
-            } else {
-                return Err(Error::<T>::MemberIdNotFound.into());
-            }
+        ) -> Result<T::MemberId, DispatchError> {
+            let member_id =
+                T::MemberIdOf::convert(who.clone()).ok_or(Error::<T>::MemberIdNotFound)?;
 
             if !T::IsMember::is_member(&member_id) {
                 return Err(Error::<T>::NotMember.into());
             }
 
-            Ok(())
+            Ok(member_id)
         }
     }
 }

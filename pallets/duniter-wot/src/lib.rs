@@ -137,7 +137,7 @@ where
             && cert_meta.issued_count < T::MaxByIssuer::get()
     }
     fn can_confirm_identity(idty_index: IdtyIndex, owner_key: AccountId) -> bool {
-        pallet_membership::Pallet::<T, I>::request_membership(
+        pallet_membership::Pallet::<T, I>::force_request_membership(
             RawOrigin::Root.into(),
             idty_index,
             MembershipMetaData(owner_key),

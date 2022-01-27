@@ -235,7 +235,6 @@ fn test_idty_membership_expire_them_requested() {
         run_to_block(6);
         assert_ok!(Membership::request_membership(
             Origin::signed(3),
-            3,
             crate::MembershipMetaData(3)
         ));
 

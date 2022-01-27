@@ -226,53 +226,33 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
         #[pallet::weight(0)]
-        pub fn request_membership(
+        pub fn force_request_membership(
             origin: OriginFor<T>,
             idty_id: T::IdtyId,
             metadata: T::MetaData,
         ) -> DispatchResultWithPostInfo {
-            let is_root = match origin.into() {
-                Ok(RawOrigin::Root) => true,
-                Ok(RawOrigin::Signed(account_id)) => {
-                    if let Some(expected_idty_id) = T::IdtyIdOf::convert(account_id.clone()) {
-                        if idty_id != expected_idty_id {
-                            return Err(BadOrigin.into());
-                        } else if !metadata.validate(&account_id) {
-                            return Err(Error::<T, I>::InvalidMetaData.into());
-                        }
-                    } else {
-                        return Err(Error::<T, I>::IdtyIdNotFound.into());
-                    }
-                    false
-                }
-                _ => return Err(BadOrigin.into()),
-            };
-            if PendingMembership::<T, I>::contains_key(&idty_id) {
-                return Err(Error::<T, I>::MembershipAlreadyRequested.into());
+            ensure_root(origin)?;
+
+            Self::do_request_membership(idty_id, metadata)
+        }
+
+        #[pallet::weight(0)]
+        pub fn request_membership(
+            origin: OriginFor<T>,
+            metadata: T::MetaData,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            let idty_id = T::IdtyIdOf::convert(who.clone()).ok_or(Error::<T, I>::IdtyIdNotFound)?;
+            if !metadata.validate(&who) {
+                return Err(Error::<T, I>::InvalidMetaData.into());
             }
-            if Membership::<T, I>::contains_key(&idty_id) {
-                return Err(Error::<T, I>::MembershipAlreadyAcquired.into());
-            }
-            if RevokedMembership::<T, I>::contains_key(&idty_id) {
-                return Err(Error::<T, I>::MembershipRevokedRecently.into());
-            }
-            if !is_root
-                && !T::IsIdtyAllowedToRequestMembership::is_idty_allowed_to_request_membership(
-                    &idty_id,
-                )
+            if !T::IsIdtyAllowedToRequestMembership::is_idty_allowed_to_request_membership(&idty_id)
             {
                 return Err(Error::<T, I>::IdtyNotAllowedToRequestMembership.into());
             }
 
-            let block_number = frame_system::pallet::Pallet::<T>::block_number();
-            let expire_on = block_number + T::PendingMembershipPeriod::get();
-
-            PendingMembership::<T, I>::insert(idty_id, metadata);
-            PendingMembershipsExpireOn::<T, I>::append(expire_on, idty_id);
-            Self::deposit_event(Event::MembershipRequested(idty_id));
-            T::OnEvent::on_event(&sp_membership::Event::MembershipRequested(idty_id));
-
-            Ok(().into())
+            Self::do_request_membership(idty_id, metadata)
         }
 
         #[pallet::weight(0)]
@@ -362,6 +342,30 @@ pub mod pallet {
             );
             MembershipsExpireOn::<T, I>::append(expire_on, idty_id);
             0
+        }
+        fn do_request_membership(
+            idty_id: T::IdtyId,
+            metadata: T::MetaData,
+        ) -> DispatchResultWithPostInfo {
+            if PendingMembership::<T, I>::contains_key(&idty_id) {
+                return Err(Error::<T, I>::MembershipAlreadyRequested.into());
+            }
+            if Membership::<T, I>::contains_key(&idty_id) {
+                return Err(Error::<T, I>::MembershipAlreadyAcquired.into());
+            }
+            if RevokedMembership::<T, I>::contains_key(&idty_id) {
+                return Err(Error::<T, I>::MembershipRevokedRecently.into());
+            }
+
+            let block_number = frame_system::pallet::Pallet::<T>::block_number();
+            let expire_on = block_number + T::PendingMembershipPeriod::get();
+
+            PendingMembership::<T, I>::insert(idty_id, metadata);
+            PendingMembershipsExpireOn::<T, I>::append(expire_on, idty_id);
+            Self::deposit_event(Event::MembershipRequested(idty_id));
+            T::OnEvent::on_event(&sp_membership::Event::MembershipRequested(idty_id));
+
+            Ok(().into())
         }
         pub(super) fn do_revoke_membership(idty_id: T::IdtyId) -> Weight {
             Self::remove_membership(&idty_id);
