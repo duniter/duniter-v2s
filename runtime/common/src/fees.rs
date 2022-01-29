@@ -35,4 +35,8 @@ where
             degree: 1,
         })
     }
+    // Force disable fees
+    fn calc(weight: &Weight) -> Self::Balance {
+        Zero::zero()
+    }
 }
