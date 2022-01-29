@@ -163,8 +163,19 @@ macro_rules! pallets_config {
 			type WeightInfo = common_runtime::weights::pallet_balances::WeightInfo<Runtime>;
 		}
 
+		pub struct HandleFees;
+		type NegativeImbalance = <Balances as frame_support::traits::Currency<AccountId>>::NegativeImbalance;
+		impl frame_support::traits::OnUnbalanced<NegativeImbalance> for HandleFees {
+			fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+				use frame_support::traits::Currency as _;
+
+				if let Some(author) = Authorship::author() {
+					Balances::resolve_creating(&author, amount);
+				}
+			}
+		}
 		impl pallet_transaction_payment::Config for Runtime {
-			type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+			type OnChargeTransaction = CurrencyAdapter<Balances, HandleFees>;
 			type TransactionByteFee = TransactionByteFee;
 			type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
 			type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance>;
