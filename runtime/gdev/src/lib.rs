@@ -127,7 +127,9 @@ impl frame_support::traits::Contains<Call> for BaseCallFilter {
     fn contains(call: &Call) -> bool {
         !matches!(
             call,
-            Call::Membership(
+            Call::System(
+                frame_system::Call::remark { .. } | frame_system::Call::remark_with_event { .. }
+            ) | Call::Membership(
                 pallet_membership::Call::claim_membership { .. }
                     | pallet_membership::Call::revoke_membership { .. }
             ) | Call::Session(_)
