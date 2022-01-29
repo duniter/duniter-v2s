@@ -249,6 +249,29 @@ macro_rules! pallets_config {
 
 		// UTILITIES //
 
+		parameter_types! {
+			// One storage item; key size 32, value size 8; .
+			pub const ProxyDepositBase: Balance = deposit(1, 8);
+			// Additional storage item size of 33 bytes.
+			pub const ProxyDepositFactor: Balance = deposit(0, 33);
+			pub const AnnouncementDepositBase: Balance = deposit(1, 8);
+			pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
+		}
+		impl pallet_proxy::Config for Runtime {
+			type Event = Event;
+			type Call = Call;
+			type Currency = Balances;
+			type ProxyType = ProxyType;
+			type ProxyDepositBase = ProxyDepositBase;
+			type ProxyDepositFactor = ProxyDepositFactor;
+			type MaxProxies = frame_support::traits::ConstU32<32>;
+			type MaxPending = frame_support::traits::ConstU32<32>;
+			type CallHasher = BlakeTwo256;
+			type AnnouncementDepositBase = AnnouncementDepositBase;
+			type AnnouncementDepositFactor = AnnouncementDepositFactor;
+			type WeightInfo = pallet_proxy::weights::SubstrateWeight<Self>;
+		}
+
 		impl pallet_utility::Config for Runtime {
 			type Event = Event;
 			type Call = Call;

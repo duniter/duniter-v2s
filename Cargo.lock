@@ -1915,6 +1915,7 @@ dependencies = [
  "pallet-membership",
  "pallet-multisig",
  "pallet-offences",
+ "pallet-proxy",
  "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
@@ -1971,6 +1972,7 @@ dependencies = [
  "pallet-membership",
  "pallet-multisig",
  "pallet-offences",
+ "pallet-proxy",
  "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
@@ -2164,6 +2166,7 @@ dependencies = [
  "pallet-membership",
  "pallet-multisig",
  "pallet-offences",
+ "pallet-proxy",
  "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
@@ -4458,6 +4461,20 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-proxy"
+version = "4.0.0-dev"
+source = "git+https://github.com/librelois/substrate.git?branch=duniter-monthly-2022-01#277da611dd03bc181b094682acf83138e2ea85aa"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
+ "sp-runtime",
  "sp-std",
 ]
 

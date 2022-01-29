@@ -138,6 +138,48 @@ impl frame_support::traits::Contains<Call> for BaseCallFilter {
     }
 }
 
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    codec::Encode,
+    codec::Decode,
+    frame_support::RuntimeDebug,
+    codec::MaxEncodedLen,
+    scale_info::TypeInfo,
+)]
+#[allow(clippy::unnecessary_cast)]
+pub enum ProxyType {
+    Any = 0,
+    TransferOnly = 1,
+    CancelProxy = 2,
+}
+impl Default for ProxyType {
+    fn default() -> Self {
+        Self::Any
+    }
+}
+impl frame_support::traits::InstanceFilter<Call> for ProxyType {
+    fn filter(&self, c: &Call) -> bool {
+        match self {
+            ProxyType::Any => true,
+            ProxyType::TransferOnly => {
+                matches!(c, Call::Balances(..) | Call::UniversalDividend(..))
+            }
+            ProxyType::CancelProxy => {
+                matches!(
+                    c,
+                    Call::Proxy(pallet_proxy::Call::reject_announcement { .. })
+                )
+            }
+        }
+    }
+}
+
 // Configure FRAME pallets to include in runtime.
 common_runtime::pallets_config! {
     // Dynamic parameters
@@ -224,8 +266,9 @@ construct_runtime!(
         // Governance stuff
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
 
-        // Cunning utilities
-        Utility: pallet_utility::{Pallet, Call, Event} = 30,
+        // Utilities
+        Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 30,
+        Utility: pallet_utility::{Pallet, Call, Event} = 31,
 
         // Universal dividend
         UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage} = 40,

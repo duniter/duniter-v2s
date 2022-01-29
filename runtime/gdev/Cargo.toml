@@ -45,6 +45,7 @@ std = [
     'pallet-membership/std',
     'pallet-im-online/std',
     'pallet-multisig/std',
+    'pallet-proxy/std',
     'pallet-session/std',
     'pallet-sudo/std',
     'pallet-universal-dividend/std',
@@ -162,6 +163,11 @@ git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
 
 [dependencies.pallet-multisig]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
+
+[dependencies.pallet-proxy]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'

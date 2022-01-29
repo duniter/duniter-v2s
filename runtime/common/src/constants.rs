@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::BlockNumber;
+use crate::{Balance, BlockNumber};
 use sp_runtime::Perbill;
 
 /// This determines the average expected block time that we are targeting.
@@ -56,3 +56,8 @@ pub const BABE_GENESIS_EPOCH_CONFIG: sp_consensus_babe::BabeEpochConfiguration =
         c: PRIMARY_PROBABILITY,
         allowed_slots: sp_consensus_babe::AllowedSlots::PrimaryAndSecondaryVRFSlots,
     };
+
+// 1 unit per item + 1 cent per byte
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+    items as Balance * 100 + (bytes as Balance)
+}
