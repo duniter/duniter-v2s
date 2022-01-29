@@ -17,7 +17,7 @@ workflow:
 .env:
   image: paritytech/ci-linux:production
   tags:
-    - elois-boson
+    - elois-neutron
 
 fmt_and_clippy:
   extends: .env
