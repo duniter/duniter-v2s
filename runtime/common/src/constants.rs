@@ -40,6 +40,13 @@ pub const YEARS: BlockNumber = (SECS_PER_YEAR / SECS_PER_BLOCK) as BlockNumber;
 
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 
+frame_support::parameter_types! {
+    pub const DbWeight: frame_support::weights::RuntimeDbWeight = frame_support::weights::RuntimeDbWeight {
+        read: 25 * frame_support::weights::constants::WEIGHT_PER_MICROS,   // ~25 µs
+        write: 100 * frame_support::weights::constants::WEIGHT_PER_MICROS, // ~100 µs
+    };
+}
+
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 

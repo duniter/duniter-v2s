@@ -23,6 +23,7 @@ pub mod fees;
 pub mod handlers;
 mod pallets_config;
 pub mod providers;
+pub mod weights;
 
 pub use pallet_identity::{GenesisIdty, IdtyName, IdtyStatus, IdtyValue};
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;

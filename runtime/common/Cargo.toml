@@ -22,6 +22,7 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'pallet-authority-members/std',
+    'pallet-balances/std',
     'pallet-certification/std',
     'pallet-duniter-wot/std',
     'pallet-identity/std',
@@ -62,6 +63,11 @@ git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'
 
 [dependencies.frame-system]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
+
+[dependencies.pallet-balances]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-01'

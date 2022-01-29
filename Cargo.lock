@@ -845,6 +845,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-authority-members",
+ "pallet-balances",
  "pallet-certification",
  "pallet-duniter-wot",
  "pallet-identity",

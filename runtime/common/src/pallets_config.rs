@@ -55,7 +55,7 @@ macro_rules! pallets_config {
 			/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 			type BlockHashCount = BlockHashCount;
 			/// The weight of database operations that the runtime can invoke.
-			type DbWeight = RocksDbWeight;
+			type DbWeight = DbWeight;
 			/// Version of the runtime.
 			type Version = Version;
 			/// Converts a module to the index of the module in `construct_runtime!`.
@@ -160,7 +160,7 @@ macro_rules! pallets_config {
 			type DustRemoval = ();
 			type ExistentialDeposit = ExistentialDeposit;
 			type AccountStore = System;
-			type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+			type WeightInfo = common_runtime::weights::pallet_balances::WeightInfo<Runtime>;
 		}
 
 		impl pallet_transaction_payment::Config for Runtime {
