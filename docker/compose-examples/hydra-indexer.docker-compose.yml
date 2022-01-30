@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: postgres
 
   duniter-1:
-    image: duniter/duniter-v2s:debug-sha-c305faab
+    image: duniter/duniter-v2s:debug-sha-775e4c88
     restart: unless-stopped
     ports:
       - "9944:9944"
