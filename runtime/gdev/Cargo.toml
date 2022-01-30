@@ -33,6 +33,7 @@ std = [
     'frame-support/std',
     'frame-system-rpc-runtime-api/std',
     'frame-system/std',
+	'pallet-atomic-swap/std',
 	'pallet-authority-discovery/std',
 	'pallet-authority-members/std',
     'pallet-babe/std',
@@ -126,6 +127,11 @@ branch = 'duniter-monthly-2022-01'
 [dependencies.hex-literal]
 optional = true
 version = '0.3.1'
+
+[dependencies.pallet-atomic-swap]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-01'
 
 [dependencies.pallet-authority-discovery]
 default-features = false

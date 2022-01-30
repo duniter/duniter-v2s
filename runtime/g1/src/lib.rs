@@ -219,27 +219,26 @@ construct_runtime!(
         // Governance stuff.
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
 
-        // Cunning utilities.
-        Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 30,
-        Utility: pallet_utility::{Pallet, Call, Event} = 31,
-
-        // Universal dividend.
-        UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage} = 40,
-        UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
+        // Universal dividend
+        UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage} = 30,
+        UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 31,
 
         // Web Of Trust
-        Wot: pallet_duniter_wot::<Instance1>::{Pallet} = 50,
-        Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 51,
-        Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
-        Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
+        Wot: pallet_duniter_wot::<Instance1>::{Pallet} = 40,
+        Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
+        Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
+        Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
 
         // Smiths Sub-Wot
-        SmithsSubWot: pallet_duniter_wot::<Instance2>::{Pallet} = 60,
-        SmithsMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 62,
-        SmithsCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 63,
+        SmithsSubWot: pallet_duniter_wot::<Instance2>::{Pallet} = 50,
+        SmithsMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
+        SmithsCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
 
-        // Multisig dispatch.
-        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 70,
+        // Utilities
+        AtomicSwap: pallet_atomic_swap::{Pallet, Call, Storage, Event<T>} = 60,
+        Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 61,
+        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 62,
+        Utility: pallet_utility::{Pallet, Call, Event} = 63,
     }
 );
 

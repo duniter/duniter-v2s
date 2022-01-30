@@ -1902,6 +1902,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex-literal",
+ "pallet-atomic-swap",
  "pallet-authority-discovery",
  "pallet-authority-members",
  "pallet-authorship",
@@ -1958,6 +1959,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex-literal",
+ "pallet-atomic-swap",
  "pallet-authority-discovery",
  "pallet-authority-members",
  "pallet-authorship",
@@ -2153,6 +2155,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex-literal",
+ "pallet-atomic-swap",
  "pallet-authority-discovery",
  "pallet-authority-members",
  "pallet-authorship",
@@ -4202,6 +4205,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ff55baddef9e4ad00f88b6c743a2a8062d4c6ade126c2a528644b8e444d52ce"
 dependencies = [
  "stable_deref_trait",
+]
+
+[[package]]
+name = "pallet-atomic-swap"
+version = "4.0.0-dev"
+source = "git+https://github.com/librelois/substrate.git?branch=duniter-monthly-2022-01#277da611dd03bc181b094682acf83138e2ea85aa"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]

@@ -260,6 +260,12 @@ macro_rules! pallets_config {
 
 		// UTILITIES //
 
+		impl pallet_atomic_swap::Config for Runtime {
+			type Event = Event;
+			type SwapAction = pallet_atomic_swap::BalanceSwapAction<AccountId, Balances>;
+			type ProofLimit = frame_support::traits::ConstU32<255>;
+		}
+
 		parameter_types! {
 			// One storage item; key size 32, value size 8; .
 			pub const ProxyDepositBase: Balance = deposit(1, 8);
@@ -281,6 +287,16 @@ macro_rules! pallets_config {
 			type AnnouncementDepositBase = AnnouncementDepositBase;
 			type AnnouncementDepositFactor = AnnouncementDepositFactor;
 			type WeightInfo = pallet_proxy::weights::SubstrateWeight<Self>;
+		}
+
+		impl pallet_multisig::Config for Runtime {
+			type Event = Event;
+			type Call = Call;
+			type Currency = Balances;
+			type DepositBase = DepositBase;
+			type DepositFactor = DepositFactor;
+			type MaxSignatories = MaxSignatories;
+			type WeightInfo = pallet_multisig::weights::SubstrateWeight<Self>;
 		}
 
 		impl pallet_utility::Config for Runtime {
@@ -398,18 +414,6 @@ macro_rules! pallets_config {
 			type OnRemovedCert = SmithsSubWot;
 			type CertRenewablePeriod = SmithCertRenewablePeriod;
 			type ValidityPeriod = SmithValidityPeriod;
-		}
-
-		// MULTISIG //
-
-		impl pallet_multisig::Config for Runtime {
-			type Event = Event;
-			type Call = Call;
-			type Currency = Balances;
-			type DepositBase = DepositBase;
-			type DepositFactor = DepositFactor;
-			type MaxSignatories = MaxSignatories;
-			type WeightInfo = pallet_multisig::weights::SubstrateWeight<Self>;
 		}
 	};
 }
