@@ -3,7 +3,7 @@ version: "3.5"
 services:
   duniter-v2s:
     container_name: duniter-v2s
-    image: duniter/duniter-v2s:debug-sha-325c6bd8
+    image: duniter/duniter-v2s:debug-sha-c5827302
     ports:
       # telemetry
       - "127.0.0.1:9615:9615"
