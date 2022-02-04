@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-#![allow(clippy::enum_variant_names)]
+#![allow(clippy::enum_variant_names, dead_code, unused_imports)]
 
 pub mod balances;
 
@@ -23,7 +23,9 @@ pub mod node_runtime {}
 
 use serde_json::Value;
 use sp_keyring::AccountKeyring;
+use std::io::prelude::*;
 use std::process::Command;
+use std::str::FromStr;
 use subxt::{ClientBuilder, DefaultConfig, DefaultExtra};
 
 pub type Api = node_runtime::RuntimeApi<DefaultConfig, DefaultExtra<DefaultConfig>>;
@@ -40,41 +42,23 @@ impl Drop for Process {
     }
 }
 
+struct FullNode {
+    process: Process,
+    p2p_port: u16,
+    ws_port: u16,
+}
+
 pub async fn spawn_node() -> (Api, Client, Process) {
     let duniter_binary_path = std::env::var("DUNITER_BINARY_PATH")
         .unwrap_or_else(|_| "../target/debug/duniter".to_owned());
-
-    let p2p_port = portpicker::pick_unused_port().expect("No ports free");
-    let rpc_port = portpicker::pick_unused_port().expect("No ports free");
-    let ws_port = portpicker::pick_unused_port().expect("No ports free");
-    let process = Process(
-        Command::new(duniter_binary_path)
-            .args([
-                "--execution=Native",
-                "--no-telemetry",
-                "--no-prometheus",
-                "--dev",
-                "--sealing=manual",
-                "--tmp",
-                "--port",
-                &p2p_port.to_string(),
-                "--rpc-port",
-                &rpc_port.to_string(),
-                "--ws-port",
-                &ws_port.to_string(),
-            ])
-            .spawn()
-            .expect("failed to spawn node"),
+    let FullNode {
+        process,
+        p2p_port: _,
+        ws_port,
+    } = spawn_full_node(
+        &duniter_binary_path,
+        &["--dev", "--execution=Native", "--sealing=manual"],
     );
-    let duration_secs = if let Ok(duration_string) =
-        std::env::var("DUNITER_INTEGRATION_TESTS_SPAWN_NODE_DURATION")
-    {
-        duration_string.parse().unwrap_or(4)
-    } else {
-        4
-    };
-    std::thread::sleep(std::time::Duration::from_secs(duration_secs));
-
     let client = ClientBuilder::new()
         .set_url(format!("ws://127.0.0.1:{}", ws_port))
         .build()
@@ -127,4 +111,85 @@ pub async fn create_block_with_extrinsic(
         .fetch_events()
         .await
         .map_err(Into::into)
+}
+
+fn spawn_full_node(duniter_binary_path: &str, args: &[&str]) -> FullNode {
+    let p2p_port = portpicker::pick_unused_port().expect("No ports free");
+    let rpc_port = portpicker::pick_unused_port().expect("No ports free");
+    let ws_port = portpicker::pick_unused_port().expect("No ports free");
+    let log_file_path = format!("duniter-v2s-{}.log", ws_port);
+    let log_file = std::fs::File::create(&log_file_path).expect("fail to create log file");
+    let process = Process(
+        Command::new(duniter_binary_path)
+            .args(
+                [
+                    "--no-telemetry",
+                    "--no-prometheus",
+                    "--tmp",
+                    "--port",
+                    &p2p_port.to_string(),
+                    "--rpc-port",
+                    &rpc_port.to_string(),
+                    "--ws-port",
+                    &ws_port.to_string(),
+                ]
+                .iter()
+                .chain(args),
+            )
+            .stdout(std::process::Stdio::null())
+            .stderr(log_file)
+            .spawn()
+            .expect("failed to spawn node"),
+    );
+
+    let timeout =
+        if let Ok(duration_string) = std::env::var("DUNITER_END2END_TESTS_SPAWN_NODE_TIMEOUT") {
+            duration_string.parse().unwrap_or(4)
+        } else {
+            4
+        };
+
+    wait_until_log_line(
+        "***** Duniter has fully started *****",
+        &log_file_path,
+        std::time::Duration::from_secs(timeout),
+    );
+
+    FullNode {
+        process,
+        p2p_port,
+        ws_port,
+    }
+}
+
+fn wait_until_log_line(expected_log_line: &str, log_file_path: &str, timeout: std::time::Duration) {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let mut watcher = notify::watcher(tx, std::time::Duration::from_millis(100)).unwrap();
+    use notify::Watcher as _;
+    watcher
+        .watch(&log_file_path, notify::RecursiveMode::NonRecursive)
+        .unwrap();
+
+    let mut pos = 0;
+    loop {
+        match rx.recv_timeout(timeout) {
+            Ok(notify::DebouncedEvent::Write(_)) => {
+                let mut file = std::fs::File::open(&log_file_path).unwrap();
+                file.seek(std::io::SeekFrom::Start(pos)).unwrap();
+                pos = file.metadata().unwrap().len();
+                let reader = std::io::BufReader::new(file);
+
+                for line in reader.lines() {
+                    if line.expect("fail to read line").contains(expected_log_line) {
+                        return;
+                    }
+                }
+            }
+            Ok(_) => {}
+            Err(err) => {
+                eprintln!("Error: {:?}", err);
+                std::process::exit(1);
+            }
+        }
+    }
 }

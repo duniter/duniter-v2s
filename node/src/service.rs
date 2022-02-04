@@ -648,5 +648,8 @@ where
     }
 
     network_starter.start_network();
+
+    log::info!("***** Duniter has fully started *****");
+
     Ok(task_manager)
 }

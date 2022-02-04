@@ -170,6 +170,6 @@ async fn main() {
     DuniterWorld::cucumber()
         //.fail_on_skipped()
         .max_concurrent_scenarios(4)
-        .run_and_exit("features")
+        .run_and_exit("cucumber-features")
         .await;
 }

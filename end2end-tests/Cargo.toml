@@ -1,10 +1,10 @@
 [package]
 authors = ['Axiom-Team Developers <https://axiom-team.fr>']
-description = 'duniter integration tests.'
+description = 'duniter end2end tests.'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'AGPL-3.0'
-name = 'duniter-integration-tests'
+name = 'duniter-end2end-tests'
 repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
 version = '3.0.0'
 
@@ -12,6 +12,7 @@ version = '3.0.0'
 async-trait = "0.1"
 cucumber = "0.11"
 env_logger = "0.9.0"
+notify = "4.0"
 parity-scale-codec = "2.3.1"
 portpicker = "0.1.1"
 serde_json = "1.0.64"

@@ -206,7 +206,7 @@ fn gen_genesis_conf(
     assert!(initial_smiths_len <= initial_identities_len);
     assert!(initial_authorities_len <= initial_smiths_len);
 
-    let babe_epoch_duration = get_env_u32("DUNITER_BABE_EPOCH_DURATION", 600) as u64;
+    let babe_epoch_duration = get_env_u32("DUNITER_BABE_EPOCH_DURATION", 30) as u64;
     let cert_validity_period = get_env_u32("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
     let membership_period = get_env_u32("DUNITER_MEMBERSHIP_PERIOD", 1_000);
     let membership_renewable_period = get_env_u32("DUNITER_MEMBERSHIP_RENEWABLE_PERIOD", 50);

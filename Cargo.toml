@@ -106,7 +106,7 @@ substrate-frame-rpc-system = { git = "https://github.com/librelois/substrate.git
 resolver = "2"
 
 members = [
-	'integration-tests',
+	'end2end-tests',
     'pallets/certification',
     'pallets/duniter-test-parameters',
     'pallets/duniter-test-parameters/macro',
