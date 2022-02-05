@@ -37,37 +37,37 @@ version = '2.3.1'
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
 optional = true
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.sp-arithmetic]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.sp-io]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 ### DOC ###
 
@@ -80,7 +80,7 @@ targets = ['x86_64-unknown-linux-gnu']
 [dev-dependencies.pallet-balances]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dev-dependencies.serde]
 features = ["derive"]
@@ -89,14 +89,14 @@ version = '1.0.119'
 [dev-dependencies.sp-core]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dev-dependencies.sp-io]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dev-dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'

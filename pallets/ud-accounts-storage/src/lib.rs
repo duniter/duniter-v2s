@@ -34,7 +34,16 @@ use sp_std::prelude::*;
 pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
-    use scale_info::TypeInfo;
+    use frame_support::traits::StorageVersion;
+
+    /// The current storage version.
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
+    #[pallet::pallet]
+    #[pallet::generate_store(pub(super) trait Store)]
+    #[pallet::storage_version(STORAGE_VERSION)]
+    #[pallet::without_storage_info]
+    pub struct Pallet<T>(_);
 
     // CONFIG //
 
@@ -42,27 +51,6 @@ pub mod pallet {
     pub trait Config: frame_system::Config {}
 
     // STORAGE //
-
-    #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
-    pub struct Pallet<T>(_);
-
-    // A value placed in storage that represents the current version of the Balances storage.
-    // This value is used by the `on_runtime_upgrade` logic to determine whether we run
-    // storage migration logic. This should match directly with the semantic versions of the Rust crate.
-    #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-    pub enum Releases {
-        V1_0_0,
-    }
-    impl Default for Releases {
-        fn default() -> Self {
-            Releases::V1_0_0
-        }
-    }
-
-    /// Storage version of the pallet.
-    #[pallet::storage]
-    pub(super) type StorageVersion<T: Config> = StorageValue<_, Releases, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn ud_accounts)]
@@ -94,7 +82,6 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            <StorageVersion<T>>::put(Releases::V1_0_0);
             <UdAccountsCounter<T>>::put(self.ud_accounts.len() as u64);
             for (account, index) in &self.ud_accounts {
                 <UdAccounts<T>>::insert(account, index);

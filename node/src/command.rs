@@ -15,6 +15,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod key;
+pub mod utils;
+
 use crate::cli::{Cli, Subcommand};
 #[cfg(feature = "g1")]
 use crate::service::G1Executor;
@@ -151,8 +154,6 @@ pub fn run() -> sc_cli::Result<()> {
     force_cli_options(&mut cli);
 
     match &cli.subcommand {
-        Some(Subcommand::Key(cmd)) => cmd.run(&cli),
-        Some(Subcommand::Utils(cmd)) => cmd.run(&cli),
         Some(Subcommand::BuildSpec(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| {
@@ -204,6 +205,7 @@ pub fn run() -> sc_cli::Result<()> {
                 Ok((cmd.run(client, config.chain_spec), task_manager))
             })
         }
+        Some(Subcommand::Key(cmd)) => cmd.run(&cli),
         Some(Subcommand::ImportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|mut config| {
@@ -230,6 +232,10 @@ pub fn run() -> sc_cli::Result<()> {
                 Ok((cmd.run(client, backend), task_manager))
             })
         }
+        Some(Subcommand::Sign(cmd)) => cmd.run(),
+        Some(Subcommand::Utils(cmd)) => cmd.run(&cli),
+        Some(Subcommand::Vanity(cmd)) => cmd.run(),
+        Some(Subcommand::Verify(cmd)) => cmd.run(),
         Some(Subcommand::Benchmark(cmd)) => {
             if cfg!(feature = "runtime-benchmarks") {
                 let runner = cli.create_runner(cmd)?;

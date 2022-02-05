@@ -88,6 +88,8 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
         None,
         // Protocol ID
         None,
+        //Fork ID
+        None,
         // Properties
         Some(
             serde_json::json!({
@@ -120,6 +122,8 @@ pub fn gen_live_conf() -> Result<ChainSpec, String> {
                 // Telemetry
                 None,
                 // Protocol ID
+                None,
+                //Fork ID
                 None,
                 // Properties
                 Some(
@@ -178,6 +182,8 @@ pub fn local_testnet_config(
         // Telemetry
         None,
         // Protocol ID
+        None,
+        //Fork ID
         None,
         // Properties
         Some(

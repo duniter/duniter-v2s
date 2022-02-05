@@ -32,7 +32,9 @@ runtime-benchmarks = [
 ]
 
 [build-dependencies]
-substrate-build-script-utils = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-01' }
+clap = { version = "3.0" }
+#clap_complete = { version = "3.0" }
+substrate-build-script-utils = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02' }
 
 [dev-dependencies]
 rusty-hook = "^0.11.2"
@@ -49,6 +51,7 @@ sp-membership = { path = 'primitives/membership' }
 
 # crates.io dependencies
 async-io = "1.3"
+clap = { version = "3.0", features = ["derive"] }
 futures = { version = "0.3.1", features = ["compat"] }
 hex = "0.4.3"
 jsonrpc-core = '18.0.0'
@@ -57,50 +60,49 @@ maplit = '1.0.2'
 memmap2 = "0.5.0"
 serde = "1.0"
 serde_json = "1.0.64"
-structopt = '0.3.8'
 
 # substrate dependencies
-frame-benchmarking = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-frame-benchmarking-cli = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-pallet-grandpa = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-pallet-transaction-payment-rpc = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-basic-authorship = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-chain-spec = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-cli = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-client-api = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-consensus = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-babe = { package = "sc-consensus-babe", git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-manual-seal = { package = "sc-consensus-manual-seal", git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-consensus-uncles = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-executor = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-finality-grandpa = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-keystore = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-network = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-rpc-api = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-service = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-telemetry = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-transaction-pool = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sc-transaction-pool-api = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-api = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-authority-discovery = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-block-builder = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-blockchain = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-consensus = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-consensus-babe = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-core = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-finality-grandpa = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-io = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-offchain = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-keyring = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-keystore = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-runtime = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-session = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-storage = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-timestamp = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-transaction-pool = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-sp-trie = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
-substrate-frame-rpc-system = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-01" }
+frame-benchmarking = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+frame-benchmarking-cli = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+pallet-grandpa = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+pallet-transaction-payment-rpc = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-basic-authorship = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-chain-spec = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-cli = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-client-api = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-consensus = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+babe = { package = "sc-consensus-babe", git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+manual-seal = { package = "sc-consensus-manual-seal", git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-consensus-uncles = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-executor = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-finality-grandpa = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-keystore = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-network = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-rpc-api = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-service = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-telemetry = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-transaction-pool = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sc-transaction-pool-api = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-api = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-authority-discovery = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-block-builder = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-blockchain = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-consensus = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-consensus-babe = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-core = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-finality-grandpa = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-io = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-offchain = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-keyring = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-keystore = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-runtime = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-session = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-storage = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-timestamp = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-transaction-pool = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+sp-trie = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+substrate-frame-rpc-system = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
 
 [workspace]
 resolver = "2"

@@ -41,11 +41,21 @@ const OFFCHAIN_PREFIX_UD_HISTORY: &[u8] = b"ud::history::";
 pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
+    use frame_support::traits::StorageVersion;
     use frame_system::pallet_prelude::*;
     use scale_info::TypeInfo;
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+    /// The current storage version.
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
+    #[pallet::pallet]
+    #[pallet::generate_store(pub(super) trait Store)]
+    #[pallet::storage_version(STORAGE_VERSION)]
+    #[pallet::without_storage_info]
+    pub struct Pallet<T>(_);
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -82,27 +92,6 @@ pub mod pallet {
     }
 
     // STORAGE //
-
-    #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
-    pub struct Pallet<T>(_);
-
-    // A value placed in storage that represents the current version of the Balances storage.
-    // This value is used by the `on_runtime_upgrade` logic to determine whether we run
-    // storage migration logic. This should match directly with the semantic versions of the Rust crate.
-    #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-    pub enum Releases {
-        V1_0_0,
-    }
-    impl Default for Releases {
-        fn default() -> Self {
-            Releases::V1_0_0
-        }
-    }
-
-    /// Storage version of the pallet.
-    #[pallet::storage]
-    pub(super) type StorageVersion<T: Config> = StorageValue<_, Releases, ValueQuery>;
 
     #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
     pub struct LastReeval<T: Config> {
@@ -154,7 +143,6 @@ pub mod pallet {
             assert!(!self.first_ud.is_zero());
             assert!(self.initial_monetary_mass >= T::Currency::total_issuance());
 
-            <StorageVersion<T>>::put(Releases::V1_0_0);
             <CurrentUdStorage<T>>::put(self.first_ud);
             <MonetaryMassStorage<T>>::put(self.initial_monetary_mass);
         }

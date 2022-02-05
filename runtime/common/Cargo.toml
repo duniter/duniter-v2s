@@ -60,23 +60,23 @@ version = '2.3.1'
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.pallet-balances]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.pallet-session]
 default-features = false
 features = ["historical"]
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.serde]
 version = "1.0.101"
@@ -86,29 +86,29 @@ features = ["derive"]
 [dependencies.sp-arithmetic]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.sp-consensus-babe]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.sp-staking]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-01'
+branch = 'duniter-monthly-2022-02'

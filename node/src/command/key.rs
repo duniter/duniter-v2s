@@ -22,15 +22,14 @@ use sc_service::config::{BasePath, KeystoreConfig};
 use sp_core::crypto::{AccountId32, KeyTypeId, SecretString};
 use sp_keystore::{SyncCryptoStore, SyncCryptoStorePtr};
 use std::sync::Arc;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Subcommand)]
 pub enum KeySubcommand {
     /// Generate session keys and store them in the keystore
     GenerateSessionKeys(GenSessionKeysCmd),
 
     #[allow(missing_docs)]
-    #[structopt(flatten)]
+    #[clap(flatten)]
     Key(sc_cli::KeySubcommand),
 }
 
@@ -44,20 +43,20 @@ impl KeySubcommand {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Args)]
 pub struct GenSessionKeysCmd {
     /// The secret key URI.
     /// If the value is a file, the file content is used as URI.
     /// If not given, you will be prompted for the URI.
-    #[structopt(long)]
+    #[clap(long)]
     suri: Option<String>,
 
     #[allow(missing_docs)]
-    #[structopt(flatten)]
+    #[clap(flatten)]
     pub shared_params: SharedParams,
 
     #[allow(missing_docs)]
-    #[structopt(flatten)]
+    #[clap(flatten)]
     pub keystore_params: KeystoreParams,
 }
 

@@ -16,9 +16,8 @@
 
 use sc_cli::{Error, SubstrateCli};
 use sp_io::hashing::twox_128;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Subcommand)]
 pub enum UtilsSubCommand {
     /// Compute the raw storage key prefix
     StorageKeyPrefix(StorageKeyPrefixCmd),
@@ -33,13 +32,13 @@ impl UtilsSubCommand {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Parser)]
 pub struct StorageKeyPrefixCmd {
     /// Pallet name
-    #[structopt(short = "p", long)]
+    #[clap(short = 'p', long)]
     pallet_name: Option<String>,
     /// Storage item name
-    #[structopt(short = "i", long)]
+    #[clap(short = 'i', long)]
     item_name: Option<String>,
 }
 

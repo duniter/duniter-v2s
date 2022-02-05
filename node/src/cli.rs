@@ -14,32 +14,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-pub mod key;
-pub mod utils;
-
-use sc_cli::RunCmd;
-use std::str::FromStr;
-use structopt::StructOpt;
-
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Parser)]
 pub struct Cli {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     pub subcommand: Option<Subcommand>,
 
-    #[structopt(flatten)]
-    pub run: RunCmd,
+    #[clap(flatten)]
+    pub run: sc_cli::RunCmd,
 
     /// How blocks should be sealed
     ///
     /// Options are "production", "instant", "manual", or timer interval in milliseconds
-    #[structopt(long, default_value = "production")]
-    pub sealing: Sealing,
+    #[clap(long, default_value = "production")]
+    pub sealing: crate::cli::Sealing,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
-    /// Key management cli utilities
-    Key(key::KeySubcommand),
     /// Build a chain specification.
     BuildSpec(sc_cli::BuildSpecCmd),
 
@@ -52,6 +43,10 @@ pub enum Subcommand {
     /// Export the state of a given block into a chain spec.
     ExportState(sc_cli::ExportStateCmd),
 
+    /// Key management cli utilities
+    #[clap(subcommand)]
+    Key(crate::command::key::KeySubcommand),
+
     /// Import blocks.
     ImportBlocks(sc_cli::ImportBlocksCmd),
 
@@ -61,16 +56,26 @@ pub enum Subcommand {
     /// Revert the chain to a previous state.
     Revert(sc_cli::RevertCmd),
 
+    /// Sign a message, with a given (secret) key.
+    Sign(sc_cli::SignCmd),
+
     /// Some tools for developers and advanced testers
-    Utils(utils::UtilsSubCommand),
+    #[clap(subcommand)]
+    Utils(crate::command::utils::UtilsSubCommand),
+
+    /// Generate a seed that provides a vanity address.
+    Vanity(sc_cli::VanityCmd),
+
+    /// Verify a signature for a message, provided on STDIN, with a given (public or secret) key.
+    Verify(sc_cli::VerifyCmd),
 
     /// The custom benchmark subcommmand benchmarking runtime pallets.
-    #[structopt(name = "benchmark", about = "Benchmark runtime pallets.")]
+    #[clap(name = "benchmark", about = "Benchmark runtime pallets.")]
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 }
 
 /// Block authoring scheme to be used by the node
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ArgEnum)]
 pub enum Sealing {
     /// Author a block using normal runtime behavior (mandatory for production networks)
     Production,
@@ -88,7 +93,7 @@ impl Sealing {
     }
 }
 
-impl FromStr for Sealing {
+impl std::str::FromStr for Sealing {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
