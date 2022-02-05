@@ -1161,6 +1161,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derivative"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "derive_more"
 version = "0.99.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2862,9 +2873,8 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "726b6cb76e568aefc4cc127fdb39cb9d92c176f4df0385eaf8053f770351719c"
+version = "0.8.0"
+source = "git+https://github.com/librelois/jsonrpsee/?branch=duniter-monthly-2022-01#b038aa331e0cd10723512eeb22c8049357606866"
 dependencies = [
  "jsonrpsee-client-transport",
  "jsonrpsee-core",
@@ -2876,9 +2886,8 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-client-transport"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bc39096d2bd470ecbd5ed96c8464e2b2c2ef7ec6f8cb9611604255608624773"
+version = "0.8.0"
+source = "git+https://github.com/librelois/jsonrpsee/?branch=duniter-monthly-2022-01#b038aa331e0cd10723512eeb22c8049357606866"
 dependencies = [
  "futures 0.3.19",
  "http",
@@ -2897,9 +2906,8 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-core"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b863e5e86a11bfaf46bb3ab5aba184671bd62058e8e3ab741c3395904c7afbf3"
+version = "0.8.0"
+source = "git+https://github.com/librelois/jsonrpsee/?branch=duniter-monthly-2022-01#b038aa331e0cd10723512eeb22c8049357606866"
 dependencies = [
  "anyhow",
  "arrayvec 0.7.1",
@@ -2920,9 +2928,8 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-http-client"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7ca9f9028b3a9cd3c7c5b876f037def9368c6ba6498fd2d3162bdbece1d0ef9"
+version = "0.8.0"
+source = "git+https://github.com/librelois/jsonrpsee/?branch=duniter-monthly-2022-01#b038aa331e0cd10723512eeb22c8049357606866"
 dependencies = [
  "async-trait",
  "hyper",
@@ -2939,9 +2946,8 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-proc-macros"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a74ecebba6051b2f745bdc286d3b5ae7c5ff4a71828f7285662acc79cdc113c"
+version = "0.8.0"
+source = "git+https://github.com/librelois/jsonrpsee/?branch=duniter-monthly-2022-01#b038aa331e0cd10723512eeb22c8049357606866"
 dependencies = [
  "proc-macro-crate 1.1.0",
  "proc-macro2",
@@ -2951,9 +2957,8 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-types"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e169725e476234f3f96079fb9d8a6d00226db602d3fa056f044994239a490d78"
+version = "0.8.0"
+source = "git+https://github.com/librelois/jsonrpsee/?branch=duniter-monthly-2022-01#b038aa331e0cd10723512eeb22c8049357606866"
 dependencies = [
  "anyhow",
  "beef",
@@ -2965,9 +2970,8 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-ws-client"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c97f67449d58b8d90ad57986d12dacab8fd594759ff64eb5e6b6e84e470db977"
+version = "0.8.0"
+source = "git+https://github.com/librelois/jsonrpsee/?branch=duniter-monthly-2022-01#b038aa331e0cd10723512eeb22c8049357606866"
 dependencies = [
  "jsonrpsee-client-transport",
  "jsonrpsee-core",
@@ -7729,12 +7733,13 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "subxt"
-version = "0.15.0"
-source = "git+https://github.com/librelois/subxt.git?branch=duniter-monthly-2022-01#0e3e6bf872ee9e3284a48a8f450721d5855a2020"
+version = "0.17.0"
+source = "git+https://github.com/librelois/subxt.git?branch=duniter-monthly-2022-01#c292286e868dcac23315ec0fd4baeec2ef41edcc"
 dependencies = [
  "async-trait",
  "bitvec 0.20.4",
  "chameleon",
+ "derivative",
  "frame-metadata",
  "futures 0.3.19",
  "hex",
@@ -7750,13 +7755,12 @@ dependencies = [
  "sp-version",
  "subxt-macro",
  "thiserror",
- "url 2.2.2",
 ]
 
 [[package]]
 name = "subxt-codegen"
-version = "0.2.0"
-source = "git+https://github.com/librelois/subxt.git?branch=duniter-monthly-2022-01#0e3e6bf872ee9e3284a48a8f450721d5855a2020"
+version = "0.17.0"
+source = "git+https://github.com/librelois/subxt.git?branch=duniter-monthly-2022-01#c292286e868dcac23315ec0fd4baeec2ef41edcc"
 dependencies = [
  "async-trait",
  "darling",
@@ -7773,8 +7777,8 @@ dependencies = [
 
 [[package]]
 name = "subxt-macro"
-version = "0.1.0"
-source = "git+https://github.com/librelois/subxt.git?branch=duniter-monthly-2022-01#0e3e6bf872ee9e3284a48a8f450721d5855a2020"
+version = "0.17.0"
+source = "git+https://github.com/librelois/subxt.git?branch=duniter-monthly-2022-01#c292286e868dcac23315ec0fd4baeec2ef41edcc"
 dependencies = [
  "async-trait",
  "darling",

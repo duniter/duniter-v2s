@@ -26,11 +26,14 @@ use sp_keyring::AccountKeyring;
 use std::io::prelude::*;
 use std::process::Command;
 use std::str::FromStr;
+use subxt::rpc::{rpc_params, ClientT, SubscriptionClientT};
 use subxt::{ClientBuilder, DefaultConfig, DefaultExtra};
 
 pub type Api = node_runtime::RuntimeApi<DefaultConfig, DefaultExtra<DefaultConfig>>;
 pub type Client = subxt::Client<DefaultConfig>;
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+pub type TransactionProgress<'client> =
+    subxt::TransactionProgress<'client, DefaultConfig, node_runtime::DispatchError>;
 
 pub const SUDO_ACCOUNT: AccountKeyring = AccountKeyring::Alice;
 
@@ -74,10 +77,7 @@ pub async fn create_empty_block(client: &Client) -> Result<()> {
     let _: Value = client
         .rpc()
         .client
-        .request(
-            "engine_createBlock",
-            &[Value::Bool(true), Value::Bool(false), Value::Null],
-        )
+        .request("engine_createBlock", rpc_params![true, false, Value::Null])
         .await?;
 
     Ok(())
@@ -92,16 +92,13 @@ pub async fn create_block_with_extrinsic(
     let ext_hash = <DefaultConfig as subxt::Config>::Hashing::hash_of(&extrinsic);
     // Submit and watch for transaction progress.
     let sub = client.rpc().watch_extrinsic(extrinsic).await?;
-    let watcher = subxt::TransactionProgress::new(sub, client, ext_hash);
+    let watcher = TransactionProgress::new(sub, client, ext_hash);
 
     // Create a non-empty block
     let _: Value = client
         .rpc()
         .client
-        .request(
-            "engine_createBlock",
-            &[Value::Bool(false), Value::Bool(false), Value::Null],
-        )
+        .request("engine_createBlock", rpc_params![false, false, Value::Null])
         .await?;
 
     // Get extrinsic events
