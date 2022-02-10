@@ -51,6 +51,10 @@ impl<IdtyId, MetaData> OnEvent<IdtyId, MetaData> for () {
     }
 }
 
+pub trait MembersCount {
+    fn members_count() -> u32;
+}
+
 pub trait MembershipExternalStorage<BlockNumber: Decode + Encode + TypeInfo, IdtyId>:
     sp_runtime::traits::IsMember<IdtyId>
 {

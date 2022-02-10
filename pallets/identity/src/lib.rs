@@ -134,7 +134,6 @@ pub mod pallet {
             let mut identities = self.identities.clone();
             identities.sort_unstable_by(|a, b| a.index.cmp(&b.index));
 
-            <IdentitiesCount<T>>::put(identities.len() as u64);
             for idty in identities.into_iter() {
                 let idty_index = Pallet::<T>::get_next_idty_index();
                 if idty.value.removable_on > T::BlockNumber::zero() {
@@ -155,7 +154,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn identity)]
     pub type Identities<T: Config> =
-        StorageMap<_, Twox64Concat, T::IdtyIndex, IdtyValue<T::BlockNumber>, OptionQuery>;
+        CountedStorageMap<_, Twox64Concat, T::IdtyIndex, IdtyValue<T::BlockNumber>, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn identity_index_of)]
@@ -168,10 +167,6 @@ pub mod pallet {
 
     #[pallet::storage]
     pub(super) type NextIdtyIndex<T: Config> = StorageValue<_, T::IdtyIndex, ValueQuery>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn identities_count)]
-    pub(super) type IdentitiesCount<T: Config> = StorageValue<_, u64, ValueQuery>;
 
     /// Identities by removed block
     #[pallet::storage]
@@ -266,7 +261,6 @@ pub mod pallet {
             );
             IdentitiesRemovableOn::<T>::append(removable_on, (idty_index, IdtyStatus::Created));
             IdentityIndexOf::<T>::insert(owner_key.clone(), idty_index);
-            Self::inc_identities_counter();
             Self::deposit_event(Event::IdtyCreated(idty_index, owner_key));
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Created { creator });
             Ok(().into())
@@ -459,19 +453,19 @@ pub mod pallet {
         NotRespectIdtyCreationPeriod,
     }
 
+    // PUBLIC FUNCTIONS //
+
+    impl<T: Config> Pallet<T> {
+        pub fn identities_count() -> u32 {
+            Identities::<T>::count()
+        }
+    }
+
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
-        fn dec_identities_counter() {
-            if let Ok(counter) = <IdentitiesCount<T>>::try_get() {
-                <IdentitiesCount<T>>::put(counter.saturating_sub(1));
-            } else {
-                panic!("storage corrupted")
-            }
-        }
         pub(super) fn do_remove_identity(idty_index: T::IdtyIndex) -> Weight {
             <Identities<T>>::remove(idty_index);
-            Self::dec_identities_counter();
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Removed);
 
             0
@@ -483,13 +477,6 @@ pub mod pallet {
             } else {
                 <NextIdtyIndex<T>>::put(T::IdtyIndex::one() + T::IdtyIndex::one());
                 T::IdtyIndex::one()
-            }
-        }
-        fn inc_identities_counter() {
-            if let Ok(counter) = <IdentitiesCount<T>>::try_get() {
-                <IdentitiesCount<T>>::put(counter.saturating_add(1));
-            } else {
-                <IdentitiesCount<T>>::put(1);
             }
         }
         fn prune_identities(block_number: T::BlockNumber) -> Weight {

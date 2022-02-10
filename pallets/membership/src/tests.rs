@@ -19,7 +19,7 @@ use crate::mock::*;
 use crate::{Error, Event};
 use frame_support::assert_ok;
 use maplit::btreemap;
-use sp_membership::traits::IsInPendingMemberships;
+use sp_membership::traits::*;
 use sp_membership::MembershipData;
 use sp_runtime::traits::IsMember;
 
@@ -46,6 +46,7 @@ fn test_genesis_build() {
                 renewable_on: 2
             })
         );
+        assert_eq!(DefaultMembership::members_count(), 1);
     });
 }
 

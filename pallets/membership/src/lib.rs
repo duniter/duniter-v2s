@@ -127,7 +127,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn membership)]
     pub type Membership<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Twox64Concat, T::IdtyId, MembershipData<T::BlockNumber>, OptionQuery>;
+        CountedStorageMap<_, Twox64Concat, T::IdtyId, MembershipData<T::BlockNumber>, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn memberships_expire_on)]
@@ -475,5 +475,11 @@ impl<T: Config<I>, I: 'static> IsInPendingMemberships<T::IdtyId> for Pallet<T, I
 impl<T: Config<I>, I: 'static> sp_runtime::traits::IsMember<T::IdtyId> for Pallet<T, I> {
     fn is_member(idty_id: &T::IdtyId) -> bool {
         Self::is_member_inner(idty_id)
+    }
+}
+
+impl<T: Config<I>, I: 'static> MembersCount for Pallet<T, I> {
+    fn members_count() -> u32 {
+        Membership::<T, I>::count()
     }
 }
