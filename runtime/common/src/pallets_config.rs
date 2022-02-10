@@ -415,5 +415,44 @@ macro_rules! pallets_config {
 			type CertRenewablePeriod = SmithCertRenewablePeriod;
 			type ValidityPeriod = SmithValidityPeriod;
 		}
+
+		pub struct SmithMembersDefaultVote;
+		impl pallet_collective::DefaultVote for SmithMembersDefaultVote {
+			fn default_vote(
+				_prime_vote: Option<bool>,
+				_yes_votes: u32,
+				_no_votes: u32,
+				_len: u32,
+			) -> bool {
+				false
+			}
+		}
+		pub struct SmithMembersStorage;
+		impl sp_runtime::traits::IsMember<AccountId> for SmithMembersStorage {
+			fn is_member(account_id: &AccountId) -> bool {
+				use sp_runtime::traits::Convert as _;
+				if let Some(idty_index) = Identity::convert(account_id.clone()) {
+					pallet_membership::Pallet::<Runtime, Instance2>::is_member(&idty_index)
+				} else {
+					false
+				}
+			}
+		}
+		impl pallet_collective::MembersStorage<AccountId> for SmithMembersStorage {
+			fn members_count() -> u32 {
+				pallet_membership::Membership::<Runtime, Instance2>::count()
+			}
+		}
+		impl pallet_collective::Config<Instance2> for Runtime {
+			type Origin = Origin;
+			type Proposal = Call;
+			type Event = Event;
+			type MotionDuration = frame_support::pallet_prelude::ConstU32<10_000>;
+			type MaxProposals = frame_support::pallet_prelude::ConstU32<10>;
+			type MaxMembers = frame_support::pallet_prelude::ConstU32<1_000>;
+			type MembersStorage = SmithMembersStorage;
+			type DefaultVote = SmithMembersDefaultVote;
+			type WeightInfo = ();
+		}
 	};
 }

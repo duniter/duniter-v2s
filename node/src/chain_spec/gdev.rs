@@ -354,6 +354,7 @@ fn gen_genesis_conf(
             apply_cert_period_at_genesis: false,
             certs_by_issuer: clique_wot(initial_smiths_len, smith_cert_validity_period),
         },
+        smiths_collective: Default::default(),
         ud_accounts_storage: UdAccountsStorageConfig {
             ud_accounts: initial_identities
                 .values()
@@ -461,6 +462,7 @@ fn genesis_data_to_gdev_genesis_conf(
         smiths_membership: SmithsMembershipConfig {
             memberships: smiths_memberships,
         },
+        smiths_collective: Default::default(),
         ud_accounts_storage: UdAccountsStorageConfig { ud_accounts },
         universal_dividend: UniversalDividendConfig {
             first_ud,

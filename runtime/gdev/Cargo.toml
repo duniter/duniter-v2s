@@ -39,6 +39,7 @@ std = [
     'pallet-babe/std',
     'pallet-balances/std',
     'pallet-certification/std',
+    'pallet-collective/std',
     'pallet-duniter-test-parameters/std',
     'pallet-duniter-wot/std',
     'pallet-grandpa/std',
@@ -50,6 +51,7 @@ std = [
     'pallet-session/std',
     'pallet-sudo/std',
     'pallet-universal-dividend/std',
+    'pallet-upgrade-origin/std',
     'pallet-timestamp/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',
@@ -81,6 +83,7 @@ pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-membership = { path = '../../pallets/membership', default-features = false }
 pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
+pallet-upgrade-origin = { path = '../../pallets/upgrade-origin', default-features = false }
 sp-membership = { path = '../../primitives/membership', default-features = false }
 
 # substrate
@@ -149,6 +152,11 @@ git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-02'
 
 [dependencies.pallet-balances]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+[dependencies.pallet-collective]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-02'

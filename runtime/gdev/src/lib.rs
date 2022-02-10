@@ -45,6 +45,7 @@ use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
+use sp_core::u32_trait::*;
 use sp_core::OpaqueMetadata;
 use sp_runtime::traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys};
 use sp_runtime::{
@@ -224,9 +225,16 @@ common_runtime::pallets_config! {
         type CertCount = u32;
         type PeriodCount = Balance;
     }
+
     impl pallet_sudo::Config for Runtime {
         type Event = Event;
         type Call = Call;
+    }
+
+    impl pallet_upgrade_origin::Config for Runtime {
+        type Event = Event;
+        type Call = Call;
+        type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, Instance2>;
     }
 }
 
@@ -264,6 +272,7 @@ construct_runtime!(
 
         // Governance stuff
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
+        UpgradeOrigin: pallet_upgrade_origin::{Pallet, Call, Event} = 21,
 
         // Universal dividend
         UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage} = 30,
@@ -279,6 +288,7 @@ construct_runtime!(
         SmithsSubWot: pallet_duniter_wot::<Instance2>::{Pallet} = 50,
         SmithsMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
         SmithsCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
+        SmithsCollective: pallet_collective::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>, Origin<T>} = 54,
 
         // Utilities
         AtomicSwap: pallet_atomic_swap::{Pallet, Call, Storage, Event<T>} = 60,

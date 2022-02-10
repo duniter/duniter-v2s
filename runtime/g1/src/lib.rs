@@ -232,6 +232,7 @@ construct_runtime!(
         SmithsSubWot: pallet_duniter_wot::<Instance2>::{Pallet} = 50,
         SmithsMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
         SmithsCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
+        SmithsCollective: pallet_collective::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>, Origin<T>} = 54,
 
         // Utilities
         AtomicSwap: pallet_atomic_swap::{Pallet, Call, Storage, Event<T>} = 60,

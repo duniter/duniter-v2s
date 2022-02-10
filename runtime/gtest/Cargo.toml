@@ -38,6 +38,7 @@ std = [
     'pallet-babe/std',
     'pallet-balances/std',
     'pallet-certification/std',
+    'pallet-collective/std',
     'pallet-duniter-wot/std',
     'pallet-grandpa/std',
     'pallet-identity/std',
@@ -146,6 +147,11 @@ git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-02'
 
 [dependencies.pallet-balances]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+[dependencies.pallet-collective]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-02'
