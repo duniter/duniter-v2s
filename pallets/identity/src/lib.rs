@@ -314,7 +314,7 @@ pub mod pallet {
 
             match idty_value.status {
                 IdtyStatus::Created => return Err(Error::<T>::IdtyNotConfirmedByOwner.into()),
-                IdtyStatus::ConfirmedByOwner | IdtyStatus::Disabled => {
+                IdtyStatus::ConfirmedByOwner => {
                     if !T::EnsureIdtyCallAllowed::can_validate_identity(idty_index) {
                         return Err(Error::<T>::NotAllowedToValidateIdty.into());
                     }
@@ -332,31 +332,6 @@ pub mod pallet {
 
             Ok(().into())
         }
-        #[pallet::weight(0)]
-        pub fn disable_identity(
-            origin: OriginFor<T>,
-            idty_index: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
-            // Verify phase
-            ensure_root(origin)?;
-
-            if !Identities::<T>::contains_key(idty_index) {
-                return Err(Error::<T>::IdtyNotFound.into());
-            }
-
-            // Apply phase
-            let block_number = frame_system::pallet::Pallet::<T>::block_number();
-            let removable_on = block_number + T::MaxDisabledPeriod::get();
-            Identities::<T>::mutate_exists(idty_index, |idty_value_opt| {
-                if let Some(idty_value) = idty_value_opt {
-                    idty_value.status = IdtyStatus::Disabled;
-                    idty_value.removable_on = removable_on;
-                }
-            });
-            <IdentitiesRemovableOn<T>>::append(removable_on, (idty_index, IdtyStatus::Disabled));
-            Ok(().into())
-        }
-
         #[pallet::weight(0)]
         pub fn remove_identity(
             origin: OriginFor<T>,

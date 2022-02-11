@@ -69,7 +69,6 @@ impl<'de> serde::Deserialize<'de> for IdtyName {
 pub enum IdtyStatus {
     Created,
     ConfirmedByOwner,
-    Disabled,
     Validated,
 }
 impl Default for IdtyStatus {

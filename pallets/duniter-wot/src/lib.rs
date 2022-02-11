@@ -166,9 +166,6 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::IsCertAllowed<IdtyI
                 match receiver_data.status {
                     IdtyStatus::ConfirmedByOwner => true,
                     IdtyStatus::Created => false,
-                    IdtyStatus::Disabled => {
-                        pallet_membership::Pallet::<T, I>::is_in_pending_memberships(receiver)
-                    }
                     IdtyStatus::Validated => {
                         pallet_membership::Pallet::<T, I>::is_member(&receiver)
                             || pallet_membership::Pallet::<T, I>::is_in_pending_memberships(
@@ -204,11 +201,7 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::IsIdtyAllowedToRequestMemb
 {
     fn is_idty_allowed_to_request_membership(idty_index: &IdtyIndex) -> bool {
         if let Some(idty_value) = pallet_identity::Pallet::<T>::identity(idty_index) {
-            if T::IsSubWot::get() {
-                idty_value.status == IdtyStatus::Validated
-            } else {
-                idty_value.status == IdtyStatus::Disabled
-            }
+            T::IsSubWot::get() && idty_value.status == IdtyStatus::Validated
         } else {
             false
         }
@@ -229,8 +222,9 @@ where
             }
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipExpired(idty_index)
             | sp_membership::Event::<IdtyIndex, MetaData>::MembershipRevoked(idty_index) => {
-                Self::dispath_idty_call(pallet_identity::Call::disable_identity {
+                Self::dispath_idty_call(pallet_identity::Call::remove_identity {
                     idty_index: *idty_index,
+                    idty_name: None,
                 });
                 if !T::IsSubWot::get() {
                     WotDiffs::<T, I>::append(WotDiff::DisableNode(*idty_index));

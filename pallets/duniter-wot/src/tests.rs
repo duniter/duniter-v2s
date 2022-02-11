@@ -222,8 +222,8 @@ fn test_idty_membership_expire_them_requested() {
         );
         assert_eq!(DuniterWot::wot_diffs(), vec![WotDiff::DisableNode(3),]);
 
-        // Charlie's identity should be disabled at block #5
-        assert_eq!(Identity::identity(3).unwrap().status, IdtyStatus::Disabled);
+        // Charlie's identity should be removed at block #5
+        assert!(Identity::identity(3).is_none());
 
         // Alice can't renew it's cert to Charlie
         assert_err!(
@@ -231,7 +231,7 @@ fn test_idty_membership_expire_them_requested() {
             pallet_certification::Error::<Test, Instance1>::CertNotAllowed
         );
 
-        // Charlie should be able to request membership
+        /*// Charlie should be able to request membership
         run_to_block(6);
         assert_ok!(Membership::request_membership(
             Origin::signed(3),
@@ -266,6 +266,6 @@ fn test_idty_membership_expire_them_requested() {
             }
         );
 
-        assert_eq!(DuniterWot::wot_diffs(), vec![WotDiff::AddNode(3),]);
+        assert_eq!(DuniterWot::wot_diffs(), vec![WotDiff::AddNode(3),]);*/
     });
 }
