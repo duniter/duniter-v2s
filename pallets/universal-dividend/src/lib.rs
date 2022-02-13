@@ -197,7 +197,9 @@ pub mod pallet {
                 Self::write_ud_history(n, account_id, ud_amount);
             }
 
-            <MonetaryMassStorage<T>>::put(monetary_mass + (ud_amount * members_count));
+            <MonetaryMassStorage<T>>::put(
+                monetary_mass.saturating_add(ud_amount.saturating_mul(members_count)),
+            );
             Self::deposit_event(Event::NewUdCreated(ud_amount, members_count));
 
             total_weight
