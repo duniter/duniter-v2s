@@ -98,9 +98,8 @@ pub mod pallet {
     #[derive(Encode, Decode, Clone, PartialEq, Eq)]
     pub struct GenesisIdty<T: Config> {
         pub index: T::IdtyIndex,
-        pub owner_key: T::AccountId,
         pub name: IdtyName,
-        pub value: IdtyValue<T::BlockNumber>,
+        pub value: IdtyValue<T::BlockNumber, T::AccountId>,
     }
 
     #[pallet::genesis_config]
@@ -144,7 +143,7 @@ pub mod pallet {
                 }
                 <Identities<T>>::insert(idty_index, idty.value.clone());
                 IdentitiesNames::<T>::insert(idty.name.clone(), ());
-                IdentityIndexOf::<T>::insert(idty.owner_key, idty_index);
+                IdentityIndexOf::<T>::insert(idty.value.owner_key, idty_index);
             }
         }
     }
@@ -153,8 +152,13 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn identity)]
-    pub type Identities<T: Config> =
-        CountedStorageMap<_, Twox64Concat, T::IdtyIndex, IdtyValue<T::BlockNumber>, OptionQuery>;
+    pub type Identities<T: Config> = CountedStorageMap<
+        _,
+        Twox64Concat,
+        T::IdtyIndex,
+        IdtyValue<T::BlockNumber, T::AccountId>,
+        OptionQuery,
+    >;
 
     #[pallet::storage]
     #[pallet::getter(fn identity_index_of)]
@@ -240,7 +244,7 @@ pub mod pallet {
             }
 
             // Apply phase //
-
+            frame_system::Pallet::<T>::inc_sufficients(&owner_key);
             <Identities<T>>::mutate_exists(creator, |idty_val_opt| {
                 if let Some(ref mut idty_val) = idty_val_opt {
                     idty_val.next_creatable_identity_on =
@@ -255,6 +259,7 @@ pub mod pallet {
                 idty_index,
                 IdtyValue {
                     next_creatable_identity_on: T::BlockNumber::zero(),
+                    owner_key: owner_key.clone(),
                     removable_on,
                     status: IdtyStatus::Created,
                 },
@@ -440,9 +445,10 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         pub(super) fn do_remove_identity(idty_index: T::IdtyIndex) -> Weight {
-            <Identities<T>>::remove(idty_index);
+            if let Some(idty_val) = Identities::<T>::take(idty_index) {
+                frame_system::Pallet::<T>::dec_sufficients(&idty_val.owner_key);
+            }
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Removed);
-
             0
         }
         fn get_next_idty_index() -> T::IdtyIndex {

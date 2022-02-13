@@ -20,15 +20,15 @@ use crate::{Error, GenesisIdty, IdtyName, IdtyValue};
 use frame_support::assert_ok;
 use frame_system::{EventRecord, Phase};
 
-type IdtyVal = IdtyValue<u64>;
+type IdtyVal = IdtyValue<u64, u64>;
 
 fn alice() -> GenesisIdty<Test> {
     GenesisIdty {
         index: 1,
-        owner_key: 1,
         name: IdtyName::from("Alice"),
         value: IdtyVal {
             next_creatable_identity_on: 0,
+            owner_key: 1,
             removable_on: 0,
             status: crate::IdtyStatus::Validated,
         },

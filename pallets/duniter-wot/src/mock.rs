@@ -178,10 +178,10 @@ pub fn new_test_ext(initial_identities_len: usize) -> sp_io::TestExternalities {
             identities: (1..=initial_identities_len)
                 .map(|i| pallet_identity::GenesisIdty {
                     index: i as u32,
-                    owner_key: i as u64,
                     name: pallet_identity::IdtyName::from(NAMES[i - 1]),
                     value: pallet_identity::IdtyValue {
                         next_creatable_identity_on: 0,
+                        owner_key: i as u64,
                         removable_on: 0,
                         status: pallet_identity::IdtyStatus::Validated,
                     },

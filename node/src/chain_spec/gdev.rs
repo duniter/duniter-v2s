@@ -310,10 +310,10 @@ fn gen_genesis_conf(
                 .enumerate()
                 .map(|(i, (name, owner_key))| GenesisIdty {
                     index: i as u32 + 1,
-                    owner_key: owner_key.clone(),
                     name: name.clone(),
                     value: IdtyValue {
                         next_creatable_identity_on: Default::default(),
+                        owner_key: owner_key.clone(),
                         removable_on: 0,
                         status: IdtyStatus::Validated,
                     },
@@ -440,10 +440,10 @@ fn genesis_data_to_gdev_genesis_conf(
                 .enumerate()
                 .map(|(i, (name, pubkey))| common_runtime::GenesisIdty {
                     index: i as u32 + 1,
-                    owner_key: pubkey,
                     name: common_runtime::IdtyName::from(name.as_str()),
                     value: common_runtime::IdtyValue {
                         next_creatable_identity_on: 0,
+                        owner_key: pubkey,
                         removable_on: 0,
                         status: IdtyStatus::Validated,
                     },

@@ -60,9 +60,17 @@ fn test_create_idty_ok() {
         assert_ok!(Identity::create_identity(Origin::signed(1), 6));
         // 2 events should have occurred: IdtyCreated and NewCert
         let events = System::events();
-        assert_eq!(events.len(), 2);
+        assert_eq!(events.len(), 3);
         assert_eq!(
             events[0],
+            EventRecord {
+                phase: Phase::Initialization,
+                event: Event::System(frame_system::Event::NewAccount { account: 6 }),
+                topics: vec![],
+            }
+        );
+        assert_eq!(
+            events[1],
             EventRecord {
                 phase: Phase::Initialization,
                 event: Event::Identity(pallet_identity::Event::IdtyCreated(6, 6)),
@@ -70,7 +78,7 @@ fn test_create_idty_ok() {
             }
         );
         assert_eq!(
-            events[1],
+            events[2],
             EventRecord {
                 phase: Phase::Initialization,
                 event: Event::Cert(pallet_certification::Event::NewCert {
