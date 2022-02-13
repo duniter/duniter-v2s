@@ -222,12 +222,20 @@ fn test_idty_membership_expire_them_requested() {
         run_to_block(5);
         assert!(Membership::membership(3).is_none());
         let events = System::events();
-        assert_eq!(events.len(), 1);
+        assert_eq!(events.len(), 2);
         assert_eq!(
             events[0],
             EventRecord {
                 phase: Phase::Initialization,
                 event: Event::Membership(pallet_membership::Event::MembershipExpired(3)),
+                topics: vec![],
+            }
+        );
+        assert_eq!(
+            events[1],
+            EventRecord {
+                phase: Phase::Initialization,
+                event: Event::Identity(pallet_identity::Event::IdtyRemoved { idty_index: 3 }),
                 topics: vec![],
             }
         );
