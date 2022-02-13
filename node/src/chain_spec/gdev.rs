@@ -220,6 +220,7 @@ fn gen_genesis_conf(
     let smith_membership_renewable_period =
         get_env_u32("DUNITER_SMITH_MEMBERSHIP_RENEWABLE_PERIOD", 20);
     let smith_membership_period = get_env_u32("DUNITER_SMITH_MEMBERSHIP_PERIOD", 1_000);
+    let ud_reeval_period = get_env_u32("DUNITER_UD_REEEVAL_PERIOD", 20);
 
     let initial_smiths = (0..initial_smiths_len)
         .map(|i| get_authority_keys_from_seed(NAMES[i]))
@@ -254,8 +255,8 @@ fn gen_genesis_conf(
                 pending_membership_period: 500,
                 ud_creation_period: 10,
                 ud_first_reeval: 100,
-                ud_reeval_period: 20,
-                ud_reeval_period_in_blocks: 200,
+                ud_reeval_period: ud_reeval_period as u64,
+                ud_reeval_period_in_blocks: 10 * ud_reeval_period,
                 smith_cert_period: 15,
                 smith_cert_max_by_issuer: 8,
                 smith_cert_min_received_cert_to_issue_cert: 2,
