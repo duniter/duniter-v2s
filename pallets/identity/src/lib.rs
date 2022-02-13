@@ -214,6 +214,9 @@ pub mod pallet {
         /// An identity has been validated
         /// [idty_index]
         IdtyValidated { idty_index: T::IdtyIndex },
+        /// An identity has been removed
+        /// [idty_index]
+        IdtyRemoved { idty_index: T::IdtyIndex },
     }
 
     // CALLS //
@@ -462,6 +465,7 @@ pub mod pallet {
             if let Some(idty_val) = Identities::<T>::take(idty_index) {
                 frame_system::Pallet::<T>::dec_sufficients(&idty_val.owner_key);
             }
+            Self::deposit_event(Event::IdtyRemoved { idty_index });
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Removed);
             0
         }
