@@ -47,7 +47,11 @@ fn test_ud_creation() {
             events[9],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::UniversalDividend(crate::Event::NewUdCreated(1000, 3)),
+                event: Event::UniversalDividend(crate::Event::NewUdCreated {
+                    amount: 1_000,
+                    monetary_mass: 3_000,
+                    members_count: 3,
+                }),
                 topics: vec![],
             }
         );

@@ -177,11 +177,19 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// A new universal dividend is created
-        /// [ud_amout, members_count]
-        NewUdCreated(BalanceOf<T>, BalanceOf<T>),
+        /// [amout, members_count]
+        NewUdCreated {
+            amount: BalanceOf<T>,
+            monetary_mass: BalanceOf<T>,
+            members_count: BalanceOf<T>,
+        },
         /// The universal dividend has been re-evaluated
         /// [new_ud_amount, monetary_mass, members_count]
-        UdReevalued(BalanceOf<T>, BalanceOf<T>, BalanceOf<T>),
+        UdReevalued {
+            new_ud_amount: BalanceOf<T>,
+            monetary_mass: BalanceOf<T>,
+            members_count: BalanceOf<T>,
+        },
     }
 
     // INTERNAL FUNCTIONS //
@@ -197,10 +205,14 @@ pub mod pallet {
                 Self::write_ud_history(n, account_id, ud_amount);
             }
 
-            <MonetaryMassStorage<T>>::put(
-                monetary_mass.saturating_add(ud_amount.saturating_mul(members_count)),
-            );
-            Self::deposit_event(Event::NewUdCreated(ud_amount, members_count));
+            let new_monetary_mass =
+                monetary_mass.saturating_add(ud_amount.saturating_mul(members_count));
+            MonetaryMassStorage::<T>::put(new_monetary_mass);
+            Self::deposit_event(Event::NewUdCreated {
+                amount: ud_amount,
+                members_count,
+                monetary_mass: new_monetary_mass,
+            });
 
             total_weight
         }
@@ -239,11 +251,11 @@ pub mod pallet {
 
             <CurrentUdStorage<T>>::put(new_ud_amount);
 
-            Self::deposit_event(Event::UdReevalued(
+            Self::deposit_event(Event::UdReevalued {
                 new_ud_amount,
                 monetary_mass,
                 members_count,
-            ));
+            });
 
             total_weight
         }

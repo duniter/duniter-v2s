@@ -62,7 +62,10 @@ fn test_create_identity_ok() {
             events[1],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyCreated(2, 2)),
+                event: Event::Identity(crate::Event::IdtyCreated {
+                    idty_index: 2,
+                    owner_key: 2,
+                }),
                 topics: vec![],
             }
         );
@@ -86,7 +89,10 @@ fn test_idty_creation_period() {
             events[1],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyCreated(2, 2)),
+                event: Event::Identity(crate::Event::IdtyCreated {
+                    idty_index: 2,
+                    owner_key: 2,
+                }),
                 topics: vec![],
             }
         );
@@ -108,7 +114,10 @@ fn test_idty_creation_period() {
             events[1],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyCreated(3, 3)),
+                event: Event::Identity(crate::Event::IdtyCreated {
+                    idty_index: 3,
+                    owner_key: 3,
+                }),
                 topics: vec![],
             }
         );

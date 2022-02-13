@@ -73,7 +73,10 @@ fn test_create_idty_ok() {
             events[1],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyCreated(6, 6)),
+                event: Event::Identity(pallet_identity::Event::IdtyCreated {
+                    idty_index: 6,
+                    owner_key: 6,
+                }),
                 topics: vec![],
             }
         );
@@ -145,7 +148,7 @@ fn test_new_idty_validation() {
             events[2],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyValidated(6,)),
+                event: Event::Identity(pallet_identity::Event::IdtyValidated { idty_index: 6 }),
                 topics: vec![],
             }
         );
@@ -194,11 +197,11 @@ fn test_confirm_idty_ok() {
             events[1],
             EventRecord {
                 phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyConfirmed(
-                    6,
-                    6,
-                    IdtyName::from("Ferdie"),
-                )),
+                event: Event::Identity(pallet_identity::Event::IdtyConfirmed {
+                    idty_index: 6,
+                    owner_key: 6,
+                    name: IdtyName::from("Ferdie"),
+                }),
                 topics: vec![],
             }
         );

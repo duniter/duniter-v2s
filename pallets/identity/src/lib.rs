@@ -200,13 +200,20 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// A new identity has been created
         /// [idty_index, owner_key]
-        IdtyCreated(T::IdtyIndex, T::AccountId),
+        IdtyCreated {
+            idty_index: T::IdtyIndex,
+            owner_key: T::AccountId,
+        },
         /// An identity has been confirmed by it's owner
         /// [idty_index, owner_key, name]
-        IdtyConfirmed(T::IdtyIndex, T::AccountId, IdtyName),
+        IdtyConfirmed {
+            idty_index: T::IdtyIndex,
+            owner_key: T::AccountId,
+            name: IdtyName,
+        },
         /// An identity has been validated
         /// [idty_index]
-        IdtyValidated(T::IdtyIndex),
+        IdtyValidated { idty_index: T::IdtyIndex },
     }
 
     // CALLS //
@@ -266,7 +273,10 @@ pub mod pallet {
             );
             IdentitiesRemovableOn::<T>::append(removable_on, (idty_index, IdtyStatus::Created));
             IdentityIndexOf::<T>::insert(owner_key.clone(), idty_index);
-            Self::deposit_event(Event::IdtyCreated(idty_index, owner_key));
+            Self::deposit_event(Event::IdtyCreated {
+                idty_index,
+                owner_key,
+            });
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Created { creator });
             Ok(().into())
         }
@@ -302,7 +312,11 @@ pub mod pallet {
 
             <Identities<T>>::insert(idty_index, idty_value);
             <IdentitiesNames<T>>::insert(idty_name.clone(), ());
-            Self::deposit_event(Event::IdtyConfirmed(idty_index, who, idty_name));
+            Self::deposit_event(Event::IdtyConfirmed {
+                idty_index,
+                owner_key: who,
+                name: idty_name,
+            });
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Confirmed);
             Ok(().into())
         }
@@ -332,7 +346,7 @@ pub mod pallet {
             idty_value.status = IdtyStatus::Validated;
 
             <Identities<T>>::insert(idty_index, idty_value);
-            Self::deposit_event(Event::IdtyValidated(idty_index));
+            Self::deposit_event(Event::IdtyValidated { idty_index });
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Validated);
 
             Ok(().into())
