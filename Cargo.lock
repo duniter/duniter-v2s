@@ -829,6 +829,7 @@ version = "0.8.0-dev"
 dependencies = [
  "frame-support",
  "frame-system",
+ "log",
  "pallet-authority-members",
  "pallet-balances",
  "pallet-certification",
@@ -4312,6 +4313,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "log",
  "maplit",
  "pallet-session",
  "parity-scale-codec",

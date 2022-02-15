@@ -78,7 +78,6 @@ impl system::Config for Test {
 }
 
 parameter_types! {
-    pub const ExternalizeMembershipStorage: bool = false;
     pub const MembershipPeriod: BlockNumber = 5;
     pub const PendingMembershipPeriod: BlockNumber = 3;
     pub const RenewablePeriod: BlockNumber = 2;
@@ -89,10 +88,8 @@ impl pallet_membership::Config for Test {
     type IsIdtyAllowedToRenewMembership = ();
     type IsIdtyAllowedToRequestMembership = ();
     type Event = Event;
-    type ExternalizeMembershipStorage = ExternalizeMembershipStorage;
     type IdtyId = IdtyId;
     type IdtyIdOf = ConvertInto;
-    type MembershipExternalStorage = crate::NoExternalStorage;
     type MembershipPeriod = MembershipPeriod;
     type MetaData = ();
     type OnEvent = ();

@@ -44,7 +44,7 @@ pub mod pallet {
     use super::*;
     use frame_support::traits::StorageVersion;
     use frame_system::pallet_prelude::*;
-    use sp_runtime::traits::{Convert, IsMember};
+    use sp_runtime::traits::Convert;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -63,19 +63,12 @@ pub mod pallet {
         type IsIdtyAllowedToRequestMembership: IsIdtyAllowedToRequestMembership<Self::IdtyId>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
-        /// Specify true if you want to externalize the storage of memberships, but in this case
-        /// you must provide an implementation of `MembershipExternalStorage`
-        type ExternalizeMembershipStorage: Get<bool>;
         /// Something that identifies an identity
         type IdtyId: Copy + MaybeSerializeDeserialize + Parameter + Ord;
         /// Something that give the IdtyId on an account id
         type IdtyIdOf: Convert<Self::AccountId, Option<Self::IdtyId>>;
         /// Optional metadata
         type MetaData: Parameter + Validate<Self::AccountId>;
-        /// Provide your implementation of membership storage here, if you want the pallet to
-        /// handle the storage for you, specify `()` and set `ExternalizeMembershipStorage` to
-        /// `false`.
-        type MembershipExternalStorage: MembershipExternalStorage<Self::BlockNumber, Self::IdtyId>;
         #[pallet::constant]
         /// Maximum life span of a non-renewable membership (in number of blocks)
         type MembershipPeriod: Get<Self::BlockNumber>;
@@ -113,11 +106,7 @@ pub mod pallet {
         fn build(&self) {
             for (idty_id, membership_data) in &self.memberships {
                 MembershipsExpireOn::<T, I>::append(membership_data.expire_on, idty_id);
-                if T::ExternalizeMembershipStorage::get() {
-                    T::MembershipExternalStorage::insert(*idty_id, *membership_data);
-                } else {
-                    Membership::<T, I>::insert(idty_id, membership_data);
-                }
+                Membership::<T, I>::insert(idty_id, membership_data);
             }
         }
     }
@@ -369,16 +358,17 @@ pub mod pallet {
             Ok(().into())
         }
         pub(super) fn do_revoke_membership(idty_id: T::IdtyId) -> Weight {
-            Self::remove_membership(&idty_id);
-            if T::RevocationPeriod::get() > Zero::zero() {
-                let block_number = frame_system::pallet::Pallet::<T>::block_number();
-                let pruned_on = block_number + T::RevocationPeriod::get();
+            if Self::remove_membership(&idty_id) {
+                if T::RevocationPeriod::get() > Zero::zero() {
+                    let block_number = frame_system::pallet::Pallet::<T>::block_number();
+                    let pruned_on = block_number + T::RevocationPeriod::get();
 
-                RevokedMembership::<T, I>::insert(idty_id, ());
-                RevokedMembershipsPrunedOn::<T, I>::append(pruned_on, idty_id);
+                    RevokedMembership::<T, I>::insert(idty_id, ());
+                    RevokedMembershipsPrunedOn::<T, I>::append(pruned_on, idty_id);
+                }
+                Self::deposit_event(Event::MembershipRevoked(idty_id));
+                T::OnEvent::on_event(&sp_membership::Event::MembershipRevoked(idty_id));
             }
-            Self::deposit_event(Event::MembershipRevoked(idty_id));
-            T::OnEvent::on_event(&sp_membership::Event::MembershipRevoked(idty_id));
 
             0
         }
@@ -436,32 +426,16 @@ pub mod pallet {
         }
 
         pub(super) fn is_member_inner(idty_id: &T::IdtyId) -> bool {
-            if T::ExternalizeMembershipStorage::get() {
-                T::MembershipExternalStorage::is_member(idty_id)
-            } else {
-                Membership::<T, I>::contains_key(idty_id)
-            }
+            Membership::<T, I>::contains_key(idty_id)
         }
         fn insert_membership(idty_id: T::IdtyId, membership_data: MembershipData<T::BlockNumber>) {
-            if T::ExternalizeMembershipStorage::get() {
-                T::MembershipExternalStorage::insert(idty_id, membership_data);
-            } else {
-                Membership::<T, I>::insert(idty_id, membership_data);
-            }
+            Membership::<T, I>::insert(idty_id, membership_data);
         }
         fn get_membership(idty_id: &T::IdtyId) -> Option<MembershipData<T::BlockNumber>> {
-            if T::ExternalizeMembershipStorage::get() {
-                T::MembershipExternalStorage::get(idty_id)
-            } else {
-                Membership::<T, I>::try_get(idty_id).ok()
-            }
+            Membership::<T, I>::try_get(idty_id).ok()
         }
-        fn remove_membership(idty_id: &T::IdtyId) {
-            if T::ExternalizeMembershipStorage::get() {
-                T::MembershipExternalStorage::remove(idty_id);
-            } else {
-                Membership::<T, I>::remove(idty_id);
-            }
+        fn remove_membership(idty_id: &T::IdtyId) -> bool {
+            Membership::<T, I>::take(idty_id).is_some()
         }
     }
 }

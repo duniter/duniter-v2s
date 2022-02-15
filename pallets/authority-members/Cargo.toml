@@ -17,6 +17,7 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'frame-benchmarking/std',
+	'log/std',
     'pallet-session/std',
     'serde',
     'sp-core/std',
@@ -28,17 +29,19 @@ std = [
 try-runtime = ['frame-support/try-runtime']
 
 [dependencies]
+# local
 sp-membership = { path = "../../primitives/membership", default-features = false }
 
-# substrate
+# crates.io
+log = { version = "0.4.14", default-features = false }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
-
 [dependencies.codec]
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
 version = '2.3.1'
 
+# substrate
 [dependencies.frame-benchmarking]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'

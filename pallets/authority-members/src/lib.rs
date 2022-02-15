@@ -100,7 +100,10 @@ pub mod pallet {
         fn build(&self) {
             for (member_id, (account_id, _is_online)) in &self.initial_authorities {
                 AccountIdOf::<T>::insert(member_id, account_id);
-                Members::<T>::insert(member_id, MemberData::new_genesis(T::MaxKeysLife::get()));
+                Members::<T>::insert(
+                    member_id,
+                    MemberData::new_genesis(T::MaxKeysLife::get(), account_id.to_owned()),
+                );
             }
             let mut members_ids = self
                 .initial_authorities
@@ -148,7 +151,8 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn member)]
-    pub type Members<T: Config> = StorageMap<_, Twox64Concat, T::MemberId, MemberData, OptionQuery>;
+    pub type Members<T: Config> =
+        StorageMap<_, Twox64Concat, T::MemberId, MemberData<T::AccountId>, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn members_expire_on)]
@@ -301,6 +305,7 @@ pub mod pallet {
                 let mut member_data = member_data_opt.get_or_insert(MemberData {
                     expire_on_session,
                     must_rotate_keys_before,
+                    owner_key: who,
                 });
                 member_data.must_rotate_keys_before = must_rotate_keys_before;
             });
@@ -324,25 +329,6 @@ pub mod pallet {
             Ok(().into())
         }
         #[pallet::weight(0)]
-        pub fn purge_old_session_keys(
-            origin: OriginFor<T>,
-            accounts_ids: Vec<T::AccountId>,
-        ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-            let member_id = Self::verify_ownership_and_membership(&who)?;
-
-            for account_id in accounts_ids {
-                if !T::IsMember::is_member(&member_id) {
-                    let _post_info = pallet_session::Call::<T>::purge_keys {}
-                        .dispatch_bypass_filter(
-                            frame_system::Origin::<T>::Signed(account_id).into(),
-                        )?;
-                }
-            }
-
-            Ok(().into())
-        }
-        #[pallet::weight(0)]
         pub fn remove_member(
             origin: OriginFor<T>,
             member_id: T::MemberId,
@@ -353,7 +339,8 @@ pub mod pallet {
                 return Err(Error::<T>::NotMember.into());
             }
 
-            Self::do_remove_member(member_id);
+            let member_data = Members::<T>::get(member_id).ok_or(Error::<T>::NotMember)?;
+            Self::do_remove_member(member_id, member_data.owner_key);
 
             Ok(().into())
         }
@@ -362,7 +349,7 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
-        fn do_remove_member(member_id: T::MemberId) -> Weight {
+        fn do_remove_member(member_id: T::MemberId, owner_key: T::AccountId) -> Weight {
             if Self::is_online(member_id) {
                 // Trigger the member deletion for next session
                 Self::insert_out(member_id);
@@ -373,6 +360,18 @@ pub mod pallet {
             Self::remove_online(member_id);
             Members::<T>::remove(member_id);
 
+            // Purge session keys
+            if let Err(e) = pallet_session::Pallet::<T>::purge_keys(
+                frame_system::Origin::<T>::Signed(owner_key).into(),
+            ) {
+                log::error!(
+                    target: "runtime::authority_members",
+                    "Logic error: fail to purge session keys in do_remove_member(): {:?}",
+                    e
+                );
+            }
+
+            // Emit event
             Self::deposit_event(Event::MemberRemoved(member_id));
             let _ = T::OnRemovedMember::on_removed_member(member_id);
 
@@ -382,14 +381,14 @@ pub mod pallet {
             for member_id in MembersExpireOn::<T>::take(current_session_index) {
                 if let Some(member_data) = Members::<T>::get(member_id) {
                     if member_data.expire_on_session == current_session_index {
-                        Self::do_remove_member(member_id);
+                        Self::do_remove_member(member_id, member_data.owner_key);
                     }
                 }
             }
             for member_id in MustRotateKeysBefore::<T>::take(current_session_index) {
                 if let Some(member_data) = Members::<T>::get(member_id) {
                     if member_data.must_rotate_keys_before == current_session_index {
-                        Self::do_remove_member(member_id);
+                        Self::do_remove_member(member_id, member_data.owner_key);
                     }
                 }
             }

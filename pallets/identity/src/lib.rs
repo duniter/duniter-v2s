@@ -90,6 +90,9 @@ pub mod pallet {
         /// Maximum period with disabled status, after this period, the identity is permanently
         /// deleted
         type MaxDisabledPeriod: Get<Self::BlockNumber>;
+        /// Handle the logic that remove all identity consumers.
+        /// "identity consumers" mean all things that rely on the existence of the identity.
+        type RemoveIdentityConsumers: RemoveIdentityConsumers<Self::IdtyIndex>;
     }
 
     // GENESIS STUFF //
@@ -464,10 +467,11 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         pub(super) fn do_remove_identity(idty_index: T::IdtyIndex) -> Weight {
             if let Some(idty_val) = Identities::<T>::take(idty_index) {
+                T::RemoveIdentityConsumers::remove_idty_consumers(idty_index);
                 frame_system::Pallet::<T>::dec_sufficients(&idty_val.owner_key);
+                Self::deposit_event(Event::IdtyRemoved { idty_index });
+                T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Removed);
             }
-            Self::deposit_event(Event::IdtyRemoved { idty_index });
-            T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Removed);
             0
         }
         fn get_next_idty_index() -> T::IdtyIndex {

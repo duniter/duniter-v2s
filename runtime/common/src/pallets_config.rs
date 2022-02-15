@@ -344,16 +344,15 @@ macro_rules! pallets_config {
 			type IsMember = Membership;
 			type OnIdtyChange = Wot;
 			type MaxDisabledPeriod = MaxDisabledPeriod;
+			type RemoveIdentityConsumers = RemoveIdentityConsumersImpl<Self>;
 		}
 
 		impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {
 			type IsIdtyAllowedToRenewMembership = Wot;
 			type IsIdtyAllowedToRequestMembership = Wot;
 			type Event = Event;
-			type ExternalizeMembershipStorage = frame_support::traits::ConstBool<false>;
 			type IdtyId = IdtyIndex;
 			type IdtyIdOf = Identity;
-			type MembershipExternalStorage = sp_membership::traits::NoExternalStorage;
 			type MembershipPeriod = MembershipPeriod;
 			type MetaData = pallet_duniter_wot::MembershipMetaData<AccountId>;
 			type OnEvent = OnMembershipEventHandler<Wot, Runtime>;
@@ -390,10 +389,8 @@ macro_rules! pallets_config {
 			type IsIdtyAllowedToRenewMembership = ();
 			type IsIdtyAllowedToRequestMembership = ();
 			type Event = Event;
-			type ExternalizeMembershipStorage = frame_support::traits::ConstBool<false>;
 			type IdtyId = IdtyIndex;
 			type IdtyIdOf = Identity;
-			type MembershipExternalStorage = sp_membership::traits::NoExternalStorage;
 			type MembershipPeriod = SmithMembershipPeriod;
 			type MetaData = SmithsMembershipMetaData<opaque::SessionKeysWrapper>;
 			type OnEvent = OnSmithMembershipEventHandler<SmithsSubWot, Runtime>;

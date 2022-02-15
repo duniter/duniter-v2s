@@ -20,6 +20,7 @@ use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::instances::{Instance1, Instance2};
 use frame_support::pallet_prelude::Weight;
 use frame_support::Parameter;
+use sp_runtime::traits::IsMember;
 
 pub struct OnMembershipEventHandler<Inner, Runtime>(core::marker::PhantomData<(Inner, Runtime)>);
 
@@ -129,6 +130,55 @@ where
                 println!("{:?}", e)
             }
         }
+        0
+    }
+}
+
+pub struct RemoveIdentityConsumersImpl<Runtime>(core::marker::PhantomData<Runtime>);
+impl<Runtime> pallet_identity::traits::RemoveIdentityConsumers<IdtyIndex>
+    for RemoveIdentityConsumersImpl<Runtime>
+where
+    Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex>
+        + pallet_authority_members::Config<MemberId = IdtyIndex>
+        + pallet_membership::Config<Instance1, IdtyId = IdtyIndex>
+        + pallet_membership::Config<Instance2, IdtyId = IdtyIndex>,
+{
+    fn remove_idty_consumers(idty_index: IdtyIndex) -> Weight {
+        // Remove smith member
+        if pallet_membership::Pallet::<Runtime, Instance2>::is_member(&idty_index) {
+            if let Err(e) = pallet_authority_members::Pallet::<Runtime>::remove_member(
+                frame_system::RawOrigin::Root.into(),
+                idty_index,
+            ) {
+                log::error!(
+                    target: "runtime::common",
+                    "Logic error: fail to remove authority member in remove_idty_consumers(): {:?}",
+                    e
+                );
+            }
+            if let Err(e) = pallet_membership::Pallet::<Runtime, Instance2>::revoke_membership(
+                frame_system::RawOrigin::Root.into(),
+                Some(idty_index),
+            ) {
+                log::error!(
+                    target: "runtime::common",
+                    "Logic error: fail to revoke smith membership in remove_idty_consumers(): {:?}",
+                    e
+                );
+            }
+        }
+        // Remove "classic" member
+        if let Err(e) = pallet_membership::Pallet::<Runtime, Instance1>::revoke_membership(
+            frame_system::RawOrigin::Root.into(),
+            Some(idty_index),
+        ) {
+            log::error!(
+                target: "runtime::common",
+                "Logic error: fail to revoke membership in remove_idty_consumers(): {:?}",
+                e
+            );
+        }
+
         0
     }
 }

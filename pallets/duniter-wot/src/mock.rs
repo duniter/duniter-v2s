@@ -118,11 +118,11 @@ impl pallet_identity::Config for Test {
     type IsMember = Membership;
     type OnIdtyChange = DuniterWot;
     type MaxDisabledPeriod = MaxDisabledPeriod;
+    type RemoveIdentityConsumers = ();
 }
 
 // Membership
 parameter_types! {
-    pub const ExternalizeMembershipStorage: bool = false;
     pub const MembershipPeriod: u64 = 5;
     pub const PendingMembershipPeriod: u64 = 3;
     pub const RenewablePeriod: u64 = 2;
@@ -133,10 +133,8 @@ impl pallet_membership::Config<Instance1> for Test {
     type IsIdtyAllowedToRenewMembership = DuniterWot;
     type IsIdtyAllowedToRequestMembership = DuniterWot;
     type Event = Event;
-    type ExternalizeMembershipStorage = ExternalizeMembershipStorage;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = Identity;
-    type MembershipExternalStorage = sp_membership::traits::NoExternalStorage;
     type MembershipPeriod = MembershipPeriod;
     type MetaData = crate::MembershipMetaData<u64>;
     type OnEvent = DuniterWot;

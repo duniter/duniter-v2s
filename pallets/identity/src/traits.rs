@@ -47,3 +47,12 @@ impl<T: Config> OnIdtyChange<T> for () {
         0
     }
 }
+
+pub trait RemoveIdentityConsumers<IndtyIndex> {
+    fn remove_idty_consumers(idty_index: IndtyIndex) -> Weight;
+}
+impl<IndtyIndex> RemoveIdentityConsumers<IndtyIndex> for () {
+    fn remove_idty_consumers(_: IndtyIndex) -> Weight {
+        0
+    }
+}

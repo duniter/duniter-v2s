@@ -21,6 +21,7 @@ std = [
     'codec/std',
     'frame-support/std',
     'frame-system/std',
+	'log/std',
     'pallet-authority-members/std',
     'pallet-balances/std',
     'pallet-certification/std',
@@ -46,6 +47,7 @@ pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', defau
 sp-membership = { path = '../../primitives/membership', default-features = false }
 
 # Crates.io
+log = { version = "0.4.14", default-features = false }
 smallvec = "1.6.1"
 
 # Substrate

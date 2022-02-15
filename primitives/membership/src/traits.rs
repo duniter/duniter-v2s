@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::*;
-use frame_support::pallet_prelude::{TypeInfo, Weight};
+use frame_support::pallet_prelude::Weight;
 
 pub trait IsIdtyAllowedToRenewMembership<IdtyId> {
     fn is_idty_allowed_to_renew_membership(idty_id: &IdtyId) -> bool;
@@ -53,36 +52,6 @@ impl<IdtyId, MetaData> OnEvent<IdtyId, MetaData> for () {
 
 pub trait MembersCount {
     fn members_count() -> u32;
-}
-
-pub trait MembershipExternalStorage<BlockNumber: Decode + Encode + TypeInfo, IdtyId>:
-    sp_runtime::traits::IsMember<IdtyId>
-{
-    fn insert(idty_id: IdtyId, membership_data: MembershipData<BlockNumber>);
-    fn get(idty_id: &IdtyId) -> Option<MembershipData<BlockNumber>>;
-    fn remove(idty_id: &IdtyId);
-}
-
-static INVALID_CONF_MSG: &str = "invalid pallet configuration: if `MembershipExternalStorage` = (), you must set `ExternalizeMembershipStorage` to `false`.";
-
-pub struct NoExternalStorage;
-impl<IdtyId> sp_runtime::traits::IsMember<IdtyId> for NoExternalStorage {
-    fn is_member(_: &IdtyId) -> bool {
-        panic!("{}", INVALID_CONF_MSG)
-    }
-}
-impl<BlockNumber: Decode + Encode + TypeInfo, IdtyId> MembershipExternalStorage<BlockNumber, IdtyId>
-    for NoExternalStorage
-{
-    fn insert(_: IdtyId, _: MembershipData<BlockNumber>) {
-        panic!("{}", INVALID_CONF_MSG)
-    }
-    fn get(_: &IdtyId) -> Option<MembershipData<BlockNumber>> {
-        panic!("{}", INVALID_CONF_MSG)
-    }
-    fn remove(_: &IdtyId) {
-        panic!("{}", INVALID_CONF_MSG)
-    }
 }
 
 pub trait Validate<AccountId> {

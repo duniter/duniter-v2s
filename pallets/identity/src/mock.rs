@@ -110,6 +110,7 @@ impl pallet_identity::Config for Test {
     type IsMember = IsMemberTestImpl;
     type OnIdtyChange = ();
     type MaxDisabledPeriod = MaxDisabledPeriod;
+    type RemoveIdentityConsumers = ();
 }
 
 // Build genesis storage according to the mock runtime.
