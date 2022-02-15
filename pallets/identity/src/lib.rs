@@ -144,6 +144,7 @@ pub mod pallet {
                         (idty_index, idty.value.status),
                     )
                 }
+                // frame_system::Pallet::<T>::dec_providers(&account);
                 frame_system::Pallet::<T>::inc_sufficients(&idty.value.owner_key);
                 <Identities<T>>::insert(idty_index, idty.value.clone());
                 IdentitiesNames::<T>::insert(idty.name.clone(), ());

@@ -73,6 +73,11 @@ std = [
     'sp-version/std',
 ]
 
+[dev-dependencies]
+sp-consensus-vrf = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02' }
+sp-finality-grandpa = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02' }
+sp-io = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02' }
+
 [dependencies]
 common-runtime = { path = "../common", default-features = false }
 pallet-authority-members = { path = '../../pallets/authority-members', default-features = false }
