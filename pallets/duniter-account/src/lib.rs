@@ -260,9 +260,12 @@ where
         let result = f(&mut some_data)?;
         let is_providing = some_data.is_some();
         if !was_providing && is_providing {
-            // If the account does not exist, we should program its creation
             if !frame_system::Pallet::<T>::account_exists(account_id) {
+                // If the account does not exist, we should program its creation
                 PendingNewAccounts::<T>::insert(account_id, ());
+            } else {
+                // If the account already exists, we should register increment providers directly
+                frame_system::Pallet::<T>::inc_providers(account_id);
             }
         } else if was_providing && !is_providing {
             match frame_system::Pallet::<T>::dec_providers(account_id)? {
