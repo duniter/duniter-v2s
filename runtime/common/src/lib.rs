@@ -72,6 +72,15 @@ impl sp_runtime::traits::Convert<AccountId, Option<entities::ValidatorFullIdenti
     }
 }
 
+pub struct GetCurrentEpochIndex<Runtime>(core::marker::PhantomData<Runtime>);
+impl<Runtime: pallet_babe::Config> frame_support::pallet_prelude::Get<u64>
+    for GetCurrentEpochIndex<Runtime>
+{
+    fn get() -> u64 {
+        pallet_babe::Pallet::<Runtime>::epoch_index()
+    }
+}
+
 pub struct IdtyNameValidatorImpl;
 impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorImpl {
     fn validate(idty_name: &pallet_identity::IdtyName) -> bool {

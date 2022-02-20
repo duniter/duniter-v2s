@@ -279,6 +279,7 @@ macro_rules! pallets_config {
 		impl pallet_provide_randomness::Config for Runtime {
 			type Currency = Balances;
 			type Event = Event;
+			type GetCurrentEpochIndex = GetCurrentEpochIndex<Self>;
 			type MaxRequests = frame_support::traits::ConstU32<1_000>;
 			type RequestPrice = frame_support::traits::ConstU64<200>;
 			type OnFilledRandomness = Account;

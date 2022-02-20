@@ -69,6 +69,8 @@ pub mod pallet {
         type Currency: Currency<Self::AccountId>;
         /// The overarching event type.
         type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
+        /// Get the current epoch index
+        type GetCurrentEpochIndex: Get<u64>;
         /// Maximum number of not yet filled requests
         #[pallet::constant]
         type MaxRequests: Get<u32>;
@@ -88,7 +90,7 @@ pub mod pallet {
     // STORAGE //
 
     #[pallet::storage]
-    pub(super) type NewEpoch<T: Config> = StorageValue<_, bool, ValueQuery>;
+    pub(super) type NexEpochHookIn<T: Config> = StorageValue<_, u8, ValueQuery>;
 
     #[pallet::storage]
     pub(super) type RequestIdProvider<T: Config> = StorageValue<_, RequestId, ValueQuery>;
@@ -98,20 +100,9 @@ pub mod pallet {
     pub type RequestsReadyAtNextBlock<T: Config> = StorageValue<_, Vec<Request>, ValueQuery>;
 
     #[pallet::storage]
-    #[pallet::getter(fn requests_ready_at_next_epoch)]
-    pub type RequestsReadyAtNextEpoch<T: Config> = StorageValue<_, Vec<Request>, ValueQuery>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn requests_ready_in_two_epochs)]
-    pub type RequestsReadyInTwoEpochs<T: Config> = StorageValue<_, Vec<Request>, ValueQuery>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn requests_ready_in_three_epochs)]
-    pub type RequestsReadyInThreeEpochs<T: Config> = StorageValue<_, Vec<Request>, ValueQuery>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn pending_requests)]
-    pub type PendingRequests<T: Config> = StorageValue<_, Vec<Request>, ValueQuery>;
+    #[pallet::getter(fn requests_ready_at_epoch)]
+    pub type RequestsReadyAtEpoch<T: Config> =
+        StorageMap<_, Twox64Concat, u64, Vec<Request>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn requests_ids)]
@@ -189,10 +180,14 @@ pub mod pallet {
                 total_weight += 100_000;
             }
 
-            if NewEpoch::<T>::get() {
-                NewEpoch::<T>::put(false);
+            let next_epoch_hook_in = NexEpochHookIn::<T>::mutate(|next_in| {
+                core::mem::replace(next_in, next_in.saturating_sub(1))
+            });
+            if next_epoch_hook_in == 1 {
                 total_weight += 100_000;
-                for Request { request_id, salt } in RequestsReadyAtNextEpoch::<T>::take() {
+                for Request { request_id, salt } in
+                    RequestsReadyAtEpoch::<T>::take(T::GetCurrentEpochIndex::get())
+                {
                     let randomness = T::RandomnessFromOneEpochAgo::random(salt.as_ref()).0;
                     total_weight +=
                         T::OnFilledRandomness::on_filled_randomness(request_id, randomness);
@@ -202,18 +197,6 @@ pub mod pallet {
                     });
                     total_weight += 100_000;
                 }
-
-                total_weight += 200_000;
-                let requests_ready_at_next_epoch = RequestsReadyInTwoEpochs::<T>::take();
-                RequestsReadyAtNextEpoch::<T>::put(requests_ready_at_next_epoch);
-
-                total_weight += 200_000;
-                let requests_ready_in_two_epochs = RequestsReadyInThreeEpochs::<T>::take();
-                RequestsReadyInTwoEpochs::<T>::put(requests_ready_in_two_epochs);
-
-                total_weight += 200_000;
-                let requests_ready_in_three_epochs = PendingRequests::<T>::take();
-                RequestsReadyInThreeEpochs::<T>::put(requests_ready_in_three_epochs);
             }
 
             total_weight
@@ -243,7 +226,7 @@ pub mod pallet {
             Self::apply_request(randomness_type, salt)
         }
         pub fn on_new_epoch() {
-            NewEpoch::<T>::put(true);
+            NexEpochHookIn::<T>::put(5)
         }
     }
 
@@ -265,22 +248,35 @@ pub mod pallet {
                 core::mem::replace(next_request_id, next_request_id.saturating_add(1))
             });
             RequestsIds::<T>::insert(request_id, ());
+            let current_epoch = T::GetCurrentEpochIndex::get();
             match randomness_type {
                 RandomnessType::RandomnessFromPreviousBlock => {
                     RequestsReadyAtNextBlock::<T>::append(Request { request_id, salt });
                 }
                 RandomnessType::RandomnessFromOneEpochAgo => {
-                    if NewEpoch::<T>::get() {
-                        RequestsReadyInThreeEpochs::<T>::append(Request { request_id, salt });
+                    if NexEpochHookIn::<T>::get() > 1 {
+                        RequestsReadyAtEpoch::<T>::append(
+                            current_epoch + 3,
+                            Request { request_id, salt },
+                        );
                     } else {
-                        RequestsReadyInTwoEpochs::<T>::append(Request { request_id, salt });
+                        RequestsReadyAtEpoch::<T>::append(
+                            current_epoch + 2,
+                            Request { request_id, salt },
+                        );
                     }
                 }
                 RandomnessType::RandomnessFromTwoEpochsAgo => {
-                    if NewEpoch::<T>::get() {
-                        PendingRequests::<T>::append(Request { request_id, salt });
+                    if NexEpochHookIn::<T>::get() > 1 {
+                        RequestsReadyAtEpoch::<T>::append(
+                            current_epoch + 4,
+                            Request { request_id, salt },
+                        );
                     } else {
-                        RequestsReadyInThreeEpochs::<T>::append(Request { request_id, salt });
+                        RequestsReadyAtEpoch::<T>::append(
+                            current_epoch + 3,
+                            Request { request_id, salt },
+                        );
                     }
                 }
             }

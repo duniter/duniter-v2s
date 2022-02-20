@@ -831,6 +831,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-authority-members",
+ "pallet-babe",
  "pallet-balances",
  "pallet-certification",
  "pallet-duniter-account",
