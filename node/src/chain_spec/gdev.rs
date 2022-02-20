@@ -278,7 +278,7 @@ fn gen_genesis_conf(
                 smith_cert_min_received_cert_to_issue_cert: 2,
                 smith_cert_renewable_period: 50,
                 smith_cert_validity_period: 1_000,
-                smith_membership_period: 1_000,
+                smith_membership_period,
                 smith_membership_renewable_period: 50,
                 smith_pending_membership_period: 500,
                 smiths_wot_first_cert_issuable_on: 20,
@@ -360,7 +360,7 @@ fn gen_genesis_conf(
                     (
                         i as u32,
                         MembershipData {
-                            expire_on: smith_membership_period,
+                            expire_on: 0,
                             renewable_on: smith_membership_renewable_period,
                         },
                     )
