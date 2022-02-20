@@ -18,11 +18,11 @@ mod common;
 
 use common::*;
 use frame_support::traits::{PalletInfo, StorageInfo, StorageInfoTrait};
-//use frame_support::{assert_err, assert_ok};
-use frame_support::assert_ok;
+use frame_support::{assert_err, assert_ok};
 use frame_support::{StorageHasher, Twox128};
 use gdev_runtime::*;
-use sp_core::crypto::Ss58Codec;
+use sp_keyring::AccountKeyring;
+use sp_runtime::MultiAddress;
 
 #[test]
 fn verify_pallet_prefixes() {
@@ -99,7 +99,7 @@ fn test_remove_identity() {
         assert_eq!(
             System::events()[1].event,
             Event::System(frame_system::Event::KilledAccount {
-                account: AccountId::from_ss58check(DAVE).unwrap()
+                account: AccountKeyring::Dave.to_account_id()
             })
         );
         assert_eq!(
@@ -140,4 +140,125 @@ fn test_remove_smith_identity() {
         );
         //println!("{:#?}", events);
     });
+}
+
+#[test]
+fn test_create_new_account() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 1_000)])
+        .build()
+        .execute_with(|| {
+            run_to_block(2);
+
+            // Should be able to transfer 5 units to a new account
+            assert_ok!(Balances::transfer(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                500
+            ));
+            let events = System::events();
+            //println!("{:#?}", events);
+            assert_eq!(events.len(), 2);
+            assert_eq!(
+                System::events()[0].event,
+                Event::Balances(pallet_balances::Event::Endowed {
+                    account: AccountKeyring::Eve.to_account_id(),
+                    free_balance: 500,
+                })
+            );
+            assert_eq!(
+                System::events()[1].event,
+                Event::Balances(pallet_balances::Event::Transfer {
+                    from: AccountKeyring::Alice.to_account_id(),
+                    to: AccountKeyring::Eve.to_account_id(),
+                    amount: 500,
+                })
+            );
+
+            // At next bloc, the mew account must be created,
+            // and new account tax should be collected
+            run_to_block(3);
+            let events = System::events();
+            //println!("{:#?}", events);
+            assert_eq!(events.len(), 2);
+            assert_eq!(
+                System::events()[0].event,
+                Event::System(frame_system::Event::NewAccount {
+                    account: AccountKeyring::Eve.to_account_id(),
+                })
+            );
+            assert_eq!(
+                System::events()[1].event,
+                Event::Balances(pallet_balances::Event::Withdraw {
+                    who: AccountKeyring::Eve.to_account_id(),
+                    amount: 300,
+                })
+            );
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
+                200
+            );
+
+            // A random id request should be registered
+            assert_eq!(
+                Account::pending_random_id_assignments(0),
+                Some(AccountKeyring::Eve.to_account_id())
+            );
+
+            // We can't remove the account until the random id is assigned
+            run_to_block(4);
+            assert_err!(
+                Balances::transfer(
+                    frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                    MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
+                    200
+                ),
+                pallet_balances::Error::<Runtime>::KeepAlive,
+            );
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
+                200
+            );
+            assert_ok!(Balances::transfer_all(
+                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
+                false
+            ),);
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
+                200
+            );
+        });
+}
+
+#[test]
+fn test_create_new_idty() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 1_000)])
+        .build()
+        .execute_with(|| {
+            run_to_block(2);
+
+            // Should be able to create an identity
+            assert_ok!(Balances::transfer(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                200
+            ));
+            assert_ok!(Identity::create_identity(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                AccountKeyring::Eve.to_account_id(),
+            ));
+
+            // At next bloc, nothing should be preleved
+            run_to_block(3);
+            let events = System::events();
+            assert_eq!(events.len(), 0);
+
+            // A random id request should be registered
+            assert_eq!(
+                Account::pending_random_id_assignments(0),
+                Some(AccountKeyring::Eve.to_account_id())
+            );
+        });
 }

@@ -25,6 +25,7 @@ mod pallets_config;
 pub mod providers;
 pub mod weights;
 
+pub use pallet_duniter_account::GenesisAccountData;
 pub use pallet_identity::{GenesisIdty, IdtyName, IdtyStatus, IdtyValue};
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 

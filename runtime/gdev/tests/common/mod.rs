@@ -27,7 +27,7 @@ use sp_consensus_babe::{AuthorityId as BabeId, Slot};
 use sp_consensus_vrf::schnorrkel::{VRFOutput, VRFProof};
 use sp_core::crypto::IsWrappedBy;
 use sp_core::sr25519;
-use sp_core::{Encode, Pair, Public};
+use sp_core::{Encode, Pair, Public, H256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_membership::MembershipData;
 use sp_runtime::testing::{Digest, DigestItem};
@@ -46,13 +46,10 @@ pub type AuthorityKeys = (
 
 pub const NAMES: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"];
 
-//pub const CHARLIE: &str = "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y";
-pub const DAVE: &str = "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy";
-
 pub struct ExtBuilder {
     // endowed accounts with balances
+    initial_accounts: BTreeMap<AccountId, GenesisAccountData<Balance>>,
     initial_authorities_len: usize,
-    initial_balances: Vec<(AccountId, Balance)>,
     initial_identities: BTreeMap<IdtyName, AccountId>,
     initial_smiths: Vec<AuthorityKeys>,
     parameters: GenesisParameters<u32, u32, Balance>,
@@ -68,9 +65,18 @@ impl ExtBuilder {
         assert!(initial_smiths_len <= initial_identities_len);
         assert!(initial_authorities_len <= initial_smiths_len);
 
-        let initial_smiths = (0..initial_smiths_len)
-            .map(|i| get_authority_keys_from_seed(NAMES[i]))
-            .collect::<Vec<AuthorityKeys>>();
+        let initial_accounts = (0..initial_identities_len)
+            .map(|i| {
+                (
+                    get_account_id_from_seed::<sr25519::Public>(NAMES[i]),
+                    GenesisAccountData {
+                        balance: 0,
+                        is_identity: true,
+                        random_id: H256([i as u8; 32]),
+                    },
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
         let initial_identities = (0..initial_identities_len)
             .map(|i| {
                 (
@@ -79,10 +85,13 @@ impl ExtBuilder {
                 )
             })
             .collect::<BTreeMap<IdtyName, AccountId>>();
+        let initial_smiths = (0..initial_smiths_len)
+            .map(|i| get_authority_keys_from_seed(NAMES[i]))
+            .collect::<Vec<AuthorityKeys>>();
 
         Self {
+            initial_accounts,
             initial_authorities_len,
-            initial_balances: vec![],
             initial_identities,
             initial_smiths,
             parameters: GenesisParameters {
@@ -119,20 +128,28 @@ impl ExtBuilder {
         }
     }
 
-    /*pub fn with_initial_balances(mut self, initial_balances: Vec<(AccountId, Balance)>) -> Self {
-        self.initial_balances = initial_balances;
+    pub fn with_initial_balances(mut self, initial_balances: Vec<(AccountId, Balance)>) -> Self {
+        for (account_id, balance) in initial_balances {
+            self.initial_accounts
+                .entry(account_id.clone())
+                .or_insert(GenesisAccountData {
+                    random_id: H256(account_id.into()),
+                    ..Default::default()
+                })
+                .balance = balance;
+        }
         self
     }
 
-    pub fn with_parameters(mut self, parameters: GenesisParameters<u32, u32, Balance>) -> Self {
+    /*pub fn with_parameters(mut self, parameters: GenesisParameters<u32, u32, Balance>) -> Self {
         self.parameters = parameters;
         self
     }*/
 
     pub fn build(self) -> sp_io::TestExternalities {
         let Self {
+            initial_accounts,
             initial_authorities_len,
-            initial_balances,
             initial_identities,
             initial_smiths,
             parameters,
@@ -159,8 +176,8 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .unwrap();*/
 
-        pallet_balances::GenesisConfig::<Runtime> {
-            balances: initial_balances,
+        pallet_duniter_account::GenesisConfig::<Runtime> {
+            accounts: initial_accounts,
         }
         .assimilate_storage(&mut t)
         .unwrap();
@@ -320,6 +337,7 @@ pub fn run_to_block(n: u32) {
         System::set_block_number(System::block_number() + 1);
 
         // Initialize the new block
+        Account::on_initialize(System::block_number());
         Scheduler::on_initialize(System::block_number());
         //Babe::on_initialize(System::block_number());
         Authorship::on_initialize(System::block_number());

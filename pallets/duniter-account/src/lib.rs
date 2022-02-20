@@ -73,7 +73,8 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub accounts: sp_std::collections::btree_set::BTreeSet<T::AccountId>,
+        pub accounts:
+            sp_std::collections::btree_map::BTreeMap<T::AccountId, GenesisAccountData<T::Balance>>,
     }
 
     #[cfg(feature = "std")]
@@ -88,8 +89,26 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            for account_id in &self.accounts {
-                PendingNewAccounts::<T>::insert(account_id.clone(), ());
+            for (
+                account_id,
+                GenesisAccountData {
+                    random_id,
+                    balance,
+                    is_identity,
+                },
+            ) in &self.accounts
+            {
+                assert!(!balance.is_zero() || *is_identity);
+                frame_system::Account::<T>::mutate(account_id, |account| {
+                    account.data.random_id = Some(*random_id);
+                    if !balance.is_zero() {
+                        account.data.free = *balance;
+                        account.providers = 1;
+                    }
+                    if *is_identity {
+                        account.sufficients = 1;
+                    }
+                });
             }
         }
     }
@@ -155,6 +174,11 @@ pub mod pallet {
                         total_weight += 200_000;
                     } else {
                         // The charges could not be deducted, we slash the account
+                        let res = frame_system::Pallet::<T>::dec_providers(&account_id);
+                        debug_assert!(
+                            res.is_ok(),
+                            "Cannot fail because providers are incremented just before"
+                        );
                         let account_data = frame_system::Pallet::<T>::get(&account_id);
                         let (imbalance, rest) = pallet_balances::Pallet::<T>::slash(
                             &account_id,
@@ -227,7 +251,7 @@ where
         f: impl FnOnce(&mut Option<pallet_balances::AccountData<Balance>>) -> Result<R, E>,
     ) -> Result<R, E> {
         let account = frame_system::Account::<T>::get(account_id);
-        let was_providing = account.data != Default::default();
+        let was_providing = account.data.was_providing();
         let mut some_data = if was_providing {
             Some(account.data.into())
         } else {

@@ -16,15 +16,14 @@
 
 use common_runtime::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use sp_core::Decode;
-use std::collections::{BTreeMap, BTreeSet};
+use sp_core::{blake2_256, Decode, Encode, H256};
+use std::collections::BTreeMap;
 
 type MembershipData = sp_membership::MembershipData<u32>;
 
 #[derive(Clone)]
 pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
-    pub accounts: BTreeSet<AccountId>,
-    pub balances: Vec<(AccountId, u64)>,
+    pub accounts: BTreeMap<AccountId, GenesisAccountData<u64>>,
     pub certs_by_issuer: BTreeMap<u32, BTreeMap<u32, u32>>,
     pub first_ud: u64,
     pub identities: Vec<(String, AccountId)>,
@@ -138,13 +137,13 @@ where
 
     // MONEY AND WOT //
 
-    let mut accounts = BTreeSet::new();
-    let mut balances = Vec::new();
+    let mut accounts = BTreeMap::new();
     let mut identities_ = Vec::with_capacity(identities.len());
     let mut idty_index: u32 = 1;
     let mut idty_index_of = BTreeMap::new();
     let mut initial_monetary_mass = 0;
     let mut memberships = BTreeMap::new();
+    //let mut total_dust = 0;
     let mut ud_accounts = BTreeMap::new();
     for (idty_name, identity) in &identities {
         if !validate_idty_name(idty_name) {
@@ -152,13 +151,21 @@ where
         }
 
         // Money
-        if identity.balance >= 100 {
-            balances.push((identity.pubkey.clone(), identity.balance));
+        let balance = if identity.balance >= 100 {
+            identity.balance
         } else {
-            // If an identity has no currency in genesis, its account will not be created,
-            // so it must be created explicitly
-            accounts.insert(identity.pubkey.clone());
-        }
+            //total_dust += identity.balance;
+            0
+        };
+        accounts.insert(
+            identity.pubkey.clone(),
+            GenesisAccountData {
+                random_id: H256(blake2_256(&(idty_index, &identity.pubkey).encode())),
+                balance,
+                is_identity: true,
+            },
+        );
+
         // We must count the money under the existential deposit because what we count is
         // the monetary mass created (for the revaluation of the DU)
         initial_monetary_mass += identity.balance;
@@ -248,7 +255,6 @@ where
 
     let genesis_data = GenesisData {
         accounts,
-        balances,
         certs_by_issuer,
         first_ud,
         identities: identities_,

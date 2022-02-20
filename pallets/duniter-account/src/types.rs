@@ -34,6 +34,9 @@ impl<Balance: Zero> AccountData<Balance> {
         self.reserved = new_balances.reserved;
         self.fee_frozen = new_balances.fee_frozen;
     }
+    pub fn was_providing(&self) -> bool {
+        !self.free.is_zero() || !self.reserved.is_zero()
+    }
 }
 
 impl<Balance: Zero> From<AccountData<Balance>> for pallet_balances::AccountData<Balance> {
@@ -45,4 +48,12 @@ impl<Balance: Zero> From<AccountData<Balance>> for pallet_balances::AccountData<
             fee_frozen: account_data.fee_frozen,
         }
     }
+}
+
+#[derive(Clone, Decode, Default, Encode, Eq, MaxEncodedLen, PartialEq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub struct GenesisAccountData<Balance> {
+    pub random_id: H256,
+    pub balance: Balance,
+    pub is_identity: bool,
 }

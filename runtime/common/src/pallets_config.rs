@@ -114,8 +114,8 @@ macro_rules! pallets_config {
 		impl pallet_duniter_account::Config for Runtime {
 			type AccountIdToSalt = sp_runtime::traits::ConvertInto;
 			type Event = Event;
-			type MaxNewAccountsPerBlock = frame_support::pallet_prelude::ConstU32<100>;
-			type NewAccountPrice = frame_support::traits::ConstU64<200>;
+			type MaxNewAccountsPerBlock = frame_support::pallet_prelude::ConstU32<1>;
+			type NewAccountPrice = frame_support::traits::ConstU64<300>;
 		}
 
 		// BLOCK CREATION //

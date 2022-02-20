@@ -214,6 +214,11 @@ pub fn new_test_ext(initial_identities_len: usize) -> sp_io::TestExternalities {
     .unwrap();
 
     frame_support::BasicExternalities::execute_with_storage(&mut t, || {
+        // manually increment genesis identities sufficient counter
+        // In real world, this should be handle manually by genesis creator
+        for i in 1..=initial_identities_len {
+            frame_system::Pallet::<Test>::inc_sufficients(&(i as u64));
+        }
         // Some dedicated test account
         frame_system::Pallet::<Test>::inc_providers(&(initial_identities_len as u64));
         frame_system::Pallet::<Test>::inc_providers(&(initial_identities_len as u64 + 1));

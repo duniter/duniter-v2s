@@ -26,7 +26,7 @@ use gdev_runtime::{
 use sc_service::ChainType;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
-use sp_core::sr25519;
+use sp_core::{blake2_256, sr25519, Encode, H256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_membership::MembershipData;
 use std::collections::BTreeMap;
@@ -242,7 +242,17 @@ fn gen_genesis_conf(
         account: AccountConfig {
             accounts: initial_identities
                 .iter()
-                .map(|(_, owner_key)| owner_key.clone())
+                .enumerate()
+                .map(|(i, (_, owner_key))| {
+                    (
+                        owner_key.clone(),
+                        GenesisAccountData {
+                            random_id: H256(blake2_256(&(i as u32, owner_key).encode())),
+                            balance: 0,
+                            is_identity: true,
+                        },
+                    )
+                })
                 .collect(),
         },
         parameters: ParametersConfig {
@@ -403,7 +413,6 @@ fn genesis_data_to_gdev_genesis_conf(
 ) -> gdev_runtime::GenesisConfig {
     let super::gen_genesis_data::GenesisData {
         accounts,
-        balances,
         certs_by_issuer,
         first_ud,
         identities,
@@ -429,7 +438,7 @@ fn genesis_data_to_gdev_genesis_conf(
         authority_members: AuthorityMembersConfig {
             initial_authorities,
         },
-        balances: BalancesConfig { balances },
+        balances: Default::default(),
         babe: BabeConfig {
             authorities: Vec::with_capacity(0),
             epoch_config: Some(common_runtime::constants::BABE_GENESIS_EPOCH_CONFIG),
