@@ -22,7 +22,6 @@ use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    BuildStorage,
 };
 use std::collections::BTreeMap;
 
@@ -45,7 +44,7 @@ frame_support::construct_runtime!(
     }
 );
 
-// Sstem
+// System
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub const SS58Prefix: u8 = 42;
@@ -170,43 +169,57 @@ pub const NAMES: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext(initial_identities_len: usize) -> sp_io::TestExternalities {
-    GenesisConfig {
-        system: SystemConfig::default(),
-        identity: IdentityConfig {
-            identities: (1..=initial_identities_len)
-                .map(|i| pallet_identity::GenesisIdty {
-                    index: i as u32,
-                    name: pallet_identity::IdtyName::from(NAMES[i - 1]),
-                    value: pallet_identity::IdtyValue {
-                        next_creatable_identity_on: 0,
-                        owner_key: i as u64,
-                        removable_on: 0,
-                        status: pallet_identity::IdtyStatus::Validated,
-                    },
-                })
-                .collect(),
-        },
-        membership: MembershipConfig {
-            memberships: (1..=initial_identities_len)
-                .map(|i| {
-                    (
-                        i as u32,
-                        sp_membership::MembershipData {
-                            expire_on: MembershipPeriod::get(),
-                            renewable_on: RenewablePeriod::get(),
-                        },
-                    )
-                })
-                .collect(),
-        },
-        cert: CertConfig {
-            certs_by_issuer: clique_wot(initial_identities_len, ValidityPeriod::get()),
-            apply_cert_period_at_genesis: true,
-        },
+    let mut t = frame_system::GenesisConfig::default()
+        .build_storage::<Test>()
+        .unwrap();
+
+    pallet_identity::GenesisConfig::<Test> {
+        identities: (1..=initial_identities_len)
+            .map(|i| pallet_identity::GenesisIdty {
+                index: i as u32,
+                name: pallet_identity::IdtyName::from(NAMES[i - 1]),
+                value: pallet_identity::IdtyValue {
+                    next_creatable_identity_on: 0,
+                    owner_key: i as u64,
+                    removable_on: 0,
+                    status: pallet_identity::IdtyStatus::Validated,
+                },
+            })
+            .collect(),
     }
-    .build_storage()
-    .unwrap()
-    .into()
+    .assimilate_storage(&mut t)
+    .unwrap();
+
+    pallet_membership::GenesisConfig::<Test, Instance1> {
+        memberships: (1..=initial_identities_len)
+            .map(|i| {
+                (
+                    i as u32,
+                    sp_membership::MembershipData {
+                        expire_on: MembershipPeriod::get(),
+                        renewable_on: RenewablePeriod::get(),
+                    },
+                )
+            })
+            .collect(),
+    }
+    .assimilate_storage(&mut t)
+    .unwrap();
+
+    pallet_certification::GenesisConfig::<Test, Instance1> {
+        certs_by_issuer: clique_wot(initial_identities_len, ValidityPeriod::get()),
+        apply_cert_period_at_genesis: true,
+    }
+    .assimilate_storage(&mut t)
+    .unwrap();
+
+    frame_support::BasicExternalities::execute_with_storage(&mut t, || {
+        // Some dedicated test account
+        frame_system::Pallet::<Test>::inc_providers(&(initial_identities_len as u64));
+        frame_system::Pallet::<Test>::inc_providers(&(initial_identities_len as u64 + 1));
+    });
+
+    sp_io::TestExternalities::new(t)
 }
 
 pub fn run_to_block(n: u64) {

@@ -1,0 +1,104 @@
+[package]
+authors = ['librelois <c@elo.tf>']
+description = 'FRAME pallet duniter account.'
+edition = '2018'
+homepage = 'https://substrate.dev'
+license = 'AGPL-3.0'
+name = 'pallet-duniter-account'
+readme = 'README.md'
+repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
+version = '3.0.0'
+
+[features]
+default = ['std']
+runtime-benchmarks = ['frame-benchmarking']
+std = [
+    'codec/std',
+    'frame-support/std',
+    'frame-system/std',
+    'frame-benchmarking/std',
+    'pallet-balances/std',
+    'pallet-provide-randomness/std',
+    'serde',
+    'sp-core/std',
+    'sp-io/std',
+    'sp-runtime/std',
+	'sp-std/std',
+]
+try-runtime = ['frame-support/try-runtime']
+
+[dependencies]
+# local
+pallet-provide-randomness = { path = "../provide-randomness", default-features = false }
+
+# crates.io
+codec = { package = 'parity-scale-codec', version = "2.3.1", default-features = false, features = ["derive"] }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+
+# substrate
+[dependencies.frame-benchmarking]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+optional = true
+branch = 'duniter-monthly-2022-02'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+[dependencies.frame-system]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+[dependencies.pallet-balances]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+[dependencies.serde]
+version = "1.0.101"
+optional = true
+features = ["derive"]
+
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+[dependencies.sp-io]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+### DOC ###
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+### DEV ###
+
+[dev-dependencies.pallet-balances]
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+[dev-dependencies.maplit]
+version = '1.0.2'
+
+[dev-dependencies.serde]
+version = '1.0.119'
+
+[dev-dependencies.sp-io]
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'

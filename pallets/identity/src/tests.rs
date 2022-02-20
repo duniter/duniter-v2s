@@ -57,9 +57,9 @@ fn test_create_identity_ok() {
         // Alice should be able te create an identity
         assert_ok!(Identity::create_identity(Origin::signed(1), 2));
         let events = System::events();
-        assert_eq!(events.len(), 2);
+        assert_eq!(events.len(), 1);
         assert_eq!(
-            events[1],
+            events[0],
             EventRecord {
                 phase: Phase::Initialization,
                 event: Event::Identity(crate::Event::IdtyCreated {
@@ -84,9 +84,9 @@ fn test_idty_creation_period() {
         // Alice should be able te create an identity
         assert_ok!(Identity::create_identity(Origin::signed(1), 2));
         let events = System::events();
-        assert_eq!(events.len(), 2);
+        assert_eq!(events.len(), 1);
         assert_eq!(
-            events[1],
+            events[0],
             EventRecord {
                 phase: Phase::Initialization,
                 event: Event::Identity(crate::Event::IdtyCreated {
@@ -109,9 +109,9 @@ fn test_idty_creation_period() {
         run_to_block(4);
         assert_ok!(Identity::create_identity(Origin::signed(1), 3));
         let events = System::events();
-        assert_eq!(events.len(), 2);
+        assert_eq!(events.len(), 1);
         assert_eq!(
-            events[1],
+            events[0],
             EventRecord {
                 phase: Phase::Initialization,
                 event: Event::Identity(crate::Event::IdtyCreated {

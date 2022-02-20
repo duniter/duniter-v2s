@@ -17,12 +17,13 @@
 use common_runtime::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp_core::Decode;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 type MembershipData = sp_membership::MembershipData<u32>;
 
 #[derive(Clone)]
 pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
+    pub accounts: BTreeSet<AccountId>,
     pub balances: Vec<(AccountId, u64)>,
     pub certs_by_issuer: BTreeMap<u32, BTreeMap<u32, u32>>,
     pub first_ud: u64,
@@ -137,6 +138,7 @@ where
 
     // MONEY AND WOT //
 
+    let mut accounts = BTreeSet::new();
     let mut balances = Vec::new();
     let mut identities_ = Vec::with_capacity(identities.len());
     let mut idty_index: u32 = 1;
@@ -152,6 +154,10 @@ where
         // Money
         if identity.balance >= 100 {
             balances.push((identity.pubkey.clone(), identity.balance));
+        } else {
+            // If an identity has no currency in genesis, its account will not be created,
+            // so it must be created explicitly
+            accounts.insert(identity.pubkey.clone());
         }
         // We must count the money under the existential deposit because what we count is
         // the monetary mass created (for the revaluation of the DU)
@@ -241,6 +247,7 @@ where
     }
 
     let genesis_data = GenesisData {
+        accounts,
         balances,
         certs_by_issuer,
         first_ud,

@@ -22,6 +22,17 @@ use frame_support::pallet_prelude::Weight;
 use frame_support::Parameter;
 use sp_runtime::traits::IsMember;
 
+pub struct OnNewSessionHandler<Runtime>(core::marker::PhantomData<Runtime>);
+impl<Runtime> pallet_authority_members::traits::OnNewSession for OnNewSessionHandler<Runtime>
+where
+    Runtime: pallet_provide_randomness::Config,
+{
+    fn on_new_session(_index: sp_staking::SessionIndex) -> Weight {
+        pallet_provide_randomness::Pallet::<Runtime>::on_new_epoch();
+        0
+    }
+}
+
 pub struct OnMembershipEventHandler<Inner, Runtime>(core::marker::PhantomData<(Inner, Runtime)>);
 
 type MembershipMetaData = pallet_duniter_wot::MembershipMetaData<AccountId>;
@@ -92,7 +103,7 @@ impl<
                     frame_system::Origin::<Runtime>::Signed(owner_key.clone()).into(),
                 ) {
                     sp_std::if_std! {
-                        println!("{:?}", e)
+                        println!("fail to set session keys: {:?}", e)
                     }
                 }
                 0
@@ -105,7 +116,7 @@ impl<
                     call.dispatch_bypass_filter(frame_system::Origin::<Runtime>::Root.into())
                 {
                     sp_std::if_std! {
-                        println!("{:?}", e)
+                        println!("faid to remove member: {:?}", e)
                     }
                 }
                 0
@@ -127,7 +138,7 @@ where
             Some(idty_index),
         ) {
             sp_std::if_std! {
-                println!("{:?}", e)
+                println!("fail to revoke membership: {:?}", e)
             }
         }
         0
@@ -146,16 +157,6 @@ where
     fn remove_idty_consumers(idty_index: IdtyIndex) -> Weight {
         // Remove smith member
         if pallet_membership::Pallet::<Runtime, Instance2>::is_member(&idty_index) {
-            if let Err(e) = pallet_authority_members::Pallet::<Runtime>::remove_member(
-                frame_system::RawOrigin::Root.into(),
-                idty_index,
-            ) {
-                log::error!(
-                    target: "runtime::common",
-                    "Logic error: fail to remove authority member in remove_idty_consumers(): {:?}",
-                    e
-                );
-            }
             if let Err(e) = pallet_membership::Pallet::<Runtime, Instance2>::revoke_membership(
                 frame_system::RawOrigin::Root.into(),
                 Some(idty_index),

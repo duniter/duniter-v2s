@@ -14,25 +14,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use super::SessionIndex;
-use frame_support::pallet_prelude::Weight;
+//! Various basic types for use in pallet provide randomness
 
-pub trait OnNewSession {
-    fn on_new_session(index: SessionIndex) -> Weight;
+use super::RequestId;
+use codec::{Decode, Encode};
+use frame_support::pallet_prelude::*;
+use scale_info::TypeInfo;
+use sp_core::H256;
+
+#[derive(Clone, Copy, Decode, Encode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+pub enum RandomnessType {
+    RandomnessFromPreviousBlock,
+    RandomnessFromOneEpochAgo,
+    RandomnessFromTwoEpochsAgo,
 }
 
-impl OnNewSession for () {
-    fn on_new_session(_: SessionIndex) -> Weight {
-        0
-    }
-}
-
-pub trait OnRemovedMember<MemberId> {
-    fn on_removed_member(member_id: MemberId) -> Weight;
-}
-
-impl<MemberId> OnRemovedMember<MemberId> for () {
-    fn on_removed_member(_: MemberId) -> Weight {
-        0
-    }
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub struct Request {
+    pub request_id: RequestId,
+    pub salt: H256,
 }

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-//! Various basic types for use in the certification pallet.
+//! Various basic types for use in the identity pallet.
 
 use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;

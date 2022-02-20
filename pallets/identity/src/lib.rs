@@ -144,7 +144,6 @@ pub mod pallet {
                         (idty_index, idty.value.status),
                     )
                 }
-                // frame_system::Pallet::<T>::dec_providers(&account);
                 frame_system::Pallet::<T>::inc_sufficients(&idty.value.owner_key);
                 <Identities<T>>::insert(idty_index, idty.value.clone());
                 IdentitiesNames::<T>::insert(idty.name.clone(), ());
@@ -243,6 +242,11 @@ pub mod pallet {
                 IdentityIndexOf::<T>::try_get(&who).map_err(|_| Error::<T>::IdtyIndexNotFound)?;
             let creator_idty_val =
                 Identities::<T>::try_get(&creator).map_err(|_| Error::<T>::IdtyNotFound)?;
+
+            ensure!(
+                frame_system::Pallet::<T>::account_exists(&owner_key),
+                Error::<T>::OwnerAccountNotExist
+            );
 
             if IdentityIndexOf::<T>::contains_key(&owner_key) {
                 return Err(Error::<T>::IdtyAlreadyCreated.into());
@@ -453,6 +457,8 @@ pub mod pallet {
         RightNotExist,
         /// Not respect IdtyCreationPeriod
         NotRespectIdtyCreationPeriod,
+        /// Owner account not exist
+        OwnerAccountNotExist,
     }
 
     // PUBLIC FUNCTIONS //

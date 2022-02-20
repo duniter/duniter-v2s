@@ -67,7 +67,7 @@ macro_rules! pallets_config {
 			/// What to do if an account is fully reaped from the system.
 			type OnKilledAccount = ();
 			/// The data to be stored in an account.
-			type AccountData = pallet_balances::AccountData<Balance>;
+			type AccountData = pallet_duniter_account::AccountData<Balance>;
 			/// Weight information for the extrinsics of this pallet.
 			type SystemWeightInfo = ();
 			/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
@@ -107,6 +107,15 @@ macro_rules! pallets_config {
 			type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 			type PreimageProvider = ();
 			type NoPreimagePostponement = ();
+		}
+
+		// ACCOUNT //
+
+		impl pallet_duniter_account::Config for Runtime {
+			type AccountIdToSalt = sp_runtime::traits::ConvertInto;
+			type Event = Event;
+			type MaxNewAccountsPerBlock = frame_support::pallet_prelude::ConstU32<100>;
+			type NewAccountPrice = frame_support::traits::ConstU64<200>;
 		}
 
 		// BLOCK CREATION //
@@ -151,7 +160,7 @@ macro_rules! pallets_config {
 
 		impl pallet_balances::Config for Runtime {
 			type MaxLocks = MaxLocks;
-			type MaxReserves = ();
+			type MaxReserves = frame_support::pallet_prelude::ConstU32<5>;
 			type ReserveIdentifier = [u8; 8];
 			/// The type for recording an account's balance.
 			type Balance = Balance;
@@ -159,7 +168,7 @@ macro_rules! pallets_config {
 			type Event = Event;
 			type DustRemoval = ();
 			type ExistentialDeposit = ExistentialDeposit;
-			type AccountStore = System;
+			type AccountStore = Account;
 			type WeightInfo = common_runtime::weights::pallet_balances::WeightInfo<Runtime>;
 		}
 
@@ -191,6 +200,7 @@ macro_rules! pallets_config {
 			type Event = Event;
 			type KeysWrapper = opaque::SessionKeysWrapper;
 			type IsMember = SmithsMembership;
+			type OnNewSession = OnNewSessionHandler<Runtime>;
 			type OnRemovedMember = OnRemovedAuthorityMemberHandler<Runtime>;
 			type MemberId = IdtyIndex;
 			type MemberIdOf = Identity;
@@ -264,6 +274,17 @@ macro_rules! pallets_config {
 			type Event = Event;
 			type SwapAction = pallet_atomic_swap::BalanceSwapAction<AccountId, Balances>;
 			type ProofLimit = frame_support::traits::ConstU32<255>;
+		}
+
+		impl pallet_provide_randomness::Config for Runtime {
+			type Currency = Balances;
+			type Event = Event;
+			type MaxRequests = frame_support::traits::ConstU32<1_000>;
+			type RequestPrice = frame_support::traits::ConstU64<200>;
+			type OnFilledRandomness = Account;
+			type OnUnbalanced = ();
+			type CurrentBlockRandomness = pallet_babe::CurrentBlockRandomness<Self>;
+			type RandomnessFromOneEpochAgo = pallet_babe::RandomnessFromOneEpochAgo<Self>;
 		}
 
 		parameter_types! {

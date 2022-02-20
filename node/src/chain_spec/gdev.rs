@@ -18,10 +18,10 @@ use super::*;
 use common_runtime::constants::*;
 use common_runtime::*;
 use gdev_runtime::{
-    opaque::SessionKeys, AccountId, AuthorityMembersConfig, BabeConfig, BalancesConfig, CertConfig,
-    GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig, ParametersConfig, SessionConfig,
-    SmithsCertConfig, SmithsMembershipConfig, SudoConfig, SystemConfig, UdAccountsStorageConfig,
-    UniversalDividendConfig, WASM_BINARY,
+    opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
+    BalancesConfig, CertConfig, GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig,
+    ParametersConfig, SessionConfig, SmithsCertConfig, SmithsMembershipConfig, SudoConfig,
+    SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
@@ -239,6 +239,12 @@ fn gen_genesis_conf(
             // Add Wasm runtime to storage.
             code: wasm_binary.to_vec(),
         },
+        account: AccountConfig {
+            accounts: initial_identities
+                .iter()
+                .map(|(_, owner_key)| owner_key.clone())
+                .collect(),
+        },
         parameters: ParametersConfig {
             parameters: GenesisParameters {
                 babe_epoch_duration,
@@ -396,6 +402,7 @@ fn genesis_data_to_gdev_genesis_conf(
     wasm_binary: &[u8],
 ) -> gdev_runtime::GenesisConfig {
     let super::gen_genesis_data::GenesisData {
+        accounts,
         balances,
         certs_by_issuer,
         first_ud,
@@ -416,6 +423,7 @@ fn genesis_data_to_gdev_genesis_conf(
             // Add Wasm runtime to storage.
             code: wasm_binary.to_vec(),
         },
+        account: AccountConfig { accounts },
         parameters: ParametersConfig { parameters },
         authority_discovery: Default::default(),
         authority_members: AuthorityMembersConfig {

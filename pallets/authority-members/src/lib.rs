@@ -32,6 +32,7 @@ mod benchmarking;*/
 pub use pallet::*;
 pub use types::*;
 
+use self::traits::*;
 use frame_support::traits::Get;
 use sp_runtime::traits::Convert;
 use sp_staking::SessionIndex;
@@ -40,7 +41,6 @@ use sp_std::prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::traits::OnRemovedMember;
     use frame_support::pallet_prelude::*;
     use frame_support::traits::ValidatorRegistration;
     use frame_support::traits::{StorageVersion, UnfilteredDispatchable};
@@ -66,6 +66,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type KeysWrapper: Parameter + Into<Self::Keys>;
         type IsMember: IsMember<Self::MemberId>;
+        type OnNewSession: OnNewSession;
         type OnRemovedMember: OnRemovedMember<Self::MemberId>;
         /// Max number of authorities allowed
         #[pallet::constant]
@@ -335,10 +336,6 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             T::RemoveMemberOrigin::ensure_origin(origin)?;
 
-            if !T::IsMember::is_member(&member_id) {
-                return Err(Error::<T>::NotMember.into());
-            }
-
             let member_data = Members::<T>::get(member_id).ok_or(Error::<T>::NotMember)?;
             Self::do_remove_member(member_id, member_data.owner_key);
 
@@ -572,6 +569,7 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
     /// The session start to be used for validation.
     fn start_session(start_index: SessionIndex) {
         Self::expire_memberships(start_index);
+        T::OnNewSession::on_new_session(start_index);
     }
 }
 

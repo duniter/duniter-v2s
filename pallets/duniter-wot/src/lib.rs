@@ -115,7 +115,7 @@ pub mod pallet {
             if !T::IsSubWot::get() {
                 if let Err(e) = idty_call.dispatch_bypass_filter(RawOrigin::Root.into()) {
                     sp_std::if_std! {
-                        println!("{:?}", e)
+                        println!("fail to dispatch idty call: {:?}", e)
                     }
                     return false;
                 }
@@ -269,7 +269,7 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pall
                     true,
                 ) {
                     sp_std::if_std! {
-                        println!("{:?}", e)
+                        println!("fail to force add cert: {:?}", e)
                     }
                 }
             }
@@ -304,7 +304,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex
                     Some(receiver),
                 ) {
                     sp_std::if_std! {
-                        println!("{:?}", e)
+                        println!("fail to claim membership: {:?}", e)
                     }
                 }
             } else {
@@ -344,7 +344,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
                 Some(receiver),
             ) {
                 sp_std::if_std! {
-                    println!("{:?}", e)
+                    println!("fail to revoke membership: {:?}", e)
                 }
             }
         }

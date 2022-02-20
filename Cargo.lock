@@ -833,9 +833,11 @@ dependencies = [
  "pallet-authority-members",
  "pallet-balances",
  "pallet-certification",
+ "pallet-duniter-account",
  "pallet-duniter-wot",
  "pallet-identity",
  "pallet-membership",
+ "pallet-provide-randomness",
  "pallet-session",
  "pallet-ud-accounts-storage",
  "parity-scale-codec",
@@ -1953,6 +1955,7 @@ dependencies = [
  "pallet-balances",
  "pallet-certification",
  "pallet-collective",
+ "pallet-duniter-account",
  "pallet-duniter-wot",
  "pallet-grandpa",
  "pallet-identity",
@@ -1960,6 +1963,7 @@ dependencies = [
  "pallet-membership",
  "pallet-multisig",
  "pallet-offences",
+ "pallet-provide-randomness",
  "pallet-proxy",
  "pallet-scheduler",
  "pallet-session",
@@ -2011,6 +2015,7 @@ dependencies = [
  "pallet-balances",
  "pallet-certification",
  "pallet-collective",
+ "pallet-duniter-account",
  "pallet-duniter-test-parameters",
  "pallet-duniter-wot",
  "pallet-grandpa",
@@ -2019,6 +2024,7 @@ dependencies = [
  "pallet-membership",
  "pallet-multisig",
  "pallet-offences",
+ "pallet-provide-randomness",
  "pallet-proxy",
  "pallet-scheduler",
  "pallet-session",
@@ -2212,6 +2218,7 @@ dependencies = [
  "pallet-balances",
  "pallet-certification",
  "pallet-collective",
+ "pallet-duniter-account",
  "pallet-duniter-wot",
  "pallet-grandpa",
  "pallet-identity",
@@ -2219,6 +2226,7 @@ dependencies = [
  "pallet-membership",
  "pallet-multisig",
  "pallet-offences",
+ "pallet-provide-randomness",
  "pallet-proxy",
  "pallet-scheduler",
  "pallet-session",
@@ -4419,6 +4427,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-duniter-account"
+version = "3.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "maplit",
+ "pallet-balances",
+ "pallet-provide-randomness",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-duniter-test-parameters"
 version = "3.0.0"
 dependencies = [
@@ -4568,6 +4595,21 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-provide-randomness"
+version = "3.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-std",
 ]
 

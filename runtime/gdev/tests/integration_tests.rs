@@ -124,11 +124,11 @@ fn test_remove_smith_identity() {
         assert_eq!(events.len(), 4);
         assert_eq!(
             System::events()[0].event,
-            Event::AuthorityMembers(pallet_authority_members::Event::MemberRemoved(3))
+            Event::SmithsMembership(pallet_membership::Event::MembershipRevoked(3))
         );
         assert_eq!(
             System::events()[1].event,
-            Event::SmithsMembership(pallet_membership::Event::MembershipRevoked(3))
+            Event::AuthorityMembers(pallet_authority_members::Event::MemberRemoved(3))
         );
         assert_eq!(
             System::events()[2].event,

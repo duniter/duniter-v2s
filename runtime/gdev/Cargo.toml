@@ -41,10 +41,12 @@ std = [
     'pallet-certification/std',
     'pallet-collective/std',
     'pallet-duniter-test-parameters/std',
+    'pallet-duniter-account/std',
     'pallet-duniter-wot/std',
     'pallet-grandpa/std',
     'pallet-identity/std',
     'pallet-membership/std',
+	'pallet-provide-randomness/std',
     'pallet-im-online/std',
     'pallet-multisig/std',
     'pallet-proxy/std',
@@ -83,9 +85,11 @@ common-runtime = { path = "../common", default-features = false }
 pallet-authority-members = { path = '../../pallets/authority-members', default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
 pallet-duniter-test-parameters = { path = '../../pallets/duniter-test-parameters', default-features = false }
+pallet-duniter-account = { path = '../../pallets/duniter-account', default-features = false }
 pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-membership = { path = '../../pallets/membership', default-features = false }
+pallet-provide-randomness = { path = '../../pallets/provide-randomness', default-features = false }
 pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
 pallet-upgrade-origin = { path = '../../pallets/upgrade-origin', default-features = false }

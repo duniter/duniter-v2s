@@ -195,14 +195,15 @@ construct_runtime!(
     {
         // Basic stuff
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
-        Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 1,
+        Account: pallet_duniter_account::{Pallet, Storage, Config<T>, Event<T>} = 1,
+        Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 2,
 
         // Block creation
-        Babe: pallet_babe::{Pallet, Call, Storage, Config, ValidateUnsigned} = 2,
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
+        Babe: pallet_babe::{Pallet, Call, Storage, Config, ValidateUnsigned} = 3,
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 4,
 
         // Money management
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
+        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 6,
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 32,
 
         // Consensus support.
@@ -236,9 +237,10 @@ construct_runtime!(
 
         // Utilities
         AtomicSwap: pallet_atomic_swap::{Pallet, Call, Storage, Event<T>} = 60,
-        Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 61,
-        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 62,
-        Utility: pallet_utility::{Pallet, Call, Event} = 63,
+        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 61,
+        ProvideRandomness: pallet_provide_randomness::{Pallet, Call, Storage, Event} = 62,
+        Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 63,
+        Utility: pallet_utility::{Pallet, Call, Event} = 64,
     }
 );
 

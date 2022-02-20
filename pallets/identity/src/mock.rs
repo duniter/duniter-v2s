@@ -18,14 +18,13 @@ use super::*;
 use crate::{self as pallet_identity};
 use frame_support::{
     parameter_types,
-    traits::{Everything, OnFinalize, OnInitialize},
+    traits::{Everything, GenesisBuild, OnFinalize, OnInitialize},
 };
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup, IsMember},
-    BuildStorage,
 };
 
 type AccountId = u64;
@@ -115,13 +114,19 @@ impl pallet_identity::Config for Test {
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext(gen_conf: pallet_identity::GenesisConfig<Test>) -> sp_io::TestExternalities {
-    GenesisConfig {
-        system: SystemConfig::default(),
-        identity: gen_conf,
-    }
-    .build_storage()
-    .unwrap()
-    .into()
+    let mut t = frame_system::GenesisConfig::default()
+        .build_storage::<Test>()
+        .unwrap();
+
+    gen_conf.assimilate_storage(&mut t).unwrap();
+
+    frame_support::BasicExternalities::execute_with_storage(&mut t, || {
+        // Some dedicated test account
+        frame_system::Pallet::<Test>::inc_providers(&2);
+        frame_system::Pallet::<Test>::inc_providers(&3);
+    });
+
+    sp_io::TestExternalities::new(t)
 }
 
 pub fn run_to_block(n: u64) {

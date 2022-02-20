@@ -25,9 +25,11 @@ std = [
     'pallet-authority-members/std',
     'pallet-balances/std',
     'pallet-certification/std',
+    'pallet-duniter-account/std',
     'pallet-duniter-wot/std',
     'pallet-identity/std',
     'pallet-membership/std',
+    'pallet-provide-randomness/std',
     'pallet-ud-accounts-storage/std',
     'serde',
     'sp-arithmetic/std',
@@ -40,9 +42,11 @@ std = [
 [dependencies]
 pallet-authority-members = { path = '../../pallets/authority-members', default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
+pallet-duniter-account = { path = '../../pallets/duniter-account', default-features = false }
 pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-membership = { path = '../../pallets/membership', default-features = false }
+pallet-provide-randomness = { path = '../../pallets/provide-randomness', default-features = false }
 pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
 sp-membership = { path = '../../primitives/membership', default-features = false }
 

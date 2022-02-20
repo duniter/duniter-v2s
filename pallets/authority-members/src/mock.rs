@@ -156,6 +156,7 @@ impl pallet_authority_members::Config for Test {
     type MaxOfflineSessions = ConstU32<2>;
     type MemberId = u64;
     type MemberIdOf = ConvertInto;
+    type OnNewSession = ();
     type OnRemovedMember = ();
     type RemoveMemberOrigin = system::EnsureRoot<u64>;
 }
