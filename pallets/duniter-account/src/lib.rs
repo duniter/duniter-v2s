@@ -134,8 +134,18 @@ pub mod pallet {
                         ExistenceRequirement::KeepAlive,
                     );
                     if let Ok(imbalance) = res {
-                        // The fees have been collected, we handle the collected amount and we
-                        // request the random id
+                        // The fees have been succesfully collected, we should:
+                        // 1. Increment consumers to prevent the destruction of the account before
+                        // the random id is assigned
+                        // 2. Manage the funds collected
+                        // 3. Submit random id generation request
+                        // 4. Save the id of the random generation request.
+                        let res =
+                            frame_system::Pallet::<T>::inc_consumers_without_limit(&account_id);
+                        debug_assert!(
+                            res.is_ok(),
+                            "Cannot fail because providers are incremented just before"
+                        );
                         T::OnUnbalanced::on_unbalanced(imbalance);
                         let request_id = pallet_provide_randomness::Pallet::<T>::force_request(
                             pallet_provide_randomness::RandomnessType::RandomnessFromTwoEpochsAgo,
@@ -167,19 +177,14 @@ where
 {
     fn on_filled_randomness(request_id: RequestId, randomness: H256) -> Weight {
         if let Some(account_id) = PendingRandomIdAssignments::<T>::take(request_id) {
-            // Can only fail if the account has been deleted in the meantime,
-            // but this case does not require any processing
-            let res = frame_system::Pallet::<T>::mutate_exists(&account_id, |maybe_account_data| {
-                if let Some(ref mut account_data) = maybe_account_data {
-                    account_data.random_id = Some(randomness);
-                }
+            frame_system::Account::<T>::mutate(&account_id, |account| {
+                account.consumers = account.consumers.saturating_sub(1);
+                account.data.random_id = Some(randomness);
             });
-            if res.is_ok() {
-                Self::deposit_event(Event::RandomIdAssigned {
-                    account_id,
-                    random_id: randomness,
-                });
-            }
+            Self::deposit_event(Event::RandomIdAssigned {
+                account_id,
+                random_id: randomness,
+            });
             200_000
         } else {
             100_000
