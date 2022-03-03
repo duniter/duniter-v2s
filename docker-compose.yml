@@ -18,7 +18,7 @@ services:
       DUNITER_CHAIN_NAME: "dev"
       #DUNITER_DISABLE_PROMETHEUS: "false"
     volumes:
-      - data:/var/lib/lc-core
+      - data:/var/lib/duniter
 
 volumes:
   data:
