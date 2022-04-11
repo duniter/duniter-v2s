@@ -59,7 +59,7 @@ impl SubstrateCli for Cli {
             #[cfg(feature = "gdev")]
             "dev" => Box::new(chain_spec::gdev::development_chain_spec()?),
             #[cfg(feature = "gdev")]
-            "local" => Box::new(chain_spec::gdev::local_testnet_config(1, 3, 4)?),
+            "local" | "gdev_local" => Box::new(chain_spec::gdev::local_testnet_config(1, 3, 4)?),
             #[cfg(feature = "gdev")]
             "local2" => Box::new(chain_spec::gdev::local_testnet_config(2, 3, 4)?),
             #[cfg(feature = "gdev")]
