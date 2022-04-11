@@ -57,6 +57,8 @@ struct GenesisConfig<Parameters> {
     #[serde(rename = "smiths")]
     smith_identities: BTreeMap<String, SmithData>,
     sudo_key: Option<AccountId>,
+    #[serde(default)]
+    wallets: BTreeMap<AccountId, u64>,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -133,6 +135,7 @@ where
         parameters,
         identities,
         smith_identities,
+        wallets,
     } = genesis_config;
 
     // MONEY AND WOT //
@@ -145,6 +148,24 @@ where
     let mut memberships = BTreeMap::new();
     //let mut total_dust = 0;
     let mut ud_accounts = BTreeMap::new();
+
+    // SIMPLE WALLETS //
+
+    let mut wallet_index: u32 = 0;
+    for (pubkey, balance) in wallets {
+        wallet_index += 1;
+        accounts.insert(
+            pubkey.clone(),
+            GenesisAccountData {
+                random_id: H256(blake2_256(&(wallet_index, &pubkey).encode())),
+                balance,
+                is_identity: false,
+            },
+        );
+    }
+
+    // IDENTITIES //
+
     for (idty_name, identity) in &identities {
         if !validate_idty_name(idty_name) {
             return Err(format!("Identity name '{}' is invalid", &idty_name));
