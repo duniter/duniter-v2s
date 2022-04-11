@@ -21,6 +21,8 @@ use std::collections::BTreeMap;
 
 type MembershipData = sp_membership::MembershipData<u32>;
 
+const EXISTENTIAL_DEPOSIT: u64 = 100;
+
 #[derive(Clone)]
 pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub accounts: BTreeMap<AccountId, GenesisAccountData<u64>>,
@@ -172,7 +174,7 @@ where
         }
 
         // Money
-        let balance = if identity.balance >= 100 {
+        let balance = if identity.balance >= EXISTENTIAL_DEPOSIT {
             identity.balance
         } else {
             //total_dust += identity.balance;
@@ -241,6 +243,13 @@ where
         let identity = identities
             .get(&idty_name)
             .ok_or(format!("Identity '{}' not exist", &idty_name))?;
+
+        if identity.balance < EXISTENTIAL_DEPOSIT {
+            return Err(format!(
+                "Identity '{}' have balance '{}' < EXISTENTIAL_DEPOSIT",
+                idty_name, identity.balance,
+            ));
+        }
 
         // Initial authorities
         initial_authorities.insert(*idty_index, (identity.pubkey.clone(), smith_data.authority));
