@@ -54,7 +54,7 @@ Feature: My awesome feature
 - alice
 - bob
 - charlie
-- deve
+- dave
 - eve
 - ferdie
 
@@ -107,7 +107,7 @@ List of possible actions:
 
     Example: `Monetary mass should be 30.00 ĞD`
 
-### Run cucumber functionnal tests
+### Run cucumber functional tests
 
 To run the cucumber tests, you will need to have the rust toolchain installed locally.
 
