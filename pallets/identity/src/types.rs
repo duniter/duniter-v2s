@@ -85,3 +85,10 @@ pub struct IdtyValue<BlockNumber, AccountId> {
     pub removable_on: BlockNumber,
     pub status: IdtyStatus,
 }
+
+#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo, RuntimeDebug)]
+pub struct RevocationPayload<AccountId, Hash> {
+    pub owner_key: AccountId,
+    // Avoid replay attack between blockchains
+    pub genesis_hash: Hash,
+}

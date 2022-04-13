@@ -367,6 +367,8 @@ macro_rules! pallets_config {
 			type OnIdtyChange = Wot;
 			type MaxDisabledPeriod = MaxDisabledPeriod;
 			type RemoveIdentityConsumers = RemoveIdentityConsumersImpl<Self>;
+			type RevocationSigner = <Signature as sp_runtime::traits::Verify>::Signer;
+			type RevocationSignature = Signature;
 		}
 
 		impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {

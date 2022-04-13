@@ -35,7 +35,7 @@ pub use types::*;
 use crate::traits::*;
 use codec::Codec;
 use frame_support::dispatch::Weight;
-use sp_runtime::traits::{AtLeast32BitUnsigned, One, Saturating, Zero};
+use sp_runtime::traits::{AtLeast32BitUnsigned, IdentifyAccount, One, Saturating, Verify, Zero};
 use sp_std::fmt::Debug;
 use sp_std::prelude::*;
 
@@ -93,6 +93,10 @@ pub mod pallet {
         /// Handle the logic that remove all identity consumers.
         /// "identity consumers" mean all things that rely on the existence of the identity.
         type RemoveIdentityConsumers: RemoveIdentityConsumers<Self::IdtyIndex>;
+        /// Signing key of revocation payload
+        type RevocationSigner: IdentifyAccount<AccountId = Self::AccountId>;
+        /// Signature of revocation payload
+        type RevocationSignature: Parameter + Verify<Signer = Self::RevocationSigner>;
     }
 
     // GENESIS STUFF //
@@ -363,6 +367,30 @@ pub mod pallet {
             Ok(().into())
         }
         #[pallet::weight(0)]
+        pub fn revoke_identity(
+            origin: OriginFor<T>,
+            payload: RevocationPayload<T::AccountId, T::Hash>,
+            payload_sig: T::RevocationSignature,
+        ) -> DispatchResultWithPostInfo {
+            let _ = ensure_signed(origin)?;
+            ensure!(
+                payload.genesis_hash
+                    == frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero()),
+                Error::<T>::InvalidGenesisHash
+            );
+            ensure!(
+                payload.using_encoded(|bytes| payload_sig.verify(bytes, &payload.owner_key)),
+                Error::<T>::InvalidRevocationProof
+            );
+            if let Some(idty_index) = <IdentityIndexOf<T>>::take(payload.owner_key) {
+                Self::do_remove_identity(idty_index);
+                Ok(().into())
+            } else {
+                Err(Error::<T>::IdtyNotFound.into())
+            }
+        }
+
+        #[pallet::weight(0)]
         pub fn remove_identity(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
@@ -418,6 +446,10 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        /// Genesis hash does not match
+        InvalidGenesisHash,
+        /// Revocation payload signature is invalid
+        InvalidRevocationProof,
         /// Creator not allowed to create identities
         CreatorNotAllowedToCreateIdty,
         /// Identity already confirmed

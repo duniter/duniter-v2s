@@ -20,7 +20,7 @@ use frame_support::{parameter_types, traits::Everything};
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
-    testing::Header,
+    testing::{Header, TestSignature, UintAuthorityId},
     traits::{BlakeTwo256, IdentityLookup},
 };
 use std::collections::BTreeMap;
@@ -118,6 +118,8 @@ impl pallet_identity::Config for Test {
     type OnIdtyChange = DuniterWot;
     type MaxDisabledPeriod = MaxDisabledPeriod;
     type RemoveIdentityConsumers = ();
+    type RevocationSigner = UintAuthorityId;
+    type RevocationSignature = TestSignature;
 }
 
 // Membership

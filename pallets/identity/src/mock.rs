@@ -23,7 +23,7 @@ use frame_support::{
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
-    testing::Header,
+    testing::{Header, TestSignature, UintAuthorityId},
     traits::{BlakeTwo256, IdentityLookup, IsMember},
 };
 
@@ -110,6 +110,8 @@ impl pallet_identity::Config for Test {
     type OnIdtyChange = ();
     type MaxDisabledPeriod = MaxDisabledPeriod;
     type RemoveIdentityConsumers = ();
+    type RevocationSigner = UintAuthorityId;
+    type RevocationSignature = TestSignature;
 }
 
 // Build genesis storage according to the mock runtime.

@@ -15,10 +15,12 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::mock::*;
-use crate::{Error, GenesisIdty, IdtyName, IdtyValue};
+use crate::{Error, GenesisIdty, IdtyName, IdtyValue, RevocationPayload};
+use codec::Encode;
 //use frame_support::assert_err;
 use frame_support::assert_ok;
 use frame_system::{EventRecord, Phase};
+use sp_runtime::testing::TestSignature;
 
 type IdtyVal = IdtyValue<u64, u64>;
 
@@ -120,6 +122,62 @@ fn test_idty_creation_period() {
                 }),
                 topics: vec![],
             }
+        );
+    });
+}
+
+#[test]
+fn test_idty_revocation() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice()],
+    })
+    .execute_with(|| {
+        // We need to initialize at least one block before any call
+        run_to_block(1);
+
+        let revocation_payload = RevocationPayload {
+            owner_key: 1,
+            genesis_hash: System::block_hash(0),
+        };
+
+        // Payload must be signed by the right identity
+        assert_eq!(
+            Identity::revoke_identity(
+                Origin::signed(1),
+                revocation_payload.clone(),
+                TestSignature(42, revocation_payload.encode())
+            ),
+            Err(Error::<Test>::InvalidRevocationProof.into())
+        );
+
+        // Anyone can submit a revocation payload
+        assert_ok!(Identity::revoke_identity(
+            Origin::signed(42),
+            revocation_payload.clone(),
+            TestSignature(1, revocation_payload.encode())
+        ));
+
+        let events = System::events();
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0],
+            EventRecord {
+                phase: Phase::Initialization,
+                event: Event::Identity(crate::Event::IdtyRemoved { idty_index: 1 }),
+                topics: vec![],
+            }
+        );
+
+        run_to_block(2);
+
+        // The identity no longer exists
+        assert_eq!(
+            Identity::revoke_identity(
+                Origin::signed(1),
+                revocation_payload.clone(),
+                TestSignature(1, revocation_payload.encode())
+            ),
+            Err(Error::<Test>::IdtyNotFound.into())
         );
     });
 }
