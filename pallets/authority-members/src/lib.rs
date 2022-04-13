@@ -184,8 +184,8 @@ pub mod pallet {
         /// A member will enter the set of authorities in 2 sessions.
         /// [member_id]
         MemberGoOnline(T::MemberId),
-        /// A member has lost the right to be part of the authorities, he will be removed from
-        //// the authority set in 2 sessions.
+        /// A member has lost the right to be part of the authorities,
+        /// this member will be removed from the authority set in 2 sessions.
         /// [member_id]
         MemberRemoved(T::MemberId),
     }

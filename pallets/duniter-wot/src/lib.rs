@@ -338,7 +338,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
         if receiver_received_count < T::MinCertForMembership::get()
             && pallet_membership::Pallet::<T, I>::is_member(&receiver)
         {
-            // Revoke receiver membership and disable his identity
+            // Revoke receiver membership and disable their identity
             if let Err(e) = pallet_membership::Pallet::<T, I>::revoke_membership(
                 RawOrigin::Root.into(),
                 Some(receiver),

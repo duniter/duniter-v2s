@@ -183,7 +183,7 @@ fn test_go_online() {
     new_test_ext(3).execute_with(|| {
         run_to_block(1);
 
-        // Member 12 should be able to set his session keys
+        // Member 12 should be able to set their session keys
         assert_ok!(AuthorityMembers::set_session_keys(
             Origin::signed(12),
             UintAuthorityId(12).into(),
@@ -235,7 +235,7 @@ fn test_too_many_authorities() {
     new_test_ext(3).execute_with(|| {
         run_to_block(1);
 
-        // Member 12 set his session keys then go online
+        // Member 12 sets their session keys then go online
         assert_ok!(AuthorityMembers::set_session_keys(
             Origin::signed(12),
             UintAuthorityId(12).into(),
@@ -267,7 +267,7 @@ fn test_go_online_then_go_offline_in_same_session() {
     new_test_ext(3).execute_with(|| {
         run_to_block(1);
 
-        // Member 12 set his session keys & go online
+        // Member 12 sets their session keys & go online
         assert_ok!(AuthorityMembers::set_session_keys(
             Origin::signed(12),
             UintAuthorityId(12).into(),
@@ -276,7 +276,7 @@ fn test_go_online_then_go_offline_in_same_session() {
 
         run_to_block(2);
 
-        // Member 12 should be able to go offline at the same session to "cancel" his previous
+        // Member 12 should be able to go offline at the same session to "cancel" their previous
         // action
         assert_ok!(AuthorityMembers::go_offline(Origin::signed(12)),);
 
@@ -305,7 +305,7 @@ fn test_go_offline_then_go_online_in_same_session() {
 
         run_to_block(7);
 
-        // Member 9 should be able to go online at the same session to "cancel" his previous action
+        // Member 9 should be able to go online at the same session to "cancel" their previous action
         assert_ok!(AuthorityMembers::go_online(Origin::signed(9)),);
 
         // Verify state

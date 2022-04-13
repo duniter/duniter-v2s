@@ -63,7 +63,7 @@ After complying with the above criteria in your commits, you should check that y
   git checkout YOU_BRANCH   # switch back to your branch
   git rebase master            # rebase you work on master branch
 
-In case of conflict during rebase that you can not solve, contact a lead developer telling him the hash of the commit on which YOUR_BRANCH is currently based so he can reproduce the rebase and see the conflicts. While waiting for his answer, you can cancel the rebase and work on YOUR_BRANCH without updating:
+In case of conflict during rebase that you can not solve, contact a lead developer telling them the hash of the commit on which YOUR_BRANCH is currently based so they can reproduce the rebase and see the conflicts. While waiting for their answer, you can cancel the rebase and work on YOUR_BRANCH without updating:
 
   git rebase --abort
 

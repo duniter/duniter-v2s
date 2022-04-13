@@ -38,7 +38,7 @@ Please read [Developer documentation] before contribute.
 
 5. Push your branch on the gitlab and create a merge request. Briefly explain the purpose of your contribution in the description of the merge request.
 
-6. Tag a Duniter reviewer so he will review your contribution. If you still have no news after several weeks, tag another reviewer or/and talk about your contribution on [the technical forum].
+6. Tag a Duniter reviewer so they will review your contribution. If you still have no news after several weeks, tag another reviewer or/and talk about your contribution on [the technical forum].
 
 ## List of Duniter's reviewers
 
