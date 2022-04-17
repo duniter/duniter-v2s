@@ -1,0 +1,105 @@
+version: "3.4"
+
+services:
+  db:
+    image: postgres:12
+    restart: always
+    volumes:
+      - /var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+  duniter-rpc:
+    image: duniter/duniter-v2s:debug-sha-acaf89a4
+    restart: unless-stopped
+    ports:
+      - "9944:9944"
+      - "30333:30333"
+    volumes:
+      - ./duniter-rpc/:/var/lib/duniter/
+    environment:
+      - DUNITER_CHAIN_NAME=/var/lib/duniter/genesis-raw.json
+    command:
+      - "--bootnodes"
+      - "/dns/duniter-validator/tcp/30333/p2p/VALIDATOR_NODE_KEY"
+      - "--node-key-file"
+      - "/var/lib/duniter/node-key"
+      - "--unsafe-rpc-external"
+      - "--rpc-cors"
+      - "all"
+
+  duniter-validator:
+    image: duniter/duniter-v2s:debug-sha-acaf89a4
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9945:9944"
+      - "30334:30333"
+    volumes:
+      - ./duniter-validator/:/var/lib/duniter/
+    environment:
+      - DUNITER_CHAIN_NAME=/var/lib/duniter/genesis.json
+    command:
+      - "--bootnodes"
+      - "/dns/duniter-rpc/tcp/30333/p2p/RPC_NODE_KEY"
+      - "--node-key-file"
+      - "/var/lib/duniter/node-key"
+      - "--rpc-methods=Unsafe"
+      - "--validator"
+      - "--unsafe-rpc-external"
+      - "--rpc-cors"
+      - "all"
+
+  indexer:
+    image: subsquid/hydra-indexer:5
+    restart: unless-stopped
+    environment:
+      - WORKERS_NUMBER=1
+      - DB_NAME=indexer
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_PORT=5432
+      - REDIS_URI=redis://redis:6379/0
+      - FORCE_HEIGHT=true
+      - BLOCK_HEIGHT=0 # starting block height
+      - WS_PROVIDER_ENDPOINT_URI=ws://duniter-rpc:9944/
+    depends_on:
+      - db
+      - redis
+    command: >
+      sh -c "yarn db:bootstrap && yarn start:prod"
+
+  indexer-gateway:
+    image: subsquid/hydra-indexer-gateway:5
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - db
+      - indexer-status-service
+      - indexer
+    ports:
+      - "4010:8080"
+    environment:
+      - DEV_MODE=true
+      - DB_NAME=indexer
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_PORT=5432
+      - HYDRA_INDEXER_STATUS_SERVICE=http://indexer-status-service:8081/status
+
+  indexer-status-service:
+    image: subsquid/hydra-indexer-status-service:5
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      REDIS_URI: redis://redis:6379/0
+      PORT: 8081
+
+  redis:
+    image: redis:6.0-alpine
+    restart: always
+    ports:
+      - "6379"
