@@ -220,7 +220,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn go_offline(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // Verification phase //
             let who = ensure_signed(origin)?;
@@ -246,7 +246,7 @@ pub mod pallet {
 
             Ok(().into())
         }
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn go_online(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // Verification phase //
             let who = ensure_signed(origin)?;
@@ -282,7 +282,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn set_session_keys(
             origin: OriginFor<T>,
             keys: T::KeysWrapper,
@@ -314,7 +314,7 @@ pub mod pallet {
 
             Ok(().into())
         }
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn prune_account_id_of(
             origin: OriginFor<T>,
             members_ids: Vec<T::MemberId>,
@@ -329,7 +329,7 @@ pub mod pallet {
 
             Ok(().into())
         }
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn remove_member(
             origin: OriginFor<T>,
             member_id: T::MemberId,

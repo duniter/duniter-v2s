@@ -229,7 +229,7 @@ pub mod pallet {
     // Dispatchable functions must be annotated with a weight and must return a DispatchResult.
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn create_identity(
             origin: OriginFor<T>,
             owner_key: T::AccountId,
@@ -291,7 +291,7 @@ pub mod pallet {
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Created { creator });
             Ok(().into())
         }
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn confirm_identity(
             origin: OriginFor<T>,
             idty_name: IdtyName,
@@ -331,7 +331,7 @@ pub mod pallet {
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Confirmed);
             Ok(().into())
         }
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn validate_identity(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
@@ -362,7 +362,7 @@ pub mod pallet {
 
             Ok(().into())
         }
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn revoke_identity(
             origin: OriginFor<T>,
             payload: RevocationPayload<T::AccountId, T::Hash>,
@@ -386,7 +386,7 @@ pub mod pallet {
             }
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn remove_identity(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
@@ -402,7 +402,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn prune_item_identities_names(
             origin: OriginFor<T>,
             names: Vec<IdtyName>,
@@ -416,7 +416,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn prune_item_identity_index_of(
             origin: OriginFor<T>,
             accounts_ids: Vec<T::AccountId>,

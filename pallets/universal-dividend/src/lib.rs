@@ -277,7 +277,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Transfer some liquid free balance to another account, in milliUD.
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn transfer_ud(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
@@ -287,7 +287,7 @@ pub mod pallet {
         }
 
         /// Transfer some liquid free balance to another account, in milliUD.
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn transfer_ud_keep_alive(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,

@@ -215,7 +215,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn force_request_membership(
             origin: OriginFor<T>,
             idty_id: T::IdtyId,
@@ -226,7 +226,7 @@ pub mod pallet {
             Self::do_request_membership(idty_id, metadata)
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn request_membership(
             origin: OriginFor<T>,
             metadata: T::MetaData,
@@ -245,7 +245,7 @@ pub mod pallet {
             Self::do_request_membership(idty_id, metadata)
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn claim_membership(
             origin: OriginFor<T>,
             maybe_idty_id: Option<T::IdtyId>,
@@ -268,7 +268,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn renew_membership(
             origin: OriginFor<T>,
             maybe_idty_id: Option<T::IdtyId>,
@@ -294,7 +294,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn revoke_membership(
             origin: OriginFor<T>,
             maybe_idty_id: Option<T::IdtyId>,

@@ -140,7 +140,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Request a randomness
-        #[pallet::weight(100_000_000)]
+        #[pallet::weight(500_000_000)]
         pub fn request(
             origin: OriginFor<T>,
             randomness_type: RandomnessType,

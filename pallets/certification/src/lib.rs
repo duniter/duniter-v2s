@@ -291,7 +291,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn force_add_cert(
             origin: OriginFor<T>,
             issuer: T::IdtyIndex,
@@ -335,7 +335,7 @@ pub mod pallet {
 
             Self::do_add_cert(block_number, create, issuer, receiver)
         }
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn add_cert(
             origin: OriginFor<T>,
             receiver: T::AccountId,
@@ -380,7 +380,7 @@ pub mod pallet {
             Self::do_add_cert(block_number, create, issuer, receiver)
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn del_cert(
             origin: OriginFor<T>,
             issuer: T::IdtyIndex,
@@ -391,7 +391,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(1_000_000_000)]
         pub fn remove_all_certs_received_by(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
