@@ -38,7 +38,7 @@ services:
     volumes:
       - ./duniter-validator/:/var/lib/duniter/
     environment:
-      - DUNITER_CHAIN_NAME=/var/lib/duniter/genesis.json
+      - DUNITER_CHAIN_NAME=/var/lib/duniter/genesis-raw.json
     command:
       - "--bootnodes"
       - "/dns/duniter-rpc/tcp/30333/p2p/RPC_NODE_KEY"
