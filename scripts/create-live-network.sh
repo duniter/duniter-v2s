@@ -23,8 +23,8 @@ mkdir -p $WORK_DIR/duniter-validator
 
 # generate raw_chain spec
 export DUNITER_GENESIS_CONFIG=$GENESIS
-$DUNITER_BINARY build-spec --chain $CURRENCY-gl --raw > $WORK_DIR/duniter-rpc/genesis-raw.json
-cp $WORK_DIR/duniter-rpc/genesis-raw.json $WORK_DIR/duniter-validator/genesis-raw.json
+$DUNITER_BINARY build-spec --chain $CURRENCY-gl --raw > $WORK_DIR/duniter-rpc/$CURRENCY-raw.json
+cp $WORK_DIR/duniter-rpc/$CURRENCY-raw.json $WORK_DIR/duniter-validator/$CURRENCY-raw.json
 
 # generate rpc node key
 RPC_NODE_KEY=$($DUNITER_BINARY key generate-node-key --file $WORK_DIR/duniter-rpc/node-key 2>&1)
@@ -34,6 +34,7 @@ VALIDATOR_NODE_KEY=$($DUNITER_BINARY key generate-node-key --file $WORK_DIR/duni
 
 # generate docker-compose file
 cp docker/compose-examples/live-template.docker-compose.yml $WORK_DIR/docker-compose.yml
+sed -i -e "s/CURRENCY/$CURRENCY/g" $WORK_DIR/docker-compose.yml
 sed -i -e "s/RPC_NODE_KEY/$RPC_NODE_KEY/g" $WORK_DIR/docker-compose.yml
 sed -i -e "s/VALIDATOR_NODE_KEY/$VALIDATOR_NODE_KEY/g" $WORK_DIR/docker-compose.yml
 
