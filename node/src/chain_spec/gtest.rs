@@ -111,7 +111,7 @@ pub fn local_testnet_config(
         // Name
         "Ğtest Local Testnet",
         // ID
-        "gtest_local_testnet",
+        "gtest_local",
         ChainType::Local,
         move || {
             gen_genesis_conf(
