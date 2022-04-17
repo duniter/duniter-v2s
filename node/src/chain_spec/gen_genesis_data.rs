@@ -76,9 +76,7 @@ struct Idty {
 
 #[derive(Clone, Deserialize, Serialize)]
 struct SmithData {
-    #[serde(default)]
-    authority: bool,
-    session_keys: String,
+    session_keys: Option<String>,
     #[serde(default)]
     certs: Vec<String>,
 }
@@ -252,11 +250,24 @@ where
         }
 
         // Initial authorities
-        initial_authorities.insert(*idty_index, (identity.pubkey.clone(), smith_data.authority));
+        initial_authorities.insert(
+            *idty_index,
+            (identity.pubkey.clone(), smith_data.session_keys.is_some()),
+        );
 
         // Session keys
-        let session_keys_bytes = hex::decode(&smith_data.session_keys[2..])
-            .map_err(|_| format!("invalid session keys for idty {}", &idty_name))?;
+        let session_keys_bytes = if let Some(ref session_keys) = smith_data.session_keys {
+            hex::decode(&session_keys[2..])
+                .map_err(|_| format!("invalid session keys for idty {}", &idty_name))?
+        } else {
+            // Create fake session keys (must be unique and deterministic)
+            let mut fake_session_keys_bytes = Vec::with_capacity(128);
+            for _ in 0..4 {
+                fake_session_keys_bytes.extend_from_slice(identity.pubkey.as_ref())
+            }
+            fake_session_keys_bytes
+            //vec![initial_authorities.len() as u8; std::mem::size_of::<SK>()]
+        };
         session_keys_map.insert(
             identity.pubkey.clone(),
             SK::decode(&mut &session_keys_bytes[..])

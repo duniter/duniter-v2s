@@ -50,17 +50,14 @@
   },
   "smiths": {
     "Elois1": {
-      "authority": true,
       "certs": ["Elois2", "Elois3"],
       "session_keys": "0x90ea1e9059fd30860fc14370b62a3675a720763913e0aa41fa01b268c33afd3b64c9301d94f7a043ac6714c8a6301541e56e833c1b13170c19f9785fa469407864c9301d94f7a043ac6714c8a6301541e56e833c1b13170c19f9785fa469407864c9301d94f7a043ac6714c8a6301541e56e833c1b13170c19f9785fa4694078"
     },
     "Elois2": {
-      "certs": ["Elois1", "Elois3"],
-      "session_keys": "0x1a1c5027d35e315efde9b9296a0ff80920a9d448a7d0480080d9773e4035ec85a270415a3a2f5392df3185bc9f3d2d7a3cb158f55ebdf6ccc42da8ab26d96f7ca270415a3a2f5392df3185bc9f3d2d7a3cb158f55ebdf6ccc42da8ab26d96f7ca270415a3a2f5392df3185bc9f3d2d7a3cb158f55ebdf6ccc42da8ab26d96f7c"
+      "certs": ["Elois1", "Elois3"]
     },
     "Elois3": {
-      "certs": ["Elois1", "Elois2"],
-      "session_keys": "0xcde37cd0d59573465dacd587f0759c93a82e9f0a40ee8f547772446abe846b86f0badfddff9238d6f18ab5ef8fa5fdd3d5edd29a9f6b097416ffc87e2f774022f0badfddff9238d6f18ab5ef8fa5fdd3d5edd29a9f6b097416ffc87e2f774022f0badfddff9238d6f18ab5ef8fa5fdd3d5edd29a9f6b097416ffc87e2f774022"
+      "certs": ["Elois1", "Elois2"]
     }
   },
   "sudo_key": "5H95G8bwuf4yyNNNa83hDhj7wpYaSRhZiGezZ9TDbyqNdAhY"
