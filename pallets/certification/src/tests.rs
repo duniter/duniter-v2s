@@ -37,6 +37,32 @@ fn test_must_receive_cert_before_can_issue() {
 }
 
 #[test]
+fn test_cannot_certify_self() {
+    new_test_ext(DefaultCertificationConfig {
+        apply_cert_period_at_genesis: true,
+        certs_by_issuer: btreemap![
+            1 => btreemap![
+                0 => 5,
+            ],
+            2 => btreemap![
+                0 => 5,
+            ],
+            3 => btreemap![
+                0 => 5,
+            ],
+        ],
+    })
+    .execute_with(|| {
+        run_to_block(2);
+
+        assert_eq!(
+            DefaultCertification::add_cert(Origin::signed(0), 0),
+            Err(Error::<Test, _>::CannotCertifySelf.into())
+        );
+    });
+}
+
+#[test]
 fn test_genesis_build() {
     new_test_ext(DefaultCertificationConfig {
         apply_cert_period_at_genesis: true,

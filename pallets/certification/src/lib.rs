@@ -260,22 +260,24 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
+        /// An identity cannot certify itself
+        CannotCertifySelf,
         /// Certification non autorisée
         CertNotAllowed,
-        /// Issuer not found
-        IssuerNotFound,
         /// An identity must receive certifications before it can issue them.
         IdtyMustReceiveCertsBeforeCanIssue,
         /// This identity has already issued the maximum number of certifications
         IssuedTooManyCert,
-        /// Receiver not found
-        ReceiverNotFound,
+        /// Issuer not found
+        IssuerNotFound,
         /// Not enough certifications received
         NotEnoughCertReceived,
-        /// This certification has already been issued or renewed recently
-        NotRespectRenewablePeriod,
         /// This identity has already issued a certification too recently
         NotRespectCertPeriod,
+        /// This certification has already been issued or renewed recently
+        NotRespectRenewablePeriod,
+        /// Receiver not found
+        ReceiverNotFound,
     }
 
     #[pallet::hooks]
@@ -339,6 +341,7 @@ pub mod pallet {
             receiver: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
+            ensure!(who != receiver, Error::<T, I>::CannotCertifySelf);
             let issuer = T::IdtyIndexOf::convert(who).ok_or(Error::<T, I>::IssuerNotFound)?;
             let receiver =
                 T::IdtyIndexOf::convert(receiver).ok_or(Error::<T, I>::ReceiverNotFound)?;
