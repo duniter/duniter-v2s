@@ -22,13 +22,13 @@ Feature: Balance transfer
 
 ### create a new functional test
 
-To create a new test scenario, simply create a new file with a name of your choice in the `/features`
-folder and give it the extension `.feature`.
+To create a new test scenario, simply create a new file with a name of your choice in the
+`/cucumber-features` folder and give it the extension `.feature`.
 
 Read in the sections below which users are available and which operations you can write.
 
 If you want to write things that are not yet interpreted, make sure you standardize as much as
-possible the way you write actions and assertions,  in order to facilitate their future technical
+possible the way you write actions and assertions, in order to facilitate their future technical
 interpretation.
 
 Feel free to add comments to explain your scenario:
@@ -119,7 +119,7 @@ You can filter the `.feature` files to run with the option `i`, for instante:
 cargo cucumber -i monetary*
 ```
 
-Will only run `.feature` files that start with `monetary`.
+Will only run `.feature` files that start with `"monetary"`.
 
 ### Contribute to the code that runs the tests
 
@@ -127,12 +127,12 @@ Cucumber is not magic, we have to write code that interprets the Gherkin text an
 actions accordingly.
 
 The rust code that interprets the Gherkin text is in this file:
-`integration-tests/tests/cucumber_tests.rs`.
+`end2end-tests/tests/cucumber_tests.rs`.
 
 To contribute to this section, read the [Cucumber Rust Book].
 
 To interact with the node, we use exclusively RPC requests, the RPC requests are realized in
-functions defined in `integration-tests/tests/common`.
+functions defined in `end2end-tests/tests/common`.
 
 To realize the RPC requests, we use the rust crate [subxt](https://github.com/paritytech/subxt).
 
