@@ -270,7 +270,7 @@ fn gen_genesis_conf(
                 membership_period,
                 membership_renewable_period,
                 pending_membership_period: 500,
-                ud_creation_period: ud_creation_period,
+                ud_creation_period,
                 ud_first_reeval: 100,
                 ud_reeval_period: ud_reeval_period as u64,
                 ud_reeval_period_in_blocks: ud_creation_period * ud_reeval_period,
