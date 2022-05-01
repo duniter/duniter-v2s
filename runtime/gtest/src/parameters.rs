@@ -88,7 +88,7 @@ parameter_types! {
     pub const UdCreationPeriod: BlockNumber = DAYS;
     pub const UdFirstReeval: BlockNumber = 2 * DAYS;
     pub const UdReevalPeriod: Balance = 7;
-    pub const UdReevalPeriodInBlocks: BlockNumber = 100800; // 86400 *7 / 6
+    pub const UdReevalPeriodInBlocks: BlockNumber = 100800; // 86400 * 7 / 6
 }
 
 /*******/

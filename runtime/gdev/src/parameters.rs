@@ -81,7 +81,8 @@ frame_support::parameter_types! {
 
 // Universal dividend
 parameter_types! {
-    pub const SquareMoneyGrowthRate: Permill = Permill::one();
+    // 0.002_381_440 = 0.0488^2
+    pub const SquareMoneyGrowthRate: Permill = Permill::from_parts(2_381_440);
 }
 
 // Multisig
