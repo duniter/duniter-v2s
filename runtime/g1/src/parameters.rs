@@ -153,7 +153,5 @@ parameter_types! {
 
 // Multisig
 parameter_types! {
-    pub const DepositBase: Balance = 1000;
-    pub const DepositFactor: Balance = 10;
     pub const MaxSignatories: u16 = 5;
 }

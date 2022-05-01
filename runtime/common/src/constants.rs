@@ -57,7 +57,10 @@ pub const BABE_GENESIS_EPOCH_CONFIG: sp_consensus_babe::BabeEpochConfiguration =
         allowed_slots: sp_consensus_babe::AllowedSlots::PrimaryAndSecondaryVRFSlots,
     };
 
-// 1 unit per item + 1 cent per byte
+pub const DEPOSIT_PER_BYTE: Balance = 1;
+pub const DEPOSIT_PER_ITEM: Balance = 100;
+
+// Compute storage deposit per items and bytes
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
-    items as Balance * 100 + (bytes as Balance)
+    items as Balance * DEPOSIT_PER_ITEM + (bytes as Balance * DEPOSIT_PER_BYTE)
 }

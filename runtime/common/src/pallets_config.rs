@@ -311,6 +311,10 @@ macro_rules! pallets_config {
 			type WeightInfo = pallet_proxy::weights::SubstrateWeight<Self>;
 		}
 
+		parameter_types! {
+			pub const DepositBase: Balance = DEPOSIT_PER_ITEM;
+			pub const DepositFactor: Balance = DEPOSIT_PER_BYTE * 32;
+		}
 		impl pallet_multisig::Config for Runtime {
 			type Event = Event;
 			type Call = Call;
