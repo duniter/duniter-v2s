@@ -84,17 +84,6 @@ macro_rules! pallets_config {
 				BlockWeights::get().max_block;
 			pub const MaxScheduledPerBlock: u32 = 50;
 		}
-		/// Used the compare the privilege of an origin inside the scheduler.
-		pub struct OriginPrivilegeCmp;
-		impl frame_support::traits::PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
-			fn cmp_privilege(left: &OriginCaller, right: &OriginCaller) -> Option<core::cmp::Ordering> {
-				if left == right {
-					Some(core::cmp::Ordering::Equal)
-				} else {
-					None
-				}
-			}
-		}
 		impl pallet_scheduler::Config for Runtime {
 			type Event = Event;
 			type Origin = Origin;
@@ -102,7 +91,7 @@ macro_rules! pallets_config {
 			type Call = Call;
 			type MaximumWeight = MaximumSchedulerWeight;
 			type ScheduleOrigin = frame_system::EnsureSigned<AccountId>;
-			type OriginPrivilegeCmp = OriginPrivilegeCmp;
+			type OriginPrivilegeCmp = EqualPrivilegeOnly;
 			type MaxScheduledPerBlock = MaxScheduledPerBlock;
 			type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 			type PreimageProvider = ();
