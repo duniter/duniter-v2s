@@ -42,8 +42,8 @@ pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 
 frame_support::parameter_types! {
     pub const DbWeight: frame_support::weights::RuntimeDbWeight = frame_support::weights::RuntimeDbWeight {
-        read: 25 * frame_support::weights::constants::WEIGHT_PER_MICROS,   // ~25 µs
-        write: 100 * frame_support::weights::constants::WEIGHT_PER_MICROS, // ~100 µs
+        read: 250 * frame_support::weights::constants::WEIGHT_PER_MICROS,   // ~25 µs
+        write: 1_000 * frame_support::weights::constants::WEIGHT_PER_MICROS, // ~100 µs
     };
 }
 
