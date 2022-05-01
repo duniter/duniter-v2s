@@ -212,7 +212,7 @@ macro_rules! pallets_config {
 			type ReportUnresponsiveness = Offences;
 			type UnsignedPriority = ImOnlineUnsignedPriority;
 			type WeightInfo = ();
-			type MaxKeys = MaxKeys;
+			type MaxKeys = MaxAuthorities;
 			type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
 			type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
 		}
