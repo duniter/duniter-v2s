@@ -105,7 +105,6 @@ parameter_types! {
 frame_support::parameter_types! {
     pub const ConfirmPeriod: BlockNumber = 8 * HOURS;
     pub const IdtyCreationPeriod: BlockNumber = DAYS;
-    pub const MaxDisabledPeriod: BlockNumber = 73 * DAYS;
 }
 
 // Membership

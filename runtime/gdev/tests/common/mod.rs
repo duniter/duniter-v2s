@@ -103,7 +103,6 @@ impl ExtBuilder {
                 cert_validity_period: 10_000,
                 idty_confirm_period: 40,
                 idty_creation_period: 50,
-                idty_max_disabled_period: 1_000,
                 membership_period: 1_000,
                 membership_renewable_period: 5,
                 pending_membership_period: 500,

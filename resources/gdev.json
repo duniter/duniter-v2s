@@ -26,7 +26,6 @@
     "cert_validity_period": 100000,
     "idty_confirm_period": 40,
     "idty_creation_period": 50,
-    "idty_max_disabled_period": 1000,
     "membership_period": 100000,
     "membership_renewable_period": 50,
     "pending_membership_period": 500,

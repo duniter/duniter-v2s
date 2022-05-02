@@ -79,7 +79,6 @@ parameter_types! {
     pub const ConfirmPeriod: u64 = 2;
     pub const IdtyCreationPeriod: u64 = 3;
     pub const MaxInactivityPeriod: u64 = 5;
-    pub const MaxDisabledPeriod: u64 = 4;
     pub const RenewablePeriod: u64 = 3;
     pub const ValidationPeriod: u64 = 2;
 }
@@ -108,7 +107,6 @@ impl pallet_identity::Config for Test {
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
     type IsMember = IsMemberTestImpl;
     type OnIdtyChange = ();
-    type MaxDisabledPeriod = MaxDisabledPeriod;
     type RemoveIdentityConsumers = ();
     type RevocationSigner = UintAuthorityId;
     type RevocationSignature = TestSignature;

@@ -358,7 +358,6 @@ macro_rules! pallets_config {
 			type IdtyValidationOrigin = EnsureRoot<Self::AccountId>;
 			type IsMember = Membership;
 			type OnIdtyChange = Wot;
-			type MaxDisabledPeriod = MaxDisabledPeriod;
 			type RemoveIdentityConsumers = RemoveIdentityConsumersImpl<Self>;
 			type RevocationSigner = <Signature as sp_runtime::traits::Verify>::Signer;
 			type RevocationSignature = Signature;

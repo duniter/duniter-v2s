@@ -95,7 +95,6 @@ impl pallet_duniter_wot::Config<Instance1> for Test {
 parameter_types! {
     pub const ConfirmPeriod: u64 = 2;
     pub const IdtyCreationPeriod: u64 = 3;
-    pub const MaxDisabledPeriod: u64 = 4;
     pub const ValidationPeriod: u64 = 2;
 }
 
@@ -116,7 +115,6 @@ impl pallet_identity::Config for Test {
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
     type IsMember = Membership;
     type OnIdtyChange = DuniterWot;
-    type MaxDisabledPeriod = MaxDisabledPeriod;
     type RemoveIdentityConsumers = ();
     type RevocationSigner = UintAuthorityId;
     type RevocationSignature = TestSignature;

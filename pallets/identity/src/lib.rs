@@ -86,10 +86,6 @@ pub mod pallet {
         type IsMember: sp_runtime::traits::IsMember<Self::IdtyIndex>;
         /// On identity confirmed by it's owner
         type OnIdtyChange: OnIdtyChange<Self>;
-        #[pallet::constant]
-        /// Maximum period with disabled status, after this period, the identity is permanently
-        /// deleted
-        type MaxDisabledPeriod: Get<Self::BlockNumber>;
         /// Handle the logic that remove all identity consumers.
         /// "identity consumers" mean all things that rely on the existence of the identity.
         type RemoveIdentityConsumers: RemoveIdentityConsumers<Self::IdtyIndex>;

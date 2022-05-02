@@ -192,7 +192,6 @@ common_runtime::pallets_config! {
     pub type ValidityPeriod = pallet_duniter_test_parameters::CertValidityPeriod<Runtime>;
     pub type ConfirmPeriod = pallet_duniter_test_parameters::IdtyConfirmPeriod<Runtime>;
     pub type IdtyCreationPeriod = pallet_duniter_test_parameters::IdtyCreationPeriod<Runtime>;
-    pub type MaxDisabledPeriod = pallet_duniter_test_parameters::IdtyMaxDisabledPeriod<Runtime>;
     pub type MembershipPeriod = pallet_duniter_test_parameters::MembershipPeriod<Runtime>;
     pub type RenewablePeriod = pallet_duniter_test_parameters::MembershipRenewablePeriod<Runtime>;
     pub type PendingMembershipPeriod = pallet_duniter_test_parameters::PendingMembershipPeriod<Runtime>;
