@@ -72,7 +72,7 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
             .api
             .storage()
             .universal_dividend()
-            .current_ud_storage(None)
+            .current_ud(None)
             .await?;
         amount = (amount * current_ud_amount) / 1_000;
     }
@@ -144,7 +144,7 @@ async fn current_ud_amount_should_be(
         .api
         .storage()
         .universal_dividend()
-        .current_ud_storage(None)
+        .current_ud(None)
         .await?;
     assert_eq!(actual, expected);
     Ok(())
@@ -157,7 +157,7 @@ async fn monetary_mass_should_be(world: &mut DuniterWorld, amount: u64, cents: u
         .api
         .storage()
         .universal_dividend()
-        .monetary_mass_storage(None)
+        .monetary_mass(None)
         .await?;
     assert_eq!(actual, expected);
     Ok(())
