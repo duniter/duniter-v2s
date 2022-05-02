@@ -221,7 +221,7 @@ fn gen_genesis_conf(
         get_env_u32("DUNITER_SMITH_MEMBERSHIP_RENEWABLE_PERIOD", 20);
     let smith_membership_period = get_env_u32("DUNITER_SMITH_MEMBERSHIP_PERIOD", 1_000);
     let ud_creation_period = get_env_u32("DUNITER_UD_CREATION_PERIOD", 10);
-    let ud_reeval_period = get_env_u32("DUNITER_UD_REEEVAL_PERIOD", 20);
+    let ud_reeval_period = get_env_u32("DUNITER_UD_REEEVAL_PERIOD", 200);
 
     let initial_smiths = (0..initial_smiths_len)
         .map(|i| get_authority_keys_from_seed(NAMES[i]))
@@ -270,9 +270,7 @@ fn gen_genesis_conf(
                 membership_renewable_period,
                 pending_membership_period: 500,
                 ud_creation_period,
-                ud_first_reeval: 100,
-                ud_reeval_period: ud_reeval_period as u64,
-                ud_reeval_period_in_blocks: ud_creation_period * ud_reeval_period,
+                ud_reeval_period,
                 smith_cert_period: 15,
                 smith_cert_max_by_issuer: 8,
                 smith_cert_min_received_cert_to_issue_cert: 2,
@@ -381,6 +379,7 @@ fn gen_genesis_conf(
                 .collect(),
         },
         universal_dividend: UniversalDividendConfig {
+            first_reeval: 100,
             first_ud: 1_000,
             initial_monetary_mass: 0,
         },
@@ -415,6 +414,7 @@ fn genesis_data_to_gdev_genesis_conf(
         accounts,
         certs_by_issuer,
         first_ud,
+        first_ud_reeval,
         identities,
         initial_authorities,
         initial_monetary_mass,
@@ -483,6 +483,7 @@ fn genesis_data_to_gdev_genesis_conf(
         smiths_collective: Default::default(),
         ud_accounts_storage: UdAccountsStorageConfig { ud_accounts },
         universal_dividend: UniversalDividendConfig {
+            first_reeval: first_ud_reeval,
             first_ud,
             initial_monetary_mass,
         },

@@ -324,15 +324,14 @@ macro_rules! pallets_config {
 		// UNIVERSAL DIVIDEND //
 
 		impl pallet_universal_dividend::Config for Runtime {
+			type BlockNumberIntoBalance = sp_runtime::traits::ConvertInto;
 			type Currency = pallet_balances::Pallet<Runtime>;
 			type Event = Event;
 			type MembersCount = common_runtime::providers::UdAccountsProvider<Runtime>;
 			type MembersIds = common_runtime::providers::UdAccountsProvider<Runtime>;
 			type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
 			type UdCreationPeriod = UdCreationPeriod;
-			type UdFirstReeval = UdFirstReeval;
 			type UdReevalPeriod = UdReevalPeriod;
-			type UdReevalPeriodInBlocks = UdReevalPeriodInBlocks;
 			type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
 		}
 

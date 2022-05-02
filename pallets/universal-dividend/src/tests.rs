@@ -20,6 +20,7 @@ use frame_system::{EventRecord, Phase};
 #[test]
 fn test_ud_creation() {
     new_test_ext(UniversalDividendConfig {
+        first_reeval: 8,
         first_ud: 1_000,
         initial_monetary_mass: 0,
     })

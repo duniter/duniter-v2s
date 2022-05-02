@@ -78,7 +78,6 @@ targets = ['x86_64-unknown-linux-gnu']
 ### DEV ###
 
 [dev-dependencies.pallet-balances]
-default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-02'
 
@@ -87,16 +86,13 @@ features = ["derive"]
 version = '1.0.119'
 
 [dev-dependencies.sp-core]
-default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-02'
 
 [dev-dependencies.sp-io]
-default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-02'
 
 [dev-dependencies.sp-runtime]
-default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-02'

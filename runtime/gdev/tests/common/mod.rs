@@ -107,9 +107,7 @@ impl ExtBuilder {
                 membership_renewable_period: 5,
                 pending_membership_period: 500,
                 ud_creation_period: 10,
-                ud_first_reeval: 100,
-                ud_reeval_period: 20,
-                ud_reeval_period_in_blocks: 10 * 20,
+                ud_reeval_period: 10 * 20,
                 smith_cert_period: 15,
                 smith_cert_max_by_issuer: 8,
                 smith_cert_min_received_cert_to_issue_cert: 2,
@@ -280,6 +278,7 @@ impl ExtBuilder {
         .unwrap();
 
         pallet_universal_dividend::GenesisConfig::<Runtime> {
+            first_reeval: 100,
             first_ud: 1_000,
             initial_monetary_mass: 0,
         }

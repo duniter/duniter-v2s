@@ -85,10 +85,7 @@ parameter_types! {
     // 0.002_381_440 = 0.0488^2
     pub const SquareMoneyGrowthRate: Permill = Permill::from_parts(2_381_440);
     pub const UdCreationPeriod: BlockNumber = DAYS;
-    // TODO: this value will depend on the date of the migration
-    pub const UdFirstReeval: BlockNumber = 45 * DAYS;
-    pub const UdReevalPeriod: Balance = 182;
-    pub const UdReevalPeriodInBlocks: BlockNumber = 2_620_800; // 86400 * 182 / 6
+    pub const UdReevalPeriod: BlockNumber = 2_620_800; // 86400 * 182 / 6
 }
 
 /*******/

@@ -99,9 +99,7 @@ parameter_types! {
     pub const MembersCount: u64 = 3;
     pub const SquareMoneyGrowthRate: Permill = Permill::from_percent(10);
     pub const UdCreationPeriod: BlockNumber = 2;
-    pub const UdFirstReeval: BlockNumber = 0;
-    pub const UdReevalPeriod: Balance = 4;
-    pub const UdReevalPeriodInBlocks: BlockNumber = 8; // 2 * 4
+    pub const UdReevalPeriod: BlockNumber = 8;
 }
 
 pub struct FakeWot;
@@ -112,15 +110,14 @@ impl Get<Vec<u64>> for FakeWot {
 }
 
 impl pallet_universal_dividend::Config for Test {
+    type BlockNumberIntoBalance = sp_runtime::traits::ConvertInto;
     type Currency = pallet_balances::Pallet<Test>;
     type Event = Event;
     type MembersCount = MembersCount;
     type MembersIds = FakeWot;
     type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
     type UdCreationPeriod = UdCreationPeriod;
-    type UdFirstReeval = UdFirstReeval;
     type UdReevalPeriod = UdReevalPeriod;
-    type UdReevalPeriodInBlocks = UdReevalPeriodInBlocks;
     type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
 }
 

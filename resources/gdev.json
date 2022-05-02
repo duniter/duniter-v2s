@@ -1,5 +1,6 @@
 {
   "first_ud": 1000,
+  "first_ud_reeval": 200,
   "identities": {
     "Elois1": {
       "balance": 1000,

@@ -30,7 +30,7 @@ mod benchmarking;
 use frame_support::traits::{tokens::ExistenceRequirement, Currency};
 use sp_arithmetic::{
     per_things::Permill,
-    traits::{CheckedSub, One, Saturating, Zero},
+    traits::{One, Saturating, Zero},
 };
 use sp_runtime::traits::StaticLookup;
 use sp_std::prelude::*;
@@ -43,7 +43,7 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_support::traits::StorageVersion;
     use frame_system::pallet_prelude::*;
-    use scale_info::TypeInfo;
+    use sp_runtime::traits::Convert;
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -59,6 +59,8 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
+        // BlockNumber into Balance converter
+        type BlockNumberIntoBalance: Convert<Self::BlockNumber, BalanceOf<Self>>;
         // The currency
         type Currency: Currency<Self::AccountId>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
@@ -74,16 +76,8 @@ pub mod pallet {
         /// Universal dividend creation period
         type UdCreationPeriod: Get<Self::BlockNumber>;
         #[pallet::constant]
-        /// Universal dividend first reevaluation (in block number)
-        /// Must be leess than UdReevalPeriodInBlocks
-        type UdFirstReeval: Get<Self::BlockNumber>;
-        #[pallet::constant]
-        /// Universal dividend reevaluation period (in number of creation period)
-        type UdReevalPeriod: Get<BalanceOf<Self>>;
-        #[pallet::constant]
-        /// Universal dividend reevaluation period in number of blocks
-        /// Must be equal to UdReevalPeriod * UdCreationPeriod
-        type UdReevalPeriodInBlocks: Get<Self::BlockNumber>;
+        /// Universal dividend reevaluation period (in number of blocks)
+        type UdReevalPeriod: Get<Self::BlockNumber>;
         #[pallet::constant]
         /// The number of units to divide the amounts expressed in number of UDs
         /// Example: If you wish to express the UD amounts with a maximum precision of the order
@@ -93,36 +87,26 @@ pub mod pallet {
 
     // STORAGE //
 
-    #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-    pub struct LastReeval<T: Config> {
-        members_count: BalanceOf<T>,
-        monetary_mass: BalanceOf<T>,
-        ud_amount: BalanceOf<T>,
-    }
-    impl<T: Config> Default for LastReeval<T> {
-        fn default() -> Self {
-            Self {
-                monetary_mass: Default::default(),
-                members_count: Default::default(),
-                ud_amount: Default::default(),
-            }
-        }
-    }
-
-    /// Last reevaluation
+    /// Current UD amount
     #[pallet::storage]
     #[pallet::getter(fn current_ud)]
-    pub type CurrentUdStorage<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+    pub type CurrentUd<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     /// Total quantity of money created by universal dividend (does not take into account the possible destruction of money)
     #[pallet::storage]
     #[pallet::getter(fn total_money_created)]
-    pub type MonetaryMassStorage<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+    pub type MonetaryMass<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+    /// Next UD reevaluation
+    #[pallet::storage]
+    #[pallet::getter(fn next_reeval)]
+    pub type NextReeval<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
 
     // GENESIS
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
+        pub first_reeval: T::BlockNumber,
         pub first_ud: BalanceOf<T>,
         pub initial_monetary_mass: BalanceOf<T>,
     }
@@ -131,6 +115,7 @@ pub mod pallet {
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
+                first_reeval: Default::default(),
                 first_ud: Default::default(),
                 initial_monetary_mass: Default::default(),
             }
@@ -143,8 +128,9 @@ pub mod pallet {
             assert!(!self.first_ud.is_zero());
             assert!(self.initial_monetary_mass >= T::Currency::total_issuance());
 
-            <CurrentUdStorage<T>>::put(self.first_ud);
-            <MonetaryMassStorage<T>>::put(self.initial_monetary_mass);
+            <CurrentUd<T>>::put(self.first_ud);
+            <MonetaryMass<T>>::put(self.initial_monetary_mass);
+            NextReeval::<T>::put(self.first_reeval);
         }
     }
 
@@ -155,13 +141,14 @@ pub mod pallet {
         fn on_initialize(n: T::BlockNumber) -> Weight {
             if (n % T::UdCreationPeriod::get()).is_zero() {
                 let current_members_count = T::MembersCount::get();
-                if (n % T::UdReevalPeriodInBlocks::get()).checked_sub(&T::UdFirstReeval::get())
-                    == Some(Zero::zero())
-                {
+                let next_reeval = NextReeval::<T>::get();
+                if n >= next_reeval {
+                    NextReeval::<T>::put(next_reeval.saturating_add(T::UdReevalPeriod::get()));
                     Self::reeval_ud(current_members_count)
                         + Self::create_ud(current_members_count, n)
+                        + T::DbWeight::get().reads_writes(2, 1)
                 } else {
-                    Self::create_ud(current_members_count, n)
+                    Self::create_ud(current_members_count, n) + T::DbWeight::get().reads(2)
                 }
             } else {
                 0
@@ -197,8 +184,8 @@ pub mod pallet {
         fn create_ud(members_count: BalanceOf<T>, n: T::BlockNumber) -> Weight {
             let total_weight: Weight = 0;
 
-            let ud_amount = <CurrentUdStorage<T>>::try_get().expect("corrupted storage");
-            let monetary_mass = <MonetaryMassStorage<T>>::try_get().expect("corrupted storage");
+            let ud_amount = <CurrentUd<T>>::try_get().expect("corrupted storage");
+            let monetary_mass = <MonetaryMass<T>>::try_get().expect("corrupted storage");
 
             for account_id in T::MembersIds::get() {
                 T::Currency::deposit_creating(&account_id, ud_amount);
@@ -207,7 +194,7 @@ pub mod pallet {
 
             let new_monetary_mass =
                 monetary_mass.saturating_add(ud_amount.saturating_mul(members_count));
-            MonetaryMassStorage::<T>::put(new_monetary_mass);
+            MonetaryMass::<T>::put(new_monetary_mass);
             Self::deposit_event(Event::NewUdCreated {
                 amount: ud_amount,
                 members_count,
@@ -224,8 +211,8 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let dest = T::Lookup::lookup(dest)?;
-            let ud_amount = <CurrentUdStorage<T>>::try_get()
-                .map_err(|_| DispatchError::Other("corrupted storage"))?;
+            let ud_amount =
+                <CurrentUd<T>>::try_get().map_err(|_| DispatchError::Other("corrupted storage"))?;
             T::Currency::transfer(
                 &who,
                 &dest,
@@ -237,19 +224,21 @@ pub mod pallet {
         fn reeval_ud(members_count: BalanceOf<T>) -> Weight {
             let total_weight: Weight = 0;
 
-            let ud_amount = <CurrentUdStorage<T>>::try_get().expect("corrupted storage");
+            let ud_amount = <CurrentUd<T>>::try_get().expect("corrupted storage");
 
-            let monetary_mass = <MonetaryMassStorage<T>>::try_get().expect("corrupted storage");
+            let monetary_mass = <MonetaryMass<T>>::try_get().expect("corrupted storage");
 
             let new_ud_amount = Self::reeval_ud_formula(
                 ud_amount,
                 T::SquareMoneyGrowthRate::get(),
                 monetary_mass,
                 members_count,
-                T::UdReevalPeriod::get(),
+                T::BlockNumberIntoBalance::convert(
+                    T::UdReevalPeriod::get() / T::UdCreationPeriod::get(),
+                ),
             );
 
-            <CurrentUdStorage<T>>::put(new_ud_amount);
+            <CurrentUd<T>>::put(new_ud_amount);
 
             Self::deposit_event(Event::UdReevalued {
                 new_ud_amount,

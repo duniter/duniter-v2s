@@ -28,6 +28,7 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub accounts: BTreeMap<AccountId, GenesisAccountData<u64>>,
     pub certs_by_issuer: BTreeMap<u32, BTreeMap<u32, u32>>,
     pub first_ud: u64,
+    pub first_ud_reeval: u32,
     pub identities: Vec<(String, AccountId)>,
     pub initial_authorities: BTreeMap<u32, (AccountId, bool)>,
     pub initial_monetary_mass: u64,
@@ -53,6 +54,7 @@ pub struct ParamsAppliedAtGenesis {
 #[derive(Deserialize, Serialize)]
 struct GenesisConfig<Parameters> {
     first_ud: u64,
+    first_ud_reeval: u32,
     identities: BTreeMap<String, Idty>,
     #[serde(default)]
     parameters: Parameters,
@@ -132,6 +134,7 @@ where
     let GenesisConfig {
         sudo_key,
         first_ud,
+        first_ud_reeval,
         parameters,
         identities,
         smith_identities,
@@ -298,6 +301,7 @@ where
         accounts,
         certs_by_issuer,
         first_ud,
+        first_ud_reeval,
         identities: identities_,
         initial_authorities,
         initial_monetary_mass,
