@@ -267,12 +267,7 @@ impl ExtBuilder {
         .unwrap();
 
         pallet_ud_accounts_storage::GenesisConfig::<Runtime> {
-            ud_accounts: initial_identities
-                .values()
-                .cloned()
-                .enumerate()
-                .map(|(i, account)| (account, (i + 1) as u32))
-                .collect(),
+            ud_accounts: initial_identities.values().cloned().collect(),
         }
         .assimilate_storage(&mut t)
         .unwrap();

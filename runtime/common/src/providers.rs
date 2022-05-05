@@ -14,20 +14,33 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::AccountId;
+use crate::{AccountId, IdtyIndex};
 use frame_support::traits::Get;
 use sp_std::vec::Vec;
+
+pub struct IdentityAccountIdProvider<Runtime>(core::marker::PhantomData<Runtime>);
+
+impl<
+        Runtime: frame_system::Config<AccountId = AccountId>
+            + pallet_identity::Config<IdtyIndex = IdtyIndex>,
+    > sp_runtime::traits::Convert<IdtyIndex, Option<AccountId>>
+    for IdentityAccountIdProvider<Runtime>
+{
+    fn convert(idty_index: IdtyIndex) -> Option<AccountId> {
+        pallet_identity::Pallet::<Runtime>::identity(idty_index).map(|idty| idty.owner_key)
+    }
+}
 
 pub struct UdAccountsProvider<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime: pallet_ud_accounts_storage::Config> Get<u64> for UdAccountsProvider<Runtime> {
     fn get() -> u64 {
-        <pallet_ud_accounts_storage::Pallet<Runtime>>::ud_accounts_count()
+        <pallet_ud_accounts_storage::Pallet<Runtime>>::accounts_len() as u64
     }
 }
 impl<Runtime: frame_system::Config<AccountId = AccountId> + pallet_ud_accounts_storage::Config>
     Get<Vec<AccountId>> for UdAccountsProvider<Runtime>
 {
     fn get() -> Vec<AccountId> {
-        <pallet_ud_accounts_storage::Pallet<Runtime>>::account_list()
+        <pallet_ud_accounts_storage::Pallet<Runtime>>::accounts_list()
     }
 }

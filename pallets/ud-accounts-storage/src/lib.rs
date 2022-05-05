@@ -54,20 +54,14 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn ud_accounts)]
-    pub type UdAccounts<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, u32, ValueQuery>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn ud_accounts_count)]
-    pub(super) type UdAccountsCounter<T: Config> = StorageValue<_, u64, ValueQuery>;
-
-    #[pallet::storage]
-    pub(super) type ToBeRemoved<T: Config> = StorageValue<_, Vec<u32>, ValueQuery>;
+    pub type UdAccounts<T: Config> =
+        CountedStorageMap<_, Blake2_128Concat, T::AccountId, (), ValueQuery>;
 
     // GENESIS //
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub ud_accounts: sp_std::collections::btree_map::BTreeMap<T::AccountId, u32>,
+        pub ud_accounts: sp_std::collections::btree_set::BTreeSet<T::AccountId>,
     }
 
     #[cfg(feature = "std")]
@@ -82,9 +76,8 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            <UdAccountsCounter<T>>::put(self.ud_accounts.len() as u64);
-            for (account, index) in &self.ud_accounts {
-                <UdAccounts<T>>::insert(account, index);
+            for account in &self.ud_accounts {
+                <UdAccounts<T>>::insert(account, ());
             }
         }
     }
@@ -92,56 +85,36 @@ pub mod pallet {
     // PUBLIC FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
-        pub fn account_list() -> Vec<T::AccountId> {
-            let mut to_be_removed = ToBeRemoved::<T>::take();
-            to_be_removed.sort_unstable();
-
-            let mut accounts_to_pass = Vec::new();
-            let mut accounts_to_remove = Vec::new();
-            <UdAccounts<T>>::iter().for_each(|(k, v)| {
-                if to_be_removed.binary_search(&v).is_ok() {
-                    accounts_to_remove.push(k);
-                } else {
-                    accounts_to_pass.push(k);
-                }
-            });
-            for account in accounts_to_remove {
-                UdAccounts::<T>::remove(account);
-            }
-
-            accounts_to_pass
+        pub fn accounts_len() -> u32 {
+            <UdAccounts<T>>::count()
+        }
+        pub fn accounts_list() -> Vec<T::AccountId> {
+            <UdAccounts<T>>::iter_keys().collect()
         }
         pub fn replace_account(
             old_account_opt: Option<T::AccountId>,
             new_account_opt: Option<T::AccountId>,
-            index: u32,
         ) -> Weight {
             if let Some(old_account) = old_account_opt {
                 if let Some(new_account) = new_account_opt {
-                    Self::replace_account_inner(old_account, new_account, index)
+                    Self::replace_account_inner(old_account, new_account)
                 } else {
                     Self::del_account(old_account)
                 }
             } else if let Some(new_account) = new_account_opt {
-                Self::add_account(new_account, index)
+                Self::add_account(new_account)
             } else {
                 0
             }
         }
-        pub fn remove_account(account_index: u32) -> Weight {
-            ToBeRemoved::<T>::append(account_index);
-            UdAccountsCounter::<T>::mutate(|counter| counter.saturating_sub(1));
-            0
+        pub fn remove_account(account_id: T::AccountId) -> Weight {
+            Self::del_account(account_id)
         }
-        fn replace_account_inner(
-            old_account: T::AccountId,
-            new_account: T::AccountId,
-            index: u32,
-        ) -> Weight {
+        fn replace_account_inner(old_account: T::AccountId, new_account: T::AccountId) -> Weight {
             if <UdAccounts<T>>::contains_key(&old_account) {
                 if !<UdAccounts<T>>::contains_key(&new_account) {
                     <UdAccounts<T>>::remove(&old_account);
-                    <UdAccounts<T>>::insert(&new_account, index);
+                    <UdAccounts<T>>::insert(&new_account, ());
                 } else {
                     frame_support::runtime_print!(
                         "ERROR: replace_account(): new_account {:?} already added",
@@ -156,10 +129,9 @@ pub mod pallet {
             }
             0
         }
-        fn add_account(account: T::AccountId, index: u32) -> Weight {
+        fn add_account(account: T::AccountId) -> Weight {
             if !<UdAccounts<T>>::contains_key(&account) {
-                <UdAccounts<T>>::insert(&account, index);
-                UdAccountsCounter::<T>::mutate(|counter| counter.saturating_add(1));
+                <UdAccounts<T>>::insert(&account, ());
             } else {
                 frame_support::runtime_print!(
                     "ERROR: add_account(): account {:?} already added",
@@ -171,8 +143,6 @@ pub mod pallet {
         fn del_account(account: T::AccountId) -> Weight {
             if <UdAccounts<T>>::contains_key(&account) {
                 <UdAccounts<T>>::remove(&account);
-
-                UdAccountsCounter::<T>::mutate(|counter| counter.saturating_sub(1));
             } else {
                 frame_support::runtime_print!(
                     "ERROR: del_account(): account {:?} already deleted",

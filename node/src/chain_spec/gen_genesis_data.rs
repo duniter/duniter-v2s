@@ -17,7 +17,7 @@
 use common_runtime::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp_core::{blake2_256, Decode, Encode, H256};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 type MembershipData = sp_membership::MembershipData<u32>;
 
@@ -38,7 +38,7 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub smiths_certs_by_issuer: BTreeMap<u32, BTreeMap<u32, u32>>,
     pub smiths_memberships: BTreeMap<u32, MembershipData>,
     pub sudo_key: Option<AccountId>,
-    pub ud_accounts: BTreeMap<AccountId, u32>,
+    pub ud_accounts: BTreeSet<AccountId>,
 }
 
 #[derive(Default)]
@@ -150,7 +150,7 @@ where
     let mut initial_monetary_mass = 0;
     let mut memberships = BTreeMap::new();
     //let mut total_dust = 0;
-    let mut ud_accounts = BTreeMap::new();
+    let mut ud_accounts = BTreeSet::new();
 
     // SIMPLE WALLETS //
 
@@ -193,7 +193,7 @@ where
         // We must count the money under the existential deposit because what we count is
         // the monetary mass created (for the revaluation of the DU)
         initial_monetary_mass += identity.balance;
-        ud_accounts.insert(identity.pubkey.clone(), idty_index);
+        ud_accounts.insert(identity.pubkey.clone());
 
         // Wot
         identities_.push((idty_name.clone(), identity.pubkey.clone()));

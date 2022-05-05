@@ -371,12 +371,7 @@ fn gen_genesis_conf(
         },
         smiths_collective: Default::default(),
         ud_accounts_storage: UdAccountsStorageConfig {
-            ud_accounts: initial_identities
-                .values()
-                .cloned()
-                .enumerate()
-                .map(|(i, account)| (account, (i + 1) as u32))
-                .collect(),
+            ud_accounts: initial_identities.values().cloned().collect(),
         },
         universal_dividend: UniversalDividendConfig {
             first_reeval: 100,

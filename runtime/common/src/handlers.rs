@@ -20,7 +20,7 @@ use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::instances::{Instance1, Instance2};
 use frame_support::pallet_prelude::Weight;
 use frame_support::Parameter;
-use sp_runtime::traits::IsMember;
+use sp_runtime::traits::{Convert, IsMember};
 
 pub struct OnNewSessionHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_authority_members::traits::OnNewSession for OnNewSessionHandler<Runtime>
@@ -48,15 +48,20 @@ impl<
 {
     fn on_event(membership_event: &sp_membership::Event<IdtyIndex, MembershipMetaData>) -> Weight {
         (match membership_event {
-            sp_membership::Event::MembershipAcquired(idty_index, owner_key) => {
+            sp_membership::Event::MembershipAcquired(_idty_index, owner_key) => {
                 pallet_ud_accounts_storage::Pallet::<Runtime>::replace_account(
                     None,
                     Some(owner_key.0.clone()),
-                    *idty_index,
                 )
             }
             sp_membership::Event::MembershipRevoked(idty_index) => {
-                pallet_ud_accounts_storage::Pallet::<Runtime>::remove_account(*idty_index)
+                if let Some(account_id) =
+                    crate::providers::IdentityAccountIdProvider::<Runtime>::convert(*idty_index)
+                {
+                    pallet_ud_accounts_storage::Pallet::<Runtime>::remove_account(account_id)
+                } else {
+                    0
+                }
             }
             _ => 0,
         }) + Inner::on_event(membership_event)
