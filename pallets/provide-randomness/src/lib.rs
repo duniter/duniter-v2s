@@ -172,6 +172,7 @@ pub mod pallet {
                 let randomness = T::CurrentBlockRandomness::random(salt.as_ref())
                     .0
                     .unwrap_or_default();
+                RequestsIds::<T>::remove(request_id);
                 total_weight += T::OnFilledRandomness::on_filled_randomness(request_id, randomness);
                 Self::deposit_event(Event::FilledRandomness {
                     request_id,
@@ -189,6 +190,7 @@ pub mod pallet {
                     RequestsReadyAtEpoch::<T>::take(T::GetCurrentEpochIndex::get())
                 {
                     let randomness = T::RandomnessFromOneEpochAgo::random(salt.as_ref()).0;
+                    RequestsIds::<T>::remove(request_id);
                     total_weight +=
                         T::OnFilledRandomness::on_filled_randomness(request_id, randomness);
                     Self::deposit_event(Event::FilledRandomness {
