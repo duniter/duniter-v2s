@@ -1,0 +1,23 @@
+[package]
+authors = ["elois <elois@duniter.org>"]
+description = "Duniter-v2s xtask"
+edition = "2018"
+license = "AGPL-3.0"
+name = "xtask"
+repository = "https://git.duniter.org/nodes/typescript/duniter"
+version = "0.1.0"
+
+[[bin]]
+bench = false
+path = "src/main.rs"
+name = "xtask"
+
+[dependencies]
+anyhow = "1.0.32"
+clap = { version = "3.0", features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "2", default-features = false, features = ["derive", "full", "bit-vec"] }
+frame-metadata = "14.0.0"
+run_script = "0.6.3"
+scale-info = { version = "1.0.0", features = ["bit-vec"] }
+version_check = "0.9.2"
+version-compare = "0.0.11"

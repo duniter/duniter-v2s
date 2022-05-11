@@ -36,7 +36,7 @@ Other docker-compose files are suggested in the `docker/compose-examples` folder
 
 ## Setup
 
-First, complete the [basic setup instructions](./docs/setup.md).
+First, complete the [basic setup instructions](./docs/dev/setup.md).
 
 ## Build
 

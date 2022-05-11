@@ -1,3 +1,5 @@
 [alias]
 cucumber = "test -p duniter-end2end-tests --test cucumber_tests --"
 tu = "test --workspace --exclude duniter-end2end-tests"
+xtask = "run --package xtask --"
+
