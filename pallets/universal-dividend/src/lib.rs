@@ -29,7 +29,7 @@ mod benchmarking;
 
 use frame_support::traits::{tokens::ExistenceRequirement, Currency};
 use sp_arithmetic::{
-    per_things::Permill,
+    per_things::Perbill,
     traits::{One, Saturating, Zero},
 };
 use sp_runtime::traits::StaticLookup;
@@ -71,7 +71,7 @@ pub mod pallet {
         type MembersIds: Get<Vec<<Self as frame_system::Config>::AccountId>>;
         #[pallet::constant]
         /// Square of the money growth rate per ud reevaluation period
-        type SquareMoneyGrowthRate: Get<Permill>;
+        type SquareMoneyGrowthRate: Get<Perbill>;
         #[pallet::constant]
         /// Universal dividend creation period
         type UdCreationPeriod: Get<Self::BlockNumber>;
@@ -250,7 +250,7 @@ pub mod pallet {
         }
         fn reeval_ud_formula(
             ud_t: BalanceOf<T>,
-            c_square: Permill,
+            c_square: Perbill,
             monetary_mass: BalanceOf<T>,
             mut members_count: BalanceOf<T>,
             count_uds_beetween_two_reevals: BalanceOf<T>, // =(dt/udFrequency)

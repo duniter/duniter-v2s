@@ -97,7 +97,7 @@ impl pallet_balances::Config for Test {
 
 parameter_types! {
     pub const MembersCount: u64 = 3;
-    pub const SquareMoneyGrowthRate: Permill = Permill::from_percent(10);
+    pub const SquareMoneyGrowthRate: Perbill = Perbill::from_percent(10);
     pub const UdCreationPeriod: BlockNumber = 2;
     pub const UdReevalPeriod: BlockNumber = 8;
 }
