@@ -41,6 +41,7 @@ pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 
 use common_runtime::IdtyNameValidatorImpl;
+use frame_support::traits::Contains;
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -122,7 +123,7 @@ pub type Executive = frame_executive::Executive<
 >;
 
 pub struct BaseCallFilter;
-impl frame_support::traits::Contains<Call> for BaseCallFilter {
+impl Contains<Call> for BaseCallFilter {
     fn contains(call: &Call) -> bool {
         !matches!(
             call,

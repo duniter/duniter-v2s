@@ -123,15 +123,20 @@ macro_rules! runtime_apis {
 				}
 			}
 
-            impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
-                fn validate_transaction(
-                    source: TransactionSource,
-                    tx: <Block as BlockT>::Extrinsic,
+			impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
+				fn validate_transaction(
+					source: TransactionSource,
+					tx: <Block as BlockT>::Extrinsic,
 					block_hash: <Block as BlockT>::Hash,
-                ) -> TransactionValidity {
-                    Executive::validate_transaction(source, tx, block_hash)
-                }
-            }
+				) -> TransactionValidity {
+					// Filtered calls should not enter the tx pool.
+					if !<Runtime as frame_system::Config>::BaseCallFilter::contains(&tx.function)
+					{
+						return sp_runtime::transaction_validity::InvalidTransaction::Call.into();
+					}
+					Executive::validate_transaction(source, tx, block_hash)
+				}
+			}
 
 			impl sp_offchain::OffchainWorkerApi<Block> for Runtime {
 				fn offchain_worker(header: &<Block as BlockT>::Header) {
