@@ -840,6 +840,7 @@ dependencies = [
  "pallet-membership",
  "pallet-provide-randomness",
  "pallet-session",
+ "pallet-treasury",
  "pallet-ud-accounts-storage",
  "parity-scale-codec",
  "scale-info",
@@ -1976,6 +1977,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury",
  "pallet-ud-accounts-storage",
  "pallet-universal-dividend",
  "pallet-utility",
@@ -2037,6 +2039,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury",
  "pallet-ud-accounts-storage",
  "pallet-universal-dividend",
  "pallet-upgrade-origin",
@@ -2240,6 +2243,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury",
  "pallet-ud-accounts-storage",
  "pallet-universal-dividend",
  "pallet-utility",
@@ -4440,9 +4444,11 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "log",
  "maplit",
  "pallet-balances",
  "pallet-provide-randomness",
+ "pallet-treasury",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -4745,6 +4751,23 @@ dependencies = [
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
+]
+
+[[package]]
+name = "pallet-treasury"
+version = "4.0.0-dev"
+source = "git+https://github.com/librelois/substrate.git?branch=duniter-monthly-2022-02#8fbc011c06ee051577022c8fd84f2a018123efd3"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]

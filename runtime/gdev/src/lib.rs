@@ -42,6 +42,7 @@ pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 
 use common_runtime::IdtyNameValidatorImpl;
 use frame_support::traits::Contains;
+use frame_support::PalletId;
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -123,6 +124,8 @@ pub type Executive = frame_executive::Executive<
     AllPalletsWithSystem,
 >;
 
+pub type SmithsInstance = Instance2;
+
 pub struct BaseCallFilter;
 impl Contains<Call> for BaseCallFilter {
     fn contains(call: &Call) -> bool {
@@ -131,7 +134,8 @@ impl Contains<Call> for BaseCallFilter {
             Call::System(
                 frame_system::Call::remark { .. } | frame_system::Call::remark_with_event { .. }
             ) | Call::Membership(
-                pallet_membership::Call::claim_membership { .. }
+                pallet_membership::Call::request_membership { .. }
+                    | pallet_membership::Call::claim_membership { .. }
                     | pallet_membership::Call::revoke_membership { .. }
             ) | Call::Session(_)
                 | Call::SmithsMembership(pallet_membership::Call::claim_membership { .. })
@@ -232,7 +236,7 @@ common_runtime::pallets_config! {
     impl pallet_upgrade_origin::Config for Runtime {
         type Event = Event;
         type Call = Call;
-        type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, Instance2>;
+        type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, SmithsInstance>;
     }
 }
 
@@ -295,6 +299,7 @@ construct_runtime!(
         ProvideRandomness: pallet_provide_randomness::{Pallet, Call, Storage, Event} = 62,
         Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 63,
         Utility: pallet_utility::{Pallet, Call, Event} = 64,
+        Treasury: pallet_treasury::{Pallet, Call, Config, Storage, Event<T>} = 65,
     }
 );
 

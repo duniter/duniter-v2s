@@ -378,6 +378,7 @@ fn gen_genesis_conf(
             first_ud: 1_000,
             initial_monetary_mass: 0,
         },
+        treasury: Default::default(),
     }
 }
 
@@ -482,5 +483,6 @@ fn genesis_data_to_gdev_genesis_conf(
             first_ud,
             initial_monetary_mass,
         },
+        treasury: Default::default(),
     }
 }

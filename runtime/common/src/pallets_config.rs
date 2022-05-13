@@ -155,7 +155,7 @@ macro_rules! pallets_config {
 			type Balance = Balance;
 			/// The ubiquitous event type.
 			type Event = Event;
-			type DustRemoval = ();
+			type DustRemoval = Treasury;
 			type ExistentialDeposit = ExistentialDeposit;
 			type AccountStore = Account;
 			type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
@@ -272,7 +272,7 @@ macro_rules! pallets_config {
 			type MaxRequests = frame_support::traits::ConstU32<1_000>;
 			type RequestPrice = frame_support::traits::ConstU64<200>;
 			type OnFilledRandomness = Account;
-			type OnUnbalanced = ();
+			type OnUnbalanced = Treasury;
 			type CurrentBlockRandomness = pallet_babe::CurrentBlockRandomness<Self>;
 			type RandomnessFromOneEpochAgo = pallet_babe::RandomnessFromOneEpochAgo<Self>;
 		}
@@ -319,6 +319,33 @@ macro_rules! pallets_config {
 			type Call = Call;
 			type PalletsOrigin = OriginCaller;
 			type WeightInfo = pallet_utility::weights::SubstrateWeight<Self>;
+		}
+
+		parameter_types! {
+			pub const Burn: Permill = Permill::zero();
+			pub const ProposalBond: Permill = Permill::from_percent(1);
+			pub const ProposalBondMaximum: Option<Balance> = None;
+			pub const SpendPeriod: BlockNumber = DAYS;
+			// Treasury account address:
+			// gdev/gtest: 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
+			pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+		}
+		impl pallet_treasury::Config for Runtime {
+			type ApproveOrigin = TreasuryApproveOrigin;
+			type Burn = Burn;
+			type BurnDestination = ();
+			type Currency = Balances;
+			type Event = Event;
+			type OnSlash = Treasury;
+			type ProposalBond = ProposalBond;
+			type ProposalBondMinimum = frame_support::traits::ConstU64<10_000>;
+			type ProposalBondMaximum = ProposalBondMaximum;
+			type MaxApprovals = frame_support::traits::ConstU32<10>;
+			type PalletId = TreasuryPalletId;
+			type RejectOrigin = TreasuryRejectOrigin;
+			type SpendFunds = TreasurySpendFunds<Self>;
+			type SpendPeriod = SpendPeriod;
+			type WeightInfo = pallet_treasury::weights::SubstrateWeight<Self>;
 		}
 
 		// UNIVERSAL DIVIDEND //

@@ -14,11 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
+use crate::*;
 use common_runtime::constants::*;
 use common_runtime::{Balance, BlockNumber};
 use frame_support::parameter_types;
 use frame_support::weights::constants::WEIGHT_PER_SECOND;
 use sp_arithmetic::Perbill;
+use sp_core::u32_trait::*;
 use sp_runtime::transaction_validity::TransactionPriority;
 
 parameter_types! {
@@ -146,7 +148,17 @@ parameter_types! {
     pub const SmithValidityPeriod: BlockNumber = 146 * DAYS;
 }
 
+/*************/
+/* UTILITIES */
+/*************/
+
 // Multisig
 parameter_types! {
     pub const MaxSignatories: u16 = 5;
 }
+
+// Treasury
+pub type TreasuryApproveOrigin =
+    pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, SmithsInstance>;
+pub type TreasuryRejectOrigin =
+    pallet_collective::EnsureProportionMoreThan<_1, _3, AccountId, SmithsInstance>;

@@ -22,8 +22,9 @@ runtime-benchmarks = [
     'frame-system/runtime-benchmarks',
     'hex-literal',
     'pallet-balances/runtime-benchmarks',
-    'pallet-universal-dividend/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
+    'pallet-treasury/runtime-benchmarks',
+    'pallet-universal-dividend/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
 ]
 std = [
@@ -50,10 +51,11 @@ std = [
     'pallet-multisig/std',
     'pallet-session/std',
     'pallet-sudo/std',
-    'pallet-universal-dividend/std',
     'pallet-timestamp/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',
+    'pallet-treasury/std',
+    'pallet-universal-dividend/std',
     'common-runtime/std',
     'serde',
     'sp-api/std',
@@ -213,6 +215,11 @@ git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-02'
 
 [dependencies.pallet-transaction-payment-rpc-runtime-api]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+[dependencies.pallet-treasury]
 default-features = false
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-02'

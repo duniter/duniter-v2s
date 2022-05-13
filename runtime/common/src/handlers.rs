@@ -188,3 +188,18 @@ where
         0
     }
 }
+
+pub struct TreasurySpendFunds<Runtime>(core::marker::PhantomData<Runtime>);
+impl<Runtime> pallet_treasury::SpendFunds<Runtime> for TreasurySpendFunds<Runtime>
+where
+    Runtime: pallet_treasury::Config,
+{
+    fn spend_funds(
+        _budget_remaining: &mut pallet_treasury::BalanceOf<Runtime>,
+        _imbalance: &mut pallet_treasury::PositiveImbalanceOf<Runtime>,
+        _total_weight: &mut Weight,
+        missed_any: &mut bool,
+    ) {
+        *missed_any = true;
+    }
+}

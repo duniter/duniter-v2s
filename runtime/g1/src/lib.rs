@@ -42,6 +42,7 @@ pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 
 use common_runtime::IdtyNameValidatorImpl;
 use frame_support::traits::Contains;
+use frame_support::PalletId;
 use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -120,6 +121,8 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPalletsWithSystem,
 >;
+
+pub type SmithsInstance = Instance2;
 
 pub struct BaseCallFilter;
 impl Contains<Call> for BaseCallFilter {
@@ -241,6 +244,7 @@ construct_runtime!(
         ProvideRandomness: pallet_provide_randomness::{Pallet, Call, Storage, Event} = 62,
         Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 63,
         Utility: pallet_utility::{Pallet, Call, Event} = 64,
+        Treasury: pallet_treasury::{Pallet, Call, Config, Storage, Event<T>} = 65,
     }
 );
 

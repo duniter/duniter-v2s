@@ -25,6 +25,11 @@ use sp_keyring::AccountKeyring;
 use sp_runtime::MultiAddress;
 
 #[test]
+fn verify_treasury_account() {
+    println!("{}", Treasury::account_id());
+}
+
+#[test]
 fn verify_pallet_prefixes() {
     let prefix = |pallet_name, storage_name| {
         let mut res = [0u8; 32];
@@ -143,6 +148,71 @@ fn test_remove_smith_identity() {
 }
 
 #[test]
+fn test_create_new_account_with_insufficient_balance() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 1_000)])
+        .build()
+        .execute_with(|| {
+            run_to_block(2);
+
+            // Should be able to transfer 2 units to a new account
+            assert_ok!(Balances::transfer(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                200
+            ));
+            let events = System::events();
+            //println!("{:#?}", events);
+            assert_eq!(events.len(), 2);
+            assert_eq!(
+                System::events()[0].event,
+                Event::Balances(pallet_balances::Event::Endowed {
+                    account: AccountKeyring::Eve.to_account_id(),
+                    free_balance: 200,
+                })
+            );
+            assert_eq!(
+                System::events()[1].event,
+                Event::Balances(pallet_balances::Event::Transfer {
+                    from: AccountKeyring::Alice.to_account_id(),
+                    to: AccountKeyring::Eve.to_account_id(),
+                    amount: 200,
+                })
+            );
+
+            // At next bloc, the new account must be reaped because it's balance is not sufficient
+            // to pay the "new account tax"
+            run_to_block(3);
+            let events = System::events();
+            //println!("{:#?}", events);
+            assert_eq!(events.len(), 3);
+            assert_eq!(
+                System::events()[0].event,
+                Event::Account(pallet_duniter_account::Event::ForceDestroy {
+                    who: AccountKeyring::Eve.to_account_id(),
+                    balance: 200,
+                })
+            );
+            assert_eq!(
+                System::events()[1].event,
+                Event::Balances(pallet_balances::Event::Deposit {
+                    who: Treasury::account_id(),
+                    amount: 200,
+                })
+            );
+            assert_eq!(
+                System::events()[2].event,
+                Event::Treasury(pallet_treasury::Event::Deposit { value: 200 })
+            );
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
+                0
+            );
+            assert_eq!(Balances::free_balance(Treasury::account_id()), 400);
+        });
+}
+
+#[test]
 fn test_create_new_account() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 1_000)])
@@ -175,12 +245,12 @@ fn test_create_new_account() {
                 })
             );
 
-            // At next bloc, the mew account must be created,
-            // and new account tax should be collected
+            // At next bloc, the new account must be created,
+            // and new account tax should be collected and deposited in the terasury
             run_to_block(3);
             let events = System::events();
-            //println!("{:#?}", events);
-            assert_eq!(events.len(), 2);
+            println!("{:#?}", events);
+            assert_eq!(events.len(), 4);
             assert_eq!(
                 System::events()[0].event,
                 Event::System(frame_system::Event::NewAccount {
@@ -195,9 +265,21 @@ fn test_create_new_account() {
                 })
             );
             assert_eq!(
+                System::events()[2].event,
+                Event::Balances(pallet_balances::Event::Deposit {
+                    who: Treasury::account_id(),
+                    amount: 300,
+                })
+            );
+            assert_eq!(
+                System::events()[3].event,
+                Event::Treasury(pallet_treasury::Event::Deposit { value: 300 })
+            );
+            assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 200
             );
+            assert_eq!(Balances::free_balance(Treasury::account_id()), 500);
 
             // A random id request should be registered
             assert_eq!(
