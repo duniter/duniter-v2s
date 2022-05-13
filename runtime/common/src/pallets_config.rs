@@ -69,7 +69,7 @@ macro_rules! pallets_config {
 			/// The data to be stored in an account.
 			type AccountData = pallet_duniter_account::AccountData<Balance>;
 			/// Weight information for the extrinsics of this pallet.
-			type SystemWeightInfo = ();
+			type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
 			/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 			type SS58Prefix = SS58Prefix;
 			/// The set code logic, just the default since we're not a parachain.
@@ -142,7 +142,7 @@ macro_rules! pallets_config {
 			type Moment = u64;
 			type OnTimestampSet = Babe;
 			type MinimumPeriod = MinimumPeriod;
-			type WeightInfo = ();
+			type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 		}
 
 		// MONEY MANAGEMENT //
@@ -158,7 +158,7 @@ macro_rules! pallets_config {
 			type DustRemoval = ();
 			type ExistentialDeposit = ExistentialDeposit;
 			type AccountStore = Account;
-			type WeightInfo = common_runtime::weights::pallet_balances::WeightInfo<Runtime>;
+			type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 		}
 
 		pub struct HandleFees;
@@ -211,7 +211,7 @@ macro_rules! pallets_config {
 			type NextSessionRotation = Babe;
 			type ReportUnresponsiveness = Offences;
 			type UnsignedPriority = ImOnlineUnsignedPriority;
-			type WeightInfo = ();
+			type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
 			type MaxKeys = MaxAuthorities;
 			type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
 			type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
@@ -230,7 +230,7 @@ macro_rules! pallets_config {
 			type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, AuthorityMembers>;
 			type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 			type Keys = opaque::SessionKeys;
-			type WeightInfo = ();
+			type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
 		}
 		impl pallet_session::historical::Config for Runtime {
 			type FullIdentification = ValidatorFullIdentification;
@@ -464,7 +464,7 @@ macro_rules! pallets_config {
 			type MaxMembers = frame_support::pallet_prelude::ConstU32<1_000>;
 			type MembersStorage = SmithMembersStorage;
 			type DefaultVote = SmithMembersDefaultVote;
-			type WeightInfo = ();
+			type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 		}
 	};
 }
