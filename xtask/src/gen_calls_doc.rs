@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{bail, Context, Result};
 use codec::Decode;
 use scale_info::form::PortableForm;
 use std::{
@@ -70,18 +70,10 @@ impl CallCategory {
         }
     }
     fn is_root(pallet_name: &str, call_name: &str) -> bool {
-        if let Self::Root = Self::is(pallet_name, call_name) {
-            true
-        } else {
-            false
-        }
+        matches!(Self::is(pallet_name, call_name), Self::Root)
     }
     fn is_user(pallet_name: &str, call_name: &str) -> bool {
-        if let Self::User = Self::is(pallet_name, call_name) {
-            true
-        } else {
-            false
-        }
+        matches!(Self::is(pallet_name, call_name), Self::User)
     }
 }
 
@@ -131,7 +123,6 @@ impl From<&scale_info::Variant<PortableForm>> for Call {
 
 #[derive(Clone)]
 struct CallParam {
-    docs: Vec<String>,
     name: String,
     type_name: String,
 }
@@ -139,7 +130,6 @@ struct CallParam {
 impl From<&scale_info::Field<PortableForm>> for CallParam {
     fn from(field: &scale_info::Field<PortableForm>) -> Self {
         Self {
-            docs: field.docs().to_vec(),
             name: field.name().cloned().unwrap_or_default(),
             type_name: field.type_name().cloned().unwrap_or_default(),
         }

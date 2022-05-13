@@ -64,7 +64,7 @@ fn main() -> Result<()> {
     }
 }
 
-fn build(production: bool) -> Result<()> {
+fn build(_production: bool) -> Result<()> {
     exec_should_success(Command::new("cargo").args(&["clean", "-p", "duniter"]))?;
     exec_should_success(Command::new("cargo").args(&["build", "--locked"]))?;
     exec_should_success(Command::new("mkdir").args(&["build"]))?;
