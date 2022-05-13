@@ -133,7 +133,7 @@ macro_rules! pallets_config {
 			type HandleEquivocation =
 				pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
 
-			type WeightInfo = ();
+			type WeightInfo = common_runtime::weights::pallet_babe::WeightInfo<Runtime>;
 
 			type MaxAuthorities = MaxAuthorities;
 		}
@@ -252,7 +252,7 @@ macro_rules! pallets_config {
 
 			type HandleEquivocation = ();
 
-			type WeightInfo = ();
+			type WeightInfo = common_runtime::weights::pallet_grandpa::WeightInfo<Runtime>;
 
 			type MaxAuthorities = MaxAuthorities;
 		}
