@@ -66,6 +66,7 @@ impl CallCategory {
             }
             ("SmithsCollective", "set_members" | "disapprove_proposal") => Self::Root,
             ("Utility", "dispatch_as") => Self::Root,
+            ("Treasury", "approve_proposal" | "reject_proposal") => Self::OtherOrigin,
             _ => Self::User,
         }
     }

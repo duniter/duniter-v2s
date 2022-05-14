@@ -12,7 +12,7 @@ through on-chain governance mechanisms.
 
 ## User calls
 
-There are **52** user calls organized in **17** pallets.
+There are **53** user calls organized in **18** pallets.
 
 ### 2: Scheduler
 
@@ -1447,6 +1447,33 @@ bypassing `frame_system::Config::BaseCallFilter`).
 
 ```rust
 calls: Vec<<T as Config>::Call>
+```
+
+</p>
+</details>
+
+
+### 65: Treasury
+
+<details><summary>0: propose_spend(value, beneficiary)</summary>
+<p>
+
+### Index
+
+`0`
+
+### Documentation
+
+Put forward a suggestion for spending. A deposit proportional to the value
+is reserved and slashed if the proposal is rejected. It is returned once the
+proposal is awarded.
+
+
+### Types of parameters
+
+```rust
+value: BalanceOf<T, I>,
+beneficiary: <T::Lookup as StaticLookup>::Source
 ```
 
 </p>
