@@ -94,8 +94,23 @@ build_release:
   extends: .env
   rules:
     - if: "$CI_COMMIT_TAG || $CI_COMMIT_BRANCH =~ /^release/"
+    - when: never
+  stage: build
+  script:
+    - cargo build --locked --release
+    - mkdir build
+    - mv target/release/duniter build/duniter
+  artifacts:
+    paths:
+      - build/
+    expire_in: 3 day
+
+build_release_manual:
+  extends: .env
+  rules:
     - when: manual
   stage: build
+  allow_failure: true
   script:
     - cargo build --locked --release
     - mkdir build
