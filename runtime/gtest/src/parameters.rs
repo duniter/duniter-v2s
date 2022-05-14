@@ -104,7 +104,7 @@ parameter_types! {
 
 // Identity
 frame_support::parameter_types! {
-    pub const ConfirmPeriod: BlockNumber = 8 * HOURS;
+    pub const ConfirmPeriod: BlockNumber = DAYS;
     pub const IdtyCreationPeriod: BlockNumber = DAYS;
 }
 
@@ -154,7 +154,7 @@ parameter_types! {
 
 // Multisig
 parameter_types! {
-    pub const MaxSignatories: u16 = 5;
+    pub const MaxSignatories: u16 = 10;
 }
 
 // Treasury

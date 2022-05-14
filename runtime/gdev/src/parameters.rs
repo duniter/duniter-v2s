@@ -92,7 +92,7 @@ parameter_types! {
 
 // Multisig
 parameter_types! {
-    pub const MaxSignatories: u16 = 5;
+    pub const MaxSignatories: u16 = 10;
 }
 
 // Treasury

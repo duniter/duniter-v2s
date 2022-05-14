@@ -194,8 +194,8 @@ macro_rules! pallets_config {
 			type MemberId = IdtyIndex;
 			type MemberIdOf = Identity;
 			type MaxAuthorities = MaxAuthorities;
-			type MaxKeysLife = frame_support::pallet_prelude::ConstU32<1_000>;
-			type MaxOfflineSessions = frame_support::pallet_prelude::ConstU32<100>;
+			type MaxKeysLife = frame_support::pallet_prelude::ConstU32<1_500>;
+			type MaxOfflineSessions = frame_support::pallet_prelude::ConstU32<2_400>;
 			type RemoveMemberOrigin = EnsureRoot<Self::AccountId>;
 		}
 		impl pallet_authorship::Config for Runtime {
@@ -269,8 +269,8 @@ macro_rules! pallets_config {
 			type Currency = Balances;
 			type Event = Event;
 			type GetCurrentEpochIndex = GetCurrentEpochIndex<Self>;
-			type MaxRequests = frame_support::traits::ConstU32<1_000>;
-			type RequestPrice = frame_support::traits::ConstU64<200>;
+			type MaxRequests = frame_support::traits::ConstU32<100>;
+			type RequestPrice = frame_support::traits::ConstU64<2_000>;
 			type OnFilledRandomness = Account;
 			type OnUnbalanced = Treasury;
 			type CurrentBlockRandomness = pallet_babe::CurrentBlockRandomness<Self>;
@@ -340,7 +340,7 @@ macro_rules! pallets_config {
 			type ProposalBond = ProposalBond;
 			type ProposalBondMinimum = frame_support::traits::ConstU64<10_000>;
 			type ProposalBondMaximum = ProposalBondMaximum;
-			type MaxApprovals = frame_support::traits::ConstU32<10>;
+			type MaxApprovals = frame_support::traits::ConstU32<100>;
 			type PalletId = TreasuryPalletId;
 			type RejectOrigin = TreasuryRejectOrigin;
 			type SpendFunds = TreasurySpendFunds<Self>;
@@ -482,12 +482,15 @@ macro_rules! pallets_config {
 				pallet_membership::Membership::<Runtime, Instance2>::count()
 			}
 		}
+		parameter_types! {
+			pub const SmithsMotionDuration: BlockNumber = 7 * DAYS;
+		}
 		impl pallet_collective::Config<Instance2> for Runtime {
 			type Origin = Origin;
 			type Proposal = Call;
 			type Event = Event;
-			type MotionDuration = frame_support::pallet_prelude::ConstU32<10_000>;
-			type MaxProposals = frame_support::pallet_prelude::ConstU32<10>;
+			type MotionDuration = SmithsMotionDuration;
+			type MaxProposals = frame_support::pallet_prelude::ConstU32<20>;
 			type MaxMembers = frame_support::pallet_prelude::ConstU32<1_000>;
 			type MembersStorage = SmithMembersStorage;
 			type DefaultVote = SmithMembersDefaultVote;
