@@ -31,7 +31,7 @@ esac
 set -- "$@" \
   "${chain[@]}" \
   $(ternary "$DUNITER_DISABLE_PROMETHEUS" --no-prometheus) \
-  -d /var/lib/duniter --unsafe-ws-external
+  -d /var/lib/duniter --unsafe-rpc-external --unsafe-ws-external
 
 echo "Starting duniter with parameters:" "$@"
 exec duniter "$@"
