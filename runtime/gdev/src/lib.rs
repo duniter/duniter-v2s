@@ -139,6 +139,7 @@ impl Contains<Call> for BaseCallFilter {
                     | pallet_membership::Call::revoke_membership { .. }
             ) | Call::Session(_)
                 | Call::SmithsMembership(pallet_membership::Call::claim_membership { .. })
+                | Call::AuthorityMembers(pallet_authority_members::Call::go_online { .. })
         )
     }
 }
