@@ -25,7 +25,6 @@ services:
       - "/dns/duniter-validator/tcp/30333/p2p/VALIDATOR_NODE_KEY"
       - "--node-key-file"
       - "/var/lib/duniter/node-key"
-      - "--unsafe-rpc-external"
       - "--rpc-cors"
       - "all"
 
@@ -46,7 +45,6 @@ services:
       - "/var/lib/duniter/node-key"
       - "--rpc-methods=Unsafe"
       - "--validator"
-      - "--unsafe-rpc-external"
       - "--rpc-cors"
       - "all"
 
