@@ -94,7 +94,7 @@ build_release:
   extends: .env
   rules:
     - if: "$CI_COMMIT_TAG || $CI_COMMIT_BRANCH =~ /^release/"
-    - when: never
+    - when: manual
   stage: build
   script:
     - cargo build --locked --release
@@ -132,11 +132,12 @@ tests_release:
   stage: tests
   variables:
     DUNITER_BINARY_PATH: "../build/duniter"
-    DUNITER_INTEGRATION_TESTS_SPAWN_NODE_DURATION: "10"
+    DUNITER_END2END_TESTS_SPAWN_NODE_TIMEOUT: "20"
   script:
     - cargo test --workspace --exclude duniter-end2end-tests
+    - cargo cucumber -i balance*
     - cargo cucumber -i monetary*
-    - cargo cucumber -i *transfer*
+    - cargo cucumber -i transfer*
   dependencies:
     - build_release
 
@@ -169,7 +170,7 @@ deploy_docker_test_image:
     DOCKERFILE_PATH: "docker/Dockerfile"
     IMAGE_TAG: "test-image-$CI_COMMIT_SHORT_SHA"
 
-deploy_docker_debug:
+deploy_docker_debug_sha:
   extends: .docker-build-app-image
   rules:
     - if: $CI_COMMIT_TAG
@@ -182,3 +183,13 @@ deploy_docker_debug:
     - docker login -u "duniterteam" -p "$DUNITERTEAM_PASSWD"
     - docker tag "duniter/duniter-v2s:$IMAGE_TAG" "duniter/duniter-v2s:debug-latest"
     - docker push "duniter/duniter-v2s:debug-latest"
+
+deploy_docker_release_sha:
+  extends: .docker-build-app-image
+  rules:
+    - when: manual
+  variables:
+    DOCKERFILE_PATH: "docker/Dockerfile"
+    IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
+  dependencies:
+    - build_release
