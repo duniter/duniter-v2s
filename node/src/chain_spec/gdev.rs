@@ -112,7 +112,7 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
             "gdev",
             ChainType::Development,
             move || {
-                gen_genesis_conf(
+                gen_genesis_for_local_chain(
                     wasm_binary,
                     // Initial authorities len
                     1,
@@ -209,7 +209,7 @@ pub fn local_testnet_config(
         "gdev_local",
         ChainType::Local,
         move || {
-            gen_genesis_conf(
+            gen_genesis_for_local_chain(
                 wasm_binary,
                 // Initial authorities len
                 initial_authorities_len,
@@ -245,7 +245,7 @@ pub fn local_testnet_config(
     ))
 }
 
-fn gen_genesis_conf(
+fn gen_genesis_for_local_chain(
     wasm_binary: &[u8],
     initial_authorities_len: usize,
     initial_smiths_len: usize,
