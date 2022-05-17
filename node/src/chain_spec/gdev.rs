@@ -341,7 +341,7 @@ fn gen_genesis_conf(
                     (
                         i as u32,
                         MembershipData {
-                            expire_on: membership_period,
+                            expire_on: 0,
                             renewable_on: membership_renewable_period,
                         },
                     )
