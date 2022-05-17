@@ -118,7 +118,7 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
     }
 
     // Create {amount} ĞD for {who}
-    common::balances::set_balance(&world.api(), &world.client(), who, amount).await?;
+    common::balances::set_balance(world.api(), world.client(), who, amount).await?;
 
     Ok(())
 }
@@ -126,7 +126,7 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
 #[when(regex = r"(\d+) blocks? later")]
 async fn n_blocks_later(world: &mut DuniterWorld, n: usize) -> Result<()> {
     for _ in 0..n {
-        common::create_empty_block(&world.client()).await?;
+        common::create_empty_block(world.client()).await?;
     }
     Ok(())
 }
@@ -145,9 +145,9 @@ async fn transfer(
     let (amount, is_ud) = parse_amount(amount, &unit);
 
     if is_ud {
-        common::balances::transfer_ud(&world.api(), &world.client(), from, amount, to).await
+        common::balances::transfer_ud(world.api(), world.client(), from, amount, to).await
     } else {
-        common::balances::transfer(&world.api(), &world.client(), from, amount, to).await
+        common::balances::transfer(world.api(), world.client(), from, amount, to).await
     }
 }
 
@@ -157,7 +157,7 @@ async fn send_all_to(world: &mut DuniterWorld, from: String, to: String) -> Resu
     let from = AccountKeyring::from_str(&from).expect("unknown from");
     let to = AccountKeyring::from_str(&to).expect("unknown to");
 
-    common::balances::transfer_all(&world.api(), &world.client(), from, to).await
+    common::balances::transfer_all(world.api(), world.client(), from, to).await
 }
 
 #[then(regex = r"([a-zA-Z]+) should have (\d+) ĞD")]

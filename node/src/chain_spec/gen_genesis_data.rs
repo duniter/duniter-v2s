@@ -257,7 +257,7 @@ where
         // Initial authorities
         if maybe_force_authority.is_some() {
             if smith_data.session_keys.is_some() {
-                return Err(format!("session_keys field forbidden",));
+                return Err("session_keys field forbidden".to_owned());
             }
             if *idty_index == 1 {
                 initial_authorities.insert(1, (identity.pubkey.clone(), true));
@@ -312,9 +312,7 @@ where
     }
 
     if maybe_force_authority.is_none() && online_authorities_counter == 0 {
-        return Err(format!(
-            "The session_keys field must be filled in for at least one smith.",
-        ));
+        return Err("The session_keys field must be filled in for at least one smith.".to_owned());
     }
 
     let genesis_data = GenesisData {
