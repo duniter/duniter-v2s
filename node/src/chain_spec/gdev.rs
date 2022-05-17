@@ -62,47 +62,91 @@ pub fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
 pub fn development_chain_spec() -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
-    Ok(ChainSpec::from_genesis(
-        // Name
-        "Development",
-        // ID
-        "gdev",
-        ChainType::Development,
-        move || {
-            gen_genesis_conf(
-                wasm_binary,
-                // Initial authorities len
-                1,
-                // Initial smiths members len
-                3,
-                // Inital identities len
-                4,
-                // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                true,
-            )
-        },
-        // Bootnodes
-        vec![],
-        // Telemetry
-        None,
-        // Protocol ID
-        None,
-        //Fork ID
-        None,
-        // Properties
-        Some(
-            serde_json::json!({
-                    "tokenDecimals": TOKEN_DECIMALS,
-                    "tokenSymbol": TOKEN_SYMBOL,
-            })
-            .as_object()
-            .expect("must be a map")
-            .clone(),
-        ),
-        // Extensions
-        None,
-    ))
+    if std::env::var("DUNITER_GENESIS_CONFIG").is_ok() {
+        super::gen_genesis_data::generate_genesis_data(
+            |genesis_data| {
+                ChainSpec::from_genesis(
+                    // Name
+                    "Development",
+                    // ID
+                    "gdev",
+                    sc_service::ChainType::Development,
+                    move || genesis_data_to_gdev_genesis_conf(genesis_data.clone(), wasm_binary),
+                    // Bootnodes
+                    vec![],
+                    // Telemetry
+                    None,
+                    // Protocol ID
+                    None,
+                    //Fork ID
+                    None,
+                    // Properties
+                    Some(
+                        serde_json::json!({
+                            "tokenDecimals": TOKEN_DECIMALS,
+                            "tokenSymbol": TOKEN_SYMBOL,
+                        })
+                        .as_object()
+                        .expect("must be a map")
+                        .clone(),
+                    ),
+                    // Extensions
+                    None,
+                )
+            },
+            Some(get_authority_keys_from_seed("Alice").encode()),
+            Some(super::gen_genesis_data::ParamsAppliedAtGenesis {
+                genesis_certs_expire_on: 100_000,
+                genesis_smith_certs_expire_on: 100_000,
+                genesis_memberships_expire_on: 100_000,
+                genesis_memberships_renewable_on: 50,
+                genesis_smith_memberships_expire_on: 100_000,
+                genesis_smith_memberships_renewable_on: 50,
+            }),
+        )
+    } else {
+        Ok(ChainSpec::from_genesis(
+            // Name
+            "Development",
+            // ID
+            "gdev",
+            ChainType::Development,
+            move || {
+                gen_genesis_conf(
+                    wasm_binary,
+                    // Initial authorities len
+                    1,
+                    // Initial smiths members len
+                    3,
+                    // Inital identities len
+                    4,
+                    // Sudo account
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    true,
+                )
+            },
+            // Bootnodes
+            vec![],
+            // Telemetry
+            None,
+            // Protocol ID
+            None,
+            //Fork ID
+            None,
+            // Properties
+            Some(
+                serde_json::json!({
+                        "tokenDecimals": TOKEN_DECIMALS,
+                        "tokenSymbol": TOKEN_SYMBOL,
+                })
+                .as_object()
+                .expect("must be a map")
+                .clone(),
+            ),
+            // Extensions
+            None,
+        ))
+    }
 }
 
 pub fn gen_live_conf() -> Result<ChainSpec, String> {
@@ -139,6 +183,7 @@ pub fn gen_live_conf() -> Result<ChainSpec, String> {
                 None,
             )
         },
+        None,
         Some(super::gen_genesis_data::ParamsAppliedAtGenesis {
             genesis_certs_expire_on: 100_000,
             genesis_smith_certs_expire_on: 100_000,

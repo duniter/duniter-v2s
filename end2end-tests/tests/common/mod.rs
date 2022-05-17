@@ -24,6 +24,7 @@ pub mod node_runtime {}
 use serde_json::Value;
 use sp_keyring::AccountKeyring;
 use std::io::prelude::*;
+use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
 use subxt::rpc::{rpc_params, ClientT, SubscriptionClientT};
@@ -38,9 +39,8 @@ pub type TransactionProgress<'client> =
 pub const SUDO_ACCOUNT: AccountKeyring = AccountKeyring::Alice;
 
 pub struct Process(std::process::Child);
-
-impl Drop for Process {
-    fn drop(&mut self) {
+impl Process {
+    pub fn kill(&mut self) {
         self.0.kill().expect("node already down");
     }
 }
@@ -51,7 +51,8 @@ struct FullNode {
     ws_port: u16,
 }
 
-pub async fn spawn_node() -> (Api, Client, Process) {
+pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Api, Client, Process) {
+    println!("maybe_genesis_conf_file={:?}", maybe_genesis_conf_file);
     let duniter_binary_path = std::env::var("DUNITER_BINARY_PATH")
         .unwrap_or_else(|_| "../target/debug/duniter".to_owned());
     let FullNode {
@@ -59,8 +60,9 @@ pub async fn spawn_node() -> (Api, Client, Process) {
         p2p_port: _,
         ws_port,
     } = spawn_full_node(
-        &duniter_binary_path,
         &["--dev", "--execution=Native", "--sealing=manual"],
+        &duniter_binary_path,
+        maybe_genesis_conf_file,
     );
     let client = ClientBuilder::new()
         .set_url(format!("ws://127.0.0.1:{}", ws_port))
@@ -110,12 +112,27 @@ pub async fn create_block_with_extrinsic(
         .map_err(Into::into)
 }
 
-fn spawn_full_node(duniter_binary_path: &str, args: &[&str]) -> FullNode {
+fn spawn_full_node(
+    args: &[&str],
+    duniter_binary_path: &str,
+    maybe_genesis_conf_file: Option<PathBuf>,
+) -> FullNode {
+    // Ports
     let p2p_port = portpicker::pick_unused_port().expect("No ports free");
     let rpc_port = portpicker::pick_unused_port().expect("No ports free");
     let ws_port = portpicker::pick_unused_port().expect("No ports free");
+
+    // Env vars
+    let mut envs = Vec::new();
+    if let Some(genesis_conf_file) = maybe_genesis_conf_file {
+        envs.push(("DUNITER_GENESIS_CONFIG", genesis_conf_file));
+    }
+
+    // Logs
     let log_file_path = format!("duniter-v2s-{}.log", ws_port);
     let log_file = std::fs::File::create(&log_file_path).expect("fail to create log file");
+
+    // Command
     let process = Process(
         Command::new(duniter_binary_path)
             .args(
@@ -133,6 +150,7 @@ fn spawn_full_node(duniter_binary_path: &str, args: &[&str]) -> FullNode {
                 .iter()
                 .chain(args),
             )
+            .envs(envs)
             .stdout(std::process::Stdio::null())
             .stderr(log_file)
             .spawn()

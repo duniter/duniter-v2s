@@ -58,21 +58,26 @@ Feature: My awesome feature
 - eve
 - ferdie
 
+### genesis state
+
+Each scenario bootstraps its own blockchain with its own genesis state.
+
+By default, all scenarios use the same configuration for the genesis, which is located in the file
+`/cucumber-genesis/default.json`.
+
+You can define a custom genesis state for each scenario with the tag `@genesis.confName`.
+
+The genesis configuration must then be defined in a json file located at
+`/cucumber-genesis/confName.json`.
+
+You can also define a custom genesis at the feature level, all the scenarios of this feature will
+then inherit the genesis configuration.
+
 ### Currency amounts
 
 Amounts must be expressed as an integer of `ĞD` or `UD`, decimal numbers are not supported.
 If you need more precision, you can express amounts in cents of ĞD (write `cĞD`), or in thousandths
 of UD (write `mUD`).
-
-#### Given
-
-You can give any currency balance to each of the test users, so money will be created ex-nihilo for
-that user. Note that this created money is not included in the monetary mass used to revalue the UD
-amount.
-
-Usage: `{user} have {amount} {unit}`
-
-Example: `alice have 10 ĞD`
 
 #### When
 

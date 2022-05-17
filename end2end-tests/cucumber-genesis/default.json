@@ -1,0 +1,61 @@
+{
+  "first_ud": 1000,
+  "first_ud_reeval": 100,
+  "identities": {
+    "Alice": {
+      "balance": 1000,
+      "certs": ["Bob", "Charlie"],
+      "pubkey": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+    },
+    "Bob": {
+      "balance": 1000,
+      "certs": ["Alice", "Charlie"],
+      "pubkey": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+    },
+    "Charlie": {
+      "balance": 1000,
+      "certs": ["Alice", "Bob"],
+      "pubkey": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y"
+    }
+  },
+  "parameters": {
+    "babe_epoch_duration": 30,
+    "cert_period": 15,
+    "cert_max_by_issuer": 10,
+    "cert_min_received_cert_to_issue_cert": 2,
+    "cert_renewable_period": 50,
+    "cert_validity_period": 1000,
+    "idty_confirm_period": 40,
+    "idty_creation_period": 50,
+    "membership_period": 1000,
+    "membership_renewable_period": 50,
+    "pending_membership_period": 500,
+    "ud_creation_period": 10,
+    "ud_reeval_period": 100,
+    "smith_cert_period": 15,
+    "smith_cert_max_by_issuer": 8,
+    "smith_cert_min_received_cert_to_issue_cert": 2,
+    "smith_cert_renewable_period": 50,
+    "smith_cert_validity_period": 1000,
+    "smith_membership_period": 1000,
+    "smith_membership_renewable_period": 20,
+    "smith_pending_membership_period": 500,
+    "smiths_wot_first_cert_issuable_on": 20,
+    "smiths_wot_min_cert_for_membership": 2,
+    "wot_first_cert_issuable_on": 20,
+    "wot_min_cert_for_create_idty_right": 2,
+    "wot_min_cert_for_membership": 2
+  },
+  "smiths": {
+    "Alice": {
+      "certs": ["Bob", "Charlie"]
+    },
+    "Bob": {
+      "certs": ["Alice", "Charlie"]
+    },
+    "Charlie": {
+      "certs": ["Alice", "Bob"]
+    }
+  },
+  "sudo_key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+}

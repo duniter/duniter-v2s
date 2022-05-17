@@ -21,13 +21,38 @@ use common::*;
 use cucumber::{given, then, when, World, WorldInit};
 use sp_keyring::AccountKeyring;
 use std::convert::Infallible;
+use std::path::PathBuf;
 use std::str::FromStr;
 
 #[derive(WorldInit)]
-pub struct DuniterWorld {
-    api: Api,
-    client: Client,
-    _process: Process,
+pub struct DuniterWorld(Option<DuniterWorldInner>);
+
+impl DuniterWorld {
+    async fn init(&mut self, maybe_genesis_conf_file: Option<PathBuf>) {
+        if let Some(ref mut inner) = self.0 {
+            inner.kill();
+        }
+        self.0 = Some(DuniterWorldInner::new(maybe_genesis_conf_file).await);
+    }
+    fn api(&self) -> &Api {
+        if let Some(ref inner) = self.0 {
+            &inner.api
+        } else {
+            panic!("uninit")
+        }
+    }
+    fn client(&self) -> &Client {
+        if let Some(ref inner) = self.0 {
+            &inner.client
+        } else {
+            panic!("uninit")
+        }
+    }
+    fn kill(&mut self) {
+        if let Some(ref mut inner) = self.0 {
+            inner.kill();
+        }
+    }
 }
 
 impl std::fmt::Debug for DuniterWorld {
@@ -42,12 +67,27 @@ impl World for DuniterWorld {
     type Error = Infallible;
 
     async fn new() -> std::result::Result<Self, Infallible> {
-        let (api, client, _process) = spawn_node().await;
-        Ok(DuniterWorld {
+        Ok(DuniterWorld(None))
+    }
+}
+
+struct DuniterWorldInner {
+    api: Api,
+    client: Client,
+    process: Process,
+}
+
+impl DuniterWorldInner {
+    async fn new(maybe_genesis_conf_file: Option<PathBuf>) -> Self {
+        let (api, client, process) = spawn_node(maybe_genesis_conf_file).await;
+        DuniterWorldInner {
             api,
             client,
-            _process,
-        })
+            process,
+        }
+    }
+    fn kill(&mut self) {
+        self.process.kill();
     }
 }
 
@@ -69,7 +109,7 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
 
     if is_ud {
         let current_ud_amount = world
-            .api
+            .api()
             .storage()
             .universal_dividend()
             .current_ud(None)
@@ -78,7 +118,7 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
     }
 
     // Create {amount} ĞD for {who}
-    common::balances::set_balance(&world.api, &world.client, who, amount).await?;
+    common::balances::set_balance(&world.api(), &world.client(), who, amount).await?;
 
     Ok(())
 }
@@ -86,7 +126,7 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
 #[when(regex = r"(\d+) blocks? later")]
 async fn n_blocks_later(world: &mut DuniterWorld, n: usize) -> Result<()> {
     for _ in 0..n {
-        common::create_empty_block(&world.client).await?;
+        common::create_empty_block(&world.client()).await?;
     }
     Ok(())
 }
@@ -105,9 +145,9 @@ async fn transfer(
     let (amount, is_ud) = parse_amount(amount, &unit);
 
     if is_ud {
-        common::balances::transfer_ud(&world.api, &world.client, from, amount, to).await
+        common::balances::transfer_ud(&world.api(), &world.client(), from, amount, to).await
     } else {
-        common::balances::transfer(&world.api, &world.client, from, amount, to).await
+        common::balances::transfer(&world.api(), &world.client(), from, amount, to).await
     }
 }
 
@@ -117,7 +157,7 @@ async fn send_all_to(world: &mut DuniterWorld, from: String, to: String) -> Resu
     let from = AccountKeyring::from_str(&from).expect("unknown from");
     let to = AccountKeyring::from_str(&to).expect("unknown to");
 
-    common::balances::transfer_all(&world.api, &world.client, from, to).await
+    common::balances::transfer_all(&world.api(), &world.client(), from, to).await
 }
 
 #[then(regex = r"([a-zA-Z]+) should have (\d+) ĞD")]
@@ -128,7 +168,7 @@ async fn should_have(world: &mut DuniterWorld, who: String, amount: u64) -> Resu
         .to_account_id();
     let amount = amount * 100;
 
-    let who_account = world.api.storage().system().account(who, None).await?;
+    let who_account = world.api().storage().system().account(who, None).await?;
     assert_eq!(who_account.data.free, amount);
     Ok(())
 }
@@ -141,7 +181,7 @@ async fn current_ud_amount_should_be(
 ) -> Result<()> {
     let expected = (amount * 100) + cents;
     let actual = world
-        .api
+        .api()
         .storage()
         .universal_dividend()
         .current_ud(None)
@@ -154,7 +194,7 @@ async fn current_ud_amount_should_be(
 async fn monetary_mass_should_be(world: &mut DuniterWorld, amount: u64, cents: u64) -> Result<()> {
     let expected = (amount * 100) + cents;
     let actual = world
-        .api
+        .api()
         .storage()
         .universal_dividend()
         .monetary_mass(None)
@@ -170,6 +210,35 @@ async fn main() {
     DuniterWorld::cucumber()
         //.fail_on_skipped()
         .max_concurrent_scenarios(4)
+        .before(|feature, _rule, scenario, world| {
+            let mut genesis_conf_file_path = PathBuf::new();
+            genesis_conf_file_path.push("cucumber-genesis");
+            genesis_conf_file_path.push(&format!(
+                "{}.json",
+                genesis_conf_name(&feature.tags, &scenario.tags)
+            ));
+            Box::pin(world.init(Some(genesis_conf_file_path)))
+        })
+        .after(|_feature, _rule, _scenario, maybe_world| {
+            if let Some(world) = maybe_world {
+                world.kill();
+            }
+            Box::pin(std::future::ready(()))
+        })
         .run_and_exit("cucumber-features")
         .await;
+}
+
+fn genesis_conf_name(feature_tags: &[String], scenario_tags: &[String]) -> String {
+    for tag in scenario_tags {
+        if let Some(("genesis", conf_name)) = tag.split_once(".") {
+            return conf_name.to_owned();
+        }
+    }
+    for tag in feature_tags {
+        if let Some(("genesis", conf_name)) = tag.split_once(".") {
+            return conf_name.to_owned();
+        }
+    }
+    "default".to_owned()
 }

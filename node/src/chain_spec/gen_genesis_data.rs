@@ -85,6 +85,7 @@ struct SmithData {
 
 pub fn generate_genesis_data<CS, P, SK, F>(
     f: F,
+    maybe_force_authority: Option<Vec<u8>>,
     params_applied_at_genesis: Option<ParamsAppliedAtGenesis>,
 ) -> Result<CS, String>
 where
@@ -234,6 +235,7 @@ where
     // SMITHS SUB-WOT //
 
     let mut initial_authorities = BTreeMap::new();
+    let mut online_authorities_counter = 0;
     let mut session_keys_map = BTreeMap::new();
     let mut smiths_memberships = BTreeMap::new();
     let mut smiths_certs_by_issuer = BTreeMap::new();
@@ -253,15 +255,27 @@ where
         }
 
         // Initial authorities
-        initial_authorities.insert(
-            *idty_index,
-            (identity.pubkey.clone(), smith_data.session_keys.is_some()),
-        );
+        if maybe_force_authority.is_some() {
+            if smith_data.session_keys.is_some() {
+                return Err(format!("session_keys field forbidden",));
+            }
+            if *idty_index == 1 {
+                initial_authorities.insert(1, (identity.pubkey.clone(), true));
+            }
+        } else {
+            initial_authorities.insert(
+                *idty_index,
+                (identity.pubkey.clone(), smith_data.session_keys.is_some()),
+            );
+        }
 
         // Session keys
         let session_keys_bytes = if let Some(ref session_keys) = smith_data.session_keys {
+            online_authorities_counter += 1;
             hex::decode(&session_keys[2..])
                 .map_err(|_| format!("invalid session keys for idty {}", &idty_name))?
+        } else if let (1, Some(ref session_keys_bytes)) = (*idty_index, &maybe_force_authority) {
+            session_keys_bytes.clone()
         } else {
             // Create fake session keys (must be unique and deterministic)
             let mut fake_session_keys_bytes = Vec::with_capacity(128);
@@ -295,6 +309,12 @@ where
                 renewable_on: genesis_smith_memberships_renewable_on,
             },
         );
+    }
+
+    if maybe_force_authority.is_none() && online_authorities_counter == 0 {
+        return Err(format!(
+            "The session_keys field must be filled in for at least one smith.",
+        ));
     }
 
     let genesis_data = GenesisData {
