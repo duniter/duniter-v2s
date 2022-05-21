@@ -262,7 +262,7 @@ macro_rules! pallets_config {
 		impl pallet_atomic_swap::Config for Runtime {
 			type Event = Event;
 			type SwapAction = pallet_atomic_swap::BalanceSwapAction<AccountId, Balances>;
-			type ProofLimit = frame_support::traits::ConstU32<255>;
+			type ProofLimit = frame_support::traits::ConstU32<1_024>;
 		}
 
 		impl pallet_provide_randomness::Config for Runtime {
