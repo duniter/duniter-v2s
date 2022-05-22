@@ -138,6 +138,14 @@ tests_debug:
     - cargo cucumber -i balance*
     - cargo cucumber -i monetary*
     - cargo cucumber -i transfer*
+  after_script:
+    - cd target/debug/deps/
+    - rm cucumber_tests-*.d
+    - mv cucumber_tests* ../../../build/duniter-cucumber
+  artifacts:
+    paths:
+      - build/
+    expire_in: 3 day
 
 tests_release:
   extends: .env

@@ -45,6 +45,9 @@ impl Process {
     }
 }
 
+const DUNITER_DOCKER_PATH: &str = "/usr/local/bin/duniter";
+const DUNITER_LOCAL_PATH: &str = "../target/debug/duniter";
+
 struct FullNode {
     process: Process,
     p2p_port: u16,
@@ -53,8 +56,14 @@ struct FullNode {
 
 pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Api, Client, Process) {
     println!("maybe_genesis_conf_file={:?}", maybe_genesis_conf_file);
-    let duniter_binary_path = std::env::var("DUNITER_BINARY_PATH")
-        .unwrap_or_else(|_| "../target/debug/duniter".to_owned());
+    let duniter_binary_path = std::env::var("DUNITER_BINARY_PATH").unwrap_or_else(|_| {
+        if std::path::Path::new(DUNITER_DOCKER_PATH).exists() {
+            DUNITER_DOCKER_PATH.to_owned()
+        } else {
+            DUNITER_LOCAL_PATH.to_owned()
+        }
+    });
+
     let FullNode {
         process,
         p2p_port: _,

@@ -40,7 +40,7 @@ LABEL description="Crypto-currency software (based on Substrate framework) to op
 RUN adduser --home /var/lib/duniter duniter
 
 # Configuration
-# rpc, rpc-ws, p2p, telemetry 
+# rpc, rpc-ws, p2p, telemetry
 EXPOSE 9933 9944 30333 9615
 VOLUME /var/lib/duniter
 ENTRYPOINT ["docker-entrypoint"]
@@ -48,4 +48,5 @@ USER duniter
 
 # Intall
 COPY --from=build /root/build/duniter /usr/local/bin/duniter
+COPY --from=build /root/build/duniter-cucumber /usr/local/bin/duniter-cucumber
 COPY docker/docker-entrypoint /usr/local/bin/

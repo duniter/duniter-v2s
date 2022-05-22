@@ -23,6 +23,10 @@ use sp_keyring::AccountKeyring;
 use std::convert::Infallible;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 
 #[derive(WorldInit)]
 pub struct DuniterWorld(Option<DuniterWorldInner>);
@@ -203,9 +207,27 @@ async fn monetary_mass_should_be(world: &mut DuniterWorld, amount: u64, cents: u
     Ok(())
 }
 
+#[derive(clap::Args)]
+struct CustomOpts {
+    /// Keep running
+    #[clap(short, long)]
+    keep_running: bool,
+}
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
     //env_logger::init();
+
+    let opts = cucumber::cli::Opts::<_, _, _, CustomOpts>::parsed();
+    let keep_running = opts.custom.keep_running;
+
+    // Handle crtl+C
+    let running = Arc::new(AtomicBool::new(true));
+    let running_clone = running.clone();
+    ctrlc::set_handler(move || {
+        running_clone.store(false, Ordering::SeqCst);
+    })
+    .expect("Error setting Ctrl-C handler");
 
     DuniterWorld::cucumber()
         //.fail_on_skipped()
@@ -219,12 +241,17 @@ async fn main() {
             ));
             Box::pin(world.init(Some(genesis_conf_file_path)))
         })
-        .after(|_feature, _rule, _scenario, maybe_world| {
+        .after(move |_feature, _rule, _scenario, maybe_world| {
+            if keep_running {
+                while running.load(Ordering::SeqCst) {}
+            }
+
             if let Some(world) = maybe_world {
                 world.kill();
             }
             Box::pin(std::future::ready(()))
         })
+        .with_cli(opts)
         .run_and_exit("cucumber-features")
         .await;
 }
