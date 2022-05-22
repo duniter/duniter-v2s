@@ -214,9 +214,20 @@ struct CustomOpts {
     keep_running: bool,
 }
 
+const DOCKER_FEATURES_PATH: &str = "/var/lib/duniter/cucumber-features";
+const LOCAL_FEATURES_PATH: &str = "cucumber-features";
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
     //env_logger::init();
+
+    let features_path = if std::path::Path::new(DOCKER_FEATURES_PATH).exists() {
+        DOCKER_FEATURES_PATH
+    } else if std::path::Path::new(LOCAL_FEATURES_PATH).exists() {
+        LOCAL_FEATURES_PATH
+    } else {
+        panic!("cucumber-features folder not found");
+    };
 
     let opts = cucumber::cli::Opts::<_, _, _, CustomOpts>::parsed();
     let keep_running = opts.custom.keep_running;
@@ -252,7 +263,7 @@ async fn main() {
             Box::pin(std::future::ready(()))
         })
         .with_cli(opts)
-        .run_and_exit("cucumber-features")
+        .run_and_exit(features_path)
         .await;
 }
 
