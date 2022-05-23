@@ -27,6 +27,14 @@ RUN test -x build/duniter || \
         mv target/release/duniter build/ \
     )
 
+# Create fake duniter-cucumber if is not exist
+# The goal is to avoid error later, this binary is optional
+RUN test -x build/duniter-cucumber || \
+    ( \
+        mkdir -p build && \
+        touch build/duniter-cucumber \
+    )
+
 # ------------------------------------------------------------------------------
 # Final Stage
 # ------------------------------------------------------------------------------
