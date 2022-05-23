@@ -1,63 +1,78 @@
 {
   "first_ud": 1000,
-  "first_ud_reeval": 200,
+  "first_ud_reeval": 100800,
   "identities": {
+    "Elois0": {
+      "balance": 1000,
+      "certs": ["Elois1", "Elois2", "Elois3", "Elois4"],
+      "pubkey": "5Co5AWcBiz4HaAEpu8BxLdghnCob89rFGU5yQ65WP3t2jsyB"
+    },
     "Elois1": {
       "balance": 1000,
-      "certs": ["Elois2", "Elois3"],
+      "certs": ["Elois0", "Elois2", "Elois3", "Elois4"],
       "pubkey": "5H95G8bwuf4yyNNNa83hDhj7wpYaSRhZiGezZ9TDbyqNdAhY"
     },
     "Elois2": {
       "balance": 1000,
-      "certs": ["Elois1", "Elois3"],
+      "certs": ["Elois0", "Elois1", "Elois3", "Elois4"],
       "pubkey": "5GFEEx7kqvP4QEPCAXkALeYCG7m8DiA5LQ4YzW62j7FytQyg"
     },
     "Elois3": {
       "balance": 1000,
-      "certs": ["Elois1", "Elois2"],
+      "certs": ["Elois0", "Elois1", "Elois2", "Elois4"],
       "pubkey": "5HNFikZ2smaTvWSfxHBRXpPVkCVeiKs6oBjGBn95RCs1RPRB"
+    },
+    "Elois4": {
+      "balance": 1000,
+      "certs": ["Elois0", "Elois1", "Elois2", "Elois3"],
+      "pubkey": "5HNMRSuZkaw9UvTmkEQSLSiYoR8ZwyYDBnfuH6Sasgj5yFou"
     }
   },
   "parameters": {
-    "babe_epoch_duration": 30,
-    "cert_period": 15,
-    "cert_max_by_issuer": 10,
-    "cert_min_received_cert_to_issue_cert": 2,
-    "cert_renewable_period": 50,
-    "cert_validity_period": 100000,
-    "idty_confirm_period": 40,
-    "idty_creation_period": 50,
-    "membership_period": 100000,
-    "membership_renewable_period": 50,
-    "pending_membership_period": 500,
-    "ud_creation_period": 10,
-    "ud_first_reeval": 0,
-    "ud_reeval_period": 200,
-    "smith_cert_period": 15,
-    "smith_cert_max_by_issuer": 8,
+    "babe_epoch_duration": 600,
+    "cert_period": 14400,
+    "cert_max_by_issuer": 100,
+    "cert_min_received_cert_to_issue_cert": 5,
+    "cert_renewable_period": 172800,
+    "cert_validity_period": 2102400,
+    "idty_confirm_period": 14400,
+    "idty_creation_period": 14400,
+    "membership_period": 1051200,
+    "membership_renewable_period": 172800,
+    "pending_membership_period": 172800,
+    "ud_creation_period": 14400,
+    "ud_reeval_period": 100800,
+    "smith_cert_period": 14400,
+    "smith_cert_max_by_issuer": 12,
     "smith_cert_min_received_cert_to_issue_cert": 2,
-    "smith_cert_renewable_period": 50,
-    "smith_cert_validity_period": 100000,
-    "smith_membership_period": 100000,
-    "smith_membership_renewable_period": 50,
-    "smith_pending_membership_period": 500,
-    "smiths_wot_first_cert_issuable_on": 20,
-    "smiths_wot_min_cert_for_membership": 2,
-    "wot_first_cert_issuable_on": 20,
-    "wot_min_cert_for_create_idty_right": 2,
-    "wot_min_cert_for_membership": 2
+    "smith_cert_renewable_period": 172800,
+    "smith_cert_validity_period": 2102400,
+    "smith_membership_period": 1051200,
+    "smith_membership_renewable_period": 172800,
+    "smith_pending_membership_period": 172800,
+    "smiths_wot_first_cert_issuable_on": 14400,
+    "smiths_wot_min_cert_for_membership": 3,
+    "wot_first_cert_issuable_on": 0,
+    "wot_min_cert_for_create_idty_right": 5,
+    "wot_min_cert_for_membership": 5
   },
   "smiths": {
+    "Elois0": {
+      "certs": ["Elois1", "Elois2", "Elois3", "Elois4"],
+      "session_keys": "0xb67db3acc0ec68327e9e258aa5247a0f504616142ecb445c2540b9bdb223b5bea0beb8d9dea455ad5591961c868e59e0760e6e819a85c89ea7cbb527a0944241a0beb8d9dea455ad5591961c868e59e0760e6e819a85c89ea7cbb527a0944241a0beb8d9dea455ad5591961c868e59e0760e6e819a85c89ea7cbb527a0944241"
+    },
     "Elois1": {
-      "certs": ["Elois2", "Elois3"],
-      "session_keys": "0x90ea1e9059fd30860fc14370b62a3675a720763913e0aa41fa01b268c33afd3b64c9301d94f7a043ac6714c8a6301541e56e833c1b13170c19f9785fa469407864c9301d94f7a043ac6714c8a6301541e56e833c1b13170c19f9785fa469407864c9301d94f7a043ac6714c8a6301541e56e833c1b13170c19f9785fa4694078"
+      "certs": ["Elois0", "Elois2", "Elois3", "Elois4"]
     },
     "Elois2": {
-      "certs": ["Elois1", "Elois3"]
+      "certs": ["Elois0", "Elois1", "Elois3", "Elois4"]
     },
     "Elois3": {
-      "certs": ["Elois1", "Elois2"]
+      "certs": ["Elois0", "Elois1", "Elois2", "Elois4"]
+    },
+    "Elois4": {
+      "certs": ["Elois0", "Elois1", "Elois2", "Elois3"]
     }
   },
-  "sudo_key": "5H95G8bwuf4yyNNNa83hDhj7wpYaSRhZiGezZ9TDbyqNdAhY"
+  "sudo_key": "5Co5AWcBiz4HaAEpu8BxLdghnCob89rFGU5yQ65WP3t2jsyB"
 }
