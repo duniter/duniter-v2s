@@ -75,6 +75,50 @@ fn test_create_identity_ok() {
 }
 
 #[test]
+fn test_create_identity_but_not_confirm_it() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice()],
+    })
+    .execute_with(|| {
+        // We need to initialize at least one block before any call
+        run_to_block(1);
+
+        // Alice should be able te create an identity
+        assert_ok!(Identity::create_identity(Origin::signed(1), 2));
+
+        // The identity shoud expire in blocs #3
+        run_to_block(3);
+        let events = System::events();
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0],
+            EventRecord {
+                phase: Phase::Initialization,
+                event: Event::Identity(crate::Event::IdtyRemoved { idty_index: 2 }),
+                topics: vec![],
+            }
+        );
+
+        // We shoud be able to recreate the identity
+        run_to_block(4);
+        assert_ok!(Identity::create_identity(Origin::signed(1), 2));
+        let events = System::events();
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0],
+            EventRecord {
+                phase: Phase::Initialization,
+                event: Event::Identity(crate::Event::IdtyCreated {
+                    idty_index: 3,
+                    owner_key: 2,
+                }),
+                topics: vec![],
+            }
+        );
+    });
+}
+
+#[test]
 fn test_idty_creation_period() {
     new_test_ext(IdentityConfig {
         identities: vec![alice()],
