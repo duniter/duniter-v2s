@@ -72,6 +72,9 @@ pub enum Subcommand {
     /// The custom benchmark subcommmand benchmarking runtime pallets.
     #[clap(name = "benchmark", about = "Benchmark runtime pallets.")]
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
+
+    /// Generate completion for various shell interpreters
+    Completion(Completion),
 }
 
 /// Block authoring scheme to be used by the node
@@ -84,6 +87,10 @@ pub enum Sealing {
     /// Author a block upon receiving an RPC command
     Manual,
     /// Author blocks at a regular interval specified in milliseconds
+    // Clap limitiation with non-unit variant.
+    // While it compiles just fine with clap alone, clap_complete emits a compile-time error.
+    // See https://github.com/clap-rs/clap/issues/3543
+    #[clap(skip)]
     Interval(u64),
 }
 
@@ -109,4 +116,10 @@ impl std::str::FromStr for Sealing {
             }
         })
     }
+}
+
+#[derive(Debug, clap::Args)]
+pub struct Completion {
+    #[clap(short, long, arg_enum)]
+    pub generator: clap_complete::Shell,
 }

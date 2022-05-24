@@ -27,6 +27,7 @@ use crate::service::GDevExecutor;
 use crate::service::GTestExecutor;
 use crate::service::{IdentifyRuntimeType, RuntimeType};
 use crate::{chain_spec, service};
+use clap::CommandFactory;
 use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 
 impl SubstrateCli for Cli {
@@ -258,6 +259,16 @@ pub fn run() -> sc_cli::Result<()> {
 				You can enable it with `--features runtime-benchmarks`."
                     .into())
             }
+        }
+        Some(Subcommand::Completion(cmd)) => {
+            let command = &mut Cli::command();
+            clap_complete::generate(
+                cmd.generator,
+                command,
+                command.get_name().to_string(),
+                &mut std::io::stdout(),
+            );
+            Ok(())
         }
         None => {
             let runner = cli.create_runner(&cli.run)?;
