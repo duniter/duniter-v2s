@@ -18,7 +18,7 @@ mod gen_calls_doc;
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use std::io::{BufReader, BufWriter, Read, Write};
+use std::io::{BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -82,13 +82,12 @@ fn inject_runtime_code(raw_spec: &Path, runtime: &Path) -> Result<()> {
     // Read runtime code
     // SAFETY: `mmap` is fundamentally unsafe since technically the file can change
     //         underneath us while it is mapped; in practice it's unlikely to be a problem
-    let mut file =
-        std::fs::File::open(runtime).with_context(|| "Failed to open runtime wasm file")?;
-    let mut runtime_code =
+    let file = std::fs::File::open(runtime).with_context(|| "Failed to open runtime wasm file")?;
+    let runtime_code =
         unsafe { memmap2::Mmap::map(&file).with_context(|| "Failed to read runtime wasm file")? };
 
     // Read raw spec
-    let mut file = std::fs::File::open(raw_spec).with_context(|| "Failed to open raw spec file")?;
+    let file = std::fs::File::open(raw_spec).with_context(|| "Failed to open raw spec file")?;
     let reader = BufReader::new(file);
     let mut json: serde_json::Value =
         serde_json::from_reader(reader).with_context(|| "Failed to read raw spec file")?;
@@ -124,7 +123,7 @@ fn inject_runtime_code(raw_spec: &Path, runtime: &Path) -> Result<()> {
 
     // Write modified raw specs
 
-    let mut file = std::fs::File::create(raw_spec)?;
+    let file = std::fs::File::create(raw_spec)?;
 
     serde_json::to_writer_pretty(BufWriter::new(file), &json)
         .with_context(|| "fail to write raw specs")?;
