@@ -17,7 +17,8 @@
 use common_runtime::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp_core::{blake2_256, Decode, Encode, H256};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::ops::AddAssign;
 
 type MembershipData = sp_membership::MembershipData<u32>;
 
@@ -216,8 +217,8 @@ where
     }
 
     // CERTIFICATIONS //
-
     let mut certs_by_issuer = BTreeMap::new();
+    let mut counter_by_receiver = HashMap::<_, u32>::new();
     for (idty_name, identity) in &identities {
         let issuer_index = idty_index_of
             .get(&idty_name)
@@ -228,12 +229,26 @@ where
                 .get(receiver)
                 .ok_or(format!("Identity '{}' not exist", receiver))?;
             issuer_certs.insert(*receiver_index, genesis_certs_expire_on);
+            counter_by_receiver
+                .entry(receiver)
+                .or_default()
+                .add_assign(1);
         }
         certs_by_issuer.insert(*issuer_index, issuer_certs);
+    }
+    // TODO: move this check in the runtime genesis build
+    for (receiver, counter) in counter_by_receiver {
+        if counter < 5 {
+            return Err(format!(
+                "Identity '{}' not have enough certs ({}/5)",
+                receiver, counter
+            ));
+        }
     }
 
     // SMITHS SUB-WOT //
 
+    let mut counter_by_receiver = HashMap::<String, u32>::new();
     let mut initial_authorities = BTreeMap::new();
     let mut online_authorities_counter = 0;
     let mut session_keys_map = BTreeMap::new();
@@ -298,6 +313,10 @@ where
                 .get(receiver)
                 .ok_or(format!("Identity '{}' not exist", receiver))?;
             issuer_certs.insert(*receiver_index, genesis_smith_certs_expire_on);
+            counter_by_receiver
+                .entry(receiver.clone())
+                .or_default()
+                .add_assign(1);
         }
         smiths_certs_by_issuer.insert(*idty_index, issuer_certs);
 
@@ -309,6 +328,15 @@ where
                 renewable_on: genesis_smith_memberships_renewable_on,
             },
         );
+    }
+    // TODO: move this check in the runtime genesis build
+    for (receiver, counter) in counter_by_receiver {
+        if counter < 3 {
+            return Err(format!(
+                "Identity '{}' not have enough certs ({}/3)",
+                receiver, counter
+            ));
+        }
     }
 
     if maybe_force_authority.is_none() && online_authorities_counter == 0 {
