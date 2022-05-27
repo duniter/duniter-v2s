@@ -15,3 +15,7 @@ Then, the runtime wasm bytecode is generated in this location:
 ```
 runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm
 ```
+
+To compare it to last official :
+- download it here : https://git.duniter.org/nodes/rust/duniter-v2s/-/releases
+- compare `sha256sum` of it and of the one you've built
