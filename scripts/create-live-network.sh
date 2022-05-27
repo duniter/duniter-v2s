@@ -64,7 +64,7 @@ echo "VALIDATOR_NODE_KEY=$VALIDATOR_NODE_KEY"
 
 # generate docker-compose file
 echo "generate docker-compose file…"
-cp docker/compose-examples/live-template.docker-compose.yml $WORK_DIR/docker-compose.yml
+cp docker/compose/live-template.docker-compose.yml $WORK_DIR/docker-compose.yml
 sed -i -e "s/DUNITER_IMAGE_TAG/$DUNITER_IMAGE_TAG/g" $WORK_DIR/docker-compose.yml
 sed -i -e "s/CURRENCY/$CURRENCY/g" $WORK_DIR/docker-compose.yml
 sed -i -e "s/RPC_NODE_KEY/$RPC_NODE_KEY/g" $WORK_DIR/docker-compose.yml

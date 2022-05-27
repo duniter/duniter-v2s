@@ -30,7 +30,7 @@ Then open `https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944` in a b
 This repository contains a docker-compose file at the root of the repository, it is configured to
 be able to launch a development node on the ğdev currency (single-node currency).
 
-Other docker-compose files are suggested in the `docker/compose-examples` folder:
+Other docker-compose files are suggested in the `docker/compose` folder:
 
 - `gtest-local2.docker-compose.yml`: Configured to launch 2 validators on ğdem currency.
 
