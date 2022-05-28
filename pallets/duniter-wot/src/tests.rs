@@ -16,7 +16,6 @@
 
 use crate::mock::Identity;
 use crate::mock::*;
-use crate::WotDiff;
 use frame_support::assert_err;
 use frame_support::assert_ok;
 use frame_support::instances::Instance1;
@@ -87,7 +86,6 @@ fn test_create_idty_ok() {
         );
         assert_eq!(Identity::identity(6).unwrap().status, IdtyStatus::Created);
         assert_eq!(Identity::identity(6).unwrap().removable_on, 4);
-        assert!(DuniterWot::wot_diffs().is_empty());
     });
 }
 
@@ -104,9 +102,6 @@ fn test_new_idty_validation() {
             Origin::signed(6),
             IdtyName::from("Ferdie"),
         ));
-
-        // Ferdie is not yet validated, so there should be no wot diff
-        assert!(DuniterWot::wot_diffs().is_empty());
 
         // Bob should be able to certify Ferdie
         run_to_block(4);
@@ -143,17 +138,6 @@ fn test_new_idty_validation() {
                 event: Event::Identity(pallet_identity::Event::IdtyValidated { idty_index: 6 }),
                 topics: vec![],
             }
-        );
-
-        // Ferdie has just been validated, so the wot diff should contain her entry and all her
-        // certifications
-        assert_eq!(
-            DuniterWot::wot_diffs(),
-            vec![
-                WotDiff::AddNode(6),
-                WotDiff::AddLink(1, 6),
-                WotDiff::AddLink(2, 6)
-            ]
         );
     });
 }
@@ -231,7 +215,6 @@ fn test_idty_membership_expire_them_requested() {
                 topics: vec![],
             }
         );
-        assert_eq!(DuniterWot::wot_diffs(), vec![WotDiff::DisableNode(3),]);
 
         // Charlie's identity should be removed at block #5
         assert!(Identity::identity(3).is_none());
@@ -275,8 +258,6 @@ fn test_idty_membership_expire_them_requested() {
                 event: Event::Identity(pallet_identity::Event::IdtyValidated(3)),
                 topics: vec![],
             }
-        );
-
-        assert_eq!(DuniterWot::wot_diffs(), vec![WotDiff::AddNode(3),]);*/
+        );*/
     });
 }
