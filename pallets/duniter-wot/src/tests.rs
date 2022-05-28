@@ -24,7 +24,7 @@ use pallet_identity::{IdtyName, IdtyStatus};
 
 #[test]
 fn test_genesis_build() {
-    new_test_ext(3).execute_with(|| {
+    new_test_ext(3, 2).execute_with(|| {
         run_to_block(1);
         // Verify state
         assert_eq!(Identity::identities_count(), 3);
@@ -38,7 +38,7 @@ fn test_genesis_build() {
 
 #[test]
 fn test_creator_not_allowed_to_create_idty() {
-    new_test_ext(3).execute_with(|| {
+    new_test_ext(3, 2).execute_with(|| {
         run_to_block(1);
 
         // Alice should not be able te create an identity before block #2
@@ -51,8 +51,56 @@ fn test_creator_not_allowed_to_create_idty() {
 }
 
 #[test]
+fn test_join_smiths() {
+    new_test_ext(5, 3).execute_with(|| {
+        run_to_block(2);
+
+        // Dave shoud be able to requst smith membership
+        assert_ok!(SmithsMembership::request_membership(
+            Origin::signed(4),
+            crate::MembershipMetaData(4)
+        ));
+
+        run_to_block(3);
+
+        // Then, Alice should be able to send a smith cert to Dave
+        assert_ok!(SmithsCert::add_cert(Origin::signed(1), 4));
+    });
+}
+
+#[test]
+fn test_revoke_smiths_them_rejoin() {
+    new_test_ext(5, 4).execute_with(|| {
+        run_to_block(2);
+
+        // Dave shoud be able to revoke is smith membership
+        assert_ok!(SmithsMembership::revoke_membership(
+            Origin::signed(4),
+            Some(4)
+        ));
+
+        // Dave should not be able te re-request membership before the RevocationPeriod end
+        run_to_block(3);
+        assert_err!(
+            SmithsMembership::request_membership(Origin::signed(4), crate::MembershipMetaData(4)),
+            pallet_membership::Error::<Test, crate::Instance2>::MembershipRevokedRecently
+        );
+
+        // At bloc #6, Dave shoud be able to request smith membership
+        run_to_block(6);
+        assert_ok!(SmithsMembership::request_membership(
+            Origin::signed(4),
+            crate::MembershipMetaData(4)
+        ));
+
+        // Then, Alice should be able to send a smith cert to Dave
+        assert_ok!(SmithsCert::add_cert(Origin::signed(1), 4));
+    });
+}
+
+#[test]
 fn test_create_idty_ok() {
-    new_test_ext(5).execute_with(|| {
+    new_test_ext(5, 2).execute_with(|| {
         run_to_block(2);
 
         // Alice should be able te create an identity at block #2
@@ -91,7 +139,7 @@ fn test_create_idty_ok() {
 
 #[test]
 fn test_new_idty_validation() {
-    new_test_ext(5).execute_with(|| {
+    new_test_ext(5, 2).execute_with(|| {
         // Alice create Ferdie identity
         run_to_block(2);
         assert_ok!(Identity::create_identity(Origin::signed(1), 6));
@@ -144,7 +192,7 @@ fn test_new_idty_validation() {
 
 #[test]
 fn test_confirm_idty_ok() {
-    new_test_ext(5).execute_with(|| {
+    new_test_ext(5, 2).execute_with(|| {
         run_to_block(2);
 
         // Alice create Ferdie identity
@@ -186,7 +234,7 @@ fn test_confirm_idty_ok() {
 
 #[test]
 fn test_idty_membership_expire_them_requested() {
-    new_test_ext(3).execute_with(|| {
+    new_test_ext(3, 2).execute_with(|| {
         run_to_block(4);
 
         // Alice renew her membership
@@ -194,10 +242,11 @@ fn test_idty_membership_expire_them_requested() {
         // Bob renew his membership
         assert_ok!(Membership::renew_membership(Origin::signed(2), None));
 
-        // Charlie's membership should expire at block #5
-        run_to_block(5);
+        // Charlie's membership should expire at block #8
+        run_to_block(8);
         assert!(Membership::membership(3).is_none());
         let events = System::events();
+        println!("{:?}", events);
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[0],
@@ -216,7 +265,7 @@ fn test_idty_membership_expire_them_requested() {
             }
         );
 
-        // Charlie's identity should be removed at block #5
+        // Charlie's identity should be removed at block #8
         assert!(Identity::identity(3).is_none());
 
         // Alice can't renew it's cert to Charlie
@@ -224,40 +273,5 @@ fn test_idty_membership_expire_them_requested() {
             Cert::add_cert(Origin::signed(1), 3),
             pallet_certification::Error::<Test, Instance1>::CertNotAllowed
         );
-
-        /*// Charlie should be able to request membership
-        run_to_block(6);
-        assert_ok!(Membership::request_membership(
-            Origin::signed(3),
-            crate::MembershipMetaData(3)
-        ));
-
-        // Charlie should re-enter in the wot immediatly
-        let events = System::events();
-        assert_eq!(events.len(), 3);
-        assert_eq!(
-            events[0],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Membership(pallet_membership::Event::MembershipRequested(3)),
-                topics: vec![],
-            }
-        );
-        assert_eq!(
-            events[1],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Membership(pallet_membership::Event::MembershipAcquired(3)),
-                topics: vec![],
-            }
-        );
-        assert_eq!(
-            events[2],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyValidated(3)),
-                topics: vec![],
-            }
-        );*/
     });
 }

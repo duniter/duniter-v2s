@@ -41,6 +41,9 @@ frame_support::construct_runtime!(
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>},
         Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>},
         Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>},
+        SmithsSubWot: pallet_duniter_wot::<Instance2>::{Pallet},
+        SmithsMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>},
+        SmithsCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
 );
 
@@ -122,7 +125,7 @@ impl pallet_identity::Config for Test {
 
 // Membership
 parameter_types! {
-    pub const MembershipPeriod: u64 = 5;
+    pub const MembershipPeriod: u64 = 8;
     pub const PendingMembershipPeriod: u64 = 3;
     pub const RenewablePeriod: u64 = 2;
     pub const RevocationPeriod: u64 = 4;
@@ -165,10 +168,72 @@ impl pallet_certification::Config<Instance1> for Test {
     type ValidityPeriod = ValidityPeriod;
 }
 
+// SMITHS SUB-WOT //
+
+parameter_types! {
+    pub const SmithsMinCertForMembership: u32 = 2;
+    pub const SmithsFirstIssuableOn: u64 = 2;
+}
+
+impl pallet_duniter_wot::Config<Instance2> for Test {
+    type IsSubWot = frame_support::traits::ConstBool<true>;
+    type MinCertForMembership = SmithsMinCertForMembership;
+    type MinCertForCreateIdtyRight = frame_support::traits::ConstU32<0>;
+    type FirstIssuableOn = SmithsFirstIssuableOn;
+}
+
+// SmithsMembership
+parameter_types! {
+    pub const SmithsMembershipPeriod: u64 = 20;
+    pub const SmithsPendingMembershipPeriod: u64 = 3;
+    pub const SmithsRenewablePeriod: u64 = 2;
+    pub const SmithsRevocationPeriod: u64 = 4;
+}
+
+impl pallet_membership::Config<Instance2> for Test {
+    type IsIdtyAllowedToRenewMembership = SmithsSubWot;
+    type IsIdtyAllowedToRequestMembership = SmithsSubWot;
+    type Event = Event;
+    type IdtyId = IdtyIndex;
+    type IdtyIdOf = Identity;
+    type MembershipPeriod = SmithsMembershipPeriod;
+    type MetaData = crate::MembershipMetaData<u64>;
+    type OnEvent = SmithsSubWot;
+    type PendingMembershipPeriod = SmithsPendingMembershipPeriod;
+    type RenewablePeriod = SmithsRenewablePeriod;
+    type RevocationPeriod = SmithsRevocationPeriod;
+}
+
+// SmithsCert
+parameter_types! {
+    pub const SmithsMaxByIssuer: u8 = 8;
+    pub const SmithsMinReceivedCertToBeAbleToIssueCert: u32 = 2;
+    pub const SmithsCertRenewablePeriod: u64 = 4;
+    pub const SmithsCertPeriod: u64 = 2;
+    pub const SmithsValidityPeriod: u64 = 10;
+}
+
+impl pallet_certification::Config<Instance2> for Test {
+    type CertPeriod = SmithsCertPeriod;
+    type Event = Event;
+    type IdtyIndex = IdtyIndex;
+    type IdtyIndexOf = Identity;
+    type IsCertAllowed = DuniterWot;
+    type MaxByIssuer = SmithsMaxByIssuer;
+    type MinReceivedCertToBeAbleToIssueCert = SmithsMinReceivedCertToBeAbleToIssueCert;
+    type OnNewcert = DuniterWot;
+    type OnRemovedCert = DuniterWot;
+    type CertRenewablePeriod = SmithsCertRenewablePeriod;
+    type ValidityPeriod = SmithsValidityPeriod;
+}
+
 pub const NAMES: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"];
 
 // Build genesis storage according to the mock runtime.
-pub fn new_test_ext(initial_identities_len: usize) -> sp_io::TestExternalities {
+pub fn new_test_ext(
+    initial_identities_len: usize,
+    initial_smiths_len: usize,
+) -> sp_io::TestExternalities {
     let mut t = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
         .unwrap();
@@ -213,6 +278,29 @@ pub fn new_test_ext(initial_identities_len: usize) -> sp_io::TestExternalities {
     .assimilate_storage(&mut t)
     .unwrap();
 
+    pallet_membership::GenesisConfig::<Test, Instance2> {
+        memberships: (1..=initial_smiths_len)
+            .map(|i| {
+                (
+                    i as u32,
+                    sp_membership::MembershipData {
+                        expire_on: SmithsMembershipPeriod::get(),
+                        renewable_on: SmithsRenewablePeriod::get(),
+                    },
+                )
+            })
+            .collect(),
+    }
+    .assimilate_storage(&mut t)
+    .unwrap();
+
+    pallet_certification::GenesisConfig::<Test, Instance2> {
+        certs_by_issuer: clique_wot(initial_smiths_len, ValidityPeriod::get()),
+        apply_cert_period_at_genesis: true,
+    }
+    .assimilate_storage(&mut t)
+    .unwrap();
+
     frame_support::BasicExternalities::execute_with_storage(&mut t, || {
         // manually increment genesis identities sufficient counter
         // In real world, this should be handle manually by genesis creator
@@ -233,6 +321,9 @@ pub fn run_to_block(n: u64) {
         Identity::on_finalize(System::block_number());
         Membership::on_finalize(System::block_number());
         Cert::on_finalize(System::block_number());
+        SmithsSubWot::on_finalize(System::block_number());
+        SmithsMembership::on_finalize(System::block_number());
+        SmithsCert::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
         System::reset_events();
         System::set_block_number(System::block_number() + 1);
@@ -241,6 +332,9 @@ pub fn run_to_block(n: u64) {
         Identity::on_initialize(System::block_number());
         Membership::on_initialize(System::block_number());
         Cert::on_initialize(System::block_number());
+        SmithsSubWot::on_initialize(System::block_number());
+        SmithsMembership::on_initialize(System::block_number());
+        SmithsCert::on_initialize(System::block_number());
     }
 }
 
