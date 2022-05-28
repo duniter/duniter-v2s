@@ -20,6 +20,7 @@ runtime-benchmarks = [
 ]
 std = [
     'codec/std',
+    'duniter-primitives/std',
     'frame-support/std',
     'frame-system/std',
 	'log/std',
@@ -43,6 +44,7 @@ std = [
 ]
 
 [dependencies]
+duniter-primitives = { path = '../../primitives/duniter', default-features = false }
 pallet-authority-members = { path = '../../pallets/authority-members', default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
 pallet-duniter-account = { path = '../../pallets/duniter-account', default-features = false }

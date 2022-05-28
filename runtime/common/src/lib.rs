@@ -84,6 +84,6 @@ impl<Runtime: pallet_babe::Config> frame_support::pallet_prelude::Get<u64>
 pub struct IdtyNameValidatorImpl;
 impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorImpl {
     fn validate(idty_name: &pallet_identity::IdtyName) -> bool {
-        idty_name.0.len() >= 3 && idty_name.0.len() <= 64
+        duniter_primitives::validate_idty_name(&idty_name.0)
     }
 }

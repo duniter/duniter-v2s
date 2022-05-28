@@ -1,0 +1,51 @@
+[package]
+authors = ['librelois <c@elo.tf>']
+description = 'primitives for duniter runtime.'
+edition = '2018'
+homepage = 'https://substrate.dev'
+license = 'AGPL-3.0'
+name = 'duniter-primitives'
+readme = 'README.md'
+repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
+version = '3.0.0'
+
+[features]
+default = ['std']
+std = [
+    'codec/std',
+    'frame-support/std',
+	'sp-runtime/std',
+	'sp-std/std',
+]
+try-runtime = ['frame-support/try-runtime']
+
+[dependencies]
+
+# substrate
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '2.3.1'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/librelois/substrate.git'
+branch = 'duniter-monthly-2022-02'
+
+### DOC ###
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
