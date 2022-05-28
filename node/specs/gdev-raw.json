@@ -1,6 +1,8 @@
 {
   "bootNodes": [
-    "/ip4/149.202.87.126/tcp/30334/p2p/12D3KooWMb8hmxdtBQhGLB8caokbAZQ3YokN9erMe6oAEsPDrwYf"
+    "/dns/gdev.elo.tf/tcp/30333/p2p/12D3KooWJoNxU9NKHr7y5pmWYW1LLbMrBMTnEzhm7n9mpbKrt45B",
+    "/dns/gdev.librelois.fr/tcp/30334/p2p/12D3KooWMb8hmxdtBQhGLB8caokbAZQ3YokN9erMe6oAEsPDrwYf",
+    "/dns/gdev.cgeek.fr/tcp/30333/p2p/12D3KooWF4QpicSWSD32f6yaqdr4eSqudrK7AbR9LvgUDGdSqukc"
   ],
   "chainType": "Live",
   "codeSubstitutes": {},
