@@ -77,7 +77,7 @@ common_runtime::declare_session_keys! {}
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("g1"),
-    impl_name: create_runtime_str!("g1"),
+    impl_name: create_runtime_str!("duniter-g1"),
     authoring_version: 1,
     // The version of the runtime specification. A full node will not attempt to use its native
     //   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
