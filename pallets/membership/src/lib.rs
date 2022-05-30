@@ -405,10 +405,12 @@ pub mod pallet {
             let mut total_weight: Weight = 0;
 
             for idty_id in PendingMembershipsExpireOn::<T, I>::take(block_number) {
-                PendingMembership::<T, I>::remove(&idty_id);
-                Self::deposit_event(Event::PendingMembershipExpired(idty_id));
-                total_weight +=
-                    T::OnEvent::on_event(&sp_membership::Event::PendingMembershipExpired(idty_id));
+                if PendingMembership::<T, I>::take(&idty_id).is_some() {
+                    Self::deposit_event(Event::PendingMembershipExpired(idty_id));
+                    total_weight += T::OnEvent::on_event(
+                        &sp_membership::Event::PendingMembershipExpired(idty_id),
+                    );
+                }
             }
 
             total_weight
