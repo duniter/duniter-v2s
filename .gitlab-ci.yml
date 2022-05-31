@@ -220,6 +220,7 @@ deploy_docker_release_sha:
   extends: .docker-build-app-image
   rules:
     - when: manual
+  allow_failure: true
   variables:
     DOCKERFILE_PATH: "docker/Dockerfile"
     IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
