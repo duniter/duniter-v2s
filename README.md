@@ -2,17 +2,49 @@
 
 A rewriting of duniter based on [Substrate](https://www.substrate.io/) framework.
 
-## Usage
+duniter-v2s is under active development, only a test network called "ĞDev" is deployed.
 
-### Docker
+## Use
 
-The easiest way to use duniter-v2s is to use the docker image.
+### Join ĞDev network
 
-#### Releases images
+The easiest way is to use the docker image.
 
-For the moment, duniter-v2s does not have a first release yet.
+Minimal command to deploy a **temporary** mirror peer:
 
-#### Test images
+```docker
+docker run -it -p9944:9944 -e DUNITER_CHAIN_NAME=gdev duniter/duniter-v2s:v0.1.0 --tmp --execution=Wasm
+```
+
+To go further, read [How to deploy a permanent mirror node on ĞDev network](./docs/user/mirror.md).
+
+### Create your local blockchain
+
+It can be useful to deploy your local blockchain, for instance to have a controled environement
+to develop/test an application that interact with the blockchain.
+
+```docker
+docker run -it -p9944:9944 duniter/duniter-v2s:v0.1.0 --tmp
+```
+
+Or use the `docker-compose.yml` at the root of this repository.
+
+#### Control when your local blockchain should produce blocks
+
+By default, your local blockchain produce a new block every 6 seconds, which is not practical in some cases.
+
+You can decide when to produce blocks with the cli option `--sealing`, , there are 2 possible modes:
+
+* `--sealing=instant`: produce a block immediately upon receiving a transaction into the transaction pool
+* `--sealing=manual`: produce a block upon receiving an RPC request (method `engine_createBlock`).
+
+### Autocompletion
+
+See [autocompletion](./docs/user/autocompletion.md).
+
+## Test
+
+### Test a specific commit
 
 At each commit on master, an image with the tag `debug-sha-********` is published, where `********`
 corresponds to the first 8 hash characters of the commit.
@@ -25,20 +57,25 @@ docker run -it -p9944:9944 --name duniter-v2s duniter/duniter-v2s:debug-sha-b836
 
 Then open `https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944` in a browser.
 
-### Docker compose
+Enable detailed logging:
 
-This repository contains a docker-compose file at the root of the repository, it is configured to
-be able to launch a development node on the ğdev currency (single-node currency).
+```docker
+docker run -it -p9944:9944 --name duniter-v2s \
+  -e RUST_LOG=debug \
+  -e RUST_BACKTRACE=1 \
+  -lruntime=debug \
+  duniter/duniter-v2s:debug-sha-b836f1a6
+```
 
-Other docker-compose files are suggested in the `docker/compose` folder:
+## Contribute
 
-- `gtest-local2.docker-compose.yml`: Configured to launch 2 validators on ğdem currency.
+Before any contribution, please read carefully the [CONTRIBUTING](./CONTRIBUTING.md) file and our [git conventions](./docs/dev/git-conventions.md).
 
-## Setup
+### Setup your dev environment
 
 First, complete the [basic setup instructions](./docs/dev/setup.md).
 
-## Build
+### Build
 
 NOTE: You must first follow the instructions in the [Setup] section (#setup).
 
@@ -48,7 +85,7 @@ Use the following command to build the node without launching it:
 cargo build
 ```
 
-## Run
+### Run
 
 Use Rust's native `cargo` command to build and launch the node:
 
@@ -56,76 +93,23 @@ Use Rust's native `cargo` command to build and launch the node:
 cargo run -- --dev --tmp
 ```
 
-## Contribute
-
-Before any contribution, please read carefully the [CONTRIBUTING](./CONTRIBUTING.md) file and our [git conventions](./docs/dev/git-conventions.md).
-
-## Embedded Docs
-
-Once the project has been built, the following command can be used to explore all parameters and
-subcommands:
-
-```sh
-./target/release/duniter -h
-```
-
-### Autocompletion
-
-One can generate autocompletion for its favorite shell using the following option:
-
-```sh
-cargo run --release -- completion --generator <GENERATOR>
-```
-
-Where `GENERATOR` can be any of `bash`, `elvish`, `fish`, `powershell` and `zsh`.
-
-#### Bash
-
-First, get the completion file in a known place:
-
-```sh
-mkdir -p ~/.local/share/duniter
-cargo run --release -- completion --generator bash > ~/.local/share/duniter/completion.bash
-```
-
-You can now manually source the file when needed:
-
-```sh
-source ~/.local/share/duniter/completion.bash
-```
-
-Or you can automatically source it at `bash` startup by adding this to your `~/.bashrc` file:
-
-```sh
-[[ -f $HOME/.local/share/duniter/completion.bash ]] && source $HOME/.local/share/duniter/completion.bash
-```
-
-You can now enjoy semantic completion of the `./target/release/duniter` command using `<Tab>` key.
+This will deploy a local blockchain with test accounts (Alice, Bob, etc) in the genesis.
 
 ## Single-Node Development Chain
 
 This command will start the single-node development chain with persistent state:
 
 ```bash
-./target/debug/duniter --dev
+./target/debug/duniter --dev --tmp
 ```
 
-Purge the development chain's state:
-
-```bash
-./target/debug/duniter purge-chain --dev
-```
+Then open `https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944` in a browser.
 
 Start the development chain with detailed logging:
 
 ```bash
 RUST_LOG=debug RUST_BACKTRACE=1 ./target/debug/duniter -lruntime=debug --dev
 ```
-
-## Connect with Polkadot-JS Apps Front-end
-
-Once the node template is running locally, you can connect it with **Polkadot-JS Apps** front-end
-to interact with your chain. [Click here](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944) connecting the Apps to your local node template.
 
 ## Multi-Node Local Testnet
 
@@ -258,29 +242,3 @@ A FRAME pallet is compromised of a number of blockchain primitives:
 - Errors: When a dispatchable fails, it returns an error.
 - Config: The `Config` configuration interface is used to define the types and parameters upon
   which a FRAME pallet depends.
-
-## Run in Docker
-
-First, install [Docker](https://docs.docker.com/get-docker/) and
-[Docker Compose](https://docs.docker.com/compose/install/).
-
-Then run the following command to start a single node development chain.
-
-```bash
-./scripts/docker_run.sh
-```
-
-This command will firstly compile your code, and then start a local development network. You can
-also replace the default command (`cargo build && ./target/debug/duniter --dev --ws-external`)
-by appending your own. A few useful ones are as follow.
-
-```bash
-# Run duniter node without re-compiling
-./scripts/docker_run.sh ./target/debug/duniter --dev --ws-external
-
-# Purge the local dev chain
-./scripts/docker_run.sh ./target/debug/duniter purge-chain --dev
-
-# Check whether the code is compilable
-./scripts/docker_run.sh cargo check
-```
