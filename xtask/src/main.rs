@@ -15,6 +15,7 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 mod gen_calls_doc;
+mod release_runtime;
 
 use anyhow::{Context, Result};
 use clap::Parser;
@@ -48,6 +49,8 @@ enum DuniterXTaskCommand {
         /// Raw spec filepath
         raw_spec: PathBuf,
     },
+    /// Release a new runtime
+    ReleaseRuntime { spec_version: u32 },
     /// Execute unit tests and integration tests
     /// End2tests are skipped
     Test,
@@ -73,6 +76,9 @@ fn main() -> Result<()> {
         DuniterXTaskCommand::GenCallsDoc => gen_calls_doc::gen_calls_doc(),
         DuniterXTaskCommand::InjectRuntimeCode { runtime, raw_spec } => {
             inject_runtime_code(&raw_spec, &runtime)
+        }
+        DuniterXTaskCommand::ReleaseRuntime { spec_version } => {
+            release_runtime::release_runtime(spec_version)
         }
         DuniterXTaskCommand::Test => test(),
     }
