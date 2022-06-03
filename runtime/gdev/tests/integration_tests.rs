@@ -155,11 +155,11 @@ fn test_create_new_account_with_insufficient_balance() {
         .execute_with(|| {
             run_to_block(2);
 
-            // Should be able to transfer 2 units to a new account
+            // Should be able to transfer 4 units to a new account
             assert_ok!(Balances::transfer(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
-                200
+                400
             ));
             let events = System::events();
             //println!("{:#?}", events);
@@ -168,7 +168,7 @@ fn test_create_new_account_with_insufficient_balance() {
                 System::events()[0].event,
                 Event::Balances(pallet_balances::Event::Endowed {
                     account: AccountKeyring::Eve.to_account_id(),
-                    free_balance: 200,
+                    free_balance: 400,
                 })
             );
             assert_eq!(
@@ -176,7 +176,7 @@ fn test_create_new_account_with_insufficient_balance() {
                 Event::Balances(pallet_balances::Event::Transfer {
                     from: AccountKeyring::Alice.to_account_id(),
                     to: AccountKeyring::Eve.to_account_id(),
-                    amount: 200,
+                    amount: 400,
                 })
             );
 
@@ -190,25 +190,25 @@ fn test_create_new_account_with_insufficient_balance() {
                 System::events()[0].event,
                 Event::Account(pallet_duniter_account::Event::ForceDestroy {
                     who: AccountKeyring::Eve.to_account_id(),
-                    balance: 200,
+                    balance: 400,
                 })
             );
             assert_eq!(
                 System::events()[1].event,
                 Event::Balances(pallet_balances::Event::Deposit {
                     who: Treasury::account_id(),
-                    amount: 200,
+                    amount: 400,
                 })
             );
             assert_eq!(
                 System::events()[2].event,
-                Event::Treasury(pallet_treasury::Event::Deposit { value: 200 })
+                Event::Treasury(pallet_treasury::Event::Deposit { value: 400 })
             );
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 0
             );
-            assert_eq!(Balances::free_balance(Treasury::account_id()), 400);
+            assert_eq!(Balances::free_balance(Treasury::account_id()), 600);
         });
 }
 
