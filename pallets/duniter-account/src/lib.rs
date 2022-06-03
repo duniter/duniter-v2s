@@ -162,7 +162,7 @@ pub mod pallet {
                     // If the account is not self-sufficient, it must pay the account creation fees
                     let account_data = frame_system::Pallet::<T>::get(&account_id);
                     let price = T::NewAccountPrice::get();
-                    if account_data.free > price {
+                    if account_data.free >= T::ExistentialDeposit::get() + price {
                         // The account can pay the new account price, we should:
                         // 1. Increment providers to create the account for frame_system point of view
                         // 2. Withdraw the "new account price" amount
