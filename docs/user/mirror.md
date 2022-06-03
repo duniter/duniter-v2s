@@ -58,3 +58,11 @@ and replace `YOUR_DOMAIN` by your domain each time.
 Your node is now online as a mirror node. It's fully capable for wallet use.
 
 To go further, read [How to become a (black)smith](./smith.md)
+
+## Upgrade your node with minimal interruption
+
+1. Modify docker image tag on your compose file
+2. Run `docker compose pull`, this will pull the new image.
+3. Run `docker compose up -d --remove-orphans`, this will recreate the container
+4. Verify that your node restarted well `docker compose logs duniter-rpc`
+5. Remove the old image `docker images rmi duniter/duniter-v2s:OLD_TAG`
