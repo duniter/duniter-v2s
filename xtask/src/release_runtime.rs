@@ -83,7 +83,7 @@ pub(super) fn release_runtime(_spec_version: u32) -> Result<()> {
         std::str::from_utf8(&output.stdout)?
             .lines()
             .last()
-            .ok_or(anyhow!("empty srtool output"))?,
+            .ok_or_else(|| anyhow!("empty srtool output"))?,
     )
     .with_context(|| "Fail to parse srtool json output")?;
 
