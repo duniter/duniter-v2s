@@ -69,12 +69,20 @@ pub enum Subcommand {
     /// Verify a signature for a message, provided on STDIN, with a given (public or secret) key.
     Verify(sc_cli::VerifyCmd),
 
+    /// Generate completion for various shell interpreters
+    Completion(Completion),
+
     /// The custom benchmark subcommmand benchmarking runtime pallets.
     #[clap(name = "benchmark", about = "Benchmark runtime pallets.")]
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
-    /// Generate completion for various shell interpreters
-    Completion(Completion),
+    /// Try some command against runtime state.
+    #[cfg(feature = "try-runtime")]
+    TryRuntime(try_runtime_cli::TryRuntimeCmd),
+
+    /// Try some command against runtime state. Note: `try-runtime` feature must be enabled.
+    #[cfg(not(feature = "try-runtime"))]
+    TryRuntime,
 }
 
 /// Block authoring scheme to be used by the node

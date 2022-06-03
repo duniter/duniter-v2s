@@ -236,6 +236,16 @@ pub fn run() -> sc_cli::Result<()> {
         Some(Subcommand::Utils(cmd)) => cmd.run(&cli),
         Some(Subcommand::Vanity(cmd)) => cmd.run(),
         Some(Subcommand::Verify(cmd)) => cmd.run(),
+        Some(Subcommand::Completion(cmd)) => {
+            let command = &mut Cli::command();
+            clap_complete::generate(
+                cmd.generator,
+                command,
+                command.get_name().to_string(),
+                &mut std::io::stdout(),
+            );
+            Ok(())
+        }
         Some(Subcommand::Benchmark(cmd)) => {
             if cfg!(feature = "runtime-benchmarks") {
                 let runner = cli.create_runner(cmd)?;
@@ -252,7 +262,7 @@ pub fn run() -> sc_cli::Result<()> {
                     #[cfg(feature = "gdev")]
                     RuntimeType::GDev => runner
                         .sync_run(|config| cmd.run::<gdev_runtime::Block, GDevExecutor>(config)),
-                    _ => Err(sc_cli::Error::Application("unknown runtime".into())),
+                    _ => Err(sc_cli::Error::Application("unknown runtime type".into())),
                 }
             } else {
                 Err("Benchmarking wasn't enabled when building the node. \
@@ -260,16 +270,47 @@ pub fn run() -> sc_cli::Result<()> {
                     .into())
             }
         }
-        Some(Subcommand::Completion(cmd)) => {
-            let command = &mut Cli::command();
-            clap_complete::generate(
-                cmd.generator,
-                command,
-                command.get_name().to_string(),
-                &mut std::io::stdout(),
-            );
-            Ok(())
+        #[cfg(feature = "try-runtime")]
+        Some(Subcommand::TryRuntime(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            let chain_spec = &runner.config().chain_spec;
+
+            use sc_service::TaskManager;
+            let registry = &runner
+                .config()
+                .prometheus_config
+                .as_ref()
+                .map(|cfg| &cfg.registry);
+            let task_manager = TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+                .map_err(|e| {
+                    sc_cli::Error::Application(format!("Fail to create TaskManager: {}", e).into())
+                })?;
+
+            // Ensure dev spec
+            if !chain_spec.id().ends_with("dev") {
+                return Err(sc_cli::Error::Application(
+                    "try-runtime only support dev specs".into(),
+                ));
+            }
+
+            match chain_spec.runtime_type() {
+                #[cfg(feature = "gdev")]
+                RuntimeType::GDev => {
+                    //sp_core::crypto::set_default_ss58_version(Ss58AddressFormatRegistry::GDev);
+                    runner.async_run(|config| {
+                        Ok((
+                            cmd.run::<gdev_runtime::Block, GDevExecutor>(config),
+                            task_manager,
+                        ))
+                    })
+                }
+                _ => Err(sc_cli::Error::Application("unknown runtime type".into())),
+            }
         }
+        #[cfg(not(feature = "try-runtime"))]
+        Some(Subcommand::TryRuntime) => Err("TryRuntime wasn't enabled when building the node. \
+				You can enable it with `--features try-runtime`."
+            .into()),
         None => {
             let runner = cli.create_runner(&cli.run)?;
             runner.run_node_until_exit(|mut config| async move {
