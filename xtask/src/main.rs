@@ -15,6 +15,7 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 mod gen_calls_doc;
+mod release_runtime;
 
 use anyhow::Result;
 use clap::Parser;
@@ -37,6 +38,8 @@ enum DuniterXTaskCommand {
     },
     /// Generate calls documentation
     GenCallsDoc,
+    /// Release a new runtime
+    ReleaseRuntime { spec_version: u32 },
     /// Execute unit tests and integration tests
     /// End2tests are skipped
     Test,
@@ -60,6 +63,9 @@ fn main() -> Result<()> {
     match args.command {
         DuniterXTaskCommand::Build { production } => build(production),
         DuniterXTaskCommand::GenCallsDoc => gen_calls_doc::gen_calls_doc(),
+        DuniterXTaskCommand::ReleaseRuntime { spec_version } => {
+            release_runtime::release_runtime(spec_version)
+        }
         DuniterXTaskCommand::Test => test(),
     }
 }
