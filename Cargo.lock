@@ -2196,6 +2196,7 @@ dependencies = [
  "pallet-membership",
  "pallet-multisig",
  "pallet-offences",
+ "pallet-preimage",
  "pallet-provide-randomness",
  "pallet-proxy",
  "pallet-scheduler",
@@ -2264,6 +2265,7 @@ dependencies = [
  "pallet-membership",
  "pallet-multisig",
  "pallet-offences",
+ "pallet-preimage",
  "pallet-provide-randomness",
  "pallet-proxy",
  "pallet-scheduler",
@@ -2476,6 +2478,7 @@ dependencies = [
  "pallet-membership",
  "pallet-multisig",
  "pallet-offences",
+ "pallet-preimage",
  "pallet-provide-randomness",
  "pallet-proxy",
  "pallet-scheduler",
@@ -5064,6 +5067,22 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-preimage"
+version = "4.0.0-dev"
+source = "git+https://github.com/librelois/substrate.git?branch=duniter-monthly-2022-02#80f060dfad0363af03dbecbe39c6fa9b99042acc"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-std",
 ]
 
