@@ -379,7 +379,7 @@ pub mod pallet {
                 Error::<T>::InvalidRevocationProof
             );
             if let Some(idty_index) = <IdentityIndexOf<T>>::take(&payload.owner_key) {
-                Self::do_remove_identity(idty_index, Some(&payload.owner_key));
+                Self::do_remove_identity(idty_index);
                 Ok(().into())
             } else {
                 Err(Error::<T>::IdtyNotFound.into())
@@ -394,7 +394,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            Self::do_remove_identity(idty_index, None);
+            Self::do_remove_identity(idty_index);
             if let Some(idty_name) = idty_name {
                 <IdentitiesNames<T>>::remove(idty_name);
             }
@@ -499,15 +499,12 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
-        pub(super) fn do_remove_identity(
-            idty_index: T::IdtyIndex,
-            maybe_owner_key: Option<&T::AccountId>,
-        ) -> Weight {
-            if let Some(idty_val) = Identities::<T>::take(idty_index) {
-                T::RemoveIdentityConsumers::remove_idty_consumers(idty_index);
-                if let Some(owner_key) = maybe_owner_key {
-                    IdentityIndexOf::<T>::remove(owner_key);
-                }
+        pub(super) fn do_remove_identity(idty_index: T::IdtyIndex) -> Weight {
+            if let Some(idty_val) = Identities::<T>::get(idty_index) {
+                let _ = T::RemoveIdentityConsumers::remove_idty_consumers(idty_index);
+                IdentityIndexOf::<T>::remove(&idty_val.owner_key);
+                // Identity should be removed after the consumers of the identity
+                Identities::<T>::remove(idty_index);
                 frame_system::Pallet::<T>::dec_sufficients(&idty_val.owner_key);
                 Self::deposit_event(Event::IdtyRemoved { idty_index });
                 T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Removed);
@@ -529,8 +526,7 @@ pub mod pallet {
             for (idty_index, idty_status) in IdentitiesRemovableOn::<T>::take(block_number) {
                 if let Ok(idty_val) = <Identities<T>>::try_get(idty_index) {
                     if idty_val.removable_on == block_number && idty_val.status == idty_status {
-                        total_weight +=
-                            Self::do_remove_identity(idty_index, Some(&idty_val.owner_key))
+                        total_weight += Self::do_remove_identity(idty_index)
                     }
                 }
             }

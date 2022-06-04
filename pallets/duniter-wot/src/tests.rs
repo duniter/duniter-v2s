@@ -187,6 +187,18 @@ fn test_new_idty_validation() {
                 topics: vec![],
             }
         );
+
+        // After PendingMembershipPeriod, Ferdie identity should not expire
+        run_to_block(6);
+        assert_eq!(
+            Identity::identity(6),
+            Some(pallet_identity::IdtyValue {
+                next_creatable_identity_on: 0,
+                owner_key: 6,
+                removable_on: 0,
+                status: IdtyStatus::Validated,
+            })
+        );
     });
 }
 
@@ -271,7 +283,7 @@ fn test_idty_membership_expire_them_requested() {
         // Alice can't renew it's cert to Charlie
         assert_err!(
             Cert::add_cert(Origin::signed(1), 3),
-            pallet_certification::Error::<Test, Instance1>::CertNotAllowed
+            pallet_certification::Error::<Test, Instance1>::ReceiverNotFound
         );
     });
 }

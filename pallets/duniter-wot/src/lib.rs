@@ -186,13 +186,24 @@ where
     fn on_event(membership_event: &sp_membership::Event<IdtyIndex, MetaData>) -> Weight {
         match membership_event {
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipAcquired(_, _) => {}
-            sp_membership::Event::<IdtyIndex, MetaData>::MembershipExpired(idty_index)
-            | sp_membership::Event::<IdtyIndex, MetaData>::MembershipRevoked(idty_index) => {
-                Self::dispath_idty_call(pallet_identity::Call::remove_identity {
-                    idty_index: *idty_index,
-                    idty_name: None,
-                });
+            // Membership expiration cases:
+            // Triggered by the membership pallet: we should remove the identity only for the main
+            // wot
+            sp_membership::Event::<IdtyIndex, MetaData>::MembershipExpired(idty_index) => {
+                if !T::IsSubWot::get() {
+                    Self::dispath_idty_call(pallet_identity::Call::remove_identity {
+                        idty_index: *idty_index,
+                        idty_name: None,
+                    });
+                }
             }
+            // Membership revocation cases:
+            // - Triggered by identity removal: the identity underlying will by removed by the
+            // caller.
+            // - Triggered by the membership pallet: it's ondly possible for the sub-wot, so we
+            // should not remove the underlying identity
+            // So, in any case, we must do nothing
+            sp_membership::Event::<IdtyIndex, MetaData>::MembershipRevoked(_) => {}
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipRenewed(_) => {}
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipRequested(idty_index) => {
                 let idty_cert_meta =
@@ -296,14 +307,10 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
             && pallet_membership::Pallet::<T, I>::is_member(&receiver)
         {
             // Revoke receiver membership and disable their identity
-            if let Err(e) = pallet_membership::Pallet::<T, I>::revoke_membership(
-                RawOrigin::Root.into(),
-                Some(receiver),
-            ) {
-                sp_std::if_std! {
-                    println!("fail to revoke membership: {:?}", e)
-                }
-            }
+            Self::dispath_idty_call(pallet_identity::Call::remove_identity {
+                idty_index: receiver,
+                idty_name: None,
+            });
         }
         0
     }

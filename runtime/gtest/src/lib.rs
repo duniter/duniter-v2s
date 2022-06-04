@@ -47,6 +47,7 @@ use frame_system::EnsureRoot;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
+use sp_core::u32_trait::*;
 use sp_core::OpaqueMetadata;
 use sp_runtime::traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys};
 use sp_runtime::{
@@ -222,6 +223,8 @@ construct_runtime!(
 
         // Governance stuff.
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
+        UpgradeOrigin: pallet_upgrade_origin::{Pallet, Call, Event} = 21,
+        Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 22,
 
         // Universal dividend
         UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage} = 30,

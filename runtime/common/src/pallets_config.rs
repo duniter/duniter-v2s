@@ -83,6 +83,7 @@ macro_rules! pallets_config {
 			pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
 				BlockWeights::get().max_block;
 			pub const MaxScheduledPerBlock: u32 = 50;
+			pub const NoPreimagePostponement: Option<u32> = Some(10);
 		}
 		impl pallet_scheduler::Config for Runtime {
 			type Event = Event;
@@ -94,7 +95,7 @@ macro_rules! pallets_config {
 			type OriginPrivilegeCmp = EqualPrivilegeOnly;
 			type MaxScheduledPerBlock = MaxScheduledPerBlock;
 			type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
-			type PreimageProvider = ();
+			type PreimageProvider = Preimage;
 			type NoPreimagePostponement = ();
 		}
 
@@ -255,6 +256,30 @@ macro_rules! pallets_config {
 			type WeightInfo = common_runtime::weights::pallet_grandpa::WeightInfo<Runtime>;
 
 			type MaxAuthorities = MaxAuthorities;
+		}
+
+		// ONCHAIN GOVERNANCE //
+
+		impl pallet_upgrade_origin::Config for Runtime {
+			type Event = Event;
+			type Call = Call;
+			type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, SmithsInstance>;
+		}
+
+		parameter_types! {
+			pub const PreimageMaxSize: u32 = 4096 * 1024;
+			pub const PreimageBaseDeposit: Balance = deposit(2, 64);
+			pub const PreimageByteDeposit: Balance = deposit(0, 1);
+		}
+
+		impl pallet_preimage::Config for Runtime {
+			type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
+			type Event = Event;
+			type Currency = Balances;
+			type ManagerOrigin = EnsureRoot<AccountId>;
+			type MaxSize = PreimageMaxSize;
+			type BaseDeposit = PreimageBaseDeposit;
+			type ByteDeposit = PreimageByteDeposit;
 		}
 
 		// UTILITIES //

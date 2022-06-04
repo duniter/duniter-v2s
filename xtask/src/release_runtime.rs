@@ -57,12 +57,6 @@ pub(super) fn release_runtime(_spec_version: u32) -> Result<()> {
 
     // TODO: create and push a git tag runtime-{spec_version}
 
-    // Get current dir
-    let pwd = std::env::current_dir()?
-        .into_os_string()
-        .into_string()
-        .map_err(|_| anyhow!("Fail to read current dir path: invalid utf8 string!"))?;
-
     // Build the new runtime
     println!("Build gdev-runtime… (take a while)");
     let output = Command::new("docker")
@@ -89,7 +83,7 @@ pub(super) fn release_runtime(_spec_version: u32) -> Result<()> {
         std::str::from_utf8(&output.stdout)?
             .lines()
             .last()
-            .ok_or(anyhow!("empty srtool output"))?,
+            .ok_or_else(|| anyhow!("empty srtool output"))?,
     )
     .with_context(|| "Fail to parse srtool json output")?;
 

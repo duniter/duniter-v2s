@@ -233,12 +233,6 @@ common_runtime::pallets_config! {
         type Event = Event;
         type Call = Call;
     }
-
-    impl pallet_upgrade_origin::Config for Runtime {
-        type Event = Event;
-        type Call = Call;
-        type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, SmithsInstance>;
-    }
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -277,6 +271,7 @@ construct_runtime!(
         // Governance stuff
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
         UpgradeOrigin: pallet_upgrade_origin::{Pallet, Call, Event} = 21,
+        Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 22,
 
         // Universal dividend
         UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage} = 30,

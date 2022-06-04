@@ -52,6 +52,7 @@ std = [
 	'pallet-provide-randomness/std',
     'pallet-im-online/std',
     'pallet-multisig/std',
+    'pallet-preimage/std',
     'pallet-proxy/std',
     'pallet-session/std',
     'pallet-sudo/std',
@@ -147,6 +148,7 @@ pallet-grandpa = { git = 'https://github.com/librelois/substrate.git', branch = 
 pallet-im-online = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
 pallet-offences = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
 pallet-multisig = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-preimage = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
 pallet-proxy = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
 pallet-scheduler = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
 pallet-session = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }

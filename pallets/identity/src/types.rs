@@ -77,7 +77,7 @@ impl Default for IdtyStatus {
     }
 }
 
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "std", derive(Debug, Deserialize, Serialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 pub struct IdtyValue<BlockNumber, AccountId> {
     pub next_creatable_identity_on: BlockNumber,
