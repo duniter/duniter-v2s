@@ -198,13 +198,11 @@ pub mod pallet {
                             total_weight += 200_000;
                         }
                     } else {
-                        // The charges could not be deducted, we slash the account
+                        // The charges could not be deducted, we must destroy the account
                         let balance_to_suppr =
                             account_data.free.saturating_add(account_data.reserved);
                         // Force account data supression
-                        frame_system::Account::<T>::mutate(&account_id, |a| {
-                            a.data.set_balances(Default::default())
-                        });
+                        frame_system::Account::<T>::remove(&account_id);
                         Self::deposit_event(Event::ForceDestroy {
                             who: account_id,
                             balance: balance_to_suppr,
