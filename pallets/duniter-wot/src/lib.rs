@@ -220,8 +220,25 @@ where
                     WotDiffs::<T, I>::append(WotDiff::AddNode(*idty_index));
                 }
             }
-            sp_membership::Event::<IdtyIndex, MetaData>::MembershipExpired(idty_index)
-            | sp_membership::Event::<IdtyIndex, MetaData>::MembershipRevoked(idty_index) => {
+            // Membership expiration cases:
+            // Triggered by the membership pallet: we should remove the identity only for the main
+            // wot
+            sp_membership::Event::<IdtyIndex, MetaData>::MembershipExpired(idty_index) => {
+                if !T::IsSubWot::get() {
+                    Self::dispath_idty_call(pallet_identity::Call::remove_identity {
+                        idty_index: *idty_index,
+                        idty_name: None,
+                    });
+                    WotDiffs::<T, I>::append(WotDiff::DisableNode(*idty_index));
+                }
+            }
+            // Membership revocation cases:
+            // - Triggered by identity removal: the identity underlying will by removed by the
+            // caller.
+            // - Triggered by the membership pallet: it's ondly possible for the sub-wot, so we
+            // should not remove the underlying identity
+            // So, in any case, we must do nothing
+            sp_membership::Event::<IdtyIndex, MetaData>::MembershipRevoked(idty_index) => {
                 if !T::IsSubWot::get() {
                     WotDiffs::<T, I>::append(WotDiff::DisableNode(*idty_index));
                 }
