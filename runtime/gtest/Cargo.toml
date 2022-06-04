@@ -22,9 +22,10 @@ runtime-benchmarks = [
     'frame-system/runtime-benchmarks',
     'hex-literal',
     'pallet-balances/runtime-benchmarks',
-    'pallet-timestamp/runtime-benchmarks',
+    'pallet-identity/runtime-benchmarks',
     'pallet-treasury/runtime-benchmarks',
     'pallet-universal-dividend/runtime-benchmarks',
+    'common-runtime/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
 ]
 std = [
@@ -33,29 +34,33 @@ std = [
     'frame-support/std',
     'frame-system-rpc-runtime-api/std',
     'frame-system/std',
+	"frame-try-runtime/std",
 	'pallet-atomic-swap/std',
+	'log/std',
 	'pallet-authority-discovery/std',
-    'pallet-authority-members/std',
+	'pallet-authority-members/std',
     'pallet-babe/std',
     'pallet-balances/std',
     'pallet-certification/std',
     'pallet-collective/std',
+    'pallet-duniter-test-parameters/std',
     'pallet-duniter-account/std',
     'pallet-duniter-wot/std',
     'pallet-grandpa/std',
     'pallet-identity/std',
-    'pallet-im-online/std',
     'pallet-membership/std',
 	'pallet-provide-randomness/std',
-    'pallet-proxy/std',
+    'pallet-im-online/std',
     'pallet-multisig/std',
+    'pallet-proxy/std',
     'pallet-session/std',
     'pallet-sudo/std',
+    'pallet-universal-dividend/std',
+    'pallet-upgrade-origin/std',
     'pallet-timestamp/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',
     'pallet-treasury/std',
-    'pallet-universal-dividend/std',
     'common-runtime/std',
     'serde',
     'sp-api/std',
@@ -73,12 +78,40 @@ std = [
     'sp-transaction-pool/std',
     'sp-version/std',
 ]
+try-runtime = [
+	"frame-executive/try-runtime",
+	"frame-try-runtime",
+	"frame-system/try-runtime",
+	"pallet-authority-discovery/try-runtime",
+	"pallet-authorship/try-runtime",
+	"pallet-balances/try-runtime",
+	"pallet-transaction-payment/try-runtime",
+	"pallet-collective/try-runtime",
+	"pallet-grandpa/try-runtime",
+	"pallet-im-online/try-runtime",
+	"pallet-multisig/try-runtime",
+	"pallet-offences/try-runtime",
+	"pallet-proxy/try-runtime",
+	"pallet-scheduler/try-runtime",
+	"pallet-session/try-runtime",
+	"pallet-timestamp/try-runtime",
+	"pallet-treasury/try-runtime",
+	"pallet-babe/try-runtime",
+	"pallet-utility/try-runtime",
+]
+
+[dev-dependencies]
+sp-consensus-vrf = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02' }
+sp-finality-grandpa = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02' }
+sp-io = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02' }
+sp-keyring = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02' }
 
 [dependencies]
 # local
 common-runtime = { path = "../common", default-features = false }
 pallet-authority-members = { path = '../../pallets/authority-members', default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
+pallet-duniter-test-parameters = { path = '../../pallets/duniter-test-parameters', default-features = false }
 pallet-duniter-account = { path = '../../pallets/duniter-account', default-features = false }
 pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
@@ -86,219 +119,53 @@ pallet-membership = { path = '../../pallets/membership', default-features = fals
 pallet-provide-randomness = { path = '../../pallets/provide-randomness', default-features = false }
 pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
+pallet-upgrade-origin = { path = '../../pallets/upgrade-origin', default-features = false }
 sp-membership = { path = '../../primitives/membership', default-features = false }
 
-# substrate
+# crates.io
+codec = { package = "parity-scale-codec", version = "2.3.1", features = ["derive"], default-features = false }
+log = { version = "0.4.17", default-features = false }
+hex-literal = { version = '0.3.1', optional = true }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+serde = { version = "1.0.101", optional = true, features = ["derive"] }
 
-[dependencies.codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = '2.3.1'
-
-[dependencies.frame-benchmarking]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-optional = true
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.frame-executive]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.frame-support]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.frame-system]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.frame-system-benchmarking]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-optional = true
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.frame-system-rpc-runtime-api]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.hex-literal]
-optional = true
-version = '0.3.1'
-
-[dependencies.pallet-atomic-swap]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-authority-discovery]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-authorship]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-babe]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-balances]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-collective]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-grandpa]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-im-online]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-offences]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-proxy]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-multisig]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-scheduler]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-session]
-default-features = false
-features = ["historical"]
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-sudo]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-timestamp]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-transaction-payment]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-transaction-payment-rpc-runtime-api]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-treasury]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.pallet-utility]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-
-[dependencies.serde]
-version = "1.0.101"
-optional = true
-features = ["derive"]
-
-[dependencies.smallvec]
-version = "1.6.1"
-
-[dependencies.sp-api]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.sp-arithmetic]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.sp-authority-discovery]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.sp-block-builder]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.sp-consensus-babe]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.sp-core]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.sp-inherents]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.sp-offchain]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.sp-session]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.sp-std]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.sp-transaction-pool]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
-
-[dependencies.sp-version]
-default-features = false
-git = 'https://github.com/librelois/substrate.git'
-branch = 'duniter-monthly-2022-02'
+# substrate
+frame-benchmarking = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', optional = true }
+frame-try-runtime = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false, optional = true }
+frame-executive = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+frame-support = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+frame-system = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+frame-system-benchmarking = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', optional = true }
+frame-system-rpc-runtime-api = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false}
+pallet-atomic-swap = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-authority-discovery = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-authorship = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-babe = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-balances = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-collective = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-grandpa = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-im-online = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-offences = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-multisig = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-proxy = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-scheduler = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-session = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-sudo = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-timestamp = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-transaction-payment = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-treasury = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+pallet-utility = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-api = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-arithmetic = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-authority-discovery = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-block-builder = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-consensus-babe = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-core = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-inherents = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-offchain = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-runtime = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-session = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-std = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-transaction-pool = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }
+sp-version = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', default-features = false }

@@ -30,6 +30,12 @@ runtime-benchmarks = [
 	'gtest-runtime',
 	'gtest-runtime/runtime-benchmarks',
 ]
+try-runtime = [
+	"g1-runtime/try-runtime",
+	"gdev-runtime/try-runtime",
+	"gtest-runtime/try-runtime",
+	"try-runtime-cli"
+]
 
 [build-dependencies]
 clap = { version = "3.0" }
@@ -39,8 +45,14 @@ substrate-build-script-utils = { git = 'https://github.com/librelois/substrate.g
 [dev-dependencies]
 rusty-hook = "^0.11.2"
 
-[dependencies]
+# Dependencies for specific targets
+[target.'cfg(any(target_arch="x86_64", target_arch="aarch64"))'.dependencies]
+sc-cli = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02", features = ["wasmtime"] }
+sc-service = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02", features = ["wasmtime"] }
+sp-trie = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02", features = ["memory-tracker"] }
 
+
+[dependencies]
 # local dependencies
 common-runtime = { path = 'runtime/common' }
 g1-runtime = { path = 'runtime/g1', optional = true }
@@ -103,6 +115,7 @@ sp-timestamp = { git = "https://github.com/librelois/substrate.git", branch = "d
 sp-transaction-pool = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
 sp-trie = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
 substrate-frame-rpc-system = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
+try-runtime-cli = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02", optional = true }
 
 [workspace]
 resolver = "2"
