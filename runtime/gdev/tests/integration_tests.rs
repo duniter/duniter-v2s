@@ -97,10 +97,6 @@ fn test_remove_identity() {
             System::events()[0].event,
             Event::Membership(pallet_membership::Event::MembershipRevoked(4))
         );
-        /*println!(
-            "{}",
-            get_account_id_from_seed::<sp_core::sr25519::Public>("Charlie")
-        );*/
         assert_eq!(
             System::events()[1].event,
             Event::System(frame_system::Event::KilledAccount {
@@ -111,7 +107,17 @@ fn test_remove_identity() {
             System::events()[2].event,
             Event::Identity(pallet_identity::Event::IdtyRemoved { idty_index: 4 })
         );
-        //println!("{:#?}", events);
+
+        // The identity should be removed from UdAccountsStorage
+        assert_eq!(UdAccountsStorage::accounts_len(), 3);
+        assert_eq!(
+            UdAccountsStorage::accounts_list(),
+            vec![
+                AccountKeyring::Bob.to_account_id(),
+                AccountKeyring::Charlie.to_account_id(),
+                AccountKeyring::Alice.to_account_id(),
+            ]
+        );
     });
 }
 
