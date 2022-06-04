@@ -251,7 +251,7 @@ fn test_idty_membership_expire_them_requested() {
         // Alice can't renew it's cert to Charlie
         assert_err!(
             Cert::add_cert(Origin::signed(1), 3),
-            pallet_certification::Error::<Test, Instance1>::CertNotAllowed
+            pallet_certification::Error::<Test, Instance1>::ReceiverNotFound
         );
 
         /*// Charlie should be able to request membership
