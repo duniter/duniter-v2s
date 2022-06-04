@@ -222,10 +222,6 @@ where
             }
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipExpired(idty_index)
             | sp_membership::Event::<IdtyIndex, MetaData>::MembershipRevoked(idty_index) => {
-                Self::dispath_idty_call(pallet_identity::Call::remove_identity {
-                    idty_index: *idty_index,
-                    idty_name: None,
-                });
                 if !T::IsSubWot::get() {
                     WotDiffs::<T, I>::append(WotDiff::DisableNode(*idty_index));
                 }
@@ -339,14 +335,10 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
             && pallet_membership::Pallet::<T, I>::is_member(&receiver)
         {
             // Revoke receiver membership and disable their identity
-            if let Err(e) = pallet_membership::Pallet::<T, I>::revoke_membership(
-                RawOrigin::Root.into(),
-                Some(receiver),
-            ) {
-                sp_std::if_std! {
-                    println!("fail to revoke membership: {:?}", e)
-                }
-            }
+            Self::dispath_idty_call(pallet_identity::Call::remove_identity {
+                idty_index: receiver,
+                idty_name: None,
+            });
         }
         if !T::IsSubWot::get() {
             WotDiffs::<T, I>::append(WotDiff::DelLink(issuer, receiver));
