@@ -335,6 +335,11 @@ pub mod pallet {
 
             Self::do_add_cert(block_number, create, issuer, receiver)
         }
+        /// Add a new certification or renew an existing one
+        ///
+        /// - `receiver`: the account receiving the certification from the origin
+        ///
+        /// The origin must be allow to certify.
         #[pallet::weight(1_000_000_000)]
         pub fn add_cert(
             origin: OriginFor<T>,

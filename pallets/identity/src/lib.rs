@@ -229,6 +229,11 @@ pub mod pallet {
     // Dispatchable functions must be annotated with a weight and must return a DispatchResult.
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// Create an identity for an existing account
+        ///
+        /// - `owner_key`: the public key corresponding to the identity to be created
+        ///
+        /// The origin must be allowed to create an identity.
         #[pallet::weight(1_000_000_000)]
         pub fn create_identity(
             origin: OriginFor<T>,
@@ -291,6 +296,11 @@ pub mod pallet {
             T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Created { creator });
             Ok(().into())
         }
+        /// Confirm the creation of an identity and give it a name
+        ///
+        /// - `idty_name`: the name uniquely associated to this identity. Must match the validation rules defined by the runtime.
+        ///
+        /// The identity must have been created using `create_identity` before it can be confirmed.
         #[pallet::weight(1_000_000_000)]
         pub fn confirm_identity(
             origin: OriginFor<T>,
@@ -362,6 +372,14 @@ pub mod pallet {
 
             Ok(().into())
         }
+        /// Revoke an identity using a signed revocation payload
+        ///
+        /// - `payload`: the revocation payload
+        ///   - `owner_key`: the public key corresponding to the identity to be revoked
+        ///   - `genesis_hash`: the genesis block hash
+        /// - `payload_sig`: the signature of the encoded form of `payload`. Must be signed by `owner_key`.
+        ///
+        /// Any origin can emit this extrinsic, not only `owner_key`.
         #[pallet::weight(1_000_000_000)]
         pub fn revoke_identity(
             origin: OriginFor<T>,
