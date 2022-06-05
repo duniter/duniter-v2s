@@ -15,7 +15,8 @@
 # node modules
 **/node_modules/**
 
-# build folder
+# build folders
+arm-build
 build
 
 # Temporary files
