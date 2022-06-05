@@ -26,6 +26,7 @@ Feature: Balance transfer
     """
     Then eve should have 2 ĞD
 
+  @ignoreErrors
   Scenario: Create a new account without any founds
     Then eve should have 0 ĞD
     When eve send 0 ĞD to alice

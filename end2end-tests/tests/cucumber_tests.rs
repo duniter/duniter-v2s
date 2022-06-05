@@ -29,33 +29,44 @@ use std::sync::{
 };
 
 #[derive(WorldInit)]
-pub struct DuniterWorld(Option<DuniterWorldInner>);
+pub struct DuniterWorld {
+    ignore_errors: bool,
+    inner: Option<DuniterWorldInner>,
+}
 
 impl DuniterWorld {
+    // Write methods
     async fn init(&mut self, maybe_genesis_conf_file: Option<PathBuf>) {
-        if let Some(ref mut inner) = self.0 {
+        if let Some(ref mut inner) = self.inner {
             inner.kill();
         }
-        self.0 = Some(DuniterWorldInner::new(maybe_genesis_conf_file).await);
+        self.inner = Some(DuniterWorldInner::new(maybe_genesis_conf_file).await);
     }
+    fn kill(&mut self) {
+        if let Some(ref mut inner) = self.inner {
+            inner.kill();
+        }
+    }
+    fn set_ignore_errors(&mut self, ignore_errors: bool) {
+        self.ignore_errors = ignore_errors;
+    }
+    // Read methods
     fn api(&self) -> &Api {
-        if let Some(ref inner) = self.0 {
+        if let Some(ref inner) = self.inner {
             &inner.api
         } else {
             panic!("uninit")
         }
     }
     fn client(&self) -> &Client {
-        if let Some(ref inner) = self.0 {
+        if let Some(ref inner) = self.inner {
             &inner.client
         } else {
             panic!("uninit")
         }
     }
-    fn kill(&mut self) {
-        if let Some(ref mut inner) = self.0 {
-            inner.kill();
-        }
+    fn ignore_errors(&self) -> bool {
+        self.ignore_errors
     }
 }
 
@@ -71,7 +82,10 @@ impl World for DuniterWorld {
     type Error = Infallible;
 
     async fn new() -> std::result::Result<Self, Infallible> {
-        Ok(DuniterWorld(None))
+        Ok(Self {
+            ignore_errors: false,
+            inner: None,
+        })
     }
 }
 
@@ -148,10 +162,16 @@ async fn transfer(
     let to = AccountKeyring::from_str(&to).expect("unknown to");
     let (amount, is_ud) = parse_amount(amount, &unit);
 
-    if is_ud {
+    let res = if is_ud {
         common::balances::transfer_ud(world.api(), world.client(), from, amount, to).await
     } else {
         common::balances::transfer(world.api(), world.client(), from, amount, to).await
+    };
+
+    if world.ignore_errors() {
+        Ok(())
+    } else {
+        res
     }
 }
 
@@ -164,13 +184,18 @@ async fn send_all_to(world: &mut DuniterWorld, from: String, to: String) -> Resu
     common::balances::transfer_all(world.api(), world.client(), from, to).await
 }
 
-#[then(regex = r"([a-zA-Z]+) should have (\d+) ĞD")]
-async fn should_have(world: &mut DuniterWorld, who: String, amount: u64) -> Result<()> {
+#[then(regex = r"([a-zA-Z]+) should have (\d+) (ĞD|cĞD)")]
+async fn should_have(
+    world: &mut DuniterWorld,
+    who: String,
+    amount: u64,
+    unit: String,
+) -> Result<()> {
     // Parse inputs
     let who = AccountKeyring::from_str(&who)
         .expect("unknown to")
         .to_account_id();
-    let amount = amount * 100;
+    let (amount, _is_ud) = parse_amount(amount, &unit);
 
     let who_account = world.api().storage().system().account(who, None).await?;
     assert_eq!(who_account.data.free, amount);
@@ -250,6 +275,7 @@ async fn main() {
                 "{}.json",
                 genesis_conf_name(&feature.tags, &scenario.tags)
             ));
+            world.set_ignore_errors(ignore_errors(&scenario.tags));
             Box::pin(world.init(Some(genesis_conf_file_path)))
         })
         .after(move |_feature, _rule, _scenario, maybe_world| {
@@ -279,4 +305,13 @@ fn genesis_conf_name(feature_tags: &[String], scenario_tags: &[String]) -> Strin
         }
     }
     "default".to_owned()
+}
+
+fn ignore_errors(scenario_tags: &[String]) -> bool {
+    for tag in scenario_tags {
+        if tag == "ignoreErrors" {
+            return true;
+        }
+    }
+    false
 }
