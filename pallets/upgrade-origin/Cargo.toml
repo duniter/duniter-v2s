@@ -17,7 +17,7 @@ std = [
     'frame-system/std',
     'frame-benchmarking/std',
     "sp-io/std",
-	"sp-std/std",
+    "sp-std/std",
 ]
 try-runtime = ['frame-support/try-runtime']
 

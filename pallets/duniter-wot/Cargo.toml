@@ -25,7 +25,7 @@ std = [
     'sp-io/std',
     'sp-membership/std',
     'sp-runtime/std',
-	'sp-std/std',
+    'sp-std/std',
 ]
 try-runtime = ['frame-support/try-runtime']
 

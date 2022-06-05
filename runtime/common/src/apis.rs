@@ -16,135 +16,135 @@
 
 #[macro_export]
 macro_rules! runtime_apis {
-	{$($custom:tt)*} => {
-		impl_runtime_apis! {
-			$($custom)*
+    {$($custom:tt)*} => {
+        impl_runtime_apis! {
+            $($custom)*
 
-			impl sp_authority_discovery::AuthorityDiscoveryApi<Block> for Runtime {
-				fn authorities() -> Vec<sp_authority_discovery::AuthorityId> {
-					AuthorityDiscovery::authorities()
-				}
-			}
+            impl sp_authority_discovery::AuthorityDiscoveryApi<Block> for Runtime {
+                fn authorities() -> Vec<sp_authority_discovery::AuthorityId> {
+                    AuthorityDiscovery::authorities()
+                }
+            }
 
-			impl sp_consensus_babe::BabeApi<Block> for Runtime {
-				fn configuration() -> sp_consensus_babe::BabeGenesisConfiguration {
-					// The choice of `c` parameter (where `1 - c` represents the
-					// probability of a slot being empty), is done in accordance to the
-					// slot duration and expected target block time, for safely
-					// resisting network delays of maximum two seconds.
-					// <https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results>
-					use frame_support::traits::Get as _;
-					sp_consensus_babe::BabeGenesisConfiguration {
-						slot_duration: Babe::slot_duration(),
-						epoch_length: EpochDuration::get(),
-						c: BABE_GENESIS_EPOCH_CONFIG.c,
-						genesis_authorities: Babe::authorities().to_vec(),
-						randomness: Babe::randomness(),
-						allowed_slots: BABE_GENESIS_EPOCH_CONFIG.allowed_slots,
-					}
-				}
+            impl sp_consensus_babe::BabeApi<Block> for Runtime {
+                fn configuration() -> sp_consensus_babe::BabeGenesisConfiguration {
+                    // The choice of `c` parameter (where `1 - c` represents the
+                    // probability of a slot being empty), is done in accordance to the
+                    // slot duration and expected target block time, for safely
+                    // resisting network delays of maximum two seconds.
+                    // <https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results>
+                    use frame_support::traits::Get as _;
+                    sp_consensus_babe::BabeGenesisConfiguration {
+                        slot_duration: Babe::slot_duration(),
+                        epoch_length: EpochDuration::get(),
+                        c: BABE_GENESIS_EPOCH_CONFIG.c,
+                        genesis_authorities: Babe::authorities().to_vec(),
+                        randomness: Babe::randomness(),
+                        allowed_slots: BABE_GENESIS_EPOCH_CONFIG.allowed_slots,
+                    }
+                }
 
-				fn current_epoch_start() -> sp_consensus_babe::Slot {
-					Babe::current_epoch_start()
-				}
+                fn current_epoch_start() -> sp_consensus_babe::Slot {
+                    Babe::current_epoch_start()
+                }
 
-				fn current_epoch() -> sp_consensus_babe::Epoch {
-					Babe::current_epoch()
-				}
+                fn current_epoch() -> sp_consensus_babe::Epoch {
+                    Babe::current_epoch()
+                }
 
-				fn next_epoch() -> sp_consensus_babe::Epoch {
-					Babe::next_epoch()
-				}
+                fn next_epoch() -> sp_consensus_babe::Epoch {
+                    Babe::next_epoch()
+                }
 
-				fn generate_key_ownership_proof(
-					_slot: sp_consensus_babe::Slot,
-					authority_id: sp_consensus_babe::AuthorityId,
-				) -> Option<sp_consensus_babe::OpaqueKeyOwnershipProof> {
-					use codec::Encode;
+                fn generate_key_ownership_proof(
+                    _slot: sp_consensus_babe::Slot,
+                    authority_id: sp_consensus_babe::AuthorityId,
+                ) -> Option<sp_consensus_babe::OpaqueKeyOwnershipProof> {
+                    use codec::Encode;
 
-					Historical::prove((sp_consensus_babe::KEY_TYPE, authority_id))
-						.map(|p| p.encode())
-						.map(sp_consensus_babe::OpaqueKeyOwnershipProof::new)
-				}
+                    Historical::prove((sp_consensus_babe::KEY_TYPE, authority_id))
+                        .map(|p| p.encode())
+                        .map(sp_consensus_babe::OpaqueKeyOwnershipProof::new)
+                }
 
-				fn submit_report_equivocation_unsigned_extrinsic(
-					equivocation_proof: sp_consensus_babe::EquivocationProof<<Block as BlockT>::Header>,
-					key_owner_proof: sp_consensus_babe::OpaqueKeyOwnershipProof,
-				) -> Option<()> {
-					let key_owner_proof = key_owner_proof.decode()?;
+                fn submit_report_equivocation_unsigned_extrinsic(
+                    equivocation_proof: sp_consensus_babe::EquivocationProof<<Block as BlockT>::Header>,
+                    key_owner_proof: sp_consensus_babe::OpaqueKeyOwnershipProof,
+                ) -> Option<()> {
+                    let key_owner_proof = key_owner_proof.decode()?;
 
-					Babe::submit_unsigned_equivocation_report(
-						equivocation_proof,
-						key_owner_proof,
-					)
-				}
-			}
+                    Babe::submit_unsigned_equivocation_report(
+                        equivocation_proof,
+                        key_owner_proof,
+                    )
+                }
+            }
 
-			impl sp_api::Core<Block> for Runtime {
-				fn version() -> RuntimeVersion {
-					VERSION
-				}
+            impl sp_api::Core<Block> for Runtime {
+                fn version() -> RuntimeVersion {
+                    VERSION
+                }
 
-				fn execute_block(block: Block) {
-					Executive::execute_block(block)
-				}
+                fn execute_block(block: Block) {
+                    Executive::execute_block(block)
+                }
 
-				fn initialize_block(header: &<Block as BlockT>::Header) {
-					Executive::initialize_block(header)
-				}
-			}
+                fn initialize_block(header: &<Block as BlockT>::Header) {
+                    Executive::initialize_block(header)
+                }
+            }
 
-			impl sp_api::Metadata<Block> for Runtime {
-				fn metadata() -> OpaqueMetadata {
-					OpaqueMetadata::new(Runtime::metadata().into())
-				}
-			}
+            impl sp_api::Metadata<Block> for Runtime {
+                fn metadata() -> OpaqueMetadata {
+                    OpaqueMetadata::new(Runtime::metadata().into())
+                }
+            }
 
-			impl sp_block_builder::BlockBuilder<Block> for Runtime {
-				fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
-					Executive::apply_extrinsic(extrinsic)
-				}
+            impl sp_block_builder::BlockBuilder<Block> for Runtime {
+                fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
+                    Executive::apply_extrinsic(extrinsic)
+                }
 
-				fn finalize_block() -> <Block as BlockT>::Header {
-					Executive::finalize_block()
-				}
+                fn finalize_block() -> <Block as BlockT>::Header {
+                    Executive::finalize_block()
+                }
 
-				fn inherent_extrinsics(
-					data: sp_inherents::InherentData,
-				) -> Vec<<Block as BlockT>::Extrinsic> {
-					data.create_extrinsics()
-				}
+                fn inherent_extrinsics(
+                    data: sp_inherents::InherentData,
+                ) -> Vec<<Block as BlockT>::Extrinsic> {
+                    data.create_extrinsics()
+                }
 
-				fn check_inherents(
-					block: Block,
-					data: sp_inherents::InherentData,
-				) -> sp_inherents::CheckInherentsResult {
-					data.check_extrinsics(&block)
-				}
-			}
+                fn check_inherents(
+                    block: Block,
+                    data: sp_inherents::InherentData,
+                ) -> sp_inherents::CheckInherentsResult {
+                    data.check_extrinsics(&block)
+                }
+            }
 
-			impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
-				fn validate_transaction(
-					source: TransactionSource,
-					tx: <Block as BlockT>::Extrinsic,
-					block_hash: <Block as BlockT>::Hash,
-				) -> TransactionValidity {
-					// Filtered calls should not enter the tx pool.
-					if !<Runtime as frame_system::Config>::BaseCallFilter::contains(&tx.function)
-					{
-						return sp_runtime::transaction_validity::InvalidTransaction::Call.into();
-					}
-					Executive::validate_transaction(source, tx, block_hash)
-				}
-			}
+            impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
+                fn validate_transaction(
+                    source: TransactionSource,
+                    tx: <Block as BlockT>::Extrinsic,
+                    block_hash: <Block as BlockT>::Hash,
+                ) -> TransactionValidity {
+                    // Filtered calls should not enter the tx pool.
+                    if !<Runtime as frame_system::Config>::BaseCallFilter::contains(&tx.function)
+                    {
+                        return sp_runtime::transaction_validity::InvalidTransaction::Call.into();
+                    }
+                    Executive::validate_transaction(source, tx, block_hash)
+                }
+            }
 
-			impl sp_offchain::OffchainWorkerApi<Block> for Runtime {
-				fn offchain_worker(header: &<Block as BlockT>::Header) {
-					Executive::offchain_worker(header)
-				}
-			}
+            impl sp_offchain::OffchainWorkerApi<Block> for Runtime {
+                fn offchain_worker(header: &<Block as BlockT>::Header) {
+                    Executive::offchain_worker(header)
+                }
+            }
 
-			impl sp_session::SessionKeys<Block> for Runtime {
+            impl sp_session::SessionKeys<Block> for Runtime {
                 fn decode_session_keys(
                     encoded: Vec<u8>,
                 ) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
@@ -161,9 +161,9 @@ macro_rules! runtime_apis {
                     Grandpa::grandpa_authorities()
                 }
 
-				fn current_set_id() -> fg_primitives::SetId {
-					Grandpa::current_set_id()
-				}
+                fn current_set_id() -> fg_primitives::SetId {
+                    Grandpa::current_set_id()
+                }
 
                 fn submit_report_equivocation_unsigned_extrinsic(
                     _equivocation_proof: fg_primitives::EquivocationProof<
@@ -186,88 +186,88 @@ macro_rules! runtime_apis {
                 }
             }
 
-			impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
-				fn account_nonce(account: AccountId) -> Index {
-					System::account_nonce(account)
-				}
-			}
+            impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
+                fn account_nonce(account: AccountId) -> Index {
+                    System::account_nonce(account)
+                }
+            }
 
-			impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>
-			for Runtime {
-				fn query_info(
-					uxt: <Block as BlockT>::Extrinsic,
-					len: u32,
-				) -> pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo<Balance> {
-					TransactionPayment::query_info(uxt, len)
-				}
+            impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>
+            for Runtime {
+                fn query_info(
+                    uxt: <Block as BlockT>::Extrinsic,
+                    len: u32,
+                ) -> pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo<Balance> {
+                    TransactionPayment::query_info(uxt, len)
+                }
 
-				fn query_fee_details(
-					uxt: <Block as BlockT>::Extrinsic,
-					len: u32,
-				) -> pallet_transaction_payment::FeeDetails<Balance> {
-					TransactionPayment::query_fee_details(uxt, len)
-				}
-			}
+                fn query_fee_details(
+                    uxt: <Block as BlockT>::Extrinsic,
+                    len: u32,
+                ) -> pallet_transaction_payment::FeeDetails<Balance> {
+                    TransactionPayment::query_fee_details(uxt, len)
+                }
+            }
 
-			#[cfg(feature = "try-runtime")]
-			impl frame_try_runtime::TryRuntime<Block> for Runtime {
-				fn on_runtime_upgrade() -> (Weight, Weight) {
-					log::info!("try-runtime::on_runtime_upgrade.");
-					let weight = Executive::try_runtime_upgrade().unwrap();
-					(weight, BlockWeights::get().max_block)
-				}
+            #[cfg(feature = "try-runtime")]
+            impl frame_try_runtime::TryRuntime<Block> for Runtime {
+                fn on_runtime_upgrade() -> (Weight, Weight) {
+                    log::info!("try-runtime::on_runtime_upgrade.");
+                    let weight = Executive::try_runtime_upgrade().unwrap();
+                    (weight, BlockWeights::get().max_block)
+                }
 
-				fn execute_block_no_check(block: Block) -> Weight {
-					Executive::execute_block_no_check(block)
-				}
-			}
+                fn execute_block_no_check(block: Block) -> Weight {
+                    Executive::execute_block_no_check(block)
+                }
+            }
 
-			#[cfg(feature = "runtime-benchmarks")]
-			impl frame_benchmarking::Benchmark<Block> for Runtime {
-				fn dispatch_benchmark(
-					config: frame_benchmarking::BenchmarkConfig,
-				) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-					use frame_benchmarking::{
-						add_benchmark, BenchmarkBatch, Benchmarking, TrackedStorageKey,
-					};
+            #[cfg(feature = "runtime-benchmarks")]
+            impl frame_benchmarking::Benchmark<Block> for Runtime {
+                fn dispatch_benchmark(
+                    config: frame_benchmarking::BenchmarkConfig,
+                ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
+                    use frame_benchmarking::{
+                        add_benchmark, BenchmarkBatch, Benchmarking, TrackedStorageKey,
+                    };
 
-					use frame_system_benchmarking::Pallet as SystemBench;
-					impl frame_system_benchmarking::Config for Runtime {}
+                    use frame_system_benchmarking::Pallet as SystemBench;
+                    impl frame_system_benchmarking::Config for Runtime {}
 
-					use pallet_crowdloan_rewards::Pallet as PalletCrowdloanRewardsBench;
-					use parachain_staking::Pallet as ParachainStakingBench;
-					use pallet_author_mapping::Pallet as PalletAuthorMappingBench;
-					let whitelist: Vec<TrackedStorageKey> = vec![];
+                    use pallet_crowdloan_rewards::Pallet as PalletCrowdloanRewardsBench;
+                    use parachain_staking::Pallet as ParachainStakingBench;
+                    use pallet_author_mapping::Pallet as PalletAuthorMappingBench;
+                    let whitelist: Vec<TrackedStorageKey> = vec![];
 
-					let mut batches = Vec::<BenchmarkBatch>::new();
-					let params = (&config, &whitelist);
+                    let mut batches = Vec::<BenchmarkBatch>::new();
+                    let params = (&config, &whitelist);
 
-					add_benchmark!(
-						params,
-						batches,
-						parachain_staking,
-						ParachainStakingBench::<Runtime>
-					);
-					// add_benchmark!(
-					// 	params,
-					// 	batches,
-					// 	pallet_crowdloan_rewards,
-					// 	PalletCrowdloanRewardsBench::<Runtime>
-					// );
-					add_benchmark!(
-						params,
-						batches,
-						pallet_author_mapping,
-						PalletAuthorMappingBench::<Runtime>
-					);
-					add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
+                    add_benchmark!(
+                        params,
+                        batches,
+                        parachain_staking,
+                        ParachainStakingBench::<Runtime>
+                    );
+                    // add_benchmark!(
+                    //     params,
+                    //     batches,
+                    //     pallet_crowdloan_rewards,
+                    //     PalletCrowdloanRewardsBench::<Runtime>
+                    // );
+                    add_benchmark!(
+                        params,
+                        batches,
+                        pallet_author_mapping,
+                        PalletAuthorMappingBench::<Runtime>
+                    );
+                    add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 
-					if batches.is_empty() {
-						return Err("Benchmark not found for this pallet.".into());
-					}
-					Ok(batches)
-				}
-			}
-		}
-	};
+                    if batches.is_empty() {
+                        return Err("Benchmark not found for this pallet.".into());
+                    }
+                    Ok(batches)
+                }
+            }
+        }
+    };
 }

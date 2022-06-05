@@ -17,14 +17,14 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'frame-benchmarking/std',
-	'log/std',
+    'log/std',
     'pallet-session/std',
     'serde',
     'sp-core/std',
     'sp-membership/std',
     'sp-runtime/std',
-	'sp-staking/std',
-	'sp-std/std',
+    'sp-staking/std',
+    'sp-std/std',
 ]
 try-runtime = ['frame-support/try-runtime']
 

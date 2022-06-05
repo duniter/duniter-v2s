@@ -22,37 +22,37 @@ use serde::{Deserialize, Serialize};
 
 #[macro_export]
 macro_rules! declare_session_keys {
-	{} => {
-		pub mod opaque {
-			use super::*;
+    {} => {
+        pub mod opaque {
+            use super::*;
 
-			impl_opaque_keys! {
-				pub struct SessionKeys {
-					pub grandpa: Grandpa,
-					pub babe: Babe,
-					pub im_online: ImOnline,
-					pub authority_discovery: AuthorityDiscovery,
-				}
-			}
+            impl_opaque_keys! {
+                pub struct SessionKeys {
+                    pub grandpa: Grandpa,
+                    pub babe: Babe,
+                    pub im_online: ImOnline,
+                    pub authority_discovery: AuthorityDiscovery,
+                }
+            }
 
-			#[derive(Clone, codec::Decode, Debug, codec::Encode, Eq, PartialEq)]
-			pub struct SessionKeysWrapper(pub SessionKeys);
+            #[derive(Clone, codec::Decode, Debug, codec::Encode, Eq, PartialEq)]
+            pub struct SessionKeysWrapper(pub SessionKeys);
 
-			impl From<SessionKeysWrapper> for SessionKeys {
-				fn from(keys_wrapper: SessionKeysWrapper) -> SessionKeys {
-					keys_wrapper.0
-				}
-			}
+            impl From<SessionKeysWrapper> for SessionKeys {
+                fn from(keys_wrapper: SessionKeysWrapper) -> SessionKeys {
+                    keys_wrapper.0
+                }
+            }
 
-			impl scale_info::TypeInfo for SessionKeysWrapper {
-				type Identity = [u8; 128];
+            impl scale_info::TypeInfo for SessionKeysWrapper {
+                type Identity = [u8; 128];
 
-				fn type_info() -> scale_info::Type {
-					Self::Identity::type_info()
-				}
-			}
-		}
-	}
+                fn type_info() -> scale_info::Type {
+                    Self::Identity::type_info()
+                }
+            }
+        }
+    }
 }
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]

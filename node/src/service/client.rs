@@ -61,16 +61,16 @@ impl From<Arc<super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>>>
 }
 
 macro_rules! match_client {
-	($self:ident, $method:ident($($param:ident),*)) => {
-		match $self {
-			#[cfg(feature = "g1")]
-			Self::G1(client) => client.$method($($param),*),
-			#[cfg(feature = "gtest")]
-			Self::GTest(client) => client.$method($($param),*),
-			#[cfg(feature = "gdev")]
-			Self::GDev(client) => client.$method($($param),*),
-		}
-	};
+    ($self:ident, $method:ident($($param:ident),*)) => {
+        match $self {
+            #[cfg(feature = "g1")]
+            Self::G1(client) => client.$method($($param),*),
+            #[cfg(feature = "gtest")]
+            Self::GTest(client) => client.$method($($param),*),
+            #[cfg(feature = "gdev")]
+            Self::GDev(client) => client.$method($($param),*),
+        }
+    };
 }
 
 impl sc_client_api::UsageProvider<Block> for Client {

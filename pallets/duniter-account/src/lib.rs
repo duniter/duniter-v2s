@@ -191,9 +191,9 @@ pub mod pallet {
                             );
                             T::OnUnbalanced::on_unbalanced(imbalance);
                             let request_id = pallet_provide_randomness::Pallet::<T>::force_request(
-								pallet_provide_randomness::RandomnessType::RandomnessFromTwoEpochsAgo,
-								H256(T::AccountIdToSalt::convert(account_id.clone())),
-							);
+                                pallet_provide_randomness::RandomnessType::RandomnessFromTwoEpochsAgo,
+                                H256(T::AccountIdToSalt::convert(account_id.clone())),
+                            );
                             PendingRandomIdAssignments::<T>::insert(request_id, account_id);
                             total_weight += 200_000;
                         }

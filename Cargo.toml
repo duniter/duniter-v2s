@@ -23,12 +23,12 @@ g1 = ["g1-runtime"]
 gdev = ["gdev-runtime"]
 gtest = ["gtest-runtime"]
 runtime-benchmarks = [
-	'g1-runtime',
-	'g1-runtime/runtime-benchmarks',
-	'gdev-runtime',
-	'gdev-runtime/runtime-benchmarks',
-	'gtest-runtime',
-	'gtest-runtime/runtime-benchmarks',
+    'g1-runtime',
+    'g1-runtime/runtime-benchmarks',
+    'gdev-runtime',
+    'gdev-runtime/runtime-benchmarks',
+    'gtest-runtime',
+    'gtest-runtime/runtime-benchmarks',
 ]
 try-runtime = [
 	"g1-runtime/try-runtime",
@@ -122,21 +122,21 @@ try-runtime-cli = { git = "https://github.com/librelois/substrate.git", branch =
 resolver = "2"
 
 members = [
-	'end2end-tests',
+    'end2end-tests',
     'pallets/certification',
     'pallets/duniter-test-parameters',
     'pallets/duniter-test-parameters/macro',
     'pallets/duniter-wot',
     'pallets/identity',
-	'pallets/membership',
-	'pallets/authority-members',
+    'pallets/membership',
+    'pallets/authority-members',
     'pallets/ud-accounts-storage',
     'pallets/universal-dividend',
-	'pallets/upgrade-origin',
+    'pallets/upgrade-origin',
     'primitives/membership',
     'runtime/common',
     'runtime/gdev',
-	'xtask',
+    'xtask',
 ]
 
 # The list of dependencies below (which can be both direct and indirect dependencies) are crates
