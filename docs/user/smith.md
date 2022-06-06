@@ -3,14 +3,19 @@
 ## Publish a node
 
 ### Duniter part
+
 - Add this docker-compose on your server :
 [docker/compose/gdev-validator.docker-compose.yml](https://git.duniter.org/nodes/rust/duniter-v2s/-/blob/master/docker/compose/gdev-validator.docker-compose.yml)
-- Edit lines 26 and 51 : `/ip4/SERVER_IP/tcp/30333/p2p/PEER_ID`
-  with your IP or domain an the PEER_ID you get using te command in comment.
+- Create a `.env` file that define environment variables `SERVER_DOMAIN`, `PEER_ID` and `VALIDATOR_PEER_ID`:
+  - `SERVER_DOMAIN`: a domain name that point on your server
+  - `PEER_ID`: Your rpc node peer id, shoud be generated with this command: `docker run --rm -it --entrypoint -v $PWD:/var/lib/duniter/ duniter duniter/duniter-v2s:v0.1.0 key generate-node-key --file /var/lib/duniter/rpc-node.key`
+  - `VALIDATOR_PEER_ID`: Your validator node peer id, shoud be generated with this command: `docker run --rm -it --entrypoint -v $PWD:/var/lib/duniter/ duniter duniter/duniter-v2s:v0.1.0 key generate-node-key --file /var/lib/duniter/validator-node.key`
   Note: duniter-rpc PEER_ID and duniter-validator PEER_ID isn't the same.
 - If you have write access errors run in docker-compose.yml folder : `chmod o+rwX -R .`
 - `docker-compose up -d` to start your node
+
 ### Reverse-proxy part (with Nginx)
+
 In `/etc/nginx/sites-enabled/gdev.YOUR_DOMAIN` put (you can probably do simpler) :
 ```
 server {
@@ -56,9 +61,10 @@ and replace `YOUR_DOMAIN` by your domain each time.
   if you don't already have a wildcard certificate.
 - `service nginx reload`
 
-Your node is now online as a mirror node. It's fully capable for wallet use.
+Your node is now online as a rpc node. It's fully capable for wallet use.
 
 ## Join the Smith WoT
+
 - add polkadot webextension to be able to authentificate with your account.
 - Go to [any node with polkadotjs ui](https://gdev.1000i100.fr/dev-ui/?rpc=wss://gdev.1000i100.fr/ws)
 - Ask to join Smith WoT (you need to already be in the main WoT)
@@ -69,8 +75,6 @@ Your node is now online as a mirror node. It's fully capable for wallet use.
 - Await smith certification : developer > extrinsics > CERTIFIER_SMITH_ACCOUNT > smithCert > addCert(receiver)
 
 When you have at least 3 certifications, your'in !
-
-
 
 ## Validate blocks (blacksmith work)
 
@@ -85,6 +89,7 @@ When you have at least 3 certifications, your'in !
   - In the UI : developer > extrinsics > YOUR_SMITH_ACCOUNT > authorityMembers > goOnline()
 
 If you're not able to monitor, reboot, act on your node, goOffline() to avoid penality to the blockchain and to you.
+
 ## Upgrade your node with minimal interruption
 
 1. Modify docker image tag on your compose file

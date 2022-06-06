@@ -28,7 +28,7 @@ services:
       #
       # The PEER_ID should be replaced by the output of this command:
       # docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/  duniter/duniter-v2s:v0.1.0 key generate-node-key --file /var/lib/duniter/node.key
-      - "/dns/SERVER_DOMAIN/tcp/30333/p2p/PEER_ID"
+      - "/dns/${SERVER_DOMAIN?SERVER_DOMAIN should be set}/tcp/30333/p2p/${PEER_ID?PEER_ID should be set}"
       - "--rpc-cors"
       - "all"
 

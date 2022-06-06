@@ -16,7 +16,7 @@ Minimal command to deploy a **temporary** mirror peer:
 docker run -it -p9944:9944 -e DUNITER_CHAIN_NAME=gdev duniter/duniter-v2s:v0.1.0 --tmp --execution=Wasm
 ```
 
-To go further, read [How to deploy a permanent mirror node on ĞDev network](./docs/user/mirror.md).
+To go further, read [How to deploy a permanent mirror node on ĞDev network](./docs/user/rpc.md).
 
 ### Create your local blockchain
 

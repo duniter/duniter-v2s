@@ -1,15 +1,19 @@
-# How to deploy a permanent mirror node on ĞDev network
+# How to deploy a permanent rpc node on ĞDev network
 
 ## Publish a node
 
 ### Duniter part
+
 - Add this docker-compose on your server :
-[docker/compose/gdev-mirror.docker-compose.yml](https://git.duniter.org/nodes/rust/duniter-v2s/-/blob/master/docker/compose/gdev-mirror.docker-compose.yml)
-- Edit lines 26: `"/dns/SERVER_DOMAIN/tcp/30333/p2p/PEER_ID"`
-  with your domain name an the PEER_ID you get using te command in comment.
+[docker/compose/gdev-rpc.docker-compose.yml](https://git.duniter.org/nodes/rust/duniter-v2s/-/blob/master/docker/compose/gdev-rpc.docker-compose.yml)
+- Create a `.env` file that defime environment variables `SERVER_DOMAIN` and `PEER_ID`:
+  - `SERVER_DOMAIN`: a domain name that point on your server
+  - `PEER_ID`: Your node peer id, shoud be generated with this command: `docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/  duniter/duniter-v2s:v0.1.0 key generate-node-key --file /var/lib/duniter/node.key`
 - If you have write access errors run in docker-compose.yml folder : `chmod o+rwX -R .`
 - `docker-compose up -d` to start your node
+
 ### Reverse-proxy part (with Nginx)
+
 In `/etc/nginx/sites-enabled/gdev.YOUR_DOMAIN` put (you can probably do simpler) :
 ```
 server {
@@ -55,7 +59,7 @@ and replace `YOUR_DOMAIN` by your domain each time.
   if you don't already have a wildcard certificate.
 - `service nginx reload`
 
-Your node is now online as a mirror node. It's fully capable for wallet use.
+Your node is now online as a rpc node. It's fully capable for wallet use.
 
 To go further, read [How to become a (black)smith](./smith.md)
 
