@@ -1,6 +1,6 @@
 ---
 name: Suggest a Feature
-about: Suggest a new feature or an improvement to an existing feature for this template.
+about: Suggest a new feature or an improvement to an existing feature for duniter-v2s.
 title: ""
 labels: enhancement
 assignees: ""
@@ -9,8 +9,8 @@ assignees: ""
 **Motivation**
 
 _Describe the need or frustration that motivated you to make this suggestion. Please note that the
-goal of this project is to provide a general-purpose template project, so please take care when
-suggesting features that may be specific to a particular use case._
+goal of this project is to bring the Ğ1 blockchain itself, so please take care when
+suggesting features that may not concern the Ğ1 currency._
 
 **Suggested Solution**
 

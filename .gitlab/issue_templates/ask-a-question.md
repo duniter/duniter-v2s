@@ -1,6 +1,6 @@
 ---
 name: Ask a Question
-about: Ask a question about this template.
+about: Ask a question about duniter-v2s.
 title: ""
 labels: question
 assignees: ""

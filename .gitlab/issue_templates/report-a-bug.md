@@ -1,6 +1,6 @@
 ---
 name: Report a Bug
-about: Report a problem with this template.
+about: Report a problem with duniter-v2s.
 title: ""
 labels: bug
 assignees: ""
@@ -8,9 +8,7 @@ assignees: ""
 
 **Description**
 
-_Tell us what happened. In particular, be specific about any changes you made to this template.
-Ideally, provide a link to your project's GitHub repository. Please note that we are not able to
-support all conceivable changes to this template project, but the more information you are able to
+_Tell us what happened. Please elaborate, the more information you are able to
 provide the more equipped we will be to help._
 
 **Steps to Reproduce**
@@ -33,7 +31,7 @@ _Describe the environment in which you encountered this bug. Use the list below 
 and add additional information if you think it's relevant._
 
 - Operating system:
-- Template version/tag:
+- Git commit/tag:
 - Rust version (run `rustup show`):
 
 **Logs, Errors or Screenshots**
