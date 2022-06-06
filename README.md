@@ -116,7 +116,7 @@ RUST_LOG=debug RUST_BACKTRACE=1 ./target/debug/duniter -lruntime=debug --dev
 If you want to see the multi-node consensus algorithm in action, refer to
 [our Start a Private Network tutorial](https://substrate.dev/docs/en/tutorials/start-a-private-network/).
 
-### Purge previous lacal testnet
+### Purge previous local testnet
 
 ```
 ./target/debug/duniter purge-chain --base-path /tmp/alice --chain local
