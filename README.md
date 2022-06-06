@@ -1,6 +1,6 @@
 # Duniter v2s
 
-A rewriting of duniter based on [Substrate](https://www.substrate.io/) framework.
+A rewriting of [Duniter](https://duniter.org) based on [Substrate](https://www.substrate.io/) framework.
 
 duniter-v2s is under active development, only a test network called "ĞDev" is deployed.
 
