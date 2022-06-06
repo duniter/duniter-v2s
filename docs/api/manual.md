@@ -7,7 +7,7 @@ Only ĞDev is covered for now.
 
 ## Notations
 
-1 ĞD = 10 units
+1 ĞD = 100 units
 
 ## Account existence
 
