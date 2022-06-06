@@ -255,7 +255,7 @@ pub mod pallet {
             mut members_count: BalanceOf<T>,
             count_uds_beetween_two_reevals: BalanceOf<T>, // =(dt/udFrequency)
         ) -> BalanceOf<T> {
-            // Ensure that we not divide by zero
+            // Ensure that we do not divide by zero
             if members_count.is_zero() {
                 members_count = One::one();
             }

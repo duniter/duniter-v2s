@@ -84,10 +84,10 @@ pub mod pallet {
         type IdtyValidationOrigin: EnsureOrigin<Self::Origin>;
         ///
         type IsMember: sp_runtime::traits::IsMember<Self::IdtyIndex>;
-        /// On identity confirmed by it's owner
+        /// On identity confirmed by its owner
         type OnIdtyChange: OnIdtyChange<Self>;
-        /// Handle the logic that remove all identity consumers.
-        /// "identity consumers" mean all things that rely on the existence of the identity.
+        /// Handle the logic that removes all identity consumers.
+        /// "identity consumers" meaning all things that rely on the existence of the identity.
         type RemoveIdentityConsumers: RemoveIdentityConsumers<Self::IdtyIndex>;
         /// Signing key of revocation payload
         type RevocationSigner: IdentifyAccount<AccountId = Self::AccountId>;
@@ -207,7 +207,7 @@ pub mod pallet {
             idty_index: T::IdtyIndex,
             owner_key: T::AccountId,
         },
-        /// An identity has been confirmed by it's owner
+        /// An identity has been confirmed by its owner
         /// [idty_index, owner_key, name]
         IdtyConfirmed {
             idty_index: T::IdtyIndex,
@@ -476,15 +476,15 @@ pub mod pallet {
         IdtyCreationNotAllowed,
         /// Identity index not found
         IdtyIndexNotFound,
-        /// Identity name already exist
+        /// Identity name already exists
         IdtyNameAlreadyExist,
-        /// Idty name invalid
+        /// Invalid identity name
         IdtyNameInvalid,
-        /// Identity not confirmed by owner
+        /// Identity not confirmed by its owner
         IdtyNotConfirmedByOwner,
         /// Identity not found
         IdtyNotFound,
-        /// Idty not member
+        /// Identity not member
         IdtyNotMember,
         /// Identity not validated
         IdtyNotValidated,
@@ -494,15 +494,15 @@ pub mod pallet {
         NotAllowedToConfirmIdty,
         /// Not allowed to validate identity
         NotAllowedToValidateIdty,
-        /// Not same identity name
+        /// Not the same identity name
         NotSameIdtyName,
         /// Right already added
         RightAlreadyAdded,
-        /// Right not exist
+        /// Right does not exist
         RightNotExist,
-        /// Not respect IdtyCreationPeriod
+        /// Identity creation period is not respected
         NotRespectIdtyCreationPeriod,
-        /// Owner account not exist
+        /// Owner account does not exist
         OwnerAccountNotExist,
     }
 

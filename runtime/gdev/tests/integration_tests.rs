@@ -186,7 +186,7 @@ fn test_create_new_account_with_insufficient_balance() {
                 })
             );
 
-            // At next bloc, the new account must be reaped because it's balance is not sufficient
+            // At next block, the new account must be reaped because its balance is not sufficient
             // to pay the "new account tax"
             run_to_block(3);
             let events = System::events();
@@ -251,8 +251,8 @@ fn test_create_new_account() {
                 })
             );
 
-            // At next bloc, the new account must be created,
-            // and new account tax should be collected and deposited in the terasury
+            // At next block, the new account must be created,
+            // and new account tax should be collected and deposited in the treasury
             run_to_block(3);
             let events = System::events();
             println!("{:#?}", events);
@@ -338,7 +338,7 @@ fn test_create_new_idty() {
                 AccountKeyring::Eve.to_account_id(),
             ));
 
-            // At next bloc, nothing should be preleved
+            // At next block, nothing should be preleved
             run_to_block(3);
             let events = System::events();
             assert_eq!(events.len(), 0);

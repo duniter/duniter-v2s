@@ -56,7 +56,7 @@ fn test_create_identity_ok() {
         // We need to initialize at least one block before any call
         run_to_block(1);
 
-        // Alice should be able te create an identity
+        // Alice should be able to create an identity
         assert_ok!(Identity::create_identity(Origin::signed(1), 2));
         let events = System::events();
         assert_eq!(events.len(), 1);
@@ -83,7 +83,7 @@ fn test_create_identity_but_not_confirm_it() {
         // We need to initialize at least one block before any call
         run_to_block(1);
 
-        // Alice should be able te create an identity
+        // Alice should be able to create an identity
         assert_ok!(Identity::create_identity(Origin::signed(1), 2));
 
         // The identity shoud expire in blocs #3
@@ -127,7 +127,7 @@ fn test_idty_creation_period() {
         // We need to initialize at least one block before any call
         run_to_block(1);
 
-        // Alice should be able te create an identity
+        // Alice should be able to create an identity
         assert_ok!(Identity::create_identity(Origin::signed(1), 2));
         let events = System::events();
         assert_eq!(events.len(), 1);
@@ -151,7 +151,7 @@ fn test_idty_creation_period() {
             Err(Error::<Test>::NotRespectIdtyCreationPeriod.into())
         );
 
-        // Alice should be able te create a second identity after block #4
+        // Alice should be able to create a second identity after block #4
         run_to_block(4);
         assert_ok!(Identity::create_identity(Origin::signed(1), 3));
         let events = System::events();

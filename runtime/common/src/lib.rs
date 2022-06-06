@@ -39,7 +39,7 @@ pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 /// Balance of an account.
 pub type Balance = u64;
 
-/// Bock type.
+/// Block type.
 pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
 
 /// Block identifier type.
