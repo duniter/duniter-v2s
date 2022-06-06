@@ -1,4 +1,4 @@
-# Duniter-v2s integration tests
+# Duniter-v2s end2end tests
 
 ## cucumber functionnal tests
 
@@ -47,37 +47,9 @@ Feature: My awesome feature
     Then We should observe that
 ```
 
-### Test users
+### Steps
 
-6 test users are provided:
-
-- alice
-- bob
-- charlie
-- dave
-- eve
-- ferdie
-
-### genesis state
-
-Each scenario bootstraps its own blockchain with its own genesis state.
-
-By default, all scenarios use the same configuration for the genesis, which is located in the file
-`/cucumber-genesis/default.json`.
-
-You can define a custom genesis state for each scenario with the tag `@genesis.confName`.
-
-The genesis configuration must then be defined in a json file located at
-`/cucumber-genesis/confName.json`.
-
-You can also define a custom genesis at the feature level, all the scenarios of this feature will
-then inherit the genesis configuration.
-
-### Currency amounts
-
-Amounts must be expressed as an integer of `ĞD` or `UD`, decimal numbers are not supported.
-If you need more precision, you can express amounts in cents of ĞD (write `cĞD`), or in thousandths
-of UD (write `mUD`).
+Each scenario is a list of steps. In our context (blockchain), only the `When` and `Then` steps make sense, `Given` being the genesis.
 
 #### When
 
@@ -95,22 +67,53 @@ List of possible actions:
 
     Example: `alice should have 10 ĞD`
 
-### Universal dividend creation
-
-#### Then
-
 -  Check the current UD amount
 
     Usage: `Current UD amount should be {amount}.{cents} ĞD`
 
     Example: `Current UD amount should be 10.00 ĞD`
 
-
 -  Check the monetary mass
 
     Usage: `Monetary mass should be {amount}.{cents} ĞD`
 
     Example: `Monetary mass should be 30.00 ĞD`
+
+### Test users
+
+6 test users are provided:
+
+- alice
+- bob
+- charlie
+- dave
+- eve
+- ferdie
+
+### Currency amounts
+
+Amounts must be expressed as an integer of `ĞD` or `UD`, decimal numbers are not supported.
+If you need more precision, you can express amounts in cents of ĞD (write `cĞD`), or in thousandths
+of UD (write `mUD`).
+
+### genesis state
+
+Each scenario bootstraps its own blockchain with its own genesis state.
+
+By default, all scenarios use the same configuration for the genesis, which is located in the file
+`/cucumber-genesis/default.json`.
+
+You can define a custom genesis state for each scenario with the tag `@genesis.confName`.
+
+The genesis configuration must then be defined in a json file located at
+`/cucumber-genesis/confName.json`.
+
+You can also define a custom genesis at the feature level, all the scenarios of this feature will
+then inherit the genesis configuration.
+
+### ignoreErrors
+
+For some scenarios, you may need to perform an action (When) that fails voluntarily, in this case you must add the tag @ignoreErrors to your scenario, otherwise it will be considered as failed
 
 ### Run cucumber functional tests
 

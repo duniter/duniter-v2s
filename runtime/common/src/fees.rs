@@ -17,7 +17,7 @@
 pub use frame_support::weights::{
     Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
-use sp_arithmetic::traits::{BaseArithmetic, Unsigned, Zero};
+use sp_arithmetic::traits::{BaseArithmetic, One, Unsigned};
 
 pub struct WeightToFeeImpl<T>(sp_std::marker::PhantomData<T>);
 
@@ -35,8 +35,8 @@ where
             degree: 1,
         })
     }
-    // Force disable fees
+    // Force constant fees
     fn calc(_weight: &Weight) -> Self::Balance {
-        Zero::zero()
+        One::one()
     }
 }
