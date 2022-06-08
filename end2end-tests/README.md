@@ -1,6 +1,6 @@
 # Duniter-v2s end2end tests
 
-## cucumber functionnal tests
+## Cucumber functionnal tests
 
 We use [cucumber] to be able to describe test scenarios in human language.
 
@@ -20,7 +20,7 @@ Feature: Balance transfer
     Then dave should have 5 ĞD
 ```
 
-### create a new functional test
+### Create a new functional test
 
 To create a new test scenario, simply create a new file with a name of your choice in the
 `/cucumber-features` folder and give it the extension `.feature`.
@@ -55,8 +55,8 @@ Each scenario is a list of steps. In our context (blockchain), only the `When` a
 
 List of possible actions:
 
-- transfer: `alice send 5 ĞD to bob`
-- transfer_ud: `alice send 3 UD to bob`
+- transfer: `alice sends 5 ĞD to bob`
+- transfer_ud: `alice sends 3 UD to bob`
 - transfer_all: `alice sends all her ĞDs to bob`
 
 #### Then
@@ -96,7 +96,7 @@ Amounts must be expressed as an integer of `ĞD` or `UD`, decimal numbers are no
 If you need more precision, you can express amounts in cents of ĞD (write `cĞD`), or in thousandths
 of UD (write `mUD`).
 
-### genesis state
+### Genesis state
 
 Each scenario bootstraps its own blockchain with its own genesis state.
 
@@ -117,17 +117,22 @@ For some scenarios, you may need to perform an action (When) that fails voluntar
 
 ### Run cucumber functional tests
 
+The cucumber tests use the last debug binary in your `target` folder. Make sure this binary corresponds to the executable you want to test by running `cargo build` before.
+
 To run the cucumber tests, you will need to have the rust toolchain installed locally.
 
 To run all the scenarios (there are many) use the command: `cargo cucumber`
 
-You can filter the `.feature` files to run with the option `i`, for instante:
+You can filter the `.feature` files to run with the option `i`, for instance:
 
 ```
 cargo cucumber -i monetary*
 ```
 
-Will only run `.feature` files that start with `"monetary"`.
+will only run `.feature` files that start with `"monetary"`.
+
+The features will be tested in parallel and logs files will be written in the `end2end-tests` folder.
+If you get an `Error: Timeout`, look at the logs to understand why Duniter did not launch successfully. You can also set the environment variable `DUNITER_END2END_TESTS_SPAWN_NODE_TIMEOUT` to increase the timeout for node spawn.
 
 ### Contribute to the code that runs the tests
 

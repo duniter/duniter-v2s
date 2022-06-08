@@ -119,7 +119,7 @@ fn parse_amount(amount: u64, unit: &str) -> (u64, bool) {
     }
 }
 
-#[given(regex = r"([a-zA-Z]+) have (\d+) (ĞD|cĞD|UD|mUD)")]
+#[given(regex = r"([a-zA-Z]+) ha(?:ve|s) (\d+) (ĞD|cĞD|UD|mUD)")]
 async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: String) -> Result<()> {
     // Parse inputs
     let who = AccountKeyring::from_str(&who).expect("unknown to");
@@ -149,7 +149,7 @@ async fn n_blocks_later(world: &mut DuniterWorld, n: usize) -> Result<()> {
     Ok(())
 }
 
-#[when(regex = r"([a-zA-Z]+) send (\d+) (ĞD|cĞD|UD|mUD) to ([a-zA-Z]+)")]
+#[when(regex = r"([a-zA-Z]+) sends? (\d+) (ĞD|cĞD|UD|mUD) to ([a-zA-Z]+)")]
 async fn transfer(
     world: &mut DuniterWorld,
     from: String,

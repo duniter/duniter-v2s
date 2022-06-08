@@ -1,7 +1,7 @@
 Feature: Balance transfer
 
-  Scenario: Create a new account with enough founds
-    When alice send 5 ĞD to dave
+  Scenario: Create a new account with enough funds
+    When alice sends 5 ĞD to dave
     Then dave should have 5 ĞD
     When 1 block later
     """
@@ -9,13 +9,13 @@ Feature: Balance transfer
     """
     Then dave should have 2 ĞD
 
-  Scenario: Create a new account without enough founds then retry with enough founds
-    When alice send 2 ĞD to eve
+  Scenario: Create a new account without enough funds then retry with enough funds
+    When alice sends 2 ĞD to eve
     Then eve should have 2 ĞD
     When 1 block later
     """
-    The blockchain should automatically destroy Evec account
-    because Eve not have enough founds to pay the new account tax
+    The blockchain should automatically destroy Eve account
+    because Eve does not have enough funds to pay the new account tax
     """
     Then eve should have 0 ĞD
     When alice send 5 ĞD to eve
@@ -27,7 +27,7 @@ Feature: Balance transfer
     Then eve should have 2 ĞD
 
   @ignoreErrors
-  Scenario: Create a new account without any founds
+  Scenario: Create a new account without any funds
     Then eve should have 0 ĞD
     When eve send 0 ĞD to alice
     Then alice should have 10 ĞD
