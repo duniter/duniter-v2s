@@ -8,6 +8,7 @@ the transactor. This is the only call category that can be submitted with an ext
 through on-chain governance mechanisms.
 1. Inherent calls: This kind of call is invoked by the author of the block itself
 (usually automatically by the node).
+1. Disabled calls: These calls are disabled for different reasons (to be documented).
 
 
 ## User calls
@@ -2146,6 +2147,172 @@ The dispatch origin for this call must be _Root_.
 ```rust
 as_origin: Box<T::PalletsOrigin>,
 call: Box<<T as Config>::Call>
+```
+
+</p>
+</details>
+
+
+
+## Disabled calls
+
+There are **7** disabled calls organized in **4** pallets.
+
+### 0: System
+
+<details><summary>1: remark(remark)</summary>
+<p>
+
+### Index
+
+`1`
+
+### Documentation
+
+Make some on-chain remark.
+
+
+### Types of parameters
+
+```rust
+remark: Vec<u8>
+```
+
+</p>
+</details>
+
+<details><summary>8: remark_with_event(remark)</summary>
+<p>
+
+### Index
+
+`8`
+
+### Documentation
+
+Make some on-chain remark and emit event.
+
+### Types of parameters
+
+```rust
+remark: Vec<u8>
+```
+
+</p>
+</details>
+
+
+### 14: Session
+
+<details><summary>0: set_keys(keys, proof)</summary>
+<p>
+
+### Index
+
+`0`
+
+### Documentation
+
+Sets the session key(s) of the function caller to `keys`.
+Allows an account to set its session key prior to becoming a validator.
+This doesn't take effect until the next session.
+
+The dispatch origin of this function must be signed.
+
+
+### Types of parameters
+
+```rust
+keys: T::Keys,
+proof: Vec<u8>
+```
+
+</p>
+</details>
+
+<details><summary>1: purge_keys()</summary>
+<p>
+
+### Index
+
+`1`
+
+### Documentation
+
+Removes any session key(s) of the function caller.
+
+This doesn't take effect until the next session.
+
+The dispatch origin of this function must be Signed and the account must be either be
+convertible to a validator ID using the chain's typical addressing system (this usually
+means being a controller account) or directly convertible into a validator ID (which
+usually means being a stash account).
+
+
+</p>
+</details>
+
+
+### 42: Membership
+
+<details><summary>2: claim_membership(maybe_idty_id)</summary>
+<p>
+
+### Index
+
+`2`
+
+### Documentation
+
+
+
+### Types of parameters
+
+```rust
+maybe_idty_id: Option<T::IdtyId>
+```
+
+</p>
+</details>
+
+<details><summary>4: revoke_membership(maybe_idty_id)</summary>
+<p>
+
+### Index
+
+`4`
+
+### Documentation
+
+
+
+### Types of parameters
+
+```rust
+maybe_idty_id: Option<T::IdtyId>
+```
+
+</p>
+</details>
+
+
+### 52: SmithsMembership
+
+<details><summary>2: claim_membership(maybe_idty_id)</summary>
+<p>
+
+### Index
+
+`2`
+
+### Documentation
+
+
+
+### Types of parameters
+
+```rust
+maybe_idty_id: Option<T::IdtyId>
 ```
 
 </p>

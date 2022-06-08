@@ -76,6 +76,9 @@ impl CallCategory {
     fn is_user(pallet_name: &str, call_name: &str) -> bool {
         matches!(Self::is(pallet_name, call_name), Self::User)
     }
+    fn is_disabled(pallet_name: &str, call_name: &str) -> bool {
+        matches!(Self::is(pallet_name, call_name), Self::Disabled)
+    }
 }
 
 #[derive(Clone)]
@@ -224,6 +227,23 @@ fn print_runtime_calls(pallets: RuntimeCalls) -> String {
             }
         })
         .collect();
+    let mut disabled_calls_counter = 0;
+    let disabled_calls_pallets: RuntimeCalls = pallets
+        .iter()
+        .cloned()
+        .filter_map(|mut pallet| {
+            let pallet_name = pallet.name.clone();
+            pallet
+                .calls
+                .retain(|call| CallCategory::is_disabled(&pallet_name, &call.name));
+            if pallet.calls.is_empty() {
+                None
+            } else {
+                disabled_calls_counter += pallet.calls.len();
+                Some(pallet)
+            }
+        })
+        .collect();
 
     let mut output = String::new();
 
@@ -244,6 +264,10 @@ through on-chain governance mechanisms.
 (usually automatically by the node).
 "#,
     );
+    output.push_str(
+        r#"1. Disabled calls: These calls are disabled for different reasons (to be documented).
+"#,
+    );
 
     output.push_str("\n\n## User calls\n\n");
     output.push_str(&print_calls_category(
@@ -257,6 +281,13 @@ through on-chain governance mechanisms.
         root_calls_counter,
         "root",
         root_calls_pallets,
+    ));
+
+    output.push_str("\n\n## Disabled calls\n\n");
+    output.push_str(&print_calls_category(
+        disabled_calls_counter,
+        "disabled",
+        disabled_calls_pallets,
     ));
 
     output
