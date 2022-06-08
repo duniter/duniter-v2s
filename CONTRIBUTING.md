@@ -31,7 +31,9 @@ Please read [Developer documentation] before contribute.
 
 2. Ensure that you respect the [commit naming conventions].
 
-3. Ensure that all automated tests pass with the `npm test` command.
+3. Ensure that all automated tests pass with the `cargo test` command.
+
+3. Ensure that the code is well formated `cargo fmt` and comply with the good practices `cargo clippy`. If you have been working on tests, check everything with `cargo clippy --all --tests`.
 
 4. Update the documentation with details of changes to the interface, this includes new environment
     variables, exposed ports, useful file locations and container parameters.

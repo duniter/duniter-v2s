@@ -4,7 +4,7 @@ description = "Duniter-v2s xtask"
 edition = "2018"
 license = "AGPL-3.0"
 name = "xtask"
-repository = "https://git.duniter.org/nodes/typescript/duniter"
+repository = "https://git.duniter.org/nodes/rust/duniter-v2s"
 version = "0.1.0"
 
 [[bin]]

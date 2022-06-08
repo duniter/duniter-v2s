@@ -1,4 +1,4 @@
-This project is tracked on our hosted gitlab server at: https://git.duniter.org/nodes/typescript/duniter/gitlab
+This project is tracked on our hosted gitlab server at: https://git.duniter.org/nodes/rust/duniter-v2s
 
 The current github repository is a simple clone taken up to date at each push on the main gitlab repository.
 
