@@ -8,6 +8,7 @@ workflow:
   rules:
     - changes:
       - docker/Dockerfile
+      - end2end-tests/**/*
       - node/**/*
       - pallets/**/*
       - runtime/**/*
