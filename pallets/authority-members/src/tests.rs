@@ -17,7 +17,7 @@
 use super::*;
 use crate::mock::*;
 use crate::MemberData;
-use frame_support::{assert_err, assert_ok};
+use frame_support::{assert_noop, assert_ok};
 use sp_runtime::testing::UintAuthorityId;
 
 const EMPTY: Vec<u64> = Vec::new();
@@ -249,7 +249,7 @@ fn test_too_many_authorities() {
             UintAuthorityId(15).into(),
         ));
         assert_eq!(AuthorityMembers::authorities_counter(), 4);
-        assert_err!(
+        assert_noop!(
             AuthorityMembers::go_online(Origin::signed(15)),
             Error::<Test>::TooManyAuthorities,
         );

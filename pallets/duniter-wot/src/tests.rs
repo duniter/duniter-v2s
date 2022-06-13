@@ -16,7 +16,7 @@
 
 use crate::mock::Identity;
 use crate::mock::*;
-use frame_support::assert_err;
+use frame_support::assert_noop;
 use frame_support::assert_ok;
 use frame_support::instances::Instance1;
 use frame_system::{EventRecord, Phase};
@@ -43,7 +43,7 @@ fn test_creator_not_allowed_to_create_idty() {
 
         // Alice should not be able to create an identity before block #2
         // because Alice.next_issuable_on = 2
-        assert_err!(
+        assert_noop!(
             Identity::create_identity(Origin::signed(1), 4),
             pallet_identity::Error::<Test>::CreatorNotAllowedToCreateIdty
         );
@@ -81,7 +81,7 @@ fn test_revoke_smiths_them_rejoin() {
 
         // Dave should not be able to re-request membership before the RevocationPeriod end
         run_to_block(3);
-        assert_err!(
+        assert_noop!(
             SmithsMembership::request_membership(Origin::signed(4), crate::MembershipMetaData(4)),
             pallet_membership::Error::<Test, crate::Instance2>::MembershipRevokedRecently
         );
@@ -281,7 +281,7 @@ fn test_idty_membership_expire_them_requested() {
         assert!(Identity::identity(3).is_none());
 
         // Alice can't renew her cert to Charlie
-        assert_err!(
+        assert_noop!(
             Cert::add_cert(Origin::signed(1), 3),
             pallet_certification::Error::<Test, Instance1>::ReceiverNotFound
         );

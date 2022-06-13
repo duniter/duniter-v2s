@@ -18,7 +18,7 @@ mod common;
 
 use common::*;
 use frame_support::traits::{PalletInfo, StorageInfo, StorageInfoTrait};
-use frame_support::{assert_err, assert_ok};
+use frame_support::{assert_noop, assert_ok};
 use frame_support::{StorageHasher, Twox128};
 use gdev_runtime::*;
 use sp_keyring::AccountKeyring;
@@ -295,7 +295,7 @@ fn test_create_new_account() {
 
             // We can't remove the account until the random id is assigned
             run_to_block(4);
-            assert_err!(
+            assert_noop!(
                 Balances::transfer(
                     frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
                     MultiAddress::Id(AccountKeyring::Alice.to_account_id()),

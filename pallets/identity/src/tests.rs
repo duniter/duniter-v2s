@@ -17,7 +17,7 @@
 use crate::mock::*;
 use crate::{Error, GenesisIdty, IdtyName, IdtyValue, RevocationPayload};
 use codec::Encode;
-//use frame_support::assert_err;
+//use frame_support::assert_noop;
 use frame_support::assert_ok;
 use frame_system::{EventRecord, Phase};
 use sp_runtime::testing::TestSignature;
