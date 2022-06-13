@@ -525,7 +525,12 @@ pub mod pallet {
                 Identities::<T>::remove(idty_index);
                 frame_system::Pallet::<T>::dec_sufficients(&idty_val.owner_key);
                 Self::deposit_event(Event::IdtyRemoved { idty_index });
-                T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Removed);
+                T::OnIdtyChange::on_idty_change(
+                    idty_index,
+                    IdtyEvent::Removed {
+                        status: idty_val.status,
+                    },
+                );
             }
             0
         }

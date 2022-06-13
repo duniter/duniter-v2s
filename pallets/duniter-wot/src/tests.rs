@@ -287,3 +287,25 @@ fn test_idty_membership_expire_them_requested() {
         );
     });
 }
+
+#[test]
+fn test_unvalidated_idty_certs_removal() {
+    new_test_ext(5, 2).execute_with(|| {
+        // Alice creates Ferdie identity
+        run_to_block(2);
+        assert_ok!(Identity::create_identity(Origin::signed(1), 6));
+
+        // Ferdie confirms his identity
+        run_to_block(3);
+        assert_ok!(Identity::confirm_identity(
+            Origin::signed(6),
+            IdtyName::from("Ferdie"),
+        ));
+
+        // After PendingMembershipPeriod, Ferdie identity should expire
+        // and his received certifications should be removed
+        assert_eq!(Cert::certs_by_receiver(6).len(), 1);
+        run_to_block(6);
+        assert_eq!(Cert::certs_by_receiver(6).len(), 0);
+    });
+}

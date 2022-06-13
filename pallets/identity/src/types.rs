@@ -27,7 +27,7 @@ pub enum IdtyEvent<T: crate::Config> {
     Created { creator: T::IdtyIndex },
     Confirmed,
     Validated,
-    Removed,
+    Removed { status: IdtyStatus },
 }
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug)]

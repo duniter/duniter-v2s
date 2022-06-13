@@ -249,7 +249,20 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pall
             }
             IdtyEvent::Confirmed => {}
             IdtyEvent::Validated => {}
-            IdtyEvent::Removed => {}
+            IdtyEvent::Removed { status } => {
+                if status != IdtyStatus::Validated {
+                    if let Err(e) =
+                        <pallet_certification::Pallet<T, I>>::remove_all_certs_received_by(
+                            frame_system::Origin::<T>::Root.into(),
+                            idty_index,
+                        )
+                    {
+                        sp_std::if_std! {
+                            println!("fail to remove certs received by some idty: {:?}", e)
+                        }
+                    }
+                }
+            }
         }
         0
     }
