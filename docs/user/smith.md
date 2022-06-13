@@ -22,6 +22,7 @@ server {
   server_name gdev.YOUR_DOMAIN.fr;
 
   listen 443 ssl http2;
+  listen [::]:443 ssl http2;
   ssl_certificate /etc/nginx/ssl/YOUR_DOMAIN.cert;
   ssl_certificate_key /etc/nginx/ssl/YOUR_DOMAIN.key;
 
