@@ -400,5 +400,10 @@
     "tokenSymbol": "ĞD"
   },
   "protocolId": null,
-  "telemetryEndpoints": null
+  "telemetryEndpoints": [
+    [
+      "wss://telemetry.polkadot.io/submit/",
+      0
+    ]
+  ]
 }
