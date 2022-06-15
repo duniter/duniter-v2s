@@ -1517,6 +1517,7 @@ dependencies = [
 name = "duniter-end2end-tests"
 version = "3.0.0"
 dependencies = [
+ "anyhow",
  "async-trait",
  "clap",
  "ctrlc",

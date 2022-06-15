@@ -28,6 +28,8 @@ use std::sync::{
     Arc,
 };
 
+// ===== world =====
+
 #[derive(WorldInit)]
 pub struct DuniterWorld {
     ignore_errors: bool,
@@ -119,6 +121,8 @@ fn parse_amount(amount: u64, unit: &str) -> (u64, bool) {
     }
 }
 
+// ===== given =====
+
 #[given(regex = r"([a-zA-Z]+) ha(?:ve|s) (\d+) (ĞD|cĞD|UD|mUD)")]
 async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: String) -> Result<()> {
     // Parse inputs
@@ -140,6 +144,8 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
 
     Ok(())
 }
+
+// ===== when =====
 
 #[when(regex = r"(\d+) blocks? later")]
 async fn n_blocks_later(world: &mut DuniterWorld, n: usize) -> Result<()> {
@@ -175,7 +181,7 @@ async fn transfer(
     }
 }
 
-#[when(regex = r"([a-zA-Z]+) sends all (?:his|her) (?:ĞDs?|DUs?) to ([a-zA-Z]+)")]
+#[when(regex = r"([a-zA-Z]+) sends? all (?:his|her) (?:ĞDs?|DUs?|UDs?) to ([a-zA-Z]+)")]
 async fn send_all_to(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
     // Parse inputs
     let from = AccountKeyring::from_str(&from).expect("unknown from");
@@ -183,6 +189,17 @@ async fn send_all_to(world: &mut DuniterWorld, from: String, to: String) -> Resu
 
     common::balances::transfer_all(world.api(), world.client(), from, to).await
 }
+
+#[when(regex = r"([a-zA-Z]+) certifies ([a-zA-Z]+)")]
+async fn certifies(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
+    // Parse inputs
+    let from = AccountKeyring::from_str(&from).expect("unknown from");
+    let to = AccountKeyring::from_str(&to).expect("unknown to");
+
+    common::cert::certify(world.api(), world.client(), from, to).await
+}
+
+// ===== then ====
 
 #[then(regex = r"([a-zA-Z]+) should have (\d+) (ĞD|cĞD)")]
 async fn should_have(
@@ -231,6 +248,48 @@ async fn monetary_mass_should_be(world: &mut DuniterWorld, amount: u64, cents: u
     assert_eq!(actual, expected);
     Ok(())
 }
+
+#[then(regex = r"([a-zA-Z]+) should be certified by ([a-zA-Z]+)")]
+async fn should_be_certified_by(
+    world: &mut DuniterWorld,
+    receiver: String,
+    issuer: String,
+) -> Result<()> {
+    // Parse inputs
+    let receiver_account = AccountKeyring::from_str(&receiver)
+        .expect("unknown to")
+        .to_account_id();
+    let issuer_account = AccountKeyring::from_str(&issuer)
+        .expect("unknown to")
+        .to_account_id();
+
+    let issuer_index = world
+        .api()
+        .storage()
+        .identity()
+        .identity_index_of(issuer_account, None)
+        .await?
+        .unwrap();
+    let receiver_index = world
+        .api()
+        .storage()
+        .identity()
+        .identity_index_of(receiver_account, None)
+        .await?
+        .unwrap();
+
+    let _certification = world
+        .api()
+        .storage()
+        .cert()
+        .storage_certs_by_issuer(issuer_index, receiver_index, None)
+        .await?
+        .ok_or_else(|| anyhow::anyhow!("no certification found from {} to {}", issuer, receiver))?;
+
+    Ok(())
+}
+
+// ============================================================
 
 #[derive(clap::Args)]
 struct CustomOpts {

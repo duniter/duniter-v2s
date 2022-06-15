@@ -9,6 +9,7 @@ repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
 version = '3.0.0'
 
 [dev-dependencies]
+anyhow = "1.0"
 async-trait = "0.1"
 clap = { version = "3.0", features = ["derive"] }
 ctrlc = "3.2.2"

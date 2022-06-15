@@ -17,10 +17,12 @@
 #![allow(clippy::enum_variant_names, dead_code, unused_imports)]
 
 pub mod balances;
+pub mod cert;
 
 #[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
 pub mod node_runtime {}
 
+use anyhow::anyhow;
 use serde_json::Value;
 use sp_keyring::AccountKeyring;
 use std::io::prelude::*;
