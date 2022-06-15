@@ -6,9 +6,14 @@
 
 - Add this docker-compose on your server :
 [docker/compose/gdev-rpc.docker-compose.yml](https://git.duniter.org/nodes/rust/duniter-v2s/-/blob/master/docker/compose/gdev-rpc.docker-compose.yml)
-- Create a `.env` file that defime environment variables `SERVER_DOMAIN` and `PEER_ID`:
-  - `SERVER_DOMAIN`: a domain name that point on your server
-  - `PEER_ID`: Your node peer id, shoud be generated with this command: `docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/  duniter/duniter-v2s:v0.1.0 key generate-node-key --file /var/lib/duniter/node.key`
+- Rename the file : `mv gdev-mirror.docker-compose.yml docker-compose.yml`
+- In the same folder, create a `.env` file that defime environment variables `SERVER_DOMAIN` and `PEER_ID`:
+```
+SERVER_DOMAIN=YOUR_DOMAIN
+PEER_ID=YOUR_PEER_ID
+```
+
+Your `PEER_ID` shoud be generated with this command: `docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/  duniter/duniter-v2s:v0.1.0 key generate-node-key --file /var/lib/duniter/node.key`
 - If you have write access errors run in docker-compose.yml folder : `chmod o+rwX -R .`
 - `docker-compose up -d` to start your node
 
