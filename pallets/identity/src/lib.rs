@@ -247,11 +247,6 @@ pub mod pallet {
             let creator_idty_val =
                 Identities::<T>::try_get(&creator).map_err(|_| Error::<T>::IdtyNotFound)?;
 
-            ensure!(
-                frame_system::Pallet::<T>::account_exists(&owner_key),
-                Error::<T>::OwnerAccountNotExist
-            );
-
             if IdentityIndexOf::<T>::contains_key(&owner_key) {
                 return Err(Error::<T>::IdtyAlreadyCreated.into());
             }
@@ -502,8 +497,9 @@ pub mod pallet {
         RightNotExist,
         /// Identity creation period is not respected
         NotRespectIdtyCreationPeriod,
-        /// Owner account does not exist
-        OwnerAccountNotExist,
+        // Removed error: OwnerAccountNotExist,
+        // Caution: if you add a new error, you should explicitly set the index
+        // to not reuse the same index as the removed error.
     }
 
     // PUBLIC FUNCTIONS //
