@@ -1,4 +1,5 @@
 stages:
+  - labels
   - quality
   - build
   - tests
@@ -15,6 +16,15 @@ workflow:
       - .gitlab-ci.yml
       - Cargo.toml
       - Cargo.lock
+
+check_labels:
+  extends: .env
+  stage: labels
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - when: never
+  script:
+    - ./scripts/check_labels.sh $CI_MERGE_REQUEST_LABELS
 
 .env:
   image: paritytech/ci-linux:production
