@@ -1,0 +1,17 @@
+[package]
+authors = ['Axiom-Team Developers <https://axiom-team.fr>']
+description = 'duniter live tests.'
+edition = '2018'
+homepage = 'https://substrate.dev'
+license = 'AGPL-3.0'
+name = 'duniter-live-tests'
+repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
+version = '3.0.0'
+
+[dev-dependencies]
+anyhow = "1.0"
+hex-literal = "0.3"
+parity-scale-codec = "2.3.1"
+sp-core = { git = 'https://github.com/librelois/substrate', branch = 'duniter-monthly-2022-02' }
+subxt = { git = 'https://github.com/librelois/subxt', branch = 'duniter-monthly-2022-02' }
+tokio = { version = "1.15.0", features = ["macros"] }

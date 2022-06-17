@@ -124,6 +124,15 @@ build_release_manual:
       - build/
     expire_in: 3 day
 
+sanity_tests:
+  extends: .env
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - when: never
+  stage: tests
+  script:
+    - cargo sanity-gdev
+
 tests_debug:
   extends: .env
   rules:

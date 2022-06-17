@@ -123,6 +123,7 @@ resolver = "2"
 
 members = [
     'end2end-tests',
+    'live-tests',
     'pallets/certification',
     'pallets/duniter-test-parameters',
     'pallets/duniter-test-parameters/macro',

@@ -1533,6 +1533,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "duniter-live-tests"
+version = "3.0.0"
+dependencies = [
+ "anyhow",
+ "hex-literal",
+ "parity-scale-codec",
+ "sp-core",
+ "subxt",
+ "tokio",
+]
+
+[[package]]
 name = "duniter-primitives"
 version = "3.0.0"
 dependencies = [
