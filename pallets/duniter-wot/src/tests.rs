@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::mock::Identity;
 use crate::mock::*;
+use crate::mock::{Identity, System};
 use frame_support::assert_noop;
 use frame_support::assert_ok;
 use frame_support::instances::Instance1;
@@ -60,11 +60,31 @@ fn test_join_smiths() {
             Origin::signed(4),
             crate::MembershipMetaData(4)
         ));
-
-        run_to_block(3);
+        System::assert_has_event(Event::SmithsMembership(
+            pallet_membership::Event::MembershipRequested(4),
+        ));
 
         // Then, Alice should be able to send a smith cert to Dave
+        run_to_block(3);
         assert_ok!(SmithsCert::add_cert(Origin::signed(1), 4));
+
+        // Then, if Bob certify Dave, he should become member
+        run_to_block(4);
+        assert_ok!(SmithsCert::add_cert(Origin::signed(2), 4));
+        System::assert_has_event(Event::SmithsMembership(
+            pallet_membership::Event::MembershipAcquired(4),
+        ));
+    });
+}
+
+#[test]
+fn test_smith_certs_expirations_should_revoke_smith_membership() {
+    new_test_ext(5, 3).execute_with(|| {
+        // After block #10, alice membership should be revoked due to smith certs expiration
+        run_to_block(10);
+        System::assert_has_event(Event::SmithsMembership(
+            pallet_membership::Event::MembershipRevoked(1),
+        ));
     });
 }
 

@@ -151,7 +151,7 @@ parameter_types! {
     pub const MinReceivedCertToBeAbleToIssueCert: u32 = 2;
     pub const CertRenewablePeriod: u64 = 4;
     pub const CertPeriod: u64 = 2;
-    pub const ValidityPeriod: u64 = 10;
+    pub const ValidityPeriod: u64 = 20;
 }
 
 impl pallet_certification::Config<Instance1> for Test {
@@ -218,11 +218,11 @@ impl pallet_certification::Config<Instance2> for Test {
     type Event = Event;
     type IdtyIndex = IdtyIndex;
     type IdtyIndexOf = Identity;
-    type IsCertAllowed = DuniterWot;
+    type IsCertAllowed = SmithsSubWot;
     type MaxByIssuer = SmithsMaxByIssuer;
     type MinReceivedCertToBeAbleToIssueCert = SmithsMinReceivedCertToBeAbleToIssueCert;
-    type OnNewcert = DuniterWot;
-    type OnRemovedCert = DuniterWot;
+    type OnNewcert = SmithsSubWot;
+    type OnRemovedCert = SmithsSubWot;
     type CertRenewablePeriod = SmithsCertRenewablePeriod;
     type ValidityPeriod = SmithsValidityPeriod;
 }
@@ -295,7 +295,7 @@ pub fn new_test_ext(
     .unwrap();
 
     pallet_certification::GenesisConfig::<Test, Instance2> {
-        certs_by_issuer: clique_wot(initial_smiths_len, ValidityPeriod::get()),
+        certs_by_issuer: clique_wot(initial_smiths_len, SmithsValidityPeriod::get()),
         apply_cert_period_at_genesis: true,
     }
     .assimilate_storage(&mut t)

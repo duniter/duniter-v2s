@@ -32,6 +32,7 @@ mod benchmarking;*/
 pub use pallet::*;
 pub use types::*;
 
+use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::pallet_prelude::*;
 use frame_system::RawOrigin;
 use pallet_certification::traits::SetNextIssuableOn;
@@ -44,7 +45,6 @@ type IdtyIndex = u32;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::dispatch::UnfilteredDispatchable;
     use frame_support::traits::StorageVersion;
 
     /// The current storage version.
@@ -288,7 +288,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex
                     Some(receiver),
                 ) {
                     sp_std::if_std! {
-                        println!("fail to claim membership: {:?}", e)
+                        println!("fail to claim membership: {:?}", e)
                     }
                 }
             } else {
@@ -319,11 +319,23 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
         if receiver_received_count < T::MinCertForMembership::get()
             && pallet_membership::Pallet::<T, I>::is_member(&receiver)
         {
-            // Revoke receiver membership and disable their identity
-            Self::dispath_idty_call(pallet_identity::Call::remove_identity {
-                idty_index: receiver,
-                idty_name: None,
-            });
+            if T::IsSubWot::get() {
+                // Revoke receiver membership
+                let call = pallet_membership::Call::<T, I>::revoke_membership {
+                    maybe_idty_id: Some(receiver),
+                };
+                if let Err(e) = call.dispatch_bypass_filter(RawOrigin::Root.into()) {
+                    sp_std::if_std! {
+                        println!("fail to dispatch membership call: {:?}", e)
+                    }
+                }
+            } else {
+                // Revoke receiver membership and disable his identity
+                Self::dispath_idty_call(pallet_identity::Call::remove_identity {
+                    idty_index: receiver,
+                    idty_name: None,
+                });
+            }
         }
         0
     }
