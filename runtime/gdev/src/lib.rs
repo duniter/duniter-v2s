@@ -164,6 +164,7 @@ pub enum ProxyType {
     Any = 0,
     TransferOnly = 1,
     CancelProxy = 2,
+    SmithsCollectivePropose = 3,
 }
 impl Default for ProxyType {
     fn default() -> Self {
@@ -181,6 +182,12 @@ impl frame_support::traits::InstanceFilter<Call> for ProxyType {
                 matches!(
                     c,
                     Call::Proxy(pallet_proxy::Call::reject_announcement { .. })
+                )
+            }
+            ProxyType::SmithsCollectivePropose => {
+                matches!(
+                    c,
+                    Call::SmithsCollective(pallet_collective::Call::propose { .. })
                 )
             }
         }
