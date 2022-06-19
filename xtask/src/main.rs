@@ -56,7 +56,8 @@ enum DuniterXTaskCommand {
     Test,
 }
 
-fn main() -> Result<()> {
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<()> {
     let args = DuniterXTask::parse();
 
     if !version_check::is_min_version(MIN_RUST_VERSION).unwrap_or(false)
@@ -78,7 +79,7 @@ fn main() -> Result<()> {
             inject_runtime_code(&raw_spec, &runtime)
         }
         DuniterXTaskCommand::ReleaseRuntime { spec_version } => {
-            release_runtime::release_runtime(spec_version)
+            release_runtime::release_runtime(spec_version).await
         }
         DuniterXTaskCommand::Test => test(),
     }
