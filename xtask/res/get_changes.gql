@@ -1,0 +1,10 @@
+query GetChangesQuery($milestone: String!) {
+  project(fullPath: "nodes/rust/duniter-v2s") {
+		mergeRequests(milestoneTitle: $milestone, state: merged) {
+      nodes {
+        iid
+        title
+      }
+    }
+  }
+}

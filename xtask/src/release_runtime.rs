@@ -14,30 +14,33 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
+mod create_release;
+mod get_changes;
+
 use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
 use std::io::Read;
 use std::process::Command;
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
 struct Srtool {
     gen: String,
     rustc: String,
     runtimes: SrtoolRuntimes,
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
 struct SrtoolRuntimes {
     compact: SrtoolRuntime,
     compressed: SrtoolRuntime,
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
 struct SrtoolRuntime {
     subwasm: SrtoolRuntimeSubWasm,
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
 struct SrtoolRuntimeSubWasm {
     core_version: String,
     metadata_version: u32,
@@ -46,7 +49,7 @@ struct SrtoolRuntimeSubWasm {
     proposal_hash: String,
 }
 
-pub(super) fn release_runtime(_spec_version: u32) -> Result<()> {
+pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
     // Get current dir
     let pwd = std::env::current_dir()?
         .into_os_string()
@@ -88,16 +91,20 @@ pub(super) fn release_runtime(_spec_version: u32) -> Result<()> {
     .with_context(|| "Fail to parse srtool json output")?;
 
     // Generate release notes
-    let release_notes =
-        gen_release_notes(srtool).with_context(|| "Fail to generate release notes")?;
+    let release_notes = gen_release_notes(spec_version, srtool)
+        .await
+        .with_context(|| "Fail to generate release notes")?;
 
     // TODO: Call gitlab API to publish the release notes (and upload the wasm)
     println!("{}", release_notes);
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    create_release::create_release(gitlab_token, spec_version, release_notes).await?;
 
     Ok(())
 }
 
-fn gen_release_notes(srtool: Srtool) -> Result<String> {
+async fn gen_release_notes(spec_version: u32, srtool: Srtool) -> Result<String> {
     // Read template file
     const RELEASE_NOTES_TEMPLATE_FILEPATH: &str = "xtask/res/runtime_release_notes.template";
     let mut file = std::fs::File::open(RELEASE_NOTES_TEMPLATE_FILEPATH)?;
@@ -109,8 +116,8 @@ fn gen_release_notes(srtool: Srtool) -> Result<String> {
     let wasm = srtool.runtimes.compressed.subwasm;
     let compression_percent = (1.0 - (wasm.size as f64 / uncompressed_size as f64)) * 100.0;
 
-    // TODO: get changes (list of MRs) from gitlab API
-    let changes = String::new();
+    // Get changes (list of MRs) from gitlab API
+    let changes = get_changes::get_changes(spec_version).await?;
 
     // Fill template values
     let mut values = std::collections::HashMap::new();

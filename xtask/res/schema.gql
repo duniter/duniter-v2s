@@ -1,0 +1,85 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  project(fullPath: ID!): Project
+  mergeRequest(id: MergeRequestID!): MergeRequest
+}
+
+type Mutation {
+  releaseCreate(input: ReleaseCreateInput!): ReleaseCreatePayload
+}
+
+type Project {
+  mergeRequests(
+    state: MergeRequestState
+    milestoneTitle: String
+  ): MergeRequestConnection
+}
+
+scalar MergeRequestID
+
+type MergeRequest {
+  conflicts: Boolean!
+  diffHeadSha: String
+  draft: Boolean!
+  headPipeline: Pipeline
+  id: ID!
+  iid: String!
+  mergeable: Boolean!
+  title: String!
+}
+
+type MergeRequestConnection {
+  count: Int!
+  nodes: [MergeRequest]
+}
+
+enum MergeRequestState {
+  opened
+  closed
+  locked
+  all
+  merged
+}
+
+type Pipeline {
+  active: Boolean!
+  cancelable: Boolean!
+  id: ID!
+  iid: String!
+}
+
+input ReleaseCreateInput {
+  projectPath: ID!
+  tagName: String!
+  name: String
+  description: String
+  milestones: [String!]
+  assets: ReleaseAssetsInput
+  clientMutationId: String
+}
+
+input ReleaseAssetsInput {
+  links: [ReleaseAssetLinkInput!]
+}
+
+input ReleaseAssetLinkInput {
+  name: String!
+  url: String!
+  directAssetPath: String
+  linkType: ReleaseAssetLinkType = OTHER
+}
+
+enum ReleaseAssetLinkType {
+  OTHER
+  RUNBOOK
+  PACKAGE
+  IMAGE
+}
+
+type ReleaseCreatePayload {
+  errors: [String!]!
+}
