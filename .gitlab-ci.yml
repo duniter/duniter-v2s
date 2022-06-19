@@ -34,7 +34,7 @@ check_labels:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - when: never
   script:
-    - ./scripts/check_labels.sh $CI_MERGE_REQUEST_LABELS
+    - ./scripts/check_labels.sh $CI_MERGE_REQUEST_LABELS $CI_MERGE_REQUEST_MILESTONE
 
 .env:
   image: paritytech/ci-linux:production
