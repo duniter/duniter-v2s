@@ -1,4 +1,5 @@
 stages:
+  - schedule
   - labels
   - quality
   - build
@@ -16,6 +17,15 @@ workflow:
       - .gitlab-ci.yml
       - Cargo.toml
       - Cargo.lock
+
+sanity_tests:
+  extends: .env
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TOPIC=="sanity-tests"'
+    - when: never
+  stage: schedule
+  script:
+    - cargo sanity-${CURRENCY}
 
 check_labels:
   extends: .env
@@ -133,15 +143,6 @@ build_release_manual:
     paths:
       - build/
     expire_in: 3 day
-
-sanity_tests:
-  extends: .env
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-    - when: never
-  stage: tests
-  script:
-    - cargo sanity-gdev
 
 tests_debug:
   extends: .env
