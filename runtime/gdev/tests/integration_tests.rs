@@ -169,16 +169,22 @@ fn test_create_new_account_with_insufficient_balance() {
             ));
             let events = System::events();
             //println!("{:#?}", events);
-            assert_eq!(events.len(), 2);
+            assert_eq!(events.len(), 3);
             assert_eq!(
                 System::events()[0].event,
+                Event::System(frame_system::Event::NewAccount {
+                    account: AccountKeyring::Eve.to_account_id(),
+                })
+            );
+            assert_eq!(
+                System::events()[1].event,
                 Event::Balances(pallet_balances::Event::Endowed {
                     account: AccountKeyring::Eve.to_account_id(),
                     free_balance: 400,
                 })
             );
             assert_eq!(
-                System::events()[1].event,
+                System::events()[2].event,
                 Event::Balances(pallet_balances::Event::Transfer {
                     from: AccountKeyring::Alice.to_account_id(),
                     to: AccountKeyring::Eve.to_account_id(),
@@ -234,16 +240,22 @@ fn test_create_new_account() {
             ));
             let events = System::events();
             //println!("{:#?}", events);
-            assert_eq!(events.len(), 2);
+            assert_eq!(events.len(), 3);
             assert_eq!(
                 System::events()[0].event,
+                Event::System(frame_system::Event::NewAccount {
+                    account: AccountKeyring::Eve.to_account_id(),
+                })
+            );
+            assert_eq!(
+                System::events()[1].event,
                 Event::Balances(pallet_balances::Event::Endowed {
                     account: AccountKeyring::Eve.to_account_id(),
                     free_balance: 500,
                 })
             );
             assert_eq!(
-                System::events()[1].event,
+                System::events()[2].event,
                 Event::Balances(pallet_balances::Event::Transfer {
                     from: AccountKeyring::Alice.to_account_id(),
                     to: AccountKeyring::Eve.to_account_id(),
@@ -256,29 +268,23 @@ fn test_create_new_account() {
             run_to_block(3);
             let events = System::events();
             println!("{:#?}", events);
-            assert_eq!(events.len(), 4);
+            assert_eq!(events.len(), 3);
             assert_eq!(
                 System::events()[0].event,
-                Event::System(frame_system::Event::NewAccount {
-                    account: AccountKeyring::Eve.to_account_id(),
-                })
-            );
-            assert_eq!(
-                System::events()[1].event,
                 Event::Balances(pallet_balances::Event::Withdraw {
                     who: AccountKeyring::Eve.to_account_id(),
                     amount: 300,
                 })
             );
             assert_eq!(
-                System::events()[2].event,
+                System::events()[1].event,
                 Event::Balances(pallet_balances::Event::Deposit {
                     who: Treasury::account_id(),
                     amount: 300,
                 })
             );
             assert_eq!(
-                System::events()[3].event,
+                System::events()[2].event,
                 Event::Treasury(pallet_treasury::Event::Deposit { value: 300 })
             );
             assert_eq!(

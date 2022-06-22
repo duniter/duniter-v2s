@@ -22,6 +22,10 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+#[cfg(feature = "runtime-benchmarks")]
+#[macro_use]
+extern crate frame_benchmarking;
+
 pub mod parameters;
 
 pub use self::parameters::*;
@@ -128,6 +132,7 @@ pub type Executive = frame_executive::Executive<
 pub type SmithsInstance = Instance2;
 
 pub struct BaseCallFilter;
+#[cfg(not(feature = "runtime-benchmarks"))]
 impl Contains<Call> for BaseCallFilter {
     fn contains(call: &Call) -> bool {
         !matches!(
@@ -141,6 +146,20 @@ impl Contains<Call> for BaseCallFilter {
             ) | Call::Session(_)
                 | Call::SmithsMembership(pallet_membership::Call::claim_membership { .. })
                 | Call::AuthorityMembers(pallet_authority_members::Call::go_online { .. })
+        )
+    }
+}
+#[cfg(feature = "runtime-benchmarks")]
+impl Contains<Call> for BaseCallFilter {
+    fn contains(call: &Call) -> bool {
+        !matches!(
+            call,
+            Call::Membership(
+                pallet_membership::Call::request_membership { .. }
+                    | pallet_membership::Call::claim_membership { .. }
+                    | pallet_membership::Call::revoke_membership { .. }
+            ) | Call::Session(_)
+                | Call::SmithsMembership(pallet_membership::Call::claim_membership { .. })
         )
     }
 }

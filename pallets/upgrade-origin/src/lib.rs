@@ -17,6 +17,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::boxed_local)]
 
+mod benchmarking;
+mod weights;
+
+pub use pallet::*;
+pub use weights::WeightInfo;
+
 use frame_support::{
     dispatch::PostDispatchInfo,
     traits::{IsSubType, UnfilteredDispatchable},
@@ -25,7 +31,6 @@ use frame_support::{
 use sp_runtime::traits::Dispatchable;
 use sp_std::prelude::*;
 
-pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -53,6 +58,17 @@ pub mod pallet {
 
         /// The upgradable origin
         type UpgradableOrigin: EnsureOrigin<Self::Origin>;
+
+        /// Pallet weights info
+        type WeightInfo: WeightInfo;
+
+        #[cfg(feature = "runtime-benchmarks")]
+        /// The worst case origin type to use in ŵeights benchmarking
+        type WorstCaseOriginType: Into<Self::Origin>;
+
+        #[cfg(feature = "runtime-benchmarks")]
+        /// The worst case origin to use in weights benchmarking
+        type WorstCaseOrigin: Get<Self::WorstCaseOriginType>;
     }
 
     #[pallet::event]
@@ -67,8 +83,34 @@ pub mod pallet {
         /// Dispatches a function call from root origin.
         ///
         /// The weight of this call is defined by the caller.
-        #[pallet::weight(*_weight)]
+        #[pallet::weight({
+			let dispatch_info = call.get_dispatch_info();
+			(
+				T::WeightInfo::dispatch_as_root()
+					.saturating_add(dispatch_info.weight),
+				dispatch_info.class,
+			)
+		})]
         pub fn dispatch_as_root(
+            origin: OriginFor<T>,
+            call: Box<<T as Config>::Call>,
+        ) -> DispatchResultWithPostInfo {
+            T::UpgradableOrigin::ensure_origin(origin)?;
+
+            let res = call.dispatch_bypass_filter(frame_system::RawOrigin::Root.into());
+
+            Self::deposit_event(Event::DispatchedAsRoot {
+                result: res.map(|_| ()).map_err(|e| e.error),
+            });
+            Ok(Pays::No.into())
+        }
+        /// Dispatches a function call from root origin.
+        /// This function does not check the weight of the call, and instead allows the
+        /// caller to specify the weight of the call.
+        ///
+        /// The weight of this call is defined by the caller.
+        #[pallet::weight((*_weight, call.get_dispatch_info().class))]
+        pub fn dispatch_as_root_unchecked_weight(
             origin: OriginFor<T>,
             call: Box<<T as Config>::Call>,
             _weight: Weight,

@@ -23,12 +23,12 @@ g1 = ["g1-runtime"]
 gdev = ["gdev-runtime"]
 gtest = ["gtest-runtime"]
 runtime-benchmarks = [
-    'g1-runtime',
-    'g1-runtime/runtime-benchmarks',
+    #'g1-runtime',
+    #'g1-runtime/runtime-benchmarks',
     'gdev-runtime',
     'gdev-runtime/runtime-benchmarks',
-    'gtest-runtime',
-    'gtest-runtime/runtime-benchmarks',
+    #'gtest-runtime',
+    #'gtest-runtime/runtime-benchmarks',
 ]
 try-runtime = [
 	"g1-runtime/try-runtime",

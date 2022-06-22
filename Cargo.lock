@@ -855,24 +855,34 @@ name = "common-runtime"
 version = "0.8.0-dev"
 dependencies = [
  "duniter-primitives",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "frame-system-benchmarking",
  "log",
  "pallet-authority-members",
  "pallet-babe",
+ "pallet-balances",
  "pallet-certification",
  "pallet-duniter-account",
  "pallet-duniter-wot",
  "pallet-grandpa",
  "pallet-identity",
  "pallet-membership",
+ "pallet-multisig",
  "pallet-provide-randomness",
+ "pallet-proxy",
+ "pallet-scheduler",
  "pallet-session",
+ "pallet-timestamp",
  "pallet-treasury",
  "pallet-ud-accounts-storage",
+ "pallet-universal-dividend",
+ "pallet-upgrade-origin",
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "serde_derive",
  "smallvec",
  "sp-arithmetic",
  "sp-consensus-babe",
@@ -2326,6 +2336,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "serde_derive",
  "sp-api",
  "sp-arithmetic",
  "sp-authority-discovery",
@@ -5049,6 +5060,7 @@ name = "pallet-im-online"
 version = "4.0.0-dev"
 source = "git+https://github.com/librelois/substrate.git?branch=duniter-monthly-2022-02#80f060dfad0363af03dbecbe39c6fa9b99042acc"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -5086,6 +5098,7 @@ name = "pallet-multisig"
 version = "4.0.0-dev"
 source = "git+https://github.com/librelois/substrate.git?branch=duniter-monthly-2022-02#80f060dfad0363af03dbecbe39c6fa9b99042acc"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -5106,6 +5119,7 @@ dependencies = [
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-runtime",
  "sp-staking",
  "sp-std",
@@ -5147,6 +5161,7 @@ name = "pallet-proxy"
 version = "4.0.0-dev"
 source = "git+https://github.com/librelois/substrate.git?branch=duniter-monthly-2022-02#80f060dfad0363af03dbecbe39c6fa9b99042acc"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -5161,6 +5176,7 @@ name = "pallet-scheduler"
 version = "4.0.0-dev"
 source = "git+https://github.com/librelois/substrate.git?branch=duniter-monthly-2022-02#80f060dfad0363af03dbecbe39c6fa9b99042acc"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -5218,6 +5234,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sp-inherents",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "sp-timestamp",
@@ -5339,6 +5356,7 @@ name = "pallet-utility"
 version = "4.0.0-dev"
 source = "git+https://github.com/librelois/substrate.git?branch=duniter-monthly-2022-02#80f060dfad0363af03dbecbe39c6fa9b99042acc"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",

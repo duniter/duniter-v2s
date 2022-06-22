@@ -79,7 +79,7 @@ impl system::Config for Test {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: Balance = 1;
+    pub const ExistentialDeposit: Balance = 10;
     pub const MaxLocks: u32 = 50;
 }
 
@@ -119,6 +119,7 @@ impl pallet_universal_dividend::Config for Test {
     type UdCreationPeriod = UdCreationPeriod;
     type UdReevalPeriod = UdReevalPeriod;
     type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
+    type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.

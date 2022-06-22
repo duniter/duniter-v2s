@@ -38,15 +38,6 @@ const SECS_PER_YEAR: u64 = 31_557_600; // (365.25 * 24 * 60 * 60)
 pub const MONTHS: BlockNumber = (SECS_PER_YEAR / (12 * SECS_PER_BLOCK)) as BlockNumber;
 pub const YEARS: BlockNumber = (SECS_PER_YEAR / SECS_PER_BLOCK) as BlockNumber;
 
-pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-
-frame_support::parameter_types! {
-    pub const DbWeight: frame_support::weights::RuntimeDbWeight = frame_support::weights::RuntimeDbWeight {
-        read: 250 * frame_support::weights::constants::WEIGHT_PER_MICROS,   // ~25 µs
-        write: 1_000 * frame_support::weights::constants::WEIGHT_PER_MICROS, // ~100 µs
-    };
-}
-
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 
@@ -63,4 +54,45 @@ pub const DEPOSIT_PER_ITEM: Balance = 100;
 // Compute storage deposit per items and bytes
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
     items as Balance * DEPOSIT_PER_ITEM + (bytes as Balance * DEPOSIT_PER_BYTE)
+}
+
+// WEIGHTS COMSTANTS //
+
+// Execution cost of everything outside of the call itself:
+// signature verification, pre_dispatch and post_dispatch
+pub const EXTRINSIC_BASE_WEIGHTS: frame_support::weights::Weight = 1_000_000_000;
+
+// Maximal weight proportion of normal extrinsics per block
+pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+
+// DB weights
+frame_support::parameter_types! {
+    pub const DbWeight: frame_support::weights::RuntimeDbWeight = frame_support::weights::RuntimeDbWeight {
+        read: 250 * frame_support::weights::constants::WEIGHT_PER_MICROS,   // ~25 µs
+        write: 1_000 * frame_support::weights::constants::WEIGHT_PER_MICROS, // ~100 µs
+    };
+}
+
+// Block weights limits
+pub fn block_weights(
+    expected_block_weight: frame_support::weights::Weight,
+    normal_ratio: sp_arithmetic::Perbill,
+) -> frame_system::limits::BlockWeights {
+    let normal_weight = normal_ratio * expected_block_weight;
+    frame_system::limits::BlockWeights::builder()
+        .for_class(frame_support::weights::DispatchClass::Normal, |weights| {
+            weights.base_extrinsic = EXTRINSIC_BASE_WEIGHTS;
+            weights.max_total = normal_weight.into();
+        })
+        .for_class(
+            frame_support::weights::DispatchClass::Operational,
+            |weights| {
+                weights.base_extrinsic = EXTRINSIC_BASE_WEIGHTS;
+                weights.max_total = expected_block_weight.into();
+                weights.reserved = (expected_block_weight - normal_weight).into();
+            },
+        )
+        .avg_block_initialization(sp_arithmetic::Perbill::from_percent(10))
+        .build()
+        .expect("Fatal error: invalid BlockWeights configuration")
 }

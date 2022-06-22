@@ -223,51 +223,78 @@ macro_rules! runtime_apis {
             }
 
             #[cfg(feature = "runtime-benchmarks")]
-            impl frame_benchmarking::Benchmark<Block> for Runtime {
-                fn dispatch_benchmark(
-                    config: frame_benchmarking::BenchmarkConfig,
-                ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-                    use frame_benchmarking::{
-                        add_benchmark, BenchmarkBatch, Benchmarking, TrackedStorageKey,
-                    };
+			impl frame_benchmarking::Benchmark<Block> for Runtime {
+				fn benchmark_metadata(extra: bool) -> (
+					Vec<frame_benchmarking::BenchmarkList>,
+					Vec<frame_support::traits::StorageInfo>,
+				) {
+					use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
+					use frame_support::traits::StorageInfoTrait;
 
-                    use frame_system_benchmarking::Pallet as SystemBench;
-                    impl frame_system_benchmarking::Config for Runtime {}
+					use frame_system_benchmarking::Pallet as SystemBench;
+					use frame_benchmarking::baseline::Pallet as Baseline;
 
-                    use pallet_crowdloan_rewards::Pallet as PalletCrowdloanRewardsBench;
-                    use parachain_staking::Pallet as ParachainStakingBench;
-                    use pallet_author_mapping::Pallet as PalletAuthorMappingBench;
-                    let whitelist: Vec<TrackedStorageKey> = vec![];
+					let mut list = Vec::<BenchmarkList>::new();
+                    list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
+					list_benchmark!(list, extra, pallet_balances, Balances);
+					list_benchmark!(list, extra, pallet_multisig, Multisig);
+					list_benchmark!(list, extra, pallet_proxy, Proxy);
+					list_benchmark!(list, extra, pallet_scheduler, Scheduler);
+					list_benchmark!(list, extra, pallet_timestamp, Timestamp);
+					list_benchmark!(list, extra, pallet_universal_dividend, UniversalDividend);
+					list_benchmark!(list, extra, pallet_upgrade_origin, UpgradeOrigin);
+					list_benchmark!(list, extra, pallet_utility, Utility);
 
-                    let mut batches = Vec::<BenchmarkBatch>::new();
-                    let params = (&config, &whitelist);
+					let storage_info = AllPalletsWithSystem::storage_info();
+					return (list, storage_info)
+				}
 
-                    add_benchmark!(
-                        params,
-                        batches,
-                        parachain_staking,
-                        ParachainStakingBench::<Runtime>
-                    );
-                    // add_benchmark!(
-                    //     params,
-                    //     batches,
-                    //     pallet_crowdloan_rewards,
-                    //     PalletCrowdloanRewardsBench::<Runtime>
-                    // );
-                    add_benchmark!(
-                        params,
-                        batches,
-                        pallet_author_mapping,
-                        PalletAuthorMappingBench::<Runtime>
-                    );
-                    add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
+				fn dispatch_benchmark(
+					config: frame_benchmarking::BenchmarkConfig
+				) -> Result<
+					Vec<frame_benchmarking::BenchmarkBatch>,
+					sp_runtime::RuntimeString,
+				> {
+					use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
+					// Trying to add benchmarks directly to some pallets caused cyclic dependency issues.
+					// To get around that, we separated the benchmarks into its own crate.
+					use frame_system_benchmarking::Pallet as SystemBench;
+					use frame_benchmarking::baseline::Pallet as Baseline;
 
-                    if batches.is_empty() {
-                        return Err("Benchmark not found for this pallet.".into());
-                    }
-                    Ok(batches)
-                }
-            }
+					impl frame_system_benchmarking::Config for Runtime {}
+					impl frame_benchmarking::baseline::Config for Runtime {}
+
+					let whitelist: Vec<TrackedStorageKey> = vec![
+						// Block Number
+						hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac").to_vec().into(),
+						// Total Issuance
+						hex_literal::hex!("c2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80").to_vec().into(),
+						// Execution Phase
+						hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a").to_vec().into(),
+						// Event Count
+						hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850").to_vec().into(),
+						// System Events
+						hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),
+						// Treasury Account
+						hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef7b99d880ec681799c0cf30e8886371da95ecffd7b6c0f78751baa9d281e0bfa3a6d6f646c70792f74727372790000000000000000000000000000000000000000").to_vec().into(),
+					];
+
+					let mut batches = Vec::<BenchmarkBatch>::new();
+					let params = (&config, &whitelist);
+					add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
+					add_benchmark!(params, batches, pallet_balances, Balances);
+					add_benchmark!(params, batches, pallet_multisig, Multisig);
+					add_benchmark!(params, batches, pallet_proxy, Proxy);
+					add_benchmark!(params, batches, pallet_scheduler, Scheduler);
+					add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+					add_benchmark!(params, batches, pallet_universal_dividend, UniversalDividend);
+					add_benchmark!(params, batches, pallet_upgrade_origin, UpgradeOrigin);
+					add_benchmark!(params, batches, pallet_utility, Utility);
+
+					if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
+					Ok(batches)
+				}
+			}
         }
     };
 }

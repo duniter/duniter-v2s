@@ -14,5 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
+pub mod frame_system;
 pub mod pallet_babe;
+pub mod pallet_balances;
 pub mod pallet_grandpa;
+pub mod pallet_multisig;
+pub mod pallet_proxy;
+pub mod pallet_scheduler;
+pub mod pallet_timestamp;
+pub mod pallet_universal_dividend;
+pub mod pallet_upgrade_origin;

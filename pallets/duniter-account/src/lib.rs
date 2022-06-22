@@ -164,14 +164,12 @@ pub mod pallet {
                     let price = T::NewAccountPrice::get();
                     if account_data.free >= T::ExistentialDeposit::get() + price {
                         // The account can pay the new account price, we should:
-                        // 1. Increment providers to create the account for frame_system point of view
-                        // 2. Withdraw the "new account price" amount
-                        // 3. Increment consumers to prevent the destruction of the account before
+                        // 1. Withdraw the "new account price" amount
+                        // 2. Increment consumers to prevent the destruction of the account before
                         // the random id is assigned
-                        // 4. Manage the funds collected
-                        // 5. Submit random id generation request
-                        // 6. Save the id of the random generation request.
-                        frame_system::Pallet::<T>::inc_providers(&account_id);
+                        // 3. Manage the funds collected
+                        // 4. Submit random id generation request
+                        // 5. Save the id of the random generation request.
                         let res = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::withdraw(
                             &account_id,
                             price,
@@ -287,10 +285,9 @@ where
             if !frame_system::Pallet::<T>::account_exists(account_id) {
                 // If the account does not exist, we should program its creation
                 PendingNewAccounts::<T>::insert(account_id, ());
-            } else {
-                // If the account already exists, we should register increment providers directly
-                frame_system::Pallet::<T>::inc_providers(account_id);
             }
+            // We should increment the "balances" provider
+            frame_system::Pallet::<T>::inc_providers(account_id);
         } else if was_providing && !is_providing {
             match frame_system::Pallet::<T>::dec_providers(account_id)? {
                 frame_system::DecRefStatus::Reaped => return Ok(result),

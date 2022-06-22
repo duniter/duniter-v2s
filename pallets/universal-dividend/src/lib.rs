@@ -16,16 +16,15 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub use pallet::*;
-
+mod benchmarking;
 #[cfg(test)]
 mod mock;
-
 #[cfg(test)]
 mod tests;
+mod weights;
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
+pub use pallet::*;
+pub use weights::WeightInfo;
 
 use frame_support::traits::{tokens::ExistenceRequirement, Currency};
 use sp_arithmetic::{
@@ -83,6 +82,8 @@ pub mod pallet {
         /// Example: If you wish to express the UD amounts with a maximum precision of the order
         /// of the milliUD, choose 1000
         type UnitsPerUd: Get<BalanceOf<Self>>;
+        /// Pallet weights info
+        type WeightInfo: WeightInfo;
     }
 
     // STORAGE //
@@ -139,20 +140,21 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
+            let mut total_weight = T::WeightInfo::on_initialize();
             if (n % T::UdCreationPeriod::get()).is_zero() {
                 let current_members_count = T::MembersCount::get();
                 let next_reeval = NextReeval::<T>::get();
                 if n >= next_reeval {
                     NextReeval::<T>::put(next_reeval.saturating_add(T::UdReevalPeriod::get()));
-                    Self::reeval_ud(current_members_count)
+                    total_weight += Self::reeval_ud(current_members_count)
                         + Self::create_ud(current_members_count, n)
-                        + T::DbWeight::get().reads_writes(2, 1)
+                        + T::DbWeight::get().reads_writes(2, 1);
                 } else {
-                    Self::create_ud(current_members_count, n) + T::DbWeight::get().reads(2)
+                    total_weight +=
+                        Self::create_ud(current_members_count, n) + T::DbWeight::get().reads(2);
                 }
-            } else {
-                0
             }
+            total_weight
         }
     }
 
@@ -277,7 +279,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Transfer some liquid free balance to another account, in milliUD.
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::transfer_ud())]
         pub fn transfer_ud(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
@@ -287,7 +289,7 @@ pub mod pallet {
         }
 
         /// Transfer some liquid free balance to another account, in milliUD.
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::transfer_ud_keep_alive())]
         pub fn transfer_ud_keep_alive(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,

@@ -69,7 +69,7 @@ macro_rules! pallets_config {
             /// The data to be stored in an account.
             type AccountData = pallet_duniter_account::AccountData<Balance>;
             /// Weight information for the extrinsics of this pallet.
-            type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
+            type SystemWeightInfo = common_runtime::weights::frame_system::WeightInfo<Runtime>;
             /// This is used as an identifier of the chain. 42 is the generic substrate prefix.
             type SS58Prefix = SS58Prefix;
             /// The set code logic, just the default since we're not a parachain.
@@ -94,7 +94,7 @@ macro_rules! pallets_config {
             type ScheduleOrigin = EnsureRoot<AccountId>;
             type OriginPrivilegeCmp = EqualPrivilegeOnly;
             type MaxScheduledPerBlock = MaxScheduledPerBlock;
-            type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+            type WeightInfo = common_runtime::weights::pallet_scheduler::WeightInfo<Runtime>;
             type PreimageProvider = Preimage;
             type NoPreimagePostponement = ();
         }
@@ -143,7 +143,7 @@ macro_rules! pallets_config {
             type Moment = u64;
             type OnTimestampSet = Babe;
             type MinimumPeriod = MinimumPeriod;
-            type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
+            type WeightInfo = common_runtime::weights::pallet_timestamp::WeightInfo<Runtime>;
         }
 
         // MONEY MANAGEMENT //
@@ -159,7 +159,7 @@ macro_rules! pallets_config {
             type DustRemoval = Treasury;
             type ExistentialDeposit = ExistentialDeposit;
             type AccountStore = Account;
-            type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+            type WeightInfo = common_runtime::weights::pallet_balances::WeightInfo<Runtime>;
         }
 
         pub struct HandleFees;
@@ -260,11 +260,22 @@ macro_rules! pallets_config {
 
         // ONCHAIN GOVERNANCE //
 
-        impl pallet_upgrade_origin::Config for Runtime {
-            type Event = Event;
-            type Call = Call;
-            type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, SmithsInstance>;
-        }
+		#[cfg(feature = "runtime-benchmarks")]
+		parameter_types! {
+			pub const WorstCaseOrigin: pallet_collective::RawOrigin<AccountId, SmithsInstance> =
+				pallet_collective::RawOrigin::<AccountId, SmithsInstance>::Members(2, 3);
+		}
+
+		impl pallet_upgrade_origin::Config for Runtime {
+			type Event = Event;
+			type Call = Call;
+			type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, SmithsInstance>;
+			type WeightInfo = common_runtime::weights::pallet_upgrade_origin::WeightInfo<Runtime>;
+			#[cfg(feature = "runtime-benchmarks")]
+			type WorstCaseOriginType = pallet_collective::RawOrigin<AccountId, SmithsInstance>;
+			#[cfg(feature = "runtime-benchmarks")]
+			type WorstCaseOrigin = WorstCaseOrigin;
+		}
 
         parameter_types! {
             pub const PreimageMaxSize: u32 = 4096 * 1024;
@@ -322,7 +333,7 @@ macro_rules! pallets_config {
             type CallHasher = BlakeTwo256;
             type AnnouncementDepositBase = AnnouncementDepositBase;
             type AnnouncementDepositFactor = AnnouncementDepositFactor;
-            type WeightInfo = pallet_proxy::weights::SubstrateWeight<Self>;
+            type WeightInfo = common_runtime::weights::pallet_proxy::WeightInfo<Self>;
         }
 
         parameter_types! {
@@ -336,7 +347,7 @@ macro_rules! pallets_config {
             type DepositBase = DepositBase;
             type DepositFactor = DepositFactor;
             type MaxSignatories = MaxSignatories;
-            type WeightInfo = pallet_multisig::weights::SubstrateWeight<Self>;
+            type WeightInfo = common_runtime::weights::pallet_multisig::WeightInfo<Self>;
         }
 
         impl pallet_utility::Config for Runtime {
@@ -385,6 +396,7 @@ macro_rules! pallets_config {
             type UdCreationPeriod = UdCreationPeriod;
             type UdReevalPeriod = UdReevalPeriod;
             type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
+			type WeightInfo = common_runtime::weights::pallet_universal_dividend::WeightInfo<Runtime>;
         }
 
         impl pallet_ud_accounts_storage::Config for Runtime {}
