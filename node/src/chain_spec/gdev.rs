@@ -259,6 +259,7 @@ fn gen_genesis_for_local_chain(
 
     let babe_epoch_duration = get_env_u32("DUNITER_BABE_EPOCH_DURATION", 30) as u64;
     let cert_validity_period = get_env_u32("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
+    let first_ud = 1_000;
     let membership_period = get_env_u32("DUNITER_MEMBERSHIP_PERIOD", 1_000);
     let membership_renewable_period = get_env_u32("DUNITER_MEMBERSHIP_RENEWABLE_PERIOD", 50);
     let smith_cert_validity_period = get_env_u32("DUNITER_SMITH_CERT_VALIDITY_PERIOD", 1_000);
@@ -271,7 +272,7 @@ fn gen_genesis_for_local_chain(
     let initial_smiths = (0..initial_smiths_len)
         .map(|i| get_authority_keys_from_seed(NAMES[i]))
         .collect::<Vec<AuthorityKeys>>();
-    let initial_identities = (0..initial_smiths_len)
+    let initial_identities = (0..initial_identities_len)
         .map(|i| {
             (
                 IdtyName::from(NAMES[i]),
@@ -294,7 +295,7 @@ fn gen_genesis_for_local_chain(
                         owner_key.clone(),
                         GenesisAccountData {
                             random_id: H256(blake2_256(&(i as u32, owner_key).encode())),
-                            balance: 0,
+                            balance: first_ud,
                             is_identity: true,
                         },
                     )
@@ -420,8 +421,8 @@ fn gen_genesis_for_local_chain(
         },
         universal_dividend: UniversalDividendConfig {
             first_reeval: 100,
-            first_ud: 1_000,
-            initial_monetary_mass: 0,
+            first_ud,
+            initial_monetary_mass: initial_identities_len as u64 * first_ud,
         },
         treasury: Default::default(),
     }
