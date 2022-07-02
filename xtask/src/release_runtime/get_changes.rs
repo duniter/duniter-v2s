@@ -44,14 +44,12 @@ pub(super) async fn get_changes(spec_version: u32) -> Result<String> {
             if let Some(merge_requests) = project.merge_requests {
                 if let Some(nodes) = merge_requests.nodes {
                     let mut changes = String::new();
-                    for merge_request in nodes {
-                        if let Some(merge_request) = merge_request {
-                            changes.push_str(&format!(
-                                "* {mr_title} (!{mr_number})\n",
-                                mr_title = merge_request.title,
-                                mr_number = merge_request.iid
-                            ));
-                        }
+                    for merge_request in nodes.into_iter().flatten() {
+                        changes.push_str(&format!(
+                            "* {mr_title} (!{mr_number})\n",
+                            mr_title = merge_request.title,
+                            mr_number = merge_request.iid
+                        ));
                     }
                     Ok(changes)
                 } else {
