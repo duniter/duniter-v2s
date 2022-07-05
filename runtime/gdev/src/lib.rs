@@ -31,7 +31,8 @@ pub mod parameters;
 pub use self::parameters::*;
 pub use common_runtime::{
     constants::*, entities::*, handlers::*, AccountId, Address, Balance, BlockNumber,
-    FullIdentificationOfImpl, GetCurrentEpochIndex, Hash, Header, IdtyIndex, Index, Signature,
+    FullIdentificationOfImpl, GetCurrentEpochIndex, Hash, Header, IdtyData, IdtyIndex, Index,
+    Signature,
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_duniter_test_parameters::Parameters as GenesisParameters;
@@ -228,7 +229,10 @@ common_runtime::pallets_config! {
     pub type MembershipPeriod = pallet_duniter_test_parameters::MembershipPeriod<Runtime>;
     pub type RenewablePeriod = pallet_duniter_test_parameters::MembershipRenewablePeriod<Runtime>;
     pub type PendingMembershipPeriod = pallet_duniter_test_parameters::PendingMembershipPeriod<Runtime>;
+    #[cfg(not(test))]
     pub type UdCreationPeriod = pallet_duniter_test_parameters::UdCreationPeriod<Runtime>;
+    #[cfg(test)]
+    pub type UdCreationPeriod = frame_support::traits::ConstU32<10>;
     pub type UdReevalPeriod = pallet_duniter_test_parameters::UdReevalPeriod<Runtime>;
     pub type WotFirstCertIssuableOn = pallet_duniter_test_parameters::WotFirstCertIssuableOn<Runtime>;
     pub type WotMinCertForMembership = pallet_duniter_test_parameters::WotMinCertForMembership<Runtime>;
@@ -301,8 +305,7 @@ construct_runtime!(
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 22,
 
         // Universal dividend
-        UdAccountsStorage: pallet_ud_accounts_storage::{Pallet, Config<T>, Storage} = 30,
-        UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 31,
+        UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 30,
 
         // Web Of Trust
         Wot: pallet_duniter_wot::<Instance1>::{Pallet} = 40,

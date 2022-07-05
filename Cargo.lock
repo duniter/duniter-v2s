@@ -895,7 +895,6 @@ dependencies = [
  "pallet-session",
  "pallet-timestamp",
  "pallet-treasury",
- "pallet-ud-accounts-storage",
  "pallet-universal-dividend",
  "pallet-upgrade-origin",
  "parity-scale-codec",
@@ -2325,7 +2324,6 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
- "pallet-ud-accounts-storage",
  "pallet-universal-dividend",
  "pallet-upgrade-origin",
  "pallet-utility",
@@ -2394,7 +2392,6 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
- "pallet-ud-accounts-storage",
  "pallet-universal-dividend",
  "pallet-upgrade-origin",
  "pallet-utility",
@@ -2666,7 +2663,6 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
- "pallet-ud-accounts-storage",
  "pallet-universal-dividend",
  "pallet-upgrade-origin",
  "pallet-utility",
@@ -5497,23 +5493,6 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-ud-accounts-storage"
-version = "3.0.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-balances",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-std",
 ]

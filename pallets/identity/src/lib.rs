@@ -68,6 +68,14 @@ pub mod pallet {
         type EnsureIdtyCallAllowed: EnsureIdtyCallAllowed<Self>;
         /// Minimum duration between the creation of 2 identities by the same creator
         type IdtyCreationPeriod: Get<Self::BlockNumber>;
+        /// Custom data to store in each identity
+        type IdtyData: Clone
+            + Codec
+            + Default
+            + Eq
+            + TypeInfo
+            + MaybeSerializeDeserialize
+            + MaxEncodedLen;
         /// A short identity index.
         type IdtyIndex: Parameter
             + Member
@@ -102,7 +110,7 @@ pub mod pallet {
     pub struct GenesisIdty<T: Config> {
         pub index: T::IdtyIndex,
         pub name: IdtyName,
-        pub value: IdtyValue<T::BlockNumber, T::AccountId>,
+        pub value: IdtyValue<T::BlockNumber, T::AccountId, T::IdtyData>,
     }
 
     #[pallet::genesis_config]
@@ -159,7 +167,7 @@ pub mod pallet {
         _,
         Twox64Concat,
         T::IdtyIndex,
-        IdtyValue<T::BlockNumber, T::AccountId>,
+        IdtyValue<T::BlockNumber, T::AccountId, T::IdtyData>,
         OptionQuery,
     >;
 
@@ -280,6 +288,7 @@ pub mod pallet {
                     owner_key: owner_key.clone(),
                     removable_on,
                     status: IdtyStatus::Created,
+                    data: Default::default(),
                 },
             );
             IdentitiesRemovableOn::<T>::append(removable_on, (idty_index, IdtyStatus::Created));
@@ -558,5 +567,56 @@ pub mod pallet {
 impl<T: Config> sp_runtime::traits::Convert<T::AccountId, Option<T::IdtyIndex>> for Pallet<T> {
     fn convert(account_id: T::AccountId) -> Option<T::IdtyIndex> {
         Self::identity_index_of(account_id)
+    }
+}
+
+impl<T> frame_support::traits::StoredMap<T::AccountId, T::IdtyData> for Pallet<T>
+where
+    T: Config,
+{
+    fn get(key: &T::AccountId) -> T::IdtyData {
+        if let Some(idty_index) = Self::identity_index_of(key) {
+            if let Some(idty_val) = Identities::<T>::get(idty_index) {
+                idty_val.data
+            } else {
+                Default::default()
+            }
+        } else {
+            Default::default()
+        }
+    }
+    fn try_mutate_exists<R, E: From<sp_runtime::DispatchError>>(
+        key: &T::AccountId,
+        f: impl FnOnce(&mut Option<T::IdtyData>) -> Result<R, E>,
+    ) -> Result<R, E> {
+        let maybe_idty_index = Self::identity_index_of(key);
+        let mut maybe_idty_data = if let Some(idty_index) = maybe_idty_index {
+            if let Some(idty_val) = Identities::<T>::get(idty_index) {
+                Some(idty_val.data)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        let result = f(&mut maybe_idty_data)?;
+        if let Some(idty_index) = maybe_idty_index {
+            Identities::<T>::mutate_exists(idty_index, |idty_val_opt| {
+                if let Some(ref mut idty_val) = idty_val_opt {
+                    idty_val.data = maybe_idty_data.unwrap_or_default();
+                } else if maybe_idty_data.is_some() {
+                    return Err(sp_runtime::DispatchError::Other(
+                        "Tring to set IdtyData for a non-existing identity!",
+                    ));
+                }
+                Ok(())
+            })?;
+        } else if maybe_idty_data.is_some() {
+            return Err(sp_runtime::DispatchError::Other(
+                "Tring to set IdtyData for a non-existing identity!",
+            )
+            .into());
+        }
+        Ok(result)
     }
 }

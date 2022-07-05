@@ -18,8 +18,8 @@
 
 use super::*;
 
-use frame_benchmarking::{account, benchmarks, whitelisted_caller};
-use frame_support::pallet_prelude::IsType;
+use frame_benchmarking::{account, benchmarks, whitelist_account, whitelisted_caller};
+use frame_support::pallet_prelude::{BoundedVec, IsType};
 use frame_support::traits::{Get, OnInitialize};
 use frame_system::RawOrigin;
 use pallet_balances::Pallet as Balances;
@@ -27,28 +27,89 @@ use sp_runtime::traits::Bounded;
 
 use crate::Pallet;
 
-const BLOCK_NUMBER: u32 = 2;
 const ED_MULTIPLIER: u32 = 10;
 const SEED: u32 = 0;
 
-/*fn fill_storage<T: Config>(
-    members_count: u32,
-) -> Result<(), &'static str> {
-    Ok(())
-}*/
-
 benchmarks! {
-    // TODO add on_initialize_ud_created and on_initialize_ud_reevalued (after manual UD impl)
+    where_clause {
+        where
+        T: pallet_balances::Config, T::Balance: From<u64>,
+        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>
+    }
     on_initialize {
-        //let n in 1 .. 10_000;
-        //fill_storage::<T>(n)?;
-    }: { Pallet::<T>::on_initialize(BLOCK_NUMBER.into()); }
+        let total_money_created = Pallet::<T>::total_money_created();
+    }: { Pallet::<T>::on_initialize(1_u32.into()); }
+    verify {
+        assert_eq!(Pallet::<T>::total_money_created(), total_money_created);
+    }
+    where_clause {
+        where
+        T: pallet_balances::Config, T::Balance: From<u64>,
+        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>
+    }
+    on_initialize_ud_created {
+        let block_number = T::UdCreationPeriod::get();
+        let block_number_plus_one: T::BlockNumber = block_number + One::one();
+        NextReeval::<T>::put(block_number_plus_one);
+    }: { Pallet::<T>::on_initialize(block_number.into()); }
     verify {
     }
+    where_clause {
+        where
+        T: pallet_balances::Config, T::Balance: From<u64>,
+        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>
+    }
+    on_initialize_ud_reevalued {
+        let block_number = T::UdCreationPeriod::get();
+        let block_number_plus_one: T::BlockNumber = block_number + One::one();
+        NextReeval::<T>::put(block_number_plus_one);
+        Pallet::<T>::on_initialize(block_number.into());
+        NextReeval::<T>::put(block_number);
+    }: { Pallet::<T>::on_initialize(block_number.into()); }
+    verify {
+    }
+    // Benchmark `claim_uds` extrinsic with the worst possible conditions:
+    // * UDs have never been claimed
+    // * The maximum number of revaluations has taken place since
+    where_clause {
+        where
+        T: pallet_balances::Config, T::Balance: From<u64>,
+        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>
+    }
+    claim_uds {
+        let n in 1 .. T::MaxPastReeval::get();
+
+        // Caller should be a member
+        let caller: T::AccountId = T::MembersStorageIter::from(None)
+            .next()
+            .expect("we need at least one member")
+            .0;
+
+        // Simulate n reevals
+        let mut past_reevals = BoundedVec::default();
+        for i in 0..n {
+            past_reevals
+                .try_push((((3 * i) + 1) as u16, ((1_000 + (100 * i)) as u32).into()))
+                .expect("unreachable");
+        }
+        PastReevals::<T>::put(past_reevals);
+
+        // Simulate 3n+2 UDs
+        CurrentUdIndex::<T>::put(((3 * n) + 2) as u16);
+
+        whitelist_account!(caller);
+    }: claim_uds(RawOrigin::Signed(caller))
+    verify {
+    }
+
     // Benchmark `transfer_ud` extrinsic with the worst possible conditions:
     // * Transfer will kill the sender account.
     // * Transfer will create the recipient account.
-    where_clause { where T: pallet_balances::Config, T::Balance: From<u64>, <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance> }
+    where_clause {
+        where
+        T: pallet_balances::Config, T::Balance: From<u64>,
+        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>
+    }
     transfer_ud {
         let existential_deposit = T::ExistentialDeposit::get();
         let caller = whitelisted_caller();
@@ -94,6 +155,7 @@ benchmarks! {
             first_reeval: 8,
             first_ud: 1_000,
             initial_monetary_mass: 0,
+            initial_members: vec![1],
         }),
         crate::mock::Test
     );

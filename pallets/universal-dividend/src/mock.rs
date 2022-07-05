@@ -18,7 +18,7 @@ use super::*;
 use crate::{self as pallet_universal_dividend};
 use frame_support::{
     parameter_types,
-    traits::{Everything, Get, OnFinalize, OnInitialize},
+    traits::{Everything, OnFinalize, OnInitialize},
 };
 use frame_system as system;
 use sp_core::H256;
@@ -102,10 +102,38 @@ parameter_types! {
     pub const UdReevalPeriod: BlockNumber = 8;
 }
 
-pub struct FakeWot;
-impl Get<Vec<u64>> for FakeWot {
-    fn get() -> Vec<u64> {
-        vec![1, 2, 3]
+pub struct TestMembersStorage;
+impl frame_support::traits::StoredMap<u64, FirstEligibleUd> for TestMembersStorage {
+    fn get(key: &u64) -> FirstEligibleUd {
+        crate::TestMembers::<Test>::get(key)
+    }
+    fn try_mutate_exists<R, E: From<sp_runtime::DispatchError>>(
+        key: &u64,
+        f: impl FnOnce(&mut Option<FirstEligibleUd>) -> Result<R, E>,
+    ) -> Result<R, E> {
+        let mut value = Some(crate::TestMembers::<Test>::get(key));
+        let result = f(&mut value)?;
+        if let Some(value) = value {
+            crate::TestMembers::<Test>::insert(key, value)
+        }
+        Ok(result)
+    }
+}
+pub struct TestMembersStorageIter(frame_support::storage::PrefixIterator<(u64, FirstEligibleUd)>);
+impl From<Option<Vec<u8>>> for TestMembersStorageIter {
+    fn from(maybe_key: Option<Vec<u8>>) -> Self {
+        let mut iter = crate::TestMembers::<Test>::iter();
+        if let Some(key) = maybe_key {
+            iter.set_last_raw_key(key);
+        }
+        Self(iter)
+    }
+}
+impl Iterator for TestMembersStorageIter {
+    type Item = (u64, FirstEligibleUd);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
     }
 }
 
@@ -113,8 +141,10 @@ impl pallet_universal_dividend::Config for Test {
     type BlockNumberIntoBalance = sp_runtime::traits::ConvertInto;
     type Currency = pallet_balances::Pallet<Test>;
     type Event = Event;
+    type MaxPastReeval = frame_support::traits::ConstU32<2>;
     type MembersCount = MembersCount;
-    type MembersIds = FakeWot;
+    type MembersStorage = TestMembersStorage;
+    type MembersStorageIter = TestMembersStorageIter;
     type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
     type UdCreationPeriod = UdCreationPeriod;
     type UdReevalPeriod = UdReevalPeriod;
@@ -140,6 +170,7 @@ pub fn run_to_block(n: u64) {
     while System::block_number() < n {
         UniversalDividend::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
+        System::reset_events();
         System::set_block_number(System::block_number() + 1);
         System::on_initialize(System::block_number());
         UniversalDividend::on_initialize(System::block_number());

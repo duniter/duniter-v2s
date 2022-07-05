@@ -15,10 +15,11 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{AccountId, IdtyIndex};
-use frame_support::traits::Get;
+use core::marker::PhantomData;
+use sp_std::boxed::Box;
 use sp_std::vec::Vec;
 
-pub struct IdentityAccountIdProvider<Runtime>(core::marker::PhantomData<Runtime>);
+pub struct IdentityAccountIdProvider<Runtime>(PhantomData<Runtime>);
 
 impl<
         Runtime: frame_system::Config<AccountId = AccountId>
@@ -31,16 +32,33 @@ impl<
     }
 }
 
-pub struct UdAccountsProvider<Runtime>(core::marker::PhantomData<Runtime>);
-impl<Runtime: pallet_ud_accounts_storage::Config> Get<u64> for UdAccountsProvider<Runtime> {
-    fn get() -> u64 {
-        <pallet_ud_accounts_storage::Pallet<Runtime>>::accounts_len() as u64
+#[allow(clippy::type_complexity)]
+pub struct IdtyDataIter<T: pallet_identity::Config>(
+    Box<dyn Iterator<Item = pallet_identity::IdtyValue<T::BlockNumber, T::AccountId, T::IdtyData>>>,
+    PhantomData<T>,
+);
+
+impl<T: pallet_identity::Config> From<Option<Vec<u8>>> for IdtyDataIter<T> {
+    fn from(maybe_key: Option<Vec<u8>>) -> Self {
+        let mut iter = pallet_identity::Identities::<T>::iter_values();
+        if let Some(key) = maybe_key {
+            iter.set_last_raw_key(key);
+        }
+        Self(Box::new(iter), PhantomData)
     }
 }
-impl<Runtime: frame_system::Config<AccountId = AccountId> + pallet_ud_accounts_storage::Config>
-    Get<Vec<AccountId>> for UdAccountsProvider<Runtime>
-{
-    fn get() -> Vec<AccountId> {
-        <pallet_ud_accounts_storage::Pallet<Runtime>>::accounts_list()
+
+impl<T: pallet_identity::Config> Iterator for IdtyDataIter<T> {
+    type Item = (T::AccountId, T::IdtyData);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(pallet_identity::IdtyValue {
+            owner_key, data, ..
+        }) = self.0.next()
+        {
+            Some((owner_key, data))
+        } else {
+            None
+        }
     }
 }

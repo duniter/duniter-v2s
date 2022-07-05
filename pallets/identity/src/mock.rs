@@ -102,6 +102,7 @@ impl pallet_identity::Config for Test {
     type Event = Event;
     type EnsureIdtyCallAllowed = ();
     type IdtyCreationPeriod = IdtyCreationPeriod;
+    type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = u64;
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;

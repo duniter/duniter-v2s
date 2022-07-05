@@ -12,13 +12,14 @@ version = '3.0.0'
 default = ['std']
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
-	"pallet-balances"
+	"pallet-balances",
 ]
 std = [
     'codec/std',
     'frame-support/std',
     'frame-system/std',
     'frame-benchmarking/std',
+	"serde",
     "sp-arithmetic/std",
     "sp-io/std",
     "sp-std/std",
@@ -26,19 +27,14 @@ std = [
 try-runtime = ['frame-support/try-runtime']
 
 [dependencies]
-
-# substrate
+# crates.io
+codec = { package = 'parity-scale-codec', version = '2.3.1', default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+serde = { version = "1.0.101", features = ["derive"], optional = true }
 
 # substrate bencharks
 frame-benchmarking = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', optional = true, default-features = false }
 pallet-balances = { git = 'https://github.com/librelois/substrate.git', branch = 'duniter-monthly-2022-02', optional = true, default-features = false }
-
-[dependencies.codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = '2.3.1'
 
 [dependencies.frame-support]
 default-features = false
@@ -78,13 +74,12 @@ targets = ['x86_64-unknown-linux-gnu']
 
 ### DEV ###
 
+[dev-dependencies]
+serde = { version = "1.0.101", features = ["derive"] }
+
 [dev-dependencies.pallet-balances]
 git = 'https://github.com/librelois/substrate.git'
 branch = 'duniter-monthly-2022-02'
-
-[dev-dependencies.serde]
-features = ["derive"]
-version = '1.0.119'
 
 [dev-dependencies.sp-core]
 git = 'https://github.com/librelois/substrate.git'

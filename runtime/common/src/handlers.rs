@@ -15,12 +15,13 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use super::entities::*;
-use super::{AccountId, IdtyIndex};
+use super::{AccountId, IdtyData, IdtyIndex};
 use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::instances::{Instance1, Instance2};
 use frame_support::pallet_prelude::Weight;
+use frame_support::traits::Get;
 use frame_support::Parameter;
-use sp_runtime::traits::{Convert, IsMember};
+use sp_runtime::traits::IsMember;
 
 pub struct OnNewSessionHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_authority_members::traits::OnNewSession for OnNewSessionHandler<Runtime>
@@ -40,27 +41,35 @@ type MembershipMetaData = pallet_duniter_wot::MembershipMetaData<AccountId>;
 impl<
         Inner: sp_membership::traits::OnEvent<IdtyIndex, MembershipMetaData>,
         Runtime: frame_system::Config<AccountId = AccountId>
-            + pallet_identity::Config<IdtyIndex = IdtyIndex>
+            + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
             + pallet_membership::Config<Instance1, MetaData = MembershipMetaData>
-            + pallet_ud_accounts_storage::Config,
+            + pallet_universal_dividend::Config,
     > sp_membership::traits::OnEvent<IdtyIndex, MembershipMetaData>
     for OnMembershipEventHandler<Inner, Runtime>
 {
     fn on_event(membership_event: &sp_membership::Event<IdtyIndex, MembershipMetaData>) -> Weight {
         (match membership_event {
-            sp_membership::Event::MembershipAcquired(_idty_index, owner_key) => {
-                pallet_ud_accounts_storage::Pallet::<Runtime>::replace_account(
-                    None,
-                    Some(owner_key.0.clone()),
-                )
+            sp_membership::Event::MembershipAcquired(idty_index, _owner_key) => {
+                pallet_identity::Identities::<Runtime>::mutate_exists(idty_index, |idty_val_opt| {
+                    if let Some(ref mut idty_val) = idty_val_opt {
+                        idty_val.data =
+                            pallet_universal_dividend::Pallet::<Runtime>::init_first_eligible_ud();
+                    }
+                });
+                Runtime::DbWeight::get().reads_writes(1, 1)
             }
             sp_membership::Event::MembershipRevoked(idty_index) => {
-                if let Some(account_id) =
-                    crate::providers::IdentityAccountIdProvider::<Runtime>::convert(*idty_index)
-                {
-                    pallet_ud_accounts_storage::Pallet::<Runtime>::remove_account(account_id)
+                if let Some(idty_value) = pallet_identity::Identities::<Runtime>::get(idty_index) {
+                    if let Some(first_ud_index) = idty_value.data.into() {
+                        pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
+                            first_ud_index,
+                            &idty_value.owner_key,
+                        )
+                    } else {
+                        Runtime::DbWeight::get().reads(1)
+                    }
                 } else {
-                    0
+                    Runtime::DbWeight::get().reads(1)
                 }
             }
             _ => 0,

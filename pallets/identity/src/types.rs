@@ -79,11 +79,12 @@ impl Default for IdtyStatus {
 
 #[cfg_attr(feature = "std", derive(Debug, Deserialize, Serialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
-pub struct IdtyValue<BlockNumber, AccountId> {
+pub struct IdtyValue<BlockNumber, AccountId, IdtyData> {
     pub next_creatable_identity_on: BlockNumber,
     pub owner_key: AccountId,
     pub removable_on: BlockNumber,
     pub status: IdtyStatus,
+    pub data: IdtyData,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo, RuntimeDebug)]

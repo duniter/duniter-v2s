@@ -21,7 +21,7 @@ use gdev_runtime::{
     opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
     BalancesConfig, CertConfig, GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig,
     ParametersConfig, SessionConfig, SmithsCertConfig, SmithsMembershipConfig, SudoConfig,
-    SystemConfig, UdAccountsStorageConfig, UniversalDividendConfig, WASM_BINARY,
+    SystemConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
@@ -377,6 +377,7 @@ fn gen_genesis_for_local_chain(
                         owner_key: owner_key.clone(),
                         removable_on: 0,
                         status: IdtyStatus::Validated,
+                        data: IdtyData::min(),
                     },
                 })
                 .collect(),
@@ -416,9 +417,6 @@ fn gen_genesis_for_local_chain(
             certs_by_issuer: clique_wot(initial_smiths_len, smith_cert_validity_period),
         },
         smiths_collective: Default::default(),
-        ud_accounts_storage: UdAccountsStorageConfig {
-            ud_accounts: initial_identities.values().cloned().collect(),
-        },
         universal_dividend: UniversalDividendConfig {
             first_reeval: 100,
             first_ud,
@@ -466,7 +464,6 @@ fn genesis_data_to_gdev_genesis_conf(
         smiths_certs_by_issuer,
         smiths_memberships,
         sudo_key,
-        ud_accounts,
     } = genesis_data;
 
     gdev_runtime::GenesisConfig {
@@ -506,6 +503,7 @@ fn genesis_data_to_gdev_genesis_conf(
                         owner_key: pubkey,
                         removable_on: 0,
                         status: IdtyStatus::Validated,
+                        data: IdtyData::min(),
                     },
                 })
                 .collect(),
@@ -523,7 +521,6 @@ fn genesis_data_to_gdev_genesis_conf(
             memberships: smiths_memberships,
         },
         smiths_collective: Default::default(),
-        ud_accounts_storage: UdAccountsStorageConfig { ud_accounts },
         universal_dividend: UniversalDividendConfig {
             first_reeval: first_ud_reeval,
             first_ud,

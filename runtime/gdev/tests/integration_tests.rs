@@ -17,7 +17,7 @@
 mod common;
 
 use common::*;
-use frame_support::traits::{PalletInfo, StorageInfo, StorageInfoTrait};
+use frame_support::traits::{Get, PalletInfo, StorageInfo, StorageInfoTrait};
 use frame_support::{assert_noop, assert_ok};
 use frame_support::{StorageHasher, Twox128};
 use gdev_runtime::*;
@@ -107,16 +107,60 @@ fn test_remove_identity() {
             System::events()[2].event,
             Event::Identity(pallet_identity::Event::IdtyRemoved { idty_index: 4 })
         );
+    });
+}
+#[test]
+fn test_remove_identity_after_one_ud() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        //println!("UdCreationPeriod={}", <Runtime as pallet_universal_dividend::Config>::UdCreationPeriod::get());
+        run_to_block(<Runtime as pallet_universal_dividend::Config>::UdCreationPeriod::get() + 1);
 
-        // The identity should be removed from UdAccountsStorage
-        assert_eq!(UdAccountsStorage::accounts_len(), 3);
+        assert_ok!(Identity::remove_identity(
+            frame_system::RawOrigin::Root.into(),
+            4,
+            None
+        ));
+
+        // Verify events
+        let events = System::events();
+        //println!("{:?}", events);
+        assert_eq!(events.len(), 5);
         assert_eq!(
-            UdAccountsStorage::accounts_list(),
-            vec![
-                AccountKeyring::Bob.to_account_id(),
-                AccountKeyring::Charlie.to_account_id(),
-                AccountKeyring::Alice.to_account_id(),
-            ]
+            System::events()[0].event,
+            Event::Membership(pallet_membership::Event::MembershipRevoked(4))
+        );
+        assert_eq!(
+            System::events()[1].event,
+            Event::Balances(pallet_balances::Event::Deposit {
+                who: AccountKeyring::Dave.to_account_id(),
+                amount: 1_000
+            })
+        );
+        assert_eq!(
+            System::events()[2].event,
+            Event::Balances(pallet_balances::Event::Endowed {
+                account: AccountKeyring::Dave.to_account_id(),
+                free_balance: 1_000
+            })
+        );
+        assert_eq!(
+            System::events()[3].event,
+            Event::UniversalDividend(pallet_universal_dividend::Event::UdsAutoPaidAtRemoval {
+                count: 1,
+                total: 1_000,
+                who: AccountKeyring::Dave.to_account_id(),
+            })
+        );
+        assert_eq!(
+            System::events()[4].event,
+            Event::Identity(pallet_identity::Event::IdtyRemoved { idty_index: 4 })
+        );
+
+        // Verify state
+        assert!(Identity::identity(4).is_none());
+        assert_eq!(
+            Balances::free_balance(AccountKeyring::Dave.to_account_id()),
+            1_000
         );
     });
 }

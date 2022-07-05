@@ -22,7 +22,7 @@ use frame_support::assert_ok;
 use frame_system::{EventRecord, Phase};
 use sp_runtime::testing::TestSignature;
 
-type IdtyVal = IdtyValue<u64, u64>;
+type IdtyVal = IdtyValue<u64, u64, ()>;
 
 fn alice() -> GenesisIdty<Test> {
     GenesisIdty {
@@ -33,6 +33,7 @@ fn alice() -> GenesisIdty<Test> {
             owner_key: 1,
             removable_on: 0,
             status: crate::IdtyStatus::Validated,
+            data: (),
         },
     }
 }

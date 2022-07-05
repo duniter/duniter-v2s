@@ -113,6 +113,7 @@ impl pallet_identity::Config for Test {
     type Event = Event;
     type EnsureIdtyCallAllowed = DuniterWot;
     type IdtyCreationPeriod = IdtyCreationPeriod;
+    type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = IdtyIndex;
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
@@ -248,6 +249,7 @@ pub fn new_test_ext(
                     owner_key: i as u64,
                     removable_on: 0,
                     status: pallet_identity::IdtyStatus::Validated,
+                    data: (),
                 },
             })
             .collect(),

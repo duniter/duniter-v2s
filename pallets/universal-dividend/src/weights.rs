@@ -21,6 +21,9 @@ use frame_support::weights::{constants::RocksDbWeight, Weight};
 /// Weight functions needed for pallet_universal_dividend.
 pub trait WeightInfo {
     fn on_initialize() -> Weight;
+    fn on_initialize_ud_created() -> Weight;
+    fn on_initialize_ud_reevalued() -> Weight;
+    fn claim_uds(n: u32) -> Weight;
     fn transfer_ud() -> Weight;
     fn transfer_ud_keep_alive() -> Weight;
 }
@@ -30,6 +33,38 @@ impl WeightInfo for () {
     // Storage: (r:0 w:0)
     fn on_initialize() -> Weight {
         2_260_000 as Weight
+    }
+    // Storage: Membership CounterForMembership (r:1 w:0)
+    // Storage: UniversalDividend NextReeval (r:1 w:0)
+    // Storage: UniversalDividend CurrentUd (r:1 w:0)
+    // Storage: UniversalDividend MonetaryMass (r:1 w:1)
+    // Storage: UniversalDividend CurrentUdIndex (r:1 w:1)
+    fn on_initialize_ud_created() -> Weight {
+        (20_160_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(5 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+    }
+    // Storage: Membership CounterForMembership (r:1 w:0)
+    // Storage: UniversalDividend NextReeval (r:1 w:1)
+    // Storage: UniversalDividend CurrentUd (r:1 w:1)
+    // Storage: UniversalDividend MonetaryMass (r:1 w:1)
+    // Storage: UniversalDividend PastReevals (r:1 w:1)
+    // Storage: UniversalDividend CurrentUdIndex (r:1 w:1)
+    fn on_initialize_ud_reevalued() -> Weight {
+        (32_770_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(6 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(5 as Weight))
+    }
+    // Storage: Identity IdentityIndexOf (r:1 w:0)
+    // Storage: Identity Identities (r:1 w:1)
+    // Storage: UniversalDividend CurrentUdIndex (r:1 w:0)
+    // Storage: UniversalDividend PastReevals (r:1 w:0)
+    fn claim_uds(n: u32) -> Weight {
+        (32_514_000 as Weight)
+            // Standard Error: 32_000
+            .saturating_add((8_000 as Weight).saturating_mul(n as Weight))
+            .saturating_add(RocksDbWeight::get().reads(4 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
     }
     // Storage: UniversalDividend CurrentUd (r:1 w:0)
     // Storage: System Account (r:1 w:1)

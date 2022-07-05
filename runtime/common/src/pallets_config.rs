@@ -386,20 +386,27 @@ macro_rules! pallets_config {
 
         // UNIVERSAL DIVIDEND //
 
+		pub struct MembersCount;
+		impl frame_support::pallet_prelude::Get<Balance> for MembersCount {
+			fn get() -> Balance {
+				<Membership as sp_membership::traits::MembersCount>::members_count() as Balance
+			}
+		}
+
         impl pallet_universal_dividend::Config for Runtime {
             type BlockNumberIntoBalance = sp_runtime::traits::ConvertInto;
             type Currency = pallet_balances::Pallet<Runtime>;
             type Event = Event;
-            type MembersCount = common_runtime::providers::UdAccountsProvider<Runtime>;
-            type MembersIds = common_runtime::providers::UdAccountsProvider<Runtime>;
+			type MaxPastReeval = frame_support::traits::ConstU32<4>;
+            type MembersCount = MembersCount;
+            type MembersStorage = Identity;
+			type MembersStorageIter = common_runtime::providers::IdtyDataIter<Runtime>;
             type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
             type UdCreationPeriod = UdCreationPeriod;
             type UdReevalPeriod = UdReevalPeriod;
             type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
 			type WeightInfo = common_runtime::weights::pallet_universal_dividend::WeightInfo<Runtime>;
         }
-
-        impl pallet_ud_accounts_storage::Config for Runtime {}
 
         // WEB OF TRUST //
 
@@ -416,6 +423,7 @@ macro_rules! pallets_config {
             type Event = Event;
             type EnsureIdtyCallAllowed = Wot;
             type IdtyCreationPeriod = IdtyCreationPeriod;
+			type IdtyData = IdtyData;
             type IdtyIndex = IdtyIndex;
             type IdtyNameValidator = IdtyNameValidatorImpl;
             type IdtyValidationOrigin = EnsureRoot<Self::AccountId>;

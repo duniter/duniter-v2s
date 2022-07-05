@@ -210,6 +210,7 @@ impl ExtBuilder {
                         owner_key: owner_key.clone(),
                         removable_on: 0,
                         status: IdtyStatus::Validated,
+                        data: IdtyData::min(),
                     },
                 })
                 .collect(),
@@ -262,12 +263,6 @@ impl ExtBuilder {
                 initial_smiths.len(),
                 parameters.smith_cert_validity_period,
             ),
-        }
-        .assimilate_storage(&mut t)
-        .unwrap();
-
-        pallet_ud_accounts_storage::GenesisConfig::<Runtime> {
-            ud_accounts: initial_identities.values().cloned().collect(),
         }
         .assimilate_storage(&mut t)
         .unwrap();

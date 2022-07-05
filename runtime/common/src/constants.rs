@@ -15,6 +15,8 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{Balance, BlockNumber};
+use frame_support::weights::constants::WEIGHT_PER_MICROS;
+use frame_support::weights::Weight;
 use sp_runtime::Perbill;
 
 /// This determines the average expected block time that we are targeting.
@@ -56,26 +58,32 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
     items as Balance * DEPOSIT_PER_ITEM + (bytes as Balance * DEPOSIT_PER_BYTE)
 }
 
-// WEIGHTS COMSTANTS //
+// Maximal weight proportion of normal extrinsics per block
+pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+
+// WEIGHTS CONSTANTS //
+
+// Read DB weights
+pub const READ_WEIGHTS: Weight = 250 * WEIGHT_PER_MICROS; // ~250 µs
+
+// Write DB weights
+pub const WRITE_WEIGHTS: Weight = 1_000 * WEIGHT_PER_MICROS; // ~1000 µs
 
 // Execution cost of everything outside of the call itself:
 // signature verification, pre_dispatch and post_dispatch
-pub const EXTRINSIC_BASE_WEIGHTS: frame_support::weights::Weight = 1_000_000_000;
-
-// Maximal weight proportion of normal extrinsics per block
-pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+pub const EXTRINSIC_BASE_WEIGHTS: Weight = READ_WEIGHTS + WRITE_WEIGHTS;
 
 // DB weights
 frame_support::parameter_types! {
     pub const DbWeight: frame_support::weights::RuntimeDbWeight = frame_support::weights::RuntimeDbWeight {
-        read: 250 * frame_support::weights::constants::WEIGHT_PER_MICROS,   // ~25 µs
-        write: 1_000 * frame_support::weights::constants::WEIGHT_PER_MICROS, // ~100 µs
+        read: READ_WEIGHTS,
+        write: WRITE_WEIGHTS,
     };
 }
 
 // Block weights limits
 pub fn block_weights(
-    expected_block_weight: frame_support::weights::Weight,
+    expected_block_weight: Weight,
     normal_ratio: sp_arithmetic::Perbill,
 ) -> frame_system::limits::BlockWeights {
     let normal_weight = normal_ratio * expected_block_weight;

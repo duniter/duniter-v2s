@@ -21,7 +21,6 @@ runtime-benchmarks = [
     'pallet-multisig/runtime-benchmarks',
     'pallet-proxy/runtime-benchmarks',
     'pallet-treasury/runtime-benchmarks',
-    'pallet-ud-accounts-storage/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
 ]
 std = [
@@ -46,7 +45,6 @@ std = [
     'pallet-timestamp/std',
     'pallet-treasury/std',
 	'pallet-universal-dividend/std',
-    'pallet-ud-accounts-storage/std',
 	"serde/std",
 	"serde_derive",
     'sp-arithmetic/std',
@@ -71,7 +69,6 @@ pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = fa
 pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-membership = { path = '../../pallets/membership', default-features = false }
 pallet-provide-randomness = { path = '../../pallets/provide-randomness', default-features = false }
-pallet-ud-accounts-storage = { path = '../../pallets/ud-accounts-storage', default-features = false }
 pallet-upgrade-origin = { path = '../../pallets/upgrade-origin', default-features = false }
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
 sp-membership = { path = '../../primitives/membership', default-features = false }

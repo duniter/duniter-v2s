@@ -91,25 +91,6 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in library 'pallet-ud-accounts-storage'",
-      "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--lib",
-          "--package=pallet-ud-accounts-storage"
-        ],
-        "filter": {
-          "name": "pallet-ud-accounts-storage",
-          "kind": "lib"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
       "name": "Debug unit tests in library 'pallet-universal-dividend'",
       "cargo": {
         "args": [

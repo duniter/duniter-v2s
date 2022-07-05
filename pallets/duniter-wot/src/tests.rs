@@ -217,6 +217,7 @@ fn test_new_idty_validation() {
                 owner_key: 6,
                 removable_on: 0,
                 status: IdtyStatus::Validated,
+                data: ()
             })
         );
     });

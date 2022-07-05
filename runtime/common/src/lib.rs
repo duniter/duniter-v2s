@@ -54,14 +54,17 @@ pub type Hash = sp_core::H256;
 /// Block header type
 pub type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>;
 
-/// Index of an identity
-pub type IdtyIndex = u32;
-
 /// Index of a transaction in the chain.
 pub type Index = u32;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = sp_runtime::MultiSignature;
+
+/// Index of an identity
+pub type IdtyIndex = u32;
+
+/// Identity data
+pub type IdtyData = pallet_universal_dividend::FirstEligibleUd;
 
 pub struct FullIdentificationOfImpl;
 impl sp_runtime::traits::Convert<AccountId, Option<entities::ValidatorFullIdentification>>
