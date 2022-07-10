@@ -181,20 +181,26 @@ impl Contains<Call> for BaseCallFilter {
 )]
 #[allow(clippy::unnecessary_cast)]
 pub enum ProxyType {
-    Any = 0,
+    AlmostAny = 0,
     TransferOnly = 1,
     CancelProxy = 2,
     SmithsCollectivePropose = 3,
 }
 impl Default for ProxyType {
     fn default() -> Self {
-        Self::Any
+        Self::AlmostAny
     }
 }
 impl frame_support::traits::InstanceFilter<Call> for ProxyType {
     fn filter(&self, c: &Call) -> bool {
         match self {
-            ProxyType::Any => true,
+            ProxyType::AlmostAny => {
+                // Some calls are never authorized from a proxied account
+                !matches!(
+                    c,
+                    Call::Cert(..) | Call::Identity(..) | Call::SmithsCert(..)
+                )
+            }
             ProxyType::TransferOnly => {
                 matches!(c, Call::Balances(..) | Call::UniversalDividend(..))
             }

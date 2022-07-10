@@ -71,7 +71,7 @@ fn verify_pallet_indices() {
 
 #[test]
 fn verify_proxy_type_indices() {
-    assert_eq!(ProxyType::Any as u8, 0);
+    assert_eq!(ProxyType::AlmostAny as u8, 0);
 }
 
 #[test]
