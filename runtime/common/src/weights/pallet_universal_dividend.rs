@@ -74,7 +74,7 @@ impl<T: frame_system::Config> pallet_universal_dividend::WeightInfo for WeightIn
 	// Storage: UniversalDividend CurrentUdIndex (r:1 w:0)
 	// Storage: UniversalDividend PastReevals (r:1 w:0)
 	fn claim_uds(n: u32) -> Weight {
-		(1_221_776_000 as Weight)
+		(1_228_876_000 as Weight)
 			// Standard Error: 958_000
 			.saturating_add((7_709_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))

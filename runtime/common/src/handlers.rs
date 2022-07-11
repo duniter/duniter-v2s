@@ -15,7 +15,7 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use super::entities::*;
-use super::{AccountId, IdtyData, IdtyIndex};
+use super::{AccountId, IdtyIndex};
 use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::instances::{Instance1, Instance2};
 use frame_support::pallet_prelude::Weight;
@@ -52,15 +52,18 @@ impl<
             sp_membership::Event::MembershipAcquired(idty_index, _owner_key) => {
                 pallet_identity::Identities::<Runtime>::mutate_exists(idty_index, |idty_val_opt| {
                     if let Some(ref mut idty_val) = idty_val_opt {
-                        idty_val.data =
-                            pallet_universal_dividend::Pallet::<Runtime>::init_first_eligible_ud();
+                        idty_val.data = IdtyData {
+                            first_eligible_ud:
+                                pallet_universal_dividend::Pallet::<Runtime>::init_first_eligible_ud(
+                                ),
+                        }
                     }
                 });
                 Runtime::DbWeight::get().reads_writes(1, 1)
             }
             sp_membership::Event::MembershipRevoked(idty_index) => {
                 if let Some(idty_value) = pallet_identity::Identities::<Runtime>::get(idty_index) {
-                    if let Some(first_ud_index) = idty_value.data.into() {
+                    if let Some(first_ud_index) = idty_value.data.first_eligible_ud.into() {
                         pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
                             first_ud_index,
                             &idty_value.owner_key,

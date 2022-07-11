@@ -399,8 +399,8 @@ macro_rules! pallets_config {
             type Event = Event;
 			type MaxPastReeval = frame_support::traits::ConstU32<4>;
             type MembersCount = MembersCount;
-            type MembersStorage = Identity;
-			type MembersStorageIter = common_runtime::providers::IdtyDataIter<Runtime>;
+            type MembersStorage = common_runtime::providers::UdMembersStorage<Runtime>;
+			type MembersStorageIter = common_runtime::providers::UdMembersStorageIter<Runtime>;
             type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
             type UdCreationPeriod = UdCreationPeriod;
             type UdReevalPeriod = UdReevalPeriod;

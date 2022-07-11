@@ -210,7 +210,7 @@ impl ExtBuilder {
                         owner_key: owner_key.clone(),
                         removable_on: 0,
                         status: IdtyStatus::Validated,
-                        data: IdtyData::min(),
+                        data: IdtyData::new(),
                     },
                 })
                 .collect(),

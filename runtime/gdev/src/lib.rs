@@ -31,8 +31,7 @@ pub mod parameters;
 pub use self::parameters::*;
 pub use common_runtime::{
     constants::*, entities::*, handlers::*, AccountId, Address, Balance, BlockNumber,
-    FullIdentificationOfImpl, GetCurrentEpochIndex, Hash, Header, IdtyData, IdtyIndex, Index,
-    Signature,
+    FullIdentificationOfImpl, GetCurrentEpochIndex, Hash, Header, IdtyIndex, Index, Signature,
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_duniter_test_parameters::Parameters as GenesisParameters;

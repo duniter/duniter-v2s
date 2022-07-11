@@ -14,8 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{AccountId, IdtyIndex};
+use crate::{entities::IdtyData, AccountId, IdtyIndex};
 use core::marker::PhantomData;
+use pallet_universal_dividend::FirstEligibleUd;
 use sp_std::boxed::Box;
 use sp_std::vec::Vec;
 
@@ -32,13 +33,42 @@ impl<
     }
 }
 
+pub struct UdMembersStorage<T: pallet_identity::Config>(PhantomData<T>);
+
+impl<T> frame_support::traits::StoredMap<AccountId, FirstEligibleUd> for UdMembersStorage<T>
+where
+    T: frame_system::Config<AccountId = AccountId>,
+    T: pallet_identity::Config<IdtyData = IdtyData>,
+{
+    fn get(key: &T::AccountId) -> FirstEligibleUd {
+        pallet_identity::Pallet::<T>::get(key).first_eligible_ud
+    }
+    fn try_mutate_exists<R, E: From<sp_runtime::DispatchError>>(
+        key: &T::AccountId,
+        f: impl FnOnce(&mut Option<FirstEligibleUd>) -> Result<R, E>,
+    ) -> Result<R, E> {
+        pallet_identity::Pallet::<T>::try_mutate_exists(key, |maybe_idty_data| {
+            if let Some(ref mut idty_data) = maybe_idty_data {
+                let mut maybe_first_eligible_ud = Some(idty_data.first_eligible_ud);
+                let result = f(&mut maybe_first_eligible_ud)?;
+                if let Some(first_eligible_ud) = maybe_first_eligible_ud {
+                    idty_data.first_eligible_ud = first_eligible_ud;
+                }
+                Ok(result)
+            } else {
+                f(&mut None)
+            }
+        })
+    }
+}
+
 #[allow(clippy::type_complexity)]
-pub struct IdtyDataIter<T: pallet_identity::Config>(
+pub struct UdMembersStorageIter<T: pallet_identity::Config>(
     Box<dyn Iterator<Item = pallet_identity::IdtyValue<T::BlockNumber, T::AccountId, T::IdtyData>>>,
     PhantomData<T>,
 );
 
-impl<T: pallet_identity::Config> From<Option<Vec<u8>>> for IdtyDataIter<T> {
+impl<T: pallet_identity::Config> From<Option<Vec<u8>>> for UdMembersStorageIter<T> {
     fn from(maybe_key: Option<Vec<u8>>) -> Self {
         let mut iter = pallet_identity::Identities::<T>::iter_values();
         if let Some(key) = maybe_key {
@@ -48,15 +78,19 @@ impl<T: pallet_identity::Config> From<Option<Vec<u8>>> for IdtyDataIter<T> {
     }
 }
 
-impl<T: pallet_identity::Config> Iterator for IdtyDataIter<T> {
-    type Item = (T::AccountId, T::IdtyData);
+impl<T> Iterator for UdMembersStorageIter<T>
+where
+    T: pallet_identity::Config,
+    T::IdtyData: Into<FirstEligibleUd>,
+{
+    type Item = (T::AccountId, FirstEligibleUd);
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(pallet_identity::IdtyValue {
             owner_key, data, ..
         }) = self.0.next()
         {
-            Some((owner_key, data))
+            Some((owner_key, data.into()))
         } else {
             None
         }

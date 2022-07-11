@@ -18,12 +18,13 @@ use codec::{Decode, Encode, Error, Input, MaxEncodedLen, Output};
 use core::num::NonZeroU16;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
 
 pub type UdIndex = u16;
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Eq, PartialEq, RuntimeDebug)]
 pub struct FirstEligibleUd(pub Option<NonZeroU16>);
 
 #[cfg(feature = "std")]

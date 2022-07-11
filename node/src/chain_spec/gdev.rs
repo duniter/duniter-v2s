@@ -16,6 +16,7 @@
 
 use super::*;
 use common_runtime::constants::*;
+use common_runtime::entities::IdtyData;
 use common_runtime::*;
 use gdev_runtime::{
     opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
@@ -377,7 +378,7 @@ fn gen_genesis_for_local_chain(
                         owner_key: owner_key.clone(),
                         removable_on: 0,
                         status: IdtyStatus::Validated,
-                        data: IdtyData::min(),
+                        data: IdtyData::new(),
                     },
                 })
                 .collect(),
@@ -503,7 +504,7 @@ fn genesis_data_to_gdev_genesis_conf(
                         owner_key: pubkey,
                         removable_on: 0,
                         status: IdtyStatus::Validated,
-                        data: IdtyData::min(),
+                        data: IdtyData::new(),
                     },
                 })
                 .collect(),
