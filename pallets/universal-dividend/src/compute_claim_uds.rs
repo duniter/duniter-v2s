@@ -26,12 +26,15 @@ pub(super) fn compute_claim_uds<Balance: AtLeast32BitUnsigned>(
     let mut total_amount = Zero::zero();
     let mut total_count = 0;
     for (ud_index, ud_amount) in past_reevals.rev() {
-        let count = current_ud_index - core::cmp::max(ud_index, first_ud_index);
-        total_amount += Balance::from(count) * ud_amount;
-        total_count += count;
         if ud_index <= first_ud_index {
+            let count = current_ud_index - first_ud_index;
+            total_amount += Balance::from(count) * ud_amount;
+            total_count += count;
             break;
         } else {
+            let count = current_ud_index - ud_index;
+            total_amount += Balance::from(count) * ud_amount;
+            total_count += count;
             current_ud_index = ud_index;
         }
     }

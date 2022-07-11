@@ -76,7 +76,7 @@ impl<T: frame_system::Config> pallet_universal_dividend::WeightInfo for WeightIn
 	fn claim_uds(n: u32) -> Weight {
 		(1_228_876_000 as Weight)
 			// Standard Error: 958_000
-			.saturating_add((7_709_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add((7_551_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
