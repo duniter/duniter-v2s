@@ -206,11 +206,12 @@ impl ExtBuilder {
                     index: i as u32 + 1,
                     name: name.clone(),
                     value: IdtyValue {
+                        data: IdtyData::new(),
                         next_creatable_identity_on: Default::default(),
                         owner_key: owner_key.clone(),
+                        old_owner_key: None,
                         removable_on: 0,
                         status: IdtyStatus::Validated,
-                        data: IdtyData::new(),
                     },
                 })
                 .collect(),

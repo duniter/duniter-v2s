@@ -27,6 +27,7 @@ pub enum IdtyEvent<T: crate::Config> {
     Created { creator: T::IdtyIndex },
     Confirmed,
     Validated,
+    ChangedOwnerKey { new_owner_key: T::AccountId },
     Removed { status: IdtyStatus },
 }
 
@@ -80,16 +81,25 @@ impl Default for IdtyStatus {
 #[cfg_attr(feature = "std", derive(Debug, Deserialize, Serialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 pub struct IdtyValue<BlockNumber, AccountId, IdtyData> {
+    pub data: IdtyData,
     pub next_creatable_identity_on: BlockNumber,
+    pub old_owner_key: Option<(AccountId, BlockNumber)>,
     pub owner_key: AccountId,
     pub removable_on: BlockNumber,
     pub status: IdtyStatus,
-    pub data: IdtyData,
 }
 
-#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo, RuntimeDebug)]
-pub struct RevocationPayload<AccountId, Hash> {
-    pub owner_key: AccountId,
-    // Avoid replay attack between blockchains
+#[derive(Clone, Copy, Encode, RuntimeDebug)]
+pub struct NewOwnerKeyPayload<'a, AccountId, IdtyIndex, Hash> {
+    // Avoid replay attack between networks
+    pub genesis_hash: &'a Hash,
+    pub idty_index: IdtyIndex,
+    pub old_owner_key: &'a AccountId,
+}
+
+#[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, TypeInfo, RuntimeDebug)]
+pub struct RevocationPayload<IdtyIndex, Hash> {
+    // Avoid replay attack between networks
     pub genesis_hash: Hash,
+    pub idty_index: IdtyIndex,
 }

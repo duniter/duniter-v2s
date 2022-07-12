@@ -419,6 +419,7 @@ macro_rules! pallets_config {
         }
 
         impl pallet_identity::Config for Runtime {
+			type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
             type ConfirmPeriod = ConfirmPeriod;
             type Event = Event;
             type EnsureIdtyCallAllowed = Wot;
@@ -428,7 +429,9 @@ macro_rules! pallets_config {
             type IdtyNameValidator = IdtyNameValidatorImpl;
             type IdtyValidationOrigin = EnsureRoot<Self::AccountId>;
             type IsMember = Membership;
-            type OnIdtyChange = Wot;
+            type NewOwnerKeySigner = <NewOwnerKeySignature as sp_runtime::traits::Verify>::Signer;
+			type NewOwnerKeySignature = NewOwnerKeySignature;
+            type OnIdtyChange = (common_runtime::handlers::OnIdtyChangeHandler<Runtime>, Wot);
             type RemoveIdentityConsumers = RemoveIdentityConsumersImpl<Self>;
             type RevocationSigner = <Signature as sp_runtime::traits::Verify>::Signer;
             type RevocationSignature = Signature;

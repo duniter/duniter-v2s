@@ -96,6 +96,7 @@ impl pallet_duniter_wot::Config<Instance1> for Test {
 
 // Identity
 parameter_types! {
+    pub const ChangeOwnerKeyPeriod: u64 = 10;
     pub const ConfirmPeriod: u64 = 2;
     pub const IdtyCreationPeriod: u64 = 3;
     pub const ValidationPeriod: u64 = 2;
@@ -109,6 +110,7 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
 }
 
 impl pallet_identity::Config for Test {
+    type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
     type Event = Event;
     type EnsureIdtyCallAllowed = DuniterWot;
@@ -118,6 +120,8 @@ impl pallet_identity::Config for Test {
     type IdtyIndex = IdtyIndex;
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
     type IsMember = Membership;
+    type NewOwnerKeySigner = UintAuthorityId;
+    type NewOwnerKeySignature = TestSignature;
     type OnIdtyChange = DuniterWot;
     type RemoveIdentityConsumers = ();
     type RevocationSigner = UintAuthorityId;
@@ -245,11 +249,12 @@ pub fn new_test_ext(
                 index: i as u32,
                 name: pallet_identity::IdtyName::from(NAMES[i - 1]),
                 value: pallet_identity::IdtyValue {
+                    data: (),
                     next_creatable_identity_on: 0,
                     owner_key: i as u64,
+                    old_owner_key: None,
                     removable_on: 0,
                     status: pallet_identity::IdtyStatus::Validated,
-                    data: (),
                 },
             })
             .collect(),

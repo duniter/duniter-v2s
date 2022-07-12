@@ -374,11 +374,12 @@ fn gen_genesis_for_local_chain(
                     index: i as u32 + 1,
                     name: name.clone(),
                     value: IdtyValue {
+                        data: IdtyData::new(),
                         next_creatable_identity_on: Default::default(),
+                        old_owner_key: None,
                         owner_key: owner_key.clone(),
                         removable_on: 0,
                         status: IdtyStatus::Validated,
-                        data: IdtyData::new(),
                     },
                 })
                 .collect(),
@@ -500,11 +501,12 @@ fn genesis_data_to_gdev_genesis_conf(
                     index: i as u32 + 1,
                     name: common_runtime::IdtyName::from(name.as_str()),
                     value: common_runtime::IdtyValue {
+                        data: IdtyData::new(),
                         next_creatable_identity_on: 0,
+                        old_owner_key: None,
                         owner_key: pubkey,
                         removable_on: 0,
                         status: IdtyStatus::Validated,
-                        data: IdtyData::new(),
                     },
                 })
                 .collect(),

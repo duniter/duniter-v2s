@@ -76,6 +76,7 @@ impl system::Config for Test {
 }
 
 parameter_types! {
+    pub const ChangeOwnerKeyPeriod: u64 = 10;
     pub const ConfirmPeriod: u64 = 2;
     pub const IdtyCreationPeriod: u64 = 3;
     pub const MaxInactivityPeriod: u64 = 5;
@@ -98,6 +99,7 @@ impl IsMember<u64> for IsMemberTestImpl {
 }
 
 impl pallet_identity::Config for Test {
+    type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
     type Event = Event;
     type EnsureIdtyCallAllowed = ();
@@ -107,6 +109,8 @@ impl pallet_identity::Config for Test {
     type IdtyIndex = u64;
     type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
     type IsMember = IsMemberTestImpl;
+    type NewOwnerKeySigner = UintAuthorityId;
+    type NewOwnerKeySignature = TestSignature;
     type OnIdtyChange = ();
     type RemoveIdentityConsumers = ();
     type RevocationSigner = UintAuthorityId;

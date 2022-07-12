@@ -39,6 +39,9 @@ use sp_runtime::traits::{AtLeast32BitUnsigned, IdentifyAccount, One, Saturating,
 use sp_std::fmt::Debug;
 use sp_std::prelude::*;
 
+pub const NEW_OWNER_KEY_PAYLOAD_PREFIX: [u8; 4] = [b'i', b'c', b'o', b'k'];
+pub const REVOCATION_PAYLOAD_PREFIX: [u8; 4] = [b'r', b'e', b'v', b'o'];
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -62,6 +65,9 @@ pub mod pallet {
         #[pallet::constant]
         /// Period during which the owner can confirm the new identity.
         type ConfirmPeriod: Get<Self::BlockNumber>;
+        #[pallet::constant]
+        /// Minimum duration between two owner key changes
+        type ChangeOwnerKeyPeriod: Get<Self::BlockNumber>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         /// Management of the authorizations of the different calls. (The default implementation only allows root)
@@ -94,6 +100,10 @@ pub mod pallet {
         type IsMember: sp_runtime::traits::IsMember<Self::IdtyIndex>;
         /// On identity confirmed by its owner
         type OnIdtyChange: OnIdtyChange<Self>;
+        /// Signing key of new owner key payload
+        type NewOwnerKeySigner: IdentifyAccount<AccountId = Self::AccountId>;
+        /// Signature of new owner key payload
+        type NewOwnerKeySignature: Parameter + Verify<Signer = Self::NewOwnerKeySigner>;
         /// Handle the logic that removes all identity consumers.
         /// "identity consumers" meaning all things that rely on the existence of the identity.
         type RemoveIdentityConsumers: RemoveIdentityConsumers<Self::IdtyIndex>;
@@ -225,6 +235,10 @@ pub mod pallet {
         /// An identity has been validated
         /// [idty_index]
         IdtyValidated { idty_index: T::IdtyIndex },
+        IdtyChangedOwnerKey {
+            idty_index: T::IdtyIndex,
+            new_owner_key: T::AccountId,
+        },
         /// An identity has been removed
         /// [idty_index]
         IdtyRemoved { idty_index: T::IdtyIndex },
@@ -284,11 +298,12 @@ pub mod pallet {
             <Identities<T>>::insert(
                 idty_index,
                 IdtyValue {
+                    data: Default::default(),
                     next_creatable_identity_on: T::BlockNumber::zero(),
+                    old_owner_key: None,
                     owner_key: owner_key.clone(),
                     removable_on,
                     status: IdtyStatus::Created,
-                    data: Default::default(),
                 },
             );
             IdentitiesRemovableOn::<T>::append(removable_on, (idty_index, IdtyStatus::Created));
@@ -297,7 +312,7 @@ pub mod pallet {
                 idty_index,
                 owner_key,
             });
-            T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Created { creator });
+            T::OnIdtyChange::on_idty_change(idty_index, &IdtyEvent::Created { creator });
             Ok(().into())
         }
         /// Confirm the creation of an identity and give it a name
@@ -342,7 +357,7 @@ pub mod pallet {
                 owner_key: who,
                 name: idty_name,
             });
-            T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Confirmed);
+            T::OnIdtyChange::on_idty_change(idty_index, &IdtyEvent::Confirmed);
             Ok(().into())
         }
         #[pallet::weight(1_000_000_000)]
@@ -372,40 +387,118 @@ pub mod pallet {
 
             <Identities<T>>::insert(idty_index, idty_value);
             Self::deposit_event(Event::IdtyValidated { idty_index });
-            T::OnIdtyChange::on_idty_change(idty_index, IdtyEvent::Validated);
+            T::OnIdtyChange::on_idty_change(idty_index, &IdtyEvent::Validated);
 
             Ok(().into())
         }
-        /// Revoke an identity using a signed revocation payload
+
+        /// Change identity owner key.
         ///
-        /// - `payload`: the revocation payload
-        ///   - `owner_key`: the public key corresponding to the identity to be revoked
-        ///   - `genesis_hash`: the genesis block hash
-        /// - `payload_sig`: the signature of the encoded form of `payload`. Must be signed by `owner_key`.
+        /// - `new_key`: the new owner key.
+        /// - `new_key_sig`: the signature of the encoded form of `NewOwnerKeyPayload`.
+        ///                  Must be signed by `new_key`.
         ///
-        /// Any origin can emit this extrinsic, not only `owner_key`.
+        /// The origin should be the old identity owner key.
+        #[pallet::weight(1_000_000_000)]
+        pub fn change_owner_key(
+            origin: OriginFor<T>,
+            new_key: T::AccountId,
+            new_key_sig: T::NewOwnerKeySignature,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            let idty_index =
+                IdentityIndexOf::<T>::get(&who).ok_or(Error::<T>::IdtyIndexNotFound)?;
+            let mut idty_value =
+                Identities::<T>::get(idty_index).ok_or(Error::<T>::IdtyNotFound)?;
+
+            ensure!(
+                IdentityIndexOf::<T>::get(&new_key).is_none(),
+                Error::<T>::OwnerKeyAlreadyUsed
+            );
+
+            let block_number = frame_system::Pallet::<T>::block_number();
+            if let Some((_, last_change)) = idty_value.old_owner_key {
+                ensure!(
+                    block_number >= last_change + T::ChangeOwnerKeyPeriod::get(),
+                    Error::<T>::OwnerKeyAlreadyRecentlyChanged
+                );
+            }
+
+            let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
+            let new_key_payload = NewOwnerKeyPayload {
+                genesis_hash: &genesis_hash,
+                idty_index,
+                old_owner_key: &idty_value.owner_key,
+            };
+
+            ensure!(
+                (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload)
+                    .using_encoded(|bytes| new_key_sig.verify(bytes, &new_key)),
+                Error::<T>::InvalidNewOwnerKeySig
+            );
+
+            IdentityIndexOf::<T>::remove(&idty_value.owner_key);
+            idty_value.old_owner_key = Some((idty_value.owner_key.clone(), block_number));
+            idty_value.owner_key = new_key.clone();
+            IdentityIndexOf::<T>::insert(&idty_value.owner_key, idty_index);
+            Identities::<T>::insert(idty_index, idty_value);
+            Self::deposit_event(Event::IdtyChangedOwnerKey {
+                idty_index,
+                new_owner_key: new_key.clone(),
+            });
+            T::OnIdtyChange::on_idty_change(
+                idty_index,
+                &IdtyEvent::ChangedOwnerKey {
+                    new_owner_key: new_key,
+                },
+            );
+
+            Ok(().into())
+        }
+
+        /// Revoke an identity using a revocation signature
+        ///
+        /// - `idty_index`: the index of the identity to be revoked.
+        /// - `revocation_key`: the key used to sign the revocation payload.
+        /// - `revocation_sig`: the signature of the encoded form of `RevocationPayload`.
+        ///                     Must be signed by `revocation_key`.
+        ///
+        /// Any signed origin can execute this call.
         #[pallet::weight(1_000_000_000)]
         pub fn revoke_identity(
             origin: OriginFor<T>,
-            payload: RevocationPayload<T::AccountId, T::Hash>,
-            payload_sig: T::RevocationSignature,
+            idty_index: T::IdtyIndex,
+            revocation_key: T::AccountId,
+            revocation_sig: T::RevocationSignature,
         ) -> DispatchResultWithPostInfo {
             let _ = ensure_signed(origin)?;
+
+            let idty_value = Identities::<T>::get(idty_index).ok_or(Error::<T>::IdtyNotFound)?;
+
             ensure!(
-                payload.genesis_hash
-                    == frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero()),
-                Error::<T>::InvalidGenesisHash
+                if let Some((ref old_owner_key, _)) = idty_value.old_owner_key {
+                    revocation_key == idty_value.owner_key || &revocation_key == old_owner_key
+                } else {
+                    revocation_key == idty_value.owner_key
+                },
+                Error::<T>::InvalidRevocationKey
             );
+
+            let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
+            let revocation_payload = RevocationPayload {
+                genesis_hash,
+                idty_index,
+            };
+
             ensure!(
-                payload.using_encoded(|bytes| payload_sig.verify(bytes, &payload.owner_key)),
-                Error::<T>::InvalidRevocationProof
+                (REVOCATION_PAYLOAD_PREFIX, revocation_payload)
+                    .using_encoded(|bytes| revocation_sig.verify(bytes, &idty_value.owner_key)),
+                Error::<T>::InvalidRevocationSig
             );
-            if let Some(idty_index) = <IdentityIndexOf<T>>::take(&payload.owner_key) {
-                Self::do_remove_identity(idty_index);
-                Ok(().into())
-            } else {
-                Err(Error::<T>::IdtyNotFound.into())
-            }
+
+            Self::do_remove_identity(idty_index);
+            Ok(().into())
         }
 
         #[pallet::weight(1_000_000_000)]
@@ -437,37 +530,12 @@ pub mod pallet {
 
             Ok(().into())
         }
-
-        #[pallet::weight(1_000_000_000)]
-        pub fn prune_item_identity_index_of(
-            origin: OriginFor<T>,
-            accounts_ids: Vec<T::AccountId>,
-        ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
-
-            accounts_ids
-                .into_iter()
-                .filter(|account_id| {
-                    if let Ok(idty_index) = IdentityIndexOf::<T>::try_get(&account_id) {
-                        !Identities::<T>::contains_key(&idty_index)
-                    } else {
-                        false
-                    }
-                })
-                .for_each(IdentityIndexOf::<T>::remove);
-
-            Ok(().into())
-        }
     }
 
     // ERRORS //
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Genesis hash does not match
-        InvalidGenesisHash,
-        /// Revocation payload signature is invalid
-        InvalidRevocationProof,
         /// Creator not allowed to create identities
         CreatorNotAllowedToCreateIdty,
         /// Identity already confirmed
@@ -494,21 +562,28 @@ pub mod pallet {
         IdtyNotValidated,
         /// Identity not yet renewable
         IdtyNotYetRenewable,
+        /// New owner key payload signature is invalid
+        InvalidNewOwnerKeySig,
+        /// Revocation key is invalid
+        InvalidRevocationKey,
+        /// Revocation payload signature is invalid
+        InvalidRevocationSig,
         /// Not allowed to confirm identity
         NotAllowedToConfirmIdty,
         /// Not allowed to validate identity
         NotAllowedToValidateIdty,
+        /// Identity creation period is not respected
+        NotRespectIdtyCreationPeriod,
         /// Not the same identity name
         NotSameIdtyName,
+        /// Owner key already recently changed
+        OwnerKeyAlreadyRecentlyChanged,
+        /// Owner key already used
+        OwnerKeyAlreadyUsed,
         /// Right already added
         RightAlreadyAdded,
         /// Right does not exist
         RightNotExist,
-        /// Identity creation period is not respected
-        NotRespectIdtyCreationPeriod,
-        // Removed error: OwnerAccountNotExist,
-        // Caution: if you add a new error, you should explicitly set the index
-        // to not reuse the same index as the removed error.
     }
 
     // PUBLIC FUNCTIONS //
@@ -532,7 +607,7 @@ pub mod pallet {
                 Self::deposit_event(Event::IdtyRemoved { idty_index });
                 T::OnIdtyChange::on_idty_change(
                     idty_index,
-                    IdtyEvent::Removed {
+                    &IdtyEvent::Removed {
                         status: idty_val.status,
                     },
                 );

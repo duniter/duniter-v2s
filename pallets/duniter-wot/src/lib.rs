@@ -233,12 +233,12 @@ where
 }
 
 impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pallet<T, I> {
-    fn on_idty_change(idty_index: IdtyIndex, idty_event: IdtyEvent<T>) -> Weight {
+    fn on_idty_change(idty_index: IdtyIndex, idty_event: &IdtyEvent<T>) -> Weight {
         match idty_event {
             IdtyEvent::Created { creator } => {
                 if let Err(e) = <pallet_certification::Pallet<T, I>>::force_add_cert(
                     frame_system::Origin::<T>::Root.into(),
-                    creator,
+                    *creator,
                     idty_index,
                     true,
                 ) {
@@ -247,10 +247,8 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pall
                     }
                 }
             }
-            IdtyEvent::Confirmed => {}
-            IdtyEvent::Validated => {}
             IdtyEvent::Removed { status } => {
-                if status != IdtyStatus::Validated {
+                if *status != IdtyStatus::Validated {
                     if let Err(e) =
                         <pallet_certification::Pallet<T, I>>::remove_all_certs_received_by(
                             frame_system::Origin::<T>::Root.into(),
@@ -263,6 +261,7 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pall
                     }
                 }
             }
+            IdtyEvent::Confirmed | IdtyEvent::Validated | IdtyEvent::ChangedOwnerKey { .. } => {}
         }
         0
     }

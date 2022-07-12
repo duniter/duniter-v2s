@@ -85,6 +85,15 @@ parameter_types! {
     pub const SquareMoneyGrowthRate: Perbill = Perbill::from_parts(2_381_440);
 }
 
+/*******/
+/* WOT */
+/*******/
+
+// Identity
+frame_support::parameter_types! {
+    pub const ChangeOwnerKeyPeriod: BlockNumber = 7 * DAYS;
+}
+
 /*************/
 /* UTILITIES */
 /*************/

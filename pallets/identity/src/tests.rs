@@ -15,10 +15,13 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::mock::*;
-use crate::{Error, GenesisIdty, IdtyName, IdtyValue, RevocationPayload};
+use crate::{
+    Error, GenesisIdty, IdtyName, IdtyValue, NewOwnerKeyPayload, RevocationPayload,
+    NEW_OWNER_KEY_PAYLOAD_PREFIX, REVOCATION_PAYLOAD_PREFIX,
+};
 use codec::Encode;
 //use frame_support::assert_noop;
-use frame_support::assert_ok;
+use frame_support::{assert_err, assert_ok};
 use frame_system::{EventRecord, Phase};
 use sp_runtime::testing::TestSignature;
 
@@ -29,11 +32,27 @@ fn alice() -> GenesisIdty<Test> {
         index: 1,
         name: IdtyName::from("Alice"),
         value: IdtyVal {
+            data: (),
             next_creatable_identity_on: 0,
+            old_owner_key: None,
             owner_key: 1,
             removable_on: 0,
             status: crate::IdtyStatus::Validated,
+        },
+    }
+}
+
+fn bob() -> GenesisIdty<Test> {
+    GenesisIdty {
+        index: 2,
+        name: IdtyName::from("Bob"),
+        value: IdtyVal {
             data: (),
+            next_creatable_identity_on: 0,
+            old_owner_key: None,
+            owner_key: 2,
+            removable_on: 0,
+            status: crate::IdtyStatus::Validated,
         },
     }
 }
@@ -172,34 +191,139 @@ fn test_idty_creation_period() {
 }
 
 #[test]
+fn test_change_owner_key() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice(), bob()],
+    })
+    .execute_with(|| {
+        let genesis_hash = System::block_hash(0);
+        let old_owner_key = 1u64;
+        let new_key_payload = NewOwnerKeyPayload {
+            genesis_hash: &genesis_hash,
+            idty_index: 1u64,
+            old_owner_key: &old_owner_key,
+        };
+
+        // We need to initialize at least one block before any call
+        run_to_block(1);
+
+        // Caller should have an asoociated identity
+        assert_err!(
+            Identity::change_owner_key(
+                Origin::signed(42),
+                10,
+                TestSignature(10, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
+            ),
+            Error::<Test>::IdtyIndexNotFound
+        );
+
+        // Payload must be signed by the new key
+        assert_err!(
+            Identity::change_owner_key(
+                Origin::signed(1),
+                10,
+                TestSignature(42, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
+            ),
+            Error::<Test>::InvalidNewOwnerKeySig
+        );
+
+        // Payload must be prefixed
+        assert_err!(
+            Identity::change_owner_key(
+                Origin::signed(1),
+                10,
+                TestSignature(10, new_key_payload.encode())
+            ),
+            Error::<Test>::InvalidNewOwnerKeySig
+        );
+
+        // New owner key should not be used by another identity
+        assert_err!(
+            Identity::change_owner_key(
+                Origin::signed(1),
+                2,
+                TestSignature(2, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
+            ),
+            Error::<Test>::OwnerKeyAlreadyUsed
+        );
+
+        // Alice can change her owner key
+        assert_ok!(Identity::change_owner_key(
+            Origin::signed(1),
+            10,
+            TestSignature(10, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
+        ));
+        assert_eq!(
+            Identity::identity(1),
+            Some(IdtyVal {
+                data: (),
+                next_creatable_identity_on: 0,
+                old_owner_key: Some((1, 1)),
+                owner_key: 10,
+                removable_on: 0,
+                status: crate::IdtyStatus::Validated,
+            })
+        );
+
+        run_to_block(2);
+
+        // Alice can't re-change her owner key too early
+        assert_err!(
+            Identity::change_owner_key(
+                Origin::signed(10),
+                100,
+                TestSignature(
+                    100,
+                    (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode()
+                )
+            ),
+            Error::<Test>::OwnerKeyAlreadyRecentlyChanged
+        );
+    });
+}
+
+#[test]
 fn test_idty_revocation() {
     new_test_ext(IdentityConfig {
         identities: vec![alice()],
     })
     .execute_with(|| {
-        // We need to initialize at least one block before any call
-        run_to_block(1);
-
         let revocation_payload = RevocationPayload {
-            owner_key: 1,
+            idty_index: 1u64,
             genesis_hash: System::block_hash(0),
         };
+
+        // We need to initialize at least one block before any call
+        run_to_block(1);
 
         // Payload must be signed by the right identity
         assert_eq!(
             Identity::revoke_identity(
                 Origin::signed(1),
-                revocation_payload.clone(),
-                TestSignature(42, revocation_payload.encode())
+                1,
+                42,
+                TestSignature(42, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
             ),
-            Err(Error::<Test>::InvalidRevocationProof.into())
+            Err(Error::<Test>::InvalidRevocationKey.into())
+        );
+
+        // Payload must be prefixed
+        assert_eq!(
+            Identity::revoke_identity(
+                Origin::signed(1),
+                1,
+                1,
+                TestSignature(1, revocation_payload.encode())
+            ),
+            Err(Error::<Test>::InvalidRevocationSig.into())
         );
 
         // Anyone can submit a revocation payload
         assert_ok!(Identity::revoke_identity(
             Origin::signed(42),
-            revocation_payload.clone(),
-            TestSignature(1, revocation_payload.encode())
+            1,
+            1,
+            TestSignature(1, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
         ));
 
         let events = System::events();
@@ -219,8 +343,9 @@ fn test_idty_revocation() {
         assert_eq!(
             Identity::revoke_identity(
                 Origin::signed(1),
-                revocation_payload.clone(),
-                TestSignature(1, revocation_payload.encode())
+                1,
+                1,
+                TestSignature(1, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
             ),
             Err(Error::<Test>::IdtyNotFound.into())
         );

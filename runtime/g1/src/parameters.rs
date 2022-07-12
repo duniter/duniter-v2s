@@ -101,6 +101,7 @@ parameter_types! {
 
 // Identity
 parameter_types! {
+    pub const ChangeOwnerKeyPeriod: BlockNumber = 6 * MONTHS;
     pub const ConfirmPeriod: BlockNumber = 14 * DAYS;
     pub const IdtyCreationPeriod: BlockNumber = MONTHS;
     pub const ValidationPeriod: BlockNumber = YEARS;

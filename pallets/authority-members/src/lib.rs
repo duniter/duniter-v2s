@@ -100,7 +100,6 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             for (member_id, (account_id, _is_online)) in &self.initial_authorities {
-                AccountIdOf::<T>::insert(member_id, account_id);
                 Members::<T>::insert(
                     member_id,
                     MemberData::new_genesis(T::MaxKeysLife::get(), account_id.to_owned()),
@@ -255,7 +254,7 @@ pub mod pallet {
             if !Members::<T>::contains_key(member_id) {
                 return Err(Error::<T>::MemberNotFound.into());
             }
-            let validator_id = T::ValidatorIdOf::convert(who.clone())
+            let validator_id = T::ValidatorIdOf::convert(who)
                 .ok_or(pallet_session::Error::<T>::NoAssociatedValidatorId)?;
             if !pallet_session::Pallet::<T>::is_registered(&validator_id) {
                 return Err(Error::<T>::SessionKeysNotProvided.into());
@@ -276,7 +275,7 @@ pub mod pallet {
             if is_outgoing {
                 Self::remove_out(member_id);
             } else {
-                Self::insert_in(member_id, who);
+                Self::insert_in(member_id);
             }
 
             Ok(().into())
@@ -315,21 +314,6 @@ pub mod pallet {
             Ok(().into())
         }
         #[pallet::weight(1_000_000_000)]
-        pub fn prune_account_id_of(
-            origin: OriginFor<T>,
-            members_ids: Vec<T::MemberId>,
-        ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
-
-            for member_id in members_ids {
-                if !Self::is_online(member_id) && !Self::is_incoming(member_id) {
-                    AccountIdOf::<T>::remove(member_id);
-                }
-            }
-
-            Ok(().into())
-        }
-        #[pallet::weight(1_000_000_000)]
         pub fn remove_member(
             origin: OriginFor<T>,
             member_id: T::MemberId,
@@ -338,6 +322,46 @@ pub mod pallet {
 
             let member_data = Members::<T>::get(member_id).ok_or(Error::<T>::NotMember)?;
             Self::do_remove_member(member_id, member_data.owner_key);
+
+            Ok(().into())
+        }
+    }
+
+    // PUBLIC FUNCTIONS //
+
+    impl<T: Config> Pallet<T> {
+        /// Should be transactional
+        #[frame_support::transactional]
+        pub fn change_owner_key(
+            member_id: T::MemberId,
+            new_owner_key: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            let old_owner_key = Members::<T>::mutate_exists(member_id, |maybe_member_data| {
+                if let Some(ref mut member_data) = maybe_member_data {
+                    Ok(core::mem::replace(
+                        &mut member_data.owner_key,
+                        new_owner_key.clone(),
+                    ))
+                } else {
+                    Err(Error::<T>::MemberNotFound)
+                }
+            })?;
+
+            let validator_id = T::ValidatorIdOf::convert(old_owner_key.clone())
+                .ok_or(Error::<T>::MemberNotFound)?;
+            let session_keys = pallet_session::NextKeys::<T>::get(validator_id)
+                .ok_or(Error::<T>::SessionKeysNotProvided)?;
+
+            // Purge session keys
+            let _post_info = pallet_session::Call::<T>::purge_keys {}
+                .dispatch_bypass_filter(frame_system::RawOrigin::Signed(old_owner_key).into())?;
+
+            // Set session keys
+            let _post_info = pallet_session::Call::<T>::set_keys {
+                keys: session_keys,
+                proof: vec![],
+            }
+            .dispatch_bypass_filter(frame_system::RawOrigin::Signed(new_owner_key).into())?;
 
             Ok(().into())
         }
@@ -390,7 +414,7 @@ pub mod pallet {
                 }
             }
         }
-        fn insert_in(member_id: T::MemberId, account_id: T::AccountId) -> bool {
+        fn insert_in(member_id: T::MemberId) -> bool {
             let not_already_inserted = IncomingAuthorities::<T>::mutate(|members_ids| {
                 if let Err(index) = members_ids.binary_search(&member_id) {
                     members_ids.insert(index, member_id);
@@ -401,7 +425,6 @@ pub mod pallet {
             });
             if not_already_inserted {
                 AuthoritiesCounter::<T>::mutate(|counter| *counter += 1);
-                AccountIdOf::<T>::insert(member_id, account_id);
                 Self::deposit_event(Event::MemberGoOnline(member_id));
             }
             not_already_inserted
@@ -510,8 +533,6 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
                         }
                     });
                     MembersExpireOn::<T>::append(expire_on_session, member_id);
-                    // Prune AccountIdOf
-                    AccountIdOf::<T>::remove(member_id);
                 }
                 Self::deposit_event(Event::OutgoingAuthorities(members_ids_to_del.clone()));
             }
@@ -535,8 +556,8 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
             })
             .into_iter()
             .filter_map(|member_id| {
-                if let Some(account_id) = AccountIdOf::<T>::get(member_id) {
-                    T::ValidatorIdOf::convert(account_id)
+                if let Some(member_data) = Members::<T>::get(member_id) {
+                    T::ValidatorIdOf::convert(member_data.owner_key)
                 } else {
                     None
                 }
@@ -550,8 +571,8 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
             OnlineAuthorities::<T>::get()
                 .into_iter()
                 .filter_map(|member_id| {
-                    if let Some(account_id) = AccountIdOf::<T>::get(member_id) {
-                        T::ValidatorIdOf::convert(account_id)
+                    if let Some(member_data) = Members::<T>::get(member_id) {
+                        T::ValidatorIdOf::convert(member_data.owner_key)
                     } else {
                         None
                     }

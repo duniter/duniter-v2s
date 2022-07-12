@@ -103,6 +103,7 @@ parameter_types! {
 
 // Identity
 frame_support::parameter_types! {
+    pub const ChangeOwnerKeyPeriod: BlockNumber = MONTHS;
     pub const ConfirmPeriod: BlockNumber = DAYS;
     pub const IdtyCreationPeriod: BlockNumber = DAYS;
 }

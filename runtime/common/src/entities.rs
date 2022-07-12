@@ -76,6 +76,29 @@ impl From<IdtyData> for pallet_universal_dividend::FirstEligibleUd {
     }
 }
 
+pub struct NewOwnerKeySigner(sp_core::sr25519::Public);
+
+impl sp_runtime::traits::IdentifyAccount for NewOwnerKeySigner {
+    type AccountId = crate::AccountId;
+    fn into_account(self) -> crate::AccountId {
+        <[u8; 32]>::from(self.0).into()
+    }
+}
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+pub struct NewOwnerKeySignature(sp_core::sr25519::Signature);
+
+impl sp_runtime::traits::Verify for NewOwnerKeySignature {
+    type Signer = NewOwnerKeySigner;
+    fn verify<L: sp_runtime::traits::Lazy<[u8]>>(&self, msg: L, signer: &crate::AccountId) -> bool {
+        use sp_core::crypto::ByteArray as _;
+        match sp_core::sr25519::Public::from_slice(signer.as_ref()) {
+            Ok(signer) => self.0.verify(msg, &signer),
+            Err(()) => false,
+        }
+    }
+}
+
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct SmithsMembershipMetaData<SessionKeysWrapper> {

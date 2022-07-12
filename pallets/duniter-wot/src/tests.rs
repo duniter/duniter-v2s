@@ -213,11 +213,12 @@ fn test_new_idty_validation() {
         assert_eq!(
             Identity::identity(6),
             Some(pallet_identity::IdtyValue {
+                data: (),
                 next_creatable_identity_on: 0,
+                old_owner_key: None,
                 owner_key: 6,
                 removable_on: 0,
                 status: IdtyStatus::Validated,
-                data: ()
             })
         );
     });

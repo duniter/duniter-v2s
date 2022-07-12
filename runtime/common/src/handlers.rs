@@ -21,6 +21,7 @@ use frame_support::instances::{Instance1, Instance2};
 use frame_support::pallet_prelude::Weight;
 use frame_support::traits::Get;
 use frame_support::Parameter;
+use pallet_identity::IdtyEvent;
 use sp_runtime::traits::IsMember;
 
 pub struct OnNewSessionHandler<Runtime>(core::marker::PhantomData<Runtime>);
@@ -30,6 +31,36 @@ where
 {
     fn on_new_session(_index: sp_staking::SessionIndex) -> Weight {
         pallet_provide_randomness::Pallet::<Runtime>::on_new_epoch();
+        0
+    }
+}
+
+pub struct OnIdtyChangeHandler<Runtime>(core::marker::PhantomData<Runtime>);
+
+impl<T> pallet_identity::traits::OnIdtyChange<T> for OnIdtyChangeHandler<T>
+where
+    T: frame_system::Config<AccountId = AccountId>,
+    T: pallet_authority_members::Config<MemberId = IdtyIndex>,
+    T: pallet_identity::Config<IdtyIndex = IdtyIndex>,
+{
+    fn on_idty_change(idty_index: IdtyIndex, idty_event: &IdtyEvent<T>) -> Weight {
+        match idty_event {
+            IdtyEvent::ChangedOwnerKey { new_owner_key } => {
+                if let Err(e) = pallet_authority_members::Pallet::<T>::change_owner_key(
+                    idty_index,
+                    new_owner_key.clone(),
+                ) {
+                    log::error!(
+                        "on_idty_change: pallet_authority_members.change_owner_key(): {:?}",
+                        e
+                    );
+                }
+            }
+            IdtyEvent::Created { .. }
+            | IdtyEvent::Confirmed
+            | IdtyEvent::Validated
+            | IdtyEvent::Removed { .. } => {}
+        }
         0
     }
 }
