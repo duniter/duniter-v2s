@@ -115,11 +115,6 @@ fn test_genesis_build() {
             DefaultCertification::certs_removable_on(3),
             Some(vec![(2, 1)]),
         );
-        // Cert 2->0 cannot be renewed before #5
-        assert_eq!(
-            DefaultCertification::add_cert(Origin::signed(2), 0),
-            Err(Error::<Test, _>::NotRespectRenewablePeriod.into())
-        );
 
         run_to_block(3);
         // Cert 2->1 must have expired
@@ -160,33 +155,5 @@ fn test_cert_period() {
         );
         run_to_block((2 * CertPeriod::get()) + 1);
         assert_ok!(DefaultCertification::add_cert(Origin::signed(0), 3));
-    });
-}
-
-#[test]
-fn test_renewable_period() {
-    new_test_ext(DefaultCertificationConfig {
-        apply_cert_period_at_genesis: true,
-        certs_by_issuer: btreemap![
-            0 => btreemap![1 => 10],
-            2 => btreemap![0 => 10],
-            3 => btreemap![0 => 10],
-        ],
-    })
-    .execute_with(|| {
-        run_to_block(CertPeriod::get());
-        assert_eq!(
-            DefaultCertification::add_cert(Origin::signed(0), 1),
-            Err(Error::<Test, _>::NotRespectRenewablePeriod.into())
-        );
-        run_to_block(RenewablePeriod::get());
-        assert_ok!(DefaultCertification::add_cert(Origin::signed(0), 1));
-        run_to_block(RenewablePeriod::get() + CertPeriod::get());
-        assert_eq!(
-            DefaultCertification::add_cert(Origin::signed(0), 1),
-            Err(Error::<Test, _>::NotRespectRenewablePeriod.into())
-        );
-        run_to_block((2 * RenewablePeriod::get()) + 1);
-        assert_ok!(DefaultCertification::add_cert(Origin::signed(0), 1));
     });
 }

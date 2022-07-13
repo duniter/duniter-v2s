@@ -80,7 +80,6 @@ parameter_types! {
     pub const ConfirmPeriod: u64 = 2;
     pub const IdtyCreationPeriod: u64 = 3;
     pub const MaxInactivityPeriod: u64 = 5;
-    pub const RenewablePeriod: u64 = 3;
     pub const ValidationPeriod: u64 = 2;
 }
 

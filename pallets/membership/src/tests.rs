@@ -28,7 +28,6 @@ fn default_gen_conf() -> DefaultMembershipConfig {
         memberships: btreemap![
             0 => MembershipData {
                 expire_on: 3,
-                renewable_on: 2
             }
         ],
     }
@@ -41,24 +40,9 @@ fn test_genesis_build() {
         // Verify state
         assert_eq!(
             DefaultMembership::membership(0),
-            Some(MembershipData {
-                expire_on: 3,
-                renewable_on: 2
-            })
+            Some(MembershipData { expire_on: 3 })
         );
         assert_eq!(DefaultMembership::members_count(), 1);
-    });
-}
-
-#[test]
-fn test_membership_not_yet_renewable() {
-    new_test_ext(default_gen_conf()).execute_with(|| {
-        run_to_block(1);
-        // Merbership 0 cannot be renewed before #2
-        assert_eq!(
-            DefaultMembership::renew_membership(Origin::signed(0), None),
-            Err(Error::<Test, _>::MembershipNotYetRenewable.into())
-        );
     });
 }
 
@@ -190,23 +174,16 @@ fn test_membership_workflow() {
             RuntimeEvent::DefaultMembership(Event::MembershipAcquired(0))
         );
 
-        // Then, idty 0 claim renewal, should fail
-        run_to_block(3);
-        assert_eq!(
-            DefaultMembership::renew_membership(Origin::signed(0), None),
-            Err(Error::<Test, _>::MembershipNotYetRenewable.into())
-        );
-
-        // Then, idty 0 claim renewal after renewable period, should success
-        run_to_block(2 + RenewablePeriod::get());
+        // Then, idty 0 claim renewal, should success
+        run_to_block(2);
         assert_ok!(DefaultMembership::renew_membership(Origin::signed(0), None),);
 
         // Then, idty 0 shoul still member until membership period ended
-        run_to_block(2 + RenewablePeriod::get() + MembershipPeriod::get() - 1);
+        run_to_block(2 + MembershipPeriod::get() - 1);
         assert!(DefaultMembership::is_member(&0));
 
         // Then, idty 0 shoul expire after membership period
-        run_to_block(2 + RenewablePeriod::get() + MembershipPeriod::get());
+        run_to_block(2 + MembershipPeriod::get());
         assert!(!DefaultMembership::is_member(&0),);
         assert_eq!(
             System::events()[0].event,

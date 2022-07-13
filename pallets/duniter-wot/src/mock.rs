@@ -132,7 +132,6 @@ impl pallet_identity::Config for Test {
 parameter_types! {
     pub const MembershipPeriod: u64 = 8;
     pub const PendingMembershipPeriod: u64 = 3;
-    pub const RenewablePeriod: u64 = 2;
     pub const RevocationPeriod: u64 = 4;
 }
 
@@ -146,7 +145,6 @@ impl pallet_membership::Config<Instance1> for Test {
     type MetaData = crate::MembershipMetaData<u64>;
     type OnEvent = DuniterWot;
     type PendingMembershipPeriod = PendingMembershipPeriod;
-    type RenewablePeriod = RenewablePeriod;
     type RevocationPeriod = RevocationPeriod;
 }
 
@@ -154,7 +152,6 @@ impl pallet_membership::Config<Instance1> for Test {
 parameter_types! {
     pub const MaxByIssuer: u8 = 8;
     pub const MinReceivedCertToBeAbleToIssueCert: u32 = 2;
-    pub const CertRenewablePeriod: u64 = 4;
     pub const CertPeriod: u64 = 2;
     pub const ValidityPeriod: u64 = 20;
 }
@@ -169,7 +166,6 @@ impl pallet_certification::Config<Instance1> for Test {
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = DuniterWot;
     type OnRemovedCert = DuniterWot;
-    type CertRenewablePeriod = CertRenewablePeriod;
     type ValidityPeriod = ValidityPeriod;
 }
 
@@ -191,7 +187,6 @@ impl pallet_duniter_wot::Config<Instance2> for Test {
 parameter_types! {
     pub const SmithsMembershipPeriod: u64 = 20;
     pub const SmithsPendingMembershipPeriod: u64 = 3;
-    pub const SmithsRenewablePeriod: u64 = 2;
     pub const SmithsRevocationPeriod: u64 = 4;
 }
 
@@ -205,7 +200,6 @@ impl pallet_membership::Config<Instance2> for Test {
     type MetaData = crate::MembershipMetaData<u64>;
     type OnEvent = SmithsSubWot;
     type PendingMembershipPeriod = SmithsPendingMembershipPeriod;
-    type RenewablePeriod = SmithsRenewablePeriod;
     type RevocationPeriod = SmithsRevocationPeriod;
 }
 
@@ -213,7 +207,6 @@ impl pallet_membership::Config<Instance2> for Test {
 parameter_types! {
     pub const SmithsMaxByIssuer: u8 = 8;
     pub const SmithsMinReceivedCertToBeAbleToIssueCert: u32 = 2;
-    pub const SmithsCertRenewablePeriod: u64 = 4;
     pub const SmithsCertPeriod: u64 = 2;
     pub const SmithsValidityPeriod: u64 = 10;
 }
@@ -228,7 +221,6 @@ impl pallet_certification::Config<Instance2> for Test {
     type MinReceivedCertToBeAbleToIssueCert = SmithsMinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = SmithsSubWot;
     type OnRemovedCert = SmithsSubWot;
-    type CertRenewablePeriod = SmithsCertRenewablePeriod;
     type ValidityPeriod = SmithsValidityPeriod;
 }
 
@@ -269,7 +261,6 @@ pub fn new_test_ext(
                     i as u32,
                     sp_membership::MembershipData {
                         expire_on: MembershipPeriod::get(),
-                        renewable_on: RenewablePeriod::get(),
                     },
                 )
             })
@@ -292,7 +283,6 @@ pub fn new_test_ext(
                     i as u32,
                     sp_membership::MembershipData {
                         expire_on: SmithsMembershipPeriod::get(),
-                        renewable_on: SmithsRenewablePeriod::get(),
                     },
                 )
             })

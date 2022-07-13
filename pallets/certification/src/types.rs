@@ -22,7 +22,6 @@ use scale_info::TypeInfo;
 
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct CertValue<BlockNumber> {
-    pub renewable_on: BlockNumber,
     pub removable_on: BlockNumber,
 }
 

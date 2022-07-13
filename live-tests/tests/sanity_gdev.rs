@@ -41,9 +41,13 @@ type AccountInfo = gdev_runtime::runtime_types::frame_system::AccountInfo<
     Index,
     gdev_runtime::runtime_types::pallet_duniter_account::types::AccountData<Balance>,
 >;
+type IdtyData = gdev_runtime::runtime_types::common_runtime::entities::IdtyData;
 type IdtyIndex = u32;
-type IdtyValue =
-    gdev_runtime::runtime_types::pallet_identity::types::IdtyValue<BlockNumber, AccountId32>;
+type IdtyValue = gdev_runtime::runtime_types::pallet_identity::types::IdtyValue<
+    BlockNumber,
+    AccountId32,
+    IdtyData,
+>;
 use gdev_runtime::runtime_types::pallet_identity::types::IdtyStatus;
 
 struct Storage {

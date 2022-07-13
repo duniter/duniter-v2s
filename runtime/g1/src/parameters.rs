@@ -111,7 +111,6 @@ parameter_types! {
 parameter_types! {
     pub const MembershipPeriod: BlockNumber = YEARS;
     pub const PendingMembershipPeriod: BlockNumber = 2 * MONTHS;
-    pub const RenewablePeriod: BlockNumber = 2 * MONTHS;
 }
 
 // Certification
@@ -119,7 +118,6 @@ parameter_types! {
     pub const CertPeriod: BlockNumber = 5 * DAYS;
     pub const MaxByIssuer: u32 = 100;
     pub const MinReceivedCertToBeAbleToIssueCert: u32 = 5;
-    pub const CertRenewablePeriod: BlockNumber = 6 * MONTHS;
     pub const ValidityPeriod: BlockNumber = 2 * YEARS;
 }
 
@@ -136,7 +134,6 @@ parameter_types! {
 parameter_types! {
     pub const SmithMembershipPeriod: BlockNumber = 73 * DAYS;
     pub const SmithPendingMembershipPeriod: BlockNumber = 12 * DAYS;
-    pub const SmithRenewablePeriod: BlockNumber = 12 * DAYS;
 }
 
 // Certification
@@ -144,7 +141,6 @@ parameter_types! {
     pub const SmithCertPeriod: BlockNumber = 5 * DAYS;
     pub const SmithMaxByIssuer: u32 = 12;
     pub const SmithMinReceivedCertToBeAbleToIssueCert: u32 = 5;
-    pub const SmithCertRenewablePeriod: BlockNumber = 12 * DAYS;
     pub const SmithValidityPeriod: BlockNumber = 146 * DAYS;
 }
 

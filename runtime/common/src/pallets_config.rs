@@ -447,7 +447,6 @@ macro_rules! pallets_config {
             type MetaData = pallet_duniter_wot::MembershipMetaData<AccountId>;
             type OnEvent = OnMembershipEventHandler<Wot, Runtime>;
             type PendingMembershipPeriod = PendingMembershipPeriod;
-            type RenewablePeriod = RenewablePeriod;
             type RevocationPeriod = frame_support::traits::ConstU32<0>;
         }
 
@@ -461,7 +460,6 @@ macro_rules! pallets_config {
             type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
             type OnNewcert = Wot;
             type OnRemovedCert = Wot;
-            type CertRenewablePeriod = CertRenewablePeriod;
             type ValidityPeriod = ValidityPeriod;
         }
 
@@ -485,7 +483,6 @@ macro_rules! pallets_config {
             type MetaData = SmithsMembershipMetaData<opaque::SessionKeysWrapper>;
             type OnEvent = OnSmithMembershipEventHandler<SmithsSubWot, Runtime>;
             type PendingMembershipPeriod = SmithPendingMembershipPeriod;
-            type RenewablePeriod = SmithRenewablePeriod;
             type RevocationPeriod = frame_support::traits::ConstU32<0>;
         }
 
@@ -499,7 +496,6 @@ macro_rules! pallets_config {
             type MinReceivedCertToBeAbleToIssueCert = SmithMinReceivedCertToBeAbleToIssueCert;
             type OnNewcert = SmithsSubWot;
             type OnRemovedCert = SmithsSubWot;
-            type CertRenewablePeriod = SmithCertRenewablePeriod;
             type ValidityPeriod = SmithValidityPeriod;
         }
 

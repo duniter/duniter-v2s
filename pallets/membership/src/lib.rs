@@ -78,9 +78,6 @@ pub mod pallet {
         /// Maximum period (in number of blocks), where an identity can remain pending subscription.
         type PendingMembershipPeriod: Get<Self::BlockNumber>;
         #[pallet::constant]
-        /// Duration after which a membership is renewable
-        type RenewablePeriod: Get<Self::BlockNumber>;
-        #[pallet::constant]
         /// Minimum duration (in number of blocks between a revocation and a new entry request
         type RevocationPeriod: Get<Self::BlockNumber>;
     }
@@ -184,8 +181,6 @@ pub mod pallet {
         MembershipAlreadyAcquired,
         /// Membership already requested
         MembershipAlreadyRequested,
-        /// Membership not yet renewable
-        MembershipNotYetRenewable,
         /// Membership not found
         MembershipNotFound,
         /// Origin not allowed to use this identity
@@ -280,14 +275,10 @@ pub mod pallet {
                 return Err(Error::<T, I>::IdtyNotAllowedToRenewMembership.into());
             }
 
-            if let Some(membership_data) = Self::get_membership(&idty_id) {
-                let block_number = frame_system::pallet::Pallet::<T>::block_number();
-                if membership_data.renewable_on > block_number {
-                    return Err(Error::<T, I>::MembershipNotYetRenewable.into());
-                }
-            } else {
-                return Err(Error::<T, I>::MembershipNotFound.into());
-            }
+            ensure!(
+                Self::get_membership(&idty_id).is_some(),
+                Error::<T, I>::MembershipNotFound
+            );
 
             let _ = Self::do_renew_membership(idty_id);
 
@@ -321,15 +312,8 @@ pub mod pallet {
         fn do_renew_membership_inner(idty_id: T::IdtyId) -> Weight {
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             let expire_on = block_number + T::MembershipPeriod::get();
-            let renewable_on = block_number + T::RenewablePeriod::get();
 
-            Self::insert_membership(
-                idty_id,
-                MembershipData {
-                    expire_on,
-                    renewable_on,
-                },
-            );
+            Self::insert_membership(idty_id, MembershipData { expire_on });
             MembershipsExpireOn::<T, I>::append(expire_on, idty_id);
             0
         }

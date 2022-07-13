@@ -46,5 +46,4 @@ pub enum Event<IdtyId, MetaData = ()> {
 #[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct MembershipData<BlockNumber: Decode + Encode + TypeInfo> {
     pub expire_on: BlockNumber,
-    pub renewable_on: BlockNumber,
 }

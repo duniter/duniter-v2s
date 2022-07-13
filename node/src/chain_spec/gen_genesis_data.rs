@@ -45,9 +45,7 @@ pub struct ParamsAppliedAtGenesis {
     pub genesis_certs_expire_on: u32,
     pub genesis_smith_certs_expire_on: u32,
     pub genesis_memberships_expire_on: u32,
-    pub genesis_memberships_renewable_on: u32,
     pub genesis_smith_memberships_expire_on: u32,
-    pub genesis_smith_memberships_renewable_on: u32,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -96,9 +94,7 @@ where
         genesis_certs_expire_on,
         genesis_smith_certs_expire_on,
         genesis_memberships_expire_on,
-        genesis_memberships_renewable_on,
         genesis_smith_memberships_expire_on,
-        genesis_smith_memberships_renewable_on,
     } = params_applied_at_genesis.unwrap_or_default();
 
     let genesis_timestamp: u64 =
@@ -203,7 +199,6 @@ where
                     .map_or(genesis_memberships_expire_on, |expire_on| {
                         to_bn(genesis_timestamp, expire_on)
                     }),
-                renewable_on: genesis_memberships_renewable_on,
             },
         );
 
@@ -303,7 +298,6 @@ where
             *idty_index,
             MembershipData {
                 expire_on: genesis_smith_memberships_expire_on,
-                renewable_on: genesis_smith_memberships_renewable_on,
             },
         );
     }

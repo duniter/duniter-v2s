@@ -100,9 +100,7 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
                 genesis_certs_expire_on: 100_000,
                 genesis_smith_certs_expire_on: 100_000,
                 genesis_memberships_expire_on: 100_000,
-                genesis_memberships_renewable_on: 50,
                 genesis_smith_memberships_expire_on: 100_000,
-                genesis_smith_memberships_renewable_on: 50,
             }),
         )
     } else {
@@ -189,9 +187,7 @@ pub fn gen_live_conf() -> Result<ChainSpec, String> {
             genesis_certs_expire_on: 100_000,
             genesis_smith_certs_expire_on: 100_000,
             genesis_memberships_expire_on: 100_000,
-            genesis_memberships_renewable_on: 50,
             genesis_smith_memberships_expire_on: 100_000,
-            genesis_smith_memberships_renewable_on: 50,
         }),
     )
 }
@@ -262,10 +258,7 @@ fn gen_genesis_for_local_chain(
     let cert_validity_period = get_env_u32("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
     let first_ud = 1_000;
     let membership_period = get_env_u32("DUNITER_MEMBERSHIP_PERIOD", 1_000);
-    let membership_renewable_period = get_env_u32("DUNITER_MEMBERSHIP_RENEWABLE_PERIOD", 50);
     let smith_cert_validity_period = get_env_u32("DUNITER_SMITH_CERT_VALIDITY_PERIOD", 1_000);
-    let smith_membership_renewable_period =
-        get_env_u32("DUNITER_SMITH_MEMBERSHIP_RENEWABLE_PERIOD", 20);
     let smith_membership_period = get_env_u32("DUNITER_SMITH_MEMBERSHIP_PERIOD", 1_000);
     let ud_creation_period = get_env_u32("DUNITER_UD_CREATION_PERIOD", 10);
     let ud_reeval_period = get_env_u32("DUNITER_UD_REEEVAL_PERIOD", 200);
@@ -309,22 +302,18 @@ fn gen_genesis_for_local_chain(
                 cert_period: 15,
                 cert_max_by_issuer: 10,
                 cert_min_received_cert_to_issue_cert: 2,
-                cert_renewable_period: 50,
                 cert_validity_period,
                 idty_confirm_period: 40,
                 idty_creation_period: 50,
                 membership_period,
-                membership_renewable_period,
                 pending_membership_period: 500,
                 ud_creation_period,
                 ud_reeval_period,
                 smith_cert_period: 15,
                 smith_cert_max_by_issuer: 8,
                 smith_cert_min_received_cert_to_issue_cert: 2,
-                smith_cert_renewable_period: 50,
                 smith_cert_validity_period: 1_000,
                 smith_membership_period,
-                smith_membership_renewable_period: 50,
                 smith_pending_membership_period: 500,
                 smiths_wot_first_cert_issuable_on: 20,
                 smiths_wot_min_cert_for_membership: 2,
@@ -386,15 +375,7 @@ fn gen_genesis_for_local_chain(
         },
         membership: MembershipConfig {
             memberships: (1..=initial_identities.len())
-                .map(|i| {
-                    (
-                        i as u32,
-                        MembershipData {
-                            expire_on: 0,
-                            renewable_on: membership_renewable_period,
-                        },
-                    )
-                })
+                .map(|i| (i as u32, MembershipData { expire_on: 0 }))
                 .collect(),
         },
         cert: CertConfig {
@@ -403,15 +384,7 @@ fn gen_genesis_for_local_chain(
         },
         smiths_membership: SmithsMembershipConfig {
             memberships: (1..=initial_smiths_len)
-                .map(|i| {
-                    (
-                        i as u32,
-                        MembershipData {
-                            expire_on: 0,
-                            renewable_on: smith_membership_renewable_period,
-                        },
-                    )
-                })
+                .map(|i| (i as u32, MembershipData { expire_on: 0 }))
                 .collect(),
         },
         smiths_cert: SmithsCertConfig {

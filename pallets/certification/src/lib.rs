@@ -83,9 +83,6 @@ pub mod pallet {
         /// Handler for Removed event
         type OnRemovedCert: OnRemovedCert<Self::IdtyIndex>;
         #[pallet::constant]
-        /// Duration after which a certification is renewable
-        type CertRenewablePeriod: Get<Self::BlockNumber>;
-        #[pallet::constant]
         /// Duration of validity of a certification
         type ValidityPeriod: Get<Self::BlockNumber>;
     }
@@ -169,15 +166,11 @@ pub mod pallet {
                             }
                         }
                     }
-                    let renewable_on = removable_on.saturating_sub(
-                        T::ValidityPeriod::get().saturating_sub(T::CertRenewablePeriod::get()),
-                    );
 
                     <StorageCertsByIssuer<T, I>>::insert(
                         issuer,
                         receiver,
                         CertValue {
-                            renewable_on,
                             removable_on: *removable_on,
                         },
                     );
@@ -274,8 +267,6 @@ pub mod pallet {
         NotEnoughCertReceived,
         /// This identity has already issued a certification too recently
         NotRespectCertPeriod,
-        /// This certification has already been issued or renewed recently
-        NotRespectRenewablePeriod,
         /// Receiver not found
         ReceiverNotFound,
     }
@@ -302,7 +293,7 @@ pub mod pallet {
 
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
 
-            let create = if verify_rules {
+            if verify_rules {
                 let issuer_idty_cert_meta = <StorageIdtyCertMeta<T, I>>::get(issuer);
                 if issuer_idty_cert_meta.received_count == 0 {
                     return Err(Error::<T, I>::IdtyMustReceiveCertsBeforeCanIssue.into());
@@ -317,22 +308,9 @@ pub mod pallet {
                 } else if issuer_idty_cert_meta.issued_count >= T::MaxByIssuer::get() {
                     return Err(Error::<T, I>::IssuedTooManyCert.into());
                 }
-
-                // Verify rule CertRenewablePeriod
-                if let Ok(CertValue { renewable_on, .. }) =
-                    <StorageCertsByIssuer<T, I>>::try_get(issuer, receiver)
-                {
-                    if renewable_on > block_number {
-                        return Err(Error::<T, I>::NotRespectRenewablePeriod.into());
-                    }
-                    false
-                } else {
-                    true
-                }
-            } else {
-                !StorageCertsByIssuer::<T, I>::contains_key(issuer, receiver)
             };
 
+            let create = !StorageCertsByIssuer::<T, I>::contains_key(issuer, receiver);
             Self::do_add_cert(block_number, create, issuer, receiver)
         }
         /// Add a new certification or renew an existing one
@@ -370,18 +348,7 @@ pub mod pallet {
                 return Err(Error::<T, I>::IssuedTooManyCert.into());
             }
 
-            // Verify rule CertRenewablePeriod
-            let create = if let Ok(CertValue { renewable_on, .. }) =
-                <StorageCertsByIssuer<T, I>>::try_get(issuer, receiver)
-            {
-                if renewable_on > block_number {
-                    return Err(Error::<T, I>::NotRespectRenewablePeriod.into());
-                }
-                false
-            } else {
-                true
-            };
-
+            let create = !StorageCertsByIssuer::<T, I>::contains_key(issuer, receiver);
             Self::do_add_cert(block_number, create, issuer, receiver)
         }
 
@@ -439,7 +406,6 @@ pub mod pallet {
 
             // Write StorageCertsRemovableOn and StorageCertsByIssuer
             let cert_value = CertValue {
-                renewable_on: block_number + T::CertRenewablePeriod::get(),
                 removable_on: block_number + T::ValidityPeriod::get(),
             };
             <StorageCertsRemovableOn<T, I>>::append(cert_value.removable_on, (issuer, receiver));

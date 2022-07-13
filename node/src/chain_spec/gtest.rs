@@ -223,7 +223,6 @@ fn gen_genesis_for_local_chain(
                         i as u32,
                         MembershipData {
                             expire_on: gtest_runtime::MembershipPeriod::get(),
-                            renewable_on: gtest_runtime::RenewablePeriod::get(),
                         },
                     )
                 })
@@ -243,7 +242,6 @@ fn gen_genesis_for_local_chain(
                         i as u32,
                         MembershipData {
                             expire_on: gtest_runtime::SmithMembershipPeriod::get(),
-                            renewable_on: gtest_runtime::SmithRenewablePeriod::get(),
                         },
                     )
                 })

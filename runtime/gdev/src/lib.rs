@@ -227,12 +227,10 @@ common_runtime::pallets_config! {
     pub type MaxByIssuer = pallet_duniter_test_parameters::CertMaxByIssuer<Runtime>;
     pub type MinReceivedCertToBeAbleToIssueCert =
         pallet_duniter_test_parameters::CertMinReceivedCertToIssueCert<Runtime>;
-    pub type CertRenewablePeriod = pallet_duniter_test_parameters::CertRenewablePeriod<Runtime>;
     pub type ValidityPeriod = pallet_duniter_test_parameters::CertValidityPeriod<Runtime>;
     pub type ConfirmPeriod = pallet_duniter_test_parameters::IdtyConfirmPeriod<Runtime>;
     pub type IdtyCreationPeriod = pallet_duniter_test_parameters::IdtyCreationPeriod<Runtime>;
     pub type MembershipPeriod = pallet_duniter_test_parameters::MembershipPeriod<Runtime>;
-    pub type RenewablePeriod = pallet_duniter_test_parameters::MembershipRenewablePeriod<Runtime>;
     pub type PendingMembershipPeriod = pallet_duniter_test_parameters::PendingMembershipPeriod<Runtime>;
     #[cfg(not(test))]
     pub type UdCreationPeriod = pallet_duniter_test_parameters::UdCreationPeriod<Runtime>;
@@ -247,14 +245,10 @@ common_runtime::pallets_config! {
     pub type SmithMaxByIssuer = pallet_duniter_test_parameters::SmithCertMaxByIssuer<Runtime>;
     pub type SmithMinReceivedCertToBeAbleToIssueCert =
         pallet_duniter_test_parameters::SmithCertMinReceivedCertToIssueCert<Runtime>;
-    pub type SmithCertRenewablePeriod =
-        pallet_duniter_test_parameters::SmithCertRenewablePeriod<Runtime>;
     pub type SmithValidityPeriod = pallet_duniter_test_parameters::SmithCertValidityPeriod<Runtime>;
     pub type SmithMembershipPeriod = pallet_duniter_test_parameters::SmithMembershipPeriod<Runtime>;
     pub type SmithPendingMembershipPeriod =
         pallet_duniter_test_parameters::SmithPendingMembershipPeriod<Runtime>;
-    pub type SmithRenewablePeriod =
-        pallet_duniter_test_parameters::SmithMembershipRenewablePeriod<Runtime>;
     pub type SmithsWotFirstCertIssuableOn =
         pallet_duniter_test_parameters::SmithsWotFirstCertIssuableOn<Runtime>;
     pub type SmithsWotMinCertForMembership =

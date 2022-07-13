@@ -1,7 +1,7 @@
 [alias]
 cucumber = "test -p duniter-end2end-tests --test cucumber_tests --"
 sanity-gdev = "test -p duniter-live-tests --test sanity_gdev -- --nocapture"
-tu = "test --workspace --exclude duniter-end2end-tests"
+tu = "test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests"
 tb = "test --features runtime-benchmarks -p"
 xtask = "run --package xtask --"
 

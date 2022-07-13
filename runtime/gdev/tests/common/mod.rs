@@ -99,22 +99,18 @@ impl ExtBuilder {
                 cert_period: 15,
                 cert_max_by_issuer: 10,
                 cert_min_received_cert_to_issue_cert: 2,
-                cert_renewable_period: 50,
                 cert_validity_period: 10_000,
                 idty_confirm_period: 40,
                 idty_creation_period: 50,
                 membership_period: 1_000,
-                membership_renewable_period: 5,
                 pending_membership_period: 500,
                 ud_creation_period: 10,
                 ud_reeval_period: 10 * 20,
                 smith_cert_period: 15,
                 smith_cert_max_by_issuer: 8,
                 smith_cert_min_received_cert_to_issue_cert: 2,
-                smith_cert_renewable_period: 50,
                 smith_cert_validity_period: 1_000,
                 smith_membership_period: 1_000,
-                smith_membership_renewable_period: 50,
                 smith_pending_membership_period: 500,
                 smiths_wot_first_cert_issuable_on: 20,
                 smiths_wot_min_cert_for_membership: 2,
@@ -226,7 +222,6 @@ impl ExtBuilder {
                         i as u32,
                         MembershipData {
                             expire_on: parameters.membership_period,
-                            renewable_on: parameters.membership_renewable_period,
                         },
                     )
                 })
@@ -249,7 +244,6 @@ impl ExtBuilder {
                         i as u32,
                         MembershipData {
                             expire_on: parameters.smith_membership_period,
-                            renewable_on: parameters.smith_membership_renewable_period,
                         },
                     )
                 })
