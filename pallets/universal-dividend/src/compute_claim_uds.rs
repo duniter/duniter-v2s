@@ -96,4 +96,17 @@ mod tests {
             (1, 1_000)
         );
     }
+
+    #[test]
+    fn ud_for_joiner_after_reeval() {
+        let past_reevals = vec![
+            (1, 1_000 as Balance),
+            (2, 10_000 as Balance),
+            (3, 100_000 as Balance),
+        ];
+        assert_eq!(
+            compute_claim_uds(4, 2, past_reevals.into_iter()),
+            (2, 110_000)
+        );
+    }
 }
