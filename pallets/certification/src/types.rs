@@ -21,11 +21,6 @@ use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct CertValue<BlockNumber> {
-    pub removable_on: BlockNumber,
-}
-
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct IdtyCertMeta<BlockNumber: Default> {
     pub issued_count: u32,
     pub next_issuable_on: BlockNumber,

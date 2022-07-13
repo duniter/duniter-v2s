@@ -92,7 +92,7 @@ impl frame_support::traits::EnsureOrigin<(Origin, IdtyIndex, IdtyIndex)> for Ens
 }
 
 parameter_types! {
-    pub const MaxByIssuer: u32 = 3;
+    pub const MaxByIssuer: u32 = 4;
     pub const MinReceivedCertToBeAbleToIssueCert: u32 = 2;
     pub const CertPeriod: u64 = 2;
     pub const ValidityPeriod: u64 = 10;

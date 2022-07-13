@@ -231,8 +231,11 @@ impl ExtBuilder {
         .unwrap();
 
         pallet_certification::GenesisConfig::<Runtime, Instance1> {
+            certs_by_receiver: clique_wot(
+                initial_identities.len(),
+                parameters.cert_validity_period,
+            ),
             apply_cert_period_at_genesis: false,
-            certs_by_issuer: clique_wot(initial_identities.len(), parameters.cert_validity_period),
         }
         .assimilate_storage(&mut t)
         .unwrap();
@@ -254,7 +257,7 @@ impl ExtBuilder {
 
         pallet_certification::GenesisConfig::<Runtime, Instance2> {
             apply_cert_period_at_genesis: false,
-            certs_by_issuer: clique_wot(
+            certs_by_receiver: clique_wot(
                 initial_smiths.len(),
                 parameters.smith_cert_validity_period,
             ),

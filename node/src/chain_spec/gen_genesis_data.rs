@@ -26,7 +26,7 @@ const EXISTENTIAL_DEPOSIT: u64 = 100;
 #[derive(Clone)]
 pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub accounts: BTreeMap<AccountId, GenesisAccountData<u64>>,
-    pub certs_by_issuer: BTreeMap<u32, BTreeMap<u32, u32>>,
+    pub certs_by_receiver: BTreeMap<u32, BTreeMap<u32, u32>>,
     pub first_ud: u64,
     pub first_ud_reeval: u32,
     pub identities: Vec<(String, AccountId)>,
@@ -35,7 +35,7 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub memberships: BTreeMap<u32, MembershipData>,
     pub parameters: Parameters,
     pub session_keys_map: BTreeMap<AccountId, SessionKeys>,
-    pub smiths_certs_by_issuer: BTreeMap<u32, BTreeMap<u32, u32>>,
+    pub smiths_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, u32>>,
     pub smiths_memberships: BTreeMap<u32, MembershipData>,
     pub sudo_key: Option<AccountId>,
 }
@@ -209,19 +209,19 @@ where
 
     // CERTIFICATIONS //
 
-    let mut certs_by_issuer = BTreeMap::new();
+    let mut certs_by_receiver = BTreeMap::new();
     for (idty_name, identity) in &identities {
         let issuer_index = idty_index_of
             .get(&idty_name)
             .ok_or(format!("Identity '{}' not exist", &idty_name))?;
-        let mut issuer_certs = BTreeMap::new();
-        for receiver in &identity.certs {
-            let receiver_index = idty_index_of
-                .get(receiver)
-                .ok_or(format!("Identity '{}' not exist", receiver))?;
-            issuer_certs.insert(*receiver_index, genesis_certs_expire_on);
+        let mut receiver_certs = BTreeMap::new();
+        for issuer in &identity.certs {
+            let issuer_index = idty_index_of
+                .get(issuer)
+                .ok_or(format!("Identity '{}' not exist", issuer))?;
+            receiver_certs.insert(*issuer_index, genesis_certs_expire_on);
         }
-        certs_by_issuer.insert(*issuer_index, issuer_certs);
+        certs_by_receiver.insert(*issuer_index, receiver_certs);
     }
 
     // SMITHS SUB-WOT //
@@ -230,7 +230,7 @@ where
     let mut online_authorities_counter = 0;
     let mut session_keys_map = BTreeMap::new();
     let mut smiths_memberships = BTreeMap::new();
-    let mut smiths_certs_by_issuer = BTreeMap::new();
+    let mut smiths_certs_by_receiver = BTreeMap::new();
     for (idty_name, smith_data) in smith_identities {
         let idty_index = idty_index_of
             .get(&idty_name)
@@ -284,14 +284,14 @@ where
         );
 
         // Certifications
-        let mut issuer_certs = BTreeMap::new();
+        let mut receiver_certs = BTreeMap::new();
         for receiver in &smith_data.certs {
-            let receiver_index = idty_index_of
+            let issuer_index = idty_index_of
                 .get(receiver)
                 .ok_or(format!("Identity '{}' not exist", receiver))?;
-            issuer_certs.insert(*receiver_index, genesis_smith_certs_expire_on);
+            receiver_certs.insert(*issuer_index, genesis_smith_certs_expire_on);
         }
-        smiths_certs_by_issuer.insert(*idty_index, issuer_certs);
+        smiths_certs_by_receiver.insert(*idty_index, receiver_certs);
 
         // Memberships
         smiths_memberships.insert(
@@ -308,7 +308,7 @@ where
 
     let genesis_data = GenesisData {
         accounts,
-        certs_by_issuer,
+        certs_by_receiver,
         first_ud,
         first_ud_reeval,
         identities: identities_,
@@ -317,7 +317,7 @@ where
         memberships,
         parameters,
         session_keys_map,
-        smiths_certs_by_issuer,
+        smiths_certs_by_receiver,
         smiths_memberships,
         sudo_key,
     };

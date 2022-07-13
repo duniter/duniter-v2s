@@ -26,7 +26,7 @@ use sp_std::collections::btree_map::BTreeMap;
 fn test_must_receive_cert_before_can_issue() {
     new_test_ext(DefaultCertificationConfig {
         apply_cert_period_at_genesis: true,
-        certs_by_issuer: BTreeMap::new(),
+        certs_by_receiver: BTreeMap::new(),
     })
     .execute_with(|| {
         assert_eq!(
@@ -40,15 +40,10 @@ fn test_must_receive_cert_before_can_issue() {
 fn test_cannot_certify_self() {
     new_test_ext(DefaultCertificationConfig {
         apply_cert_period_at_genesis: true,
-        certs_by_issuer: btreemap![
-            1 => btreemap![
-                0 => 5,
-            ],
-            2 => btreemap![
-                0 => 5,
-            ],
-            3 => btreemap![
-                0 => 5,
+        certs_by_receiver: btreemap![
+            0 => btreemap![
+                1 => 5,
+                2 => 5,
             ],
         ],
     })
@@ -66,18 +61,18 @@ fn test_cannot_certify_self() {
 fn test_genesis_build() {
     new_test_ext(DefaultCertificationConfig {
         apply_cert_period_at_genesis: true,
-        certs_by_issuer: btreemap![
+        certs_by_receiver: btreemap![
             0 => btreemap![
-                1 => 10,
-                2 => 5,
+                1 => 7,
+                2 => 9,
             ],
             1 => btreemap![
-                0 => 7,
-                2 => 4,
+                0 => 10,
+                2 => 3,
             ],
             2 => btreemap![
-                0 => 9,
-                1 => 3,
+                0 => 5,
+                1 => 4,
             ],
         ],
     })
@@ -135,25 +130,42 @@ fn test_genesis_build() {
 fn test_cert_period() {
     new_test_ext(DefaultCertificationConfig {
         apply_cert_period_at_genesis: true,
-        certs_by_issuer: btreemap![
-            0 => btreemap![1 => 10],
-            2 => btreemap![0 => 10],
-            3 => btreemap![0 => 10],
+        certs_by_receiver: btreemap![
+            0 => btreemap![
+                1 => 10,
+                2 => 10,
+            ],
+            1 => btreemap![
+                0 => 10,
+                2 => 10,
+            ],
+            2 => btreemap![
+                0 => 10,
+                1 => 10,
+            ],
         ],
     })
     .execute_with(|| {
         assert_eq!(
-            DefaultCertification::add_cert(Origin::signed(0), 2),
-            Err(Error::<Test, _>::NotRespectCertPeriod.into())
+            DefaultCertification::idty_cert_meta(0),
+            crate::IdtyCertMeta {
+                issued_count: 2,
+                next_issuable_on: 2,
+                received_count: 2,
+            }
         );
-        run_to_block(CertPeriod::get());
-        assert_ok!(DefaultCertification::add_cert(Origin::signed(0), 2));
-        run_to_block(CertPeriod::get() + 1);
         assert_eq!(
             DefaultCertification::add_cert(Origin::signed(0), 3),
             Err(Error::<Test, _>::NotRespectCertPeriod.into())
         );
-        run_to_block((2 * CertPeriod::get()) + 1);
+        run_to_block(CertPeriod::get());
         assert_ok!(DefaultCertification::add_cert(Origin::signed(0), 3));
+        run_to_block(CertPeriod::get() + 1);
+        assert_eq!(
+            DefaultCertification::add_cert(Origin::signed(0), 4),
+            Err(Error::<Test, _>::NotRespectCertPeriod.into())
+        );
+        run_to_block((2 * CertPeriod::get()) + 1);
+        assert_ok!(DefaultCertification::add_cert(Origin::signed(0), 4));
     });
 }

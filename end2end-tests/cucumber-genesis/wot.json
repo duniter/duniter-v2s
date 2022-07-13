@@ -4,12 +4,12 @@
   "identities": {
     "Alice": {
       "balance": 1000,
-      "certs": ["Bob", "Charlie", "Dave"],
+      "certs": ["Bob", "Charlie"],
       "pubkey": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
     },
     "Bob": {
       "balance": 1000,
-      "certs": ["Alice", "Charlie", "Dave"],
+      "certs": ["Alice", "Charlie"],
       "pubkey": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
     },
     "Charlie": {
@@ -19,13 +19,13 @@
     },
     "Dave": {
       "balance": 1000,
-      "certs": [],
+      "certs": ["Alice", "Bob"],
       "pubkey": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"
     }
   },
   "parameters": {
     "babe_epoch_duration": 30,
-    "cert_period": 15,
+    "cert_period": 2,
     "cert_max_by_issuer": 10,
     "cert_min_received_cert_to_issue_cert": 2,
     "cert_validity_period": 1000,

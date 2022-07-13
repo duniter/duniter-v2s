@@ -270,8 +270,8 @@ pub fn new_test_ext(
     .unwrap();
 
     pallet_certification::GenesisConfig::<Test, Instance1> {
-        certs_by_issuer: clique_wot(initial_identities_len, ValidityPeriod::get()),
         apply_cert_period_at_genesis: true,
+        certs_by_receiver: clique_wot(initial_identities_len, ValidityPeriod::get()),
     }
     .assimilate_storage(&mut t)
     .unwrap();
@@ -292,8 +292,8 @@ pub fn new_test_ext(
     .unwrap();
 
     pallet_certification::GenesisConfig::<Test, Instance2> {
-        certs_by_issuer: clique_wot(initial_smiths_len, SmithsValidityPeriod::get()),
         apply_cert_period_at_genesis: true,
+        certs_by_receiver: clique_wot(initial_smiths_len, SmithsValidityPeriod::get()),
     }
     .assimilate_storage(&mut t)
     .unwrap();

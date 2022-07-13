@@ -92,7 +92,7 @@ pub mod pallet {
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
         pub apply_cert_period_at_genesis: bool,
-        pub certs_by_issuer: BTreeMap<T::IdtyIndex, BTreeMap<T::IdtyIndex, T::BlockNumber>>,
+        pub certs_by_receiver: BTreeMap<T::IdtyIndex, BTreeMap<T::IdtyIndex, T::BlockNumber>>,
     }
 
     #[cfg(feature = "std")]
@@ -100,7 +100,7 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 apply_cert_period_at_genesis: false,
-                certs_by_issuer: Default::default(),
+                certs_by_receiver: Default::default(),
             }
         }
     }
@@ -110,47 +110,36 @@ pub mod pallet {
         fn build(&self) {
             let mut cert_meta_by_issuer =
                 BTreeMap::<T::IdtyIndex, IdtyCertMeta<T::BlockNumber>>::new();
-            let mut certs_by_receiver = BTreeMap::<T::IdtyIndex, Vec<T::IdtyIndex>>::new();
-            for (issuer, receivers) in &self.certs_by_issuer {
-                assert!(
-                    !receivers.contains_key(issuer),
-                    "Identity cannot certify it-self."
-                );
-                assert!(
-                    !receivers.len() >= T::MaxByIssuer::get() as usize,
-                    "Identity n°{:?} exceed MaxByIssuer.",
-                    issuer
-                );
-
-                cert_meta_by_issuer.insert(
-                    *issuer,
-                    IdtyCertMeta {
-                        issued_count: receivers.len() as u32,
-                        next_issuable_on: sp_runtime::traits::Zero::zero(),
-                        received_count: 0,
-                    },
-                );
-                for receiver in receivers.keys() {
-                    certs_by_receiver
-                        .entry(*receiver)
-                        .or_default()
-                        .push(*issuer);
-                }
-            }
-
-            // Write StorageCertsByReceiver
-            for (receiver, mut issuers) in certs_by_receiver {
-                cert_meta_by_issuer
-                    .entry(receiver)
-                    .and_modify(|cert_meta| cert_meta.received_count = issuers.len() as u32);
-                issuers.sort();
-                <StorageCertsByReceiver<T, I>>::insert(receiver, issuers);
-            }
-            // Write StorageCertsByIssuer
             let mut certs_removable_on =
                 BTreeMap::<T::BlockNumber, Vec<(T::IdtyIndex, T::IdtyIndex)>>::new();
-            for (issuer, receivers) in &self.certs_by_issuer {
-                for (receiver, removable_on) in receivers {
+            for (receiver, issuers) in &self.certs_by_receiver {
+                // Forbid self-cert
+                assert!(
+                    !issuers.contains_key(receiver),
+                    "Identity cannot certify it-self."
+                );
+
+                // We should insert cert_meta for receivers that have not issued any cert.
+                cert_meta_by_issuer
+                    .entry(*receiver)
+                    .or_insert(IdtyCertMeta {
+                        issued_count: 0,
+                        next_issuable_on: sp_runtime::traits::Zero::zero(),
+                        received_count: issuers.len() as u32,
+                    });
+
+                for (issuer, removable_on) in issuers {
+                    // Count issued certs
+                    cert_meta_by_issuer
+                        .entry(*issuer)
+                        .or_insert(IdtyCertMeta {
+                            issued_count: 0,
+                            next_issuable_on: sp_runtime::traits::Zero::zero(),
+                            received_count: issuers.len() as u32,
+                        })
+                        .issued_count += 1;
+
+                    // Prepare CertsRemovableOn
                     certs_removable_on
                         .entry(*removable_on)
                         .or_default()
@@ -166,23 +155,31 @@ pub mod pallet {
                             }
                         }
                     }
-
-                    <StorageCertsByIssuer<T, I>>::insert(
-                        issuer,
-                        receiver,
-                        CertValue {
-                            removable_on: *removable_on,
-                        },
-                    );
                 }
+
+                // Write CertsByReceiver
+                let mut issuers: Vec<_> = issuers.iter().collect();
+                issuers.sort();
+                CertsByReceiver::<T, I>::insert(receiver, issuers);
             }
+
             // Write StorageIdtyCertMeta
             for (issuer, cert_meta) in cert_meta_by_issuer {
-                <StorageIdtyCertMeta<T, I>>::insert(issuer, cert_meta);
+                assert!(
+                    !cert_meta.issued_count >= T::MaxByIssuer::get(),
+                    "Identity n°{:?} exceed MaxByIssuer.",
+                    issuer
+                );
+                assert!(
+                    !cert_meta.received_count >= T::MinReceivedCertToBeAbleToIssueCert::get(),
+                    "Identity n°{:?} not respect MinReceivedCertToBeAbleToIssueCert.",
+                    issuer
+                );
+                StorageIdtyCertMeta::<T, I>::insert(issuer, cert_meta);
             }
             // Write storage StorageCertsRemovableOn
             for (removable_on, certs) in certs_removable_on {
-                <StorageCertsRemovableOn<T, I>>::insert(removable_on, certs);
+                StorageCertsRemovableOn::<T, I>::insert(removable_on, certs);
             }
         }
     }
@@ -195,27 +192,11 @@ pub mod pallet {
     pub type StorageIdtyCertMeta<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Twox64Concat, T::IdtyIndex, IdtyCertMeta<T::BlockNumber>, ValueQuery>;
 
-    /// Certifications by issuer
-    #[pallet::storage]
-    #[pallet::getter(fn cert)]
-    /// Certifications by issuer
-    pub(super) type StorageCertsByIssuer<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
-        _,
-        Twox64Concat,
-        T::IdtyIndex,
-        Twox64Concat,
-        T::IdtyIndex,
-        CertValue<T::BlockNumber>,
-        OptionQuery,
-        GetDefault,
-        ConstU32<4_000_000_000>,
-    >;
-
     /// Certifications by receiver
     #[pallet::storage]
     #[pallet::getter(fn certs_by_receiver)]
-    pub type StorageCertsByReceiver<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Twox64Concat, T::IdtyIndex, Vec<T::IdtyIndex>, ValueQuery>;
+    pub type CertsByReceiver<T: Config<I>, I: 'static = ()> =
+        StorageMap<_, Twox64Concat, T::IdtyIndex, Vec<(T::IdtyIndex, T::BlockNumber)>, ValueQuery>;
 
     /// Certifications removable on
     #[pallet::storage]
@@ -310,8 +291,7 @@ pub mod pallet {
                 }
             };
 
-            let create = !StorageCertsByIssuer::<T, I>::contains_key(issuer, receiver);
-            Self::do_add_cert(block_number, create, issuer, receiver)
+            Self::do_add_cert(block_number, issuer, receiver)
         }
         /// Add a new certification or renew an existing one
         ///
@@ -348,8 +328,7 @@ pub mod pallet {
                 return Err(Error::<T, I>::IssuedTooManyCert.into());
             }
 
-            let create = !StorageCertsByIssuer::<T, I>::contains_key(issuer, receiver);
-            Self::do_add_cert(block_number, create, issuer, receiver)
+            Self::do_add_cert(block_number, issuer, receiver)
         }
 
         #[pallet::weight(1_000_000_000)]
@@ -369,10 +348,8 @@ pub mod pallet {
             idty_index: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            if let Ok(issuers) = <StorageCertsByReceiver<T, I>>::try_get(idty_index) {
-                for issuer in issuers {
-                    Self::remove_cert_inner(issuer, idty_index, None);
-                }
+            for (issuer, _) in CertsByReceiver::<T, I>::get(idty_index) {
+                Self::remove_cert_inner(issuer, idty_index, None);
             }
             Ok(().into())
         }
@@ -383,42 +360,42 @@ pub mod pallet {
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
         fn do_add_cert(
             block_number: T::BlockNumber,
-            create: bool,
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
-            // Write StorageIdtyCertMeta for issuer
-            let issuer_issued_count =
-                StorageIdtyCertMeta::<T, I>::mutate(issuer, |issuer_idty_cert_meta| {
-                    issuer_idty_cert_meta.issued_count =
-                        issuer_idty_cert_meta.issued_count.saturating_add(1);
-                    issuer_idty_cert_meta.next_issuable_on = block_number + T::CertPeriod::get();
-                    issuer_idty_cert_meta.issued_count
-                });
+            // Write StorageCertsRemovableOn
+            let removable_on = block_number + T::ValidityPeriod::get();
+            <StorageCertsRemovableOn<T, I>>::append(removable_on, (issuer, receiver));
 
-            // Write StorageIdtyCertMeta for receiver
-            let receiver_received_count =
-                <StorageIdtyCertMeta<T, I>>::mutate_exists(receiver, |cert_meta_opt| {
-                    let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());
-                    cert_meta.received_count = cert_meta.received_count.saturating_add(1);
-                    cert_meta.received_count
-                });
+            // Write CertsByReceiver
+            let mut created = false;
+            CertsByReceiver::<T, I>::mutate_exists(receiver, |maybe_issuers| {
+                let issuers = maybe_issuers.get_or_insert(Vec::with_capacity(0));
+                if let Err(index) = issuers.binary_search_by(|(issuer_, _)| issuer.cmp(issuer_)) {
+                    issuers.insert(index, (issuer, removable_on));
+                    created = true;
+                }
+            });
 
-            // Write StorageCertsRemovableOn and StorageCertsByIssuer
-            let cert_value = CertValue {
-                removable_on: block_number + T::ValidityPeriod::get(),
-            };
-            <StorageCertsRemovableOn<T, I>>::append(cert_value.removable_on, (issuer, receiver));
-            <StorageCertsByIssuer<T, I>>::insert(issuer, receiver, cert_value);
+            if created {
+                // Write StorageIdtyCertMeta for issuer
+                let issuer_issued_count =
+                    StorageIdtyCertMeta::<T, I>::mutate(issuer, |issuer_idty_cert_meta| {
+                        issuer_idty_cert_meta.issued_count =
+                            issuer_idty_cert_meta.issued_count.saturating_add(1);
+                        issuer_idty_cert_meta.next_issuable_on =
+                            block_number + T::CertPeriod::get();
+                        issuer_idty_cert_meta.issued_count
+                    });
 
-            if create {
-                // Write StorageCertsByReceiver
-                <StorageCertsByReceiver<T, I>>::mutate_exists(receiver, |issuers_opt| {
-                    let issuers = issuers_opt.get_or_insert(Vec::with_capacity(0));
-                    if let Err(index) = issuers.binary_search(&issuer) {
-                        issuers.insert(index, issuer);
-                    }
-                });
+                // Write StorageIdtyCertMeta for receiver
+                let receiver_received_count =
+                    <StorageIdtyCertMeta<T, I>>::mutate_exists(receiver, |cert_meta_opt| {
+                        let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());
+                        cert_meta.received_count = cert_meta.received_count.saturating_add(1);
+                        cert_meta.received_count
+                    });
+
                 Self::deposit_event(Event::NewCert {
                     issuer,
                     issuer_issued_count,
@@ -455,24 +432,23 @@ pub mod pallet {
         ) -> Weight {
             let mut total_weight: Weight = 0;
             let mut removed = false;
-            <StorageCertsByIssuer<T, I>>::mutate_exists(issuer, receiver, |cert_val_opt| {
-                if let Some(cert_val) = cert_val_opt {
-                    if Some(cert_val.removable_on) == block_number_opt || block_number_opt.is_none()
-                    {
+            CertsByReceiver::<T, I>::mutate_exists(receiver, |issuers_opt| {
+                let issuers = issuers_opt.get_or_insert(Vec::with_capacity(0));
+                if let Ok(index) = issuers.binary_search_by(|(issuer_, _)| issuer.cmp(issuer_)) {
+                    if let Some(block_number) = block_number_opt {
+                        if let Some((_, removable_on)) = issuers.get(index) {
+                            if *removable_on == block_number {
+                                issuers.remove(index);
+                                removed = true;
+                            }
+                        }
+                    } else {
+                        issuers.remove(index);
                         removed = true;
                     }
                 }
-                if removed {
-                    cert_val_opt.take();
-                }
             });
             if removed {
-                <StorageCertsByReceiver<T, I>>::mutate_exists(receiver, |issuers_opt| {
-                    let issuers = issuers_opt.get_or_insert(Vec::with_capacity(0));
-                    if let Ok(index) = issuers.binary_search(&issuer) {
-                        issuers.remove(index);
-                    }
-                });
                 let issuer_issued_count =
                     <StorageIdtyCertMeta<T, I>>::mutate_exists(issuer, |cert_meta_opt| {
                         let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());

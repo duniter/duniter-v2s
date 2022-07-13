@@ -278,15 +278,23 @@ async fn should_be_certified_by(
         .await?
         .unwrap();
 
-    let _certification = world
+    let issuers = world
         .api()
         .storage()
         .cert()
-        .storage_certs_by_issuer(issuer_index, receiver_index, None)
-        .await?
-        .ok_or_else(|| anyhow::anyhow!("no certification found from {} to {}", issuer, receiver))?;
+        .certs_by_receiver(receiver_index, None)
+        .await?;
 
-    Ok(())
+    match issuers.binary_search_by(|(issuer_, _)| issuer_index.cmp(issuer_)) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(anyhow::anyhow!(
+            "no certification found from {} to {}: {:?}",
+            issuer,
+            receiver,
+            issuers
+        )
+        .into()),
+    }
 }
 
 // ============================================================
