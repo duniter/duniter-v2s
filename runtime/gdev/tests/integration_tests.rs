@@ -350,3 +350,44 @@ fn test_create_new_idty() {
             );
         });
 }
+
+#[test]
+fn test_create_new_idty_without_founds() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 1_000)])
+        .build()
+        .execute_with(|| {
+            run_to_block(2);
+
+            // Should be able to create an identity without founds
+            assert_ok!(Identity::create_identity(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                AccountKeyring::Eve.to_account_id(),
+            ));
+
+            // At next block, nothing should be preleved
+            run_to_block(3);
+            let events = System::events();
+            assert_eq!(events.len(), 0);
+
+            // Deposit some founds on the identity account,
+            // this should trigger the random id assignemt
+            assert_ok!(Balances::transfer(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                200
+            ));
+
+            // At next block, nothing should be preleved,
+            // and a random id request should be registered
+            run_to_block(4);
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
+                200
+            );
+            assert_eq!(
+                Account::pending_random_id_assignments(0),
+                Some(AccountKeyring::Eve.to_account_id())
+            );
+        });
+}

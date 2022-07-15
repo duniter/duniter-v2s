@@ -158,7 +158,7 @@ tests_debug:
     DUNITER_BINARY_PATH: "../build/duniter"
     DUNITER_END2END_TESTS_SPAWN_NODE_TIMEOUT: "20"
   script:
-    - cargo test --workspace --exclude duniter-end2end-tests
+    - cargo test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests
     - cargo cucumber -i balance*
     - cargo cucumber -i monetary*
     - cargo cucumber -i transfer*
@@ -182,7 +182,7 @@ tests_release:
     DUNITER_BINARY_PATH: "../build/duniter"
     DUNITER_END2END_TESTS_SPAWN_NODE_TIMEOUT: "20"
   script:
-    - cargo test --workspace --exclude duniter-end2end-tests
+    - cargo test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests
     - cargo cucumber -i balance*
     - cargo cucumber -i monetary*
     - cargo cucumber -i transfer*
