@@ -102,7 +102,7 @@ impl pallet_certification::Config for Test {
     type CertPeriod = CertPeriod;
     type Event = Event;
     type IdtyIndex = IdtyIndex;
-    type IdtyIndexOf = sp_runtime::traits::ConvertInto;
+    type OwnerKeyOf = sp_runtime::traits::ConvertInto;
     type IsCertAllowed = ();
     type MaxByIssuer = MaxByIssuer;
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;

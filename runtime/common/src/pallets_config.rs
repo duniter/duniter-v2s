@@ -193,7 +193,7 @@ macro_rules! pallets_config {
             type OnNewSession = OnNewSessionHandler<Runtime>;
             type OnRemovedMember = OnRemovedAuthorityMemberHandler<Runtime>;
             type MemberId = IdtyIndex;
-            type MemberIdOf = Identity;
+            type MemberIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type MaxAuthorities = MaxAuthorities;
             type MaxKeysLife = frame_support::pallet_prelude::ConstU32<1_500>;
             type MaxOfflineSessions = frame_support::pallet_prelude::ConstU32<2_400>;
@@ -427,8 +427,6 @@ macro_rules! pallets_config {
 			type IdtyData = IdtyData;
             type IdtyIndex = IdtyIndex;
             type IdtyNameValidator = IdtyNameValidatorImpl;
-            type IdtyValidationOrigin = EnsureRoot<Self::AccountId>;
-            type IsMember = Membership;
             type NewOwnerKeySigner = <NewOwnerKeySignature as sp_runtime::traits::Verify>::Signer;
 			type NewOwnerKeySignature = NewOwnerKeySignature;
             type OnIdtyChange = (common_runtime::handlers::OnIdtyChangeHandler<Runtime>, Wot);
@@ -438,11 +436,12 @@ macro_rules! pallets_config {
         }
 
         impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {
+			type IsIdtyAllowedToClaimMembership = Wot;
             type IsIdtyAllowedToRenewMembership = Wot;
             type IsIdtyAllowedToRequestMembership = Wot;
             type Event = Event;
             type IdtyId = IdtyIndex;
-            type IdtyIdOf = Identity;
+            type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type MembershipPeriod = MembershipPeriod;
             type MetaData = pallet_duniter_wot::MembershipMetaData<AccountId>;
             type OnEvent = OnMembershipEventHandler<Wot, Runtime>;
@@ -454,7 +453,7 @@ macro_rules! pallets_config {
             type CertPeriod = CertPeriod;
             type Event = Event;
             type IdtyIndex = IdtyIndex;
-            type IdtyIndexOf = Identity;
+            type OwnerKeyOf = Identity;
             type IsCertAllowed = Wot;
             type MaxByIssuer = MaxByIssuer;
             type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
@@ -474,11 +473,12 @@ macro_rules! pallets_config {
         }
 
         impl pallet_membership::Config<Instance2> for Runtime {
-            type IsIdtyAllowedToRenewMembership = ();
-            type IsIdtyAllowedToRequestMembership = ();
+			type IsIdtyAllowedToClaimMembership = SmithsSubWot;
+            type IsIdtyAllowedToRenewMembership = SmithsSubWot;
+            type IsIdtyAllowedToRequestMembership = SmithsSubWot;
             type Event = Event;
             type IdtyId = IdtyIndex;
-            type IdtyIdOf = Identity;
+            type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type MembershipPeriod = SmithMembershipPeriod;
             type MetaData = SmithsMembershipMetaData<opaque::SessionKeysWrapper>;
             type OnEvent = OnSmithMembershipEventHandler<SmithsSubWot, Runtime>;
@@ -490,7 +490,7 @@ macro_rules! pallets_config {
             type CertPeriod = SmithCertPeriod;
             type Event = Event;
             type IdtyIndex = IdtyIndex;
-            type IdtyIndexOf = Identity;
+            type OwnerKeyOf = Identity;
             type IsCertAllowed = SmithsSubWot;
             type MaxByIssuer = SmithMaxByIssuer;
             type MinReceivedCertToBeAbleToIssueCert = SmithMinReceivedCertToBeAbleToIssueCert;
@@ -514,7 +514,7 @@ macro_rules! pallets_config {
         impl sp_runtime::traits::IsMember<AccountId> for SmithMembersStorage {
             fn is_member(account_id: &AccountId) -> bool {
                 use sp_runtime::traits::Convert as _;
-                if let Some(idty_index) = Identity::convert(account_id.clone()) {
+                if let Some(idty_index) = common_runtime::providers::IdentityIndexOf::<Runtime>::convert(account_id.clone()) {
                     pallet_membership::Pallet::<Runtime, Instance2>::is_member(&idty_index)
                 } else {
                     false

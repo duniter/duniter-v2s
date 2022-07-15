@@ -84,6 +84,7 @@ parameter_types! {
 }
 
 impl pallet_membership::Config for Test {
+    type IsIdtyAllowedToClaimMembership = ();
     type IsIdtyAllowedToRenewMembership = ();
     type IsIdtyAllowedToRequestMembership = ();
     type Event = Event;

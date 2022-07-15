@@ -16,6 +16,16 @@
 
 use frame_support::pallet_prelude::Weight;
 
+pub trait IsIdtyAllowedToClaimMembership<IdtyId> {
+    fn is_idty_allowed_to_claim_membership(idty_id: &IdtyId) -> bool;
+}
+
+impl<IdtyId> IsIdtyAllowedToClaimMembership<IdtyId> for () {
+    fn is_idty_allowed_to_claim_membership(_: &IdtyId) -> bool {
+        true
+    }
+}
+
 pub trait IsIdtyAllowedToRenewMembership<IdtyId> {
     fn is_idty_allowed_to_renew_membership(idty_id: &IdtyId) -> bool;
 }

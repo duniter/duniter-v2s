@@ -33,6 +33,16 @@ impl<
     }
 }
 
+pub struct IdentityIndexOf<T: pallet_identity::Config>(PhantomData<T>);
+
+impl<T: pallet_identity::Config> sp_runtime::traits::Convert<T::AccountId, Option<T::IdtyIndex>>
+    for IdentityIndexOf<T>
+{
+    fn convert(account_id: T::AccountId) -> Option<T::IdtyIndex> {
+        pallet_identity::Pallet::<T>::identity_index_of(account_id)
+    }
+}
+
 pub struct UdMembersStorage<T: pallet_identity::Config>(PhantomData<T>);
 
 impl<T> frame_support::traits::StoredMap<AccountId, FirstEligibleUd> for UdMembersStorage<T>

@@ -116,6 +116,9 @@ where
         .is_ok()
     }
     fn can_validate_identity(idty_index: IdtyIndex) -> bool {
+        // TODO replace this code by te commented one for distance feature
+        /*let idty_cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
+        idty_cert_meta.received_count >= T::MinCertForMembership::get() as u32*/
         pallet_membership::Pallet::<T, I>::claim_membership(
             RawOrigin::Root.into(),
             Some(idty_index),
@@ -151,6 +154,15 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::IsCertAllowed<IdtyI
             // Issuer not found
             false
         }
+    }
+}
+
+impl<T: Config<I>, I: 'static> sp_membership::traits::IsIdtyAllowedToClaimMembership<IdtyIndex>
+    for Pallet<T, I>
+{
+    fn is_idty_allowed_to_claim_membership(idty_index: &IdtyIndex) -> bool {
+        let idty_cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
+        idty_cert_meta.received_count >= T::MinCertForMembership::get() as u32
     }
 }
 
@@ -205,22 +217,7 @@ where
             // So, in any case, we must do nothing
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipRevoked(_) => {}
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipRenewed(_) => {}
-            sp_membership::Event::<IdtyIndex, MetaData>::MembershipRequested(idty_index) => {
-                let idty_cert_meta =
-                    pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
-                let received_count = idty_cert_meta.received_count;
-
-                // TODO insert `receiver` in distance queue if received_count >= MinCertForMembership
-                if received_count >= T::MinCertForMembership::get() as u32 {
-                    // TODO insert `receiver` in distance queue
-                    if Self::dispath_idty_call(pallet_identity::Call::validate_identity {
-                        idty_index: *idty_index,
-                    }) && received_count == T::MinReceivedCertToBeAbleToIssueCert::get()
-                    {
-                        Self::do_apply_first_issuable_on(*idty_index);
-                    }
-                }
-            }
+            sp_membership::Event::<IdtyIndex, MetaData>::MembershipRequested(_) => {}
             sp_membership::Event::<IdtyIndex, MetaData>::PendingMembershipExpired(idty_index) => {
                 Self::dispath_idty_call(pallet_identity::Call::remove_identity {
                     idty_index: *idty_index,
@@ -243,7 +240,7 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pall
                     true,
                 ) {
                     sp_std::if_std! {
-                        println!("fail to force add cert: {:?}", e)
+                        println!("fail to force add cert: {:?}", e)
                     }
                 }
             }
@@ -274,32 +271,8 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex
         receiver: IdtyIndex,
         receiver_received_count: u32,
     ) -> Weight {
-        if pallet_membership::Pallet::<T, I>::is_member(&receiver) {
-            if receiver_received_count == T::MinReceivedCertToBeAbleToIssueCert::get() {
-                Self::do_apply_first_issuable_on(receiver);
-            }
-        } else if pallet_membership::Pallet::<T, I>::is_in_pending_memberships(receiver)
-            && receiver_received_count >= T::MinCertForMembership::get()
-        {
-            if T::IsSubWot::get() {
-                if let Err(e) = pallet_membership::Pallet::<T, I>::claim_membership(
-                    RawOrigin::Root.into(),
-                    Some(receiver),
-                ) {
-                    sp_std::if_std! {
-                        println!("fail to claim membership: {:?}", e)
-                    }
-                }
-            } else {
-                // TODO insert `receiver` in distance queue
-                Self::dispath_idty_call(pallet_identity::Call::validate_identity {
-                    idty_index: receiver,
-                });
-            }
-
-            if receiver_received_count == T::MinReceivedCertToBeAbleToIssueCert::get() {
-                Self::do_apply_first_issuable_on(receiver);
-            }
+        if receiver_received_count == T::MinReceivedCertToBeAbleToIssueCert::get() {
+            Self::do_apply_first_issuable_on(receiver);
         }
         0
     }

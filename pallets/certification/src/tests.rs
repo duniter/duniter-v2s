@@ -30,8 +30,8 @@ fn test_must_receive_cert_before_can_issue() {
     })
     .execute_with(|| {
         assert_eq!(
-            DefaultCertification::add_cert(Origin::signed(0), 1),
-            Err(Error::<Test, _>::IdtyMustReceiveCertsBeforeCanIssue.into())
+            DefaultCertification::add_cert(Origin::signed(0), 0, 1),
+            Err(Error::<Test, _>::NotEnoughCertReceived.into())
         );
     });
 }
@@ -51,7 +51,7 @@ fn test_cannot_certify_self() {
         run_to_block(2);
 
         assert_eq!(
-            DefaultCertification::add_cert(Origin::signed(0), 0),
+            DefaultCertification::add_cert(Origin::signed(0), 0, 0),
             Err(Error::<Test, _>::CannotCertifySelf.into())
         );
     });
@@ -155,17 +155,17 @@ fn test_cert_period() {
             }
         );
         assert_eq!(
-            DefaultCertification::add_cert(Origin::signed(0), 3),
+            DefaultCertification::add_cert(Origin::signed(0), 0, 3),
             Err(Error::<Test, _>::NotRespectCertPeriod.into())
         );
         run_to_block(CertPeriod::get());
-        assert_ok!(DefaultCertification::add_cert(Origin::signed(0), 3));
+        assert_ok!(DefaultCertification::add_cert(Origin::signed(0), 0, 3));
         run_to_block(CertPeriod::get() + 1);
         assert_eq!(
-            DefaultCertification::add_cert(Origin::signed(0), 4),
+            DefaultCertification::add_cert(Origin::signed(0), 0, 4),
             Err(Error::<Test, _>::NotRespectCertPeriod.into())
         );
         run_to_block((2 * CertPeriod::get()) + 1);
-        assert_ok!(DefaultCertification::add_cert(Origin::signed(0), 4));
+        assert_ok!(DefaultCertification::add_cert(Origin::signed(0), 0, 4));
     });
 }

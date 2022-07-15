@@ -94,10 +94,6 @@ pub mod pallet {
             + MaxEncodedLen;
         /// Handle logic to validate an identity name
         type IdtyNameValidator: IdtyNameValidator;
-        /// Origin allowed to validate identity
-        type IdtyValidationOrigin: EnsureOrigin<Self::Origin>;
-        ///
-        type IsMember: sp_runtime::traits::IsMember<Self::IdtyIndex>;
         /// On identity confirmed by its owner
         type OnIdtyChange: OnIdtyChange<Self>;
         /// Signing key of new owner key payload
@@ -366,7 +362,7 @@ pub mod pallet {
             idty_index: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
             // Verification phase //
-            T::IdtyValidationOrigin::ensure_origin(origin)?;
+            let _ = ensure_signed(origin)?;
 
             let mut idty_value =
                 Identities::<T>::try_get(idty_index).map_err(|_| Error::<T>::IdtyNotFound)?;
@@ -639,9 +635,9 @@ pub mod pallet {
     }
 }
 
-impl<T: Config> sp_runtime::traits::Convert<T::AccountId, Option<T::IdtyIndex>> for Pallet<T> {
-    fn convert(account_id: T::AccountId) -> Option<T::IdtyIndex> {
-        Self::identity_index_of(account_id)
+impl<T: Config> sp_runtime::traits::Convert<T::IdtyIndex, Option<T::AccountId>> for Pallet<T> {
+    fn convert(idty_index: T::IdtyIndex) -> Option<T::AccountId> {
+        Identities::<T>::get(idty_index).map(|idty_val| idty_val.owner_key)
     }
 }
 

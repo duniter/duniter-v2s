@@ -68,8 +68,8 @@ pub mod pallet {
             + MaybeSerializeDeserialize
             + Debug
             + MaxEncodedLen;
-        /// Something that give the IdtyIndex on an account id
-        type IdtyIndexOf: Convert<Self::AccountId, Option<Self::IdtyIndex>>;
+        /// Something that give the owner key of an identity
+        type OwnerKeyOf: Convert<Self::IdtyIndex, Option<Self::AccountId>>;
         ///
         type IsCertAllowed: IsCertAllowed<Self::IdtyIndex>;
         #[pallet::constant]
@@ -238,8 +238,6 @@ pub mod pallet {
         CannotCertifySelf,
         /// Certification non autorisée
         CertNotAllowed,
-        /// An identity must receive certifications before it can issue them.
-        IdtyMustReceiveCertsBeforeCanIssue,
         /// This identity has already issued the maximum number of certifications
         IssuedTooManyCert,
         /// Issuer not found
@@ -248,8 +246,6 @@ pub mod pallet {
         NotEnoughCertReceived,
         /// This identity has already issued a certification too recently
         NotRespectCertPeriod,
-        /// Receiver not found
-        ReceiverNotFound,
     }
 
     #[pallet::hooks]
@@ -272,23 +268,31 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
+            // Forbid self cert
+            ensure!(issuer != receiver, Error::<T, I>::CannotCertifySelf);
+
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
 
             if verify_rules {
-                let issuer_idty_cert_meta = <StorageIdtyCertMeta<T, I>>::get(issuer);
-                if issuer_idty_cert_meta.received_count == 0 {
-                    return Err(Error::<T, I>::IdtyMustReceiveCertsBeforeCanIssue.into());
-                }
-                // Verify rules CertPeriod and MaxByIssuer
-                if issuer_idty_cert_meta.received_count
-                    < T::MinReceivedCertToBeAbleToIssueCert::get()
-                {
-                    return Err(Error::<T, I>::NotEnoughCertReceived.into());
-                } else if issuer_idty_cert_meta.next_issuable_on > block_number {
-                    return Err(Error::<T, I>::NotRespectCertPeriod.into());
-                } else if issuer_idty_cert_meta.issued_count >= T::MaxByIssuer::get() {
-                    return Err(Error::<T, I>::IssuedTooManyCert.into());
-                }
+                // Verify rule MinReceivedCertToBeAbleToIssueCert
+                let issuer_idty_cert_meta = StorageIdtyCertMeta::<T, I>::get(issuer);
+                ensure!(
+                    issuer_idty_cert_meta.received_count
+                        >= T::MinReceivedCertToBeAbleToIssueCert::get(),
+                    Error::<T, I>::NotEnoughCertReceived
+                );
+
+                // Verify rule MaxByIssuer
+                ensure!(
+                    issuer_idty_cert_meta.issued_count < T::MaxByIssuer::get(),
+                    Error::<T, I>::IssuedTooManyCert
+                );
+
+                // Verify rule CertPeriod
+                ensure!(
+                    block_number >= issuer_idty_cert_meta.next_issuable_on,
+                    Error::<T, I>::NotRespectCertPeriod
+                );
             };
 
             Self::do_add_cert(block_number, issuer, receiver)
@@ -301,32 +305,45 @@ pub mod pallet {
         #[pallet::weight(1_000_000_000)]
         pub fn add_cert(
             origin: OriginFor<T>,
-            receiver: T::AccountId,
+            issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            ensure!(who != receiver, Error::<T, I>::CannotCertifySelf);
-            let issuer = T::IdtyIndexOf::convert(who).ok_or(Error::<T, I>::IssuerNotFound)?;
-            let receiver =
-                T::IdtyIndexOf::convert(receiver).ok_or(Error::<T, I>::ReceiverNotFound)?;
-            if !T::IsCertAllowed::is_cert_allowed(issuer, receiver) {
-                return Err(Error::<T, I>::CertNotAllowed.into());
-            }
 
+            // Forbid self cert
+            ensure!(issuer != receiver, Error::<T, I>::CannotCertifySelf);
+
+            // Verify caller ownership
+            let issuer_owner_key =
+                T::OwnerKeyOf::convert(issuer).ok_or(Error::<T, I>::IssuerNotFound)?;
+            ensure!(issuer_owner_key == who, DispatchError::BadOrigin);
+
+            // Verify compatibility with other pallets state
+            ensure!(
+                T::IsCertAllowed::is_cert_allowed(issuer, receiver),
+                Error::<T, I>::CertNotAllowed
+            );
+
+            // Verify rule MinReceivedCertToBeAbleToIssueCert
             let issuer_idty_cert_meta = <StorageIdtyCertMeta<T, I>>::get(issuer);
-            if issuer_idty_cert_meta.received_count == 0 {
-                return Err(Error::<T, I>::IdtyMustReceiveCertsBeforeCanIssue.into());
-            }
+            ensure!(
+                issuer_idty_cert_meta.received_count
+                    >= T::MinReceivedCertToBeAbleToIssueCert::get(),
+                Error::<T, I>::NotEnoughCertReceived
+            );
 
+            // Verify rule MaxByIssuer
+            ensure!(
+                issuer_idty_cert_meta.issued_count < T::MaxByIssuer::get(),
+                Error::<T, I>::IssuedTooManyCert
+            );
+
+            // Verify rule CertPeriod
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
-
-            // Verify rules CertPeriod and MaxByIssuer
-            if issuer_idty_cert_meta.received_count < T::MinReceivedCertToBeAbleToIssueCert::get() {
-                return Err(Error::<T, I>::NotEnoughCertReceived.into());
-            } else if issuer_idty_cert_meta.next_issuable_on > block_number {
-                return Err(Error::<T, I>::NotRespectCertPeriod.into());
-            } else if issuer_idty_cert_meta.issued_count >= T::MaxByIssuer::get() {
-                return Err(Error::<T, I>::IssuedTooManyCert.into());
-            }
+            ensure!(
+                block_number >= issuer_idty_cert_meta.next_issuable_on,
+                Error::<T, I>::NotRespectCertPeriod
+            );
 
             Self::do_add_cert(block_number, issuer, receiver)
         }

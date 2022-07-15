@@ -18,7 +18,7 @@ use super::node_runtime::runtime_types::gdev_runtime;
 use super::node_runtime::runtime_types::pallet_certification;
 use super::*;
 use sp_keyring::AccountKeyring;
-use subxt::{sp_runtime::MultiAddress, PairSigner};
+use subxt::{sp_runtime::MultiAddress, PairSigner, Signer};
 
 pub async fn certify(
     api: &Api,
@@ -26,15 +26,29 @@ pub async fn certify(
     from: AccountKeyring,
     to: AccountKeyring,
 ) -> Result<()> {
-    let from = PairSigner::new(from.pair());
+    let signer = PairSigner::new(from.pair());
+    let from = from.to_account_id();
     let to = to.to_account_id();
+
+    let issuer_index = api
+        .storage()
+        .identity()
+        .identity_index_of(from, None)
+        .await?
+        .unwrap();
+    let receiver_index = api
+        .storage()
+        .identity()
+        .identity_index_of(to, None)
+        .await?
+        .unwrap();
 
     let _events = create_block_with_extrinsic(
         client,
         api.tx()
             .cert()
-            .add_cert(to)
-            .create_signed(&from, ())
+            .add_cert(issuer_index, receiver_index)
+            .create_signed(&signer, ())
             .await?,
     )
     .await?;

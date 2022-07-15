@@ -29,6 +29,15 @@ type AccountId = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
+pub struct IdentityIndexOf<T: pallet_identity::Config>(PhantomData<T>);
+impl<T: pallet_identity::Config> sp_runtime::traits::Convert<T::AccountId, Option<T::IdtyIndex>>
+    for IdentityIndexOf<T>
+{
+    fn convert(account_id: T::AccountId) -> Option<T::IdtyIndex> {
+        pallet_identity::Pallet::<T>::identity_index_of(account_id)
+    }
+}
+
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
     pub enum Test where
@@ -118,8 +127,6 @@ impl pallet_identity::Config for Test {
     type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = IdtyIndex;
-    type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
-    type IsMember = Membership;
     type NewOwnerKeySigner = UintAuthorityId;
     type NewOwnerKeySignature = TestSignature;
     type OnIdtyChange = DuniterWot;
@@ -136,11 +143,12 @@ parameter_types! {
 }
 
 impl pallet_membership::Config<Instance1> for Test {
+    type IsIdtyAllowedToClaimMembership = DuniterWot;
     type IsIdtyAllowedToRenewMembership = DuniterWot;
     type IsIdtyAllowedToRequestMembership = DuniterWot;
     type Event = Event;
     type IdtyId = IdtyIndex;
-    type IdtyIdOf = Identity;
+    type IdtyIdOf = IdentityIndexOf<Self>;
     type MembershipPeriod = MembershipPeriod;
     type MetaData = crate::MembershipMetaData<u64>;
     type OnEvent = DuniterWot;
@@ -160,7 +168,7 @@ impl pallet_certification::Config<Instance1> for Test {
     type CertPeriod = CertPeriod;
     type Event = Event;
     type IdtyIndex = IdtyIndex;
-    type IdtyIndexOf = Identity;
+    type OwnerKeyOf = Identity;
     type IsCertAllowed = DuniterWot;
     type MaxByIssuer = MaxByIssuer;
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
@@ -191,11 +199,12 @@ parameter_types! {
 }
 
 impl pallet_membership::Config<Instance2> for Test {
+    type IsIdtyAllowedToClaimMembership = SmithsSubWot;
     type IsIdtyAllowedToRenewMembership = SmithsSubWot;
     type IsIdtyAllowedToRequestMembership = SmithsSubWot;
     type Event = Event;
     type IdtyId = IdtyIndex;
-    type IdtyIdOf = Identity;
+    type IdtyIdOf = IdentityIndexOf<Self>;
     type MembershipPeriod = SmithsMembershipPeriod;
     type MetaData = crate::MembershipMetaData<u64>;
     type OnEvent = SmithsSubWot;
@@ -215,7 +224,7 @@ impl pallet_certification::Config<Instance2> for Test {
     type CertPeriod = SmithsCertPeriod;
     type Event = Event;
     type IdtyIndex = IdtyIndex;
-    type IdtyIndexOf = Identity;
+    type OwnerKeyOf = Identity;
     type IsCertAllowed = SmithsSubWot;
     type MaxByIssuer = SmithsMaxByIssuer;
     type MinReceivedCertToBeAbleToIssueCert = SmithsMinReceivedCertToBeAbleToIssueCert;

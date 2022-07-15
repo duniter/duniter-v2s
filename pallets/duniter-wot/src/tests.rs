@@ -66,11 +66,18 @@ fn test_join_smiths() {
 
         // Then, Alice should be able to send a smith cert to Dave
         run_to_block(3);
-        assert_ok!(SmithsCert::add_cert(Origin::signed(1), 4));
+        assert_ok!(SmithsCert::add_cert(Origin::signed(1), 1, 4));
 
-        // Then, if Bob certify Dave, he should become member
+        // Then, Bob should be able to send a smith cert to Dave
         run_to_block(4);
-        assert_ok!(SmithsCert::add_cert(Origin::signed(2), 4));
+        assert_ok!(SmithsCert::add_cert(Origin::signed(2), 2, 4));
+
+        // Then, Dave should be able to claim his membership
+        run_to_block(4);
+        assert_ok!(SmithsMembership::claim_membership(
+            Origin::signed(4),
+            Some(4)
+        ));
         System::assert_has_event(Event::SmithsMembership(
             pallet_membership::Event::MembershipAcquired(4),
         ));
@@ -114,7 +121,7 @@ fn test_revoke_smiths_them_rejoin() {
         ));
 
         // Then, Alice should be able to send a smith cert to Dave
-        assert_ok!(SmithsCert::add_cert(Origin::signed(1), 4));
+        assert_ok!(SmithsCert::add_cert(Origin::signed(1), 1, 4));
     });
 }
 
@@ -173,40 +180,23 @@ fn test_new_idty_validation() {
 
         // Bob should be able to certify Ferdie
         run_to_block(4);
-        assert_ok!(Cert::add_cert(Origin::signed(2), 6));
+        assert_ok!(Cert::add_cert(Origin::signed(2), 2, 6));
+        System::assert_has_event(Event::Cert(pallet_certification::Event::NewCert {
+            issuer: 2,
+            issuer_issued_count: 5,
+            receiver: 6,
+            receiver_received_count: 2,
+        }));
 
-        let events = System::events();
-        // 3 events should have occurred: NewCert, MembershipAcquired and IdtyValidated
-        assert_eq!(events.len(), 3);
-        assert_eq!(
-            events[0],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Cert(pallet_certification::Event::NewCert {
-                    issuer: 2,
-                    issuer_issued_count: 5,
-                    receiver: 6,
-                    receiver_received_count: 2
-                }),
-                topics: vec![],
-            }
-        );
-        assert_eq!(
-            events[1],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Membership(pallet_membership::Event::MembershipAcquired(6)),
-                topics: vec![],
-            }
-        );
-        assert_eq!(
-            events[2],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyValidated { idty_index: 6 }),
-                topics: vec![],
-            }
-        );
+        // Anyone should be able to validate Ferdie identity
+        run_to_block(5);
+        assert_ok!(Identity::validate_identity(Origin::signed(42), 6));
+        System::assert_has_event(Event::Membership(
+            pallet_membership::Event::MembershipAcquired(6),
+        ));
+        System::assert_has_event(Event::Identity(pallet_identity::Event::IdtyValidated {
+            idty_index: 6,
+        }));
 
         // After PendingMembershipPeriod, Ferdie identity should not expire
         run_to_block(6);
@@ -304,8 +294,8 @@ fn test_idty_membership_expire_them_requested() {
 
         // Alice can't renew her cert to Charlie
         assert_noop!(
-            Cert::add_cert(Origin::signed(1), 3),
-            pallet_certification::Error::<Test, Instance1>::ReceiverNotFound
+            Cert::add_cert(Origin::signed(1), 1, 3),
+            pallet_certification::Error::<Test, Instance1>::CertNotAllowed
         );
     });
 }

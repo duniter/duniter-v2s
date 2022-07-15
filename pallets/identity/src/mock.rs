@@ -24,7 +24,7 @@ use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
     testing::{Header, TestSignature, UintAuthorityId},
-    traits::{BlakeTwo256, IdentityLookup, IsMember},
+    traits::{BlakeTwo256, IdentityLookup},
 };
 
 type AccountId = u64;
@@ -90,13 +90,6 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
     }
 }
 
-pub struct IsMemberTestImpl;
-impl IsMember<u64> for IsMemberTestImpl {
-    fn is_member(_: &u64) -> bool {
-        true
-    }
-}
-
 impl pallet_identity::Config for Test {
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
@@ -106,8 +99,6 @@ impl pallet_identity::Config for Test {
     type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = u64;
-    type IdtyValidationOrigin = system::EnsureRoot<AccountId>;
-    type IsMember = IsMemberTestImpl;
     type NewOwnerKeySigner = UintAuthorityId;
     type NewOwnerKeySignature = TestSignature;
     type OnIdtyChange = ();

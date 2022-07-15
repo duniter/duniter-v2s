@@ -59,7 +59,11 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
+        /// Ask the runtime if the identity can claim the membership
+        type IsIdtyAllowedToClaimMembership: IsIdtyAllowedToClaimMembership<Self::IdtyId>;
+        /// Ask the runtime if the identity can renew his membership
         type IsIdtyAllowedToRenewMembership: IsIdtyAllowedToRenewMembership<Self::IdtyId>;
+        /// Ask the runtime if the identity can request the membership
         type IsIdtyAllowedToRequestMembership: IsIdtyAllowedToRequestMembership<Self::IdtyId>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
@@ -169,6 +173,8 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
+        /// Identity not allowed to claim membership
+        IdtyNotAllowedToClaimMembership,
         /// Identity not allowed to request membership
         IdtyNotAllowedToRequestMembership,
         /// Identity not allowed to renew membership
@@ -248,9 +254,15 @@ pub mod pallet {
             // Verify phase
             let idty_id = Self::ensure_origin_and_get_idty_id(origin, maybe_idty_id)?;
 
-            if Membership::<T, I>::contains_key(&idty_id) {
-                return Err(Error::<T, I>::MembershipAlreadyAcquired.into());
-            }
+            ensure!(
+                !Membership::<T, I>::contains_key(&idty_id),
+                Error::<T, I>::MembershipAlreadyAcquired
+            );
+
+            ensure!(
+                T::IsIdtyAllowedToClaimMembership::is_idty_allowed_to_claim_membership(&idty_id),
+                Error::<T, I>::IdtyNotAllowedToClaimMembership
+            );
 
             let metadata = PendingMembership::<T, I>::take(&idty_id)
                 .ok_or(Error::<T, I>::MembershipRequestNotFound)?;
@@ -271,13 +283,14 @@ pub mod pallet {
             // Verify phase
             let idty_id = Self::ensure_origin_and_get_idty_id(origin, maybe_idty_id)?;
 
-            if !T::IsIdtyAllowedToRenewMembership::is_idty_allowed_to_renew_membership(&idty_id) {
-                return Err(Error::<T, I>::IdtyNotAllowedToRenewMembership.into());
-            }
-
             ensure!(
                 Self::get_membership(&idty_id).is_some(),
                 Error::<T, I>::MembershipNotFound
+            );
+
+            ensure!(
+                T::IsIdtyAllowedToRenewMembership::is_idty_allowed_to_renew_membership(&idty_id),
+                Error::<T, I>::IdtyNotAllowedToRenewMembership,
             );
 
             let _ = Self::do_renew_membership(idty_id);
