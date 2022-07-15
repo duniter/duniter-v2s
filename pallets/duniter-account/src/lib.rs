@@ -185,7 +185,7 @@ pub mod pallet {
                                 frame_system::Pallet::<T>::inc_consumers_without_limit(&account_id);
                             debug_assert!(
                                 res.is_ok(),
-                                "Cannot fail because providers are incremented just before"
+                                "Cannot fail because any account with funds should have providers"
                             );
                             T::OnUnbalanced::on_unbalanced(imbalance);
                             let request_id = pallet_provide_randomness::Pallet::<T>::force_request(
@@ -282,12 +282,8 @@ where
         let result = f(&mut some_data)?;
         let is_providing = some_data.is_some();
         if !was_providing && is_providing {
-            if !frame_system::Pallet::<T>::account_exists(account_id) {
-                // If the account does not exist, we should program its creation
-                PendingNewAccounts::<T>::insert(account_id, ());
-            }
-            // We should increment the "balances" provider
             frame_system::Pallet::<T>::inc_providers(account_id);
+            PendingNewAccounts::<T>::insert(account_id, ());
         } else if was_providing && !is_providing {
             match frame_system::Pallet::<T>::dec_providers(account_id)? {
                 frame_system::DecRefStatus::Reaped => return Ok(result),
