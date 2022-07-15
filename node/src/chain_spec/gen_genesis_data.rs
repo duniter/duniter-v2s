@@ -38,6 +38,7 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub smiths_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, u32>>,
     pub smiths_memberships: BTreeMap<u32, MembershipData>,
     pub sudo_key: Option<AccountId>,
+    pub technical_committee_members: Vec<AccountId>,
 }
 
 #[derive(Default)]
@@ -58,6 +59,7 @@ struct GenesisConfig<Parameters> {
     #[serde(rename = "smiths")]
     smith_identities: BTreeMap<String, SmithData>,
     sudo_key: Option<AccountId>,
+    technical_committee: Vec<String>,
     #[serde(default)]
     wallets: BTreeMap<AccountId, u64>,
 }
@@ -134,6 +136,7 @@ where
         parameters,
         identities,
         smith_identities,
+        technical_committee,
         wallets,
     } = genesis_config;
 
@@ -145,6 +148,7 @@ where
     let mut idty_index_of = BTreeMap::new();
     let mut initial_monetary_mass = 0;
     let mut memberships = BTreeMap::new();
+    let mut technical_committee_members = Vec::with_capacity(technical_committee.len());
     //let mut total_dust = 0;
 
     // SIMPLE WALLETS //
@@ -160,6 +164,16 @@ where
                 is_identity: false,
             },
         );
+    }
+
+    // Technical Comittee //
+
+    for idty_name in technical_committee {
+        if let Some(identity) = identities.get(&idty_name) {
+            technical_committee_members.push(identity.pubkey.clone());
+        } else {
+            return Err(format!("Identity '{}' not exist", idty_name));
+        }
     }
 
     // IDENTITIES //
@@ -320,6 +334,7 @@ where
         smiths_certs_by_receiver,
         smiths_memberships,
         sudo_key,
+        technical_committee_members,
     };
 
     Ok(f(genesis_data))

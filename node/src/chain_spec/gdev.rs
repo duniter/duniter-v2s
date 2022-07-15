@@ -22,7 +22,7 @@ use gdev_runtime::{
     opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
     BalancesConfig, CertConfig, GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig,
     ParametersConfig, SessionConfig, SmithsCertConfig, SmithsMembershipConfig, SudoConfig,
-    SystemConfig, UniversalDividendConfig, WASM_BINARY,
+    SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
@@ -355,6 +355,13 @@ fn gen_genesis_for_local_chain(
             // Assign network admin rights.
             key: Some(root_key),
         },
+        technical_committee: TechnicalCommitteeConfig {
+            members: initial_smiths
+                .iter()
+                .map(|x| x.0.clone())
+                .collect::<Vec<_>>(),
+            ..Default::default()
+        },
         identity: IdentityConfig {
             identities: initial_identities
                 .iter()
@@ -391,7 +398,6 @@ fn gen_genesis_for_local_chain(
             apply_cert_period_at_genesis: false,
             certs_by_receiver: clique_wot(initial_smiths_len, smith_cert_validity_period),
         },
-        smiths_collective: Default::default(),
         universal_dividend: UniversalDividendConfig {
             first_reeval: 100,
             first_ud,
@@ -439,6 +445,7 @@ fn genesis_data_to_gdev_genesis_conf(
         smiths_certs_by_receiver,
         smiths_memberships,
         sudo_key,
+        technical_committee_members,
     } = genesis_data;
 
     gdev_runtime::GenesisConfig {
@@ -466,6 +473,10 @@ fn genesis_data_to_gdev_genesis_conf(
                 .collect::<Vec<_>>(),
         },
         sudo: SudoConfig { key: sudo_key },
+        technical_committee: TechnicalCommitteeConfig {
+            members: technical_committee_members,
+            ..Default::default()
+        },
         identity: IdentityConfig {
             identities: identities
                 .into_iter()
@@ -496,7 +507,6 @@ fn genesis_data_to_gdev_genesis_conf(
         smiths_membership: SmithsMembershipConfig {
             memberships: smiths_memberships,
         },
-        smiths_collective: Default::default(),
         universal_dividend: UniversalDividendConfig {
             first_reeval: first_ud_reeval,
             first_ud,

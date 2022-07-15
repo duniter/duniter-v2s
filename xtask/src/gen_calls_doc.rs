@@ -64,7 +64,7 @@ impl CallCategory {
             ("SmithsCert", "force_add_cert" | "del_cert" | "remove_all_certs_received_by") => {
                 Self::Root
             }
-            ("SmithsCollective", "set_members" | "disapprove_proposal") => Self::Root,
+            ("TechnicalCommittee", "set_members" | "disapprove_proposal") => Self::Root,
             ("Utility", "dispatch_as") => Self::Root,
             ("Treasury", "approve_proposal" | "reject_proposal") => Self::OtherOrigin,
             _ => Self::User,

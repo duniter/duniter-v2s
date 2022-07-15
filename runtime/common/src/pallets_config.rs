@@ -262,17 +262,17 @@ macro_rules! pallets_config {
 
 		#[cfg(feature = "runtime-benchmarks")]
 		parameter_types! {
-			pub const WorstCaseOrigin: pallet_collective::RawOrigin<AccountId, SmithsInstance> =
-				pallet_collective::RawOrigin::<AccountId, SmithsInstance>::Members(2, 3);
+			pub const WorstCaseOrigin: pallet_collective::RawOrigin<AccountId, TechnicalCommitteeInstance> =
+				pallet_collective::RawOrigin::<AccountId, TechnicalCommitteeInstance>::Members(2, 3);
 		}
 
 		impl pallet_upgrade_origin::Config for Runtime {
 			type Event = Event;
 			type Call = Call;
-			type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, SmithsInstance>;
+			type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, TechnicalCommitteeInstance>;
 			type WeightInfo = common_runtime::weights::pallet_upgrade_origin::WeightInfo<Runtime>;
 			#[cfg(feature = "runtime-benchmarks")]
-			type WorstCaseOriginType = pallet_collective::RawOrigin<AccountId, SmithsInstance>;
+			type WorstCaseOriginType = pallet_collective::RawOrigin<AccountId, TechnicalCommitteeInstance>;
 			#[cfg(feature = "runtime-benchmarks")]
 			type WorstCaseOrigin = WorstCaseOrigin;
 		}
@@ -499,8 +499,8 @@ macro_rules! pallets_config {
             type ValidityPeriod = SmithValidityPeriod;
         }
 
-        pub struct SmithMembersDefaultVote;
-        impl pallet_collective::DefaultVote for SmithMembersDefaultVote {
+        pub struct TechnicalCommitteeDefaultVote;
+        impl pallet_collective::DefaultVote for TechnicalCommitteeDefaultVote {
             fn default_vote(
                 _prime_vote: Option<bool>,
                 _yes_votes: u32,
@@ -510,34 +510,18 @@ macro_rules! pallets_config {
                 false
             }
         }
-        pub struct SmithMembersStorage;
-        impl sp_runtime::traits::IsMember<AccountId> for SmithMembersStorage {
-            fn is_member(account_id: &AccountId) -> bool {
-                use sp_runtime::traits::Convert as _;
-                if let Some(idty_index) = common_runtime::providers::IdentityIndexOf::<Runtime>::convert(account_id.clone()) {
-                    pallet_membership::Pallet::<Runtime, Instance2>::is_member(&idty_index)
-                } else {
-                    false
-                }
-            }
-        }
-        impl pallet_collective::MembersStorage<AccountId> for SmithMembersStorage {
-            fn members_count() -> u32 {
-                pallet_membership::Membership::<Runtime, Instance2>::count()
-            }
-        }
         parameter_types! {
-            pub const SmithsMotionDuration: BlockNumber = 7 * DAYS;
+            pub const TechnicalCommitteeMotionDuration: BlockNumber = 7 * DAYS;
         }
         impl pallet_collective::Config<Instance2> for Runtime {
             type Origin = Origin;
             type Proposal = Call;
             type Event = Event;
-            type MotionDuration = SmithsMotionDuration;
+            type MotionDuration = TechnicalCommitteeMotionDuration;
             type MaxProposals = frame_support::pallet_prelude::ConstU32<20>;
-            type MaxMembers = frame_support::pallet_prelude::ConstU32<1_000>;
-            type MembersStorage = SmithMembersStorage;
-            type DefaultVote = SmithMembersDefaultVote;
+            type MaxMembers = frame_support::pallet_prelude::ConstU32<100>;
+            type MembersStorage = pallet_collective::InternalMembersStorage<Runtime, Instance2>;
+            type DefaultVote = TechnicalCommitteeDefaultVote;
             type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
         }
     };

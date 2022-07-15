@@ -183,5 +183,6 @@
       "certs": ["Elois","tuxmain","HugoTrentesaux"]
     }
   },
-  "sudo_key": "5Co5AWcBiz4HaAEpu8BxLdghnCob89rFGU5yQ65WP3t2jsyB"
+  "sudo_key": "5Co5AWcBiz4HaAEpu8BxLdghnCob89rFGU5yQ65WP3t2jsyB",
+  "technical_committee": ["Elois", "cgeek", "tuxmain", "HugoTrentesaux"]
 }

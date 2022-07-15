@@ -105,6 +105,6 @@ parameter_types! {
 
 // Treasury
 pub type TreasuryApproveOrigin =
-    pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, SmithsInstance>;
+    pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, TechnicalCommitteeInstance>;
 pub type TreasuryRejectOrigin =
-    pallet_collective::EnsureProportionMoreThan<_1, _3, AccountId, SmithsInstance>;
+    pallet_collective::EnsureProportionMoreThan<_1, _3, AccountId, TechnicalCommitteeInstance>;

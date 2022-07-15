@@ -53,5 +53,6 @@
       "certs": ["Alice", "Bob"]
     }
   },
-  "sudo_key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+  "sudo_key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+  "technical_committee": ["Alice", "Bob", "Charlie"]
 }

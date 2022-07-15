@@ -124,7 +124,7 @@ pub type Executive = frame_executive::Executive<
     AllPalletsWithSystem,
 >;
 
-pub type SmithsInstance = Instance2;
+pub type TechnicalCommitteeInstance = Instance2;
 
 pub struct BaseCallFilter;
 impl Contains<Call> for BaseCallFilter {
@@ -230,6 +230,7 @@ construct_runtime!(
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
         UpgradeOrigin: pallet_upgrade_origin::{Pallet, Call, Event} = 21,
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 22,
+        TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>, Origin<T>} = 23,
 
         // Universal dividend
         UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 30,
@@ -244,7 +245,6 @@ construct_runtime!(
         SmithsSubWot: pallet_duniter_wot::<Instance2>::{Pallet} = 50,
         SmithsMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
         SmithsCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
-        SmithsCollective: pallet_collective::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>, Origin<T>} = 54,
 
         // Utilities
         AtomicSwap: pallet_atomic_swap::{Pallet, Call, Storage, Event<T>} = 60,
