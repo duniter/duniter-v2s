@@ -20,7 +20,7 @@ pub mod gdev_runtime {}
 use hex_literal::hex;
 use sp_core::crypto::AccountId32;
 use sp_core::{blake2_128, ByteArray, H256};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use subxt::{ClientBuilder, DefaultConfig, DefaultExtra};
 
 const DEFAULT_ENDPOINT: &str = "wss://gdev.librelois.fr:443/ws";
@@ -50,6 +50,7 @@ struct Storage {
     accounts: HashMap<AccountId32, AccountInfo>,
     identities: HashMap<IdtyIndex, IdtyValue>,
     identity_index_of: HashMap<[u8; 16], IdtyIndex>,
+    pending_new_accounts: HashSet<AccountId32>,
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -123,10 +124,25 @@ async fn sanity_tests_at(client: Client, maybe_block_hash: Option<H256>) -> anyh
     }
     println!("identity_index_of: {}.", identities.len());
 
+    // Collect pending_new_accounts
+    let mut pending_new_accounts = HashSet::new();
+    let mut idty_index_of_iter = api
+        .storage()
+        .account()
+        .pending_new_accounts_iter(maybe_block_hash)
+        .await?;
+    while let Some((key, ())) = idty_index_of_iter.next().await? {
+        let mut account_id_bytes = [0u8; 32];
+        account_id_bytes.copy_from_slice(&key.0[48..]);
+        pending_new_accounts.insert(AccountId32::new(account_id_bytes));
+    }
+    println!("pending_new_accounts: {}.", pending_new_accounts.len());
+
     let storage = Storage {
         accounts,
         identities,
         identity_index_of,
+        pending_new_accounts,
     };
 
     // ===== Verify storage ===== //
@@ -147,7 +163,8 @@ mod verifier {
         }
 
         pub(super) async fn verify_storage(&mut self, storage: &Storage) -> anyhow::Result<()> {
-            self.verify_accounts(&storage.accounts).await;
+            self.verify_accounts(&storage.accounts, &storage.pending_new_accounts)
+                .await;
             self.verify_identities(&storage.accounts, &storage.identities)
                 .await;
             self.verify_identity_index_of(&storage.identities, &storage.identity_index_of)
@@ -172,7 +189,11 @@ mod verifier {
             }
         }
 
-        async fn verify_accounts(&mut self, accounts: &HashMap<AccountId32, AccountInfo>) {
+        async fn verify_accounts(
+            &mut self,
+            accounts: &HashMap<AccountId32, AccountInfo>,
+            pending_new_accounts: &HashSet<AccountId32>,
+        ) {
             for (account_id, account_info) in accounts {
                 if account_info.sufficients == 0 {
                     // Rule 1: If the account is not sufficient, it should have at least one provider
@@ -188,23 +209,25 @@ mod verifier {
                             account_id
                         ),
                     );
+
+                    if account_id.as_slice() != TREASURY_ACCOUNT_ID {
+                        // Rule 3: If the account is not sufficient and not a "special account",
+                        // it should have a random id or a consumer or in pending_new_accounts
+                        self.assert(
+                            account_info.data.random_id.is_some()
+                                || account_info.consumers > 0
+                                || pending_new_accounts.contains(account_id),
+                            format!("Account {} has no random_id nor consumer.", account_id),
+                        );
+                    }
                 }
 
-                // Rule 3: If the account have consumers, it shoul have at least one provider
+                // Rule 4: If the account have consumers, it shoul have at least one provider
                 if account_info.consumers > 0 {
                     // Rule 1: If the account is not s
                     self.assert(
                         account_info.providers > 0,
                         format!("Account {} has no providers nor sufficients.", account_id),
-                    );
-                }
-
-                if account_id.as_slice() != TREASURY_ACCOUNT_ID {
-                    // Rule 4: If the account is not a "special account",
-                    // it should have a random id or a consumer
-                    self.assert(
-                        account_info.data.random_id.is_some() || account_info.consumers > 0,
-                        format!("Account {} has no random_id nor consumer.", account_id),
                     );
                 }
             }
