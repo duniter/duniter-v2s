@@ -175,9 +175,9 @@ macro_rules! pallets_config {
         }
         impl pallet_transaction_payment::Config for Runtime {
             type OnChargeTransaction = CurrencyAdapter<Balances, HandleFees>;
-            type TransactionByteFee = TransactionByteFee;
             type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
             type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance>;
+            type LengthToFee = common_runtime::fees::LengthToFeeImpl<Balance>;
             type FeeMultiplierUpdate = ();
         }
 
@@ -269,7 +269,7 @@ macro_rules! pallets_config {
 		impl pallet_upgrade_origin::Config for Runtime {
 			type Event = Event;
 			type Call = Call;
-			type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, TechnicalCommitteeInstance>;
+			type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 2, 3>;
 			type WeightInfo = common_runtime::weights::pallet_upgrade_origin::WeightInfo<Runtime>;
 			#[cfg(feature = "runtime-benchmarks")]
 			type WorstCaseOriginType = pallet_collective::RawOrigin<AccountId, TechnicalCommitteeInstance>;
@@ -309,7 +309,7 @@ macro_rules! pallets_config {
             type RequestPrice = frame_support::traits::ConstU64<2_000>;
             type OnFilledRandomness = Account;
             type OnUnbalanced = Treasury;
-            type CurrentBlockRandomness = pallet_babe::CurrentBlockRandomness<Self>;
+            type ParentBlockRandomness = pallet_babe::ParentBlockRandomness<Self>;
             type RandomnessFromOneEpochAgo = pallet_babe::RandomnessFromOneEpochAgo<Self>;
         }
 
@@ -520,7 +520,6 @@ macro_rules! pallets_config {
             type MotionDuration = TechnicalCommitteeMotionDuration;
             type MaxProposals = frame_support::pallet_prelude::ConstU32<20>;
             type MaxMembers = frame_support::pallet_prelude::ConstU32<100>;
-            type MembersStorage = pallet_collective::InternalMembersStorage<Runtime, Instance2>;
             type DefaultVote = TechnicalCommitteeDefaultVote;
             type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
         }

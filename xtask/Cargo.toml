@@ -1,7 +1,7 @@
 [package]
 authors = ["elois <elois@duniter.org>"]
 description = "Duniter-v2s xtask"
-edition = "2018"
+edition = "2021"
 license = "AGPL-3.0"
 name = "xtask"
 repository = "https://git.duniter.org/nodes/rust/duniter-v2s"
@@ -15,15 +15,15 @@ name = "xtask"
 [dependencies]
 anyhow = "1.0.32"
 clap = { version = "3.0", features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "2", default-features = false, features = ["derive", "full", "bit-vec"] }
-frame-metadata = "14.0.0"
+codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = ["derive", "full", "bit-vec"] }
+frame-metadata = "15.0.0"
 graphql_client = "0.10.0"
 hex = "0.4"
 memmap2 = "0.5.0"
 placeholder = "1.1.3"
 reqwest = { version = "0.11.11", features = ["json"] }
 run_script = "0.6.3"
-scale-info = { version = "1.0.0", features = ["bit-vec"] }
+scale-info = { version = "2.1.1", features = ["bit-vec"] }
 serde = { version = "1.0.101", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.15.0", features = ["macros"] }

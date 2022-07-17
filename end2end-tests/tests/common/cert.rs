@@ -18,7 +18,7 @@ use super::node_runtime::runtime_types::gdev_runtime;
 use super::node_runtime::runtime_types::pallet_certification;
 use super::*;
 use sp_keyring::AccountKeyring;
-use subxt::{sp_runtime::MultiAddress, PairSigner, Signer};
+use subxt::{sp_runtime::MultiAddress, PairSigner};
 
 pub async fn certify(
     api: &Api,
@@ -33,13 +33,13 @@ pub async fn certify(
     let issuer_index = api
         .storage()
         .identity()
-        .identity_index_of(from, None)
+        .identity_index_of(&from, None)
         .await?
         .unwrap();
     let receiver_index = api
         .storage()
         .identity()
-        .identity_index_of(to, None)
+        .identity_index_of(&to, None)
         .await?
         .unwrap();
 
@@ -47,8 +47,8 @@ pub async fn certify(
         client,
         api.tx()
             .cert()
-            .add_cert(issuer_index, receiver_index)
-            .create_signed(&signer, ())
+            .add_cert(issuer_index, receiver_index)?
+            .create_signed(&signer, BaseExtrinsicParamsBuilder::new())
             .await?,
     )
     .await?;

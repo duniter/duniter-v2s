@@ -28,7 +28,37 @@ use crate::service::GTestExecutor;
 use crate::service::{IdentifyRuntimeType, RuntimeType};
 use crate::{chain_spec, service};
 use clap::CommandFactory;
+use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
+
+// TODO: create our own reference hardware
+/*
+lazy_static! {
+    /// The hardware requirements as measured on reference hardware.
+    pub static ref REFERENCE_HARDWARE: Requirements = {
+        let raw = include_bytes!("reference_hardware.json").as_slice();
+        serde_json::from_slice(raw).expect("Hardcoded data is known good; qed")
+    };
+}*/
+
+/// Unwraps a [`crate::client::Client`] into the concrete runtime client.
+macro_rules! unwrap_client {
+    (
+		$client:ident,
+		$code:expr
+	) => {
+        match $client.as_ref() {
+            #[cfg(feature = "g1")]
+            crate::service::client::Client::G1($client) => $code,
+            #[cfg(feature = "gtest")]
+            crate::service::client::Client::GTest($client) => $code,
+            #[cfg(feature = "gdev")]
+            crate::service::client::Client::GDev($client) => $code,
+            #[allow(unreachable_patterns)]
+            _ => panic!("unknown runtime"),
+        }
+    };
+}
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
@@ -99,8 +129,7 @@ impl SubstrateCli for Cli {
 
                 let starts_with = |prefix: &str| {
                     path.file_name()
-                        .map(|f| f.to_str().map(|s| s.starts_with(&prefix)))
-                        .flatten()
+                        .and_then(|f| f.to_str().map(|s| s.starts_with(&prefix)))
                         .unwrap_or(false)
                 };
 
@@ -229,7 +258,10 @@ pub fn run() -> sc_cli::Result<()> {
             runner.async_run(|mut config| {
                 let (client, backend, _, task_manager) =
                     service::new_chain_ops(&mut config, cli.sealing.is_manual_consensus())?;
-                Ok((cmd.run(client, backend), task_manager))
+                let aux_revert = Box::new(|client, backend, blocks| {
+                    service::revert_backend(client, backend, blocks)
+                });
+                Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
             })
         }
         Some(Subcommand::Sign(cmd)) => cmd.run(),
@@ -247,27 +279,64 @@ pub fn run() -> sc_cli::Result<()> {
             Ok(())
         }
         Some(Subcommand::Benchmark(cmd)) => {
-            if cfg!(feature = "runtime-benchmarks") {
-                let runner = cli.create_runner(cmd)?;
-                let chain_spec = &runner.config().chain_spec;
+            let runner = cli.create_runner(cmd)?;
+            let chain_spec = &runner.config().chain_spec;
 
-                match chain_spec.runtime_type() {
-                    #[cfg(feature = "g1")]
-                    RuntimeType::G1 => {
-                        runner.sync_run(|config| cmd.run::<g1_runtime::Block, G1Executor>(config))
+            match cmd {
+                BenchmarkCmd::Storage(cmd) => runner.sync_run(|mut config| {
+                    let (client, backend, _, _) = service::new_chain_ops(&mut config, false)?;
+                    let db = backend.expose_db();
+                    let storage = backend.expose_storage();
+
+                    unwrap_client!(client, cmd.run(config, client.clone(), db, storage))
+                }),
+                BenchmarkCmd::Block(cmd) => runner.sync_run(|mut config| {
+                    let (client, _, _, _) = service::new_chain_ops(&mut config, false)?;
+
+                    unwrap_client!(client, cmd.run(client.clone()))
+                }),
+                BenchmarkCmd::Overhead(cmd) => runner.sync_run(|mut config| {
+                    let (client, _, _, _) = service::new_chain_ops(&mut config, false)?;
+                    let wrapped = client.clone();
+
+                    let inherent_data = crate::service::client::benchmark_inherent_data()
+                        .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                    unwrap_client!(
+                        client,
+                        cmd.run(config, client.clone(), inherent_data, wrapped)
+                    )
+                }),
+                BenchmarkCmd::Pallet(cmd) => {
+                    if cfg!(feature = "runtime-benchmarks") {
+                        match chain_spec.runtime_type() {
+                            #[cfg(feature = "g1")]
+                            RuntimeType::G1 => runner.sync_run(|config| {
+                                cmd.run::<g1_runtime::Block, G1Executor>(config)
+                            }),
+                            #[cfg(feature = "gtest")]
+                            RuntimeType::GTest => runner.sync_run(|config| {
+                                cmd.run::<gtest_runtime::Block, GTestExecutor>(config)
+                            }),
+                            #[cfg(feature = "gdev")]
+                            RuntimeType::GDev => runner.sync_run(|config| {
+                                cmd.run::<gdev_runtime::Block, GDevExecutor>(config)
+                            }),
+                            _ => Err(sc_cli::Error::Application("unknown runtime type".into())),
+                        }
+                    } else {
+                        Err("Benchmarking wasn't enabled when building the node. \
+								You can enable it with `--features runtime-benchmarks`."
+                            .into())
                     }
-                    #[cfg(feature = "gtest")]
-                    RuntimeType::GTest => runner
-                        .sync_run(|config| cmd.run::<gtest_runtime::Block, GTestExecutor>(config)),
-                    #[cfg(feature = "gdev")]
-                    RuntimeType::GDev => runner
-                        .sync_run(|config| cmd.run::<gdev_runtime::Block, GDevExecutor>(config)),
-                    _ => Err(sc_cli::Error::Application("unknown runtime type".into())),
                 }
-            } else {
-                Err("Benchmarking wasn't enabled when building the node. \
-                    You can enable it with `--features runtime-benchmarks`."
-                    .into())
+                BenchmarkCmd::Machine(cmd) => {
+                    runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
+                }
+                // NOTE: this allows the Duniter client to leniently implement
+                // new benchmark commands.
+                #[allow(unreachable_patterns)]
+                _ => panic!("unknown runtime"),
             }
         }
         #[cfg(feature = "try-runtime")]

@@ -14,29 +14,33 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-pub use frame_support::weights::{
-    Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
-};
+pub use frame_support::weights::{Weight, WeightToFee};
 use sp_arithmetic::traits::{BaseArithmetic, One, Unsigned};
 
-pub struct WeightToFeeImpl<T>(sp_std::marker::PhantomData<T>);
+pub struct LengthToFeeImpl<T>(sp_std::marker::PhantomData<T>);
 
-impl<T> WeightToFeePolynomial for WeightToFeeImpl<T>
+impl<T> WeightToFee for LengthToFeeImpl<T>
 where
     T: BaseArithmetic + From<u32> + Copy + Unsigned,
 {
     type Balance = T;
 
-    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        smallvec::smallvec!(WeightToFeeCoefficient {
-            coeff_integer: 0u32.into(),
-            coeff_frac: sp_runtime::Perbill::from_parts(1),
-            negative: false,
-            degree: 1,
-        })
-    }
     // Force constant fees
-    fn calc(_weight: &Weight) -> Self::Balance {
+    fn weight_to_fee(lenght_in_bytes: &Weight) -> Self::Balance {
+        (*lenght_in_bytes as u32 / 1_000_u32).into()
+    }
+}
+
+pub struct WeightToFeeImpl<T>(sp_std::marker::PhantomData<T>);
+
+impl<T> WeightToFee for WeightToFeeImpl<T>
+where
+    T: BaseArithmetic + From<u32> + Copy + Unsigned,
+{
+    type Balance = T;
+
+    fn weight_to_fee(_weight: &Weight) -> Self::Balance {
+        // Force constant fees for now
         One::one()
     }
 }

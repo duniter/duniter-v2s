@@ -214,7 +214,7 @@ async fn should_have(
         .to_account_id();
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
-    let who_account = world.api().storage().system().account(who, None).await?;
+    let who_account = world.api().storage().system().account(&who, None).await?;
     assert_eq!(who_account.data.free, amount);
     Ok(())
 }
@@ -267,14 +267,14 @@ async fn should_be_certified_by(
         .api()
         .storage()
         .identity()
-        .identity_index_of(issuer_account, None)
+        .identity_index_of(&issuer_account, None)
         .await?
         .unwrap();
     let receiver_index = world
         .api()
         .storage()
         .identity()
-        .identity_index_of(receiver_account, None)
+        .identity_index_of(&receiver_account, None)
         .await?
         .unwrap();
 
@@ -282,7 +282,7 @@ async fn should_be_certified_by(
         .api()
         .storage()
         .cert()
-        .certs_by_receiver(receiver_index, None)
+        .certs_by_receiver(&receiver_index, None)
         .await?;
 
     match issuers.binary_search_by(|(issuer_, _)| issuer_index.cmp(issuer_)) {
@@ -362,12 +362,12 @@ async fn main() {
 
 fn genesis_conf_name(feature_tags: &[String], scenario_tags: &[String]) -> String {
     for tag in scenario_tags {
-        if let Some(("genesis", conf_name)) = tag.split_once(".") {
+        if let Some(("genesis", conf_name)) = tag.split_once('.') {
             return conf_name.to_owned();
         }
     }
     for tag in feature_tags {
-        if let Some(("genesis", conf_name)) = tag.split_once(".") {
+        if let Some(("genesis", conf_name)) = tag.split_once('.') {
             return conf_name.to_owned();
         }
     }

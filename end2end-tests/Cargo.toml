@@ -1,7 +1,7 @@
 [package]
 authors = ['Axiom-Team Developers <https://axiom-team.fr>']
 description = 'duniter end2end tests.'
-edition = '2018'
+edition = "2021"
 homepage = 'https://substrate.dev'
 license = 'AGPL-3.0'
 name = 'duniter-end2end-tests'
@@ -16,11 +16,11 @@ ctrlc = "3.2.2"
 cucumber = "0.11"
 env_logger = "0.9.0"
 notify = "4.0"
-parity-scale-codec = "2.3.1"
+parity-scale-codec = "3.1.5"
 portpicker = "0.1.1"
 serde_json = "1.0.64"
-sp-keyring = { git = "https://github.com/librelois/substrate.git", branch = "duniter-monthly-2022-02" }
-subxt = { git = 'https://github.com/librelois/subxt.git', branch = 'duniter-monthly-2022-02' }
+sp-keyring = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
+subxt = { git = 'https://github.com/duniter/subxt.git', branch = 'duniter-substrate-v0.9.23' }
 tokio = { version = "1.15.0", features = ["macros"] }
 
 [[test]]

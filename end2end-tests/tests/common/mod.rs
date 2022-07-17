@@ -23,6 +23,7 @@ pub mod cert;
 pub mod node_runtime {}
 
 use anyhow::anyhow;
+use parity_scale_codec::Encode;
 use serde_json::Value;
 use sp_keyring::AccountKeyring;
 use std::io::prelude::*;
@@ -30,13 +31,40 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
 use subxt::rpc::{rpc_params, ClientT, SubscriptionClientT};
-use subxt::{ClientBuilder, DefaultConfig, DefaultExtra};
+use subxt::{extrinsic::BaseExtrinsicParamsBuilder, ClientBuilder, DefaultConfig};
 
-pub type Api = node_runtime::RuntimeApi<DefaultConfig, DefaultExtra<DefaultConfig>>;
+pub type Api = node_runtime::RuntimeApi<DefaultConfig, BaseExtrinsicParams<DefaultConfig>>;
+type BaseExtrinsicParams<T> = subxt::extrinsic::BaseExtrinsicParams<T, Tip>;
 pub type Client = subxt::Client<DefaultConfig>;
+pub type Event = node_runtime::Event;
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+pub type SignedSubmittableExtrinsic<'client> = subxt::SignedSubmittableExtrinsic<
+    'client,
+    DefaultConfig,
+    BaseExtrinsicParams<DefaultConfig>,
+    node_runtime::DispatchError,
+    Event,
+>;
 pub type TransactionProgress<'client> =
-    subxt::TransactionProgress<'client, DefaultConfig, node_runtime::DispatchError>;
+    subxt::TransactionProgress<'client, DefaultConfig, node_runtime::DispatchError, Event>;
+
+#[derive(Copy, Clone, Debug, Default, Encode)]
+pub struct Tip {
+    #[codec(compact)]
+    tip: u64,
+}
+
+impl Tip {
+    pub fn new(amount: u64) -> Self {
+        Tip { tip: amount }
+    }
+}
+
+impl From<u64> for Tip {
+    fn from(n: u64) -> Self {
+        Self::new(n)
+    }
+}
 
 pub const SUDO_ACCOUNT: AccountKeyring = AccountKeyring::Alice;
 
@@ -98,14 +126,15 @@ pub async fn create_empty_block(client: &Client) -> Result<()> {
 
 pub async fn create_block_with_extrinsic(
     client: &Client,
-    extrinsic: subxt::UncheckedExtrinsic<DefaultConfig, DefaultExtra<DefaultConfig>>,
-) -> Result<subxt::TransactionEvents<DefaultConfig>> {
-    // Get a hash of the extrinsic (we'll need this later).
+    extrinsic: SignedSubmittableExtrinsic<'_>,
+) -> Result<subxt::TransactionEvents<DefaultConfig, Event>> {
+    /*// Get a hash of the extrinsic (we'll need this later).
     use subxt::sp_runtime::traits::Hash as _;
-    let ext_hash = <DefaultConfig as subxt::Config>::Hashing::hash_of(&extrinsic);
+    let ext_hash = <DefaultConfig as subxt::Config>::Hashing::hash_of(&encoded_extrinsic);
     // Submit and watch for transaction progress.
-    let sub = client.rpc().watch_extrinsic(extrinsic).await?;
-    let watcher = TransactionProgress::new(sub, client, ext_hash);
+    let sub = client.rpc().submit_extrinsic(encoded_extrinsic).await?;
+    let watcher = TransactionProgress::new(sub, client, ext_hash);*/
+    let watcher = extrinsic.submit_and_watch().await?;
 
     // Create a non-empty block
     let _: Value = client

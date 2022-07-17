@@ -72,8 +72,9 @@ pub enum Subcommand {
     /// Generate completion for various shell interpreters
     Completion(Completion),
 
-    /// The custom benchmark subcommmand benchmarking runtime pallets.
-    #[clap(name = "benchmark", about = "Benchmark runtime pallets.")]
+    /// Sub-commands concerned with benchmarking.
+    /// The pallet benchmarking moved to the `pallet` sub-command.
+    #[clap(subcommand)]
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
     /// Try some command against runtime state.

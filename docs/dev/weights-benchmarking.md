@@ -7,7 +7,7 @@ complete real example.
 3. If the benchmark tests compiles and pass, compile the binary with benchmarks on your local
 machine: `cargo build --release --features runtime-benchmarks`
 4. Run the benchmarks on your local machine (to test if it work mith a real runtime). The command
-is: `duniter benchmark --chain=CURRENCY-dev --steps=50 --repeat=20 --pallet=pallet_universal_dividend --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=.`
+is: `duniter benchmark pallet --chain=CURRENCY-dev --steps=50 --repeat=20 --pallet=pallet_universal_dividend --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=.`
 5. If it work, use the generated file content to create or update the `WeightInfo` trait and the `()` dummy implementation. Then use the `WeightInfo` tarit in the real code of the pallet. See 79e0fd4bf3b0579279fc957da5e2fdfc6d8a17fa for a
 complete real example.
 6. Redo steps `3.` and `4.` on the reference machine.

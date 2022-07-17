@@ -81,8 +81,8 @@ pub mod pallet {
         type OnFilledRandomness: OnFilledRandomness;
         /// Handler for the unbalanced reduction when the requestor pays fees.
         type OnUnbalanced: OnUnbalanced<NegativeImbalanceOf<Self>>;
-        /// A safe source of randomness from the current block
-        type CurrentBlockRandomness: Randomness<Option<H256>, Self::BlockNumber>;
+        /// A safe source of randomness from the parent block
+        type ParentBlockRandomness: Randomness<Option<H256>, Self::BlockNumber>;
         /// A safe source of randomness from one epoch ago
         type RandomnessFromOneEpochAgo: Randomness<H256, Self::BlockNumber>;
     }
@@ -169,7 +169,7 @@ pub mod pallet {
 
             total_weight += 100_000;
             for Request { request_id, salt } in RequestsReadyAtNextBlock::<T>::take() {
-                let randomness = T::CurrentBlockRandomness::random(salt.as_ref())
+                let randomness = T::ParentBlockRandomness::random(salt.as_ref())
                     .0
                     .unwrap_or_default();
                 RequestsIds::<T>::remove(request_id);

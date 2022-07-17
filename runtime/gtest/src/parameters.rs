@@ -20,7 +20,6 @@ use common_runtime::{Balance, BlockNumber};
 use frame_support::parameter_types;
 use frame_support::weights::constants::WEIGHT_PER_SECOND;
 use sp_arithmetic::Perbill;
-use sp_core::u32_trait::*;
 use sp_runtime::transaction_validity::TransactionPriority;
 
 parameter_types! {
@@ -74,11 +73,6 @@ parameter_types! {
 frame_support::parameter_types! {
     pub const ExistentialDeposit: Balance = 200;
     pub const MaxLocks: u32 = 50;
-}
-
-// Transaction payment
-frame_support::parameter_types! {
-    pub const TransactionByteFee: Balance = 0;
 }
 
 // Universal dividend
@@ -155,6 +149,6 @@ parameter_types! {
 
 // Treasury
 pub type TreasuryApproveOrigin =
-    pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, TechnicalCommitteeInstance>;
+    pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCommitteeInstance, 1, 2>;
 pub type TreasuryRejectOrigin =
-    pallet_collective::EnsureProportionMoreThan<_1, _3, AccountId, TechnicalCommitteeInstance>;
+    pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCommitteeInstance, 1, 3>;

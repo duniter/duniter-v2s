@@ -16,9 +16,9 @@
 
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-mod client;
+pub mod client;
 
-use self::client::{Client, RuntimeApiCollection};
+use self::client::{Client, ClientHandle, RuntimeApiCollection};
 use async_io::Timer;
 use common_runtime::Block;
 use futures::{Stream, StreamExt};
@@ -314,7 +314,7 @@ where
                 let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                 let slot =
-                    sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_duration(
+                    sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
                         *timestamp,
                         slot_duration,
                     );
@@ -512,7 +512,7 @@ where
                                 )
                                 .map_err(|err| format!("{:?}", err))?;
                             let babe = sp_consensus_babe::inherents::InherentDataProvider::new(
-                                timestamp.slot().into(),
+                                timestamp.slot(),
                             );
                             Ok((timestamp, babe))
                         }
@@ -545,7 +545,7 @@ where
                         let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                         let slot =
-                            sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_duration(
+                            sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
                                     *timestamp,
                                     slot_duration,
                                 );
@@ -605,7 +605,7 @@ where
         keystore: keystore_container.sync_keystore(),
         task_manager: &mut task_manager,
         transaction_pool,
-        rpc_extensions_builder,
+        rpc_builder: rpc_extensions_builder,
         backend,
         system_rpc_tx,
         config,
@@ -663,4 +663,42 @@ where
     log::info!("***** Duniter has fully started *****");
 
     Ok(task_manager)
+}
+
+/// Reverts the node state down to at most the last finalized block.
+///
+/// In particular this reverts:
+/// - Low level Babe and Grandpa consensus data.
+pub fn revert_backend(
+    client: Arc<Client>,
+    backend: Arc<FullBackend>,
+    blocks: common_runtime::BlockNumber,
+) -> sc_cli::Result<()> {
+    // Revert Substrate consensus related components
+    client.execute_with(RevertConsensus { blocks, backend })?;
+    Ok(())
+}
+
+pub(super) struct RevertConsensus {
+    blocks: common_runtime::BlockNumber,
+    backend: Arc<FullBackend>,
+}
+
+impl client::ExecuteWithClient for RevertConsensus {
+    type Output = sp_blockchain::Result<()>;
+
+    fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
+    where
+        <Api as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
+        Backend: sc_client_api::Backend<Block> + 'static,
+        Backend::State: sp_api::StateBackend<BlakeTwo256>,
+        Api: RuntimeApiCollection<StateBackend = Backend::State>,
+        Client: client::AbstractClient<Block, Backend, Api = Api> + 'static,
+    {
+        // Revert consensus-related components.
+        // The operations are not correlated, thus call order is not relevant.
+        babe::revert(client.clone(), self.backend, self.blocks)?;
+        sc_finality_grandpa::revert(client, self.blocks)?;
+        Ok(())
+    }
 }

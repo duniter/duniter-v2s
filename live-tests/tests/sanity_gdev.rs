@@ -21,14 +21,15 @@ use hex_literal::hex;
 use sp_core::crypto::AccountId32;
 use sp_core::{blake2_128, ByteArray, H256};
 use std::collections::HashMap;
-use subxt::{ClientBuilder, DefaultConfig, DefaultExtra};
+use subxt::{extrinsic::PlainTip, ClientBuilder, DefaultConfig};
 
 const DEFAULT_ENDPOINT: &str = "wss://gdev.librelois.fr:443/ws";
 
 const TREASURY_ACCOUNT_ID: [u8; 32] =
     hex!("6d6f646c70792f74727372790000000000000000000000000000000000000000");
 
-type Api = gdev_runtime::RuntimeApi<DefaultConfig, DefaultExtra<DefaultConfig>>;
+type Api = gdev_runtime::RuntimeApi<DefaultConfig, BaseExtrinsicParams<DefaultConfig>>;
+type BaseExtrinsicParams<T> = subxt::extrinsic::BaseExtrinsicParams<T, PlainTip>;
 type Client = subxt::Client<DefaultConfig>;
 
 // define gdev basic types

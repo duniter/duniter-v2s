@@ -36,8 +36,11 @@ pub async fn set_balance(
                     new_free: amount,
                     new_reserved: 0,
                 },
-            ))
-            .create_signed(&PairSigner::new(SUDO_ACCOUNT.pair()), ())
+            ))?
+            .create_signed(
+                &PairSigner::new(SUDO_ACCOUNT.pair()),
+                BaseExtrinsicParamsBuilder::new(),
+            )
             .await?,
     )
     .await?;
@@ -59,8 +62,8 @@ pub async fn transfer(
         client,
         api.tx()
             .balances()
-            .transfer(to.clone().into(), amount)
-            .create_signed(&from, ())
+            .transfer(to.clone().into(), amount)?
+            .create_signed(&from, BaseExtrinsicParamsBuilder::new())
             .await?,
     )
     .await?;
@@ -81,8 +84,8 @@ pub async fn transfer_all(
         client,
         api.tx()
             .balances()
-            .transfer_all(to.clone().into(), false)
-            .create_signed(&from, ())
+            .transfer_all(to.clone().into(), false)?
+            .create_signed(&from, BaseExtrinsicParamsBuilder::new())
             .await?,
     )
     .await?;
@@ -104,8 +107,8 @@ pub async fn transfer_ud(
         client,
         api.tx()
             .universal_dividend()
-            .transfer_ud(to.clone().into(), amount)
-            .create_signed(&from, ())
+            .transfer_ud(to.clone().into(), amount)?
+            .create_signed(&from, BaseExtrinsicParamsBuilder::new())
             .await?,
     )
     .await?;

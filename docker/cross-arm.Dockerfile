@@ -15,12 +15,12 @@ RUN dpkg --add-architecture armhf && \
   libssl-dev:armhf
 
 # Install nightly with armv7 and  w32-u-u
-RUN rustup install nightly-2021-11-12-x86_64-unknown-linux-gnu && \
+RUN rustup install nightly-2022-04-20-x86_64-unknown-linux-gnu && \
   rustup target add armv7-unknown-linux-gnueabihf --toolchain \
-  nightly-2021-11-12-x86_64-unknown-linux-gnu && \
+  nightly-2022-04-20-x86_64-unknown-linux-gnu && \
   rustup target add wasm32-unknown-unknown --toolchain \
-  nightly-2021-11-12-x86_64-unknown-linux-gnu && \
-  cargo +nightly-2021-11-12-x86_64-unknown-linux-gnu install --git \
+  nightly-2022-04-20-x86_64-unknown-linux-gnu && \
+  cargo +nightly-2022-04-20-x86_64-unknown-linux-gnu install --git \
   https://github.com/alexcrichton/wasm-gc --force
 
 ENV CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER arm-linux-gnueabihf-gcc
