@@ -20,6 +20,11 @@
       ],
       "pubkey": "5H95G8bwuf4yyNNNa83hDhj7wpYaSRhZiGezZ9TDbyqNdAhY"
     },
+    "Elois2": {
+      "balance": 10000,
+      "certs": ["tuxmain", "Elois", "HugoTrentesaux"],
+      "pubkey": "5GFEEx7kqvP4QEPCAXkALeYCG7m8DiA5LQ4YzW62j7FytQyg"
+    },
     "poka": {
       "balance": 10000,
       "certs": ["cgeek", "vit", "tuxmain", "Elois", "HugoTrentesaux"],
@@ -136,7 +141,7 @@
     "babe_epoch_duration": 600,
     "cert_period": 14400,
     "cert_max_by_issuer": 100,
-    "cert_min_received_cert_to_issue_cert": 5,
+    "cert_min_received_cert_to_issue_cert": 3,
     "cert_validity_period": 2102400,
     "idty_confirm_period": 14400,
     "idty_creation_period": 14400,
@@ -145,7 +150,7 @@
     "ud_creation_period": 14400,
     "ud_reeval_period": 100800,
     "smith_cert_period": 14400,
-    "smith_cert_max_by_issuer": 12,
+    "smith_cert_max_by_issuer": 15,
     "smith_cert_min_received_cert_to_issue_cert": 3,
     "smith_cert_validity_period": 2102400,
     "smith_membership_period": 1051200,
@@ -153,13 +158,16 @@
     "smiths_wot_first_cert_issuable_on": 14400,
     "smiths_wot_min_cert_for_membership": 3,
     "wot_first_cert_issuable_on": 0,
-    "wot_min_cert_for_create_idty_right": 5,
-    "wot_min_cert_for_membership": 5
+    "wot_min_cert_for_create_idty_right": 3,
+    "wot_min_cert_for_membership": 3
   },
   "smiths": {
     "Elois": {
       "certs": ["poka", "cgeek", "vit", "tuxmain", "HugoTrentesaux", "kapis"],
-      "session_keys": "0xb67db3acc0ec68327e9e258aa5247a0f504616142ecb445c2540b9bdb223b5bea0beb8d9dea455ad5591961c868e59e0760e6e819a85c89ea7cbb527a0944241a0beb8d9dea455ad5591961c868e59e0760e6e819a85c89ea7cbb527a0944241a0beb8d9dea455ad5591961c868e59e0760e6e819a85c89ea7cbb527a0944241"
+      "session_keys": "0x92743b12d55242276539d7256951cdfda85371caefbd325396da9331011b737d14084d2537f77e786a75b9bcbe351051fad52946ec211724b5e8c93bb8aa7a6f14084d2537f77e786a75b9bcbe351051fad52946ec211724b5e8c93bb8aa7a6f14084d2537f77e786a75b9bcbe351051fad52946ec211724b5e8c93bb8aa7a6f"
+    },
+    "Elois2": {
+      "certs": ["tuxmain", "Elois", "HugoTrentesaux"]
     },
     "poka": {
       "certs": ["cgeek", "vit", "tuxmain", "Elois", "HugoTrentesaux"]
@@ -183,6 +191,6 @@
       "certs": ["Elois","tuxmain","HugoTrentesaux"]
     }
   },
-  "sudo_key": "5Co5AWcBiz4HaAEpu8BxLdghnCob89rFGU5yQ65WP3t2jsyB",
+  "sudo_key": "5Hm8sBbwuLAU99dBezvgtnRmZCrUy9mhqmbQMFyGTaeATYg7",
   "technical_committee": ["Elois", "cgeek", "tuxmain", "HugoTrentesaux"]
 }

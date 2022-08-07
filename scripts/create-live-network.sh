@@ -22,7 +22,7 @@ SPEC_DIR="${4:-resources}"
 echo "CURRENCY=$CURRENCY"
 
 # constants
-DUNITER_IMAGE_TAG="sha-68fd7b3a"
+DUNITER_IMAGE_TAG="debug-sha-ae65f879"
 
 # Clean and (re-)create working forders
 rm -rf $WORK_DIR

@@ -44,8 +44,10 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
 #[derive(Default)]
 pub struct ParamsAppliedAtGenesis {
     pub genesis_certs_expire_on: u32,
-    pub genesis_smith_certs_expire_on: u32,
+    pub genesis_certs_min_received: u32,
     pub genesis_memberships_expire_on: u32,
+    pub genesis_smith_certs_expire_on: u32,
+    pub genesis_smith_certs_min_received: u32,
     pub genesis_smith_memberships_expire_on: u32,
 }
 
@@ -94,8 +96,10 @@ where
 {
     let ParamsAppliedAtGenesis {
         genesis_certs_expire_on,
-        genesis_smith_certs_expire_on,
+        genesis_certs_min_received,
         genesis_memberships_expire_on,
+        genesis_smith_certs_expire_on,
+        genesis_smith_certs_min_received,
         genesis_smith_memberships_expire_on,
     } = params_applied_at_genesis.unwrap_or_default();
 
@@ -238,6 +242,18 @@ where
         certs_by_receiver.insert(*issuer_index, receiver_certs);
     }
 
+    // Verify certifications coherence
+    for (idty_index, receiver_certs) in &certs_by_receiver {
+        if receiver_certs.len() < genesis_certs_min_received as usize {
+            return Err(format!(
+                "Identity n°{} has received only {}/{} certifications)",
+                idty_index,
+                receiver_certs.len(),
+                genesis_certs_min_received
+            ));
+        }
+    }
+
     // SMITHS SUB-WOT //
 
     let mut initial_authorities = BTreeMap::new();
@@ -314,6 +330,24 @@ where
                 expire_on: genesis_smith_memberships_expire_on,
             },
         );
+    }
+
+    // Verify smiths certifications coherence
+    if smiths_certs_by_receiver.len() < smiths_memberships.len() {
+        return Err(format!(
+            "{} smith identities has not received any smiths certifications",
+            smiths_memberships.len() - smiths_certs_by_receiver.len()
+        ));
+    }
+    for (idty_index, receiver_certs) in &smiths_certs_by_receiver {
+        if receiver_certs.len() < genesis_smith_certs_min_received as usize {
+            return Err(format!(
+                "Identity n°{} has received only {}/{} smiths certifications)",
+                idty_index,
+                receiver_certs.len(),
+                genesis_smith_certs_min_received
+            ));
+        }
     }
 
     if maybe_force_authority.is_none() && online_authorities_counter == 0 {
