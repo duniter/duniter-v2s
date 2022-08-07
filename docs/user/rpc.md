@@ -13,7 +13,7 @@ SERVER_DOMAIN=YOUR_DOMAIN
 PEER_ID=YOUR_PEER_ID
 ```
 
-Your `PEER_ID` shoud be generated with this command: `docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/  duniter/duniter-v2s:v0.1.0 key generate-node-key --file /var/lib/duniter/node.key`
+Your `PEER_ID` shoud be generated with this command: `docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/  duniter/duniter-v2s:v0.2.0 key generate-node-key --file /var/lib/duniter/node.key`
 - If you have write access errors run in docker-compose.yml folder : `chmod o+rwX -R .`
 - `docker-compose up -d` to start your node
 
