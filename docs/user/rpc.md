@@ -5,7 +5,7 @@
 ### Duniter part
 
 - Add this docker-compose on your server :
-[docker/compose/gdev-rpc.docker-compose.yml](https://git.duniter.org/nodes/rust/duniter-v2s/-/blob/master/docker/compose/gdev-rpc.docker-compose.yml)
+[docker/compose/gdev-rpc.docker-compose.yml](https://git.duniter.org/nodes/rust/duniter-v2s/-/blob/master/docker/compose/gdev-mirror.docker-compose.yml)
 - Rename the file : `mv gdev-mirror.docker-compose.yml docker-compose.yml`
 - In the same folder, create a `.env` file that defime environment variables `SERVER_DOMAIN` and `PEER_ID`:
 ```
