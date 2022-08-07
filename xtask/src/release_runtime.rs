@@ -42,11 +42,21 @@ struct SrtoolRuntime {
 
 #[derive(Default, Deserialize)]
 struct SrtoolRuntimeSubWasm {
-    core_version: String,
+    core_version: CoreVersion,
     metadata_version: u32,
     size: u32,
     blake2_256: String,
     proposal_hash: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CoreVersion {
+    //impl_name: String,
+    //impl_version: u32,
+    spec_name: String,
+    spec_version: u32,
+    //transaction_version: u32,
 }
 
 pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
@@ -59,6 +69,14 @@ pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
     // TODO: check spec_version in the code and bump if necessary (with a commit)
 
     // TODO: create and push a git tag runtime-{spec_version}
+
+    // Create target folder for runtime build
+    Command::new("mkdir")
+        .args(["-p", "runtime/gdev/target"])
+        .status()?;
+    Command::new("chmod")
+        .args(["777", "runtime/gdev/target"])
+        .status()?;
 
     // Build the new runtime
     println!("Build gdev-runtime… (take a while)");
@@ -73,7 +91,7 @@ pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
             "RUNTIME_DIR=runtime/gdev",
             "-v",
             &format!("{}:/build", pwd),
-            "paritytech/srtool:1.60.0",
+            "paritytech/srtool:1.62.0",
             "build",
             "--app",
             "--json",
@@ -128,7 +146,13 @@ async fn gen_release_notes(spec_version: u32, srtool: Srtool) -> Result<String> 
         format!("{} KB", wasm.size / 1_024),
     );
     values.insert("runtime_size".to_owned(), wasm.size.to_string());
-    values.insert("core_version".to_owned(), wasm.core_version);
+    values.insert(
+        "core_version".to_owned(),
+        format!(
+            "{}-{}",
+            wasm.core_version.spec_name, wasm.core_version.spec_version
+        ),
+    );
     values.insert(
         "compression_percent".to_owned(),
         format!("{:.2}", compression_percent),
