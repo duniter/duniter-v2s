@@ -274,7 +274,7 @@
     "tokenDecimals": 2,
     "tokenSymbol": "ĞD"
   },
-  "protocolId": "gdev2",
+  "protocolId": "gdev3",
   "telemetryEndpoints": [
     [
       "/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F",
