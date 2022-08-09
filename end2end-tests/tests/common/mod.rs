@@ -18,6 +18,7 @@
 
 pub mod balances;
 pub mod cert;
+pub mod oneshot;
 
 #[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
 pub mod node_runtime {}

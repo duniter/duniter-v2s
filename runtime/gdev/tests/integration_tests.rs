@@ -430,3 +430,81 @@ fn test_create_new_idty_without_founds() {
             );
         });
 }
+
+#[test]
+fn test_oneshot_accounts() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (AccountKeyring::Alice.to_account_id(), 1_000),
+            (AccountKeyring::Eve.to_account_id(), 1_000),
+        ])
+        .build()
+        .execute_with(|| {
+            run_to_block(6);
+
+            assert_ok!(OneshotAccount::create_oneshot_account(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                400
+            ));
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                600
+            );
+            run_to_block(7);
+
+            assert_ok!(OneshotAccount::consume_oneshot_account_with_remaining(
+                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                0,
+                pallet_oneshot_account::Account::Oneshot(MultiAddress::Id(
+                    AccountKeyring::Ferdie.to_account_id()
+                )),
+                pallet_oneshot_account::Account::Normal(MultiAddress::Id(
+                    AccountKeyring::Alice.to_account_id()
+                )),
+                300
+            ));
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                700
+            );
+            assert_noop!(
+                OneshotAccount::consume_oneshot_account(
+                    frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                    0,
+                    pallet_oneshot_account::Account::Oneshot(MultiAddress::Id(
+                        AccountKeyring::Ferdie.to_account_id()
+                    )),
+                ),
+                pallet_oneshot_account::Error::<Runtime>::OneshotAccountNotExist
+            );
+            run_to_block(8);
+            // Oneshot account consumption should not increment the nonce
+            assert_eq!(
+                System::account(AccountKeyring::Eve.to_account_id()).nonce,
+                0
+            );
+
+            assert_ok!(OneshotAccount::consume_oneshot_account(
+                frame_system::RawOrigin::Signed(AccountKeyring::Ferdie.to_account_id()).into(),
+                0,
+                pallet_oneshot_account::Account::Normal(MultiAddress::Id(
+                    AccountKeyring::Alice.to_account_id()
+                )),
+            ));
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                1000
+            );
+            assert_noop!(
+                OneshotAccount::consume_oneshot_account(
+                    frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                    0,
+                    pallet_oneshot_account::Account::Normal(MultiAddress::Id(
+                        AccountKeyring::Alice.to_account_id()
+                    )),
+                ),
+                pallet_oneshot_account::Error::<Runtime>::OneshotAccountNotExist
+            );
+        });
+}

@@ -133,6 +133,7 @@ members = [
     'pallets/duniter-wot',
     'pallets/identity',
     'pallets/membership',
+    'pallets/oneshot-account',
     'pallets/authority-members',
     'pallets/universal-dividend',
     'pallets/upgrade-origin',

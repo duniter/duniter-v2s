@@ -173,12 +173,18 @@ macro_rules! pallets_config {
                 }
             }
         }
+        pub struct OnChargeTransaction;
         impl pallet_transaction_payment::Config for Runtime {
-            type OnChargeTransaction = CurrencyAdapter<Balances, HandleFees>;
+            type OnChargeTransaction = OneshotAccount;
             type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
             type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance>;
             type LengthToFee = common_runtime::fees::LengthToFeeImpl<Balance>;
             type FeeMultiplierUpdate = ();
+        }
+        impl pallet_oneshot_account::Config for Runtime {
+            type Currency = Balances;
+            type Event = Event;
+            type InnerOnChargeTransaction = CurrencyAdapter<Balances, HandleFees>;
         }
 
         // CONSENSUS  //

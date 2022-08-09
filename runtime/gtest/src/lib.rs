@@ -216,6 +216,7 @@ construct_runtime!(
         // Money management
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 6,
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 32,
+        OneshotAccount: pallet_oneshot_account::{Pallet, Call, Storage, Event<T>} = 7,
 
         // Consensus support.
         AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,

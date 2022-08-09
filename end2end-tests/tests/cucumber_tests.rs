@@ -155,7 +155,7 @@ async fn n_blocks_later(world: &mut DuniterWorld, n: usize) -> Result<()> {
     Ok(())
 }
 
-#[when(regex = r"([a-zA-Z]+) sends? (\d+) (ĞD|cĞD|UD|mUD) to ([a-zA-Z]+)")]
+#[when(regex = r"([a-zA-Z]+) sends? (\d+) (ĞD|cĞD|UD|mUD) to ([a-zA-Z]+)$")]
 async fn transfer(
     world: &mut DuniterWorld,
     from: String,
@@ -179,6 +179,86 @@ async fn transfer(
     } else {
         res
     }
+}
+
+#[when(regex = r"([a-zA-Z]+) sends? (\d+) (ĞD|cĞD) to oneshot ([a-zA-Z]+)")]
+async fn create_oneshot_account(
+    world: &mut DuniterWorld,
+    from: String,
+    amount: u64,
+    unit: String,
+    to: String,
+) -> Result<()> {
+    // Parse inputs
+    let from = AccountKeyring::from_str(&from).expect("unknown from");
+    let to = AccountKeyring::from_str(&to).expect("unknown to");
+    let (amount, is_ud) = parse_amount(amount, &unit);
+
+    assert!(!is_ud);
+
+    common::oneshot::create_oneshot_account(world.api(), world.client(), from, amount, to).await
+}
+
+#[when(regex = r"oneshot ([a-zA-Z]+) consumes? into (oneshot|account) ([a-zA-Z]+)")]
+async fn consume_oneshot_account(
+    world: &mut DuniterWorld,
+    from: String,
+    is_dest_oneshot: String,
+    to: String,
+) -> Result<()> {
+    // Parse inputs
+    let from = AccountKeyring::from_str(&from).expect("unknown from");
+    let to = AccountKeyring::from_str(&to).expect("unknown to");
+    let to = match is_dest_oneshot.as_str() {
+        "oneshot" => common::oneshot::Account::Oneshot(to),
+        "account" => common::oneshot::Account::Normal(to),
+        _ => unreachable!(),
+    };
+
+    common::oneshot::consume_oneshot_account(world.api(), world.client(), from, to).await
+}
+
+#[when(
+    regex = r"oneshot ([a-zA-Z]+) consumes? (\d+) (ĞD|cĞD) into (oneshot|account) ([a-zA-Z]+) and the rest into (oneshot|account) ([a-zA-Z]+)"
+)]
+#[allow(clippy::too_many_arguments)]
+async fn consume_oneshot_account_with_remaining(
+    world: &mut DuniterWorld,
+    from: String,
+    amount: u64,
+    unit: String,
+    is_dest_oneshot: String,
+    to: String,
+    is_remaining_to_oneshot: String,
+    remaining_to: String,
+) -> Result<()> {
+    // Parse inputs
+    let from = AccountKeyring::from_str(&from).expect("unknown from");
+    let to = AccountKeyring::from_str(&to).expect("unknown to");
+    let remaining_to = AccountKeyring::from_str(&remaining_to).expect("unknown remaining_to");
+    let to = match is_dest_oneshot.as_str() {
+        "oneshot" => common::oneshot::Account::Oneshot(to),
+        "account" => common::oneshot::Account::Normal(to),
+        _ => unreachable!(),
+    };
+    let remaining_to = match is_remaining_to_oneshot.as_str() {
+        "oneshot" => common::oneshot::Account::Oneshot(remaining_to),
+        "account" => common::oneshot::Account::Normal(remaining_to),
+        _ => unreachable!(),
+    };
+    let (amount, is_ud) = parse_amount(amount, &unit);
+
+    assert!(!is_ud);
+
+    common::oneshot::consume_oneshot_account_with_remaining(
+        world.api(),
+        world.client(),
+        from,
+        amount,
+        to,
+        remaining_to,
+    )
+    .await
 }
 
 #[when(regex = r"([a-zA-Z]+) sends? all (?:his|her) (?:ĞDs?|DUs?|UDs?) to ([a-zA-Z]+)")]
@@ -216,6 +296,29 @@ async fn should_have(
 
     let who_account = world.api().storage().system().account(&who, None).await?;
     assert_eq!(who_account.data.free, amount);
+    Ok(())
+}
+
+#[then(regex = r"([a-zA-Z]+) should have oneshot (\d+) (ĞD|cĞD)")]
+async fn should_have_oneshot(
+    world: &mut DuniterWorld,
+    who: String,
+    amount: u64,
+    unit: String,
+) -> Result<()> {
+    // Parse inputs
+    let who = AccountKeyring::from_str(&who)
+        .expect("unknown to")
+        .to_account_id();
+    let (amount, _is_ud) = parse_amount(amount, &unit);
+
+    let oneshot_amount = world
+        .api()
+        .storage()
+        .oneshot_account()
+        .oneshot_accounts(&who, None)
+        .await?;
+    assert_eq!(oneshot_amount.unwrap_or(0), amount);
     Ok(())
 }
 

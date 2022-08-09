@@ -238,6 +238,7 @@ macro_rules! runtime_apis {
                     list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 					list_benchmark!(list, extra, pallet_balances, Balances);
 					list_benchmark!(list, extra, pallet_multisig, Multisig);
+					list_benchmark!(list, extra, pallet_oneshot_account, OneshotAccount);
 					list_benchmark!(list, extra, pallet_proxy, Proxy);
 					list_benchmark!(list, extra, pallet_scheduler, Scheduler);
 					list_benchmark!(list, extra, pallet_timestamp, Timestamp);
@@ -284,6 +285,7 @@ macro_rules! runtime_apis {
 					add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 					add_benchmark!(params, batches, pallet_balances, Balances);
 					add_benchmark!(params, batches, pallet_multisig, Multisig);
+					add_benchmark!(params, batches, pallet_oneshot_account, OneshotAccount);
 					add_benchmark!(params, batches, pallet_proxy, Proxy);
 					add_benchmark!(params, batches, pallet_scheduler, Scheduler);
 					add_benchmark!(params, batches, pallet_timestamp, Timestamp);

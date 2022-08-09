@@ -49,6 +49,7 @@ std = [
     'pallet-grandpa/std',
     'pallet-identity/std',
     'pallet-membership/std',
+    'pallet-oneshot-account/std',
     'pallet-provide-randomness/std',
     'pallet-im-online/std',
     'pallet-multisig/std',
@@ -117,6 +118,7 @@ pallet-duniter-account = { path = '../../pallets/duniter-account', default-featu
 pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-membership = { path = '../../pallets/membership', default-features = false }
+pallet-oneshot-account = { path = '../../pallets/oneshot-account', default-features = false }
 pallet-provide-randomness = { path = '../../pallets/provide-randomness', default-features = false }
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
 pallet-upgrade-origin = { path = '../../pallets/upgrade-origin', default-features = false }
