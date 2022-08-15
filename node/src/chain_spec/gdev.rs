@@ -96,14 +96,6 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
                 )
             },
             Some(get_authority_keys_from_seed("Alice").encode()),
-            Some(super::gen_genesis_data::ParamsAppliedAtGenesis {
-                genesis_certs_expire_on: 100_000,
-                genesis_certs_min_received: 2,
-                genesis_memberships_expire_on: 100_000,
-                genesis_smith_certs_expire_on: 100_000,
-                genesis_smith_certs_min_received: 2,
-                genesis_smith_memberships_expire_on: 100_000,
-            }),
         )
     } else {
         Ok(ChainSpec::from_genesis(
@@ -191,14 +183,6 @@ pub fn gen_live_conf() -> Result<ChainSpec, String> {
             )
         },
         None,
-        Some(super::gen_genesis_data::ParamsAppliedAtGenesis {
-            genesis_certs_expire_on: 2_102_400,
-            genesis_certs_min_received: 3,
-            genesis_memberships_expire_on: 1_051_200,
-            genesis_smith_certs_expire_on: 2_102_400,
-            genesis_smith_certs_min_received: 3,
-            genesis_smith_memberships_expire_on: 1_051_200,
-        }),
     )
 }
 

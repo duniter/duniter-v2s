@@ -41,7 +41,7 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub technical_committee_members: Vec<AccountId>,
 }
 
-#[derive(Default)]
+#[derive(Default, Deserialize, Serialize)]
 pub struct ParamsAppliedAtGenesis {
     pub genesis_certs_expire_on: u32,
     pub genesis_certs_min_received: u32,
@@ -55,6 +55,7 @@ pub struct ParamsAppliedAtGenesis {
 struct GenesisConfig<Parameters> {
     first_ud: u64,
     first_ud_reeval: u32,
+    genesis_parameters: ParamsAppliedAtGenesis,
     identities: BTreeMap<String, Idty>,
     #[serde(default)]
     parameters: Parameters,
@@ -87,22 +88,12 @@ struct SmithData {
 pub fn generate_genesis_data<CS, P, SK, F>(
     f: F,
     maybe_force_authority: Option<Vec<u8>>,
-    params_applied_at_genesis: Option<ParamsAppliedAtGenesis>,
 ) -> Result<CS, String>
 where
     P: Default + DeserializeOwned,
     SK: Decode,
     F: Fn(GenesisData<P, SK>) -> CS,
 {
-    let ParamsAppliedAtGenesis {
-        genesis_certs_expire_on,
-        genesis_certs_min_received,
-        genesis_memberships_expire_on,
-        genesis_smith_certs_expire_on,
-        genesis_smith_certs_min_received,
-        genesis_smith_memberships_expire_on,
-    } = params_applied_at_genesis.unwrap_or_default();
-
     let genesis_timestamp: u64 =
         if let Ok(genesis_timestamp) = std::env::var("DUNITER_GENESIS_TIMESTAMP") {
             genesis_timestamp
@@ -137,6 +128,15 @@ where
         sudo_key,
         first_ud,
         first_ud_reeval,
+        genesis_parameters:
+            ParamsAppliedAtGenesis {
+                genesis_certs_expire_on,
+                genesis_certs_min_received,
+                genesis_memberships_expire_on,
+                genesis_smith_certs_expire_on,
+                genesis_smith_certs_min_received,
+                genesis_smith_memberships_expire_on,
+            },
         parameters,
         identities,
         smith_identities,
