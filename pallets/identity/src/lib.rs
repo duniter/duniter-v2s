@@ -72,6 +72,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         /// Management of the authorizations of the different calls. (The default implementation only allows root)
         type EnsureIdtyCallAllowed: EnsureIdtyCallAllowed<Self>;
+        #[pallet::constant]
         /// Minimum duration between the creation of 2 identities by the same creator
         type IdtyCreationPeriod: Get<Self::BlockNumber>;
         /// Custom data to store in each identity
