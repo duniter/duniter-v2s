@@ -54,7 +54,9 @@ pub mod pallet {
         type AccountIdToSalt: Convert<Self::AccountId, [u8; 32]>;
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        #[pallet::constant]
         type MaxNewAccountsPerBlock: Get<u32>;
+        #[pallet::constant]
         type NewAccountPrice: Get<Self::Balance>;
     }
 

@@ -65,9 +65,13 @@ pub mod pallet {
         + pallet_identity::Config<IdtyIndex = IdtyIndex>
         + pallet_membership::Config<I, IdtyId = IdtyIndex>
     {
+        #[pallet::constant]
         type FirstIssuableOn: Get<Self::BlockNumber>;
+        #[pallet::constant]
         type IsSubWot: Get<bool>;
+        #[pallet::constant]
         type MinCertForMembership: Get<u32>;
+        #[pallet::constant]
         type MinCertForCreateIdtyRight: Get<u32>;
     }
 
