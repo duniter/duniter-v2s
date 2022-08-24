@@ -398,6 +398,22 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             Self::do_transfer_ud(origin, dest, value, ExistenceRequirement::KeepAlive)
         }
+
+        #[pallet::weight(T::WeightInfo::force_set_first_eligible_ud())]
+        pub fn force_set_first_eligible_ud(
+            origin: OriginFor<T>,
+            who: T::AccountId,
+            first_eligible_ud: FirstEligibleUd,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            T::MembersStorage::try_mutate_exists(&who, |maybe_first_eligible_ud| {
+                if let Some(ref mut first_eligible_ud_) = maybe_first_eligible_ud {
+                    *first_eligible_ud_ = first_eligible_ud;
+                }
+                Ok(().into())
+            })
+        }
     }
 
     // PUBLIC FUNCTIONS

@@ -41,10 +41,21 @@ impl<T> pallet_identity::traits::OnIdtyChange<T> for OnIdtyChangeHandler<T>
 where
     T: frame_system::Config<AccountId = AccountId>,
     T: pallet_authority_members::Config<MemberId = IdtyIndex>,
-    T: pallet_identity::Config<IdtyIndex = IdtyIndex>,
+    T: pallet_identity::Config<IdtyIndex = IdtyIndex, IdtyData = IdtyData>,
+    T: pallet_universal_dividend::Config,
 {
     fn on_idty_change(idty_index: IdtyIndex, idty_event: &IdtyEvent<T>) -> Weight {
         match idty_event {
+            IdtyEvent::Validated => {
+                pallet_identity::Identities::<T>::mutate_exists(idty_index, |idty_val_opt| {
+                    if let Some(ref mut idty_val) = idty_val_opt {
+                        idty_val.data = IdtyData {
+                            first_eligible_ud:
+                                pallet_universal_dividend::Pallet::<T>::init_first_eligible_ud(),
+                        }
+                    }
+                });
+            }
             IdtyEvent::ChangedOwnerKey { new_owner_key } => {
                 if let Err(e) = pallet_authority_members::Pallet::<T>::change_owner_key(
                     idty_index,
@@ -56,10 +67,7 @@ where
                     );
                 }
             }
-            IdtyEvent::Created { .. }
-            | IdtyEvent::Confirmed
-            | IdtyEvent::Validated
-            | IdtyEvent::Removed { .. } => {}
+            IdtyEvent::Created { .. } | IdtyEvent::Confirmed | IdtyEvent::Removed { .. } => {}
         }
         0
     }
@@ -80,18 +88,6 @@ impl<
 {
     fn on_event(membership_event: &sp_membership::Event<IdtyIndex, MembershipMetaData>) -> Weight {
         (match membership_event {
-            sp_membership::Event::MembershipAcquired(idty_index, _owner_key) => {
-                pallet_identity::Identities::<Runtime>::mutate_exists(idty_index, |idty_val_opt| {
-                    if let Some(ref mut idty_val) = idty_val_opt {
-                        idty_val.data = IdtyData {
-                            first_eligible_ud:
-                                pallet_universal_dividend::Pallet::<Runtime>::init_first_eligible_ud(
-                                ),
-                        }
-                    }
-                });
-                Runtime::DbWeight::get().reads_writes(1, 1)
-            }
             sp_membership::Event::MembershipRevoked(idty_index) => {
                 if let Some(idty_value) = pallet_identity::Identities::<Runtime>::get(idty_index) {
                     if let Some(first_ud_index) = idty_value.data.first_eligible_ud.into() {

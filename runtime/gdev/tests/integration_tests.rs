@@ -432,6 +432,60 @@ fn test_create_new_idty_without_founds() {
 }
 
 #[test]
+fn test_validate_new_idty_after_few_uds() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (AccountKeyring::Alice.to_account_id(), 1_000),
+            (AccountKeyring::Bob.to_account_id(), 1_000),
+            (AccountKeyring::Charlie.to_account_id(), 1_000),
+            (AccountKeyring::Eve.to_account_id(), 1_000),
+        ])
+        .build()
+        .execute_with(|| {
+            run_to_block(21);
+
+            // Should be able to create an identity
+            assert_ok!(Balances::transfer(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                200
+            ));
+            assert_ok!(Identity::create_identity(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                AccountKeyring::Eve.to_account_id(),
+            ));
+
+            // At next block, the created identity should be confirmed by its owner
+            run_to_block(22);
+            assert_ok!(Identity::confirm_identity(
+                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                pallet_identity::IdtyName::from("Eve"),
+            ));
+
+            // At next block, Bob should be able to certify and validate the new identity
+            run_to_block(23);
+            assert_ok!(Cert::add_cert(
+                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+                2,
+                5,
+            ));
+            assert_ok!(Identity::validate_identity(
+                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+                5,
+            ));
+
+            // The new member should have first_eligible_ud equal to one
+            assert!(Identity::identity(5).is_some());
+            assert_eq!(
+                Identity::identity(5).unwrap().data,
+                IdtyData {
+                    first_eligible_ud: pallet_universal_dividend::FirstEligibleUd::from(3),
+                }
+            );
+        });
+}
+
+#[test]
 fn test_oneshot_accounts() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![
