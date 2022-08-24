@@ -402,6 +402,7 @@ pub mod pallet {
             new_key: T::AccountId,
             new_key_sig: T::NewOwnerKeySignature,
         ) -> DispatchResultWithPostInfo {
+            // verification phase
             let who = ensure_signed(origin)?;
 
             let idty_index =
@@ -415,12 +416,20 @@ pub mod pallet {
             );
 
             let block_number = frame_system::Pallet::<T>::block_number();
-            if let Some((_, last_change)) = idty_value.old_owner_key {
-                ensure!(
-                    block_number >= last_change + T::ChangeOwnerKeyPeriod::get(),
-                    Error::<T>::OwnerKeyAlreadyRecentlyChanged
-                );
-            }
+            let maybe_old_old_owner_key =
+                if let Some((old_owner_key, last_change)) = idty_value.old_owner_key {
+                    ensure!(
+                        block_number >= last_change + T::ChangeOwnerKeyPeriod::get(),
+                        Error::<T>::OwnerKeyAlreadyRecentlyChanged
+                    );
+                    ensure!(
+                        old_owner_key != new_key,
+                        Error::<T>::ProhibitedToRevertToAnOldKey
+                    );
+                    Some(old_owner_key)
+                } else {
+                    None
+                };
 
             let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
             let new_key_payload = NewOwnerKeyPayload {
@@ -435,9 +444,15 @@ pub mod pallet {
                 Error::<T>::InvalidNewOwnerKeySig
             );
 
+            // Apply phase
+            if let Some(old_old_owner_key) = maybe_old_old_owner_key {
+                frame_system::Pallet::<T>::dec_sufficients(&old_old_owner_key);
+            }
             IdentityIndexOf::<T>::remove(&idty_value.owner_key);
+
             idty_value.old_owner_key = Some((idty_value.owner_key.clone(), block_number));
             idty_value.owner_key = new_key.clone();
+            frame_system::Pallet::<T>::inc_sufficients(&idty_value.owner_key);
             IdentityIndexOf::<T>::insert(&idty_value.owner_key, idty_index);
             Identities::<T>::insert(idty_index, idty_value);
             Self::deposit_event(Event::IdtyChangedOwnerKey {
@@ -527,6 +542,23 @@ pub mod pallet {
 
             Ok(().into())
         }
+
+        #[pallet::weight(1_000_000_000)]
+        pub fn fix_sufficients(
+            origin: OriginFor<T>,
+            owner_key: T::AccountId,
+            inc: bool,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            if inc {
+                frame_system::Pallet::<T>::inc_sufficients(&owner_key);
+            } else {
+                frame_system::Pallet::<T>::dec_sufficients(&owner_key);
+            }
+
+            Ok(().into())
+        }
     }
 
     // ERRORS //
@@ -577,6 +609,8 @@ pub mod pallet {
         OwnerKeyAlreadyRecentlyChanged,
         /// Owner key already used
         OwnerKeyAlreadyUsed,
+        /// Prohibited to revert to an old key
+        ProhibitedToRevertToAnOldKey,
         /// Right already added
         RightAlreadyAdded,
         /// Right does not exist
@@ -601,6 +635,9 @@ pub mod pallet {
                 // Identity should be removed after the consumers of the identity
                 Identities::<T>::remove(idty_index);
                 frame_system::Pallet::<T>::dec_sufficients(&idty_val.owner_key);
+                if let Some((old_owner_key, _last_change)) = idty_val.old_owner_key {
+                    frame_system::Pallet::<T>::dec_sufficients(&old_owner_key);
+                }
                 Self::deposit_event(Event::IdtyRemoved { idty_index });
                 T::OnIdtyChange::on_idty_change(
                     idty_index,

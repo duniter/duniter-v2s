@@ -198,7 +198,7 @@ fn test_change_owner_key() {
     .execute_with(|| {
         let genesis_hash = System::block_hash(0);
         let old_owner_key = 1u64;
-        let new_key_payload = NewOwnerKeyPayload {
+        let mut new_key_payload = NewOwnerKeyPayload {
             genesis_hash: &genesis_hash,
             idty_index: 1u64,
             old_owner_key: &old_owner_key,
@@ -207,7 +207,11 @@ fn test_change_owner_key() {
         // We need to initialize at least one block before any call
         run_to_block(1);
 
-        // Caller should have an asoociated identity
+        // Verify genesis data
+        assert_eq!(System::sufficients(&1), 1);
+        assert_eq!(System::sufficients(&10), 0);
+
+        // Caller should have an associated identity
         assert_err!(
             Identity::change_owner_key(
                 Origin::signed(42),
@@ -264,10 +268,15 @@ fn test_change_owner_key() {
                 status: crate::IdtyStatus::Validated,
             })
         );
+        // Alice still sufficient
+        assert_eq!(System::sufficients(&1), 1);
+        // New owner key should become a sufficient account
+        assert_eq!(System::sufficients(&10), 1);
 
         run_to_block(2);
 
         // Alice can't re-change her owner key too early
+        new_key_payload.old_owner_key = &10;
         assert_err!(
             Identity::change_owner_key(
                 Origin::signed(10),
@@ -279,6 +288,45 @@ fn test_change_owner_key() {
             ),
             Error::<Test>::OwnerKeyAlreadyRecentlyChanged
         );
+
+        // Alice can re-change her owner key after ChangeOwnerKeyPeriod blocs
+        run_to_block(2 + <Test as crate::Config>::ChangeOwnerKeyPeriod::get());
+        assert_ok!(Identity::change_owner_key(
+            Origin::signed(10),
+            100,
+            TestSignature(
+                100,
+                (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode()
+            )
+        ));
+        // Old old owner key should not be sufficient anymore
+        assert_eq!(System::sufficients(&1), 0);
+        // Old owner key should still sufficient
+        assert_eq!(System::sufficients(&10), 1);
+        // New owner key should become a sufficient account
+        assert_eq!(System::sufficients(&100), 1);
+
+        // Revoke identity 1
+        assert_ok!(Identity::revoke_identity(
+            Origin::signed(42),
+            1,
+            100,
+            TestSignature(
+                100,
+                (
+                    REVOCATION_PAYLOAD_PREFIX,
+                    RevocationPayload {
+                        idty_index: 1u64,
+                        genesis_hash: System::block_hash(0),
+                    }
+                )
+                    .encode()
+            )
+        ));
+        // Old owner key should not be sufficient anymore
+        assert_eq!(System::sufficients(&10), 0);
+        // Last owner key should not be sufficient anymore
+        assert_eq!(System::sufficients(&100), 0);
     });
 }
 
@@ -327,9 +375,17 @@ fn test_idty_revocation() {
         ));
 
         let events = System::events();
-        assert_eq!(events.len(), 1);
+        assert_eq!(events.len(), 2);
         assert_eq!(
             events[0],
+            EventRecord {
+                phase: Phase::Initialization,
+                event: Event::System(frame_system::Event::KilledAccount { account: 1 }),
+                topics: vec![],
+            }
+        );
+        assert_eq!(
+            events[1],
             EventRecord {
                 phase: Phase::Initialization,
                 event: Event::Identity(crate::Event::IdtyRemoved { idty_index: 1 }),
