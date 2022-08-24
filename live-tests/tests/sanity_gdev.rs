@@ -249,6 +249,15 @@ mod verifier {
                                 idty_index
                             ),
                         );
+                        // If the identity is validated, first_eligible_ud shoud be greater
+                        // than zero
+                        self.assert(
+                            idty_value.data.first_eligible_ud > 0,
+                            format!(
+                                "Identity {} is corrupted: first_eligible_ud == 0 on validated idty",
+                                idty_index
+                            ),
+                        );
                     }
                     _ => {
                         // Rule 4: If the identity is not validated, next_creatable_identity_on shoud be zero
