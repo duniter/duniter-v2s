@@ -96,4 +96,11 @@ impl<T: frame_system::Config> pallet_universal_dividend::WeightInfo for WeightIn
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
+    // Storage: Identity IdentityIndexOf (r:1 w:0)
+    // Storage: Identity Identities (r:1 w:1)
+    fn force_set_first_eligible_ud() -> Weight {
+        (57_000_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(2 as Weight))
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
 }
