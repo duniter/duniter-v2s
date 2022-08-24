@@ -221,7 +221,7 @@ mod verifier {
             identities: &HashMap<IdtyIndex, IdtyValue>,
         ) {
             for (idty_index, idty_value) in identities {
-                // Rule 1: each identity should have an account
+                // Eeach identity should have an account
                 let maybe_account = accounts.get(&idty_value.owner_key);
                 self.assert(
                     maybe_account.is_some(),
@@ -229,7 +229,7 @@ mod verifier {
                 );
 
                 if let Some(account) = maybe_account {
-                    // Rule 2: each identity account should be sufficient
+                    // Each identity account should be sufficient
                     self.assert(
                         account.sufficients > 0,
                         format!(
@@ -239,9 +239,26 @@ mod verifier {
                     );
                 }
 
+                if let Some((ref old_owner_key, _last_change)) = idty_value.old_owner_key {
+                    // If the identity have an old_owner_key, the old account should still exist
+                    let old_account = accounts.get(old_owner_key);
+                    self.assert(
+                        old_account.is_some(),
+                        format!("Identity {} old account not exist anymore.", idty_index),
+                    );
+                    if let Some(account) = old_account {
+                        // If the identity have an old_owner_key, the old account should still
+                        // sufficients
+                        self.assert(
+                            account.sufficients > 0,
+                            format!("Identity {} old account not sufficient", idty_index),
+                        );
+                    }
+                }
+
                 match idty_value.status {
                     IdtyStatus::Validated => {
-                        // Rule 3: If the identity is validated, removable_on shoud be zero
+                        // If the identity is validated, removable_on shoud be zero
                         self.assert(
                             idty_value.removable_on == 0,
                             format!(
@@ -260,7 +277,7 @@ mod verifier {
                         );
                     }
                     _ => {
-                        // Rule 4: If the identity is not validated, next_creatable_identity_on shoud be zero
+                        // If the identity is not validated, next_creatable_identity_on shoud be zero
                         self.assert(
 							idty_value.next_creatable_identity_on == 0,
 							format!("Identity {} is corrupted: next_creatable_identity_on > 0 on non-validated idty",
