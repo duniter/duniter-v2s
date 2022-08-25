@@ -15,12 +15,13 @@ clap = { version = "3.0", features = ["derive"] }
 ctrlc = "3.2.2"
 cucumber = "0.11"
 env_logger = "0.9.0"
+hex = "0.4"
 notify = "4.0"
 parity-scale-codec = "3.1.5"
 portpicker = "0.1.1"
 serde_json = "1.0.64"
-sp-keyring = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-subxt = { git = 'https://github.com/duniter/subxt.git', branch = 'duniter-substrate-v0.9.23' }
+sp-keyring = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+subxt = { git = 'https://github.com/duniter/subxt.git', branch = 'duniter-substrate-v0.9.26' }
 tokio = { version = "1.15.0", features = ["macros"] }
 
 [[test]]

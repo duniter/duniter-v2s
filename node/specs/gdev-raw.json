@@ -1,6 +1,7 @@
 {
   "bootNodes": [
-    "/dns/gdev.elo.tf/tcp/30333/p2p/12D3KooWJoNxU9NKHr7y5pmWYW1LLbMrBMTnEzhm7n9mpbKrt45B"
+    "/dns/gdev.elo.tf/tcp/30333/p2p/12D3KooWJoNxU9NKHr7y5pmWYW1LLbMrBMTnEzhm7n9mpbKrt45B",
+    "/dns/gdev.librelois.fr/tcp/30334/p2p/12D3KooWMb8hmxdtBQhGLB8caokbAZQ3YokN9erMe6oAEsPDrwYf"
   ],
   "chainType": "Live",
   "codeSubstitutes": {},

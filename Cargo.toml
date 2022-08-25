@@ -40,16 +40,16 @@ try-runtime = [
 [build-dependencies]
 clap = { version = "3.0" }
 #clap_complete = { version = "3.0" }
-substrate-build-script-utils = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.23' }
+substrate-build-script-utils = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26' }
 
 [dev-dependencies]
 rusty-hook = "^0.11.2"
 
 # Dependencies for specific targets
 [target.'cfg(any(target_arch="x86_64", target_arch="aarch64"))'.dependencies]
-sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23", features = ["wasmtime"] }
-sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23", features = ["wasmtime"] }
-sp-trie = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23", features = ["memory-tracker"] }
+sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26", features = ["wasmtime"] }
+sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26", features = ["wasmtime"] }
+sp-trie = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26", features = ["memory-tracker"] }
 
 
 [dependencies]
@@ -67,7 +67,7 @@ clap = { version = "3.0", features = ["derive"] }
 clap_complete = { version = "3" }
 futures = { version = "0.3.1", features = ["compat"] }
 hex = "0.4.3"
-jsonrpsee = { version = "0.13.0", features = ["server"] }
+jsonrpsee = { version = "0.14.0", features = ["server"] }
 lazy_static = "1.4.0"
 log = "0.4"
 maplit = '1.0.2'
@@ -77,49 +77,49 @@ serde_json = "1.0.64"
 tracing-core = "=0.1.26"
 
 # substrate dependencies
-frame-benchmarking = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-frame-benchmarking-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-pallet-grandpa = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-pallet-transaction-payment-rpc = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-basic-authorship = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-chain-spec = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-client-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-consensus = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-babe = { package = "sc-consensus-babe", git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-manual-seal = { package = "sc-consensus-manual-seal", git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-consensus-uncles = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-executor = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-finality-grandpa = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-keystore = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-network = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-rpc-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-telemetry = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-transaction-pool = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sc-transaction-pool-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-authority-discovery = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-block-builder = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-blockchain = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-consensus = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-consensus-babe = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-core = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-finality-grandpa = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-inherents = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-io = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-offchain = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-keyring = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-keystore = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-runtime = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-session = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-storage = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-timestamp = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-transaction-pool = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-sp-trie = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-substrate-frame-rpc-system = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23" }
-try-runtime-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.23", optional = true }
+frame-benchmarking = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+frame-benchmarking-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+pallet-grandpa = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+pallet-transaction-payment-rpc = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-basic-authorship = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-chain-spec = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-client-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-consensus = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+babe = { package = "sc-consensus-babe", git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+manual-seal = { package = "sc-consensus-manual-seal", git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-consensus-uncles = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-executor = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-finality-grandpa = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-keystore = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-network = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-rpc-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-telemetry = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-transaction-pool = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-transaction-pool-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-authority-discovery = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-block-builder = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-blockchain = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-consensus = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-consensus-babe = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-core = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-finality-grandpa = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-inherents = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-io = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-offchain = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-keyring = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-keystore = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-runtime = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-session = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-storage = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-timestamp = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-transaction-pool = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sp-trie = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+substrate-frame-rpc-system = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+try-runtime-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26", optional = true }
 
 [workspace]
 resolver = "2"

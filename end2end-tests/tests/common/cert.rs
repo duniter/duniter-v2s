@@ -14,41 +14,37 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use super::node_runtime::runtime_types::gdev_runtime;
-use super::node_runtime::runtime_types::pallet_certification;
+use super::gdev;
+use super::gdev::runtime_types::pallet_certification;
 use super::*;
 use sp_keyring::AccountKeyring;
-use subxt::{sp_runtime::MultiAddress, PairSigner};
+use subxt::{ext::sp_runtime::MultiAddress, tx::PairSigner};
 
-pub async fn certify(
-    api: &Api,
-    client: &Client,
-    from: AccountKeyring,
-    to: AccountKeyring,
-) -> Result<()> {
+pub async fn certify(client: &Client, from: AccountKeyring, to: AccountKeyring) -> Result<()> {
     let signer = PairSigner::new(from.pair());
     let from = from.to_account_id();
     let to = to.to_account_id();
 
-    let issuer_index = api
+    let issuer_index = client
         .storage()
-        .identity()
-        .identity_index_of(&from, None)
+        .fetch(&gdev::storage().identity().identity_index_of(&from), None)
         .await?
         .unwrap();
-    let receiver_index = api
+    let receiver_index = client
         .storage()
-        .identity()
-        .identity_index_of(&to, None)
+        .fetch(&gdev::storage().identity().identity_index_of(&to), None)
         .await?
         .unwrap();
 
     let _events = create_block_with_extrinsic(
         client,
-        api.tx()
-            .cert()
-            .add_cert(issuer_index, receiver_index)?
-            .create_signed(&signer, BaseExtrinsicParamsBuilder::new())
+        client
+            .tx()
+            .create_signed(
+                &gdev::tx().cert().add_cert(issuer_index, receiver_index),
+                &signer,
+                BaseExtrinsicParamsBuilder::new(),
+            )
             .await?,
     )
     .await?;

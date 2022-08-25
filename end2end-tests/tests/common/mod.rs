@@ -21,7 +21,7 @@ pub mod cert;
 pub mod oneshot;
 
 #[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
-pub mod node_runtime {}
+pub mod gdev {}
 
 use anyhow::anyhow;
 use parity_scale_codec::Encode;
@@ -31,23 +31,29 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
+use subxt::ext::{sp_core, sp_runtime};
 use subxt::rpc::{rpc_params, ClientT, SubscriptionClientT};
-use subxt::{extrinsic::BaseExtrinsicParamsBuilder, ClientBuilder, DefaultConfig};
+use subxt::tx::BaseExtrinsicParamsBuilder;
 
-pub type Api = node_runtime::RuntimeApi<DefaultConfig, BaseExtrinsicParams<DefaultConfig>>;
-type BaseExtrinsicParams<T> = subxt::extrinsic::BaseExtrinsicParams<T, Tip>;
-pub type Client = subxt::Client<DefaultConfig>;
-pub type Event = node_runtime::Event;
+pub type Client = subxt::OnlineClient<GdevConfig>;
+pub type Event = gdev::Event;
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-pub type SignedSubmittableExtrinsic<'client> = subxt::SignedSubmittableExtrinsic<
-    'client,
-    DefaultConfig,
-    BaseExtrinsicParams<DefaultConfig>,
-    node_runtime::DispatchError,
-    Event,
->;
-pub type TransactionProgress<'client> =
-    subxt::TransactionProgress<'client, DefaultConfig, node_runtime::DispatchError, Event>;
+pub type SignedSubmittableExtrinsic = subxt::tx::SignedSubmittableExtrinsic<GdevConfig, Client>;
+pub type TxProgress = subxt::tx::TxProgress<GdevConfig, Client>;
+
+pub enum GdevConfig {}
+impl subxt::config::Config for GdevConfig {
+    type Index = u32;
+    type BlockNumber = u32;
+    type Hash = sp_core::H256;
+    type Hashing = sp_runtime::traits::BlakeTwo256;
+    type AccountId = sp_runtime::AccountId32;
+    type Address = sp_runtime::MultiAddress<Self::AccountId, u32>;
+    type Header = sp_runtime::generic::Header<Self::BlockNumber, sp_runtime::traits::BlakeTwo256>;
+    type Signature = sp_runtime::MultiSignature;
+    type Extrinsic = sp_runtime::OpaqueExtrinsic;
+    type ExtrinsicParams = subxt::tx::BaseExtrinsicParams<Self, Tip>;
+}
 
 #[derive(Copy, Clone, Debug, Default, Encode)]
 pub struct Tip {
@@ -85,7 +91,7 @@ struct FullNode {
     ws_port: u16,
 }
 
-pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Api, Client, Process) {
+pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Client, Process) {
     println!("maybe_genesis_conf_file={:?}", maybe_genesis_conf_file);
     let duniter_binary_path = std::env::var("DUNITER_BINARY_PATH").unwrap_or_else(|_| {
         if std::path::Path::new(DUNITER_DOCKER_PATH).exists() {
@@ -104,14 +110,11 @@ pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Api, Clien
         &duniter_binary_path,
         maybe_genesis_conf_file,
     );
-    let client = ClientBuilder::new()
-        .set_url(format!("ws://127.0.0.1:{}", ws_port))
-        .build()
+    let client = Client::from_url(format!("ws://127.0.0.1:{}", ws_port))
         .await
         .expect("fail to connect to node");
-    let api = client.clone().to_runtime_api::<Api>();
 
-    (api, client, process)
+    (client, process)
 }
 
 pub async fn create_empty_block(client: &Client) -> Result<()> {
@@ -127,14 +130,17 @@ pub async fn create_empty_block(client: &Client) -> Result<()> {
 
 pub async fn create_block_with_extrinsic(
     client: &Client,
-    extrinsic: SignedSubmittableExtrinsic<'_>,
-) -> Result<subxt::TransactionEvents<DefaultConfig, Event>> {
+    extrinsic: SignedSubmittableExtrinsic,
+) -> Result<subxt::tx::TxEvents<GdevConfig>> {
     /*// Get a hash of the extrinsic (we'll need this later).
     use subxt::sp_runtime::traits::Hash as _;
-    let ext_hash = <DefaultConfig as subxt::Config>::Hashing::hash_of(&encoded_extrinsic);
+    let ext_hash = <GdevConfig as subxt::Config>::Hashing::hash_of(&encoded_extrinsic);
     // Submit and watch for transaction progress.
     let sub = client.rpc().submit_extrinsic(encoded_extrinsic).await?;
-    let watcher = TransactionProgress::new(sub, client, ext_hash);*/
+    let watcher = TxProgress::new(sub, client, ext_hash);*/
+
+    println!("extrinsic encoded: {}", hex::encode(extrinsic.encoded()));
+
     let watcher = extrinsic.submit_and_watch().await?;
 
     // Create a non-empty block

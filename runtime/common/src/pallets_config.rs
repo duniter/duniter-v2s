@@ -175,6 +175,7 @@ macro_rules! pallets_config {
         }
         pub struct OnChargeTransaction;
         impl pallet_transaction_payment::Config for Runtime {
+            type Event = Event;
             type OnChargeTransaction = OneshotAccount;
             type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
             type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance>;
@@ -387,6 +388,7 @@ macro_rules! pallets_config {
             type RejectOrigin = TreasuryRejectOrigin;
             type SpendFunds = TreasurySpendFunds<Self>;
             type SpendPeriod = SpendPeriod;
+            type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u64>;
             type WeightInfo = pallet_treasury::weights::SubstrateWeight<Self>;
         }
 

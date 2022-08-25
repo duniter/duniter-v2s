@@ -34,49 +34,49 @@ log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 
 # benchmarks
-pallet-balances = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.23', optional = true, default-features = false }
+pallet-balances = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', optional = true, default-features = false }
 
 # substrate
 [dependencies.frame-benchmarking]
 default-features = false
 git = 'https://github.com/duniter/substrate'
 optional = true
-branch = 'duniter-substrate-v0.9.23'
+branch = 'duniter-substrate-v0.9.26'
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.23'
+branch = 'duniter-substrate-v0.9.26'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.23'
+branch = 'duniter-substrate-v0.9.26'
 
 [dependencies.pallet-transaction-payment]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.23'
+branch = 'duniter-substrate-v0.9.26'
 
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.23'
+branch = 'duniter-substrate-v0.9.26'
 
 [dependencies.sp-io]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.23'
+branch = 'duniter-substrate-v0.9.26'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.23'
+branch = 'duniter-substrate-v0.9.26'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.23'
+branch = 'duniter-substrate-v0.9.26'
 
 ### DOC ###
 
@@ -87,8 +87,8 @@ targets = ['x86_64-unknown-linux-gnu']
 
 [dev-dependencies.sp-io]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.23'
+branch = 'duniter-substrate-v0.9.26'
 
 [dev-dependencies.pallet-balances]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.23'
+branch = 'duniter-substrate-v0.9.26'

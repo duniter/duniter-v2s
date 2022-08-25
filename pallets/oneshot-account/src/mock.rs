@@ -39,7 +39,7 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+        TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
         OneshotAccount: pallet_oneshot_account::{Pallet, Call, Storage, Event<T>},
     }
 );
@@ -93,6 +93,7 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = [u8; 8];
 }
 impl pallet_transaction_payment::Config for Test {
+    type Event = Event;
     type OnChargeTransaction = OneshotAccount;
     type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
     type WeightToFee = IdentityFee<u64>;

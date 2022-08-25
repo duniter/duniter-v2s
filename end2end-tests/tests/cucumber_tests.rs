@@ -53,13 +53,6 @@ impl DuniterWorld {
         self.ignore_errors = ignore_errors;
     }
     // Read methods
-    fn api(&self) -> &Api {
-        if let Some(ref inner) = self.inner {
-            &inner.api
-        } else {
-            panic!("uninit")
-        }
-    }
     fn client(&self) -> &Client {
         if let Some(ref inner) = self.inner {
             &inner.client
@@ -69,6 +62,39 @@ impl DuniterWorld {
     }
     fn ignore_errors(&self) -> bool {
         self.ignore_errors
+    }
+    // Read storage entry on last block
+    fn read<'a, Address>(
+        &self,
+        address: &'a Address,
+    ) -> impl std::future::Future<
+        Output = std::result::Result<
+            Option<<Address::Target as subxt::metadata::DecodeWithMetadata>::Target>,
+            subxt::error::Error,
+        >,
+    > + 'a
+    where
+        Address: subxt::storage::StorageAddress<IsFetchable = subxt::storage::address::Yes> + 'a,
+    {
+        self.client().storage().fetch(address, None)
+    }
+    // Read storage entry with default value (on last block)
+    fn read_or_default<'a, Address>(
+        &self,
+        address: &'a Address,
+    ) -> impl std::future::Future<
+        Output = std::result::Result<
+            <Address::Target as subxt::metadata::DecodeWithMetadata>::Target,
+            subxt::error::Error,
+        >,
+    > + 'a
+    where
+        Address: subxt::storage::StorageAddress<
+                IsFetchable = subxt::storage::address::Yes,
+                IsDefaultable = subxt::storage::address::Yes,
+            > + 'a,
+    {
+        self.client().storage().fetch_or_default(address, None)
     }
 }
 
@@ -92,19 +118,14 @@ impl World for DuniterWorld {
 }
 
 struct DuniterWorldInner {
-    api: Api,
     client: Client,
     process: Process,
 }
 
 impl DuniterWorldInner {
     async fn new(maybe_genesis_conf_file: Option<PathBuf>) -> Self {
-        let (api, client, process) = spawn_node(maybe_genesis_conf_file).await;
-        DuniterWorldInner {
-            api,
-            client,
-            process,
-        }
+        let (client, process) = spawn_node(maybe_genesis_conf_file).await;
+        DuniterWorldInner { client, process }
     }
     fn kill(&mut self) {
         self.process.kill();
@@ -131,16 +152,14 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
 
     if is_ud {
         let current_ud_amount = world
-            .api()
-            .storage()
-            .universal_dividend()
-            .current_ud(None)
-            .await?;
+            .read(&gdev::storage().universal_dividend().current_ud())
+            .await?
+            .unwrap_or_default();
         amount = (amount * current_ud_amount) / 1_000;
     }
 
     // Create {amount} ĞD for {who}
-    common::balances::set_balance(world.api(), world.client(), who, amount).await?;
+    common::balances::set_balance(world.client(), who, amount).await?;
 
     Ok(())
 }
@@ -169,9 +188,9 @@ async fn transfer(
     let (amount, is_ud) = parse_amount(amount, &unit);
 
     let res = if is_ud {
-        common::balances::transfer_ud(world.api(), world.client(), from, amount, to).await
+        common::balances::transfer_ud(world.client(), from, amount, to).await
     } else {
-        common::balances::transfer(world.api(), world.client(), from, amount, to).await
+        common::balances::transfer(world.client(), from, amount, to).await
     };
 
     if world.ignore_errors() {
@@ -196,7 +215,7 @@ async fn create_oneshot_account(
 
     assert!(!is_ud);
 
-    common::oneshot::create_oneshot_account(world.api(), world.client(), from, amount, to).await
+    common::oneshot::create_oneshot_account(world.client(), from, amount, to).await
 }
 
 #[when(regex = r"oneshot ([a-zA-Z]+) consumes? into (oneshot|account) ([a-zA-Z]+)")]
@@ -215,7 +234,7 @@ async fn consume_oneshot_account(
         _ => unreachable!(),
     };
 
-    common::oneshot::consume_oneshot_account(world.api(), world.client(), from, to).await
+    common::oneshot::consume_oneshot_account(world.client(), from, to).await
 }
 
 #[when(
@@ -251,7 +270,6 @@ async fn consume_oneshot_account_with_remaining(
     assert!(!is_ud);
 
     common::oneshot::consume_oneshot_account_with_remaining(
-        world.api(),
         world.client(),
         from,
         amount,
@@ -267,7 +285,7 @@ async fn send_all_to(world: &mut DuniterWorld, from: String, to: String) -> Resu
     let from = AccountKeyring::from_str(&from).expect("unknown from");
     let to = AccountKeyring::from_str(&to).expect("unknown to");
 
-    common::balances::transfer_all(world.api(), world.client(), from, to).await
+    common::balances::transfer_all(world.client(), from, to).await
 }
 
 #[when(regex = r"([a-zA-Z]+) certifies ([a-zA-Z]+)")]
@@ -276,7 +294,7 @@ async fn certifies(world: &mut DuniterWorld, from: String, to: String) -> Result
     let from = AccountKeyring::from_str(&from).expect("unknown from");
     let to = AccountKeyring::from_str(&to).expect("unknown to");
 
-    common::cert::certify(world.api(), world.client(), from, to).await
+    common::cert::certify(world.client(), from, to).await
 }
 
 // ===== then ====
@@ -294,7 +312,9 @@ async fn should_have(
         .to_account_id();
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
-    let who_account = world.api().storage().system().account(&who, None).await?;
+    let who_account = world
+        .read_or_default(&gdev::storage().system().account(&who))
+        .await?;
     assert_eq!(who_account.data.free, amount);
     Ok(())
 }
@@ -313,10 +333,7 @@ async fn should_have_oneshot(
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
     let oneshot_amount = world
-        .api()
-        .storage()
-        .oneshot_account()
-        .oneshot_accounts(&who, None)
+        .read(&gdev::storage().oneshot_account().oneshot_accounts(&who))
         .await?;
     assert_eq!(oneshot_amount.unwrap_or(0), amount);
     Ok(())
@@ -330,10 +347,7 @@ async fn current_ud_amount_should_be(
 ) -> Result<()> {
     let expected = (amount * 100) + cents;
     let actual = world
-        .api()
-        .storage()
-        .universal_dividend()
-        .current_ud(None)
+        .read_or_default(&gdev::storage().universal_dividend().current_ud())
         .await?;
     assert_eq!(actual, expected);
     Ok(())
@@ -343,10 +357,7 @@ async fn current_ud_amount_should_be(
 async fn monetary_mass_should_be(world: &mut DuniterWorld, amount: u64, cents: u64) -> Result<()> {
     let expected = (amount * 100) + cents;
     let actual = world
-        .api()
-        .storage()
-        .universal_dividend()
-        .monetary_mass(None)
+        .read_or_default(&gdev::storage().universal_dividend().monetary_mass())
         .await?;
     assert_eq!(actual, expected);
     Ok(())
@@ -367,25 +378,24 @@ async fn should_be_certified_by(
         .to_account_id();
 
     let issuer_index = world
-        .api()
-        .storage()
-        .identity()
-        .identity_index_of(&issuer_account, None)
+        .read(
+            &gdev::storage()
+                .identity()
+                .identity_index_of(&issuer_account),
+        )
         .await?
         .unwrap();
     let receiver_index = world
-        .api()
-        .storage()
-        .identity()
-        .identity_index_of(&receiver_account, None)
+        .read(
+            &gdev::storage()
+                .identity()
+                .identity_index_of(&receiver_account),
+        )
         .await?
         .unwrap();
 
     let issuers = world
-        .api()
-        .storage()
-        .cert()
-        .certs_by_receiver(&receiver_index, None)
+        .read_or_default(&gdev::storage().cert().certs_by_receiver(&receiver_index))
         .await?;
 
     match issuers.binary_search_by(|(issuer_, _)| issuer_index.cmp(issuer_)) {

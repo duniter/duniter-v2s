@@ -15,22 +15,20 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 #[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
-pub mod gdev_runtime {}
+pub mod gdev {}
 
 use hex_literal::hex;
 use sp_core::crypto::AccountId32;
 use sp_core::{blake2_128, ByteArray, H256};
 use std::collections::HashMap;
-use subxt::{extrinsic::PlainTip, ClientBuilder, DefaultConfig};
+use subxt::config::SubstrateConfig as GdevConfig;
 
 const DEFAULT_ENDPOINT: &str = "wss://gdev.librelois.fr:443/ws";
 
 const TREASURY_ACCOUNT_ID: [u8; 32] =
     hex!("6d6f646c70792f74727372790000000000000000000000000000000000000000");
 
-type Api = gdev_runtime::RuntimeApi<DefaultConfig, BaseExtrinsicParams<DefaultConfig>>;
-type BaseExtrinsicParams<T> = subxt::extrinsic::BaseExtrinsicParams<T, PlainTip>;
-type Client = subxt::Client<DefaultConfig>;
+type Client = subxt::OnlineClient<GdevConfig>;
 
 // define gdev basic types
 type Balance = u64;
@@ -38,18 +36,15 @@ type BlockNumber = u32;
 type Index = u32;
 
 // Define gdev types
-type AccountInfo = gdev_runtime::runtime_types::frame_system::AccountInfo<
+type AccountInfo = gdev::runtime_types::frame_system::AccountInfo<
     Index,
-    gdev_runtime::runtime_types::pallet_duniter_account::types::AccountData<Balance>,
+    gdev::runtime_types::pallet_duniter_account::types::AccountData<Balance>,
 >;
-type IdtyData = gdev_runtime::runtime_types::common_runtime::entities::IdtyData;
+type IdtyData = gdev::runtime_types::common_runtime::entities::IdtyData;
 type IdtyIndex = u32;
-type IdtyValue = gdev_runtime::runtime_types::pallet_identity::types::IdtyValue<
-    BlockNumber,
-    AccountId32,
-    IdtyData,
->;
-use gdev_runtime::runtime_types::pallet_identity::types::IdtyStatus;
+type IdtyValue =
+    gdev::runtime_types::pallet_identity::types::IdtyValue<BlockNumber, AccountId32, IdtyData>;
+use gdev::runtime_types::pallet_identity::types::IdtyStatus;
 
 struct Storage {
     accounts: HashMap<AccountId32, AccountInfo>,
@@ -61,10 +56,7 @@ struct Storage {
 async fn main() -> anyhow::Result<()> {
     let ws_rpc_endpoint =
         std::env::var("WS_RPC_ENDPOINT").unwrap_or_else(|_| DEFAULT_ENDPOINT.to_owned());
-    let client: Client = ClientBuilder::new()
-        .set_url(ws_rpc_endpoint)
-        .set_page_size(100)
-        .build()
+    let client = Client::from_url(ws_rpc_endpoint)
         .await
         .expect("fail to connect to node");
 
@@ -81,17 +73,17 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn sanity_tests_at(client: Client, maybe_block_hash: Option<H256>) -> anyhow::Result<()> {
-    // Get API
-    let api = client.clone().to_runtime_api::<Api>();
-
     // ===== Collect storage ===== //
 
     // Collect accounts
     let mut accounts = HashMap::new();
-    let mut account_iter = api
+    let mut account_iter = client
         .storage()
-        .system()
-        .account_iter(maybe_block_hash)
+        .iter(
+            gdev::storage().system().account_root(),
+            100,
+            maybe_block_hash,
+        )
         .await?;
     while let Some((key, account_info)) = account_iter.next().await? {
         let mut account_id_bytes = [0u8; 32];
@@ -102,10 +94,13 @@ async fn sanity_tests_at(client: Client, maybe_block_hash: Option<H256>) -> anyh
 
     // Collect identities
     let mut identities = HashMap::new();
-    let mut idty_iter = api
+    let mut idty_iter = client
         .storage()
-        .identity()
-        .identities_iter(maybe_block_hash)
+        .iter(
+            gdev::storage().identity().identities_root(),
+            100,
+            maybe_block_hash,
+        )
         .await?;
     while let Some((key, idty_value)) = idty_iter.next().await? {
         let mut idty_index_bytes = [0u8; 4];
@@ -116,10 +111,13 @@ async fn sanity_tests_at(client: Client, maybe_block_hash: Option<H256>) -> anyh
 
     // Collect identity_index_of
     let mut identity_index_of = HashMap::new();
-    let mut idty_index_of_iter = api
+    let mut idty_index_of_iter = client
         .storage()
-        .identity()
-        .identity_index_of_iter(maybe_block_hash)
+        .iter(
+            gdev::storage().identity().identity_index_of_root(),
+            100,
+            maybe_block_hash,
+        )
         .await?;
     while let Some((key, idty_index)) = idty_index_of_iter.next().await? {
         let mut blake2_128_bytes = [0u8; 16];

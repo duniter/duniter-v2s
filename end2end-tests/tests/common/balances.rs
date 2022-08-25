@@ -14,30 +14,27 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use super::node_runtime::runtime_types::gdev_runtime;
-use super::node_runtime::runtime_types::pallet_balances;
+use super::gdev;
+use super::gdev::runtime_types::pallet_balances;
 use super::*;
 use sp_keyring::AccountKeyring;
-use subxt::{sp_runtime::MultiAddress, PairSigner};
+use subxt::{ext::sp_runtime::MultiAddress, tx::PairSigner};
 
-pub async fn set_balance(
-    api: &Api,
-    client: &Client,
-    who: AccountKeyring,
-    amount: u64,
-) -> Result<()> {
+pub async fn set_balance(client: &Client, who: AccountKeyring, amount: u64) -> Result<()> {
     let _events = create_block_with_extrinsic(
         client,
-        api.tx()
-            .sudo()
-            .sudo(gdev_runtime::Call::Balances(
-                pallet_balances::pallet::Call::set_balance {
-                    who: MultiAddress::Id(who.to_account_id()),
-                    new_free: amount,
-                    new_reserved: 0,
-                },
-            ))?
+        client
+            .tx()
             .create_signed(
+                &gdev::tx()
+                    .sudo()
+                    .sudo(gdev::runtime_types::gdev_runtime::Call::Balances(
+                        pallet_balances::pallet::Call::set_balance {
+                            who: MultiAddress::Id(who.to_account_id()),
+                            new_free: amount,
+                            new_reserved: 0,
+                        },
+                    )),
                 &PairSigner::new(SUDO_ACCOUNT.pair()),
                 BaseExtrinsicParamsBuilder::new(),
             )
@@ -49,7 +46,6 @@ pub async fn set_balance(
 }
 
 pub async fn transfer(
-    api: &Api,
     client: &Client,
     from: AccountKeyring,
     amount: u64,
@@ -60,10 +56,15 @@ pub async fn transfer(
 
     let _events = create_block_with_extrinsic(
         client,
-        api.tx()
-            .balances()
-            .transfer(to.clone().into(), amount)?
-            .create_signed(&from, BaseExtrinsicParamsBuilder::new())
+        client
+            .tx()
+            .create_signed(
+                &gdev::tx()
+                    .universal_dividend()
+                    .transfer_ud(to.clone().into(), amount),
+                &from,
+                BaseExtrinsicParamsBuilder::new(),
+            )
             .await?,
     )
     .await?;
@@ -71,21 +72,19 @@ pub async fn transfer(
     Ok(())
 }
 
-pub async fn transfer_all(
-    api: &Api,
-    client: &Client,
-    from: AccountKeyring,
-    to: AccountKeyring,
-) -> Result<()> {
+pub async fn transfer_all(client: &Client, from: AccountKeyring, to: AccountKeyring) -> Result<()> {
     let from = PairSigner::new(from.pair());
     let to = to.to_account_id();
 
     let _events = create_block_with_extrinsic(
         client,
-        api.tx()
-            .balances()
-            .transfer_all(to.clone().into(), false)?
-            .create_signed(&from, BaseExtrinsicParamsBuilder::new())
+        client
+            .tx()
+            .create_signed(
+                &gdev::tx().balances().transfer_all(to.clone().into(), false),
+                &from,
+                BaseExtrinsicParamsBuilder::new(),
+            )
             .await?,
     )
     .await?;
@@ -94,7 +93,6 @@ pub async fn transfer_all(
 }
 
 pub async fn transfer_ud(
-    api: &Api,
     client: &Client,
     from: AccountKeyring,
     amount: u64,
@@ -105,10 +103,15 @@ pub async fn transfer_ud(
 
     let _events = create_block_with_extrinsic(
         client,
-        api.tx()
-            .universal_dividend()
-            .transfer_ud(to.clone().into(), amount)?
-            .create_signed(&from, BaseExtrinsicParamsBuilder::new())
+        client
+            .tx()
+            .create_signed(
+                &gdev::tx()
+                    .universal_dividend()
+                    .transfer_ud(to.clone().into(), amount),
+                &from,
+                BaseExtrinsicParamsBuilder::new(),
+            )
             .await?,
     )
     .await?;

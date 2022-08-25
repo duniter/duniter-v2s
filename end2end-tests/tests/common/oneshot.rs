@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use super::node_runtime::runtime_types::gdev_runtime;
-use super::node_runtime::runtime_types::pallet_balances;
-use super::node_runtime::runtime_types::pallet_oneshot_account;
+use super::gdev;
+use super::gdev::runtime_types::pallet_balances;
+use super::gdev::runtime_types::pallet_oneshot_account;
 use super::*;
 use sp_keyring::AccountKeyring;
 use subxt::{
-    sp_runtime::{AccountId32, MultiAddress},
-    PairSigner,
+    ext::sp_runtime::{AccountId32, MultiAddress},
+    tx::PairSigner,
 };
 
 pub enum Account {
@@ -45,7 +45,6 @@ impl Account {
 }
 
 pub async fn create_oneshot_account(
-    api: &Api,
     client: &Client,
     from: AccountKeyring,
     amount: u64,
@@ -56,10 +55,15 @@ pub async fn create_oneshot_account(
 
     let _events = create_block_with_extrinsic(
         client,
-        api.tx()
-            .oneshot_account()
-            .create_oneshot_account(to.into(), amount)?
-            .create_signed(&from, BaseExtrinsicParamsBuilder::new())
+        client
+            .tx()
+            .create_signed(
+                &gdev::tx()
+                    .oneshot_account()
+                    .create_oneshot_account(to.into(), amount),
+                &from,
+                BaseExtrinsicParamsBuilder::new(),
+            )
             .await?,
     )
     .await?;
@@ -68,7 +72,6 @@ pub async fn create_oneshot_account(
 }
 
 pub async fn consume_oneshot_account(
-    api: &Api,
     client: &Client,
     from: AccountKeyring,
     to: Account,
@@ -78,10 +81,13 @@ pub async fn consume_oneshot_account(
 
     let _events = create_block_with_extrinsic(
         client,
-        api.tx()
-            .oneshot_account()
-            .consume_oneshot_account(0, to)?
-            .create_signed(&from, BaseExtrinsicParamsBuilder::new())
+        client
+            .tx()
+            .create_signed(
+                &gdev::tx().oneshot_account().consume_oneshot_account(0, to),
+                &from,
+                BaseExtrinsicParamsBuilder::new(),
+            )
             .await?,
     )
     .await?;
@@ -91,7 +97,6 @@ pub async fn consume_oneshot_account(
 
 #[allow(clippy::too_many_arguments)]
 pub async fn consume_oneshot_account_with_remaining(
-    api: &Api,
     client: &Client,
     from: AccountKeyring,
     amount: u64,
@@ -104,10 +109,15 @@ pub async fn consume_oneshot_account_with_remaining(
 
     let _events = create_block_with_extrinsic(
         client,
-        api.tx()
-            .oneshot_account()
-            .consume_oneshot_account_with_remaining(0, to, remaining_to, amount)?
-            .create_signed(&from, BaseExtrinsicParamsBuilder::new())
+        client
+            .tx()
+            .create_signed(
+                &gdev::tx()
+                    .oneshot_account()
+                    .consume_oneshot_account_with_remaining(0, to, remaining_to, amount),
+                &from,
+                BaseExtrinsicParamsBuilder::new(),
+            )
             .await?,
     )
     .await?;
