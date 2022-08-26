@@ -47,8 +47,8 @@ rusty-hook = "^0.11.2"
 
 # Dependencies for specific targets
 [target.'cfg(any(target_arch="x86_64", target_arch="aarch64"))'.dependencies]
-sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26", features = ["wasmtime"] }
-sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26", features = ["wasmtime"] }
+sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26", default-features = false, features = ["wasmtime"] }
+sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26", default-features = false, features = ["wasmtime"] }
 sp-trie = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26", features = ["memory-tracker"] }
 
 
@@ -84,7 +84,7 @@ pallet-transaction-payment-rpc = { git = "https://github.com/duniter/substrate",
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
 sc-basic-authorship = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
 sc-chain-spec = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
-sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26", default-features = false }
 sc-client-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
 sc-consensus = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
 babe = { package = "sc-consensus-babe", git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
@@ -95,7 +95,7 @@ sc-finality-grandpa = { git = "https://github.com/duniter/substrate", branch = "
 sc-keystore = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
 sc-network = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
 sc-rpc-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
-sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
+sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26", default-features = false }
 sc-telemetry = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
 sc-transaction-pool = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
 sc-transaction-pool-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.26" }
