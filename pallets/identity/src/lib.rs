@@ -70,7 +70,8 @@ pub mod pallet {
         type ChangeOwnerKeyPeriod: Get<Self::BlockNumber>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-        /// Management of the authorizations of the different calls. (The default implementation only allows root)
+        /// Management of the authorizations of the different calls.
+        /// The default implementation allows everything.
         type EnsureIdtyCallAllowed: EnsureIdtyCallAllowed<Self>;
         #[pallet::constant]
         /// Minimum duration between the creation of 2 identities by the same creator
@@ -340,7 +341,7 @@ pub mod pallet {
             if <IdentitiesNames<T>>::contains_key(&idty_name) {
                 return Err(Error::<T>::IdtyNameAlreadyExist.into());
             }
-            if !T::EnsureIdtyCallAllowed::can_confirm_identity(idty_index, who.clone()) {
+            if !T::EnsureIdtyCallAllowed::can_confirm_identity(idty_index) {
                 return Err(Error::<T>::NotAllowedToConfirmIdty.into());
             }
 
@@ -413,6 +414,11 @@ pub mod pallet {
             ensure!(
                 IdentityIndexOf::<T>::get(&new_key).is_none(),
                 Error::<T>::OwnerKeyAlreadyUsed
+            );
+
+            ensure!(
+                T::EnsureIdtyCallAllowed::can_change_identity_address(idty_index),
+                Error::<T>::NotAllowedToChangeIdtyAddress
             );
 
             let block_number = frame_system::Pallet::<T>::block_number();
@@ -495,6 +501,11 @@ pub mod pallet {
                     revocation_key == idty_value.owner_key
                 },
                 Error::<T>::InvalidRevocationKey
+            );
+
+            ensure!(
+                T::EnsureIdtyCallAllowed::can_remove_identity(idty_index),
+                Error::<T>::NotAllowedToRemoveIdty
             );
 
             let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
@@ -597,8 +608,12 @@ pub mod pallet {
         InvalidRevocationKey,
         /// Revocation payload signature is invalid
         InvalidRevocationSig,
+        /// Identity not allowed to change address
+        NotAllowedToChangeIdtyAddress,
         /// Not allowed to confirm identity
         NotAllowedToConfirmIdty,
+        /// Not allowed to remove identity
+        NotAllowedToRemoveIdty,
         /// Not allowed to validate identity
         NotAllowedToValidateIdty,
         /// Identity creation period is not respected

@@ -26,7 +26,6 @@ pub trait WeightInfo {
     fn claim_uds(n: u32) -> Weight;
     fn transfer_ud() -> Weight;
     fn transfer_ud_keep_alive() -> Weight;
-    fn force_set_first_eligible_ud() -> Weight;
 }
 
 // Insecure weights implementation, use it for tests only!
@@ -82,12 +81,5 @@ impl WeightInfo for () {
         (33_420_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(2 as Weight))
             .saturating_add(RocksDbWeight::get().writes(2 as Weight))
-    }
-    // Storage: Identity IdentityIndexOf (r:1 w:0)
-    // Storage: Identity Identities (r:1 w:1)
-    fn force_set_first_eligible_ud() -> Weight {
-        (0 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
     }
 }

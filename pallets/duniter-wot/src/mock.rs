@@ -122,7 +122,7 @@ impl pallet_identity::Config for Test {
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
     type Event = Event;
-    type EnsureIdtyCallAllowed = DuniterWot;
+    type EnsureIdtyCallAllowed = (DuniterWot, SmithsSubWot);
     type IdtyCreationPeriod = IdtyCreationPeriod;
     type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
@@ -150,7 +150,7 @@ impl pallet_membership::Config<Instance1> for Test {
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
     type MembershipPeriod = MembershipPeriod;
-    type MetaData = crate::MembershipMetaData<u64>;
+    type MetaData = ();
     type OnEvent = DuniterWot;
     type PendingMembershipPeriod = PendingMembershipPeriod;
     type RevocationPeriod = RevocationPeriod;
@@ -206,7 +206,7 @@ impl pallet_membership::Config<Instance2> for Test {
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
     type MembershipPeriod = SmithsMembershipPeriod;
-    type MetaData = crate::MembershipMetaData<u64>;
+    type MetaData = ();
     type OnEvent = SmithsSubWot;
     type PendingMembershipPeriod = SmithsPendingMembershipPeriod;
     type RevocationPeriod = SmithsRevocationPeriod;

@@ -16,11 +16,15 @@
 
 use crate::mock::*;
 use crate::mock::{Identity, System};
-use frame_support::assert_noop;
-use frame_support::assert_ok;
+use codec::Encode;
 use frame_support::instances::Instance1;
+use frame_support::{assert_noop, assert_ok};
 use frame_system::{EventRecord, Phase};
-use pallet_identity::{IdtyName, IdtyStatus};
+use pallet_identity::{
+    IdtyName, IdtyStatus, NewOwnerKeyPayload, RevocationPayload, NEW_OWNER_KEY_PAYLOAD_PREFIX,
+    REVOCATION_PAYLOAD_PREFIX,
+};
+use sp_runtime::testing::TestSignature;
 
 #[test]
 fn test_genesis_build() {
@@ -56,10 +60,7 @@ fn test_join_smiths() {
         run_to_block(2);
 
         // Dave shoud be able to request smith membership
-        assert_ok!(SmithsMembership::request_membership(
-            Origin::signed(4),
-            crate::MembershipMetaData(4)
-        ));
+        assert_ok!(SmithsMembership::request_membership(Origin::signed(4), ()));
         System::assert_has_event(Event::SmithsMembership(
             pallet_membership::Event::MembershipRequested(4),
         ));
@@ -96,6 +97,53 @@ fn test_smith_certs_expirations_should_revoke_smith_membership() {
 }
 
 #[test]
+fn test_smith_member_cant_change_its_idty_address() {
+    new_test_ext(5, 3).execute_with(|| {
+        run_to_block(2);
+
+        let genesis_hash = System::block_hash(0);
+        let new_key_payload = NewOwnerKeyPayload {
+            genesis_hash: &genesis_hash,
+            idty_index: 3u32,
+            old_owner_key: &3u64,
+        };
+
+        // Identity 3 can't change it's address
+        assert_noop!(
+            Identity::change_owner_key(
+                Origin::signed(3),
+                13,
+                TestSignature(13, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
+            ),
+            pallet_identity::Error::<Test>::NotAllowedToChangeIdtyAddress
+        );
+    });
+}
+
+#[test]
+fn test_smith_member_cant_revoke_its_idty() {
+    new_test_ext(5, 3).execute_with(|| {
+        run_to_block(2);
+
+        let revocation_payload = RevocationPayload {
+            idty_index: 3u32,
+            genesis_hash: System::block_hash(0),
+        };
+
+        // Identity 3 can't change it's address
+        assert_noop!(
+            Identity::revoke_identity(
+                Origin::signed(3),
+                3,
+                3,
+                TestSignature(3, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
+            ),
+            pallet_identity::Error::<Test>::NotAllowedToRemoveIdty
+        );
+    });
+}
+
+#[test]
 fn test_revoke_smiths_them_rejoin() {
     new_test_ext(5, 4).execute_with(|| {
         run_to_block(2);
@@ -109,16 +157,13 @@ fn test_revoke_smiths_them_rejoin() {
         // Dave should not be able to re-request membership before the RevocationPeriod end
         run_to_block(3);
         assert_noop!(
-            SmithsMembership::request_membership(Origin::signed(4), crate::MembershipMetaData(4)),
+            SmithsMembership::request_membership(Origin::signed(4), ()),
             pallet_membership::Error::<Test, crate::Instance2>::MembershipRevokedRecently
         );
 
         // At block #6, Dave shoud be able to request smith membership
         run_to_block(6);
-        assert_ok!(SmithsMembership::request_membership(
-            Origin::signed(4),
-            crate::MembershipMetaData(4)
-        ));
+        assert_ok!(SmithsMembership::request_membership(Origin::signed(4), ()));
 
         // Then, Alice should be able to send a smith cert to Dave
         assert_ok!(SmithsCert::add_cert(Origin::signed(1), 1, 4));

@@ -28,6 +28,8 @@ extern crate frame_benchmarking;
 
 pub mod parameters;
 
+mod migrations_v400;
+
 pub use self::parameters::*;
 pub use common_runtime::{
     constants::*, entities::*, handlers::*, AccountId, Address, Balance, BlockNumber,
@@ -127,6 +129,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    migrations_v400::MigrationsV400,
 >;
 
 pub type TechnicalCommitteeInstance = Instance2;

@@ -17,9 +17,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
-//pub mod traits;
-mod types;
-
 #[cfg(test)]
 mod mock;
 
@@ -30,14 +27,12 @@ mod tests;
 mod benchmarking;*/
 
 pub use pallet::*;
-pub use types::*;
 
 use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::pallet_prelude::*;
 use frame_system::RawOrigin;
 use pallet_certification::traits::SetNextIssuableOn;
 use pallet_identity::{IdtyEvent, IdtyStatus};
-use sp_membership::traits::IsInPendingMemberships;
 use sp_runtime::traits::IsMember;
 
 type IdtyIndex = u32;
@@ -102,32 +97,57 @@ pub mod pallet {
 impl<AccountId, T: Config<I>, I: 'static> pallet_identity::traits::EnsureIdtyCallAllowed<T>
     for Pallet<T, I>
 where
-    T: frame_system::Config<AccountId = AccountId>
-        + pallet_membership::Config<I, MetaData = MembershipMetaData<AccountId>>,
+    T: frame_system::Config<AccountId = AccountId> + pallet_membership::Config<I>,
 {
     fn can_create_identity(creator: IdtyIndex) -> bool {
-        let cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(creator);
-        cert_meta.received_count >= T::MinCertForCreateIdtyRight::get()
-            && cert_meta.next_issuable_on <= frame_system::pallet::Pallet::<T>::block_number()
-            && cert_meta.issued_count < T::MaxByIssuer::get()
+        if !T::IsSubWot::get() {
+            let cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(creator);
+            cert_meta.received_count >= T::MinCertForCreateIdtyRight::get()
+                && cert_meta.next_issuable_on <= frame_system::pallet::Pallet::<T>::block_number()
+                && cert_meta.issued_count < T::MaxByIssuer::get()
+        } else {
+            true
+        }
     }
-    fn can_confirm_identity(idty_index: IdtyIndex, owner_key: AccountId) -> bool {
-        pallet_membership::Pallet::<T, I>::force_request_membership(
-            RawOrigin::Root.into(),
-            idty_index,
-            MembershipMetaData(owner_key),
-        )
-        .is_ok()
+    fn can_confirm_identity(idty_index: IdtyIndex) -> bool {
+        if !T::IsSubWot::get() {
+            pallet_membership::Pallet::<T, I>::force_request_membership(
+                RawOrigin::Root.into(),
+                idty_index,
+                Default::default(),
+            )
+            .is_ok()
+        } else {
+            true
+        }
     }
     fn can_validate_identity(idty_index: IdtyIndex) -> bool {
-        // TODO replace this code by te commented one for distance feature
-        /*let idty_cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
-        idty_cert_meta.received_count >= T::MinCertForMembership::get() as u32*/
-        pallet_membership::Pallet::<T, I>::claim_membership(
-            RawOrigin::Root.into(),
-            Some(idty_index),
-        )
-        .is_ok()
+        if !T::IsSubWot::get() {
+            // TODO replace this code by the commented one for distance feature
+            /*let idty_cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
+            idty_cert_meta.received_count >= T::MinCertForMembership::get() as u32*/
+            pallet_membership::Pallet::<T, I>::claim_membership(
+                RawOrigin::Root.into(),
+                Some(idty_index),
+            )
+            .is_ok()
+        } else {
+            true
+        }
+    }
+    fn can_change_identity_address(idty_index: IdtyIndex) -> bool {
+        if T::IsSubWot::get() {
+            !pallet_membership::Pallet::<T, I>::is_member(&idty_index)
+        } else {
+            true
+        }
+    }
+    fn can_remove_identity(idty_index: IdtyIndex) -> bool {
+        if T::IsSubWot::get() {
+            !pallet_membership::Pallet::<T, I>::is_member(&idty_index)
+        } else {
+            true
+        }
     }
 }
 
@@ -141,14 +161,8 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::IsCertAllowed<IdtyI
             }
             if let Some(receiver_data) = pallet_identity::Pallet::<T>::identity(receiver) {
                 match receiver_data.status {
-                    IdtyStatus::ConfirmedByOwner => true,
+                    IdtyStatus::ConfirmedByOwner | IdtyStatus::Validated => true,
                     IdtyStatus::Created => false,
-                    IdtyStatus::Validated => {
-                        pallet_membership::Pallet::<T, I>::is_member(&receiver)
-                            || pallet_membership::Pallet::<T, I>::is_in_pending_memberships(
-                                receiver,
-                            )
-                    }
                 }
             } else {
                 // Receiver not found

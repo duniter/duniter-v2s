@@ -75,18 +75,15 @@ where
 
 pub struct OnMembershipEventHandler<Inner, Runtime>(core::marker::PhantomData<(Inner, Runtime)>);
 
-type MembershipMetaData = pallet_duniter_wot::MembershipMetaData<AccountId>;
-
 impl<
-        Inner: sp_membership::traits::OnEvent<IdtyIndex, MembershipMetaData>,
+        Inner: sp_membership::traits::OnEvent<IdtyIndex, ()>,
         Runtime: frame_system::Config<AccountId = AccountId>
             + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
-            + pallet_membership::Config<Instance1, MetaData = MembershipMetaData>
+            + pallet_membership::Config<Instance1, MetaData = ()>
             + pallet_universal_dividend::Config,
-    > sp_membership::traits::OnEvent<IdtyIndex, MembershipMetaData>
-    for OnMembershipEventHandler<Inner, Runtime>
+    > sp_membership::traits::OnEvent<IdtyIndex, ()> for OnMembershipEventHandler<Inner, Runtime>
 {
-    fn on_event(membership_event: &sp_membership::Event<IdtyIndex, MembershipMetaData>) -> Weight {
+    fn on_event(membership_event: &sp_membership::Event<IdtyIndex, ()>) -> Weight {
         (match membership_event {
             sp_membership::Event::MembershipRevoked(idty_index) => {
                 if let Some(idty_value) = pallet_identity::Identities::<Runtime>::get(idty_index) {

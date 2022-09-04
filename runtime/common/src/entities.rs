@@ -106,6 +106,11 @@ pub struct SmithsMembershipMetaData<SessionKeysWrapper> {
     pub p2p_endpoint: sp_runtime::RuntimeString,
     pub session_keys: SessionKeysWrapper,
 }
+impl<SessionKeysWrapper> Default for SmithsMembershipMetaData<SessionKeysWrapper> {
+    fn default() -> Self {
+        unreachable!()
+    }
+}
 impl<SessionKeysWrapper> sp_membership::traits::Validate<AccountId>
     for SmithsMembershipMetaData<SessionKeysWrapper>
 {

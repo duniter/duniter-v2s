@@ -430,7 +430,7 @@ macro_rules! pallets_config {
 			type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
             type ConfirmPeriod = ConfirmPeriod;
             type Event = Event;
-            type EnsureIdtyCallAllowed = Wot;
+            type EnsureIdtyCallAllowed = (Wot, SmithsSubWot);
             type IdtyCreationPeriod = IdtyCreationPeriod;
 			type IdtyData = IdtyData;
             type IdtyIndex = IdtyIndex;
@@ -451,7 +451,7 @@ macro_rules! pallets_config {
             type IdtyId = IdtyIndex;
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type MembershipPeriod = MembershipPeriod;
-            type MetaData = pallet_duniter_wot::MembershipMetaData<AccountId>;
+            type MetaData = ();
             type OnEvent = OnMembershipEventHandler<Wot, Runtime>;
             type PendingMembershipPeriod = PendingMembershipPeriod;
             type RevocationPeriod = frame_support::traits::ConstU32<0>;

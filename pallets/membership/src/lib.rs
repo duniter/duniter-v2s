@@ -72,7 +72,7 @@ pub mod pallet {
         /// Something that give the IdtyId on an account id
         type IdtyIdOf: Convert<Self::AccountId, Option<Self::IdtyId>>;
         /// Optional metadata
-        type MetaData: Parameter + Validate<Self::AccountId>;
+        type MetaData: Default + Parameter + Validate<Self::AccountId>;
         #[pallet::constant]
         /// Maximum life span of a non-renewable membership (in number of blocks)
         type MembershipPeriod: Get<Self::BlockNumber>;

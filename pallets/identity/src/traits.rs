@@ -21,18 +21,33 @@ use sp_runtime::traits::Saturating;
 
 pub trait EnsureIdtyCallAllowed<T: Config> {
     fn can_create_identity(creator: T::IdtyIndex) -> bool;
-    fn can_confirm_identity(idty_index: T::IdtyIndex, owner_key: T::AccountId) -> bool;
+    fn can_confirm_identity(idty_index: T::IdtyIndex) -> bool;
     fn can_validate_identity(idty_index: T::IdtyIndex) -> bool;
+    fn can_change_identity_address(idty_index: T::IdtyIndex) -> bool;
+    fn can_remove_identity(idty_index: T::IdtyIndex) -> bool;
 }
 
-impl<T: Config> EnsureIdtyCallAllowed<T> for () {
-    fn can_create_identity(_: T::IdtyIndex) -> bool {
+#[impl_for_tuples(5)]
+#[allow(clippy::let_and_return)]
+impl<T: Config> EnsureIdtyCallAllowed<T> for Tuple {
+    fn can_create_identity(creator: T::IdtyIndex) -> bool {
+        for_tuples!( #( if !Tuple::can_create_identity(creator) { return false; } )* );
         true
     }
-    fn can_confirm_identity(_: T::IdtyIndex, _: T::AccountId) -> bool {
+    fn can_confirm_identity(idty_index: T::IdtyIndex) -> bool {
+        for_tuples!( #( if !Tuple::can_confirm_identity(idty_index) { return false; } )* );
         true
     }
-    fn can_validate_identity(_: T::IdtyIndex) -> bool {
+    fn can_validate_identity(idty_index: T::IdtyIndex) -> bool {
+        for_tuples!( #( if !Tuple::can_validate_identity(idty_index) { return false; } )* );
+        true
+    }
+    fn can_change_identity_address(idty_index: T::IdtyIndex) -> bool {
+        for_tuples!( #( if !Tuple::can_change_identity_address(idty_index) { return false; } )* );
+        true
+    }
+    fn can_remove_identity(idty_index: T::IdtyIndex) -> bool {
+        for_tuples!( #( if !Tuple::can_remove_identity(idty_index) { return false; } )* );
         true
     }
 }
