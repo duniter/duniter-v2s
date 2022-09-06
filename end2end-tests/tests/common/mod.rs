@@ -132,14 +132,7 @@ pub async fn create_block_with_extrinsic(
     client: &Client,
     extrinsic: SignedSubmittableExtrinsic,
 ) -> Result<subxt::tx::TxEvents<GdevConfig>> {
-    /*// Get a hash of the extrinsic (we'll need this later).
-    use subxt::sp_runtime::traits::Hash as _;
-    let ext_hash = <GdevConfig as subxt::Config>::Hashing::hash_of(&encoded_extrinsic);
-    // Submit and watch for transaction progress.
-    let sub = client.rpc().submit_extrinsic(encoded_extrinsic).await?;
-    let watcher = TxProgress::new(sub, client, ext_hash);*/
-
-    println!("extrinsic encoded: {}", hex::encode(extrinsic.encoded()));
+    //println!("extrinsic encoded: {}", hex::encode(extrinsic.encoded()));
 
     let watcher = extrinsic.submit_and_watch().await?;
 

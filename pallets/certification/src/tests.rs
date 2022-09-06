@@ -42,8 +42,8 @@ fn test_cannot_certify_self() {
         apply_cert_period_at_genesis: true,
         certs_by_receiver: btreemap![
             0 => btreemap![
-                1 => 5,
-                2 => 5,
+                1 => Some(5),
+                2 => Some(5),
             ],
         ],
     })
@@ -63,16 +63,16 @@ fn test_genesis_build() {
         apply_cert_period_at_genesis: true,
         certs_by_receiver: btreemap![
             0 => btreemap![
-                1 => 7,
-                2 => 9,
+                1 => Some(7),
+                2 => Some(9),
             ],
             1 => btreemap![
-                0 => 10,
-                2 => 3,
+                0 => Some(10),
+                2 => Some(3),
             ],
             2 => btreemap![
-                0 => 5,
-                1 => 4,
+                0 => Some(5),
+                1 => Some(4),
             ],
         ],
     })
@@ -132,16 +132,16 @@ fn test_cert_period() {
         apply_cert_period_at_genesis: true,
         certs_by_receiver: btreemap![
             0 => btreemap![
-                1 => 10,
-                2 => 10,
+                1 => Some(10),
+                2 => Some(10),
             ],
             1 => btreemap![
-                0 => 10,
-                2 => 10,
+                0 => Some(10),
+                2 => Some(10),
             ],
             2 => btreemap![
-                0 => 10,
-                1 => 10,
+                0 => Some(10),
+                1 => Some(10),
             ],
         ],
     })

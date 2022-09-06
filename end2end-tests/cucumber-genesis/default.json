@@ -2,10 +2,8 @@
   "first_ud": 1000,
   "first_ud_reeval": 100,
   "genesis_parameters": {
-    "genesis_certs_expire_on": 100000,
     "genesis_certs_min_received": 2,
     "genesis_memberships_expire_on": 100000,
-    "genesis_smith_certs_expire_on": 100000,
     "genesis_smith_certs_min_received": 2,
     "genesis_smith_memberships_expire_on": 100000
   },

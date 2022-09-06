@@ -26,7 +26,7 @@ const EXISTENTIAL_DEPOSIT: u64 = 100;
 #[derive(Clone)]
 pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub accounts: BTreeMap<AccountId, GenesisAccountData<u64>>,
-    pub certs_by_receiver: BTreeMap<u32, BTreeMap<u32, u32>>,
+    pub certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
     pub first_ud: u64,
     pub first_ud_reeval: u32,
     pub identities: Vec<(String, AccountId)>,
@@ -35,7 +35,7 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub memberships: BTreeMap<u32, MembershipData>,
     pub parameters: Parameters,
     pub session_keys_map: BTreeMap<AccountId, SessionKeys>,
-    pub smiths_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, u32>>,
+    pub smiths_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
     pub smiths_memberships: BTreeMap<u32, MembershipData>,
     pub sudo_key: Option<AccountId>,
     pub technical_committee_members: Vec<AccountId>,
@@ -43,10 +43,8 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
 
 #[derive(Default, Deserialize, Serialize)]
 pub struct ParamsAppliedAtGenesis {
-    pub genesis_certs_expire_on: u32,
     pub genesis_certs_min_received: u32,
     pub genesis_memberships_expire_on: u32,
-    pub genesis_smith_certs_expire_on: u32,
     pub genesis_smith_certs_min_received: u32,
     pub genesis_smith_memberships_expire_on: u32,
 }
@@ -130,10 +128,8 @@ where
         first_ud_reeval,
         genesis_parameters:
             ParamsAppliedAtGenesis {
-                genesis_certs_expire_on,
                 genesis_certs_min_received,
                 genesis_memberships_expire_on,
-                genesis_smith_certs_expire_on,
                 genesis_smith_certs_min_received,
                 genesis_smith_memberships_expire_on,
             },
@@ -237,7 +233,7 @@ where
             let issuer_index = idty_index_of
                 .get(issuer)
                 .ok_or(format!("Identity '{}' not exist", issuer))?;
-            receiver_certs.insert(*issuer_index, genesis_certs_expire_on);
+            receiver_certs.insert(*issuer_index, None);
         }
         certs_by_receiver.insert(*issuer_index, receiver_certs);
     }
@@ -319,7 +315,7 @@ where
             let issuer_index = idty_index_of
                 .get(receiver)
                 .ok_or(format!("Identity '{}' not exist", receiver))?;
-            receiver_certs.insert(*issuer_index, genesis_smith_certs_expire_on);
+            receiver_certs.insert(*issuer_index, None);
         }
         smiths_certs_by_receiver.insert(*idty_index, receiver_certs);
 

@@ -395,7 +395,7 @@ pub fn make_secondary_vrf_pre_digest(
 fn clique_wot(
     initial_identities_len: usize,
     cert_validity_period: common_runtime::BlockNumber,
-) -> BTreeMap<IdtyIndex, BTreeMap<IdtyIndex, common_runtime::BlockNumber>> {
+) -> BTreeMap<IdtyIndex, BTreeMap<IdtyIndex, Option<common_runtime::BlockNumber>>> {
     let mut certs_by_issuer = BTreeMap::new();
     for i in 1..=initial_identities_len {
         certs_by_issuer.insert(
@@ -403,7 +403,7 @@ fn clique_wot(
             (1..=initial_identities_len)
                 .filter_map(|j| {
                     if i != j {
-                        Some((j as IdtyIndex, cert_validity_period))
+                        Some((j as IdtyIndex, Some(cert_validity_period)))
                     } else {
                         None
                     }

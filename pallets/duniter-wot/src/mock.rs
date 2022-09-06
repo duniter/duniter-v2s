@@ -347,7 +347,7 @@ pub fn run_to_block(n: u64) {
 fn clique_wot(
     initial_identities_len: usize,
     cert_validity_period: u64,
-) -> BTreeMap<IdtyIndex, BTreeMap<IdtyIndex, u64>> {
+) -> BTreeMap<IdtyIndex, BTreeMap<IdtyIndex, Option<u64>>> {
     let mut certs_by_issuer = BTreeMap::new();
     for i in 1..=initial_identities_len {
         certs_by_issuer.insert(
@@ -355,7 +355,7 @@ fn clique_wot(
             (1..=initial_identities_len)
                 .filter_map(|j| {
                     if i != j {
-                        Some((j as IdtyIndex, cert_validity_period))
+                        Some((j as IdtyIndex, Some(cert_validity_period)))
                     } else {
                         None
                     }

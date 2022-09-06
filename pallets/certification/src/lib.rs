@@ -90,9 +90,11 @@ pub mod pallet {
     // GENESIS STUFF //
 
     #[pallet::genesis_config]
+    #[allow(clippy::type_complexity)]
     pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
         pub apply_cert_period_at_genesis: bool,
-        pub certs_by_receiver: BTreeMap<T::IdtyIndex, BTreeMap<T::IdtyIndex, T::BlockNumber>>,
+        pub certs_by_receiver:
+            BTreeMap<T::IdtyIndex, BTreeMap<T::IdtyIndex, Option<T::BlockNumber>>>,
     }
 
     #[cfg(feature = "std")]
@@ -128,7 +130,8 @@ pub mod pallet {
                         received_count: issuers.len() as u32,
                     });
 
-                for (issuer, removable_on) in issuers {
+                let mut issuers_: Vec<_> = Vec::with_capacity(issuers.len());
+                for (issuer, maybe_removable_on) in issuers {
                     // Count issued certs
                     cert_meta_by_issuer
                         .entry(*issuer)
@@ -139,9 +142,13 @@ pub mod pallet {
                         })
                         .issued_count += 1;
 
+                    // Compute and store removable_on
+                    let removable_on = maybe_removable_on.unwrap_or_else(T::ValidityPeriod::get);
+                    issuers_.push((*issuer, removable_on));
+
                     // Prepare CertsRemovableOn
                     certs_removable_on
-                        .entry(*removable_on)
+                        .entry(removable_on)
                         .or_default()
                         .push((*issuer, *receiver));
 
@@ -158,9 +165,8 @@ pub mod pallet {
                 }
 
                 // Write CertsByReceiver
-                let mut issuers: Vec<_> = issuers.iter().collect();
-                issuers.sort();
-                CertsByReceiver::<T, I>::insert(receiver, issuers);
+                issuers_.sort();
+                CertsByReceiver::<T, I>::insert(receiver, issuers_);
             }
 
             // Write StorageIdtyCertMeta

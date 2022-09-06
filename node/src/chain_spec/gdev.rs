@@ -306,7 +306,7 @@ fn gen_genesis_for_local_chain(
                 smith_cert_period: 15,
                 smith_cert_max_by_issuer: 8,
                 smith_cert_min_received_cert_to_issue_cert: 2,
-                smith_cert_validity_period: 1_000,
+                smith_cert_validity_period,
                 smith_membership_period,
                 smith_pending_membership_period: 500,
                 smiths_wot_first_cert_issuable_on: 20,
@@ -381,7 +381,7 @@ fn gen_genesis_for_local_chain(
         },
         cert: CertConfig {
             apply_cert_period_at_genesis: false,
-            certs_by_receiver: clique_wot(initial_identities.len(), cert_validity_period),
+            certs_by_receiver: clique_wot(initial_identities.len()),
         },
         smiths_membership: SmithsMembershipConfig {
             memberships: (1..=initial_smiths_len)
@@ -390,7 +390,7 @@ fn gen_genesis_for_local_chain(
         },
         smiths_cert: SmithsCertConfig {
             apply_cert_period_at_genesis: false,
-            certs_by_receiver: clique_wot(initial_smiths_len, smith_cert_validity_period),
+            certs_by_receiver: clique_wot(initial_smiths_len),
         },
         universal_dividend: UniversalDividendConfig {
             first_reeval: 100,
