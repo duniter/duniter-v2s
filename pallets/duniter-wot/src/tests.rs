@@ -144,33 +144,6 @@ fn test_smith_member_cant_revoke_its_idty() {
 }
 
 #[test]
-fn test_revoke_smiths_them_rejoin() {
-    new_test_ext(5, 4).execute_with(|| {
-        run_to_block(2);
-
-        // Dave shoud be able to revoke his smith membership
-        assert_ok!(SmithsMembership::revoke_membership(
-            Origin::signed(4),
-            Some(4)
-        ));
-
-        // Dave should not be able to re-request membership before the RevocationPeriod end
-        run_to_block(3);
-        assert_noop!(
-            SmithsMembership::request_membership(Origin::signed(4), ()),
-            pallet_membership::Error::<Test, crate::Instance2>::MembershipRevokedRecently
-        );
-
-        // At block #6, Dave shoud be able to request smith membership
-        run_to_block(6);
-        assert_ok!(SmithsMembership::request_membership(Origin::signed(4), ()));
-
-        // Then, Alice should be able to send a smith cert to Dave
-        assert_ok!(SmithsCert::add_cert(Origin::signed(1), 1, 4));
-    });
-}
-
-#[test]
 fn test_create_idty_ok() {
     new_test_ext(5, 2).execute_with(|| {
         run_to_block(2);

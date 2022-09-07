@@ -444,7 +444,7 @@ macro_rules! pallets_config {
         }
 
         impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {
-			type IsIdtyAllowedToClaimMembership = Wot;
+            type IsIdtyAllowedToClaimMembership = Wot;
             type IsIdtyAllowedToRenewMembership = Wot;
             type IsIdtyAllowedToRequestMembership = Wot;
             type Event = Event;
@@ -454,7 +454,6 @@ macro_rules! pallets_config {
             type MetaData = ();
             type OnEvent = OnMembershipEventHandler<Wot, Runtime>;
             type PendingMembershipPeriod = PendingMembershipPeriod;
-            type RevocationPeriod = frame_support::traits::ConstU32<0>;
         }
 
         impl pallet_certification::Config<Instance1> for Runtime {
@@ -481,7 +480,7 @@ macro_rules! pallets_config {
         }
 
         impl pallet_membership::Config<Instance2> for Runtime {
-			type IsIdtyAllowedToClaimMembership = SmithsSubWot;
+            type IsIdtyAllowedToClaimMembership = SmithsSubWot;
             type IsIdtyAllowedToRenewMembership = SmithsSubWot;
             type IsIdtyAllowedToRequestMembership = SmithsSubWot;
             type Event = Event;
@@ -491,7 +490,6 @@ macro_rules! pallets_config {
             type MetaData = SmithsMembershipMetaData<opaque::SessionKeysWrapper>;
             type OnEvent = OnSmithMembershipEventHandler<SmithsSubWot, Runtime>;
             type PendingMembershipPeriod = SmithPendingMembershipPeriod;
-            type RevocationPeriod = frame_support::traits::ConstU32<0>;
         }
 
         impl pallet_certification::Config<Instance2> for Runtime {

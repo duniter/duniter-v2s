@@ -113,14 +113,7 @@ fn test_membership_revocation() {
             RuntimeEvent::DefaultMembership(Event::MembershipRevoked(0))
         );
 
-        // Membership 0 can't request membership before the end of RevokePeriod (1 + 4 = 5)
-        run_to_block(2);
-        assert_eq!(
-            DefaultMembership::request_membership(Origin::signed(0), ()),
-            Err(Error::<Test, _>::MembershipRevokedRecently.into())
-        );
-
-        // Membership 0 can request membership after the end of RevokePeriod (1 + 4 = 5)
+        // Membership 0 can re-request membership
         run_to_block(5);
         assert_ok!(DefaultMembership::request_membership(Origin::signed(0), ()),);
         assert_eq!(

@@ -81,9 +81,6 @@ pub mod pallet {
         #[pallet::constant]
         /// Maximum period (in number of blocks), where an identity can remain pending subscription.
         type PendingMembershipPeriod: Get<Self::BlockNumber>;
-        #[pallet::constant]
-        /// Minimum duration (in number of blocks between a revocation and a new entry request
-        type RevocationPeriod: Get<Self::BlockNumber>;
     }
 
     // GENESIS STUFF //
@@ -134,16 +131,6 @@ pub mod pallet {
     pub type PendingMembershipsExpireOn<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::IdtyId>, ValueQuery>;
 
-    #[pallet::storage]
-    #[pallet::getter(fn revoked_membership)]
-    pub type RevokedMembership<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Twox64Concat, T::IdtyId, (), OptionQuery>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn revoked_memberships_pruned_on)]
-    pub type RevokedMembershipsPrunedOn<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::IdtyId>, OptionQuery>;
-
     // EVENTS //
 
     #[pallet::event]
@@ -193,8 +180,6 @@ pub mod pallet {
         OriginNotAllowedToUseIdty,
         /// Membership request not found
         MembershipRequestNotFound,
-        /// Membership revoked recently
-        MembershipRevokedRecently,
     }
 
     // HOOKS //
@@ -203,9 +188,7 @@ pub mod pallet {
     impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
             if n > T::BlockNumber::zero() {
-                Self::expire_pending_memberships(n)
-                    + Self::expire_memberships(n)
-                    + Self::prune_revoked_memberships(n)
+                Self::expire_pending_memberships(n) + Self::expire_memberships(n)
             } else {
                 0
             }
@@ -307,7 +290,10 @@ pub mod pallet {
             let idty_id = Self::ensure_origin_and_get_idty_id(origin, maybe_idty_id)?;
 
             // Apply phase
-            let _ = Self::do_revoke_membership(idty_id);
+            if Self::remove_membership(&idty_id) {
+                Self::deposit_event(Event::MembershipRevoked(idty_id));
+                T::OnEvent::on_event(&sp_membership::Event::MembershipRevoked(idty_id));
+            }
 
             Ok(().into())
         }
@@ -340,9 +326,6 @@ pub mod pallet {
             if Membership::<T, I>::contains_key(&idty_id) {
                 return Err(Error::<T, I>::MembershipAlreadyAcquired.into());
             }
-            if RevokedMembership::<T, I>::contains_key(&idty_id) {
-                return Err(Error::<T, I>::MembershipRevokedRecently.into());
-            }
 
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             let expire_on = block_number + T::PendingMembershipPeriod::get();
@@ -353,21 +336,6 @@ pub mod pallet {
             T::OnEvent::on_event(&sp_membership::Event::MembershipRequested(idty_id));
 
             Ok(().into())
-        }
-        pub(super) fn do_revoke_membership(idty_id: T::IdtyId) -> Weight {
-            if Self::remove_membership(&idty_id) {
-                if T::RevocationPeriod::get() > Zero::zero() {
-                    let block_number = frame_system::pallet::Pallet::<T>::block_number();
-                    let pruned_on = block_number + T::RevocationPeriod::get();
-
-                    RevokedMembership::<T, I>::insert(idty_id, ());
-                    RevokedMembershipsPrunedOn::<T, I>::append(pruned_on, idty_id);
-                }
-                Self::deposit_event(Event::MembershipRevoked(idty_id));
-                T::OnEvent::on_event(&sp_membership::Event::MembershipRevoked(idty_id));
-            }
-
-            0
         }
         fn ensure_origin_and_get_idty_id(
             origin: OriginFor<T>,
@@ -407,17 +375,6 @@ pub mod pallet {
                     total_weight += T::OnEvent::on_event(
                         &sp_membership::Event::PendingMembershipExpired(idty_id),
                     );
-                }
-            }
-
-            total_weight
-        }
-        fn prune_revoked_memberships(block_number: T::BlockNumber) -> Weight {
-            let total_weight: Weight = 0;
-
-            if let Some(identities_ids) = RevokedMembershipsPrunedOn::<T, I>::take(block_number) {
-                for idty_id in identities_ids {
-                    RevokedMembership::<T, I>::remove(idty_id);
                 }
             }
 

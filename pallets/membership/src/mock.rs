@@ -80,7 +80,6 @@ impl system::Config for Test {
 parameter_types! {
     pub const MembershipPeriod: BlockNumber = 5;
     pub const PendingMembershipPeriod: BlockNumber = 3;
-    pub const RevocationPeriod: BlockNumber = 4;
 }
 
 impl pallet_membership::Config for Test {
@@ -94,7 +93,6 @@ impl pallet_membership::Config for Test {
     type MetaData = ();
     type OnEvent = ();
     type PendingMembershipPeriod = PendingMembershipPeriod;
-    type RevocationPeriod = RevocationPeriod;
 }
 
 // Build genesis storage according to the mock runtime.

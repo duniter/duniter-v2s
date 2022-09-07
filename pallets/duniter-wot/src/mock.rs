@@ -139,7 +139,6 @@ impl pallet_identity::Config for Test {
 parameter_types! {
     pub const MembershipPeriod: u64 = 8;
     pub const PendingMembershipPeriod: u64 = 3;
-    pub const RevocationPeriod: u64 = 4;
 }
 
 impl pallet_membership::Config<Instance1> for Test {
@@ -153,7 +152,6 @@ impl pallet_membership::Config<Instance1> for Test {
     type MetaData = ();
     type OnEvent = DuniterWot;
     type PendingMembershipPeriod = PendingMembershipPeriod;
-    type RevocationPeriod = RevocationPeriod;
 }
 
 // Cert
@@ -195,7 +193,6 @@ impl pallet_duniter_wot::Config<Instance2> for Test {
 parameter_types! {
     pub const SmithsMembershipPeriod: u64 = 20;
     pub const SmithsPendingMembershipPeriod: u64 = 3;
-    pub const SmithsRevocationPeriod: u64 = 4;
 }
 
 impl pallet_membership::Config<Instance2> for Test {
@@ -209,7 +206,6 @@ impl pallet_membership::Config<Instance2> for Test {
     type MetaData = ();
     type OnEvent = SmithsSubWot;
     type PendingMembershipPeriod = SmithsPendingMembershipPeriod;
-    type RevocationPeriod = SmithsRevocationPeriod;
 }
 
 // SmithsCert
