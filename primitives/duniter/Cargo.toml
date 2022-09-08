@@ -2,7 +2,7 @@
 authors = ['librelois <c@elo.tf>']
 description = 'primitives for duniter runtime.'
 edition = "2021"
-homepage = 'https://substrate.dev'
+homepage = 'https://duniter.org'
 license = 'AGPL-3.0'
 name = 'duniter-primitives'
 readme = 'README.md'

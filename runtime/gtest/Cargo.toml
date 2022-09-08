@@ -5,7 +5,7 @@ branch = 'duniter-substrate-v0.9.26'
 [package]
 authors = ['Axiom-Team Developers <https://axiom-team.fr>']
 edition = "2021"
-homepage = 'https://substrate.dev'
+homepage = 'https://duniter.org'
 license = 'AGPL-3.0'
 name = 'gtest-runtime'
 repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'

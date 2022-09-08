@@ -2,7 +2,7 @@
 authors = ['Axiom-Team Developers <https://axiom-team.fr>']
 description = 'duniter live tests.'
 edition = "2021"
-homepage = 'https://substrate.dev'
+homepage = 'https://duniter.org'
 license = 'AGPL-3.0'
 name = 'duniter-live-tests'
 repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'

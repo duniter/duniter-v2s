@@ -2,7 +2,7 @@
 authors = ['librelois <c@elo.tf>']
 description = 'Duniter test parameters macro.'
 edition = "2021"
-homepage = 'https://substrate.dev'
+homepage = 'https://duniter.org'
 license = 'AGPL-3.0'
 name = 'pallet-duniter-test-parameters-macro'
 repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
