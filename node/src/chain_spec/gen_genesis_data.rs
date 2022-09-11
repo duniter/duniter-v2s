@@ -70,7 +70,7 @@ struct Idty {
     #[serde(default)]
     balance: u64,
     #[serde(default)]
-    certs: Vec<String>,
+    certs: Vec<Cert>,
     #[serde(rename = "expire_on")]
     membership_expire_on: Option<u64>,
     pubkey: AccountId,
@@ -80,7 +80,22 @@ struct Idty {
 struct SmithData {
     session_keys: Option<String>,
     #[serde(default)]
-    certs: Vec<String>,
+    certs: Vec<Cert>,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+enum Cert {
+    Issuer(String),
+    IssuerAndExpireOn(String, u32),
+}
+impl From<Cert> for (String, Option<u32>) {
+    fn from(cert: Cert) -> Self {
+        match cert {
+            Cert::Issuer(issuer) => (issuer, None),
+            Cert::IssuerAndExpireOn(issuer, expire_on) => (issuer, Some(expire_on)),
+        }
+    }
 }
 
 pub fn generate_genesis_data<CS, P, SK, F>(
@@ -229,11 +244,12 @@ where
             .get(&idty_name)
             .ok_or(format!("Identity '{}' not exist", &idty_name))?;
         let mut receiver_certs = BTreeMap::new();
-        for issuer in &identity.certs {
+        for cert in &identity.certs {
+            let (issuer, maybe_expire_on) = cert.clone().into();
             let issuer_index = idty_index_of
-                .get(issuer)
+                .get(&issuer)
                 .ok_or(format!("Identity '{}' not exist", issuer))?;
-            receiver_certs.insert(*issuer_index, None);
+            receiver_certs.insert(*issuer_index, maybe_expire_on);
         }
         certs_by_receiver.insert(*issuer_index, receiver_certs);
     }
@@ -311,11 +327,12 @@ where
 
         // Certifications
         let mut receiver_certs = BTreeMap::new();
-        for receiver in &smith_data.certs {
+        for cert in &smith_data.certs {
+            let (issuer, maybe_expire_on) = cert.clone().into();
             let issuer_index = idty_index_of
-                .get(receiver)
-                .ok_or(format!("Identity '{}' not exist", receiver))?;
-            receiver_certs.insert(*issuer_index, None);
+                .get(&issuer)
+                .ok_or(format!("Identity '{}' not exist", issuer))?;
+            receiver_certs.insert(*issuer_index, maybe_expire_on);
         }
         smiths_certs_by_receiver.insert(*idty_index, receiver_certs);
 
