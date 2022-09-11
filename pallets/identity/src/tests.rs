@@ -20,8 +20,7 @@ use crate::{
     NEW_OWNER_KEY_PAYLOAD_PREFIX, REVOCATION_PAYLOAD_PREFIX,
 };
 use codec::Encode;
-//use frame_support::assert_noop;
-use frame_support::{assert_err, assert_ok};
+use frame_support::{assert_noop, assert_ok};
 use frame_system::{EventRecord, Phase};
 use sp_runtime::testing::TestSignature;
 
@@ -212,7 +211,7 @@ fn test_change_owner_key() {
         assert_eq!(System::sufficients(&10), 0);
 
         // Caller should have an associated identity
-        assert_err!(
+        assert_noop!(
             Identity::change_owner_key(
                 Origin::signed(42),
                 10,
@@ -222,7 +221,7 @@ fn test_change_owner_key() {
         );
 
         // Payload must be signed by the new key
-        assert_err!(
+        assert_noop!(
             Identity::change_owner_key(
                 Origin::signed(1),
                 10,
@@ -232,7 +231,7 @@ fn test_change_owner_key() {
         );
 
         // Payload must be prefixed
-        assert_err!(
+        assert_noop!(
             Identity::change_owner_key(
                 Origin::signed(1),
                 10,
@@ -242,7 +241,7 @@ fn test_change_owner_key() {
         );
 
         // New owner key should not be used by another identity
-        assert_err!(
+        assert_noop!(
             Identity::change_owner_key(
                 Origin::signed(1),
                 2,
@@ -277,7 +276,7 @@ fn test_change_owner_key() {
 
         // Alice can't re-change her owner key too early
         new_key_payload.old_owner_key = &10;
-        assert_err!(
+        assert_noop!(
             Identity::change_owner_key(
                 Origin::signed(10),
                 100,
@@ -327,6 +326,95 @@ fn test_change_owner_key() {
         assert_eq!(System::sufficients(&10), 0);
         // Last owner key should not be sufficient anymore
         assert_eq!(System::sufficients(&100), 0);
+    });
+}
+
+#[test]
+fn test_idty_revocation_with_old_key() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice()],
+    })
+    .execute_with(|| {
+        let genesis_hash = System::block_hash(0);
+        let new_key_payload = NewOwnerKeyPayload {
+            genesis_hash: &genesis_hash,
+            idty_index: 1u64,
+            old_owner_key: &1u64,
+        };
+        let revocation_payload = RevocationPayload {
+            idty_index: 1u64,
+            genesis_hash,
+        };
+
+        // We need to initialize at least one block before any call
+        run_to_block(1);
+
+        // Change alice owner key
+        assert_ok!(Identity::change_owner_key(
+            Origin::signed(1),
+            10,
+            TestSignature(10, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
+        ));
+        assert!(Identity::identity(&1).is_some());
+        let idty_val = Identity::identity(&1).unwrap();
+        assert_eq!(idty_val.owner_key, 10);
+        assert_eq!(idty_val.old_owner_key, Some((1, 1)));
+
+        // We should be able to revoke Alice identity with old key
+        run_to_block(2);
+        assert_ok!(Identity::revoke_identity(
+            Origin::signed(42),
+            1,
+            1,
+            TestSignature(1, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
+        ));
+
+        //run_to_block(2 + <Test as crate::Config>::ChangeOwnerKeyPeriod::get());
+    });
+}
+
+#[test]
+fn test_idty_revocation_with_old_key_after_old_key_expiration() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice()],
+    })
+    .execute_with(|| {
+        let genesis_hash = System::block_hash(0);
+        let new_key_payload = NewOwnerKeyPayload {
+            genesis_hash: &genesis_hash,
+            idty_index: 1u64,
+            old_owner_key: &1u64,
+        };
+        let revocation_payload = RevocationPayload {
+            idty_index: 1u64,
+            genesis_hash,
+        };
+
+        // We need to initialize at least one block before any call
+        run_to_block(1);
+
+        // Change alice owner key
+        assert_ok!(Identity::change_owner_key(
+            Origin::signed(1),
+            10,
+            TestSignature(10, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
+        ));
+        assert!(Identity::identity(&1).is_some());
+        let idty_val = Identity::identity(&1).unwrap();
+        assert_eq!(idty_val.owner_key, 10);
+        assert_eq!(idty_val.old_owner_key, Some((1, 1)));
+
+        // We should not be able to revoke Alice identity with old key after ChangeOwnerKeyPeriod
+        run_to_block(2 + <Test as crate::Config>::ChangeOwnerKeyPeriod::get());
+        assert_noop!(
+            Identity::revoke_identity(
+                Origin::signed(42),
+                1,
+                1,
+                TestSignature(1, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
+            ),
+            Error::<Test>::InvalidRevocationKey
+        );
     });
 }
 

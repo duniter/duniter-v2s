@@ -495,8 +495,11 @@ pub mod pallet {
             let idty_value = Identities::<T>::get(idty_index).ok_or(Error::<T>::IdtyNotFound)?;
 
             ensure!(
-                if let Some((ref old_owner_key, _)) = idty_value.old_owner_key {
-                    revocation_key == idty_value.owner_key || &revocation_key == old_owner_key
+                if let Some((ref old_owner_key, last_change)) = idty_value.old_owner_key {
+                    revocation_key == idty_value.owner_key
+                        || (&revocation_key == old_owner_key
+                            && frame_system::Pallet::<T>::block_number()
+                                < last_change + T::ChangeOwnerKeyPeriod::get())
                 } else {
                     revocation_key == idty_value.owner_key
                 },
@@ -516,7 +519,7 @@ pub mod pallet {
 
             ensure!(
                 (REVOCATION_PAYLOAD_PREFIX, revocation_payload)
-                    .using_encoded(|bytes| revocation_sig.verify(bytes, &idty_value.owner_key)),
+                    .using_encoded(|bytes| revocation_sig.verify(bytes, &revocation_key)),
                 Error::<T>::InvalidRevocationSig
             );
 
