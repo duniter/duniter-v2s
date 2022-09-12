@@ -91,22 +91,16 @@ fn test_remove_identity() {
             4,
             None
         ));
-        let events = System::events();
-        assert_eq!(events.len(), 3);
-        assert_eq!(
-            System::events()[0].event,
-            Event::Membership(pallet_membership::Event::MembershipRevoked(4))
-        );
-        assert_eq!(
-            System::events()[1].event,
-            Event::System(frame_system::Event::KilledAccount {
-                account: AccountKeyring::Dave.to_account_id()
-            })
-        );
-        assert_eq!(
-            System::events()[2].event,
-            Event::Identity(pallet_identity::Event::IdtyRemoved { idty_index: 4 })
-        );
+
+        System::assert_has_event(Event::Membership(
+            pallet_membership::Event::MembershipRevoked(4),
+        ));
+        System::assert_has_event(Event::System(frame_system::Event::KilledAccount {
+            account: AccountKeyring::Dave.to_account_id(),
+        }));
+        System::assert_has_event(Event::Identity(pallet_identity::Event::IdtyRemoved {
+            idty_index: 4,
+        }));
     });
 }
 #[test]
@@ -122,39 +116,27 @@ fn test_remove_identity_after_one_ud() {
         ));
 
         // Verify events
-        let events = System::events();
-        //println!("{:?}", events);
-        assert_eq!(events.len(), 5);
-        assert_eq!(
-            System::events()[0].event,
-            Event::Membership(pallet_membership::Event::MembershipRevoked(4))
-        );
-        assert_eq!(
-            System::events()[1].event,
-            Event::Balances(pallet_balances::Event::Deposit {
-                who: AccountKeyring::Dave.to_account_id(),
-                amount: 1_000
-            })
-        );
-        assert_eq!(
-            System::events()[2].event,
-            Event::Balances(pallet_balances::Event::Endowed {
-                account: AccountKeyring::Dave.to_account_id(),
-                free_balance: 1_000
-            })
-        );
-        assert_eq!(
-            System::events()[3].event,
-            Event::UniversalDividend(pallet_universal_dividend::Event::UdsAutoPaidAtRemoval {
+        System::assert_has_event(Event::Membership(
+            pallet_membership::Event::MembershipRevoked(4),
+        ));
+        System::assert_has_event(Event::Balances(pallet_balances::Event::Deposit {
+            who: AccountKeyring::Dave.to_account_id(),
+            amount: 1_000,
+        }));
+        System::assert_has_event(Event::Balances(pallet_balances::Event::Endowed {
+            account: AccountKeyring::Dave.to_account_id(),
+            free_balance: 1_000,
+        }));
+        System::assert_has_event(Event::UniversalDividend(
+            pallet_universal_dividend::Event::UdsAutoPaidAtRemoval {
                 count: 1,
                 total: 1_000,
                 who: AccountKeyring::Dave.to_account_id(),
-            })
-        );
-        assert_eq!(
-            System::events()[4].event,
-            Event::Identity(pallet_identity::Event::IdtyRemoved { idty_index: 4 })
-        );
+            },
+        ));
+        System::assert_has_event(Event::Identity(pallet_identity::Event::IdtyRemoved {
+            idty_index: 4,
+        }));
 
         // Verify state
         assert!(Identity::identity(4).is_none());
@@ -175,25 +157,19 @@ fn test_remove_smith_identity() {
             3,
             None
         ));
-        let events = System::events();
-        assert_eq!(events.len(), 4);
-        assert_eq!(
-            System::events()[0].event,
-            Event::SmithsMembership(pallet_membership::Event::MembershipRevoked(3))
-        );
-        assert_eq!(
-            System::events()[1].event,
-            Event::AuthorityMembers(pallet_authority_members::Event::MemberRemoved(3))
-        );
-        assert_eq!(
-            System::events()[2].event,
-            Event::Membership(pallet_membership::Event::MembershipRevoked(3))
-        );
-        assert_eq!(
-            System::events()[3].event,
-            Event::Identity(pallet_identity::Event::IdtyRemoved { idty_index: 3 })
-        );
-        //println!("{:#?}", events);
+        // Verify events
+        System::assert_has_event(Event::SmithsMembership(
+            pallet_membership::Event::MembershipRevoked(3),
+        ));
+        System::assert_has_event(Event::AuthorityMembers(
+            pallet_authority_members::Event::MemberRemoved(3),
+        ));
+        System::assert_has_event(Event::Membership(
+            pallet_membership::Event::MembershipRevoked(3),
+        ));
+        System::assert_has_event(Event::Identity(pallet_identity::Event::IdtyRemoved {
+            idty_index: 3,
+        }));
     });
 }
 
@@ -211,55 +187,38 @@ fn test_create_new_account_with_insufficient_balance() {
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 400
             ));
-            let events = System::events();
-            //println!("{:#?}", events);
-            assert_eq!(events.len(), 3);
-            assert_eq!(
-                System::events()[0].event,
-                Event::System(frame_system::Event::NewAccount {
-                    account: AccountKeyring::Eve.to_account_id(),
-                })
-            );
-            assert_eq!(
-                System::events()[1].event,
-                Event::Balances(pallet_balances::Event::Endowed {
-                    account: AccountKeyring::Eve.to_account_id(),
-                    free_balance: 400,
-                })
-            );
-            assert_eq!(
-                System::events()[2].event,
-                Event::Balances(pallet_balances::Event::Transfer {
-                    from: AccountKeyring::Alice.to_account_id(),
-                    to: AccountKeyring::Eve.to_account_id(),
-                    amount: 400,
-                })
-            );
+
+            System::assert_has_event(Event::System(frame_system::Event::NewAccount {
+                account: AccountKeyring::Eve.to_account_id(),
+            }));
+            System::assert_has_event(Event::Balances(pallet_balances::Event::Endowed {
+                account: AccountKeyring::Eve.to_account_id(),
+                free_balance: 400,
+            }));
+            System::assert_has_event(Event::Balances(pallet_balances::Event::Transfer {
+                from: AccountKeyring::Alice.to_account_id(),
+                to: AccountKeyring::Eve.to_account_id(),
+                amount: 400,
+            }));
 
             // At next block, the new account must be reaped because its balance is not sufficient
             // to pay the "new account tax"
             run_to_block(3);
-            let events = System::events();
-            //println!("{:#?}", events);
-            assert_eq!(events.len(), 3);
-            assert_eq!(
-                System::events()[0].event,
-                Event::Account(pallet_duniter_account::Event::ForceDestroy {
+
+            System::assert_has_event(Event::Account(
+                pallet_duniter_account::Event::ForceDestroy {
                     who: AccountKeyring::Eve.to_account_id(),
                     balance: 400,
-                })
-            );
-            assert_eq!(
-                System::events()[1].event,
-                Event::Balances(pallet_balances::Event::Deposit {
-                    who: Treasury::account_id(),
-                    amount: 400,
-                })
-            );
-            assert_eq!(
-                System::events()[2].event,
-                Event::Treasury(pallet_treasury::Event::Deposit { value: 400 })
-            );
+                },
+            ));
+            System::assert_has_event(Event::Balances(pallet_balances::Event::Deposit {
+                who: Treasury::account_id(),
+                amount: 400,
+            }));
+            System::assert_has_event(Event::Treasury(pallet_treasury::Event::Deposit {
+                value: 400,
+            }));
+
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 0
@@ -299,27 +258,19 @@ fn test_create_new_account() {
             // At next block, the new account must be created,
             // and new account tax should be collected and deposited in the treasury
             run_to_block(3);
-            let events = System::events();
-            println!("{:#?}", events);
-            assert_eq!(events.len(), 3);
-            assert_eq!(
-                System::events()[0].event,
-                Event::Balances(pallet_balances::Event::Withdraw {
-                    who: AccountKeyring::Eve.to_account_id(),
-                    amount: 300,
-                })
-            );
-            assert_eq!(
-                System::events()[1].event,
-                Event::Balances(pallet_balances::Event::Deposit {
-                    who: Treasury::account_id(),
-                    amount: 300,
-                })
-            );
-            assert_eq!(
-                System::events()[2].event,
-                Event::Treasury(pallet_treasury::Event::Deposit { value: 300 })
-            );
+
+            System::assert_has_event(Event::Balances(pallet_balances::Event::Withdraw {
+                who: AccountKeyring::Eve.to_account_id(),
+                amount: 300,
+            }));
+            System::assert_has_event(Event::Balances(pallet_balances::Event::Deposit {
+                who: Treasury::account_id(),
+                amount: 300,
+            }));
+            System::assert_has_event(Event::Treasury(pallet_treasury::Event::Deposit {
+                value: 300,
+            }));
+
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 200

@@ -19,7 +19,6 @@ use crate::mock::{Identity, System};
 use codec::Encode;
 use frame_support::instances::Instance1;
 use frame_support::{assert_noop, assert_ok};
-use frame_system::{EventRecord, Phase};
 use pallet_identity::{
     IdtyName, IdtyStatus, NewOwnerKeyPayload, RevocationPayload, NEW_OWNER_KEY_PAYLOAD_PREFIX,
     REVOCATION_PAYLOAD_PREFIX,
@@ -151,32 +150,17 @@ fn test_create_idty_ok() {
         // Alice should be able to create an identity at block #2
         assert_ok!(Identity::create_identity(Origin::signed(1), 6));
         // 2 events should have occurred: IdtyCreated and NewCert
-        let events = System::events();
-        assert_eq!(events.len(), 2);
-        assert_eq!(
-            events[0],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyCreated {
-                    idty_index: 6,
-                    owner_key: 6,
-                }),
-                topics: vec![],
-            }
-        );
-        assert_eq!(
-            events[1],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Cert(pallet_certification::Event::NewCert {
-                    issuer: 1,
-                    issuer_issued_count: 5,
-                    receiver: 6,
-                    receiver_received_count: 1
-                }),
-                topics: vec![],
-            }
-        );
+        System::assert_has_event(Event::Identity(pallet_identity::Event::IdtyCreated {
+            idty_index: 6,
+            owner_key: 6,
+        }));
+        System::assert_has_event(Event::Cert(pallet_certification::Event::NewCert {
+            issuer: 1,
+            issuer_issued_count: 5,
+            receiver: 6,
+            receiver_received_count: 1,
+        }));
+
         assert_eq!(Identity::identity(6).unwrap().status, IdtyStatus::Created);
         assert_eq!(Identity::identity(6).unwrap().removable_on, 4);
     });
@@ -247,30 +231,14 @@ fn test_confirm_idty_ok() {
             Origin::signed(6),
             IdtyName::from("Ferdie"),
         ));
-        let events = System::events();
-        // 2 events should have occurred: MembershipRequested and IdtyConfirmed
-        assert_eq!(events.len(), 2);
-        //println!("{:?}", events[0]);
-        assert_eq!(
-            events[0],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Membership(pallet_membership::Event::MembershipRequested(6)),
-                topics: vec![],
-            }
-        );
-        assert_eq!(
-            events[1],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyConfirmed {
-                    idty_index: 6,
-                    owner_key: 6,
-                    name: IdtyName::from("Ferdie"),
-                }),
-                topics: vec![],
-            }
-        );
+        System::assert_has_event(Event::Membership(
+            pallet_membership::Event::MembershipRequested(6),
+        ));
+        System::assert_has_event(Event::Identity(pallet_identity::Event::IdtyConfirmed {
+            idty_index: 6,
+            owner_key: 6,
+            name: IdtyName::from("Ferdie"),
+        }));
     });
 }
 
@@ -287,25 +255,13 @@ fn test_idty_membership_expire_them_requested() {
         // Charlie's membership should expire at block #8
         run_to_block(8);
         assert!(Membership::membership(3).is_none());
-        let events = System::events();
-        println!("{:?}", events);
-        assert_eq!(events.len(), 2);
-        assert_eq!(
-            events[0],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Membership(pallet_membership::Event::MembershipExpired(3)),
-                topics: vec![],
-            }
-        );
-        assert_eq!(
-            events[1],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(pallet_identity::Event::IdtyRemoved { idty_index: 3 }),
-                topics: vec![],
-            }
-        );
+
+        System::assert_has_event(Event::Membership(
+            pallet_membership::Event::MembershipExpired(3),
+        ));
+        System::assert_has_event(Event::Identity(pallet_identity::Event::IdtyRemoved {
+            idty_index: 3,
+        }));
 
         // Charlie's identity should be removed at block #8
         assert!(Identity::identity(3).is_none());

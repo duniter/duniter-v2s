@@ -21,7 +21,6 @@ use crate::{
 };
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
-use frame_system::{EventRecord, Phase};
 use sp_runtime::testing::TestSignature;
 
 type IdtyVal = IdtyValue<u64, u64, ()>;
@@ -77,19 +76,11 @@ fn test_create_identity_ok() {
 
         // Alice should be able to create an identity
         assert_ok!(Identity::create_identity(Origin::signed(1), 2));
-        let events = System::events();
-        assert_eq!(events.len(), 1);
-        assert_eq!(
-            events[0],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyCreated {
-                    idty_index: 2,
-                    owner_key: 2,
-                }),
-                topics: vec![],
-            }
-        );
+
+        System::assert_has_event(Event::Identity(crate::Event::IdtyCreated {
+            idty_index: 2,
+            owner_key: 2,
+        }));
     });
 }
 
@@ -107,33 +98,17 @@ fn test_create_identity_but_not_confirm_it() {
 
         // The identity shoud expire in blocs #3
         run_to_block(3);
-        let events = System::events();
-        assert_eq!(events.len(), 1);
-        assert_eq!(
-            events[0],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyRemoved { idty_index: 2 }),
-                topics: vec![],
-            }
-        );
+
+        System::assert_has_event(Event::Identity(crate::Event::IdtyRemoved { idty_index: 2 }));
 
         // We shoud be able to recreate the identity
         run_to_block(4);
         assert_ok!(Identity::create_identity(Origin::signed(1), 2));
-        let events = System::events();
-        assert_eq!(events.len(), 1);
-        assert_eq!(
-            events[0],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyCreated {
-                    idty_index: 3,
-                    owner_key: 2,
-                }),
-                topics: vec![],
-            }
-        );
+
+        System::assert_has_event(Event::Identity(crate::Event::IdtyCreated {
+            idty_index: 3,
+            owner_key: 2,
+        }));
     });
 }
 
@@ -148,19 +123,12 @@ fn test_idty_creation_period() {
 
         // Alice should be able to create an identity
         assert_ok!(Identity::create_identity(Origin::signed(1), 2));
-        let events = System::events();
-        assert_eq!(events.len(), 1);
-        assert_eq!(
-            events[0],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyCreated {
-                    idty_index: 2,
-                    owner_key: 2,
-                }),
-                topics: vec![],
-            }
-        );
+
+        System::assert_has_event(Event::Identity(crate::Event::IdtyCreated {
+            idty_index: 2,
+            owner_key: 2,
+        }));
+
         assert_eq!(Identity::identity(1).unwrap().next_creatable_identity_on, 4);
 
         // Alice cannot create a new identity before block #4
@@ -173,19 +141,11 @@ fn test_idty_creation_period() {
         // Alice should be able to create a second identity after block #4
         run_to_block(4);
         assert_ok!(Identity::create_identity(Origin::signed(1), 3));
-        let events = System::events();
-        assert_eq!(events.len(), 1);
-        assert_eq!(
-            events[0],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyCreated {
-                    idty_index: 3,
-                    owner_key: 3,
-                }),
-                topics: vec![],
-            }
-        );
+
+        System::assert_has_event(Event::Identity(crate::Event::IdtyCreated {
+            idty_index: 3,
+            owner_key: 3,
+        }));
     });
 }
 
@@ -462,24 +422,10 @@ fn test_idty_revocation() {
             TestSignature(1, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
         ));
 
-        let events = System::events();
-        assert_eq!(events.len(), 2);
-        assert_eq!(
-            events[0],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::System(frame_system::Event::KilledAccount { account: 1 }),
-                topics: vec![],
-            }
-        );
-        assert_eq!(
-            events[1],
-            EventRecord {
-                phase: Phase::Initialization,
-                event: Event::Identity(crate::Event::IdtyRemoved { idty_index: 1 }),
-                topics: vec![],
-            }
-        );
+        System::assert_has_event(Event::System(frame_system::Event::KilledAccount {
+            account: 1,
+        }));
+        System::assert_has_event(Event::Identity(crate::Event::IdtyRemoved { idty_index: 1 }));
 
         run_to_block(2);
 
