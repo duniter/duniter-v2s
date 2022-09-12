@@ -297,6 +297,22 @@ async fn certifies(world: &mut DuniterWorld, from: String, to: String) -> Result
     common::cert::certify(world.client(), from, to).await
 }
 
+#[when(regex = r"([a-zA-Z]+) creates identity for ([a-zA-Z]+)")]
+async fn creates_identity(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
+    // Parse inputs
+    let from = AccountKeyring::from_str(&from).expect("unknown from");
+    let to = AccountKeyring::from_str(&to).expect("unknown to");
+
+    common::identity::create_identity(world.client(), from, to).await
+}
+
+#[when(regex = r#"([a-zA-Z]+) confirms (?:his|her) identity with pseudo "([a-zA-Z]+)""#)]
+async fn confirm_identity(world: &mut DuniterWorld, from: String, pseudo: String) -> Result<()> {
+    let from = AccountKeyring::from_str(&from).expect("unknown from");
+
+    common::identity::confirm_identity(world.client(), from, pseudo).await
+}
+
 // ===== then ====
 
 #[then(regex = r"([a-zA-Z]+) should have (\d+) (ĞD|cĞD)")]
@@ -377,6 +393,7 @@ async fn should_be_certified_by(
         .expect("unknown to")
         .to_account_id();
 
+    // get corresponding identities index
     let issuer_index = world
         .read(
             &gdev::storage()
@@ -398,6 +415,7 @@ async fn should_be_certified_by(
         .read_or_default(&gdev::storage().cert().certs_by_receiver(&receiver_index))
         .await?;
 
+    // look for certification by issuer/receiver pair
     match issuers.binary_search_by(|(issuer_, _)| issuer_index.cmp(issuer_)) {
         Ok(_) => Ok(()),
         Err(_) => Err(anyhow::anyhow!(
@@ -407,6 +425,32 @@ async fn should_be_certified_by(
             issuers
         )
         .into()),
+    }
+}
+
+use gdev::runtime_types::pallet_identity::types::IdtyStatus;
+
+#[then(regex = r"([a-zA-Z]+) identity should be created")]
+async fn identity_should_be_created(world: &mut DuniterWorld, receiver: String) -> Result<()> {
+    let identity_value = common::identity::get_identity_value(world, receiver).await?;
+
+    match identity_value.status {
+        IdtyStatus::Created => Ok(()),
+        IdtyStatus::ConfirmedByOwner | IdtyStatus::Validated => {
+            Err(anyhow::anyhow!("status not created").into())
+        }
+    }
+}
+
+#[then(regex = r"([a-zA-Z]+) identity should be confirmed")]
+async fn identity_should_be_confirmed(world: &mut DuniterWorld, name: String) -> Result<()> {
+    let identity_value = common::identity::get_identity_value(world, name).await?;
+
+    match identity_value.status {
+        IdtyStatus::ConfirmedByOwner => Ok(()),
+        IdtyStatus::Created | IdtyStatus::Validated => {
+            Err(anyhow::anyhow!("status not confirmed by owner").into())
+        }
     }
 }
 

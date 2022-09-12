@@ -92,14 +92,14 @@ impl system::Config for Test {
 // DuniterWot
 parameter_types! {
     pub const MinCertForMembership: u32 = 2;
-    pub const MinCertForCreateIdtyRigh: u32 = 4;
+    pub const MinCertForCreateIdtyRight: u32 = 4;
     pub const FirstIssuableOn: u64 = 2;
 }
 
 impl pallet_duniter_wot::Config<Instance1> for Test {
     type IsSubWot = frame_support::traits::ConstBool<false>;
     type MinCertForMembership = MinCertForMembership;
-    type MinCertForCreateIdtyRight = MinCertForCreateIdtyRigh;
+    type MinCertForCreateIdtyRight = MinCertForCreateIdtyRight;
     type FirstIssuableOn = FirstIssuableOn;
 }
 
