@@ -1,6 +1,6 @@
 # Manual for wallet developers
 
-This functionnal documentation presents how wallets can interact with the blockchain.
+This functional documentation presents how wallets can interact with the blockchain.
 It is intended to complete the [runtime calls documentation](./runtime-calls.md) in a runtime-specific way to fit the real needs of wallet developers.
 
 Only ĞDev is covered for now.
@@ -23,9 +23,9 @@ Only use `identity` pallet. The `membership` calls are disabled.
 
 ## Revoke an identity
 
-Revoking an identity makes it lose its membership, hence UD creation and governance rights. Orher data such as balance will remain.
+Revoking an identity makes it lose its membership, hence UD creation and governance rights. Other data such as balance will remain.
 
-This feature is useful in case the user has lost their private key.
+This feature is useful in case the user has lost their private key since the revocation document can be made in advance.
 
 ### Generate the revocation payload
 

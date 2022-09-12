@@ -1,9 +1,13 @@
+# This is a minimal docker-compose.yml template for running a Duniter instance
+# For more detailed examples, look at docker/compose folder
+
 version: "3.5"
 
 services:
   duniter-v2s:
     container_name: duniter-v2s
-    image: duniter/duniter-v2s:v0.1.0
+    # choose the version of the image here
+    image: duniter/duniter-v2s:v0.3.0
     ports:
       # telemetry
       - 9615:9615

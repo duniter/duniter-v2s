@@ -8,16 +8,17 @@
 [docker/compose/gdev-validator.docker-compose.yml](https://git.duniter.org/nodes/rust/duniter-v2s/-/blob/master/docker/compose/gdev-validator.docker-compose.yml)
 - Create a `.env` file that define environment variables `SERVER_DOMAIN`, `PEER_ID` and `VALIDATOR_PEER_ID`:
   - `SERVER_DOMAIN`: a domain name that point on your server
-  - `PEER_ID`: Your rpc node peer id, shoud be generated with this command: `docker run --rm -it --entrypoint -v $PWD:/var/lib/duniter/ duniter duniter/duniter-v2s:v0.2.0 key generate-node-key --file /var/lib/duniter/rpc-node.key`
-  - `VALIDATOR_PEER_ID`: Your validator node peer id, shoud be generated with this command: `docker run --rm -it --entrypoint -v $PWD:/var/lib/duniter/ duniter duniter/duniter-v2s:v0.2.0 key generate-node-key --file /var/lib/duniter/validator-node.key`
+  - `PEER_ID`: Your rpc node peer id, shoud be generated with this command: `docker run --rm -it --entrypoint -v $PWD:/var/lib/duniter/ duniter duniter/duniter-v2s:v0.3.0 key generate-node-key --file /var/lib/duniter/rpc-node.key`
+  - `VALIDATOR_PEER_ID`: Your validator node peer id, shoud be generated with this command: `docker run --rm -it --entrypoint -v $PWD:/var/lib/duniter/ duniter duniter/duniter-v2s:v0.3.0 key generate-node-key --file /var/lib/duniter/validator-node.key`
   Note: duniter-rpc PEER_ID and duniter-validator PEER_ID isn't the same.
 - If you have write access errors run in docker-compose.yml folder : `chmod o+rwX -R .`
-- `docker-compose up -d` to start your node
+- `docker compose up -d` to start your node
 
 ### Reverse-proxy part (with Nginx)
 
-In `/etc/nginx/sites-enabled/gdev.YOUR_DOMAIN` put (you can probably do simpler) :
-```
+In `/etc/nginx/sites-enabled/gdev.YOUR_DOMAIN` put (you can probably do simpler):
+
+```nginx
 server {
   server_name gdev.YOUR_DOMAIN.fr;
 
@@ -75,7 +76,7 @@ Your node is now online as a rpc node. It's fully capable for wallet use.
   - Send the query
 - Await smith certification : developer > extrinsics > CERTIFIER_SMITH_ACCOUNT > smithCert > addCert(receiver)
 
-When you have at least 3 certifications, your'in !
+When you have at least 3 certifications, your'in!
 
 ## Validate blocks (blacksmith work)
 

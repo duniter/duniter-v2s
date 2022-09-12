@@ -1,5 +1,7 @@
 # Compile the runtime with srtool
 
+When voting for a runtime upgrade, you should check that the proposed hash actually corresponds to the published code you reviewed. Otherwise, a malicious runtime upgrade could be advertised as a legitimate one.
+
 ```docker
 docker run \
   -i \

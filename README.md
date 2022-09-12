@@ -1,8 +1,41 @@
 # Duniter v2s
 
-A rewriting of [Duniter](https://duniter.org) based on [Substrate](https://www.substrate.io/) framework.
+🆙 A rewriting of [Duniter v1](https://duniter.org) in the [Substrate](https://www.substrate.io/) framework.
 
-duniter-v2s is under active development, only a test network called "ĞDev" is deployed.
+⚠️ Duniter-v2s is under active development.
+
+🚧 A test network called "ĞDev" is deployed, allowing to test wallets and indexers.
+
+<div align="center">
+    <img alt="logov2" src="https://duniter.fr/img/duniterv2.svg" width="128" height="128"/>
+</div>
+
+## Documentation TOC
+
+- [README](./README.md)
+  - [Use](#use)
+  - [Test](#test)
+  - [Contribute](#contribute)
+  - [Structure](#project-structure)
+- [docs](./docs/)
+  - [api](./docs/api/)
+    - [manual](./docs/api/manual.md)
+    - [runtime-calls](./docs/api/runtime-calls.md) the calls you can submit through the RPC API
+  - [dev](./docs/dev/)
+    - [git-conventions](./docs/dev/git-conventions.md)
+    - [launch-a-live-network](./docs/dev/launch-a-live-network.md)
+    - [setup](./docs/dev/setup.md)
+    - [verify-runtime-code](./docs/dev/verify-runtime-code.md)
+    - [weights-benchmarking](./docs/dev/weights-benchmarking.md)
+  - [test](./docs/test/)
+    - [replay-block](./docs/test/replay-block.md)
+  - [user](./docs/user/)
+    - [autocompletion](./docs/user/autocompletion.md)
+    - [build-for-arm](./docs/user/build-for-arm.md)
+    - [rpc](./docs/user/rpc.md) deploy a permanent ǦDev mirror node
+    - [smith](./docs/user/smith.md) deploy a permanent ǦDev validator node
+- [end2end-tests](./end2end-tests/) automated end to end tests written with cucumber 
+- [live-tests](./live-tests/) sanity checks to test the storage of a live chain 
 
 ## Use
 
@@ -13,27 +46,27 @@ The easiest way is to use the docker image.
 Minimal command to deploy a **temporary** mirror peer:
 
 ```docker
-docker run -it -p9944:9944 -e DUNITER_CHAIN_NAME=gdev duniter/duniter-v2s:v0.1.0 --tmp --execution=Wasm
+docker run -it -p9944:9944 -e DUNITER_CHAIN_NAME=gdev duniter/duniter-v2s:v0.3.0 --tmp --execution=Wasm
 ```
 
 To go further, read [How to deploy a permanent mirror node on ĞDev network](./docs/user/rpc.md).
 
 ### Create your local blockchain
 
-It can be useful to deploy your local blockchain, for instance to have a controled environement
-to develop/test an application that interact with the blockchain.
+It can be useful to deploy your local blockchain, for instance to have a controlled environement
+to develop/test an application that interacts with the blockchain.
 
 ```docker
-docker run -it -p9944:9944 duniter/duniter-v2s:v0.1.0 --tmp
+docker run -it -p9944:9944 duniter/duniter-v2s:v0.3.0 --tmp
 ```
 
 Or use the `docker-compose.yml` at the root of this repository.
 
 #### Control when your local blockchain should produce blocks
 
-By default, your local blockchain produce a new block every 6 seconds, which is not practical in some cases.
+By default, your local blockchain produces a new block every 6 seconds, which is not practical in some cases.
 
-You can decide when to produce blocks with the cli option `--sealing`, , there are 2 possible modes:
+You can decide when to produce blocks with the cli option `--sealing` which has two modes:
 
 * `--sealing=instant`: produce a block immediately upon receiving a transaction into the transaction pool
 * `--sealing=manual`: produce a block upon receiving an RPC request (method `engine_createBlock`).
@@ -77,7 +110,7 @@ First, complete the [basic setup instructions](./docs/dev/setup.md).
 
 ### Build
 
-NOTE: You must first follow the instructions in the [Setup] section (#setup).
+NOTE: You must first follow the instructions in the [Setup](#setup-your-dev-environment) section.
 
 Use the following command to build the node without launching it:
 

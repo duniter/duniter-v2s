@@ -2,7 +2,7 @@
 
 ## 1. Choose the currency type
 
-Ensure that the currency type you want have the requirements.
+Ensure that the currency type you want has the requirements.
 
 For now, only `gdev` is supported.
 
@@ -61,12 +61,12 @@ root of the distribution folder:
 ```bash
 scp -r -P SSH_PORT "<path/to/dist/folder>" user@ip:/remote/dist/path
 cd "<path/to/dist/folder>"
-docker-compose up -d
+docker compose up -d
 ```
 
 Then, on the server:
 
 ```bash
 cd "<path/to/dist/folder>"
-docker-compose up -d
+docker compose up -d
 ```

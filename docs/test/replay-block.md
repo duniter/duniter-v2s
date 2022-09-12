@@ -1,6 +1,6 @@
 # How to replay a block
 
-You can use `try-runtime` subcommand to replay a block against a real satte from a live network.
+You can use `try-runtime` subcommand to replay a block against a real state from a live network.
 
 1. Checkout the git tag of the runtime version at the block you want to replay
 2. Build duniter with feature `try-runtime`: `cargo build --features try-runtime`

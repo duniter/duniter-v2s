@@ -1,6 +1,6 @@
 # Duniter-v2s end2end tests
 
-## Cucumber functionnal tests
+## Cucumber functional tests
 
 We use [cucumber] to be able to describe test scenarios in human language.
 
@@ -81,14 +81,22 @@ List of possible actions:
 
 ### Test users
 
-6 test users are provided:
+8 test users are provided derived from the same [dev mnemonic](https://docs.substrate.io/v3/getting-started/glossary/#dev-phrase)
 
-- alice
-- bob
-- charlie
-- dave
-- eve
-- ferdie
+```
+bottom drive obey lake curtain smoke basket hold race lonely fit walk
+```
+
+with the derivation path `//Alice`, `//Bob`...
+
+- alice `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`
+- bob `5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty`
+- charlie `5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y`
+- dave `5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy`
+- eve `5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw`
+- ferdie `5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL`
+- one `5Fxune7f71ZbpP2FoY3mhYcmM596Erhv1gRue4nsPwkxMR4n`
+- two `5CUjxa4wVKMj3FqKdqAUf7zcEMr4MYAjXeWmUf44B41neLmJ`
 
 ### Currency amounts
 

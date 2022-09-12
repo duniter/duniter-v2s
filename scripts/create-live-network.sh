@@ -78,4 +78,4 @@ docker cp duniter-tmp:/var/lib/duniter/chains/${CURRENCY}_local/keystore $WORK_D
 # Launch the network
 echo "compose ready in '$WORK_DIR'"
 cd $WORK_DIR
-#docker-compose up -d
+#docker compose up -d

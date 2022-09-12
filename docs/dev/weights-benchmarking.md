@@ -6,22 +6,22 @@ complete real example.
 `cargo test -p <pallet> --features runtime-benchmarks`
 3. If the benchmark tests compiles and pass, compile the binary with benchmarks on your local
 machine: `cargo build --release --features runtime-benchmarks`
-4. Run the benchmarks on your local machine (to test if it work mith a real runtime). The command
+4. Run the benchmarks on your local machine (to test if it work with a real runtime). The command
 is: `duniter benchmark pallet --chain=CURRENCY-dev --steps=50 --repeat=20 --pallet=pallet_universal_dividend --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=.`
-5. If it work, use the generated file content to create or update the `WeightInfo` trait and the `()` dummy implementation. Then use the `WeightInfo` tarit in the real code of the pallet. See 79e0fd4bf3b0579279fc957da5e2fdfc6d8a17fa for a
+5. If it worked, use the generated file content to create or update the `WeightInfo` trait and the `()` dummy implementation. Then use the `WeightInfo` tarit in the real code of the pallet. See 79e0fd4bf3b0579279fc957da5e2fdfc6d8a17fa for a
 complete real example.
 6. Redo steps `3.` and `4.` on the reference machine.
 7. Put the generated file on `runtime/common/src/weights` and use it in the runtimes configuration.
 See cee7c3b2763ba402e807f126534d9cd39a8bd025 for a complete real example.
 
-Note 1: You Must replace `CURRENCY` by the currency type, or for ĞDev use directly `--chain=dev`.
+Note 1: You *must* replace `CURRENCY` by the currency type, or for ĞDev use directly `--chain=dev`.
 
-Note2. If the reference machine not support wasmtime, you should replace `--wasm-execution=compiled`
+Note 2: If the reference machine does not support wasmtime, you should replace `--wasm-execution=compiled`
 by `--wasm-execution=interpreted-i-know-what-i-do`.
 
-## What the reference machine is?
+## What is the reference machine?
 
-For now (06/2022), it's a `Raspberry Pi 4 Model B - 4GB` with an SSD connected via USB3.
+For now (09/2022), it's a `Raspberry Pi 4 Model B - 4GB` with an SSD connected via USB3.
 
 To cross-compile the benchmarks binary for armv7:
 

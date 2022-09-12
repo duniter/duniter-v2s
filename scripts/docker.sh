@@ -10,5 +10,5 @@ mkdir -p build
 cp target/release/duniter build/duniter
 docker build -t "duniter/duniter-v2s:local" -f ".maintain/local-docker-test-network/duniter.Dockerfile" .
 
-#docker-compose down --remove-orphans
-#docker-compose run --rm --service-ports dev $@
+#docker compose down --remove-orphans
+#docker compose run --rm --service-ports dev $@

@@ -1,8 +1,23 @@
+# This is a docker template for running a gdev mirror
+# You should write a .env file aside with the environment variables:
+#
+# --- .env ---
+# SERVER_DOMAIN=gdev.example.com
+# PEER_ID=1234XxxXXxxXxxxXxzbQqEkEpTPxD9S1PtpzkZSYoueyERA5vVtQ
+# ------------
+#
+# The peer id has to be replaced withe the output of the following command
+#
+# >>> PEER_ID >>>
+# docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/  duniter/duniter-v2s:v0.3.0 key generate-node-key --file /var/lib/duniter/node.key
+# <<<<<<<<<<<<<<<
+
+
 version: "3.4"
 
 services:
   duniter-rpc:
-    image: duniter/duniter-v2s:v0.2.0
+    image: duniter/duniter-v2s:v0.3.0
     restart: unless-stopped
     ports:
       # telemetry
@@ -23,9 +38,7 @@ services:
       - "/var/lib/duniter/node.key"
       - "--public-addr"
       # SERVER_DOMAIN should be replaced by a domain name that point on your server
-      #
-      # The PEER_ID should be replaced by the output of this command:
-      # docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/  duniter/duniter-v2s:v0.1.0 key generate-node-key --file /var/lib/duniter/node.key
+      # PEER_ID should be replaced by the output of the command given at the top of this file
       - "/dns/${SERVER_DOMAIN?SERVER_DOMAIN should be set}/tcp/30333/p2p/${PEER_ID?PEER_ID should be set}"
       - "--rpc-cors"
       - "all"
