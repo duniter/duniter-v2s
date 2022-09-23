@@ -41,7 +41,7 @@ Please read [Developer documentation] before contribute.
 - @tuxmain
 
 [commit naming conventions]: ./docs/dev/git-conventions.md#naming-commits
-[Developer documentation]: ./docs/dev/index.md
+[Developer documentation]: ./docs/dev/
 [project's git conventions]: ./docs/dev/git-conventions.md
-[Setting up your development environment]: ./docs/setup.md
+[Setting up your development environment]: ./docs/dev/setup.md
 [the technical forum]: https://forum.duniter.org
