@@ -22,6 +22,7 @@
     - [manual](./docs/api/manual.md)
     - [runtime-calls](./docs/api/runtime-calls.md) the calls you can submit through the RPC API
   - [dev](./docs/dev/)
+    - [beginner-walkthrough](./docs/dev/beginner-walkthrough.md)
     - [git-conventions](./docs/dev/git-conventions.md)
     - [launch-a-live-network](./docs/dev/launch-a-live-network.md)
     - [setup](./docs/dev/setup.md)
@@ -101,6 +102,8 @@ docker run -it -p9944:9944 --name duniter-v2s \
 ```
 
 ## Contribute
+
+If you are beginner in Rust and need a well guided tutorial, follow the [beginner walkthrough](./docs/dev/beginner-walkthrough.md).
 
 Before any contribution, please read carefully the [CONTRIBUTING](./CONTRIBUTING.md) file and our [git conventions](./docs/dev/git-conventions.md).
 
