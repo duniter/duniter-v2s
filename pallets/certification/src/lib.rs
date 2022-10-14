@@ -127,8 +127,9 @@ pub mod pallet {
                     .or_insert(IdtyCertMeta {
                         issued_count: 0,
                         next_issuable_on: sp_runtime::traits::Zero::zero(),
-                        received_count: issuers.len() as u32,
-                    });
+                        received_count: 0,
+                    })
+                    .received_count = issuers.len() as u32;
 
                 let mut issuers_: Vec<_> = Vec::with_capacity(issuers.len());
                 for (issuer, maybe_removable_on) in issuers {
@@ -138,7 +139,7 @@ pub mod pallet {
                         .or_insert(IdtyCertMeta {
                             issued_count: 0,
                             next_issuable_on: sp_runtime::traits::Zero::zero(),
-                            received_count: issuers.len() as u32,
+                            received_count: 0,
                         })
                         .issued_count += 1;
 
