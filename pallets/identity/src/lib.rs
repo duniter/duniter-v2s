@@ -72,7 +72,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         /// Management of the authorizations of the different calls.
         /// The default implementation allows everything.
-        type EnsureIdtyCallAllowed: EnsureIdtyCallAllowed<Self>;
+        type CheckIdtyCallAllowed: CheckIdtyCallAllowed<Self>;
         #[pallet::constant]
         /// Minimum duration between the creation of 2 identities by the same creator
         type IdtyCreationPeriod: Get<Self::BlockNumber>;
@@ -271,9 +271,8 @@ pub mod pallet {
                 return Err(Error::<T>::IdtyAlreadyCreated.into());
             }
 
-            if !T::EnsureIdtyCallAllowed::can_create_identity(creator) {
-                return Err(Error::<T>::CreatorNotAllowedToCreateIdty.into());
-            }
+            // run checks for identity creation
+            T::CheckIdtyCallAllowed::check_create_identity(creator)?;
 
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
 
@@ -341,9 +340,7 @@ pub mod pallet {
             if <IdentitiesNames<T>>::contains_key(&idty_name) {
                 return Err(Error::<T>::IdtyNameAlreadyExist.into());
             }
-            if !T::EnsureIdtyCallAllowed::can_confirm_identity(idty_index) {
-                return Err(Error::<T>::NotAllowedToConfirmIdty.into());
-            }
+            T::CheckIdtyCallAllowed::check_confirm_identity(idty_index)?;
 
             // Apply phase //
             idty_value.status = IdtyStatus::ConfirmedByOwner;
@@ -372,9 +369,7 @@ pub mod pallet {
             match idty_value.status {
                 IdtyStatus::Created => return Err(Error::<T>::IdtyNotConfirmedByOwner.into()),
                 IdtyStatus::ConfirmedByOwner => {
-                    if !T::EnsureIdtyCallAllowed::can_validate_identity(idty_index) {
-                        return Err(Error::<T>::NotAllowedToValidateIdty.into());
-                    }
+                    T::CheckIdtyCallAllowed::check_validate_identity(idty_index)?;
                 }
                 IdtyStatus::Validated => return Err(Error::<T>::IdtyAlreadyValidated.into()),
             }
@@ -416,10 +411,7 @@ pub mod pallet {
                 Error::<T>::OwnerKeyAlreadyUsed
             );
 
-            ensure!(
-                T::EnsureIdtyCallAllowed::can_change_identity_address(idty_index),
-                Error::<T>::NotAllowedToChangeIdtyAddress
-            );
+            T::CheckIdtyCallAllowed::check_change_identity_address(idty_index)?;
 
             let block_number = frame_system::Pallet::<T>::block_number();
             let maybe_old_old_owner_key =
@@ -506,10 +498,7 @@ pub mod pallet {
                 Error::<T>::InvalidRevocationKey
             );
 
-            ensure!(
-                T::EnsureIdtyCallAllowed::can_remove_identity(idty_index),
-                Error::<T>::NotAllowedToRemoveIdty
-            );
+            T::CheckIdtyCallAllowed::check_remove_identity(idty_index)?;
 
             let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
             let revocation_payload = RevocationPayload {
@@ -579,8 +568,6 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Creator not allowed to create identities
-        CreatorNotAllowedToCreateIdty,
         /// Identity already confirmed
         IdtyAlreadyConfirmed,
         /// Identity already created
@@ -611,14 +598,6 @@ pub mod pallet {
         InvalidRevocationKey,
         /// Revocation payload signature is invalid
         InvalidRevocationSig,
-        /// Identity not allowed to change address
-        NotAllowedToChangeIdtyAddress,
-        /// Not allowed to confirm identity
-        NotAllowedToConfirmIdty,
-        /// Not allowed to remove identity
-        NotAllowedToRemoveIdty,
-        /// Not allowed to validate identity
-        NotAllowedToValidateIdty,
         /// Identity creation period is not respected
         NotRespectIdtyCreationPeriod,
         /// Not the same identity name

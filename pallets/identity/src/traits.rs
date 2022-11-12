@@ -19,36 +19,35 @@ use frame_support::pallet_prelude::*;
 use impl_trait_for_tuples::impl_for_tuples;
 use sp_runtime::traits::Saturating;
 
-pub trait EnsureIdtyCallAllowed<T: Config> {
-    fn can_create_identity(creator: T::IdtyIndex) -> bool;
-    fn can_confirm_identity(idty_index: T::IdtyIndex) -> bool;
-    fn can_validate_identity(idty_index: T::IdtyIndex) -> bool;
-    fn can_change_identity_address(idty_index: T::IdtyIndex) -> bool;
-    fn can_remove_identity(idty_index: T::IdtyIndex) -> bool;
+pub trait CheckIdtyCallAllowed<T: Config> {
+    fn check_create_identity(creator: T::IdtyIndex) -> Result<(), DispatchError>;
+    fn check_confirm_identity(idty_index: T::IdtyIndex) -> Result<(), DispatchError>;
+    fn check_validate_identity(idty_index: T::IdtyIndex) -> Result<(), DispatchError>;
+    fn check_change_identity_address(idty_index: T::IdtyIndex) -> Result<(), DispatchError>;
+    fn check_remove_identity(idty_index: T::IdtyIndex) -> Result<(), DispatchError>;
 }
 
 #[impl_for_tuples(5)]
-#[allow(clippy::let_and_return)]
-impl<T: Config> EnsureIdtyCallAllowed<T> for Tuple {
-    fn can_create_identity(creator: T::IdtyIndex) -> bool {
-        for_tuples!( #( if !Tuple::can_create_identity(creator) { return false; } )* );
-        true
+impl<T: Config> CheckIdtyCallAllowed<T> for Tuple {
+    fn check_create_identity(creator: T::IdtyIndex) -> Result<(), DispatchError> {
+        for_tuples!( #( Tuple::check_create_identity(creator)?; )* );
+        Ok(())
     }
-    fn can_confirm_identity(idty_index: T::IdtyIndex) -> bool {
-        for_tuples!( #( if !Tuple::can_confirm_identity(idty_index) { return false; } )* );
-        true
+    fn check_confirm_identity(idty_index: T::IdtyIndex) -> Result<(), DispatchError> {
+        for_tuples!( #( Tuple::check_confirm_identity(idty_index)?; )* );
+        Ok(())
     }
-    fn can_validate_identity(idty_index: T::IdtyIndex) -> bool {
-        for_tuples!( #( if !Tuple::can_validate_identity(idty_index) { return false; } )* );
-        true
+    fn check_validate_identity(idty_index: T::IdtyIndex) -> Result<(), DispatchError> {
+        for_tuples!( #( Tuple::check_validate_identity(idty_index)?; )* );
+        Ok(())
     }
-    fn can_change_identity_address(idty_index: T::IdtyIndex) -> bool {
-        for_tuples!( #( if !Tuple::can_change_identity_address(idty_index) { return false; } )* );
-        true
+    fn check_change_identity_address(idty_index: T::IdtyIndex) -> Result<(), DispatchError> {
+        for_tuples!( #( Tuple::check_change_identity_address(idty_index)?; )* );
+        Ok(())
     }
-    fn can_remove_identity(idty_index: T::IdtyIndex) -> bool {
-        for_tuples!( #( if !Tuple::can_remove_identity(idty_index) { return false; } )* );
-        true
+    fn check_remove_identity(idty_index: T::IdtyIndex) -> Result<(), DispatchError> {
+        for_tuples!( #( Tuple::check_remove_identity(idty_index)?; )* );
+        Ok(())
     }
 }
 

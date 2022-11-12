@@ -122,7 +122,7 @@ impl pallet_identity::Config for Test {
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
     type Event = Event;
-    type EnsureIdtyCallAllowed = (DuniterWot, SmithsSubWot);
+    type CheckIdtyCallAllowed = (DuniterWot, SmithsSubWot);
     type IdtyCreationPeriod = IdtyCreationPeriod;
     type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
@@ -142,9 +142,7 @@ parameter_types! {
 }
 
 impl pallet_membership::Config<Instance1> for Test {
-    type IsIdtyAllowedToClaimMembership = DuniterWot;
-    type IsIdtyAllowedToRenewMembership = DuniterWot;
-    type IsIdtyAllowedToRequestMembership = DuniterWot;
+    type CheckCallAllowed = DuniterWot;
     type Event = Event;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
@@ -167,7 +165,7 @@ impl pallet_certification::Config<Instance1> for Test {
     type Event = Event;
     type IdtyIndex = IdtyIndex;
     type OwnerKeyOf = Identity;
-    type IsCertAllowed = DuniterWot;
+    type CheckCertAllowed = DuniterWot;
     type MaxByIssuer = MaxByIssuer;
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = DuniterWot;
@@ -196,9 +194,7 @@ parameter_types! {
 }
 
 impl pallet_membership::Config<Instance2> for Test {
-    type IsIdtyAllowedToClaimMembership = SmithsSubWot;
-    type IsIdtyAllowedToRenewMembership = SmithsSubWot;
-    type IsIdtyAllowedToRequestMembership = SmithsSubWot;
+    type CheckCallAllowed = SmithsSubWot;
     type Event = Event;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
@@ -221,7 +217,7 @@ impl pallet_certification::Config<Instance2> for Test {
     type Event = Event;
     type IdtyIndex = IdtyIndex;
     type OwnerKeyOf = Identity;
-    type IsCertAllowed = SmithsSubWot;
+    type CheckCertAllowed = SmithsSubWot;
     type MaxByIssuer = SmithsMaxByIssuer;
     type MinReceivedCertToBeAbleToIssueCert = SmithsMinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = SmithsSubWot;

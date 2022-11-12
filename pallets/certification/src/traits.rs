@@ -14,13 +14,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-pub trait IsCertAllowed<IdtyIndex> {
-    fn is_cert_allowed(issuer: IdtyIndex, receiver: IdtyIndex) -> bool;
+use frame_support::pallet_prelude::*;
+
+pub trait CheckCertAllowed<IdtyIndex> {
+    fn check_cert_allowed(issuer: IdtyIndex, receiver: IdtyIndex) -> Result<(), DispatchError>;
 }
 
-impl<IdtyIndex> IsCertAllowed<IdtyIndex> for () {
-    fn is_cert_allowed(_issuer: IdtyIndex, _receiver: IdtyIndex) -> bool {
-        true
+impl<IdtyIndex> CheckCertAllowed<IdtyIndex> for () {
+    fn check_cert_allowed(_issuer: IdtyIndex, _receiver: IdtyIndex) -> Result<(), DispatchError> {
+        Ok(())
     }
 }
 

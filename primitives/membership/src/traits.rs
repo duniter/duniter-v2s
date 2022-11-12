@@ -14,35 +14,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use frame_support::pallet_prelude::Weight;
+use frame_support::pallet_prelude::*;
 
-pub trait IsIdtyAllowedToClaimMembership<IdtyId> {
-    fn is_idty_allowed_to_claim_membership(idty_id: &IdtyId) -> bool;
+pub trait CheckCallAllowed<IdtyId> {
+    fn check_idty_allowed_to_claim_membership(idty_id: &IdtyId) -> Result<(), DispatchError>;
+    fn check_idty_allowed_to_renew_membership(idty_id: &IdtyId) -> Result<(), DispatchError>;
+    fn check_idty_allowed_to_request_membership(idty_id: &IdtyId) -> Result<(), DispatchError>;
 }
 
-impl<IdtyId> IsIdtyAllowedToClaimMembership<IdtyId> for () {
-    fn is_idty_allowed_to_claim_membership(_: &IdtyId) -> bool {
-        true
+impl<IdtyId> CheckCallAllowed<IdtyId> for () {
+    fn check_idty_allowed_to_claim_membership(_: &IdtyId) -> Result<(), DispatchError> {
+        Ok(())
     }
-}
-
-pub trait IsIdtyAllowedToRenewMembership<IdtyId> {
-    fn is_idty_allowed_to_renew_membership(idty_id: &IdtyId) -> bool;
-}
-
-impl<IdtyId> IsIdtyAllowedToRenewMembership<IdtyId> for () {
-    fn is_idty_allowed_to_renew_membership(_: &IdtyId) -> bool {
-        true
+    fn check_idty_allowed_to_renew_membership(_: &IdtyId) -> Result<(), DispatchError> {
+        Ok(())
     }
-}
-
-pub trait IsIdtyAllowedToRequestMembership<IdtyId> {
-    fn is_idty_allowed_to_request_membership(idty_id: &IdtyId) -> bool;
-}
-
-impl<IdtyId> IsIdtyAllowedToRequestMembership<IdtyId> for () {
-    fn is_idty_allowed_to_request_membership(_: &IdtyId) -> bool {
-        true
+    fn check_idty_allowed_to_request_membership(_: &IdtyId) -> Result<(), DispatchError> {
+        Ok(())
     }
 }
 

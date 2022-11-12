@@ -430,7 +430,7 @@ macro_rules! pallets_config {
 			type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
             type ConfirmPeriod = ConfirmPeriod;
             type Event = Event;
-            type EnsureIdtyCallAllowed = (Wot, SmithsSubWot);
+            type CheckIdtyCallAllowed = (Wot, SmithsSubWot);
             type IdtyCreationPeriod = IdtyCreationPeriod;
 			type IdtyData = IdtyData;
             type IdtyIndex = IdtyIndex;
@@ -444,9 +444,7 @@ macro_rules! pallets_config {
         }
 
         impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {
-            type IsIdtyAllowedToClaimMembership = Wot;
-            type IsIdtyAllowedToRenewMembership = Wot;
-            type IsIdtyAllowedToRequestMembership = Wot;
+            type CheckCallAllowed = Wot;
             type Event = Event;
             type IdtyId = IdtyIndex;
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
@@ -461,7 +459,7 @@ macro_rules! pallets_config {
             type Event = Event;
             type IdtyIndex = IdtyIndex;
             type OwnerKeyOf = Identity;
-            type IsCertAllowed = Wot;
+            type CheckCertAllowed = Wot;
             type MaxByIssuer = MaxByIssuer;
             type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
             type OnNewcert = Wot;
@@ -480,9 +478,7 @@ macro_rules! pallets_config {
         }
 
         impl pallet_membership::Config<Instance2> for Runtime {
-            type IsIdtyAllowedToClaimMembership = SmithsSubWot;
-            type IsIdtyAllowedToRenewMembership = SmithsSubWot;
-            type IsIdtyAllowedToRequestMembership = SmithsSubWot;
+            type CheckCallAllowed = SmithsSubWot;
             type Event = Event;
             type IdtyId = IdtyIndex;
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
@@ -497,7 +493,7 @@ macro_rules! pallets_config {
             type Event = Event;
             type IdtyIndex = IdtyIndex;
             type OwnerKeyOf = Identity;
-            type IsCertAllowed = SmithsSubWot;
+            type CheckCertAllowed = SmithsSubWot;
             type MaxByIssuer = SmithMaxByIssuer;
             type MinReceivedCertToBeAbleToIssueCert = SmithMinReceivedCertToBeAbleToIssueCert;
             type OnNewcert = SmithsSubWot;

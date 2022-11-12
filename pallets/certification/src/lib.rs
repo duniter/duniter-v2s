@@ -71,7 +71,7 @@ pub mod pallet {
         /// Something that give the owner key of an identity
         type OwnerKeyOf: Convert<Self::IdtyIndex, Option<Self::AccountId>>;
         ///
-        type IsCertAllowed: IsCertAllowed<Self::IdtyIndex>;
+        type CheckCertAllowed: CheckCertAllowed<Self::IdtyIndex>;
         #[pallet::constant]
         /// Maximum number of active certifications by issuer
         type MaxByIssuer: Get<u32>;
@@ -243,8 +243,6 @@ pub mod pallet {
     pub enum Error<T, I = ()> {
         /// An identity cannot certify itself
         CannotCertifySelf,
-        /// Certification non autorisée
-        CertNotAllowed,
         /// This identity has already issued the maximum number of certifications
         IssuedTooManyCert,
         /// Issuer not found
@@ -326,10 +324,7 @@ pub mod pallet {
             ensure!(issuer_owner_key == who, DispatchError::BadOrigin);
 
             // Verify compatibility with other pallets state
-            ensure!(
-                T::IsCertAllowed::is_cert_allowed(issuer, receiver),
-                Error::<T, I>::CertNotAllowed
-            );
+            T::CheckCertAllowed::check_cert_allowed(issuer, receiver)?;
 
             // Verify rule MinReceivedCertToBeAbleToIssueCert
             let issuer_idty_cert_meta = <StorageIdtyCertMeta<T, I>>::get(issuer);

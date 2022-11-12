@@ -16,8 +16,9 @@
 
 use crate::mock::*;
 use crate::mock::{Identity, System};
+use crate::pallet as pallet_duniter_wot;
 use codec::Encode;
-use frame_support::instances::Instance1;
+use frame_support::instances::{Instance1, Instance2};
 use frame_support::{assert_noop, assert_ok};
 use pallet_identity::{
     IdtyName, IdtyStatus, NewOwnerKeyPayload, RevocationPayload, NEW_OWNER_KEY_PAYLOAD_PREFIX,
@@ -46,9 +47,10 @@ fn test_creator_not_allowed_to_create_idty() {
 
         // Alice should not be able to create an identity before block #2
         // because Alice.next_issuable_on = 2
+        // but the true reason is that alice did not receive enough certs
         assert_noop!(
             Identity::create_identity(Origin::signed(1), 4),
-            pallet_identity::Error::<Test>::CreatorNotAllowedToCreateIdty
+            pallet_duniter_wot::Error::<Test, Instance1>::NotEnoughReceivedCertsToCreateIdty
         );
     });
 }
@@ -114,7 +116,7 @@ fn test_smith_member_cant_change_its_idty_address() {
                 13,
                 TestSignature(13, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
             ),
-            pallet_identity::Error::<Test>::NotAllowedToChangeIdtyAddress
+            pallet_duniter_wot::Error::<Test, Instance2>::NotAllowedToChangeIdtyAddress
         );
     });
 }
@@ -137,7 +139,7 @@ fn test_smith_member_cant_revoke_its_idty() {
                 3,
                 TestSignature(3, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
             ),
-            pallet_identity::Error::<Test>::NotAllowedToRemoveIdty
+            pallet_duniter_wot::Error::<Test, Instance2>::NotAllowedToRemoveIdty
         );
     });
 }
@@ -269,7 +271,7 @@ fn test_idty_membership_expire_them_requested() {
         // Alice can't renew her cert to Charlie
         assert_noop!(
             Cert::add_cert(Origin::signed(1), 1, 3),
-            pallet_certification::Error::<Test, Instance1>::CertNotAllowed
+            pallet_duniter_wot::Error::<Test, Instance1>::IdtyNotFound
         );
     });
 }

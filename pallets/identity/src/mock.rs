@@ -94,7 +94,7 @@ impl pallet_identity::Config for Test {
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
     type Event = Event;
-    type EnsureIdtyCallAllowed = ();
+    type CheckIdtyCallAllowed = ();
     type IdtyCreationPeriod = IdtyCreationPeriod;
     type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;

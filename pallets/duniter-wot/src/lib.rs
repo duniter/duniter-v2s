@@ -92,36 +92,72 @@ pub mod pallet {
             true
         }
     }
+
+    // ERRORS //
+
+    #[pallet::error]
+    pub enum Error<T, I = ()> {
+        /// Identity not allowed to claim membership
+        IdtyNotAllowedToClaimMembership,
+        /// Identity not allowed to request membership
+        IdtyNotAllowedToRequestMembership,
+        /// Identity not allowed to renew membership
+        IdtyNotAllowedToRenewMembership,
+        /// Identity creation period not respected
+        IdtyCreationPeriodNotRespected,
+        /// Not enough received certifications to create identity
+        NotEnoughReceivedCertsToCreateIdty,
+        /// Max number of emitted certs reached
+        MaxEmittedCertsReached,
+        /// Not allowed to change identity address
+        NotAllowedToChangeIdtyAddress,
+        /// Not allowed to remove identity
+        NotAllowedToRemoveIdty,
+        /// Issuer can not emit cert because it is not validated
+        IssuerCanNotEmitCert,
+        /// Can not issue cert to unconfirmed identity
+        CertToUnconfirmedIdty,
+        /// Issuer or receiver not found
+        IdtyNotFound,
+    }
 }
 
-impl<AccountId, T: Config<I>, I: 'static> pallet_identity::traits::EnsureIdtyCallAllowed<T>
+impl<AccountId, T: Config<I>, I: 'static> pallet_identity::traits::CheckIdtyCallAllowed<T>
     for Pallet<T, I>
 where
     T: frame_system::Config<AccountId = AccountId> + pallet_membership::Config<I>,
 {
-    fn can_create_identity(creator: IdtyIndex) -> bool {
+    fn check_create_identity(creator: IdtyIndex) -> Result<(), DispatchError> {
         if !T::IsSubWot::get() {
             let cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(creator);
-            cert_meta.received_count >= T::MinCertForCreateIdtyRight::get()
-                && cert_meta.next_issuable_on <= frame_system::pallet::Pallet::<T>::block_number()
-                && cert_meta.issued_count < T::MaxByIssuer::get()
-        } else {
-            true
+            // perform all checks
+            ensure!(
+                cert_meta.received_count >= T::MinCertForCreateIdtyRight::get(),
+                Error::<T, I>::NotEnoughReceivedCertsToCreateIdty
+            );
+            ensure!(
+                cert_meta.issued_count < T::MaxByIssuer::get(),
+                Error::<T, I>::MaxEmittedCertsReached
+            );
+            ensure!(
+                cert_meta.next_issuable_on <= frame_system::pallet::Pallet::<T>::block_number(),
+                Error::<T, I>::IdtyCreationPeriodNotRespected
+            );
         }
+        Ok(())
     }
-    fn can_confirm_identity(idty_index: IdtyIndex) -> bool {
+    fn check_confirm_identity(idty_index: IdtyIndex) -> Result<(), DispatchError> {
         if !T::IsSubWot::get() {
             pallet_membership::Pallet::<T, I>::force_request_membership(
                 RawOrigin::Root.into(),
                 idty_index,
                 Default::default(),
             )
-            .is_ok()
-        } else {
-            true
+            .map_err(|e| e.error)?;
         }
+        Ok(())
     }
-    fn can_validate_identity(idty_index: IdtyIndex) -> bool {
+    fn check_validate_identity(idty_index: IdtyIndex) -> Result<(), DispatchError> {
         if !T::IsSubWot::get() {
             // TODO replace this code by the commented one for distance feature
             /*let idty_cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
@@ -130,81 +166,88 @@ where
                 RawOrigin::Root.into(),
                 Some(idty_index),
             )
-            .is_ok()
-        } else {
-            true
+            .map_err(|e| e.error)?;
         }
+        Ok(())
     }
-    fn can_change_identity_address(idty_index: IdtyIndex) -> bool {
+    fn check_change_identity_address(idty_index: IdtyIndex) -> Result<(), DispatchError> {
         if T::IsSubWot::get() {
-            !pallet_membership::Pallet::<T, I>::is_member(&idty_index)
-        } else {
-            true
+            ensure!(
+                !pallet_membership::Pallet::<T, I>::is_member(&idty_index),
+                Error::<T, I>::NotAllowedToChangeIdtyAddress
+            );
         }
+        Ok(())
     }
-    fn can_remove_identity(idty_index: IdtyIndex) -> bool {
+    fn check_remove_identity(idty_index: IdtyIndex) -> Result<(), DispatchError> {
         if T::IsSubWot::get() {
-            !pallet_membership::Pallet::<T, I>::is_member(&idty_index)
-        } else {
-            true
+            ensure!(
+                !pallet_membership::Pallet::<T, I>::is_member(&idty_index),
+                Error::<T, I>::NotAllowedToRemoveIdty
+            );
         }
+        Ok(())
     }
 }
 
-impl<T: Config<I>, I: 'static> pallet_certification::traits::IsCertAllowed<IdtyIndex>
+impl<T: Config<I>, I: 'static> pallet_certification::traits::CheckCertAllowed<IdtyIndex>
     for Pallet<T, I>
 {
-    fn is_cert_allowed(issuer: IdtyIndex, receiver: IdtyIndex) -> bool {
+    fn check_cert_allowed(issuer: IdtyIndex, receiver: IdtyIndex) -> Result<(), DispatchError> {
         if let Some(issuer_data) = pallet_identity::Pallet::<T>::identity(issuer) {
-            if issuer_data.status != IdtyStatus::Validated {
-                return false;
-            }
-            if let Some(receiver_data) = pallet_identity::Pallet::<T>::identity(receiver) {
-                match receiver_data.status {
-                    IdtyStatus::ConfirmedByOwner | IdtyStatus::Validated => true,
-                    IdtyStatus::Created => false,
-                }
-            } else {
-                // Receiver not found
-                false
-            }
+            ensure!(
+                issuer_data.status == IdtyStatus::Validated,
+                Error::<T, I>::IssuerCanNotEmitCert
+            );
         } else {
-            // Issuer not found
-            false
+            return Err(Error::<T, I>::IdtyNotFound.into());
         }
+        if let Some(receiver_data) = pallet_identity::Pallet::<T>::identity(receiver) {
+            match receiver_data.status {
+                IdtyStatus::ConfirmedByOwner | IdtyStatus::Validated => {} // able to receive cert
+                IdtyStatus::Created => return Err(Error::<T, I>::CertToUnconfirmedIdty.into()),
+            };
+        } else {
+            return Err(Error::<T, I>::IdtyNotFound.into());
+        }
+        Ok(())
     }
 }
 
-impl<T: Config<I>, I: 'static> sp_membership::traits::IsIdtyAllowedToClaimMembership<IdtyIndex>
-    for Pallet<T, I>
-{
-    fn is_idty_allowed_to_claim_membership(idty_index: &IdtyIndex) -> bool {
+impl<T: Config<I>, I: 'static> sp_membership::traits::CheckCallAllowed<IdtyIndex> for Pallet<T, I> {
+    fn check_idty_allowed_to_claim_membership(idty_index: &IdtyIndex) -> Result<(), DispatchError> {
         let idty_cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
-        idty_cert_meta.received_count >= T::MinCertForMembership::get() as u32
+        ensure!(
+            idty_cert_meta.received_count >= T::MinCertForMembership::get() as u32,
+            Error::<T, I>::IdtyNotAllowedToClaimMembership
+        );
+        Ok(())
     }
-}
 
-impl<T: Config<I>, I: 'static> sp_membership::traits::IsIdtyAllowedToRenewMembership<IdtyIndex>
-    for Pallet<T, I>
-{
-    fn is_idty_allowed_to_renew_membership(idty_index: &IdtyIndex) -> bool {
+    fn check_idty_allowed_to_renew_membership(idty_index: &IdtyIndex) -> Result<(), DispatchError> {
         if let Some(idty_value) = pallet_identity::Pallet::<T>::identity(idty_index) {
-            idty_value.status == IdtyStatus::Validated
+            ensure!(
+                idty_value.status == IdtyStatus::Validated,
+                Error::<T, I>::IdtyNotAllowedToRenewMembership
+            );
         } else {
-            false
+            return Err(Error::<T, I>::IdtyNotFound.into());
         }
+        Ok(())
     }
-}
 
-impl<T: Config<I>, I: 'static> sp_membership::traits::IsIdtyAllowedToRequestMembership<IdtyIndex>
-    for Pallet<T, I>
-{
-    fn is_idty_allowed_to_request_membership(idty_index: &IdtyIndex) -> bool {
+    fn check_idty_allowed_to_request_membership(
+        idty_index: &IdtyIndex,
+    ) -> Result<(), DispatchError> {
         if let Some(idty_value) = pallet_identity::Pallet::<T>::identity(idty_index) {
-            T::IsSubWot::get() && idty_value.status == IdtyStatus::Validated
+            ensure!(
+                T::IsSubWot::get() && idty_value.status == IdtyStatus::Validated,
+                Error::<T, I>::IdtyNotAllowedToRequestMembership
+            );
         } else {
-            false
+            return Err(Error::<T, I>::IdtyNotFound.into());
         }
+        Ok(())
     }
 }
 

@@ -59,12 +59,8 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
-        /// Ask the runtime if the identity can claim the membership
-        type IsIdtyAllowedToClaimMembership: IsIdtyAllowedToClaimMembership<Self::IdtyId>;
-        /// Ask the runtime if the identity can renew his membership
-        type IsIdtyAllowedToRenewMembership: IsIdtyAllowedToRenewMembership<Self::IdtyId>;
-        /// Ask the runtime if the identity can request the membership
-        type IsIdtyAllowedToRequestMembership: IsIdtyAllowedToRequestMembership<Self::IdtyId>;
+        /// Ask the runtime whether the identity can perform membership operations
+        type CheckCallAllowed: CheckCallAllowed<Self::IdtyId>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
         /// Something that identifies an identity
@@ -160,12 +156,6 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
-        /// Identity not allowed to claim membership
-        IdtyNotAllowedToClaimMembership,
-        /// Identity not allowed to request membership
-        IdtyNotAllowedToRequestMembership,
-        /// Identity not allowed to renew membership
-        IdtyNotAllowedToRenewMembership,
         /// Invalid meta data
         InvalidMetaData,
         /// Identity id not found
@@ -221,10 +211,7 @@ pub mod pallet {
             if !metadata.validate(&who) {
                 return Err(Error::<T, I>::InvalidMetaData.into());
             }
-            if !T::IsIdtyAllowedToRequestMembership::is_idty_allowed_to_request_membership(&idty_id)
-            {
-                return Err(Error::<T, I>::IdtyNotAllowedToRequestMembership.into());
-            }
+            T::CheckCallAllowed::check_idty_allowed_to_request_membership(&idty_id)?;
 
             Self::do_request_membership(idty_id, metadata)
         }
@@ -242,10 +229,7 @@ pub mod pallet {
                 Error::<T, I>::MembershipAlreadyAcquired
             );
 
-            ensure!(
-                T::IsIdtyAllowedToClaimMembership::is_idty_allowed_to_claim_membership(&idty_id),
-                Error::<T, I>::IdtyNotAllowedToClaimMembership
-            );
+            T::CheckCallAllowed::check_idty_allowed_to_claim_membership(&idty_id)?;
 
             let metadata = PendingMembership::<T, I>::take(&idty_id)
                 .ok_or(Error::<T, I>::MembershipRequestNotFound)?;
@@ -271,10 +255,7 @@ pub mod pallet {
                 Error::<T, I>::MembershipNotFound
             );
 
-            ensure!(
-                T::IsIdtyAllowedToRenewMembership::is_idty_allowed_to_renew_membership(&idty_id),
-                Error::<T, I>::IdtyNotAllowedToRenewMembership,
-            );
+            T::CheckCallAllowed::check_idty_allowed_to_renew_membership(&idty_id)?;
 
             let _ = Self::do_renew_membership(idty_id);
 
