@@ -45,6 +45,10 @@ An example of genesis configuration file: `resources/gdev.json`
 
 ## 5. Generate raw spec
 
+```docker
+docker run -v $HOME/dev/duniter-v2s/resources:/var/lib/duniter/resources -e DUNITER_GENESIS_CONFIG=/var/lib/duniter/resources/gdev.json --rm -it --entrypoint duniter duniter/duniter-v2s:TAG build-spec -lerror --chain=gdev-gl --raw > name-raw.json
+```
+
 ```bash
 ./scripts/gen-live-network-raw-spec.sh CURRENCY "<path/to/your/genesis/config/file>"
 ```
