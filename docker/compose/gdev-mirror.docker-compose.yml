@@ -9,15 +9,14 @@
 # The peer id has to be replaced withe the output of the following command
 #
 # >>> PEER_ID >>>
-# docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/  duniter/duniter-v2s:v0.3.0 key generate-node-key --file /var/lib/duniter/node.key
+# docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/  duniter/duniter-v2s:v0.4.0 key generate-node-key --file /var/lib/duniter/node.key
 # <<<<<<<<<<<<<<<
-
 
 version: "3.4"
 
 services:
   duniter-rpc:
-    image: duniter/duniter-v2s:v0.3.0
+    image: duniter/duniter-v2s:v0.4.0
     restart: unless-stopped
     ports:
       # telemetry

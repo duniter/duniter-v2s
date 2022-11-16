@@ -5,12 +5,12 @@
 ### Duniter part
 
 - Add this docker-compose on your server :
-[docker/compose/gdev-validator.docker-compose.yml](https://git.duniter.org/nodes/rust/duniter-v2s/-/blob/master/docker/compose/gdev-validator.docker-compose.yml)
+  [docker/compose/gdev-validator.docker-compose.yml](https://git.duniter.org/nodes/rust/duniter-v2s/-/blob/master/docker/compose/gdev-validator.docker-compose.yml)
 - Create a `.env` file that define environment variables `SERVER_DOMAIN`, `PEER_ID` and `VALIDATOR_PEER_ID`:
   - `SERVER_DOMAIN`: a domain name that point on your server
-  - `PEER_ID`: Your rpc node peer id, shoud be generated with this command: `docker run --rm -it --entrypoint -v $PWD:/var/lib/duniter/ duniter duniter/duniter-v2s:v0.3.0 key generate-node-key --file /var/lib/duniter/rpc-node.key`
-  - `VALIDATOR_PEER_ID`: Your validator node peer id, shoud be generated with this command: `docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/ duniter/duniter-v2s:v0.3.0 key generate-node-key --file /var/lib/duniter/validator-node.key`
-  Note: duniter-rpc PEER_ID and duniter-validator PEER_ID isn't the same.
+  - `PEER_ID`: Your rpc node peer id, shoud be generated with this command: `docker run --rm -it --entrypoint -v $PWD:/var/lib/duniter/ duniter duniter/duniter-v2s:v0.4.0 key generate-node-key --file /var/lib/duniter/rpc-node.key`
+  - `VALIDATOR_PEER_ID`: Your validator node peer id, shoud be generated with this command: `docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/ duniter/duniter-v2s:v0.4.0 key generate-node-key --file /var/lib/duniter/validator-node.key`
+    Note: duniter-rpc PEER_ID and duniter-validator PEER_ID isn't the same.
 - If you have write access errors run in docker-compose.yml folder : `chmod o+rwX -R .`
 - `docker compose up -d` to start your node
 
@@ -57,6 +57,7 @@ server {
   }
 }
 ```
+
 and replace `YOUR_DOMAIN` by your domain each time.
 
 - [generate your ssl certificates](https://github.com/acmesh-official/acme.sh) with let's encrypt

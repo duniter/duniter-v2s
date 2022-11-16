@@ -7,7 +7,7 @@ services:
   duniter-v2s:
     container_name: duniter-v2s
     # choose the version of the image here
-    image: duniter/duniter-v2s:v0.3.0
+    image: duniter/duniter-v2s:v0.4.0
     ports:
       # telemetry
       - 9615:9615

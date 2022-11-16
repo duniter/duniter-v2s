@@ -35,8 +35,8 @@
     - [build-for-arm](./docs/user/build-for-arm.md)
     - [rpc](./docs/user/rpc.md) deploy a permanent ǦDev mirror node
     - [smith](./docs/user/smith.md) deploy a permanent ǦDev validator node
-- [end2end-tests](./end2end-tests/) automated end to end tests written with cucumber 
-- [live-tests](./live-tests/) sanity checks to test the storage of a live chain 
+- [end2end-tests](./end2end-tests/) automated end to end tests written with cucumber
+- [live-tests](./live-tests/) sanity checks to test the storage of a live chain
 
 ## Use
 
@@ -47,7 +47,7 @@ The easiest way is to use the docker image.
 Minimal command to deploy a **temporary** mirror peer:
 
 ```docker
-docker run -it -p9944:9944 -e DUNITER_CHAIN_NAME=gdev duniter/duniter-v2s:v0.3.0 --tmp --execution=Wasm
+docker run -it -p9944:9944 -e DUNITER_CHAIN_NAME=gdev duniter/duniter-v2s:v0.4.0 --tmp --execution=Wasm
 ```
 
 To go further, read [How to deploy a permanent mirror node on ĞDev network](./docs/user/rpc.md).
@@ -58,7 +58,7 @@ It can be useful to deploy your local blockchain, for instance to have a control
 to develop/test an application that interacts with the blockchain.
 
 ```docker
-docker run -it -p9944:9944 duniter/duniter-v2s:v0.3.0 --tmp
+docker run -it -p9944:9944 duniter/duniter-v2s:v0.4.0 --tmp
 ```
 
 Or use the `docker-compose.yml` at the root of this repository.
@@ -69,8 +69,8 @@ By default, your local blockchain produces a new block every 6 seconds, which is
 
 You can decide when to produce blocks with the cli option `--sealing` which has two modes:
 
-* `--sealing=instant`: produce a block immediately upon receiving a transaction into the transaction pool
-* `--sealing=manual`: produce a block upon receiving an RPC request (method `engine_createBlock`).
+- `--sealing=instant`: produce a block immediately upon receiving a transaction into the transaction pool
+- `--sealing=manual`: produce a block upon receiving an RPC request (method `engine_createBlock`).
 
 ### Autocompletion
 

@@ -5,18 +5,21 @@
 ### Duniter part
 
 - Add this docker-compose template on your server:
-[docker/compose/gdev-rpc.docker-compose.yml](https://git.duniter.org/nodes/rust/duniter-v2s/-/blob/master/docker/compose/gdev-mirror.docker-compose.yml)
+  [docker/compose/gdev-rpc.docker-compose.yml](https://git.duniter.org/nodes/rust/duniter-v2s/-/blob/master/docker/compose/gdev-mirror.docker-compose.yml)
 - Rename the file : `mv gdev-mirror.docker-compose.yml docker-compose.yml`
 - In the same folder, create a `.env` file that defime environment variables `SERVER_DOMAIN` and `PEER_ID`:
+
 ```bash
 SERVER_DOMAIN=YOUR_DOMAIN
 PEER_ID=YOUR_PEER_ID
 ```
 
-Your `PEER_ID` shoud be generated with this command: 
+Your `PEER_ID` shoud be generated with this command:
+
 ```bash
-docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/  duniter/duniter-v2s:v0.3.0 key generate-node-key --file /var/lib/duniter/node.key
+docker run --rm -it --entrypoint duniter -v $PWD:/var/lib/duniter/  duniter/duniter-v2s:v0.4.0 key generate-node-key --file /var/lib/duniter/node.key
 ```
+
 - If you have write access errors run in docker-compose.yml folder : `chmod o+rwX -R .`
 - Do `docker compose up -d` to start your node
 
@@ -63,6 +66,7 @@ server {
   }
 }
 ```
+
 and replace `YOUR_DOMAIN` by your domain each time.
 
 - [generate your ssl certificates](https://github.com/acmesh-official/acme.sh) with let's encrypt
