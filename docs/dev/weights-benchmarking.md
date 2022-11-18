@@ -1,4 +1,18 @@
-# How to benchmarks weights of a Call/Hook/Pallet
+# Weights benchmarking
+
+## What is the reference machine?
+
+For now (09/2022), it's a `Raspberry Pi 4 Model B - 4GB` with an SSD connected via USB3.
+
+To cross-compile the benchmarks binary for armv7:
+
+```
+./scripts/cross-build-arm.sh --features runtime-benchmarks
+```
+
+The cross compiled binary is generated here: `target/armv7-unknown-linux-gnueabihf/release/duniter`
+
+## How to benchmarks weights of a Call/Hook/Pallet
 
 1. Create the benchmarking tests, see commit 31057e37be471e3f27d18c63818d57cc907b4b4f for a
 complete real example.
@@ -19,15 +33,27 @@ Note 1: You *must* replace `CURRENCY` by the currency type, or for ĞDev use dir
 Note 2: If the reference machine does not support wasmtime, you should replace `--wasm-execution=compiled`
 by `--wasm-execution=interpreted-i-know-what-i-do`.
 
-## What is the reference machine?
+## Generate base block benchmarking
 
-For now (09/2022), it's a `Raspberry Pi 4 Model B - 4GB` with an SSD connected via USB3.
-
-To cross-compile the benchmarks binary for armv7:
+1. Build binary for reference machine and copy it on reference machine.
+2. Run base block benchmarks command:
 
 ```
-./scripts/cross-build-arm.sh --features runtime-benchmarks
+./duniter benchmark overhead --chain=gdev --execution=wasm --wasm-execution=interpreted-i-know-what-i-do --weight-path=. --warmup=10 --repeat=100
 ```
 
+3. Copy the generated file `block_weights.rs` in the codebase in folder `runtime/common/src/weights/`.
+4. Commit changes and open an MR.
 
-The cross compiled binary is generated here: `target/armv7-unknown-linux-gnueabihf/release/duniter`
+## Generate storage benchmarking
+
+1. Build binary for reference machine and copy it on reference machine.
+2. Copy a DB on reference machine (on ssd), example: `scp -r -P 37015 tmp/t1 pi@192.168.1.188:/mnt/ssd1/duniter-v2s/`
+3. Run storage benchmarks command, example:
+
+```
+./duniter benchmark storage -d=/mnt/ssd1/duniter-v2s/t1 --chain=gdev --mul=2 --weight-path=. --state-version=1
+```
+
+4. Copy the generated file `paritydb_weights.rs` in the codebase in folder `runtime/common/src/weights/`.
+5. Commit changes and open an MR.

@@ -15,9 +15,10 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{Balance, BlockNumber};
-use frame_support::weights::constants::WEIGHT_PER_MICROS;
 use frame_support::weights::Weight;
 use sp_runtime::Perbill;
+
+pub use crate::weights::paritydb_weights::constants::ParityDbWeight as DbWeight;
 
 /// This determines the average expected block time that we are targeting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
@@ -63,39 +64,23 @@ pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 
 // WEIGHTS CONSTANTS //
 
-// Read DB weights
-pub const READ_WEIGHTS: Weight = 250 * WEIGHT_PER_MICROS; // ~250 µs
-
-// Write DB weights
-pub const WRITE_WEIGHTS: Weight = 1_000 * WEIGHT_PER_MICROS; // ~1000 µs
-
-// Execution cost of everything outside of the call itself:
-// signature verification, pre_dispatch and post_dispatch
-pub const EXTRINSIC_BASE_WEIGHTS: Weight = READ_WEIGHTS + WRITE_WEIGHTS;
-
-// DB weights
-frame_support::parameter_types! {
-    pub const DbWeight: frame_support::weights::RuntimeDbWeight = frame_support::weights::RuntimeDbWeight {
-        read: READ_WEIGHTS,
-        write: WRITE_WEIGHTS,
-    };
-}
-
 // Block weights limits
 pub fn block_weights(
     expected_block_weight: Weight,
     normal_ratio: sp_arithmetic::Perbill,
 ) -> frame_system::limits::BlockWeights {
+    let base_weight = DbWeight::get().reads(1) + DbWeight::get().writes(1);
     let normal_weight = normal_ratio * expected_block_weight;
     frame_system::limits::BlockWeights::builder()
+        .base_block(crate::weights::block_weights::BlockExecutionWeight::get())
         .for_class(frame_support::weights::DispatchClass::Normal, |weights| {
-            weights.base_extrinsic = EXTRINSIC_BASE_WEIGHTS;
+            weights.base_extrinsic = base_weight;
             weights.max_total = normal_weight.into();
         })
         .for_class(
             frame_support::weights::DispatchClass::Operational,
             |weights| {
-                weights.base_extrinsic = EXTRINSIC_BASE_WEIGHTS;
+                weights.base_extrinsic = base_weight;
                 weights.max_total = expected_block_weight.into();
                 weights.reserved = (expected_block_weight - normal_weight).into();
             },
