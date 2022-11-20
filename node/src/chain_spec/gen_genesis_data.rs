@@ -21,7 +21,7 @@ use std::collections::BTreeMap;
 
 type MembershipData = sp_membership::MembershipData<u32>;
 
-const EXISTENTIAL_DEPOSIT: u64 = 100;
+const EXISTENTIAL_DEPOSIT: u64 = 200;
 
 #[derive(Clone)]
 pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
