@@ -106,11 +106,11 @@ impl SubstrateCli for Cli {
             #[cfg(feature = "gtest")]
             "gtest_dev" => Box::new(chain_spec::gtest::development_chain_spec()?),
             #[cfg(feature = "gtest")]
-            "gtest_local" => Box::new(chain_spec::gtest::local_testnet_config(2, 3)?),
+            "gtest_local" => Box::new(chain_spec::gtest::local_testnet_config(2, 3, 4)?),
             #[cfg(feature = "gtest")]
-            "gtest_local3" => Box::new(chain_spec::gtest::local_testnet_config(3, 4)?),
+            "gtest_local3" => Box::new(chain_spec::gtest::local_testnet_config(3, 3, 4)?),
             #[cfg(feature = "gtest")]
-            "gtest_local4" => Box::new(chain_spec::gtest::local_testnet_config(4, 5)?),
+            "gtest_local4" => Box::new(chain_spec::gtest::local_testnet_config(4, 4, 5)?),
             #[cfg(feature = "gtest")]
             "gtest" => {
                 unimplemented!()

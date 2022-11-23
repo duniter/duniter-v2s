@@ -16,17 +16,18 @@
 
 use super::*;
 use common_runtime::constants::*;
-use common_runtime::entities::IdtyName;
+use common_runtime::entities::IdtyData;
+use common_runtime::*;
 use gtest_runtime::{
-    opaque::SessionKeys, AccountId, AuthorityMembersConfig, BabeConfig, BalancesConfig, CertConfig,
-    GenesisConfig, IdentityConfig, IdtyValue, ImOnlineId, MembershipConfig, SessionConfig,
-    SmithsCertConfig, SmithsMembershipConfig, SudoConfig, SystemConfig, UdAccountsStorageConfig,
-    UniversalDividendConfig, WASM_BINARY,
+    opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
+    BalancesConfig, CertConfig, GenesisConfig, IdentityConfig, IdtyValue, ImOnlineId,
+    MembershipConfig, SessionConfig, SmithsCertConfig, SmithsMembershipConfig, SudoConfig,
+    SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
-use sp_core::sr25519;
+use sp_core::{blake2_256, sr25519, Encode, H256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_membership::MembershipData;
 use std::collections::BTreeMap;
@@ -69,10 +70,12 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
         move || {
             gen_genesis_for_local_chain(
                 wasm_binary,
-                // Initial authorities
+                // Initial authorities len
                 1,
-                // Inital identities
+                // Initial smiths members len
                 3,
+                // Inital identities len
+                4,
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 true,
@@ -103,6 +106,7 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
 
 pub fn local_testnet_config(
     initial_authorities_len: usize,
+    initial_smiths_len: usize,
     initial_identities_len: usize,
 ) -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
@@ -118,6 +122,8 @@ pub fn local_testnet_config(
                 wasm_binary,
                 // Initial authorities len
                 initial_authorities_len,
+                // Initial smiths len,
+                initial_smiths_len,
                 // Initial identities len
                 initial_identities_len,
                 // Sudo account
@@ -151,11 +157,18 @@ pub fn local_testnet_config(
 fn gen_genesis_for_local_chain(
     wasm_binary: &[u8],
     initial_authorities_len: usize,
+    initial_smiths_len: usize,
     initial_identities_len: usize,
     root_key: AccountId,
     _enable_println: bool,
 ) -> GenesisConfig {
-    let initial_authorities = (0..initial_authorities_len)
+    assert!(initial_identities_len <= 6);
+    assert!(initial_smiths_len <= initial_identities_len);
+    assert!(initial_authorities_len <= initial_smiths_len);
+
+    let first_ud = 1_000;
+
+    let initial_smiths = (0..initial_smiths_len)
         .map(|i| get_authority_keys_from_seed(NAMES[i]))
         .collect::<Vec<AuthorityKeys>>();
     let initial_identities = (0..initial_identities_len)
@@ -172,9 +185,25 @@ fn gen_genesis_for_local_chain(
             // Add Wasm runtime to storage.
             code: wasm_binary.to_vec(),
         },
+        account: AccountConfig {
+            accounts: initial_identities
+                .iter()
+                .enumerate()
+                .map(|(i, (_, owner_key))| {
+                    (
+                        owner_key.clone(),
+                        GenesisAccountData {
+                            random_id: H256(blake2_256(&(i as u32, owner_key).encode())),
+                            balance: first_ud,
+                            is_identity: true,
+                        },
+                    )
+                })
+                .collect(),
+        },
         authority_discovery: Default::default(),
         authority_members: AuthorityMembersConfig {
-            initial_authorities: initial_authorities
+            initial_authorities: initial_smiths
                 .iter()
                 .enumerate()
                 .map(|(i, keys)| (i as u32 + 1, (keys.0.clone(), true)))
@@ -190,7 +219,7 @@ fn gen_genesis_for_local_chain(
         grandpa: Default::default(),
         im_online: Default::default(),
         session: SessionConfig {
-            keys: initial_authorities
+            keys: initial_smiths
                 .iter()
                 .map(|x| {
                     (
@@ -205,14 +234,28 @@ fn gen_genesis_for_local_chain(
             // Assign network admin rights.
             key: Some(root_key),
         },
+        technical_committee: TechnicalCommitteeConfig {
+            members: initial_smiths
+                .iter()
+                .map(|x| x.0.clone())
+                .collect::<Vec<_>>(),
+            ..Default::default()
+        },
         identity: IdentityConfig {
             identities: initial_identities
                 .iter()
-                .map(|(name, account)| IdtyValue {
+                .enumerate()
+                .map(|(i, (name, owner_key))| common_runtime::GenesisIdty {
+                    index: i as u32 + 1,
                     name: name.clone(),
-                    next_creatable_identity_on: Default::default(),
-                    removable_on: 0,
-                    status: gtest_runtime::IdtyStatus::Validated,
+                    value: IdtyValue {
+                        data: IdtyData::new(),
+                        next_creatable_identity_on: Default::default(),
+                        old_owner_key: None,
+                        owner_key: owner_key.clone(),
+                        removable_on: 0,
+                        status: IdtyStatus::Validated,
+                    },
                 })
                 .collect(),
         },
@@ -230,13 +273,10 @@ fn gen_genesis_for_local_chain(
         },
         cert: CertConfig {
             apply_cert_period_at_genesis: false,
-            certs_by_issuer: clique_wot(
-                initial_identities.len(),
-                gtest_runtime::parameters::ValidityPeriod::get(),
-            ),
+            certs_by_receiver: clique_wot(initial_identities.len()),
         },
         smiths_membership: SmithsMembershipConfig {
-            memberships: (1..=initial_authorities_len)
+            memberships: (1..=initial_smiths_len)
                 .map(|i| {
                     (
                         i as u32,
@@ -249,18 +289,14 @@ fn gen_genesis_for_local_chain(
         },
         smiths_cert: SmithsCertConfig {
             apply_cert_period_at_genesis: false,
-            certs_by_issuer: clique_wot(
-                initial_authorities_len,
-                gtest_runtime::parameters::SmithValidityPeriod::get(),
-            ),
-        },
-        ud_accounts_storage: UdAccountsStorageConfig {
-            ud_accounts: initial_identities.values().cloned().collect(),
+            certs_by_receiver: clique_wot(initial_smiths_len),
         },
         universal_dividend: UniversalDividendConfig {
+            first_reeval: 100,
             first_ud: 1_000,
             initial_monetary_mass: 0,
         },
+        treasury: Default::default(),
     }
 }
 
