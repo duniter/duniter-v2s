@@ -39,7 +39,7 @@ check_labels:
 .env:
   image: paritytech/ci-linux:production
   tags:
-    - elois-neutron
+    - dind
 
 fmt_and_clippy:
   extends: .env
@@ -203,7 +203,7 @@ tests_release:
   tags:
     - redshift
   services:
-    - docker:18.06-dind
+    - docker:dind
   before_script:
     - docker info
   script:
