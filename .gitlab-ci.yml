@@ -201,7 +201,7 @@ tests_release:
   stage: deploy
   image: docker:18.06
   tags:
-    - redshift
+    - docker
   services:
     - docker:dind
   before_script:
