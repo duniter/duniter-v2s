@@ -14,7 +14,7 @@ COPY . .
 RUN test -x build/duniter || \
     ( \
         apt-get update && \
-        DEBIAN_FRONTEND=noninteractive apt-get install -y clang \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y clang cmake \
     )
 
 # build duniter
