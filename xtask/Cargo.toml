@@ -14,7 +14,7 @@ name = "xtask"
 
 [dependencies]
 anyhow = "1.0.32"
-clap = { version = "3.0", features = ["derive"] }
+clap = { version = "4.0", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = ["derive", "full", "bit-vec"] }
 frame-metadata = "15.0.0"
 graphql_client = "0.10.0"

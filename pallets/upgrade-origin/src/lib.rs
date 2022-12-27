@@ -24,9 +24,9 @@ pub use pallet::*;
 pub use weights::WeightInfo;
 
 use frame_support::{
+    dispatch::GetDispatchInfo,
     dispatch::PostDispatchInfo,
     traits::{IsSubType, UnfilteredDispatchable},
-    weights::GetDispatchInfo,
 };
 use sp_runtime::traits::Dispatchable;
 use sp_std::prelude::*;
@@ -44,27 +44,27 @@ pub mod pallet {
     /// Configuration trait.
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// The overarching event type.
-        type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
-
         /// The overarching call type.
         type Call: Parameter
-            + Dispatchable<Origin = Self::Origin, PostInfo = PostDispatchInfo>
+            + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
             + GetDispatchInfo
             + From<frame_system::Call<Self>>
-            + UnfilteredDispatchable<Origin = Self::Origin>
+            + UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
             + IsSubType<Call<Self>>
-            + IsType<<Self as frame_system::Config>::Call>;
+            + IsType<<Self as frame_system::Config>::RuntimeCall>;
+
+        /// The overarching event type.
+        type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// The upgradable origin
-        type UpgradableOrigin: EnsureOrigin<Self::Origin>;
+        type UpgradableOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
         /// Pallet weights info
         type WeightInfo: WeightInfo;
 
         #[cfg(feature = "runtime-benchmarks")]
-        /// The worst case origin type to use in ŵeights benchmarking
-        type WorstCaseOriginType: Into<Self::Origin>;
+        /// The worst case origin type to use in weights benchmarking
+        type WorstCaseOriginType: Into<Self::RuntimeOrigin>;
 
         #[cfg(feature = "runtime-benchmarks")]
         /// The worst case origin to use in weights benchmarking

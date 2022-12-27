@@ -35,7 +35,7 @@ macro_rules! pallets_config {
             /// The identifier used to distinguish between accounts.
             type AccountId = AccountId;
             /// The aggregated dispatch type that is available for extrinsics.
-            type Call = Call;
+            type RuntimeCall = RuntimeCall;
             /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
             type Lookup = AccountIdLookup<AccountId, ()>;
             /// The index type for storing how many extrinsics an account has signed.
@@ -49,9 +49,9 @@ macro_rules! pallets_config {
             /// The header type.
             type Header = generic::Header<BlockNumber, BlakeTwo256>;
             /// The ubiquitous event type.
-            type Event = Event;
+            type RuntimeEvent = RuntimeEvent;
             /// The ubiquitous origin type.
-            type Origin = Origin;
+            type RuntimeOrigin = RuntimeOrigin;
             /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
             type BlockHashCount = BlockHashCount;
             /// The weight of database operations that the runtime can invoke.
@@ -86,26 +86,25 @@ macro_rules! pallets_config {
             pub const NoPreimagePostponement: Option<u32> = Some(10);
         }
         impl pallet_scheduler::Config for Runtime {
-            type Event = Event;
-            type Origin = Origin;
+            type RuntimeEvent = RuntimeEvent;
+            type RuntimeOrigin = RuntimeOrigin;
             type PalletsOrigin = OriginCaller;
-            type Call = Call;
+            type RuntimeCall = RuntimeCall;
             type MaximumWeight = MaximumSchedulerWeight;
             type ScheduleOrigin = EnsureRoot<AccountId>;
             type OriginPrivilegeCmp = EqualPrivilegeOnly;
             type MaxScheduledPerBlock = MaxScheduledPerBlock;
             type WeightInfo = common_runtime::weights::pallet_scheduler::WeightInfo<Runtime>;
-            type PreimageProvider = Preimage;
-            type NoPreimagePostponement = ();
+            type Preimages = Preimage;
         }
 
         // ACCOUNT //
 
         impl pallet_duniter_account::Config for Runtime {
             type AccountIdToSalt = sp_runtime::traits::ConvertInto;
-            type Event = Event;
             type MaxNewAccountsPerBlock = frame_support::pallet_prelude::ConstU32<1>;
             type NewAccountPrice = frame_support::traits::ConstU64<300>;
+            type RuntimeEvent = RuntimeEvent;
         }
 
         // BLOCK CREATION //
@@ -154,11 +153,11 @@ macro_rules! pallets_config {
             type ReserveIdentifier = [u8; 8];
             /// The type for recording an account's balance.
             type Balance = Balance;
-            /// The ubiquitous event type.
-            type Event = Event;
             type DustRemoval = Treasury;
             type ExistentialDeposit = ExistentialDeposit;
             type AccountStore = Account;
+            /// The ubiquitous event type.
+            type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_balances::WeightInfo<Runtime>;
         }
 
@@ -175,16 +174,16 @@ macro_rules! pallets_config {
         }
         pub struct OnChargeTransaction;
         impl pallet_transaction_payment::Config for Runtime {
-            type Event = Event;
             type OnChargeTransaction = OneshotAccount;
             type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
             type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance>;
             type LengthToFee = common_runtime::fees::LengthToFeeImpl<Balance>;
             type FeeMultiplierUpdate = ();
+            type RuntimeEvent = RuntimeEvent;
         }
         impl pallet_oneshot_account::Config for Runtime {
             type Currency = Balances;
-            type Event = Event;
+            type RuntimeEvent = RuntimeEvent;
             type InnerOnChargeTransaction = CurrencyAdapter<Balances, HandleFees>;
         }
 
@@ -194,7 +193,6 @@ macro_rules! pallets_config {
             type MaxAuthorities = MaxAuthorities;
         }
         impl pallet_authority_members::Config for Runtime {
-            type Event = Event;
             type KeysWrapper = opaque::SessionKeysWrapper;
             type IsMember = SmithsMembership;
             type OnNewSession = OnNewSessionHandler<Runtime>;
@@ -205,6 +203,7 @@ macro_rules! pallets_config {
             type MaxKeysLife = frame_support::pallet_prelude::ConstU32<1_500>;
             type MaxOfflineSessions = frame_support::pallet_prelude::ConstU32<2_400>;
             type RemoveMemberOrigin = EnsureRoot<Self::AccountId>;
+            type RuntimeEvent = RuntimeEvent;
         }
         impl pallet_authorship::Config for Runtime {
             type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
@@ -214,7 +213,7 @@ macro_rules! pallets_config {
         }
         impl pallet_im_online::Config for Runtime {
             type AuthorityId = ImOnlineId;
-            type Event = Event;
+            type RuntimeEvent = RuntimeEvent;
             type ValidatorSet = Historical;
             type NextSessionRotation = Babe;
             type ReportUnresponsiveness = Offences;
@@ -225,12 +224,12 @@ macro_rules! pallets_config {
             type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
         }
         impl pallet_offences::Config for Runtime {
-            type Event = Event;
+            type RuntimeEvent = RuntimeEvent;
             type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
             type OnOffenceHandler = ();
         }
         impl pallet_session::Config for Runtime {
-            type Event = Event;
+            type RuntimeEvent = RuntimeEvent;
             type ValidatorId = AccountId;
             type ValidatorIdOf = sp_runtime::traits::ConvertInto;
             type ShouldEndSession = Babe;
@@ -245,8 +244,7 @@ macro_rules! pallets_config {
             type FullIdentificationOf = FullIdentificationOfImpl;
         }
         impl pallet_grandpa::Config for Runtime {
-            type Event = Event;
-            type Call = Call;
+            type RuntimeEvent = RuntimeEvent;
 
             type KeyOwnerProofSystem = ();
 
@@ -274,8 +272,8 @@ macro_rules! pallets_config {
 		}
 
 		impl pallet_upgrade_origin::Config for Runtime {
-			type Event = Event;
-			type Call = Call;
+			type RuntimeEvent = RuntimeEvent;
+			type Call = RuntimeCall;
 			type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeInstance, 2, 3>;
 			type WeightInfo = common_runtime::weights::pallet_upgrade_origin::WeightInfo<Runtime>;
 			#[cfg(feature = "runtime-benchmarks")]
@@ -292,10 +290,9 @@ macro_rules! pallets_config {
 
         impl pallet_preimage::Config for Runtime {
             type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
-            type Event = Event;
+            type RuntimeEvent = RuntimeEvent;
             type Currency = Balances;
             type ManagerOrigin = EnsureRoot<AccountId>;
-            type MaxSize = PreimageMaxSize;
             type BaseDeposit = PreimageBaseDeposit;
             type ByteDeposit = PreimageByteDeposit;
         }
@@ -303,14 +300,13 @@ macro_rules! pallets_config {
         // UTILITIES //
 
         impl pallet_atomic_swap::Config for Runtime {
-            type Event = Event;
+            type RuntimeEvent = RuntimeEvent;
             type SwapAction = pallet_atomic_swap::BalanceSwapAction<AccountId, Balances>;
             type ProofLimit = frame_support::traits::ConstU32<1_024>;
         }
 
         impl pallet_provide_randomness::Config for Runtime {
             type Currency = Balances;
-            type Event = Event;
             type GetCurrentEpochIndex = GetCurrentEpochIndex<Self>;
             type MaxRequests = frame_support::traits::ConstU32<100>;
             type RequestPrice = frame_support::traits::ConstU64<2_000>;
@@ -318,6 +314,7 @@ macro_rules! pallets_config {
             type OnUnbalanced = Treasury;
             type ParentBlockRandomness = pallet_babe::ParentBlockRandomness<Self>;
             type RandomnessFromOneEpochAgo = pallet_babe::RandomnessFromOneEpochAgo<Self>;
+            type RuntimeEvent = RuntimeEvent;
         }
 
         parameter_types! {
@@ -329,8 +326,8 @@ macro_rules! pallets_config {
             pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
         }
         impl pallet_proxy::Config for Runtime {
-            type Event = Event;
-            type Call = Call;
+            type RuntimeEvent = RuntimeEvent;
+            type RuntimeCall = RuntimeCall;
             type Currency = Balances;
             type ProxyType = ProxyType;
             type ProxyDepositBase = ProxyDepositBase;
@@ -348,8 +345,8 @@ macro_rules! pallets_config {
             pub const DepositFactor: Balance = DEPOSIT_PER_BYTE * 32;
         }
         impl pallet_multisig::Config for Runtime {
-            type Event = Event;
-            type Call = Call;
+            type RuntimeEvent = RuntimeEvent;
+            type RuntimeCall = RuntimeCall;
             type Currency = Balances;
             type DepositBase = DepositBase;
             type DepositFactor = DepositFactor;
@@ -358,8 +355,8 @@ macro_rules! pallets_config {
         }
 
         impl pallet_utility::Config for Runtime {
-            type Event = Event;
-            type Call = Call;
+            type RuntimeEvent = RuntimeEvent;
+            type RuntimeCall = RuntimeCall;
             type PalletsOrigin = OriginCaller;
             type WeightInfo = pallet_utility::weights::SubstrateWeight<Self>;
         }
@@ -378,7 +375,7 @@ macro_rules! pallets_config {
             type Burn = Burn;
             type BurnDestination = ();
             type Currency = Balances;
-            type Event = Event;
+            type RuntimeEvent = RuntimeEvent;
             type OnSlash = Treasury;
             type ProposalBond = ProposalBond;
             type ProposalBondMinimum = frame_support::traits::ConstU64<10_000>;
@@ -404,7 +401,7 @@ macro_rules! pallets_config {
         impl pallet_universal_dividend::Config for Runtime {
             type BlockNumberIntoBalance = sp_runtime::traits::ConvertInto;
             type Currency = pallet_balances::Pallet<Runtime>;
-            type Event = Event;
+            type RuntimeEvent = RuntimeEvent;
 			type MaxPastReeval = frame_support::traits::ConstU32<4>;
             type MembersCount = MembersCount;
             type MembersStorage = common_runtime::providers::UdMembersStorage<Runtime>;
@@ -429,7 +426,6 @@ macro_rules! pallets_config {
         impl pallet_identity::Config for Runtime {
 			type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
             type ConfirmPeriod = ConfirmPeriod;
-            type Event = Event;
             type CheckIdtyCallAllowed = (Wot, SmithsSubWot);
             type IdtyCreationPeriod = IdtyCreationPeriod;
 			type IdtyData = IdtyData;
@@ -441,22 +437,22 @@ macro_rules! pallets_config {
             type RemoveIdentityConsumers = RemoveIdentityConsumersImpl<Self>;
             type RevocationSigner = <Signature as sp_runtime::traits::Verify>::Signer;
             type RevocationSignature = Signature;
+            type RuntimeEvent = RuntimeEvent;
         }
 
         impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {
             type CheckCallAllowed = Wot;
-            type Event = Event;
             type IdtyId = IdtyIndex;
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type MembershipPeriod = MembershipPeriod;
             type MetaData = ();
             type OnEvent = OnMembershipEventHandler<Wot, Runtime>;
             type PendingMembershipPeriod = PendingMembershipPeriod;
+            type RuntimeEvent = RuntimeEvent;
         }
 
         impl pallet_certification::Config<Instance1> for Runtime {
             type CertPeriod = CertPeriod;
-            type Event = Event;
             type IdtyIndex = IdtyIndex;
             type OwnerKeyOf = Identity;
             type CheckCertAllowed = Wot;
@@ -464,6 +460,7 @@ macro_rules! pallets_config {
             type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
             type OnNewcert = Wot;
             type OnRemovedCert = Wot;
+            type RuntimeEvent = RuntimeEvent;
             type ValidityPeriod = ValidityPeriod;
         }
 
@@ -479,18 +476,17 @@ macro_rules! pallets_config {
 
         impl pallet_membership::Config<Instance2> for Runtime {
             type CheckCallAllowed = SmithsSubWot;
-            type Event = Event;
             type IdtyId = IdtyIndex;
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type MembershipPeriod = SmithMembershipPeriod;
             type MetaData = SmithsMembershipMetaData<opaque::SessionKeysWrapper>;
             type OnEvent = OnSmithMembershipEventHandler<SmithsSubWot, Runtime>;
             type PendingMembershipPeriod = SmithPendingMembershipPeriod;
+            type RuntimeEvent = RuntimeEvent;
         }
 
         impl pallet_certification::Config<Instance2> for Runtime {
             type CertPeriod = SmithCertPeriod;
-            type Event = Event;
             type IdtyIndex = IdtyIndex;
             type OwnerKeyOf = Identity;
             type CheckCertAllowed = SmithsSubWot;
@@ -498,6 +494,7 @@ macro_rules! pallets_config {
             type MinReceivedCertToBeAbleToIssueCert = SmithMinReceivedCertToBeAbleToIssueCert;
             type OnNewcert = SmithsSubWot;
             type OnRemovedCert = SmithsSubWot;
+            type RuntimeEvent = RuntimeEvent;
             type ValidityPeriod = SmithValidityPeriod;
         }
 
@@ -516,9 +513,9 @@ macro_rules! pallets_config {
             pub const TechnicalCommitteeMotionDuration: BlockNumber = 7 * DAYS;
         }
         impl pallet_collective::Config<Instance2> for Runtime {
-            type Origin = Origin;
-            type Proposal = Call;
-            type Event = Event;
+            type RuntimeOrigin = RuntimeOrigin;
+            type Proposal = RuntimeCall;
+            type RuntimeEvent = RuntimeEvent;
             type MotionDuration = TechnicalCommitteeMotionDuration;
             type MaxProposals = frame_support::pallet_prelude::ConstU32<20>;
             type MaxMembers = frame_support::pallet_prelude::ConstU32<100>;

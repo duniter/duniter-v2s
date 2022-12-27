@@ -51,7 +51,7 @@ benchmarks! {
         let block_number = T::UdCreationPeriod::get();
         let block_number_plus_one: T::BlockNumber = block_number + One::one();
         NextReeval::<T>::put(block_number_plus_one);
-    }: { Pallet::<T>::on_initialize(block_number.into()); }
+    }: { Pallet::<T>::on_initialize(block_number); }
     verify {
     }
     where_clause {
@@ -63,9 +63,9 @@ benchmarks! {
         let block_number = T::UdCreationPeriod::get();
         let block_number_plus_one: T::BlockNumber = block_number + One::one();
         NextReeval::<T>::put(block_number_plus_one);
-        Pallet::<T>::on_initialize(block_number.into());
+        Pallet::<T>::on_initialize(block_number);
         NextReeval::<T>::put(block_number);
-    }: { Pallet::<T>::on_initialize(block_number.into()); }
+    }: { Pallet::<T>::on_initialize(block_number); }
     verify {
     }
     // Benchmark `claim_uds` extrinsic with the worst possible conditions:
@@ -89,8 +89,8 @@ benchmarks! {
         let mut past_reevals = BoundedVec::default();
         for i in 0..n {
             past_reevals
-                .try_push((((3 * i) + 1) as u16, ((1_000 + (100 * i)) as u32).into()))
-                .expect("unreachable");
+                .try_push((((3 * i) + 1) as u16, (1_000 + (100 * i)).into()))
+                .expect("unreachable claim");
         }
         PastReevals::<T>::put(past_reevals);
 

@@ -55,8 +55,8 @@ impl system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -64,7 +64,7 @@ impl system::Config for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -78,12 +78,12 @@ impl system::Config for Test {
 }
 
 pub struct EnsureRoot;
-impl frame_support::traits::EnsureOrigin<(Origin, IdtyIndex, IdtyIndex)> for EnsureRoot {
+impl frame_support::traits::EnsureOrigin<(RuntimeOrigin, IdtyIndex, IdtyIndex)> for EnsureRoot {
     type Success = ();
 
     fn try_origin(
-        o: (Origin, IdtyIndex, IdtyIndex),
-    ) -> Result<Self::Success, (Origin, IdtyIndex, IdtyIndex)> {
+        o: (RuntimeOrigin, IdtyIndex, IdtyIndex),
+    ) -> Result<Self::Success, (RuntimeOrigin, IdtyIndex, IdtyIndex)> {
         match o.0.clone().into() {
             Ok(system::RawOrigin::Root) => Ok(()),
             _ => Err(o),
@@ -100,7 +100,6 @@ parameter_types! {
 
 impl pallet_certification::Config for Test {
     type CertPeriod = CertPeriod;
-    type Event = Event;
     type IdtyIndex = IdtyIndex;
     type OwnerKeyOf = sp_runtime::traits::ConvertInto;
     type CheckCertAllowed = ();
@@ -108,6 +107,7 @@ impl pallet_certification::Config for Test {
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = ();
     type OnRemovedCert = ();
+    type RuntimeEvent = RuntimeEvent;
     type ValidityPeriod = ValidityPeriod;
 }
 

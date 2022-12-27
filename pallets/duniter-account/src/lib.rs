@@ -52,12 +52,12 @@ pub mod pallet {
         + pallet_treasury::Config<Currency = pallet_balances::Pallet<Self>>
     {
         type AccountIdToSalt: Convert<Self::AccountId, [u8; 32]>;
-        /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         #[pallet::constant]
         type MaxNewAccountsPerBlock: Get<u32>;
         #[pallet::constant]
         type NewAccountPrice: Get<Self::Balance>;
+        /// The overarching event type.
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     // STORAGE //
@@ -147,7 +147,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_: T::BlockNumber) -> Weight {
-            let mut total_weight = 0;
+            let mut total_weight = Weight::zero();
             for account_id in PendingNewAccounts::<T>::iter_keys()
                 .drain()
                 .take(T::MaxNewAccountsPerBlock::get() as usize)
@@ -159,7 +159,7 @@ pub mod pallet {
                         H256(T::AccountIdToSalt::convert(account_id.clone())),
                     );
                     PendingRandomIdAssignments::<T>::insert(request_id, account_id);
-                    total_weight += 100_000;
+                    total_weight += Weight::from_ref_time(100_000);
                 } else {
                     // If the account is not self-sufficient, it must pay the account creation fees
                     let account_data = frame_system::Pallet::<T>::get(&account_id);
@@ -195,7 +195,7 @@ pub mod pallet {
                                 H256(T::AccountIdToSalt::convert(account_id.clone())),
                             );
                             PendingRandomIdAssignments::<T>::insert(request_id, account_id);
-                            total_weight += 200_000;
+                            total_weight += Weight::from_ref_time(200_000);
                         }
                     } else {
                         // The charges could not be deducted, we must destroy the account
@@ -210,7 +210,7 @@ pub mod pallet {
                         T::OnUnbalanced::on_unbalanced(pallet_balances::NegativeImbalance::new(
                             balance_to_suppr,
                         ));
-                        total_weight += 300_000;
+                        total_weight += Weight::from_ref_time(300_000);
                     }
                 }
             }
@@ -233,9 +233,9 @@ where
                 who: account_id,
                 random_id: randomness,
             });
-            200_000
+            Weight::from_ref_time(200_000)
         } else {
-            100_000
+            Weight::from_ref_time(100_000)
         }
     }
 }

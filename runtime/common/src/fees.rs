@@ -26,8 +26,9 @@ where
     type Balance = T;
 
     // Force constant fees
-    fn weight_to_fee(lenght_in_bytes: &Weight) -> Self::Balance {
-        (*lenght_in_bytes as u32 / 1_000_u32).into()
+    fn weight_to_fee(length_in_bytes: &Weight) -> Self::Balance {
+        ((length_in_bytes.ref_time() as u32 + length_in_bytes.proof_size() as u32) / 1_000_u32)
+            .into()
     }
 }
 

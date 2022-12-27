@@ -49,7 +49,7 @@ fn test_creator_not_allowed_to_create_idty() {
         // because Alice.next_issuable_on = 2
         // but the true reason is that alice did not receive enough certs
         assert_noop!(
-            Identity::create_identity(Origin::signed(1), 4),
+            Identity::create_identity(RuntimeOrigin::signed(1), 4),
             pallet_duniter_wot::Error::<Test, Instance1>::NotEnoughReceivedCertsToCreateIdty
         );
     });
@@ -61,26 +61,29 @@ fn test_join_smiths() {
         run_to_block(2);
 
         // Dave shoud be able to request smith membership
-        assert_ok!(SmithsMembership::request_membership(Origin::signed(4), ()));
-        System::assert_has_event(Event::SmithsMembership(
+        assert_ok!(SmithsMembership::request_membership(
+            RuntimeOrigin::signed(4),
+            ()
+        ));
+        System::assert_has_event(RuntimeEvent::SmithsMembership(
             pallet_membership::Event::MembershipRequested(4),
         ));
 
         // Then, Alice should be able to send a smith cert to Dave
         run_to_block(3);
-        assert_ok!(SmithsCert::add_cert(Origin::signed(1), 1, 4));
+        assert_ok!(SmithsCert::add_cert(RuntimeOrigin::signed(1), 1, 4));
 
         // Then, Bob should be able to send a smith cert to Dave
         run_to_block(4);
-        assert_ok!(SmithsCert::add_cert(Origin::signed(2), 2, 4));
+        assert_ok!(SmithsCert::add_cert(RuntimeOrigin::signed(2), 2, 4));
 
         // Then, Dave should be able to claim his membership
         run_to_block(4);
         assert_ok!(SmithsMembership::claim_membership(
-            Origin::signed(4),
+            RuntimeOrigin::signed(4),
             Some(4)
         ));
-        System::assert_has_event(Event::SmithsMembership(
+        System::assert_has_event(RuntimeEvent::SmithsMembership(
             pallet_membership::Event::MembershipAcquired(4),
         ));
     });
@@ -91,7 +94,7 @@ fn test_smith_certs_expirations_should_revoke_smith_membership() {
     new_test_ext(5, 3).execute_with(|| {
         // After block #10, alice membership should be revoked due to smith certs expiration
         run_to_block(10);
-        System::assert_has_event(Event::SmithsMembership(
+        System::assert_has_event(RuntimeEvent::SmithsMembership(
             pallet_membership::Event::MembershipRevoked(1),
         ));
     });
@@ -112,7 +115,7 @@ fn test_smith_member_cant_change_its_idty_address() {
         // Identity 3 can't change it's address
         assert_noop!(
             Identity::change_owner_key(
-                Origin::signed(3),
+                RuntimeOrigin::signed(3),
                 13,
                 TestSignature(13, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
             ),
@@ -134,7 +137,7 @@ fn test_smith_member_cant_revoke_its_idty() {
         // Identity 3 can't change it's address
         assert_noop!(
             Identity::revoke_identity(
-                Origin::signed(3),
+                RuntimeOrigin::signed(3),
                 3,
                 3,
                 TestSignature(3, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
@@ -150,13 +153,15 @@ fn test_create_idty_ok() {
         run_to_block(2);
 
         // Alice should be able to create an identity at block #2
-        assert_ok!(Identity::create_identity(Origin::signed(1), 6));
+        assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 6));
         // 2 events should have occurred: IdtyCreated and NewCert
-        System::assert_has_event(Event::Identity(pallet_identity::Event::IdtyCreated {
-            idty_index: 6,
-            owner_key: 6,
-        }));
-        System::assert_has_event(Event::Cert(pallet_certification::Event::NewCert {
+        System::assert_has_event(RuntimeEvent::Identity(
+            pallet_identity::Event::IdtyCreated {
+                idty_index: 6,
+                owner_key: 6,
+            },
+        ));
+        System::assert_has_event(RuntimeEvent::Cert(pallet_certification::Event::NewCert {
             issuer: 1,
             issuer_issued_count: 5,
             receiver: 6,
@@ -173,19 +178,19 @@ fn test_new_idty_validation() {
     new_test_ext(5, 2).execute_with(|| {
         // Alice creates Ferdie identity
         run_to_block(2);
-        assert_ok!(Identity::create_identity(Origin::signed(1), 6));
+        assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 6));
 
         // Ferdie confirms his identity
         run_to_block(3);
         assert_ok!(Identity::confirm_identity(
-            Origin::signed(6),
+            RuntimeOrigin::signed(6),
             IdtyName::from("Ferdie"),
         ));
 
         // Bob should be able to certify Ferdie
         run_to_block(4);
-        assert_ok!(Cert::add_cert(Origin::signed(2), 2, 6));
-        System::assert_has_event(Event::Cert(pallet_certification::Event::NewCert {
+        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 2, 6));
+        System::assert_has_event(RuntimeEvent::Cert(pallet_certification::Event::NewCert {
             issuer: 2,
             issuer_issued_count: 5,
             receiver: 6,
@@ -194,13 +199,13 @@ fn test_new_idty_validation() {
 
         // Anyone should be able to validate Ferdie identity
         run_to_block(5);
-        assert_ok!(Identity::validate_identity(Origin::signed(42), 6));
-        System::assert_has_event(Event::Membership(
+        assert_ok!(Identity::validate_identity(RuntimeOrigin::signed(42), 6));
+        System::assert_has_event(RuntimeEvent::Membership(
             pallet_membership::Event::MembershipAcquired(6),
         ));
-        System::assert_has_event(Event::Identity(pallet_identity::Event::IdtyValidated {
-            idty_index: 6,
-        }));
+        System::assert_has_event(RuntimeEvent::Identity(
+            pallet_identity::Event::IdtyValidated { idty_index: 6 },
+        ));
 
         // After PendingMembershipPeriod, Ferdie identity should not expire
         run_to_block(6);
@@ -224,23 +229,25 @@ fn test_confirm_idty_ok() {
         run_to_block(2);
 
         // Alice creates Ferdie identity
-        assert_ok!(Identity::create_identity(Origin::signed(1), 6));
+        assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 6));
 
         run_to_block(3);
 
         // Ferdie should be able to confirm his identity
         assert_ok!(Identity::confirm_identity(
-            Origin::signed(6),
+            RuntimeOrigin::signed(6),
             IdtyName::from("Ferdie"),
         ));
-        System::assert_has_event(Event::Membership(
+        System::assert_has_event(RuntimeEvent::Membership(
             pallet_membership::Event::MembershipRequested(6),
         ));
-        System::assert_has_event(Event::Identity(pallet_identity::Event::IdtyConfirmed {
-            idty_index: 6,
-            owner_key: 6,
-            name: IdtyName::from("Ferdie"),
-        }));
+        System::assert_has_event(RuntimeEvent::Identity(
+            pallet_identity::Event::IdtyConfirmed {
+                idty_index: 6,
+                owner_key: 6,
+                name: IdtyName::from("Ferdie"),
+            },
+        ));
     });
 }
 
@@ -250,27 +257,27 @@ fn test_idty_membership_expire_them_requested() {
         run_to_block(4);
 
         // Alice renews her membership
-        assert_ok!(Membership::renew_membership(Origin::signed(1), None));
+        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(1), None));
         // Bob renews his membership
-        assert_ok!(Membership::renew_membership(Origin::signed(2), None));
+        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(2), None));
 
         // Charlie's membership should expire at block #8
         run_to_block(8);
         assert!(Membership::membership(3).is_none());
 
-        System::assert_has_event(Event::Membership(
+        System::assert_has_event(RuntimeEvent::Membership(
             pallet_membership::Event::MembershipExpired(3),
         ));
-        System::assert_has_event(Event::Identity(pallet_identity::Event::IdtyRemoved {
-            idty_index: 3,
-        }));
+        System::assert_has_event(RuntimeEvent::Identity(
+            pallet_identity::Event::IdtyRemoved { idty_index: 3 },
+        ));
 
         // Charlie's identity should be removed at block #8
         assert!(Identity::identity(3).is_none());
 
         // Alice can't renew her cert to Charlie
         assert_noop!(
-            Cert::add_cert(Origin::signed(1), 1, 3),
+            Cert::add_cert(RuntimeOrigin::signed(1), 1, 3),
             pallet_duniter_wot::Error::<Test, Instance1>::IdtyNotFound
         );
     });
@@ -281,12 +288,12 @@ fn test_unvalidated_idty_certs_removal() {
     new_test_ext(5, 2).execute_with(|| {
         // Alice creates Ferdie identity
         run_to_block(2);
-        assert_ok!(Identity::create_identity(Origin::signed(1), 6));
+        assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 6));
 
         // Ferdie confirms his identity
         run_to_block(3);
         assert_ok!(Identity::confirm_identity(
-            Origin::signed(6),
+            RuntimeOrigin::signed(6),
             IdtyName::from("Ferdie"),
         ));
 

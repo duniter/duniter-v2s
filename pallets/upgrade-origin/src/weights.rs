@@ -26,6 +26,6 @@ pub trait WeightInfo {
 // Insecure weights implementation, use it for tests only!
 impl WeightInfo for () {
     fn dispatch_as_root() -> Weight {
-        8_000 as Weight
+        Weight::from_ref_time(8_000)
     }
 }

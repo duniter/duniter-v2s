@@ -19,6 +19,7 @@ use sc_client_api::{AuxStore, Backend as BackendT, BlockchainEvents, KeyIterator
 use sp_api::{CallApiAt, NumberFor, ProvideRuntimeApi};
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
 use sp_consensus::BlockStatus;
+use sp_core::{Encode, Pair};
 use sp_runtime::{
     generic::{BlockId, SignedBlock},
     traits::{BlakeTwo256, Block as BlockT},
@@ -155,22 +156,34 @@ pub enum Client {
 }
 
 macro_rules! with_client {
-	{
-		$self:ident,
-		$client:ident,
-		{
-			$( $code:tt )*
-		}
-	} => {
-		match $self {
-			#[cfg(feature = "g1")]
-			Self::G1($client) => { $( $code )* },
-			#[cfg(feature = "gtest")]
-			Self::GTest($client) => { $( $code )* },
-			#[cfg(feature = "gdev")]
-			Self::GDev($client) => { $( $code )* },
-		}
-	}
+    {
+        $self:ident,
+        $client:ident,
+        {
+            $( $code:tt )*
+        }
+    } => {
+        match $self {
+            #[cfg(feature = "g1")]
+            Self::G1($client) => {
+                #[allow(unused_imports)]
+                use g1_runtime as runtime;
+                $( $code )*
+            }
+            #[cfg(feature = "gtest")]
+            Self::GTest($client) => {
+                #[allow(unused_imports)]
+                use gtest_runtime as runtime;
+                $( $code )*
+            }
+            #[cfg(feature = "gdev")]
+            Self::GDev($client) => {
+                #[allow(unused_imports)]
+                use gdev_runtime as runtime;
+                $( $code )*
+            }
+        }
+    }
 }
 
 impl ClientHandle for Client {
@@ -274,44 +287,99 @@ impl sc_client_api::BlockBackend<Block> for Client {
     }
 }
 
-impl frame_benchmarking_cli::ExtrinsicBuilder for Client {
-    fn remark(
+/// Helper trait to implement [`frame_benchmarking_cli::ExtrinsicBuilder`].
+///
+/// Should only be used for benchmarking since it makes strong assumptions
+/// about the chain state that these calls will be valid for.
+trait BenchmarkCallSigner<RuntimeCall: Encode + Clone, Signer: Pair> {
+    /// Signs a call together with the signed extensions of the specific runtime.
+    ///
+    /// Only works if the current block is the genesis block since the
+    /// `CheckMortality` check is mocked by using the genesis block.
+    fn sign_call(
         &self,
-        _nonce: u32,
-    ) -> std::result::Result<sp_runtime::OpaqueExtrinsic, &'static str> {
-        todo!()
-        /*with_signed_payload! {
-            self,
-            {extra, client, raw_payload},
-            {
-                // First the setup code to init all the variables that are needed
-                // to build the signed extras.
-                use runtime::{Call, SystemCall};
+        call: RuntimeCall,
+        nonce: u32,
+        current_block: u64,
+        period: u64,
+        genesis: sp_core::H256,
+        acc: Signer,
+    ) -> sp_runtime::OpaqueExtrinsic;
+}
 
-                let call = Call::System(SystemCall::remark { remark: vec![] });
-                let bob = Sr25519Keyring::Bob.pair();
+#[cfg(feature = "gdev")]
+impl BenchmarkCallSigner<gdev_runtime::RuntimeCall, sp_core::sr25519::Pair>
+    for super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>
+{
+    fn sign_call(
+        &self,
+        call: gdev_runtime::RuntimeCall,
+        nonce: u32,
+        current_block: u64,
+        period: u64,
+        genesis: sp_core::H256,
+        acc: sp_core::sr25519::Pair,
+    ) -> sp_runtime::OpaqueExtrinsic {
+        use gdev_runtime as runtime;
 
-                let period = polkadot_runtime_common::BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
+        let extra: runtime::SignedExtra = (
+            frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
+            frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
+            frame_system::CheckTxVersion::<runtime::Runtime>::new(),
+            frame_system::CheckGenesis::<runtime::Runtime>::new(),
+            frame_system::CheckMortality::<runtime::Runtime>::from(
+                sp_runtime::generic::Era::mortal(period, current_block),
+            ),
+            frame_system::CheckNonce::<runtime::Runtime>::from(nonce).into(),
+            frame_system::CheckWeight::<runtime::Runtime>::new(),
+            pallet_transaction_payment::ChargeTransactionPayment::<runtime::Runtime>::from(0),
+        );
 
-                let current_block = 0;
-                let tip = 0;
+        let payload = sp_runtime::generic::SignedPayload::from_raw(
+            call.clone(),
+            extra.clone(),
+            (
+                (),
+                runtime::VERSION.spec_version,
+                runtime::VERSION.transaction_version,
+                genesis,
+                genesis,
+                (),
+                (),
+                (),
+            ),
+        );
+
+        let signature = payload.using_encoded(|p| acc.sign(p));
+        runtime::UncheckedExtrinsic::new_signed(
+            call,
+            sp_runtime::AccountId32::from(acc.public()).into(),
+            common_runtime::Signature::Sr25519(signature),
+            extra,
+        )
+        .into()
+    }
+}
+
+impl frame_benchmarking_cli::ExtrinsicBuilder for Client {
+    fn pallet(&self) -> &str {
+        "system"
+    }
+    fn extrinsic(&self) -> &str {
+        "remark"
+    }
+    fn build(&self, nonce: u32) -> std::result::Result<sp_runtime::OpaqueExtrinsic, &'static str> {
+        with_client! {
+            self, client, {
+                let call = runtime::RuntimeCall::System(runtime::SystemCall::remark { remark: vec![] });
+                let signer = sp_keyring::Sr25519Keyring::Bob.pair();
+
+                let period = runtime::BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
                 let genesis = client.usage_info().chain.best_hash;
-            },
-            (period, current_block, nonce, tip, call, genesis),
-            /* The SignedPayload is generated here */
-            {
-                // Use the payload to generate a signature.
-                let signature = raw_payload.using_encoded(|payload| bob.sign(payload));
 
-                let ext = runtime::UncheckedExtrinsic::new_signed(
-                    call,
-                    sp_runtime::AccountId32::from(bob.public()).into(),
-                    polkadot_core_primitives::Signature::Sr25519(signature.clone()),
-                    extra,
-                );
-                Ok(ext.into())
+                Ok(client.sign_call(call, nonce, 0, period, genesis, signer))
             }
-        }*/
+        }
     }
 }
 
@@ -340,7 +408,7 @@ impl sp_blockchain::HeaderBackend<Block> for Client {
 impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
     fn storage(
         &self,
-        id: &BlockId<Block>,
+        id: &<Block as BlockT>::Hash,
         key: &StorageKey,
     ) -> sp_blockchain::Result<Option<StorageData>> {
         match_client!(self, storage(id, key))
@@ -348,7 +416,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
 
     fn storage_keys(
         &self,
-        id: &BlockId<Block>,
+        id: &<Block as BlockT>::Hash,
         key_prefix: &StorageKey,
     ) -> sp_blockchain::Result<Vec<StorageKey>> {
         match_client!(self, storage_keys(id, key_prefix))
@@ -356,7 +424,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
 
     fn storage_hash(
         &self,
-        id: &BlockId<Block>,
+        id: &<Block as BlockT>::Hash,
         key: &StorageKey,
     ) -> sp_blockchain::Result<Option<<Block as BlockT>::Hash>> {
         match_client!(self, storage_hash(id, key))
@@ -364,7 +432,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
 
     fn storage_pairs(
         &self,
-        id: &BlockId<Block>,
+        id: &<Block as BlockT>::Hash,
         key_prefix: &StorageKey,
     ) -> sp_blockchain::Result<Vec<(StorageKey, StorageData)>> {
         match_client!(self, storage_pairs(id, key_prefix))
@@ -372,7 +440,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
 
     fn storage_keys_iter<'a>(
         &self,
-        id: &BlockId<Block>,
+        id: &<Block as BlockT>::Hash,
         prefix: Option<&'a StorageKey>,
         start_key: Option<&StorageKey>,
     ) -> sp_blockchain::Result<
@@ -383,7 +451,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
 
     fn child_storage(
         &self,
-        id: &BlockId<Block>,
+        id: &<Block as BlockT>::Hash,
         child_info: &ChildInfo,
         key: &StorageKey,
     ) -> sp_blockchain::Result<Option<StorageData>> {
@@ -392,7 +460,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
 
     fn child_storage_keys(
         &self,
-        id: &BlockId<Block>,
+        id: &<Block as BlockT>::Hash,
         child_info: &ChildInfo,
         key_prefix: &StorageKey,
     ) -> sp_blockchain::Result<Vec<StorageKey>> {
@@ -401,7 +469,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
 
     fn child_storage_keys_iter<'a>(
         &self,
-        id: &BlockId<Block>,
+        id: &<Block as BlockT>::Hash,
         child_info: ChildInfo,
         prefix: Option<&'a StorageKey>,
         start_key: Option<&StorageKey>,
@@ -416,7 +484,7 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
 
     fn child_storage_hash(
         &self,
-        id: &BlockId<Block>,
+        id: &<Block as BlockT>::Hash,
         child_info: &ChildInfo,
         key: &StorageKey,
     ) -> sp_blockchain::Result<Option<<Block as BlockT>::Hash>> {
@@ -433,6 +501,7 @@ impl sc_client_api::UsageProvider<Block> for Client {
 /// Generates inherent data for benchmarking G1, GTest and GDev.
 ///
 /// Not to be used outside of benchmarking since it returns mocked values.
+#[cfg(feature = "runtime-benchmarks")]
 pub fn benchmark_inherent_data(
 ) -> std::result::Result<sp_inherents::InherentData, sp_inherents::Error> {
     use sp_inherents::InherentDataProvider;

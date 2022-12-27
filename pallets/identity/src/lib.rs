@@ -68,8 +68,6 @@ pub mod pallet {
         #[pallet::constant]
         /// Minimum duration between two owner key changes
         type ChangeOwnerKeyPeriod: Get<Self::BlockNumber>;
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         /// Management of the authorizations of the different calls.
         /// The default implementation allows everything.
         type CheckIdtyCallAllowed: CheckIdtyCallAllowed<Self>;
@@ -109,6 +107,8 @@ pub mod pallet {
         type RevocationSigner: IdentifyAccount<AccountId = Self::AccountId>;
         /// Signature of revocation payload
         type RevocationSignature: Parameter + Verify<Signer = Self::RevocationSigner>;
+        /// Because this pallet emits events, it depends on the runtime's definition of an event.
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     // GENESIS STUFF //
@@ -205,7 +205,7 @@ pub mod pallet {
             if n > T::BlockNumber::zero() {
                 Self::prune_identities(n)
             } else {
-                0
+                Weight::zero()
             }
         }
     }
@@ -265,7 +265,7 @@ pub mod pallet {
             let creator =
                 IdentityIndexOf::<T>::try_get(&who).map_err(|_| Error::<T>::IdtyIndexNotFound)?;
             let creator_idty_val =
-                Identities::<T>::try_get(&creator).map_err(|_| Error::<T>::IdtyNotFound)?;
+                Identities::<T>::try_get(creator).map_err(|_| Error::<T>::IdtyNotFound)?;
 
             if IdentityIndexOf::<T>::contains_key(&owner_key) {
                 return Err(Error::<T>::IdtyAlreadyCreated.into());
@@ -643,7 +643,7 @@ pub mod pallet {
                     },
                 );
             }
-            0
+            Weight::zero()
         }
         fn get_next_idty_index() -> T::IdtyIndex {
             if let Ok(next_index) = <NextIdtyIndex<T>>::try_get() {
@@ -655,7 +655,7 @@ pub mod pallet {
             }
         }
         fn prune_identities(block_number: T::BlockNumber) -> Weight {
-            let mut total_weight: Weight = 0;
+            let mut total_weight = Weight::zero();
 
             for (idty_index, idty_status) in IdentitiesRemovableOn::<T>::take(block_number) {
                 if let Ok(idty_val) = <Identities<T>>::try_get(idty_index) {

@@ -33,7 +33,7 @@ pub trait OnFilledRandomness {
 }
 impl OnFilledRandomness for () {
     fn on_filled_randomness(_: RequestId, _: H256) -> Weight {
-        0
+        Weight::zero()
     }
 }
 
@@ -67,8 +67,6 @@ pub mod pallet {
     pub trait Config: frame_system::Config<Hash = H256> {
         // The currency
         type Currency: Currency<Self::AccountId>;
-        /// The overarching event type.
-        type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
         /// Get the current epoch index
         type GetCurrentEpochIndex: Get<u64>;
         /// Maximum number of not yet filled requests
@@ -85,6 +83,8 @@ pub mod pallet {
         type ParentBlockRandomness: Randomness<Option<H256>, Self::BlockNumber>;
         /// A safe source of randomness from one epoch ago
         type RandomnessFromOneEpochAgo: Randomness<H256, Self::BlockNumber>;
+        /// The overarching event type.
+        type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     // STORAGE //
@@ -165,9 +165,11 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_: T::BlockNumber) -> Weight {
-            let mut total_weight = 0;
+            let request_weight = Weight::from_ref_time(100_000);
 
-            total_weight += 100_000;
+            let mut total_weight = Weight::zero();
+
+            total_weight += request_weight;
             for Request { request_id, salt } in RequestsReadyAtNextBlock::<T>::take() {
                 let randomness = T::ParentBlockRandomness::random(salt.as_ref())
                     .0
@@ -178,14 +180,14 @@ pub mod pallet {
                     request_id,
                     randomness,
                 });
-                total_weight += 100_000;
+                total_weight += request_weight;
             }
 
             let next_epoch_hook_in = NexEpochHookIn::<T>::mutate(|next_in| {
                 core::mem::replace(next_in, next_in.saturating_sub(1))
             });
             if next_epoch_hook_in == 1 {
-                total_weight += 100_000;
+                total_weight += request_weight;
                 for Request { request_id, salt } in
                     RequestsReadyAtEpoch::<T>::take(T::GetCurrentEpochIndex::get())
                 {
@@ -197,7 +199,7 @@ pub mod pallet {
                         request_id,
                         randomness,
                     });
-                    total_weight += 100_000;
+                    total_weight += request_weight;
                 }
             }
 

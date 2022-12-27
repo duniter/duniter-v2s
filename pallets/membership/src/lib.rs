@@ -61,8 +61,6 @@ pub mod pallet {
     pub trait Config<I: 'static = ()>: frame_system::Config {
         /// Ask the runtime whether the identity can perform membership operations
         type CheckCallAllowed: CheckCallAllowed<Self::IdtyId>;
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
-        type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
         /// Something that identifies an identity
         type IdtyId: Copy + MaybeSerializeDeserialize + Parameter + Ord;
         /// Something that give the IdtyId on an account id
@@ -77,6 +75,9 @@ pub mod pallet {
         #[pallet::constant]
         /// Maximum period (in number of blocks), where an identity can remain pending subscription.
         type PendingMembershipPeriod: Get<Self::BlockNumber>;
+        /// Because this pallet emits events, it depends on the runtime's definition of an event.
+        type RuntimeEvent: From<Event<Self, I>>
+            + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     // GENESIS STUFF //
@@ -180,7 +181,7 @@ pub mod pallet {
             if n > T::BlockNumber::zero() {
                 Self::expire_pending_memberships(n) + Self::expire_memberships(n)
             } else {
-                0
+                Weight::zero()
             }
         }
     }
@@ -225,13 +226,13 @@ pub mod pallet {
             let idty_id = Self::ensure_origin_and_get_idty_id(origin, maybe_idty_id)?;
 
             ensure!(
-                !Membership::<T, I>::contains_key(&idty_id),
+                !Membership::<T, I>::contains_key(idty_id),
                 Error::<T, I>::MembershipAlreadyAcquired
             );
 
             T::CheckCallAllowed::check_idty_allowed_to_claim_membership(&idty_id)?;
 
-            let metadata = PendingMembership::<T, I>::take(&idty_id)
+            let metadata = PendingMembership::<T, I>::take(idty_id)
                 .ok_or(Error::<T, I>::MembershipRequestNotFound)?;
 
             // Apply phase
@@ -295,16 +296,16 @@ pub mod pallet {
 
             Self::insert_membership(idty_id, MembershipData { expire_on });
             MembershipsExpireOn::<T, I>::append(expire_on, idty_id);
-            0
+            Weight::zero()
         }
         fn do_request_membership(
             idty_id: T::IdtyId,
             metadata: T::MetaData,
         ) -> DispatchResultWithPostInfo {
-            if PendingMembership::<T, I>::contains_key(&idty_id) {
+            if PendingMembership::<T, I>::contains_key(idty_id) {
                 return Err(Error::<T, I>::MembershipAlreadyRequested.into());
             }
-            if Membership::<T, I>::contains_key(&idty_id) {
+            if Membership::<T, I>::contains_key(idty_id) {
                 return Err(Error::<T, I>::MembershipAlreadyAcquired.into());
             }
 
@@ -332,7 +333,7 @@ pub mod pallet {
             }
         }
         fn expire_memberships(block_number: T::BlockNumber) -> Weight {
-            let mut total_weight: Weight = 0;
+            let mut total_weight: Weight = Weight::zero();
 
             for idty_id in MembershipsExpireOn::<T, I>::take(block_number) {
                 if let Some(member_data) = Self::get_membership(&idty_id) {
@@ -348,10 +349,10 @@ pub mod pallet {
             total_weight
         }
         fn expire_pending_memberships(block_number: T::BlockNumber) -> Weight {
-            let mut total_weight: Weight = 0;
+            let mut total_weight: Weight = Weight::zero();
 
             for idty_id in PendingMembershipsExpireOn::<T, I>::take(block_number) {
-                if PendingMembership::<T, I>::take(&idty_id).is_some() {
+                if PendingMembership::<T, I>::take(idty_id).is_some() {
                     Self::deposit_event(Event::PendingMembershipExpired(idty_id));
                     total_weight += T::OnEvent::on_event(
                         &sp_membership::Event::PendingMembershipExpired(idty_id),

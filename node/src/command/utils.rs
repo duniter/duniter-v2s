@@ -50,7 +50,7 @@ impl StorageKeyPrefixCmd {
         if let Some(ref pallet_name) = self.pallet_name {
             print_key_prefix = true;
             let pallet_prefix = twox_128(pallet_name.as_bytes());
-            println!("Pallet prefix: 0x{}", hex::encode(&pallet_prefix));
+            println!("Pallet prefix: 0x{}", hex::encode(pallet_prefix));
             key_prefix.extend_from_slice(&pallet_prefix[..]);
         }
         if let Some(ref item_name) = self.item_name {

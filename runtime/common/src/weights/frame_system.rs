@@ -45,41 +45,41 @@ use sp_std::marker::PhantomData;
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 	fn remark(b: u32, ) -> Weight {
-		(56_698_000 as Weight)
+		(Weight::from_ref_time(56_698_000))
 			// Standard Error: 0
-			.saturating_add((238_000 as Weight).saturating_mul(b as Weight))
+			.saturating_add((Weight::from_ref_time(238_000)).saturating_mul(b as u64))
 	}
 	fn remark_with_event(b: u32, ) -> Weight {
-		(1_830_806_000 as Weight)
+		(Weight::from_ref_time(1_830_806_000))
 			// Standard Error: 0
-			.saturating_add((254_000 as Weight).saturating_mul(b as Weight))
+			.saturating_add((Weight::from_ref_time(254_000)).saturating_mul(b as u64))
 	}
 	// Storage: System Digest (r:1 w:1)
 	// Storage: unknown [0x3a686561707061676573] (r:0 w:1)
 	fn set_heap_pages() -> Weight {
-		(74_351_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		(Weight::from_ref_time(74_351_000))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	fn set_storage(i: u32, ) -> Weight {
-		(0 as Weight)
+		(Weight::from_ref_time(0))
 			// Standard Error: 26_000
-			.saturating_add((38_883_000 as Weight).saturating_mul(i as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(i as Weight)))
+			.saturating_add((Weight::from_ref_time(38_883_000)).saturating_mul(i as u64))
+			.saturating_add(T::DbWeight::get().writes((1u64).saturating_mul(i as u64)))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	fn kill_storage(i: u32, ) -> Weight {
-		(14_386_000 as Weight)
+		(Weight::from_ref_time(14_386_000))
 			// Standard Error: 16_000
-			.saturating_add((18_658_000 as Weight).saturating_mul(i as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(i as Weight)))
+			.saturating_add((Weight::from_ref_time(18_658_000)).saturating_mul(i as u64))
+			.saturating_add(T::DbWeight::get().writes((1u64).saturating_mul(i as u64)))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	fn kill_prefix(p: u32, ) -> Weight {
-		(0 as Weight)
+		(Weight::from_ref_time(0))
 			// Standard Error: 8_000
-			.saturating_add((6_532_000 as Weight).saturating_mul(p as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(p as Weight)))
+			.saturating_add((Weight::from_ref_time(6_532_000)).saturating_mul(p as u64))
+			.saturating_add(T::DbWeight::get().writes((1u64).saturating_mul(p as u64)))
 	}
 }

@@ -85,7 +85,7 @@ pub async fn get_identity_value(world: &mut DuniterWorld, account: String) -> Re
         .unwrap();
 
     let identity_value = world
-        .read(&gdev::storage().identity().identities(&identity_index))
+        .read(&gdev::storage().identity().identities(identity_index))
         .await?
         .ok_or_else(|| {
             anyhow::anyhow!(

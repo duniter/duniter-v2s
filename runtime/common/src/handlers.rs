@@ -31,7 +31,7 @@ where
 {
     fn on_new_session(_index: sp_staking::SessionIndex) -> Weight {
         pallet_provide_randomness::Pallet::<Runtime>::on_new_epoch();
-        0
+        Weight::zero()
     }
 }
 
@@ -69,7 +69,7 @@ where
             }
             IdtyEvent::Created { .. } | IdtyEvent::Confirmed | IdtyEvent::Removed { .. } => {}
         }
-        0
+        Weight::zero()
     }
 }
 
@@ -99,7 +99,7 @@ impl<
                     Runtime::DbWeight::get().reads(1)
                 }
             }
-            _ => 0,
+            _ => Weight::zero(),
         }) + Inner::on_event(membership_event)
     }
 }
@@ -147,7 +147,7 @@ impl<
                         println!("fail to set session keys: {:?}", e)
                     }
                 }
-                0
+                Weight::zero()
             }
             sp_membership::Event::MembershipRevoked(idty_index) => {
                 let call = pallet_authority_members::Call::<Runtime>::remove_member {
@@ -160,9 +160,9 @@ impl<
                         println!("faid to remove member: {:?}", e)
                     }
                 }
-                0
+                Weight::zero()
             }
-            _ => 0,
+            _ => Weight::zero(),
         }) + Inner::on_event(membership_event)
     }
 }
@@ -182,7 +182,7 @@ where
                 println!("fail to revoke membership: {:?}", e)
             }
         }
-        0
+        Weight::zero()
     }
 }
 
@@ -221,7 +221,7 @@ where
             );
         }
 
-        0
+        Weight::zero()
     }
 }
 

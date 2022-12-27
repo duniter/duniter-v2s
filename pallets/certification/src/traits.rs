@@ -41,7 +41,7 @@ impl<IdtyIndex> OnNewcert<IdtyIndex> for () {
         _receiver: IdtyIndex,
         _receiver_received_count: u32,
     ) -> frame_support::dispatch::Weight {
-        0
+        Weight::zero()
     }
 }
 
@@ -62,7 +62,7 @@ impl<IdtyIndex> OnRemovedCert<IdtyIndex> for () {
         _receiver_received_count: u32,
         _expiration: bool,
     ) -> frame_support::dispatch::Weight {
-        0
+        Weight::zero()
     }
 }
 

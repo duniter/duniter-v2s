@@ -48,24 +48,24 @@ pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_oneshot_account::WeightInfo for WeightInfo<T> {
 	// Storage: OneshotAccount OneshotAccounts (r:1 w:1)
 	fn create_oneshot_account() -> Weight {
-		(941_602_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		(Weight::from_ref_time(941_602_000))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: OneshotAccount OneshotAccounts (r:1 w:1)
 	// Storage: System BlockHash (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
 	fn consume_oneshot_account() -> Weight {
-		(971_453_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		(Weight::from_ref_time(971_453_000))
+			.saturating_add(T::DbWeight::get().reads(3))
+			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: OneshotAccount OneshotAccounts (r:1 w:1)
 	// Storage: System BlockHash (r:1 w:0)
 	// Storage: System Account (r:2 w:2)
 	fn consume_oneshot_account_with_remaining() -> Weight {
-		(1_500_781_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		(Weight::from_ref_time(1_500_781_000))
+			.saturating_add(T::DbWeight::get().reads(4))
+			.saturating_add(T::DbWeight::get().writes(3))
 	}
 }

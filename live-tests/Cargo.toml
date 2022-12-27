@@ -12,6 +12,6 @@ version = '3.0.0'
 anyhow = "1.0"
 hex-literal = "0.3"
 parity-scale-codec = "3.1.5"
-sp-core = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26' }
-subxt = { git = 'https://github.com/duniter/subxt', branch = 'duniter-substrate-v0.9.26' }
+sp-core = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32' }
+subxt = { git = 'https://github.com/duniter/subxt', branch = 'duniter-substrate-v0.9.32' }
 tokio = { version = "1.15.0", features = ["macros"] }

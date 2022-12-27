@@ -32,7 +32,7 @@ pub trait WeightInfo {
 impl WeightInfo for () {
     // Storage: (r:0 w:0)
     fn on_initialize() -> Weight {
-        2_260_000 as Weight
+        Weight::from_ref_time(2_260_000)
     }
     // Storage: Membership CounterForMembership (r:1 w:0)
     // Storage: UniversalDividend NextReeval (r:1 w:0)
@@ -40,9 +40,9 @@ impl WeightInfo for () {
     // Storage: UniversalDividend MonetaryMass (r:1 w:1)
     // Storage: UniversalDividend CurrentUdIndex (r:1 w:1)
     fn on_initialize_ud_created() -> Weight {
-        (20_160_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(5 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+        Weight::from_ref_time(20_160_000)
+            .saturating_add(RocksDbWeight::get().reads(5))
+            .saturating_add(RocksDbWeight::get().writes(2))
     }
     // Storage: Membership CounterForMembership (r:1 w:0)
     // Storage: UniversalDividend NextReeval (r:1 w:1)
@@ -51,35 +51,35 @@ impl WeightInfo for () {
     // Storage: UniversalDividend PastReevals (r:1 w:1)
     // Storage: UniversalDividend CurrentUdIndex (r:1 w:1)
     fn on_initialize_ud_reevalued() -> Weight {
-        (32_770_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(6 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(5 as Weight))
+        Weight::from_ref_time(32_770_000)
+            .saturating_add(RocksDbWeight::get().reads(6))
+            .saturating_add(RocksDbWeight::get().writes(5))
     }
     // Storage: Identity IdentityIndexOf (r:1 w:0)
     // Storage: Identity Identities (r:1 w:1)
     // Storage: UniversalDividend CurrentUdIndex (r:1 w:0)
     // Storage: UniversalDividend PastReevals (r:1 w:0)
     fn claim_uds(n: u32) -> Weight {
-        (32_514_000 as Weight)
+        Weight::from_ref_time(32_514_000)
             // Standard Error: 32_000
-            .saturating_add((8_000 as Weight).saturating_mul(n as Weight))
-            .saturating_add(RocksDbWeight::get().reads(4 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(Weight::from_ref_time(8_000).saturating_mul(n as u64))
+            .saturating_add(RocksDbWeight::get().reads(4))
+            .saturating_add(RocksDbWeight::get().writes(1))
     }
     // Storage: UniversalDividend CurrentUd (r:1 w:0)
     // Storage: System Account (r:1 w:1)
     // Storage: Account PendingNewAccounts (r:0 w:1)
     fn transfer_ud() -> Weight {
-        (53_401_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+        Weight::from_ref_time(53_401_000)
+            .saturating_add(RocksDbWeight::get().reads(2))
+            .saturating_add(RocksDbWeight::get().writes(2))
     }
     // Storage: UniversalDividend CurrentUd (r:1 w:0)
     // Storage: System Account (r:1 w:1)
     // Storage: Account PendingNewAccounts (r:0 w:1)
     fn transfer_ud_keep_alive() -> Weight {
-        (33_420_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+        Weight::from_ref_time(33_420_000)
+            .saturating_add(RocksDbWeight::get().reads(2))
+            .saturating_add(RocksDbWeight::get().writes(2))
     }
 }

@@ -33,13 +33,13 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
 use subxt::ext::{sp_core, sp_runtime};
-use subxt::rpc::{rpc_params, ClientT, SubscriptionClientT};
+use subxt::rpc::rpc_params;
 use subxt::tx::BaseExtrinsicParamsBuilder;
 
 pub type Client = subxt::OnlineClient<GdevConfig>;
 pub type Event = gdev::Event;
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-pub type SignedSubmittableExtrinsic = subxt::tx::SignedSubmittableExtrinsic<GdevConfig, Client>;
+pub type SubmittableExtrinsic = subxt::tx::SubmittableExtrinsic<GdevConfig, Client>;
 pub type TxProgress = subxt::tx::TxProgress<GdevConfig, Client>;
 
 pub enum GdevConfig {}
@@ -52,7 +52,6 @@ impl subxt::config::Config for GdevConfig {
     type Address = sp_runtime::MultiAddress<Self::AccountId, u32>;
     type Header = sp_runtime::generic::Header<Self::BlockNumber, sp_runtime::traits::BlakeTwo256>;
     type Signature = sp_runtime::MultiSignature;
-    type Extrinsic = sp_runtime::OpaqueExtrinsic;
     type ExtrinsicParams = subxt::tx::BaseExtrinsicParams<Self, Tip>;
 }
 
@@ -122,7 +121,6 @@ pub async fn create_empty_block(client: &Client) -> Result<()> {
     // Create an empty block
     let _: Value = client
         .rpc()
-        .client
         .request("engine_createBlock", rpc_params![true, false, Value::Null])
         .await?;
 
@@ -131,8 +129,8 @@ pub async fn create_empty_block(client: &Client) -> Result<()> {
 
 pub async fn create_block_with_extrinsic(
     client: &Client,
-    extrinsic: SignedSubmittableExtrinsic,
-) -> Result<subxt::tx::TxEvents<GdevConfig>> {
+    extrinsic: SubmittableExtrinsic,
+) -> Result<subxt::blocks::ExtrinsicEvents<GdevConfig>> {
     //println!("extrinsic encoded: {}", hex::encode(extrinsic.encoded()));
 
     let watcher = extrinsic.submit_and_watch().await?;
@@ -140,7 +138,6 @@ pub async fn create_block_with_extrinsic(
     // Create a non-empty block
     let _: Value = client
         .rpc()
-        .client
         .request("engine_createBlock", rpc_params![false, false, Value::Null])
         .await?;
 
@@ -223,14 +220,14 @@ fn wait_until_log_line(expected_log_line: &str, log_file_path: &str, timeout: st
     let mut watcher = notify::watcher(tx, std::time::Duration::from_millis(100)).unwrap();
     use notify::Watcher as _;
     watcher
-        .watch(&log_file_path, notify::RecursiveMode::NonRecursive)
+        .watch(log_file_path, notify::RecursiveMode::NonRecursive)
         .unwrap();
 
     let mut pos = 0;
     loop {
         match rx.recv_timeout(timeout) {
             Ok(notify::DebouncedEvent::Write(_)) => {
-                let mut file = std::fs::File::open(&log_file_path).unwrap();
+                let mut file = std::fs::File::open(log_file_path).unwrap();
                 file.seek(std::io::SeekFrom::Start(pos)).unwrap();
                 pos = file.metadata().unwrap().len();
                 let reader = std::io::BufReader::new(file);

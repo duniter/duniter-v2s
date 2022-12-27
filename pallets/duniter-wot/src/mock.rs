@@ -67,8 +67,8 @@ impl system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
@@ -76,7 +76,7 @@ impl system::Config for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -121,7 +121,6 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
 impl pallet_identity::Config for Test {
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
-    type Event = Event;
     type CheckIdtyCallAllowed = (DuniterWot, SmithsSubWot);
     type IdtyCreationPeriod = IdtyCreationPeriod;
     type IdtyData = ();
@@ -133,6 +132,7 @@ impl pallet_identity::Config for Test {
     type RemoveIdentityConsumers = ();
     type RevocationSigner = UintAuthorityId;
     type RevocationSignature = TestSignature;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 // Membership
@@ -143,12 +143,12 @@ parameter_types! {
 
 impl pallet_membership::Config<Instance1> for Test {
     type CheckCallAllowed = DuniterWot;
-    type Event = Event;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
     type MembershipPeriod = MembershipPeriod;
     type MetaData = ();
     type OnEvent = DuniterWot;
+    type RuntimeEvent = RuntimeEvent;
     type PendingMembershipPeriod = PendingMembershipPeriod;
 }
 
@@ -162,7 +162,6 @@ parameter_types! {
 
 impl pallet_certification::Config<Instance1> for Test {
     type CertPeriod = CertPeriod;
-    type Event = Event;
     type IdtyIndex = IdtyIndex;
     type OwnerKeyOf = Identity;
     type CheckCertAllowed = DuniterWot;
@@ -170,6 +169,7 @@ impl pallet_certification::Config<Instance1> for Test {
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = DuniterWot;
     type OnRemovedCert = DuniterWot;
+    type RuntimeEvent = RuntimeEvent;
     type ValidityPeriod = ValidityPeriod;
 }
 
@@ -195,13 +195,13 @@ parameter_types! {
 
 impl pallet_membership::Config<Instance2> for Test {
     type CheckCallAllowed = SmithsSubWot;
-    type Event = Event;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
     type MembershipPeriod = SmithsMembershipPeriod;
     type MetaData = ();
     type OnEvent = SmithsSubWot;
     type PendingMembershipPeriod = SmithsPendingMembershipPeriod;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 // SmithsCert
@@ -214,7 +214,6 @@ parameter_types! {
 
 impl pallet_certification::Config<Instance2> for Test {
     type CertPeriod = SmithsCertPeriod;
-    type Event = Event;
     type IdtyIndex = IdtyIndex;
     type OwnerKeyOf = Identity;
     type CheckCertAllowed = SmithsSubWot;
@@ -222,6 +221,7 @@ impl pallet_certification::Config<Instance2> for Test {
     type MinReceivedCertToBeAbleToIssueCert = SmithsMinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = SmithsSubWot;
     type OnRemovedCert = SmithsSubWot;
+    type RuntimeEvent = RuntimeEvent;
     type ValidityPeriod = SmithsValidityPeriod;
 }
 

@@ -39,13 +39,13 @@ impl<T: frame_system::Config> pallet_babe::WeightInfo for WeightInfo<T> {
         let validator_count = validator_count.max(100) as u64;
 
         // checking membership proof
-        (35 * WEIGHT_PER_MICROS)
-            .saturating_add((175 * WEIGHT_PER_NANOS).saturating_mul(validator_count))
+        (WEIGHT_PER_MICROS * 35)
+            .saturating_add((WEIGHT_PER_NANOS * 175).saturating_mul(validator_count))
             .saturating_add(T::DbWeight::get().reads(5))
             // check equivocation proof
-            .saturating_add(110 * WEIGHT_PER_MICROS)
+            .saturating_add(WEIGHT_PER_MICROS * 110)
             // report offence
-            .saturating_add(110 * WEIGHT_PER_MICROS)
+            .saturating_add(WEIGHT_PER_MICROS * 110)
             .saturating_add(T::DbWeight::get().writes(3))
     }
 }

@@ -27,18 +27,18 @@ macro_rules! runtime_apis {
             }
 
             impl sp_consensus_babe::BabeApi<Block> for Runtime {
-                fn configuration() -> sp_consensus_babe::BabeGenesisConfiguration {
+                fn configuration() -> sp_consensus_babe::BabeConfiguration {
                     // The choice of `c` parameter (where `1 - c` represents the
                     // probability of a slot being empty), is done in accordance to the
                     // slot duration and expected target block time, for safely
                     // resisting network delays of maximum two seconds.
                     // <https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results>
                     use frame_support::traits::Get as _;
-                    sp_consensus_babe::BabeGenesisConfiguration {
+                    sp_consensus_babe::BabeConfiguration {
                         slot_duration: Babe::slot_duration(),
                         epoch_length: EpochDuration::get(),
                         c: BABE_GENESIS_EPOCH_CONFIG.c,
-                        genesis_authorities: Babe::authorities().to_vec(),
+                        authorities: Babe::authorities().to_vec(),
                         randomness: Babe::randomness(),
                         allowed_slots: BABE_GENESIS_EPOCH_CONFIG.allowed_slots,
                     }
@@ -210,15 +210,23 @@ macro_rules! runtime_apis {
             }
 
             #[cfg(feature = "try-runtime")]
-            impl frame_try_runtime::TryRuntime<Block> for Runtime {
+            impl frame_try_runtime::TryRuntime<Block> for Runtime where <Runtime as frame_system::Config>::BlockNumber: Clone + sp_std::fmt::Debug + sp_runtime::traits::AtLeast32BitUnsigned {
                 fn on_runtime_upgrade() -> (Weight, Weight) {
                     log::info!("try-runtime::on_runtime_upgrade.");
-                    let weight = Executive::try_runtime_upgrade().unwrap();
-                    (weight, BlockWeights::get().max_block)
+                    todo!()
+                    // TODO solve the problem to uncomment this:
+                    //let weight = Executive::try_runtime_upgrade().unwrap();
+                    //(weight, BlockWeights::get().max_block)
                 }
 
-                fn execute_block_no_check(block: Block) -> Weight {
-                    Executive::execute_block_no_check(block)
+                fn execute_block(
+                    block: Block,
+                    state_root_check: bool,
+                    select: frame_try_runtime::TryStateSelect,
+                ) -> Weight {
+                    todo!()
+                    // TODO solve the problem to uncomment this:
+                    //Executive::try_execute_block(block, state_root_check, select).expect("try_execute_block failed")
                 }
             }
 
@@ -235,16 +243,7 @@ macro_rules! runtime_apis {
 					use frame_benchmarking::baseline::Pallet as Baseline;
 
 					let mut list = Vec::<BenchmarkList>::new();
-                    list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
-					list_benchmark!(list, extra, pallet_balances, Balances);
-					list_benchmark!(list, extra, pallet_multisig, Multisig);
-					list_benchmark!(list, extra, pallet_oneshot_account, OneshotAccount);
-					list_benchmark!(list, extra, pallet_proxy, Proxy);
-					list_benchmark!(list, extra, pallet_scheduler, Scheduler);
-					list_benchmark!(list, extra, pallet_timestamp, Timestamp);
-					list_benchmark!(list, extra, pallet_universal_dividend, UniversalDividend);
-					list_benchmark!(list, extra, pallet_upgrade_origin, UpgradeOrigin);
-					list_benchmark!(list, extra, pallet_utility, Utility);
+                    list_benchmarks!(list, extra);
 
 					let storage_info = AllPalletsWithSystem::storage_info();
 					return (list, storage_info)
@@ -282,16 +281,7 @@ macro_rules! runtime_apis {
 
 					let mut batches = Vec::<BenchmarkBatch>::new();
 					let params = (&config, &whitelist);
-					add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-					add_benchmark!(params, batches, pallet_balances, Balances);
-					add_benchmark!(params, batches, pallet_multisig, Multisig);
-					add_benchmark!(params, batches, pallet_oneshot_account, OneshotAccount);
-					add_benchmark!(params, batches, pallet_proxy, Proxy);
-					add_benchmark!(params, batches, pallet_scheduler, Scheduler);
-					add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-					add_benchmark!(params, batches, pallet_universal_dividend, UniversalDividend);
-					add_benchmark!(params, batches, pallet_upgrade_origin, UpgradeOrigin);
-					add_benchmark!(params, batches, pallet_utility, Utility);
+                    add_benchmarks!(params, batches);
 
 					if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 					Ok(batches)

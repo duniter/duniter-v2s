@@ -44,7 +44,7 @@ pub trait OnEvent<IdtyId, MetaData> {
 
 impl<IdtyId, MetaData> OnEvent<IdtyId, MetaData> for () {
     fn on_event(_: &crate::Event<IdtyId, MetaData>) -> Weight {
-        0
+        Weight::zero()
     }
 }
 

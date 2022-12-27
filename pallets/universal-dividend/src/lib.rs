@@ -63,8 +63,6 @@ pub mod pallet {
         type BlockNumberIntoBalance: Convert<Self::BlockNumber, BalanceOf<Self>>;
         // The currency
         type Currency: Currency<Self::AccountId>;
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         #[pallet::constant]
         /// Maximum number of past UD revaluations to keep in storage.
         type MaxPastReeval: Get<u32>;
@@ -75,6 +73,8 @@ pub mod pallet {
         /// An iterator over all members
         type MembersStorageIter: From<Option<Vec<u8>>>
             + Iterator<Item = (Self::AccountId, FirstEligibleUd)>;
+        /// Because this pallet emits events, it depends on the runtime's definition of an event.
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         #[pallet::constant]
         /// Square of the money growth rate per ud reevaluation period
         type SquareMoneyGrowthRate: Get<Perbill>;

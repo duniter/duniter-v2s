@@ -75,9 +75,9 @@ fn test_create_identity_ok() {
         run_to_block(1);
 
         // Alice should be able to create an identity
-        assert_ok!(Identity::create_identity(Origin::signed(1), 2));
+        assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 2));
 
-        System::assert_has_event(Event::Identity(crate::Event::IdtyCreated {
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyCreated {
             idty_index: 2,
             owner_key: 2,
         }));
@@ -94,18 +94,20 @@ fn test_create_identity_but_not_confirm_it() {
         run_to_block(1);
 
         // Alice should be able to create an identity
-        assert_ok!(Identity::create_identity(Origin::signed(1), 2));
+        assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 2));
 
         // The identity shoud expire in blocs #3
         run_to_block(3);
 
-        System::assert_has_event(Event::Identity(crate::Event::IdtyRemoved { idty_index: 2 }));
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
+            idty_index: 2,
+        }));
 
         // We shoud be able to recreate the identity
         run_to_block(4);
-        assert_ok!(Identity::create_identity(Origin::signed(1), 2));
+        assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 2));
 
-        System::assert_has_event(Event::Identity(crate::Event::IdtyCreated {
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyCreated {
             idty_index: 3,
             owner_key: 2,
         }));
@@ -122,9 +124,9 @@ fn test_idty_creation_period() {
         run_to_block(1);
 
         // Alice should be able to create an identity
-        assert_ok!(Identity::create_identity(Origin::signed(1), 2));
+        assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 2));
 
-        System::assert_has_event(Event::Identity(crate::Event::IdtyCreated {
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyCreated {
             idty_index: 2,
             owner_key: 2,
         }));
@@ -134,15 +136,15 @@ fn test_idty_creation_period() {
         // Alice cannot create a new identity before block #4
         run_to_block(2);
         assert_eq!(
-            Identity::create_identity(Origin::signed(1), 3),
+            Identity::create_identity(RuntimeOrigin::signed(1), 3),
             Err(Error::<Test>::NotRespectIdtyCreationPeriod.into())
         );
 
         // Alice should be able to create a second identity after block #4
         run_to_block(4);
-        assert_ok!(Identity::create_identity(Origin::signed(1), 3));
+        assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 3));
 
-        System::assert_has_event(Event::Identity(crate::Event::IdtyCreated {
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyCreated {
             idty_index: 3,
             owner_key: 3,
         }));
@@ -173,7 +175,7 @@ fn test_change_owner_key() {
         // Caller should have an associated identity
         assert_noop!(
             Identity::change_owner_key(
-                Origin::signed(42),
+                RuntimeOrigin::signed(42),
                 10,
                 TestSignature(10, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
             ),
@@ -183,7 +185,7 @@ fn test_change_owner_key() {
         // Payload must be signed by the new key
         assert_noop!(
             Identity::change_owner_key(
-                Origin::signed(1),
+                RuntimeOrigin::signed(1),
                 10,
                 TestSignature(42, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
             ),
@@ -193,7 +195,7 @@ fn test_change_owner_key() {
         // Payload must be prefixed
         assert_noop!(
             Identity::change_owner_key(
-                Origin::signed(1),
+                RuntimeOrigin::signed(1),
                 10,
                 TestSignature(10, new_key_payload.encode())
             ),
@@ -203,7 +205,7 @@ fn test_change_owner_key() {
         // New owner key should not be used by another identity
         assert_noop!(
             Identity::change_owner_key(
-                Origin::signed(1),
+                RuntimeOrigin::signed(1),
                 2,
                 TestSignature(2, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
             ),
@@ -212,7 +214,7 @@ fn test_change_owner_key() {
 
         // Alice can change her owner key
         assert_ok!(Identity::change_owner_key(
-            Origin::signed(1),
+            RuntimeOrigin::signed(1),
             10,
             TestSignature(10, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
         ));
@@ -238,7 +240,7 @@ fn test_change_owner_key() {
         new_key_payload.old_owner_key = &10;
         assert_noop!(
             Identity::change_owner_key(
-                Origin::signed(10),
+                RuntimeOrigin::signed(10),
                 100,
                 TestSignature(
                     100,
@@ -251,7 +253,7 @@ fn test_change_owner_key() {
         // Alice can re-change her owner key after ChangeOwnerKeyPeriod blocs
         run_to_block(2 + <Test as crate::Config>::ChangeOwnerKeyPeriod::get());
         assert_ok!(Identity::change_owner_key(
-            Origin::signed(10),
+            RuntimeOrigin::signed(10),
             100,
             TestSignature(
                 100,
@@ -267,7 +269,7 @@ fn test_change_owner_key() {
 
         // Revoke identity 1
         assert_ok!(Identity::revoke_identity(
-            Origin::signed(42),
+            RuntimeOrigin::signed(42),
             1,
             100,
             TestSignature(
@@ -311,7 +313,7 @@ fn test_idty_revocation_with_old_key() {
 
         // Change alice owner key
         assert_ok!(Identity::change_owner_key(
-            Origin::signed(1),
+            RuntimeOrigin::signed(1),
             10,
             TestSignature(10, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
         ));
@@ -323,7 +325,7 @@ fn test_idty_revocation_with_old_key() {
         // We should be able to revoke Alice identity with old key
         run_to_block(2);
         assert_ok!(Identity::revoke_identity(
-            Origin::signed(42),
+            RuntimeOrigin::signed(42),
             1,
             1,
             TestSignature(1, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
@@ -355,7 +357,7 @@ fn test_idty_revocation_with_old_key_after_old_key_expiration() {
 
         // Change alice owner key
         assert_ok!(Identity::change_owner_key(
-            Origin::signed(1),
+            RuntimeOrigin::signed(1),
             10,
             TestSignature(10, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
         ));
@@ -368,7 +370,7 @@ fn test_idty_revocation_with_old_key_after_old_key_expiration() {
         run_to_block(2 + <Test as crate::Config>::ChangeOwnerKeyPeriod::get());
         assert_noop!(
             Identity::revoke_identity(
-                Origin::signed(42),
+                RuntimeOrigin::signed(42),
                 1,
                 1,
                 TestSignature(1, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
@@ -395,7 +397,7 @@ fn test_idty_revocation() {
         // Payload must be signed by the right identity
         assert_eq!(
             Identity::revoke_identity(
-                Origin::signed(1),
+                RuntimeOrigin::signed(1),
                 1,
                 42,
                 TestSignature(42, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
@@ -406,7 +408,7 @@ fn test_idty_revocation() {
         // Payload must be prefixed
         assert_eq!(
             Identity::revoke_identity(
-                Origin::signed(1),
+                RuntimeOrigin::signed(1),
                 1,
                 1,
                 TestSignature(1, revocation_payload.encode())
@@ -416,23 +418,25 @@ fn test_idty_revocation() {
 
         // Anyone can submit a revocation payload
         assert_ok!(Identity::revoke_identity(
-            Origin::signed(42),
+            RuntimeOrigin::signed(42),
             1,
             1,
             TestSignature(1, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
         ));
 
-        System::assert_has_event(Event::System(frame_system::Event::KilledAccount {
+        System::assert_has_event(RuntimeEvent::System(frame_system::Event::KilledAccount {
             account: 1,
         }));
-        System::assert_has_event(Event::Identity(crate::Event::IdtyRemoved { idty_index: 1 }));
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
+            idty_index: 1,
+        }));
 
         run_to_block(2);
 
         // The identity no longer exists
         assert_eq!(
             Identity::revoke_identity(
-                Origin::signed(1),
+                RuntimeOrigin::signed(1),
                 1,
                 1,
                 TestSignature(1, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())

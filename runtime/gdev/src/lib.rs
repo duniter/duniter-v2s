@@ -35,6 +35,7 @@ pub use common_runtime::{
     constants::*, entities::*, handlers::*, AccountId, Address, Balance, BlockNumber,
     FullIdentificationOfImpl, GetCurrentEpochIndex, Hash, Header, IdtyIndex, Index, Signature,
 };
+pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_duniter_test_parameters::Parameters as GenesisParameters;
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
@@ -109,7 +110,8 @@ pub fn native_version() -> NativeVersion {
 /// Block type as expected by this runtime.
 pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic =
+    generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
     frame_system::CheckNonZeroSender<Runtime>,
@@ -134,32 +136,58 @@ pub type Executive = frame_executive::Executive<
 
 pub type TechnicalCommitteeInstance = Instance2;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benches {
+    define_benchmarks!(
+        // Duniter
+        // NOTE: Make sure to prefix these with `common_runtime::` so
+        // the that path resolves correctly in the generated file.
+        [common_runtime::oneshot_account, OneshotAccount]
+        [common_runtime::universal_dividend, UniversalDividend]
+        [common_runtime::upgrade_origin, UpgradeOrigin]
+        // Substrate
+        [pallet_balances, Balances]
+        [frame_benchmarking::baseline, Baseline::<Runtime>]
+        [pallet_collective, TechnicalCommittee]
+        [pallet_im_online, ImOnline]
+        [pallet_multisig, Multisig]
+        [pallet_preimage, Preimage]
+        [pallet_proxy, Proxy]
+        [pallet_scheduler, Scheduler]
+        [frame_system, SystemBench::<Runtime>]
+        [pallet_timestamp, Timestamp]
+        [pallet_treasury, Treasury]
+        [pallet_utility, Utility]
+    );
+}
+
 pub struct BaseCallFilter;
 #[cfg(not(feature = "runtime-benchmarks"))]
-impl Contains<Call> for BaseCallFilter {
-    fn contains(call: &Call) -> bool {
+impl Contains<RuntimeCall> for BaseCallFilter {
+    fn contains(call: &RuntimeCall) -> bool {
         !matches!(
             call,
-            Call::System(
+            /*RuntimeCall::System(
                 frame_system::Call::remark { .. } | frame_system::Call::remark_with_event { .. }
-            ) | Call::Membership(
+            ) | */
+            RuntimeCall::Membership(
                 pallet_membership::Call::request_membership { .. }
                     | pallet_membership::Call::claim_membership { .. }
                     | pallet_membership::Call::revoke_membership { .. }
-            ) | Call::Session(_)
+            ) | RuntimeCall::Session(_)
         )
     }
 }
 #[cfg(feature = "runtime-benchmarks")]
-impl Contains<Call> for BaseCallFilter {
-    fn contains(call: &Call) -> bool {
+impl Contains<RuntimeCall> for BaseCallFilter {
+    fn contains(call: &RuntimeCall) -> bool {
         !matches!(
             call,
-            Call::Membership(
+            RuntimeCall::Membership(
                 pallet_membership::Call::request_membership { .. }
                     | pallet_membership::Call::claim_membership { .. }
                     | pallet_membership::Call::revoke_membership { .. }
-            ) | Call::Session(_)
+            ) | RuntimeCall::Session(_)
         )
     }
 }
@@ -190,29 +218,32 @@ impl Default for ProxyType {
         Self::AlmostAny
     }
 }
-impl frame_support::traits::InstanceFilter<Call> for ProxyType {
-    fn filter(&self, c: &Call) -> bool {
+impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
+    fn filter(&self, c: &RuntimeCall) -> bool {
         match self {
             ProxyType::AlmostAny => {
                 // Some calls are never authorized from a proxied account
                 !matches!(
                     c,
-                    Call::Cert(..) | Call::Identity(..) | Call::SmithsCert(..)
+                    RuntimeCall::Cert(..) | RuntimeCall::Identity(..) | RuntimeCall::SmithsCert(..)
                 )
             }
             ProxyType::TransferOnly => {
-                matches!(c, Call::Balances(..) | Call::UniversalDividend(..))
+                matches!(
+                    c,
+                    RuntimeCall::Balances(..) | RuntimeCall::UniversalDividend(..)
+                )
             }
             ProxyType::CancelProxy => {
                 matches!(
                     c,
-                    Call::Proxy(pallet_proxy::Call::reject_announcement { .. })
+                    RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
                 )
             }
             ProxyType::TechnicalCommitteePropose => {
                 matches!(
                     c,
-                    Call::TechnicalCommittee(pallet_collective::Call::propose { .. })
+                    RuntimeCall::TechnicalCommittee(pallet_collective::Call::propose { .. })
                 )
             }
         }
@@ -260,8 +291,8 @@ common_runtime::pallets_config! {
     }
 
     impl pallet_sudo::Config for Runtime {
-        type Event = Event;
-        type Call = Call;
+        type RuntimeEvent = RuntimeEvent;
+        type RuntimeCall = RuntimeCall;
     }
 }
 
@@ -331,10 +362,10 @@ construct_runtime!(
 
 impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
 where
-    Call: From<C>,
+    RuntimeCall: From<C>,
 {
     type Extrinsic = UncheckedExtrinsic;
-    type OverarchingCall = Call;
+    type OverarchingCall = RuntimeCall;
 }
 
 // All of our runtimes share most of their Runtime API implementations.

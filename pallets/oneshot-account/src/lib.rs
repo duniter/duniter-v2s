@@ -54,8 +54,8 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
         type Currency: Currency<Self::AccountId>;
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type InnerOnChargeTransaction: OnChargeTransaction<Self>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     // STORAGE //
@@ -315,7 +315,7 @@ pub mod pallet {
 
 impl<T: Config> OnChargeTransaction<T> for Pallet<T>
 where
-    T::Call: IsSubType<Call<T>>,
+    T::RuntimeCall: IsSubType<Call<T>>,
     T::InnerOnChargeTransaction: OnChargeTransaction<
         T,
         Balance = <T::Currency as Currency<T::AccountId>>::Balance,
@@ -326,8 +326,8 @@ where
     type LiquidityInfo = Option<<T::Currency as Currency<T::AccountId>>::NegativeImbalance>;
     fn withdraw_fee(
         who: &T::AccountId,
-        call: &T::Call,
-        dispatch_info: &DispatchInfoOf<T::Call>,
+        call: &T::RuntimeCall,
+        dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
         fee: Self::Balance,
         tip: Self::Balance,
     ) -> Result<Self::LiquidityInfo, TransactionValidityError> {
@@ -340,7 +340,7 @@ where
                 return Ok(None);
             }
 
-            if let Some(balance) = OneshotAccounts::<T>::get(&who) {
+            if let Some(balance) = OneshotAccounts::<T>::get(who) {
                 if balance >= fee {
                     OneshotAccounts::<T>::insert(who, balance.saturating_sub(fee));
                     Self::deposit_event(Event::Withdraw {
@@ -362,8 +362,8 @@ where
     }
     fn correct_and_deposit_fee(
         who: &T::AccountId,
-        dispatch_info: &DispatchInfoOf<T::Call>,
-        post_info: &PostDispatchInfoOf<T::Call>,
+        dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
+        post_info: &PostDispatchInfoOf<T::RuntimeCall>,
         corrected_fee: Self::Balance,
         tip: Self::Balance,
         already_withdrawn: Self::LiquidityInfo,

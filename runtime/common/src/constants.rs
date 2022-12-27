@@ -73,14 +73,15 @@ pub fn block_weights(
     let normal_weight = normal_ratio * expected_block_weight;
     frame_system::limits::BlockWeights::builder()
         .base_block(crate::weights::block_weights::BlockExecutionWeight::get())
-        .for_class(frame_support::weights::DispatchClass::Normal, |weights| {
+        .for_class(frame_support::dispatch::DispatchClass::all(), |weights| {
             weights.base_extrinsic = base_weight;
+        })
+        .for_class(frame_support::dispatch::DispatchClass::Normal, |weights| {
             weights.max_total = normal_weight.into();
         })
         .for_class(
-            frame_support::weights::DispatchClass::Operational,
+            frame_support::dispatch::DispatchClass::Operational,
             |weights| {
-                weights.base_extrinsic = base_weight;
                 weights.max_total = expected_block_weight.into();
                 weights.reserved = (expected_block_weight - normal_weight).into();
             },

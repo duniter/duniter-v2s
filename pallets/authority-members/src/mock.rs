@@ -71,8 +71,8 @@ impl system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
@@ -80,7 +80,7 @@ impl system::Config for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -118,7 +118,7 @@ impl ShouldEndSession<u64> for TestShouldEndSession {
 }
 
 impl pallet_session::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ValidatorId = u64;
     type ValidatorIdOf = ConvertInto;
     type ShouldEndSession = TestShouldEndSession;
@@ -148,7 +148,6 @@ impl IsMember<u64> for TestIsSmithMember {
 }
 
 impl pallet_authority_members::Config for Test {
-    type Event = Event;
     type KeysWrapper = MockSessionKeys;
     type IsMember = TestIsSmithMember;
     type MaxAuthorities = ConstU32<4>;
@@ -159,6 +158,7 @@ impl pallet_authority_members::Config for Test {
     type OnNewSession = ();
     type OnRemovedMember = ();
     type RemoveMemberOrigin = system::EnsureRoot<u64>;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 // Build genesis storage according to the mock runtime.

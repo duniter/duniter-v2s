@@ -30,6 +30,7 @@ pub use types::*;
 
 use crate::traits::*;
 use codec::Codec;
+use frame_support::pallet_prelude::*;
 use frame_support::traits::StorageVersion;
 use sp_runtime::traits::AtLeast32BitUnsigned;
 use sp_std::{fmt::Debug, vec::Vec};
@@ -37,7 +38,6 @@ use sp_std::{fmt::Debug, vec::Vec};
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::{Convert, Saturating};
     use sp_std::collections::btree_map::BTreeMap;
@@ -56,8 +56,6 @@ pub mod pallet {
         #[pallet::constant]
         /// Minimum duration between two certifications issued by the same issuer
         type CertPeriod: Get<Self::BlockNumber>;
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
-        type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
         /// A short identity index.
         type IdtyIndex: Parameter
             + Member
@@ -82,6 +80,9 @@ pub mod pallet {
         type OnNewcert: OnNewcert<Self::IdtyIndex>;
         /// Handler for Removed event
         type OnRemovedCert: OnRemovedCert<Self::IdtyIndex>;
+        /// Because this pallet emits events, it depends on the runtime's definition of an event.
+        type RuntimeEvent: From<Event<Self, I>>
+            + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         #[pallet::constant]
         /// Duration of validity of a certification
         type ValidityPeriod: Get<Self::BlockNumber>;
@@ -211,6 +212,8 @@ pub mod pallet {
     pub type StorageCertsRemovableOn<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(T::IdtyIndex, T::IdtyIndex)>, OptionQuery>;
 
+    // EVENTS //
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config<I>, I: 'static = ()> {
@@ -238,6 +241,8 @@ pub mod pallet {
             receiver: T::IdtyIndex,
         },
     }
+
+    // ERRORS //
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
@@ -434,7 +439,7 @@ pub mod pallet {
             Ok(().into())
         }
         fn prune_certifications(block_number: T::BlockNumber) -> Weight {
-            let mut total_weight: Weight = 0;
+            let mut total_weight = Weight::zero();
 
             if let Some(certs) = StorageCertsRemovableOn::<T, I>::take(block_number) {
                 for (issuer, receiver) in certs {
@@ -449,7 +454,7 @@ pub mod pallet {
             receiver: T::IdtyIndex,
             block_number_opt: Option<T::BlockNumber>,
         ) -> Weight {
-            let mut total_weight: Weight = 0;
+            let mut total_weight = Weight::zero();
             let mut removed = false;
             CertsByReceiver::<T, I>::mutate_exists(receiver, |issuers_opt| {
                 let issuers = issuers_opt.get_or_insert(Vec::with_capacity(0));
@@ -501,14 +506,11 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> SetNextIssuableOn<T::BlockNumber, T::IdtyIndex> for Pallet<T, I> {
-    fn set_next_issuable_on(
-        idty_index: T::IdtyIndex,
-        next_issuable_on: T::BlockNumber,
-    ) -> frame_support::pallet_prelude::Weight {
+    fn set_next_issuable_on(idty_index: T::IdtyIndex, next_issuable_on: T::BlockNumber) -> Weight {
         <StorageIdtyCertMeta<T, I>>::mutate_exists(idty_index, |cert_meta_opt| {
             let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());
             cert_meta.next_issuable_on = next_issuable_on;
         });
-        0
+        Weight::zero()
     }
 }

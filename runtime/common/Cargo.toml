@@ -10,7 +10,7 @@ edition = "2021"
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
     'frame-support/runtime-benchmarks',
-    'frame-system-benchmarking',
+    'frame-system-benchmarking/runtime-benchmarks',
     'frame-system/runtime-benchmarks',
 	"pallet-babe/runtime-benchmarks",
     'pallet-balances/runtime-benchmarks',
@@ -21,6 +21,7 @@ runtime-benchmarks = [
     'pallet-multisig/runtime-benchmarks',
     'pallet-proxy/runtime-benchmarks',
     'pallet-treasury/runtime-benchmarks',
+    'pallet-upgrade-origin/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
 ]
 std = [
@@ -84,27 +85,27 @@ serde_derive = { version = "1.0.101", optional = true }
 smallvec = "1.6.1"
 
 # Substrate
-frame-support = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-frame-system = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-pallet-babe = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-pallet-balances = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-pallet-grandpa = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-pallet-multisig = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-pallet-proxy = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-pallet-scheduler = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-pallet-session = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-pallet-timestamp = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-pallet-treasury = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-sp-arithmetic = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-sp-consensus-babe = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-sp-core = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-sp-runtime = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
-sp-std = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
+frame-support = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+frame-system = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-babe = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-balances = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-grandpa = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-multisig = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-proxy = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-scheduler = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-session = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-timestamp = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-treasury = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+sp-arithmetic = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+sp-consensus-babe = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+sp-core = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+sp-runtime = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+sp-std = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 
 
 # substrate benchmarks
-frame-benchmarking = { git = "https://github.com/duniter/substrate", branch = 'duniter-substrate-v0.9.26', default-features = false, optional = true }
-frame-system-benchmarking = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false, optional = true }
+frame-benchmarking = { git = "https://github.com/duniter/substrate", branch = 'duniter-substrate-v0.9.32', default-features = false, optional = true }
+frame-system-benchmarking = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false, optional = true }
 
 # TODO: there is a bad coupling in substrate that force to add this dependency
-sp-staking = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.26', default-features = false }
+sp-staking = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }

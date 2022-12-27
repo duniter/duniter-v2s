@@ -23,7 +23,7 @@ pub trait OnNewSession {
 
 impl OnNewSession for () {
     fn on_new_session(_: SessionIndex) -> Weight {
-        0
+        Weight::zero()
     }
 }
 
@@ -33,6 +33,6 @@ pub trait OnRemovedMember<MemberId> {
 
 impl<MemberId> OnRemovedMember<MemberId> for () {
     fn on_removed_member(_: MemberId) -> Weight {
-        0
+        Weight::zero()
     }
 }

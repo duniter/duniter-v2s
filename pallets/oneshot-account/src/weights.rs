@@ -29,24 +29,24 @@ pub trait WeightInfo {
 impl WeightInfo for () {
     // Storage: OneshotAccount OneshotAccounts (r:1 w:1)
     fn create_oneshot_account() -> Weight {
-        (45_690_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+        (Weight::from_ref_time(45_690_000))
+            .saturating_add(RocksDbWeight::get().reads(1))
+            .saturating_add(RocksDbWeight::get().writes(1))
     }
     // Storage: OneshotAccount OneshotAccounts (r:1 w:1)
     // Storage: System BlockHash (r:1 w:0)
     // Storage: System Account (r:1 w:1)
     fn consume_oneshot_account() -> Weight {
-        (50_060_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(3 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+        (Weight::from_ref_time(50_060_000))
+            .saturating_add(RocksDbWeight::get().reads(3))
+            .saturating_add(RocksDbWeight::get().writes(2))
     }
     // Storage: OneshotAccount OneshotAccounts (r:1 w:1)
     // Storage: System BlockHash (r:1 w:0)
     // Storage: System Account (r:2 w:2)
     fn consume_oneshot_account_with_remaining() -> Weight {
-        (69_346_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(4 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(3 as Weight))
+        (Weight::from_ref_time(69_346_000))
+            .saturating_add(RocksDbWeight::get().reads(4))
+            .saturating_add(RocksDbWeight::get().writes(3))
     }
 }

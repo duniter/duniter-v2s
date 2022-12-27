@@ -46,7 +46,7 @@ use sp_std::marker::PhantomData;
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_universal_dividend::WeightInfo for WeightInfo<T> {
 	fn on_initialize() -> Weight {
-		111_220_000 as Weight
+		Weight::from_ref_time(111_220_000)
 	}
 	// Storage: Membership CounterForMembership (r:1 w:0)
 	// Storage: UniversalDividend NextReeval (r:1 w:0)
@@ -54,9 +54,9 @@ impl<T: frame_system::Config> pallet_universal_dividend::WeightInfo for WeightIn
 	// Storage: UniversalDividend MonetaryMass (r:1 w:1)
 	// Storage: UniversalDividend CurrentUdIndex (r:1 w:1)
 	fn on_initialize_ud_created() -> Weight {
-		(525_382_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		Weight::from_ref_time(525_382_000)
+			.saturating_add(T::DbWeight::get().reads(5))
+			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: Membership CounterForMembership (r:1 w:0)
 	// Storage: UniversalDividend NextReeval (r:1 w:1)
@@ -65,35 +65,35 @@ impl<T: frame_system::Config> pallet_universal_dividend::WeightInfo for WeightIn
 	// Storage: UniversalDividend PastReevals (r:1 w:1)
 	// Storage: UniversalDividend CurrentUdIndex (r:1 w:1)
 	fn on_initialize_ud_reevalued() -> Weight {
-		(1_161_595_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(6 as Weight))
-			.saturating_add(T::DbWeight::get().writes(5 as Weight))
+		Weight::from_ref_time(1_161_595_000)
+			.saturating_add(T::DbWeight::get().reads(6))
+			.saturating_add(T::DbWeight::get().writes(5))
 	}
 	// Storage: Identity IdentityIndexOf (r:1 w:0)
 	// Storage: Identity Identities (r:1 w:1)
 	// Storage: UniversalDividend CurrentUdIndex (r:1 w:0)
 	// Storage: UniversalDividend PastReevals (r:1 w:0)
 	fn claim_uds(n: u32) -> Weight {
-		(1_228_876_000 as Weight)
+		Weight::from_ref_time(1_228_876_000)
 			// Standard Error: 958_000
-			.saturating_add((7_551_000 as Weight).saturating_mul(n as Weight))
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+			.saturating_add((Weight::from_ref_time(7_551_000)).saturating_mul(n as u64))
+			.saturating_add(T::DbWeight::get().reads(4))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: UniversalDividend CurrentUd (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
 	// Storage: Account PendingNewAccounts (r:0 w:1)
 	fn transfer_ud() -> Weight {
-		(2_468_842_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		(Weight::from_ref_time(2_468_842_000))
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: UniversalDividend CurrentUd (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
 	// Storage: Account PendingNewAccounts (r:0 w:1)
 	fn transfer_ud_keep_alive() -> Weight {
-		(1_442_150_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		(Weight::from_ref_time(1_442_150_000))
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().writes(2))
 	}
 }

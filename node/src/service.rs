@@ -23,7 +23,7 @@ use async_io::Timer;
 use common_runtime::Block;
 use futures::{Stream, StreamExt};
 use manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
-use sc_client_api::{BlockBackend, ExecutorProvider};
+use sc_client_api::BlockBackend;
 pub use sc_executor::NativeElseWasmExecutor;
 use sc_finality_grandpa::SharedVoterState;
 use sc_keystore::LocalKeystore;
@@ -292,7 +292,7 @@ where
 
     let justification_import = grandpa_block_import.clone();
 
-    let babe_config = babe::Config::get(&*client)?;
+    let babe_config = babe::configuration(&*client)?;
     let (babe_block_import, babe_link) =
         babe::block_import(babe_config, grandpa_block_import, client.clone())?;
 
@@ -319,11 +319,10 @@ where
                         slot_duration,
                     );
 
-                Ok((timestamp, slot))
+                Ok((slot, timestamp))
             },
             &task_manager.spawn_essential_handle(),
             config.prometheus_registry(),
-            sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
             telemetry.as_ref().map(|x| x.handle()),
         )?
     };
@@ -404,7 +403,7 @@ where
         Vec::default(),
     ));
 
-    let (network, system_rpc_tx, network_starter) =
+    let (network, system_rpc_tx, tx_handler_controller, network_starter) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
             client: client.clone(),
@@ -520,9 +519,6 @@ where
                 }),
             );
         } else {
-            let can_author_with =
-                sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
-
             let client_clone = client.clone();
             let slot_duration = babe_link.config().slot_duration();
             let babe_config = babe::BabeParams {
@@ -550,13 +546,12 @@ where
                                     slot_duration,
                                 );
 
-                        Ok((timestamp, slot, uncles))
+                        Ok((slot, timestamp, uncles))
                     }
                 },
                 force_authoring,
                 backoff_authoring_blocks,
                 babe_link,
-                can_author_with,
                 block_proposal_slot_portion: babe::SlotProportion::new(2f32 / 3f32),
                 max_block_proposal_slot_portion: None,
                 telemetry: telemetry.as_ref().map(|x| x.handle()),
@@ -600,15 +595,16 @@ where
     };
 
     let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+        config,
+        backend,
         network: network.clone(),
         client,
         keystore: keystore_container.sync_keystore(),
         task_manager: &mut task_manager,
         transaction_pool,
         rpc_builder: rpc_extensions_builder,
-        backend,
         system_rpc_tx,
-        config,
+        tx_handler_controller,
         telemetry: telemetry.as_mut(),
     })?;
 

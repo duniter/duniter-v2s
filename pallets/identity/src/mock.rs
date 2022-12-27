@@ -53,8 +53,8 @@ impl system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
@@ -62,7 +62,7 @@ impl system::Config for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -93,7 +93,6 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
 impl pallet_identity::Config for Test {
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
-    type Event = Event;
     type CheckIdtyCallAllowed = ();
     type IdtyCreationPeriod = IdtyCreationPeriod;
     type IdtyData = ();
@@ -105,6 +104,7 @@ impl pallet_identity::Config for Test {
     type RemoveIdentityConsumers = ();
     type RevocationSigner = UintAuthorityId;
     type RevocationSignature = TestSignature;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 // Build genesis storage according to the mock runtime.

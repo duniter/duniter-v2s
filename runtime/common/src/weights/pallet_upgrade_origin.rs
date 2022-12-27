@@ -46,6 +46,6 @@ use sp_std::marker::PhantomData;
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_upgrade_origin::WeightInfo for WeightInfo<T> {
 	fn dispatch_as_root() -> Weight {
-		(324_716_000 as Weight)
+		(Weight::from_ref_time(324_716_000))
 	}
 }

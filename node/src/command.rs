@@ -28,6 +28,7 @@ use crate::service::GTestExecutor;
 use crate::service::{IdentifyRuntimeType, RuntimeType};
 use crate::{chain_spec, service};
 use clap::CommandFactory;
+#[cfg(feature = "runtime-benchmarks")]
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 
@@ -42,6 +43,7 @@ lazy_static! {
 }*/
 
 /// Unwraps a [`crate::client::Client`] into the concrete runtime client.
+#[cfg(feature = "runtime-benchmarks")]
 macro_rules! unwrap_client {
     (
 		$client:ident,
@@ -78,7 +80,7 @@ impl SubstrateCli for Cli {
     }
 
     fn support_url() -> String {
-        "support.anonymous.an".into()
+        "https://forum.duniter.org/".into()
     }
 
     fn copyright_start_year() -> i32 {
@@ -129,7 +131,7 @@ impl SubstrateCli for Cli {
 
                 let starts_with = |prefix: &str| {
                     path.file_name()
-                        .and_then(|f| f.to_str().map(|s| s.starts_with(&prefix)))
+                        .and_then(|f| f.to_str().map(|s| s.starts_with(prefix)))
                         .unwrap_or(false)
                 };
 
@@ -278,6 +280,7 @@ pub fn run() -> sc_cli::Result<()> {
             );
             Ok(())
         }
+        #[cfg(feature = "runtime-benchmarks")]
         Some(Subcommand::Benchmark(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             let chain_spec = &runner.config().chain_spec;
@@ -304,7 +307,13 @@ pub fn run() -> sc_cli::Result<()> {
 
                     unwrap_client!(
                         client,
-                        cmd.run(config, client.clone(), inherent_data, wrapped)
+                        cmd.run(
+                            config,
+                            client.clone(),
+                            inherent_data,
+                            Vec::new(),
+                            wrapped.as_ref()
+                        )
                     )
                 }),
                 BenchmarkCmd::Pallet(cmd) => {
@@ -338,6 +347,12 @@ pub fn run() -> sc_cli::Result<()> {
                 #[allow(unreachable_patterns)]
                 _ => panic!("unknown runtime"),
             }
+        }
+        #[cfg(not(feature = "runtime-benchmarks"))]
+        Some(Subcommand::Benchmark(_cmd)) => {
+            Err("Benchmark wasn't enabled when building the node. \
+            You can enable it with `--features runtime-benchmarks`."
+                .into())
         }
         #[cfg(feature = "try-runtime")]
         Some(Subcommand::TryRuntime(cmd)) => {

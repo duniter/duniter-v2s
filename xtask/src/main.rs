@@ -42,10 +42,10 @@ enum DuniterXTaskCommand {
     GenCallsDoc,
     /// Inject runtime code in raw specs
     InjectRuntimeCode {
-        #[clap(short, long, parse(from_os_str))]
+        #[clap(short, long)]
         /// Runtime filepath
         runtime: PathBuf,
-        #[clap(short = 's', long, parse(from_os_str))]
+        #[clap(short = 's', long)]
         /// Raw spec filepath
         raw_spec: PathBuf,
     },
@@ -61,7 +61,7 @@ async fn main() -> Result<()> {
     let args = DuniterXTask::parse();
 
     if !version_check::is_min_version(MIN_RUST_VERSION).unwrap_or(false)
-        && exec_should_success(Command::new("rustup").args(&["update", "stable"])).is_err()
+        && exec_should_success(Command::new("rustup").args(["update", "stable"])).is_err()
     {
         eprintln!(
                 "Duniter requires stable Rust {} or higher. If you installed the Rust toolchain via rustup, please execute the command `rustup update stable`.",
@@ -125,7 +125,7 @@ fn inject_runtime_code(raw_spec: &Path, runtime: &Path) -> Result<()> {
         .with_context(|| "invalid raw spec file")?
         .insert(
             CODE_KEY.to_owned(),
-            serde_json::Value::String(unsafe { std::mem::transmute(hex_runtime_code) }),
+            serde_json::Value::String(hex_runtime_code),
         );
 
     // Write modified raw specs
@@ -139,16 +139,16 @@ fn inject_runtime_code(raw_spec: &Path, runtime: &Path) -> Result<()> {
 }
 
 fn build(_production: bool) -> Result<()> {
-    exec_should_success(Command::new("cargo").args(&["clean", "-p", "duniter"]))?;
-    exec_should_success(Command::new("cargo").args(&["build", "--locked"]))?;
-    exec_should_success(Command::new("mkdir").args(&["build"]))?;
-    exec_should_success(Command::new("mv").args(&["target/debug/duniter", "build/duniter"]))?;
+    exec_should_success(Command::new("cargo").args(["clean", "-p", "duniter"]))?;
+    exec_should_success(Command::new("cargo").args(["build", "--locked"]))?;
+    exec_should_success(Command::new("mkdir").args(["build"]))?;
+    exec_should_success(Command::new("mv").args(["target/debug/duniter", "build/duniter"]))?;
 
     Ok(())
 }
 
 fn test() -> Result<()> {
-    exec_should_success(Command::new("cargo").args(&[
+    exec_should_success(Command::new("cargo").args([
         "test",
         "--workspace",
         "--exclude",

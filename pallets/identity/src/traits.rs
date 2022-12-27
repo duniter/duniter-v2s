@@ -17,7 +17,6 @@
 use crate::*;
 use frame_support::pallet_prelude::*;
 use impl_trait_for_tuples::impl_for_tuples;
-use sp_runtime::traits::Saturating;
 
 pub trait CheckIdtyCallAllowed<T: Config> {
     fn check_create_identity(creator: T::IdtyIndex) -> Result<(), DispatchError>;
@@ -63,7 +62,7 @@ pub trait OnIdtyChange<T: Config> {
 #[allow(clippy::let_and_return)]
 impl<T: Config> OnIdtyChange<T> for Tuple {
     fn on_idty_change(idty_index: T::IdtyIndex, idty_event: &IdtyEvent<T>) -> Weight {
-        let mut weight = 0;
+        let mut weight = Weight::zero();
         for_tuples!( #( weight = weight.saturating_add(Tuple::on_idty_change(idty_index, idty_event)); )* );
         weight
     }
@@ -74,6 +73,6 @@ pub trait RemoveIdentityConsumers<IndtyIndex> {
 }
 impl<IndtyIndex> RemoveIdentityConsumers<IndtyIndex> for () {
     fn remove_idty_consumers(_: IndtyIndex) -> Weight {
-        0
+        Weight::zero()
     }
 }

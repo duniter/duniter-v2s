@@ -54,8 +54,8 @@ impl system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
@@ -63,7 +63,7 @@ impl system::Config for Test {
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -84,16 +84,16 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
     type MaxLocks = MaxLocks;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
+    type RuntimeEvent = RuntimeEvent;
 }
 impl pallet_transaction_payment::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type OnChargeTransaction = OneshotAccount;
     type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
     type WeightToFee = IdentityFee<u64>;
@@ -102,8 +102,8 @@ impl pallet_transaction_payment::Config for Test {
 }
 impl pallet_oneshot_account::Config for Test {
     type Currency = Balances;
-    type Event = Event;
     type InnerOnChargeTransaction = CurrencyAdapter<Balances, HandleFees>;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 pub struct HandleFees;

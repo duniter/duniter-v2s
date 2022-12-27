@@ -17,8 +17,8 @@
 use crate::Config;
 
 use codec::{Decode, Encode};
+use frame_support::dispatch::DispatchInfo;
 use frame_support::traits::IsSubType;
-use frame_support::weights::DispatchInfo;
 //use frame_system::Config;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -29,6 +29,12 @@ use sp_runtime::{
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(Runtime))]
 pub struct CheckNonce<T: Config>(pub frame_system::CheckNonce<T>);
+
+impl<T: Config> From<frame_system::CheckNonce<T>> for CheckNonce<T> {
+    fn from(check_nonce: frame_system::CheckNonce<T>) -> Self {
+        Self(check_nonce)
+    }
+}
 
 impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
     #[cfg(feature = "std")]
@@ -44,10 +50,10 @@ impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
 
 impl<T: Config + TypeInfo> SignedExtension for CheckNonce<T>
 where
-    T::Call: Dispatchable<Info = DispatchInfo> + IsSubType<crate::Call<T>>,
+    T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<crate::Call<T>>,
 {
     type AccountId = <T as frame_system::Config>::AccountId;
-    type Call = <T as frame_system::Config>::Call;
+    type Call = <T as frame_system::Config>::RuntimeCall;
     type AdditionalSigned = ();
     type Pre = ();
     const IDENTIFIER: &'static str = "CheckNonce";

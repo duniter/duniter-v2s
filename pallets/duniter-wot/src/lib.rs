@@ -218,7 +218,7 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::CheckCallAllowed<IdtyIndex
     fn check_idty_allowed_to_claim_membership(idty_index: &IdtyIndex) -> Result<(), DispatchError> {
         let idty_cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
         ensure!(
-            idty_cert_meta.received_count >= T::MinCertForMembership::get() as u32,
+            idty_cert_meta.received_count >= T::MinCertForMembership::get(),
             Error::<T, I>::IdtyNotAllowedToClaimMembership
         );
         Ok(())
@@ -286,7 +286,7 @@ where
                 });
             }
         }
-        0
+        Weight::zero()
     }
 }
 
@@ -321,7 +321,7 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pall
             }
             IdtyEvent::Confirmed | IdtyEvent::Validated | IdtyEvent::ChangedOwnerKey { .. } => {}
         }
-        0
+        Weight::zero()
     }
 }
 
@@ -335,7 +335,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex
         if receiver_received_count == T::MinReceivedCertToBeAbleToIssueCert::get() {
             Self::do_apply_first_issuable_on(receiver);
         }
-        0
+        Weight::zero()
     }
 }
 
@@ -370,6 +370,6 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
                 });
             }
         }
-        0
+        Weight::zero()
     }
 }

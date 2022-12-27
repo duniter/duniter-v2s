@@ -9,7 +9,12 @@
       "request": "launch",
       "name": "Debug unit tests in library 'duniter'",
       "cargo": {
-        "args": ["test", "--no-run", "--lib", "--package=duniter"],
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=duniter"
+        ],
         "filter": {
           "name": "duniter",
           "kind": "lib"
@@ -23,13 +28,20 @@
       "request": "launch",
       "name": "Debug executable 'duniter'",
       "cargo": {
-        "args": ["build"],
+        "args": [
+          "build"
+        ],
         "filter": {
           "name": "duniter",
           "kind": "bin"
         }
       },
-      "args": ["--tmp", "--dev", "--execution", "Native"],
+      "args": [
+        "--tmp",
+        "--dev",
+        "--execution",
+        "Native"
+      ],
       "cwd": "${workspaceFolder}"
     },
     {
@@ -37,7 +49,12 @@
       "request": "launch",
       "name": "Debug unit tests in executable 'duniter'",
       "cargo": {
-        "args": ["test", "--no-run", "--bin=duniter", "--package=duniter"],
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=duniter",
+          "--package=duniter"
+        ],
         "filter": {
           "name": "duniter",
           "kind": "bin"
@@ -51,7 +68,12 @@
       "request": "launch",
       "name": "Debug unit tests in library 'gdev-runtime'",
       "cargo": {
-        "args": ["test", "--no-run", "--lib", "--package=gdev-runtime"],
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=gdev-runtime"
+        ],
         "filter": {
           "name": "gdev-runtime",
           "kind": "lib"
@@ -65,7 +87,12 @@
       "request": "launch",
       "name": "Debug unit tests in library 'pallet-certification'",
       "cargo": {
-        "args": ["test", "--no-run", "--lib", "--package=pallet-certification"],
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=pallet-certification"
+        ],
         "filter": {
           "name": "pallet-certification",
           "kind": "lib"
@@ -79,7 +106,12 @@
       "request": "launch",
       "name": "Debug unit tests in library 'pallet-identity'",
       "cargo": {
-        "args": ["test", "--no-run", "--lib", "--package=pallet-identity"],
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=pallet-identity"
+        ],
         "filter": {
           "name": "pallet-identity",
           "kind": "lib"

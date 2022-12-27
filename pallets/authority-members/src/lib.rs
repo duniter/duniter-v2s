@@ -63,7 +63,6 @@ pub mod pallet {
     pub trait Config:
         frame_system::Config + pallet_session::Config + pallet_session::historical::Config
     {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type KeysWrapper: Parameter + Into<Self::Keys>;
         type IsMember: IsMember<Self::MemberId>;
         type OnNewSession: OnNewSession;
@@ -77,7 +76,8 @@ pub mod pallet {
         type MaxOfflineSessions: Get<SessionIndex>;
         type MemberId: Copy + Ord + MaybeSerializeDeserialize + Parameter;
         type MemberIdOf: Convert<Self::AccountId, Option<Self::MemberId>>;
-        type RemoveMemberOrigin: EnsureOrigin<Self::Origin>;
+        type RemoveMemberOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     // GENESIS STUFF //
@@ -396,7 +396,7 @@ pub mod pallet {
             Self::deposit_event(Event::MemberRemoved(member_id));
             let _ = T::OnRemovedMember::on_removed_member(member_id);
 
-            0
+            Weight::zero()
         }
         pub(super) fn expire_memberships(current_session_index: SessionIndex) {
             for member_id in MembersExpireOn::<T>::take(current_session_index) {

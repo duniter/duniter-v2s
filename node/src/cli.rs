@@ -87,7 +87,7 @@ pub enum Subcommand {
 }
 
 /// Block authoring scheme to be used by the node
-#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ArgEnum)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
 pub enum Sealing {
     /// Author a block using normal runtime behavior (mandatory for production networks)
     Production,
@@ -129,6 +129,6 @@ impl std::str::FromStr for Sealing {
 
 #[derive(Debug, clap::Args)]
 pub struct Completion {
-    #[clap(short, long, arg_enum)]
+    #[clap(short, long, value_enum)]
     pub generator: clap_complete::Shell,
 }

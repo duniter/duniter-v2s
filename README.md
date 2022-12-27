@@ -28,6 +28,7 @@
     - [setup](./docs/dev/setup.md)
     - [verify-runtime-code](./docs/dev/verify-runtime-code.md)
     - [weights-benchmarking](./docs/dev/weights-benchmarking.md)
+    - [upgrade-substrate](./docs/dev/upgrade-substrate.md)
   - [test](./docs/test/)
     - [replay-block](./docs/test/replay-block.md)
   - [user](./docs/user/)
@@ -278,3 +279,21 @@ A FRAME pallet is compromised of a number of blockchain primitives:
 - Errors: When a dispatchable fails, it returns an error.
 - Config: The `Config` configuration interface is used to define the types and parameters upon
   which a FRAME pallet depends.
+
+## License
+
+CopyLeft 2021-2023 Axiom-Team
+
+Some parts borrowed from Polkadot (Parity Technologies (UK) Ltd.)
+
+Duniter-v2S is free software: you can redistribute it and/or modify
+it under the terms of the **GNU Affero General Public License** as published by
+the Free Software Foundation, **version 3** of the License.
+
+Duniter-v2S is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.

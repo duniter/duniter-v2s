@@ -56,8 +56,8 @@ impl system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
@@ -65,7 +65,7 @@ impl system::Config for Test {
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -86,13 +86,13 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
     type MaxLocks = MaxLocks;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
+    type RuntimeEvent = RuntimeEvent;
 }
 
 parameter_types! {
@@ -140,11 +140,11 @@ impl Iterator for TestMembersStorageIter {
 impl pallet_universal_dividend::Config for Test {
     type BlockNumberIntoBalance = sp_runtime::traits::ConvertInto;
     type Currency = pallet_balances::Pallet<Test>;
-    type Event = Event;
     type MaxPastReeval = frame_support::traits::ConstU32<2>;
     type MembersCount = MembersCount;
     type MembersStorage = TestMembersStorage;
     type MembersStorageIter = TestMembersStorageIter;
+    type RuntimeEvent = RuntimeEvent;
     type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
     type UdCreationPeriod = UdCreationPeriod;
     type UdReevalPeriod = UdReevalPeriod;

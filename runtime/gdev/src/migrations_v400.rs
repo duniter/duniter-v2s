@@ -19,13 +19,13 @@ use crate::*;
 pub struct MigrationsV400;
 impl frame_support::traits::OnRuntimeUpgrade for MigrationsV400 {
     fn on_runtime_upgrade() -> Weight {
-        let mut weight = 1_000_000_000; // Safety margin
+        let mut weight = Weight::from_ref_time(1_000_000_000); // Safety margin
 
         type OldvalueType = AccountId;
 
         pallet_membership::PendingMembership::<Runtime, Instance1>::translate_values(
             |_: OldvalueType| {
-                weight += <Runtime as frame_system::Config>::DbWeight::get().write;
+                *weight.ref_time_mut() += <Runtime as frame_system::Config>::DbWeight::get().write;
                 Some(())
             },
         );
@@ -34,12 +34,12 @@ impl frame_support::traits::OnRuntimeUpgrade for MigrationsV400 {
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        Ok(())
+    fn pre_upgrade() -> Result<frame_benchmarking::Vec<u8>, &'static str> {
+        Ok(Vec::new())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: frame_benchmarking::Vec<u8>) -> Result<(), &'static str> {
         Ok(())
     }
 }

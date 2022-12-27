@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::mock::Event as RuntimeEvent;
 use crate::mock::*;
 use crate::{Error, Event};
 use frame_support::assert_ok;
@@ -52,7 +51,7 @@ fn test_membership_already_acquired() {
         run_to_block(1);
         // Merbership 0 cannot be reclaimed
         assert_eq!(
-            DefaultMembership::claim_membership(Origin::signed(0), None),
+            DefaultMembership::claim_membership(RuntimeOrigin::signed(0), None),
             Err(Error::<Test, _>::MembershipAlreadyAcquired.into())
         );
     });
@@ -64,7 +63,7 @@ fn test_membership_request_not_found() {
         run_to_block(1);
         // Merbership 0 cannot be reclaimed
         assert_eq!(
-            DefaultMembership::claim_membership(Origin::signed(1), None),
+            DefaultMembership::claim_membership(RuntimeOrigin::signed(1), None),
             Err(Error::<Test, _>::MembershipRequestNotFound.into())
         );
     });
@@ -75,7 +74,10 @@ fn test_membership_renewal() {
     new_test_ext(default_gen_conf()).execute_with(|| {
         run_to_block(2);
         // Merbership 0 can be renewable on block #2
-        assert_ok!(DefaultMembership::renew_membership(Origin::signed(0), None),);
+        assert_ok!(DefaultMembership::renew_membership(
+            RuntimeOrigin::signed(0),
+            None
+        ),);
         assert_eq!(
             System::events()[0].event,
             RuntimeEvent::DefaultMembership(Event::MembershipRenewed(0))
@@ -105,7 +107,7 @@ fn test_membership_revocation() {
         run_to_block(1);
         // Merbership 0 can be revocable on block #1
         assert_ok!(DefaultMembership::revoke_membership(
-            Origin::signed(0),
+            RuntimeOrigin::signed(0),
             None
         ),);
         assert_eq!(
@@ -115,7 +117,10 @@ fn test_membership_revocation() {
 
         // Membership 0 can re-request membership
         run_to_block(5);
-        assert_ok!(DefaultMembership::request_membership(Origin::signed(0), ()),);
+        assert_ok!(DefaultMembership::request_membership(
+            RuntimeOrigin::signed(0),
+            ()
+        ),);
         assert_eq!(
             System::events()[0].event,
             RuntimeEvent::DefaultMembership(Event::MembershipRequested(0))
@@ -128,7 +133,10 @@ fn test_pending_membership_expiration() {
     new_test_ext(Default::default()).execute_with(|| {
         // Idty 0 request membership
         run_to_block(1);
-        assert_ok!(DefaultMembership::request_membership(Origin::signed(0), ()),);
+        assert_ok!(DefaultMembership::request_membership(
+            RuntimeOrigin::signed(0),
+            ()
+        ),);
         assert_eq!(
             System::events()[0].event,
             RuntimeEvent::DefaultMembership(Event::MembershipRequested(0))
@@ -153,7 +161,10 @@ fn test_membership_workflow() {
     new_test_ext(Default::default()).execute_with(|| {
         // Idty 0 request membership
         run_to_block(1);
-        assert_ok!(DefaultMembership::request_membership(Origin::signed(0), ()),);
+        assert_ok!(DefaultMembership::request_membership(
+            RuntimeOrigin::signed(0),
+            ()
+        ),);
         assert_eq!(
             System::events()[0].event,
             RuntimeEvent::DefaultMembership(Event::MembershipRequested(0))
@@ -161,7 +172,10 @@ fn test_membership_workflow() {
 
         // Then, idty 0 claim membership
         run_to_block(2);
-        assert_ok!(DefaultMembership::claim_membership(Origin::signed(0), None),);
+        assert_ok!(DefaultMembership::claim_membership(
+            RuntimeOrigin::signed(0),
+            None
+        ),);
         assert_eq!(
             System::events()[0].event,
             RuntimeEvent::DefaultMembership(Event::MembershipAcquired(0))
@@ -169,7 +183,10 @@ fn test_membership_workflow() {
 
         // Then, idty 0 claim renewal, should success
         run_to_block(2);
-        assert_ok!(DefaultMembership::renew_membership(Origin::signed(0), None),);
+        assert_ok!(DefaultMembership::renew_membership(
+            RuntimeOrigin::signed(0),
+            None
+        ),);
 
         // Then, idty 0 shoul still member until membership period ended
         run_to_block(2 + MembershipPeriod::get() - 1);
