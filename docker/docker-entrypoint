@@ -29,6 +29,10 @@ fi
 _DUNITER_PEER_ID="$(duniter key inspect-node-key --file "$_DUNITER_KEY_FILE")"
 echo "Node peer ID is '$_DUNITER_PEER_ID'."
 
+if [ -n "$DUNITER_PUBLIC_ADDR" ]; then
+  set -- "$@" --public-addr "$DUNITER_PUBLIC_ADDR"
+fi
+
 DUNITER_DISABLE_PROMETHEUS=$(boolean "${DUNITER_DISABLE_PROMETHEUS:-false}")
 
 DUNITER_CHAIN_NAME="${DUNITER_CHAIN_NAME:-dev}"
