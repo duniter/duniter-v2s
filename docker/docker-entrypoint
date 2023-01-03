@@ -12,8 +12,9 @@ function ternary () {
   fi
 }
 
-if [ -n "$DUNITER_INSTANCE_NAME" ]; then
-  set -- "$@" --name "$DUNITER_INSTANCE_NAME"
+DUNITER_NODE_NAME="${DUNITER_NODE_NAME:-$DUNITER_INSTANCE_NAME}"
+if [ -n "$DUNITER_NODE_NAME" ]; then
+  set -- "$@" --name "$DUNITER_NODE_NAME"
 fi
 
 DUNITER_DISABLE_PROMETHEUS=$(boolean "${DUNITER_DISABLE_PROMETHEUS:-false}")
