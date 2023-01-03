@@ -17,6 +17,18 @@ if [ -n "$DUNITER_NODE_NAME" ]; then
   set -- "$@" --name "$DUNITER_NODE_NAME"
 fi
 
+_DUNITER_KEY_FILE=/var/lib/duniter/node.key
+set -- "$@" --node-key-file "$_DUNITER_KEY_FILE"
+
+if [ ! -f "$_DUNITER_KEY_FILE" ]; then
+  echo "Generating node key file '$_DUNITER_KEY_FILE'..."
+  duniter key generate-node-key --file "$_DUNITER_KEY_FILE"
+else
+  echo "Node key file '$_DUNITER_KEY_FILE' exists."
+fi
+_DUNITER_PEER_ID="$(duniter key inspect-node-key --file "$_DUNITER_KEY_FILE")"
+echo "Node peer ID is '$_DUNITER_PEER_ID'."
+
 DUNITER_DISABLE_PROMETHEUS=$(boolean "${DUNITER_DISABLE_PROMETHEUS:-false}")
 
 DUNITER_CHAIN_NAME="${DUNITER_CHAIN_NAME:-dev}"
