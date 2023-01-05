@@ -22,10 +22,7 @@ services:
       - "--node-key-file=/var/lib/duniter/node.key"
       - "--public-addr"
       # SERVER_DOMAIN should be replaced by a domain name that point on your server
-      #
-      # The PEER_ID should be replaced by the output of this command:
-      # docker run --rm -it --entrypoint -v $PWD/duniter-rpc/:/var/lib/duniter/ duniter duniter/duniter-v2s:v0.3.0 key generate-node-key --file /var/lib/duniter/node.key
-      - "/dns/${SERVER_DOMAIN?SERVER_DOMAIN should be set}/tcp/30333/p2p/${PEER_ID?PEER_ID should be set}"
+      - "/dns/${SERVER_DOMAIN?SERVER_DOMAIN should be set}/tcp/30333/ws"
       - "--rpc-cors=all"
 
   duniter-validator:
@@ -50,10 +47,7 @@ services:
       - "--public-addr"
       - "--pruning=14400"
       # SERVER_DOMAIN should be replaced by a domain name that point on your server
-      #
-      # The VALIDATOR_PEER_ID should be replaced by the output of this command:
-      # docker run --rm -it --entrypoint -v $PWD/duniter-rpc/:/var/lib/duniter/ duniter duniter/duniter-v2s:v0.3.0 key generate-node-key --file /var/lib/duniter/node.key
-      - "/dns/${SERVER_DOMAIN?SERVER_DOMAIN should be set}/tcp/30333/p2p/${VALIDATOR_PEER_ID?VALIDATOR_PEER_ID should be set}"
+      - "/dns/${SERVER_DOMAIN?SERVER_DOMAIN should be set}/tcp/30333"
       - "--rpc-cors=all"
       - "--rpc-methods=Unsafe"
       - "--validator"

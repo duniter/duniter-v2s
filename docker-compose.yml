@@ -18,7 +18,7 @@ services:
       # p2p
       - 30333:30333
     environment:
-      DUNITER_INSTANCE_NAME: "duniter_local"
+      DUNITER_NODE_NAME: "duniter_local"
       DUNITER_CHAIN_NAME: "dev"
       #DUNITER_DISABLE_PROMETHEUS: "false"
     volumes:
