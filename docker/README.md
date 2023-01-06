@@ -2,7 +2,7 @@
 
 Duniter is the software that supports the [Ğ1 libre-currency blockchain](https://duniter.org/).
 
-[Duniter v2s](https://git.duniter.org/nodes/rust/duniter-v2s) is a compete rewrite of Duniter based on the Substrate / Polkadot framework. **This is alpha state work in progress.**
+[Duniter v2s](https://git.duniter.org/nodes/rust/duniter-v2s) is a complete rewrite of Duniter based on the Substrate / Polkadot framework. **This is alpha state work in progress.**
 
 # Minimal docker-compose file for an RPC (non validator) node
 
