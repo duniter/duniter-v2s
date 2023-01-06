@@ -50,6 +50,11 @@ if [ "$DUNITER_DISABLE_PROMETHEUS" = true ]; then
   set -- "$@" --no-prometheus
 fi
 
+DUNITER_DISABLE_TELEMETRY=$(boolean "${DUNITER_DISABLE_TELEMETRY:-false}")
+if [ "$DUNITER_DISABLE_TELEMETRY" = true ]; then
+  set -- "$@" --no-telemetry
+fi
+
 DUNITER_CHAIN_NAME="${DUNITER_CHAIN_NAME:-dev}"
 case "$DUNITER_CHAIN_NAME" in
   dev)

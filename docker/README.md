@@ -14,7 +14,7 @@ services:
     image: duniter/duniter-v2s:latest
     restart: unless-stopped
     ports:
-      # telemetry
+      # Prometheus endpoint
       - 9615:9615
       # rpc via http
       - 9933:9933
@@ -42,7 +42,7 @@ services:
     image: duniter/duniter-v2s:latest
     restart: unless-stopped
     ports:
-      # telemetry
+      # Prometheus endpoint
       - 9615:9615
       # p2p
       - 30333:30333
@@ -60,7 +60,7 @@ volumes:
 # Environment variables
 
 * `DUNITER_NODE_NAME`
-  The node name. Default: random name
+  The node name. This name will appear on the Substrate telemetry server when telemetry is enabled. Default: random name.
 * `DUNITER_CHAIN_NAME`
   The currency to process. "gdev" uses the embeded chainspec. A path allows to use a local json raw chainspec.
 * `DUNITER_PUBLIC_ADDR`
@@ -76,4 +76,6 @@ volumes:
   Boolean (`true` / `false`) to run the node in validator mode. Defaults to `false`.
   Configure the polkadot options `--validator --rpc-methods Unsafe`.
 * `DUNITER_DISABLE_PROMETHEUS`
-  Boolean to disable the telemetry entry point. Defaults to false.
+  Boolean to disable the Prometheus endpoint on port 9615. Defaults to false.
+* `DUNITER_DISABLE_TELEMETRY`
+  Boolean to disable connecting to the Substrate tememetry server. Defaults to false.
