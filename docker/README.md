@@ -1,8 +1,8 @@
 # duniter/duniter-v2s
 
-Duniter is the software that supports the Ğ1 libre-currency blockchain.
+Duniter is the software that supports the [Ğ1 libre-currency blockchain](https://duniter.org/).
 
-Duniter v2s is a compete rewrite of Duniter based on the Substrate / Polkadot framework. **This is alpha state work in progress.**
+[Duniter v2s](https://git.duniter.org/nodes/rust/duniter-v2s) is a compete rewrite of Duniter based on the Substrate / Polkadot framework. **This is alpha state work in progress.**
 
 # Minimal docker-compose file for an RPC (non validator) node
 
@@ -64,10 +64,11 @@ volumes:
 * `DUNITER_CHAIN_NAME`
   The currency to process. Should be "gdev" at the current duniter-v2s development stage.
 * `DUNITER_PUBLIC_ADDR`
-  The libp2p public address base. See libp2p documentation. When this variable is not defined duniter-v2s guesses one from the node's IPv4 address.
+  The libp2p public address base. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). When this variable is not defined duniter-v2s guesses one from the node's IPv4 address.
   This variable is useful when the node is behind a reverse-proxy with its ports not directly exposed.
+  Note: the `p2p/<peer_id>` part of the address shouldn't be set in this variable. It is automatically added by Duniter.
 * `DUNITER_LISTEN_ADDR`
-  The libp2p listen address. See libp2p documentation. This variable is useful when running a validator node behind a reverse proxy, to force the P2P end point in websocket mode with:
+  The libp2p listen address. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when running a validator node behind a reverse proxy, to force the P2P end point in websocket mode with:
   `DUNITER_LISTEN_ADDR=/ip4/0.0.0.0/tcp/30333/ws`
 * `DUNITER_RPC_CORS`
   Value of the polkadot `--rpc-cors` option. Defaults to `all`.
