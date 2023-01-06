@@ -62,7 +62,7 @@ volumes:
 * `DUNITER_NODE_NAME`
   The node name. Default: random name
 * `DUNITER_CHAIN_NAME`
-  The currency to process. Should be "gdev" at the current duniter-v2s development stage.
+  The currency to process. "gdev" uses the embeded chainspec. A path allows to use a local json raw chainspec.
 * `DUNITER_PUBLIC_ADDR`
   The libp2p public address base. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). When this variable is not defined duniter-v2s guesses one from the node's IPv4 address.
   This variable is useful when the node is behind a reverse-proxy with its ports not directly exposed.
