@@ -33,7 +33,22 @@ if [ -n "$DUNITER_PUBLIC_ADDR" ]; then
   set -- "$@" --public-addr "$DUNITER_PUBLIC_ADDR"
 fi
 
+if [ -n "$DUNITER_LISTEN_ADDR" ]; then
+  set -- "$@" --listen-addr "$DUNITER_LISTEN_ADDR"
+fi
+
+DUNITER_RPC_CORS="${DUNITER_RPC_CORS:-all}"
+set -- "$@" --rpc-cors "$DUNITER_RPC_CORS"
+
+DUNITER_VALIDATOR=$(boolean "${DUNITER_VALIDATOR:-false}")
+if [ "$DUNITER_VALIDATOR" = true ]; then
+  set -- "$@" --rpc-methods Unsafe --validator
+fi
+
 DUNITER_DISABLE_PROMETHEUS=$(boolean "${DUNITER_DISABLE_PROMETHEUS:-false}")
+if [ "$DUNITER_DISABLE_PROMETHEUS" = true ]; then
+  set -- "$@" --no-prometheus
+fi
 
 DUNITER_CHAIN_NAME="${DUNITER_CHAIN_NAME:-dev}"
 case "$DUNITER_CHAIN_NAME" in
@@ -47,7 +62,6 @@ esac
 
 set -- "$@" \
   "${chain[@]}" \
-  $(ternary "$DUNITER_DISABLE_PROMETHEUS" --no-prometheus) \
   -d /var/lib/duniter --unsafe-rpc-external --unsafe-ws-external
 
 echo "Starting duniter with parameters:" "$@"
