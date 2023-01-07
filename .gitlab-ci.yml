@@ -5,6 +5,7 @@ stages:
   - build
   - tests
   - deploy
+  - readme
 
 workflow:
   rules:
@@ -271,3 +272,21 @@ deploy_docker_release_tag:
     - docker push "duniter/duniter-v2s:latest"
   dependencies:
     - build_release
+
+readme_docker_release_tag:
+  stage: readme
+  rules:
+    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v*/"
+    - when: never
+  image:
+    name: chko/docker-pushrm
+    entrypoint: ["/bin/sh", "-c", "/docker-pushrm"]
+  variables:
+    DOCKER_USER: "duniterteam"
+    DOCKER_PASS: "$DUNITERTEAM_PASSWD"
+    PUSHRM_SHORT: "Duniter v2 based on Substrate framework"
+    PUSHRM_TARGET: "docker.io/$DOCKER_USER/duniter-v2s"
+    PUSHRM_DEBUG: 1
+    PUSHRM_FILE: "$CI_PROJECT_DIR/docker/README.md"
+  script: "/bin/true"
+
