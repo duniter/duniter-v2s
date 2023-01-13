@@ -210,9 +210,9 @@ tests_release:
   script:
     - docker pull $CI_REGISTRY_IMAGE:$IMAGE_TAG || true
     - docker build --cache-from $CI_REGISTRY_IMAGE:$IMAGE_TAG --pull -t "$CI_REGISTRY_IMAGE:$IMAGE_TAG" -f $DOCKERFILE_PATH .
-    - docker login -u "duniterteam" -p "$DUNITERTEAM_PASSWD"
-    - docker tag "$CI_REGISTRY_IMAGE:$IMAGE_TAG" "duniter/duniter-v2s:$IMAGE_TAG"
-    - docker push "duniter/duniter-v2s:$IMAGE_TAG"
+    - docker login -u "$REPO_DOCKER_USER" -p "$REPO_DOCKER_PASS"
+    - docker tag "$CI_REGISTRY_IMAGE:$IMAGE_TAG" "$REPO_DOCKER_REPO/duniter-v2s:$IMAGE_TAG"
+    - docker push "$REPO_DOCKER_REPO/duniter-v2s:$IMAGE_TAG"
 
 deploy_docker_test_image:
   extends: .docker-build-app-image
@@ -237,9 +237,9 @@ deploy_docker_debug_sha:
     DOCKERFILE_PATH: "docker/Dockerfile"
     IMAGE_TAG: "debug-sha-$CI_COMMIT_SHORT_SHA"
   after_script:
-    - docker login -u "duniterteam" -p "$DUNITERTEAM_PASSWD"
-    - docker tag "duniter/duniter-v2s:$IMAGE_TAG" "duniter/duniter-v2s:debug-latest"
-    - docker push "duniter/duniter-v2s:debug-latest"
+    - docker login -u "$REPO_DOCKER_USER" -p "$REPO_DOCKER_PASS"
+    - docker tag "$REPO_DOCKER_REPO/duniter-v2s:$IMAGE_TAG" "$REPO_DOCKER_REPO/duniter-v2s:debug-latest"
+    - docker push "$REPO_DOCKER_REPO/duniter-v2s:debug-latest"
 
 deploy_docker_release_sha:
   extends: .docker-build-app-image
@@ -252,9 +252,9 @@ deploy_docker_release_sha:
     DOCKERFILE_PATH: "docker/Dockerfile"
     IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
   after_script:
-    - docker login -u "duniterteam" -p "$DUNITERTEAM_PASSWD"
-    - docker tag "duniter/duniter-v2s:$IMAGE_TAG" "duniter/duniter-v2s:sha-latest"
-    - docker push "duniter/duniter-v2s:sha-latest"
+    - docker login -u "$REPO_DOCKER_USER" -p "$REPO_DOCKER_PASS"
+    - docker tag "$REPO_DOCKER_REPO/duniter-v2s:$IMAGE_TAG" "$REPO_DOCKER_REPO/duniter-v2s:sha-latest"
+    - docker push "$REPO_DOCKER_REPO/duniter-v2s:sha-latest"
   dependencies:
     - build_release_manual
 
@@ -267,9 +267,9 @@ deploy_docker_release_tag:
     DOCKERFILE_PATH: "docker/Dockerfile"
     IMAGE_TAG: "$CI_COMMIT_TAG"
   after_script:
-    - docker login -u "duniterteam" -p "$DUNITERTEAM_PASSWD"
-    - docker tag "duniter/duniter-v2s:$IMAGE_TAG" "duniter/duniter-v2s:latest"
-    - docker push "duniter/duniter-v2s:latest"
+    - docker login -u "$REPO_DOCKER_USER" -p "$REPO_DOCKER_PASS"
+    - docker tag "$REPO_DOCKER_REPO/duniter-v2s:$IMAGE_TAG" "$REPO_DOCKER_REPO/duniter-v2s:latest"
+    - docker push "$REPO_DOCKER_REPO/duniter-v2s:latest"
   dependencies:
     - build_release
 
@@ -282,10 +282,10 @@ readme_docker_release_tag:
     name: chko/docker-pushrm
     entrypoint: ["/bin/sh", "-c", "/docker-pushrm"]
   variables:
-    DOCKER_USER: "duniterteam"
-    DOCKER_PASS: "$DUNITERTEAM_PASSWD"
+    DOCKER_USER: "$REPO_DOCKER_USER"
+    DOCKER_PASS: "$REPO_DOCKER_PASS"
     PUSHRM_SHORT: "Duniter v2 based on Substrate framework"
-    PUSHRM_TARGET: "docker.io/duniter/duniter-v2s"
+    PUSHRM_TARGET: "docker.io/$REPO_DOCKER_REPO/duniter-v2s"
     PUSHRM_DEBUG: 1
     PUSHRM_FILE: "$CI_PROJECT_DIR/docker/README.md"
   script: "/bin/true"
