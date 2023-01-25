@@ -2,196 +2,140 @@
 
 Calls are categorized according to the dispatch origin they require:
 
-1. User calls: the dispatch origin for this kind of call must be Signed by
+1. **User calls**: the dispatch origin for this kind of call must be signed by
 the transactor. This is the only call category that can be submitted with an extrinsic.
-1. Root calls: This kind of call requires a special origin that can only be invoked
+1. **Root calls**: This kind of call requires a special origin that can only be invoked
 through on-chain governance mechanisms.
-1. Inherent calls: This kind of call is invoked by the author of the block itself
+1. **Inherent calls**: This kind of call is invoked by the author of the block itself
 (usually automatically by the node).
-1. Disabled calls: These calls are disabled for different reasons (to be documented).
+1. **Disabled calls**: These calls can not be called directly, they are reserved for internal use by other runtime calls.
 
 
 ## User calls
 
-There are **53** user calls organized in **18** pallets.
+There are **68** user calls from **21** pallets.
 
-### 2: Scheduler
+### Scheduler - 2
 
-<details><summary>0: schedule(when, maybe_periodic, priority, call)</summary>
-<p>
+#### schedule - 0
 
-### Index
+<details><summary><code>schedule(when, maybe_periodic, priority, call)</code></summary>
 
-`0`
+```rust
+when: T::BlockNumber
+maybe_periodic: Option<schedule::Period<T::BlockNumber>>
+priority: schedule::Priority
+call: Box<CallOrHashOf<T>>
+```
+</details>
 
-### Documentation
 
 Anonymously schedule a task.
 
-### Types of parameters
+#### cancel - 1
+
+<details><summary><code>cancel(when, index)</code></summary>
 
 ```rust
-when: T::BlockNumber,
-maybe_periodic: Option<schedule::Period<T::BlockNumber>>,
-priority: schedule::Priority,
-call: Box<CallOrHashOf<T>>
+when: T::BlockNumber
+index: u32
 ```
-
-</p>
 </details>
 
-<details><summary>1: cancel(when, index)</summary>
-<p>
-
-### Index
-
-`1`
-
-### Documentation
 
 Cancel an anonymously scheduled task.
 
-### Types of parameters
+#### schedule_named - 2
+
+<details><summary><code>schedule_named(id, when, maybe_periodic, priority, call)</code></summary>
 
 ```rust
-when: T::BlockNumber,
-index: u32
+id: Vec<u8>
+when: T::BlockNumber
+maybe_periodic: Option<schedule::Period<T::BlockNumber>>
+priority: schedule::Priority
+call: Box<CallOrHashOf<T>>
 ```
-
-</p>
 </details>
 
-<details><summary>2: schedule_named(id, when, maybe_periodic, priority, call)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
 
 Schedule a named task.
 
-### Types of parameters
+#### cancel_named - 3
 
-```rust
-id: Vec<u8>,
-when: T::BlockNumber,
-maybe_periodic: Option<schedule::Period<T::BlockNumber>>,
-priority: schedule::Priority,
-call: Box<CallOrHashOf<T>>
-```
-
-</p>
-</details>
-
-<details><summary>3: cancel_named(id)</summary>
-<p>
-
-### Index
-
-`3`
-
-### Documentation
-
-Cancel a named scheduled task.
-
-### Types of parameters
+<details><summary><code>cancel_named(id)</code></summary>
 
 ```rust
 id: Vec<u8>
 ```
-
-</p>
 </details>
 
-<details><summary>4: schedule_after(after, maybe_periodic, priority, call)</summary>
-<p>
 
-### Index
+Cancel a named scheduled task.
 
-`4`
+#### schedule_after - 4
 
-### Documentation
+<details><summary><code>schedule_after(after, maybe_periodic, priority, call)</code></summary>
+
+```rust
+after: T::BlockNumber
+maybe_periodic: Option<schedule::Period<T::BlockNumber>>
+priority: schedule::Priority
+call: Box<CallOrHashOf<T>>
+```
+</details>
+
 
 Anonymously schedule a task after a delay.
 
 
-### Types of parameters
+#### schedule_named_after - 5
+
+<details><summary><code>schedule_named_after(id, after, maybe_periodic, priority, call)</code></summary>
 
 ```rust
-after: T::BlockNumber,
-maybe_periodic: Option<schedule::Period<T::BlockNumber>>,
-priority: schedule::Priority,
+id: Vec<u8>
+after: T::BlockNumber
+maybe_periodic: Option<schedule::Period<T::BlockNumber>>
+priority: schedule::Priority
 call: Box<CallOrHashOf<T>>
 ```
-
-</p>
 </details>
 
-<details><summary>5: schedule_named_after(id, after, maybe_periodic, priority, call)</summary>
-<p>
-
-### Index
-
-`5`
-
-### Documentation
 
 Schedule a named task after a delay.
 
 
-### Types of parameters
+### Babe - 3
+
+#### report_equivocation - 0
+
+<details><summary><code>report_equivocation(equivocation_proof, key_owner_proof)</code></summary>
 
 ```rust
-id: Vec<u8>,
-after: T::BlockNumber,
-maybe_periodic: Option<schedule::Period<T::BlockNumber>>,
-priority: schedule::Priority,
-call: Box<CallOrHashOf<T>>
+equivocation_proof: Box<EquivocationProof<T::Header>>
+key_owner_proof: T::KeyOwnerProof
 ```
-
-</p>
 </details>
 
-
-### 3: Babe
-
-<details><summary>0: report_equivocation(equivocation_proof, key_owner_proof)</summary>
-<p>
-
-### Index
-
-`0`
-
-### Documentation
 
 Report authority equivocation/misbehavior. This method will verify
 the equivocation proof and validate the given key ownership proof
 against the extracted offender. If both are valid, the offence will
 be reported.
 
-### Types of parameters
+### Balances - 6
+
+#### transfer - 0
+
+<details><summary><code>transfer(dest, value)</code></summary>
 
 ```rust
-equivocation_proof: Box<EquivocationProof<T::Header>>,
-key_owner_proof: T::KeyOwnerProof
+dest: <T::Lookup as StaticLookup>::Source
+value: T::Balance
 ```
-
-</p>
 </details>
 
-
-### 6: Balances
-
-<details><summary>0: transfer(dest, value)</summary>
-<p>
-
-### Index
-
-`0`
-
-### Documentation
 
 Transfer some liquid free balance to another account.
 
@@ -202,24 +146,16 @@ of the transfer, the account will be reaped.
 The dispatch origin for this call must be `Signed` by the transactor.
 
 
-### Types of parameters
+#### transfer_keep_alive - 3
+
+<details><summary><code>transfer_keep_alive(dest, value)</code></summary>
 
 ```rust
-dest: <T::Lookup as StaticLookup>::Source,
+dest: <T::Lookup as StaticLookup>::Source
 value: T::Balance
 ```
-
-</p>
 </details>
 
-<details><summary>3: transfer_keep_alive(dest, value)</summary>
-<p>
-
-### Index
-
-`3`
-
-### Documentation
 
 Same as the [`transfer`] call, but with a check that the transfer will not kill the
 origin account.
@@ -228,24 +164,16 @@ origin account.
 
 [`transfer`]: struct.Pallet.html#method.transfer
 
-### Types of parameters
+#### transfer_all - 4
+
+<details><summary><code>transfer_all(dest, keep_alive)</code></summary>
 
 ```rust
-dest: <T::Lookup as StaticLookup>::Source,
-value: T::Balance
+dest: <T::Lookup as StaticLookup>::Source
+keep_alive: bool
 ```
-
-</p>
 </details>
 
-<details><summary>4: transfer_all(dest, keep_alive)</summary>
-<p>
-
-### Index
-
-`4`
-
-### Documentation
 
 Transfer the entire transferable balance from the caller account.
 
@@ -265,410 +193,227 @@ The dispatch origin of this call must be Signed.
 - O(1). Just like transfer, but reading the user's transferable balance first.
   #</weight>
 
-### Types of parameters
+### OneshotAccount - 7
+
+#### create_oneshot_account - 0
+
+<details><summary><code>create_oneshot_account(dest, value)</code></summary>
 
 ```rust
-dest: <T::Lookup as StaticLookup>::Source,
-keep_alive: bool
+dest: <T::Lookup as StaticLookup>::Source
+value: <T::Currency as Currency<T::AccountId>>::Balance
 ```
-
-</p>
 </details>
 
 
-### 10: AuthorityMembers
+Create an account that can only be consumed once
 
-<details><summary>0: go_offline()</summary>
-<p>
+- `dest`: The oneshot account to be created.
+- `balance`: The balance to be transfered to this oneshot account.
 
-### Index
+Origin account is kept alive.
 
-`0`
+#### consume_oneshot_account - 1
 
-### Documentation
+<details><summary><code>consume_oneshot_account(block_height, dest)</code></summary>
 
-
-
-</p>
+```rust
+block_height: T::BlockNumber
+dest: Account<<T::Lookup as StaticLookup>::Source>
+```
 </details>
 
-<details><summary>1: go_online()</summary>
-<p>
 
-### Index
+Consume a oneshot account and transfer its balance to an account
 
-`1`
+- `block_height`: Must be a recent block number. The limit is `BlockHashCount` in the past. (this is to prevent replay attacks)
+- `dest`: The destination account.
+- `dest_is_oneshot`: If set to `true`, then a oneshot account is created at `dest`. Else, `dest` has to be an existing account.
 
-### Documentation
+#### consume_oneshot_account_with_remaining - 2
 
+<details><summary><code>consume_oneshot_account_with_remaining(block_height, dest, remaining_to, balance)</code></summary>
 
-
-</p>
+```rust
+block_height: T::BlockNumber
+dest: Account<<T::Lookup as StaticLookup>::Source>
+remaining_to: Account<<T::Lookup as StaticLookup>::Source>
+balance: <T::Currency as Currency<T::AccountId>>::Balance
+```
 </details>
 
-<details><summary>2: set_session_keys(keys)</summary>
-<p>
 
-### Index
+Consume a oneshot account then transfer some amount to an account,
+and the remaining amount to another account.
 
-`2`
+- `block_height`: Must be a recent block number.
+  The limit is `BlockHashCount` in the past. (this is to prevent replay attacks)
+- `dest`: The destination account.
+- `dest_is_oneshot`: If set to `true`, then a oneshot account is created at `dest`. Else, `dest` has to be an existing account.
+- `dest2`: The second destination account.
+- `dest2_is_oneshot`: If set to `true`, then a oneshot account is created at `dest2`. Else, `dest2` has to be an existing account.
+- `balance1`: The amount transfered to `dest`, the leftover being transfered to `dest2`.
 
-### Documentation
+### AuthorityMembers - 10
+
+#### go_offline - 0
+
+<details><summary><code>go_offline()</code></summary>
+
+```rust
+```
+</details>
 
 
 
-### Types of parameters
+
+#### go_online - 1
+
+<details><summary><code>go_online()</code></summary>
+
+```rust
+```
+</details>
+
+
+
+
+#### set_session_keys - 2
+
+<details><summary><code>set_session_keys(keys)</code></summary>
 
 ```rust
 keys: T::KeysWrapper
 ```
-
-</p>
 </details>
 
 
-### 15: Grandpa
 
-<details><summary>0: report_equivocation(equivocation_proof, key_owner_proof)</summary>
-<p>
 
-### Index
+### Grandpa - 15
 
-`0`
+#### report_equivocation - 0
 
-### Documentation
+<details><summary><code>report_equivocation(equivocation_proof, key_owner_proof)</code></summary>
+
+```rust
+equivocation_proof: Box<EquivocationProof<T::Hash, T::BlockNumber>>
+key_owner_proof: T::KeyOwnerProof
+```
+</details>
+
 
 Report voter equivocation/misbehavior. This method will verify the
 equivocation proof and validate the given key ownership proof
 against the extracted offender. If both are valid, the offence
 will be reported.
 
-### Types of parameters
+### UpgradeOrigin - 21
+
+#### dispatch_as_root_unchecked_weight - 1
+
+<details><summary><code>dispatch_as_root_unchecked_weight(call, weight)</code></summary>
 
 ```rust
-equivocation_proof: Box<EquivocationProof<T::Hash, T::BlockNumber>>,
-key_owner_proof: T::KeyOwnerProof
+call: Box<<T as Config>::Call>
+weight: Weight
 ```
-
-</p>
 </details>
 
 
-### 31: UniversalDividend
+Dispatches a function call from root origin.
+This function does not check the weight of the call, and instead allows the
+caller to specify the weight of the call.
 
-<details><summary>0: transfer_ud(dest, value)</summary>
-<p>
+The weight of this call is defined by the caller.
 
-### Index
+### Preimage - 22
 
-`0`
+#### note_preimage - 0
 
-### Documentation
-
-Transfer some liquid free balance to another account, in milliUD.
-
-### Types of parameters
+<details><summary><code>note_preimage(bytes)</code></summary>
 
 ```rust
-dest: <T::Lookup as StaticLookup>::Source,
-value: BalanceOf<T>
+bytes: Vec<u8>
 ```
-
-</p>
-</details>
-
-<details><summary>1: transfer_ud_keep_alive(dest, value)</summary>
-<p>
-
-### Index
-
-`1`
-
-### Documentation
-
-Transfer some liquid free balance to another account, in milliUD.
-
-### Types of parameters
-
-```rust
-dest: <T::Lookup as StaticLookup>::Source,
-value: BalanceOf<T>
-```
-
-</p>
 </details>
 
 
-### 41: Identity
+Register a preimage on-chain.
 
-<details><summary>0: create_identity(owner_key)</summary>
-<p>
+If the preimage was previously requested, no fees or deposits are taken for providing
+the preimage. Otherwise, a deposit is taken proportional to the size of the preimage.
 
-### Index
+#### unnote_preimage - 1
 
-`0`
-
-### Documentation
-
-
-
-### Types of parameters
+<details><summary><code>unnote_preimage(hash)</code></summary>
 
 ```rust
-owner_key: T::AccountId
+hash: T::Hash
 ```
-
-</p>
-</details>
-
-<details><summary>1: confirm_identity(idty_name)</summary>
-<p>
-
-### Index
-
-`1`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-idty_name: IdtyName
-```
-
-</p>
-</details>
-
-<details><summary>2: validate_identity(idty_index)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-idty_index: T::IdtyIndex
-```
-
-</p>
-</details>
-
-<details><summary>3: revoke_identity(payload, payload_sig)</summary>
-<p>
-
-### Index
-
-`3`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-payload: RevocationPayload<T::AccountId, T::Hash>,
-payload_sig: T::RevocationSignature
-```
-
-</p>
 </details>
 
 
-### 42: Membership
+Clear an unrequested preimage from the runtime storage.
 
-<details><summary>1: request_membership(metadata)</summary>
-<p>
+#### request_preimage - 2
 
-### Index
-
-`1`
-
-### Documentation
-
-
-
-### Types of parameters
+<details><summary><code>request_preimage(hash)</code></summary>
 
 ```rust
-metadata: T::MetaData
+hash: T::Hash
 ```
-
-</p>
-</details>
-
-<details><summary>3: renew_membership(maybe_idty_id)</summary>
-<p>
-
-### Index
-
-`3`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-maybe_idty_id: Option<T::IdtyId>
-```
-
-</p>
 </details>
 
 
-### 43: Cert
+Request a preimage be uploaded to the chain without paying any fees or deposits.
 
-<details><summary>1: add_cert(receiver)</summary>
-<p>
+If the preimage requests has already been provided on-chain, we unreserve any deposit
+a user may have paid, and take the control of the preimage out of their hands.
 
-### Index
+#### unrequest_preimage - 3
 
-`1`
-
-### Documentation
-
-
-
-### Types of parameters
+<details><summary><code>unrequest_preimage(hash)</code></summary>
 
 ```rust
-receiver: T::AccountId
+hash: T::Hash
 ```
-
-</p>
 </details>
 
 
-### 52: SmithsMembership
+Clear a previously made request for a preimage.
 
-<details><summary>1: request_membership(metadata)</summary>
-<p>
+NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`.
 
-### Index
+### TechnicalCommittee - 23
 
-`1`
+#### execute - 1
 
-### Documentation
-
-
-
-### Types of parameters
+<details><summary><code>execute(proposal, length_bound)</code></summary>
 
 ```rust
-metadata: T::MetaData
+proposal: Box<<T as Config<I>>::Proposal>
+length_bound: u32
 ```
-
-</p>
 </details>
 
-<details><summary>3: renew_membership(maybe_idty_id)</summary>
-<p>
-
-### Index
-
-`3`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-maybe_idty_id: Option<T::IdtyId>
-```
-
-</p>
-</details>
-
-<details><summary>4: revoke_membership(maybe_idty_id)</summary>
-<p>
-
-### Index
-
-`4`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-maybe_idty_id: Option<T::IdtyId>
-```
-
-</p>
-</details>
-
-
-### 53: SmithsCert
-
-<details><summary>1: add_cert(receiver)</summary>
-<p>
-
-### Index
-
-`1`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-receiver: T::AccountId
-```
-
-</p>
-</details>
-
-
-### 54: SmithsCollective
-
-<details><summary>1: execute(proposal, length_bound)</summary>
-<p>
-
-### Index
-
-`1`
-
-### Documentation
 
 Dispatch a proposal from a member using the `Member` origin.
 
 Origin must be a member of the collective.
 
 
-### Types of parameters
+#### propose - 2
+
+<details><summary><code>propose(threshold, proposal, length_bound)</code></summary>
 
 ```rust
-proposal: Box<<T as Config<I>>::Proposal>,
+threshold: MemberCount
+proposal: Box<<T as Config<I>>::Proposal>
 length_bound: u32
 ```
-
-</p>
 </details>
 
-<details><summary>2: propose(threshold, proposal, length_bound)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
 
 Add a new proposal to either be voted on or executed directly.
 
@@ -678,25 +423,17 @@ Requires the sender to be member.
 or put up for voting.
 
 
-### Types of parameters
+#### vote - 3
+
+<details><summary><code>vote(proposal, index, approve)</code></summary>
 
 ```rust
-threshold: MemberCount,
-proposal: Box<<T as Config<I>>::Proposal>,
-length_bound: u32
+proposal: T::Hash
+index: ProposalIndex
+approve: bool
 ```
-
-</p>
 </details>
 
-<details><summary>3: vote(proposal, index, approve)</summary>
-<p>
-
-### Index
-
-`3`
-
-### Documentation
 
 Add an aye or nay vote for the sender to the given proposal.
 
@@ -706,25 +443,18 @@ Transaction fees will be waived if the member is voting on any particular propos
 for the first time and the call is successful. Subsequent vote changes will charge a
 fee.
 
-### Types of parameters
+#### close - 4
+
+<details><summary><code>close(proposal_hash, index, proposal_weight_bound, length_bound)</code></summary>
 
 ```rust
-proposal: T::Hash,
-index: ProposalIndex,
-approve: bool
+proposal_hash: T::Hash
+index: ProposalIndex
+proposal_weight_bound: Weight
+length_bound: u32
 ```
-
-</p>
 </details>
 
-<details><summary>4: close(proposal_hash, index, proposal_weight_bound, length_bound)</summary>
-<p>
-
-### Index
-
-`4`
-
-### Documentation
 
 Close a vote that is either approved, disapproved or whose voting period has ended.
 
@@ -745,29 +475,273 @@ proposal.
 `storage::read` so it is `size_of::<u32>() == 4` larger than the pure length.
 
 
-### Types of parameters
+### UniversalDividend - 30
+
+#### claim_uds - 0
+
+<details><summary><code>claim_uds()</code></summary>
 
 ```rust
-proposal_hash: T::Hash,
-index: ProposalIndex,
-proposal_weight_bound: Weight,
-length_bound: u32
 ```
-
-</p>
 </details>
 
 
-### 60: AtomicSwap
+Claim Universal Dividends
 
-<details><summary>0: create_swap(target, hashed_proof, action, duration)</summary>
-<p>
+#### transfer_ud - 1
 
-### Index
+<details><summary><code>transfer_ud(dest, value)</code></summary>
 
-`0`
+```rust
+dest: <T::Lookup as StaticLookup>::Source
+value: BalanceOf<T>
+```
+</details>
 
-### Documentation
+
+Transfer some liquid free balance to another account, in milliUD.
+
+#### transfer_ud_keep_alive - 2
+
+<details><summary><code>transfer_ud_keep_alive(dest, value)</code></summary>
+
+```rust
+dest: <T::Lookup as StaticLookup>::Source
+value: BalanceOf<T>
+```
+</details>
+
+
+Transfer some liquid free balance to another account, in milliUD.
+
+#### force_set_first_eligible_ud - 3
+
+<details><summary><code>force_set_first_eligible_ud(who, first_eligible_ud)</code></summary>
+
+```rust
+who: T::AccountId
+first_eligible_ud: FirstEligibleUd
+```
+</details>
+
+
+
+
+### Identity - 41
+
+#### create_identity - 0
+
+<details><summary><code>create_identity(owner_key)</code></summary>
+
+```rust
+owner_key: T::AccountId
+```
+</details>
+
+
+Create an identity for an existing account
+
+- `owner_key`: the public key corresponding to the identity to be created
+
+The origin must be allowed to create an identity.
+
+#### confirm_identity - 1
+
+<details><summary><code>confirm_identity(idty_name)</code></summary>
+
+```rust
+idty_name: IdtyName
+```
+</details>
+
+
+Confirm the creation of an identity and give it a name
+
+- `idty_name`: the name uniquely associated to this identity. Must match the validation rules defined by the runtime.
+
+The identity must have been created using `create_identity` before it can be confirmed.
+
+#### validate_identity - 2
+
+<details><summary><code>validate_identity(idty_index)</code></summary>
+
+```rust
+idty_index: T::IdtyIndex
+```
+</details>
+
+
+
+
+#### change_owner_key - 3
+
+<details><summary><code>change_owner_key(new_key, new_key_sig)</code></summary>
+
+```rust
+new_key: T::AccountId
+new_key_sig: T::NewOwnerKeySignature
+```
+</details>
+
+
+Change identity owner key.
+
+- `new_key`: the new owner key.
+- `new_key_sig`: the signature of the encoded form of `NewOwnerKeyPayload`.
+                 Must be signed by `new_key`.
+
+The origin should be the old identity owner key.
+
+#### revoke_identity - 4
+
+<details><summary><code>revoke_identity(idty_index, revocation_key, revocation_sig)</code></summary>
+
+```rust
+idty_index: T::IdtyIndex
+revocation_key: T::AccountId
+revocation_sig: T::RevocationSignature
+```
+</details>
+
+
+Revoke an identity using a revocation signature
+
+- `idty_index`: the index of the identity to be revoked.
+- `revocation_key`: the key used to sign the revocation payload.
+- `revocation_sig`: the signature of the encoded form of `RevocationPayload`.
+                    Must be signed by `revocation_key`.
+
+Any signed origin can execute this call.
+
+#### fix_sufficients - 7
+
+<details><summary><code>fix_sufficients(owner_key, inc)</code></summary>
+
+```rust
+owner_key: T::AccountId
+inc: bool
+```
+</details>
+
+
+
+
+### Membership - 42
+
+#### request_membership - 1
+
+<details><summary><code>request_membership(metadata)</code></summary>
+
+```rust
+metadata: T::MetaData
+```
+</details>
+
+
+
+
+#### renew_membership - 3
+
+<details><summary><code>renew_membership(maybe_idty_id)</code></summary>
+
+```rust
+maybe_idty_id: Option<T::IdtyId>
+```
+</details>
+
+
+
+
+### Cert - 43
+
+#### add_cert - 1
+
+<details><summary><code>add_cert(issuer, receiver)</code></summary>
+
+```rust
+issuer: T::IdtyIndex
+receiver: T::IdtyIndex
+```
+</details>
+
+
+Add a new certification or renew an existing one
+
+- `receiver`: the account receiving the certification from the origin
+
+The origin must be allow to certify.
+
+### SmithsMembership - 52
+
+#### request_membership - 1
+
+<details><summary><code>request_membership(metadata)</code></summary>
+
+```rust
+metadata: T::MetaData
+```
+</details>
+
+
+
+
+#### renew_membership - 3
+
+<details><summary><code>renew_membership(maybe_idty_id)</code></summary>
+
+```rust
+maybe_idty_id: Option<T::IdtyId>
+```
+</details>
+
+
+
+
+#### revoke_membership - 4
+
+<details><summary><code>revoke_membership(maybe_idty_id)</code></summary>
+
+```rust
+maybe_idty_id: Option<T::IdtyId>
+```
+</details>
+
+
+
+
+### SmithsCert - 53
+
+#### add_cert - 1
+
+<details><summary><code>add_cert(issuer, receiver)</code></summary>
+
+```rust
+issuer: T::IdtyIndex
+receiver: T::IdtyIndex
+```
+</details>
+
+
+Add a new certification or renew an existing one
+
+- `receiver`: the account receiving the certification from the origin
+
+The origin must be allow to certify.
+
+### AtomicSwap - 60
+
+#### create_swap - 0
+
+<details><summary><code>create_swap(target, hashed_proof, action, duration)</code></summary>
+
+```rust
+target: T::AccountId
+hashed_proof: HashedProof
+action: T::SwapAction
+duration: T::BlockNumber
+```
+</details>
+
 
 Register a new atomic swap, declaring an intention to send funds from origin to target
 on the current blockchain. The target can claim the fund using the revealed proof. If
@@ -782,26 +756,16 @@ The dispatch origin for this call must be _Signed_.
   that the revealer uses a shorter duration than the counterparty, to prevent the
   situation where the revealer reveals the proof too late around the end block.
 
-### Types of parameters
+#### claim_swap - 1
+
+<details><summary><code>claim_swap(proof, action)</code></summary>
 
 ```rust
-target: T::AccountId,
-hashed_proof: HashedProof,
-action: T::SwapAction,
-duration: T::BlockNumber
+proof: Vec<u8>
+action: T::SwapAction
 ```
-
-</p>
 </details>
 
-<details><summary>1: claim_swap(proof, action)</summary>
-<p>
-
-### Index
-
-`1`
-
-### Documentation
 
 Claim an atomic swap.
 
@@ -811,24 +775,16 @@ The dispatch origin for this call must be _Signed_.
 - `action`: Action defined in the swap, it must match the entry in blockchain. Otherwise
   the operation fails. This is used for weight calculation.
 
-### Types of parameters
+#### cancel_swap - 2
+
+<details><summary><code>cancel_swap(target, hashed_proof)</code></summary>
 
 ```rust
-proof: Vec<u8>,
-action: T::SwapAction
+target: T::AccountId
+hashed_proof: HashedProof
 ```
-
-</p>
 </details>
 
-<details><summary>2: cancel_swap(target, hashed_proof)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
 
 Cancel an atomic swap. Only possible after the originally set duration has passed.
 
@@ -837,27 +793,18 @@ The dispatch origin for this call must be _Signed_.
 - `target`: Target of the original atomic swap.
 - `hashed_proof`: Hashed proof of the original atomic swap.
 
-### Types of parameters
+### Multisig - 61
+
+#### as_multi_threshold_1 - 0
+
+<details><summary><code>as_multi_threshold_1(other_signatories, call)</code></summary>
 
 ```rust
-target: T::AccountId,
-hashed_proof: HashedProof
+other_signatories: Vec<T::AccountId>
+call: Box<<T as Config>::Call>
 ```
-
-</p>
 </details>
 
-
-### 61: Multisig
-
-<details><summary>0: as_multi_threshold_1(other_signatories, call)</summary>
-<p>
-
-### Index
-
-`0`
-
-### Documentation
 
 Immediately dispatch a multi-signature call using a single approval from the caller.
 
@@ -870,24 +817,20 @@ multi-signature, but do not participate in the approval process.
 Result is equivalent to the dispatched result.
 
 
-### Types of parameters
+#### as_multi - 1
+
+<details><summary><code>as_multi(threshold, other_signatories, maybe_timepoint, call, store_call, max_weight)</code></summary>
 
 ```rust
-other_signatories: Vec<T::AccountId>,
-call: Box<<T as Config>::Call>
+threshold: u16
+other_signatories: Vec<T::AccountId>
+maybe_timepoint: Option<Timepoint<T::BlockNumber>>
+call: OpaqueCall<T>
+store_call: bool
+max_weight: Weight
 ```
-
-</p>
 </details>
 
-<details><summary>1: as_multi(threshold, other_signatories, maybe_timepoint, call, store_call, max_weight)</summary>
-<p>
-
-### Index
-
-`1`
-
-### Documentation
 
 Register approval for a dispatch to be made from a deterministic composite account if
 approved by a total of `threshold - 1` of `other_signatories`.
@@ -916,28 +859,19 @@ on success, result is `Ok` and the result from the interior call, if it was exec
 may be found in the deposited `MultisigExecuted` event.
 
 
-### Types of parameters
+#### approve_as_multi - 2
+
+<details><summary><code>approve_as_multi(threshold, other_signatories, maybe_timepoint, call_hash, max_weight)</code></summary>
 
 ```rust
-threshold: u16,
-other_signatories: Vec<T::AccountId>,
-maybe_timepoint: Option<Timepoint<T::BlockNumber>>,
-call: OpaqueCall<T>,
-store_call: bool,
+threshold: u16
+other_signatories: Vec<T::AccountId>
+maybe_timepoint: Option<Timepoint<T::BlockNumber>>
+call_hash: [u8; 32]
 max_weight: Weight
 ```
-
-</p>
 </details>
 
-<details><summary>2: approve_as_multi(threshold, other_signatories, maybe_timepoint, call_hash, max_weight)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
 
 Register approval for a dispatch to be made from a deterministic composite account if
 approved by a total of `threshold - 1` of `other_signatories`.
@@ -959,27 +893,18 @@ transaction index) of the first approval transaction.
 NOTE: If this is the final approval, you will want to use `as_multi` instead.
 
 
-### Types of parameters
+#### cancel_as_multi - 3
+
+<details><summary><code>cancel_as_multi(threshold, other_signatories, timepoint, call_hash)</code></summary>
 
 ```rust
-threshold: u16,
-other_signatories: Vec<T::AccountId>,
-maybe_timepoint: Option<Timepoint<T::BlockNumber>>,
-call_hash: [u8; 32],
-max_weight: Weight
+threshold: u16
+other_signatories: Vec<T::AccountId>
+timepoint: Timepoint<T::BlockNumber>
+call_hash: [u8; 32]
 ```
-
-</p>
 </details>
 
-<details><summary>3: cancel_as_multi(threshold, other_signatories, timepoint, call_hash)</summary>
-<p>
-
-### Index
-
-`3`
-
-### Documentation
 
 Cancel a pre-existing, on-going multisig transaction. Any deposit reserved previously
 for this operation will be unreserved on success.
@@ -994,53 +919,34 @@ transaction for this dispatch.
 - `call_hash`: The hash of the call to be executed.
 
 
-### Types of parameters
+### ProvideRandomness - 62
+
+#### request - 0
+
+<details><summary><code>request(randomness_type, salt)</code></summary>
 
 ```rust
-threshold: u16,
-other_signatories: Vec<T::AccountId>,
-timepoint: Timepoint<T::BlockNumber>,
-call_hash: [u8; 32]
+randomness_type: RandomnessType
+salt: H256
 ```
-
-</p>
 </details>
 
-
-### 62: ProvideRandomness
-
-<details><summary>0: request(randomness_type, salt)</summary>
-<p>
-
-### Index
-
-`0`
-
-### Documentation
 
 Request a randomness
 
-### Types of parameters
+### Proxy - 63
+
+#### proxy - 0
+
+<details><summary><code>proxy(real, force_proxy_type, call)</code></summary>
 
 ```rust
-randomness_type: RandomnessType,
-salt: H256
+real: T::AccountId
+force_proxy_type: Option<T::ProxyType>
+call: Box<<T as Config>::Call>
 ```
-
-</p>
 </details>
 
-
-### 63: Proxy
-
-<details><summary>0: proxy(real, force_proxy_type, call)</summary>
-<p>
-
-### Index
-
-`0`
-
-### Documentation
 
 Dispatch the given `call` from an account that the sender is authorised for through
 `add_proxy`.
@@ -1055,25 +961,17 @@ Parameters:
 - `call`: The call to be made by the `real` account.
 
 
-### Types of parameters
+#### add_proxy - 1
+
+<details><summary><code>add_proxy(delegate, proxy_type, delay)</code></summary>
 
 ```rust
-real: T::AccountId,
-force_proxy_type: Option<T::ProxyType>,
-call: Box<<T as Config>::Call>
+delegate: T::AccountId
+proxy_type: T::ProxyType
+delay: T::BlockNumber
 ```
-
-</p>
 </details>
 
-<details><summary>1: add_proxy(delegate, proxy_type, delay)</summary>
-<p>
-
-### Index
-
-`1`
-
-### Documentation
 
 Register a proxy account for the sender that is able to make calls on its behalf.
 
@@ -1086,25 +984,17 @@ Parameters:
 zero.
 
 
-### Types of parameters
+#### remove_proxy - 2
+
+<details><summary><code>remove_proxy(delegate, proxy_type, delay)</code></summary>
 
 ```rust
-delegate: T::AccountId,
-proxy_type: T::ProxyType,
+delegate: T::AccountId
+proxy_type: T::ProxyType
 delay: T::BlockNumber
 ```
-
-</p>
 </details>
 
-<details><summary>2: remove_proxy(delegate, proxy_type, delay)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
 
 Unregister a proxy account for the sender.
 
@@ -1115,25 +1005,14 @@ Parameters:
 - `proxy_type`: The permissions currently enabled for the removed proxy account.
 
 
-### Types of parameters
+#### remove_proxies - 3
+
+<details><summary><code>remove_proxies()</code></summary>
 
 ```rust
-delegate: T::AccountId,
-proxy_type: T::ProxyType,
-delay: T::BlockNumber
 ```
-
-</p>
 </details>
 
-<details><summary>3: remove_proxies()</summary>
-<p>
-
-### Index
-
-`3`
-
-### Documentation
 
 Unregister all proxy accounts for the sender.
 
@@ -1143,17 +1022,17 @@ WARNING: This may be called on accounts created by `anonymous`, however if done,
 the unreserved fees will be inaccessible. **All access to this account will be lost.**
 
 
-</p>
+#### anonymous - 4
+
+<details><summary><code>anonymous(proxy_type, delay, index)</code></summary>
+
+```rust
+proxy_type: T::ProxyType
+delay: T::BlockNumber
+index: u16
+```
 </details>
 
-<details><summary>4: anonymous(proxy_type, delay, index)</summary>
-<p>
-
-### Index
-
-`4`
-
-### Documentation
 
 Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and
 initialize it with a proxy of `proxy_type` for `origin` sender.
@@ -1175,25 +1054,19 @@ same sender, with the same parameters.
 Fails if there are insufficient funds to pay for deposit.
 
 
-### Types of parameters
+#### kill_anonymous - 5
+
+<details><summary><code>kill_anonymous(spawner, proxy_type, index, height, ext_index)</code></summary>
 
 ```rust
-proxy_type: T::ProxyType,
-delay: T::BlockNumber,
+spawner: T::AccountId
+proxy_type: T::ProxyType
 index: u16
+height: T::BlockNumber
+ext_index: u32
 ```
-
-</p>
 </details>
 
-<details><summary>5: kill_anonymous(spawner, proxy_type, index, height, ext_index)</summary>
-<p>
-
-### Index
-
-`5`
-
-### Documentation
 
 Removes a previously spawned anonymous proxy.
 
@@ -1213,27 +1086,16 @@ Fails with `NoPermission` in case the caller is not a previously created anonymo
 account whose `anonymous` call has corresponding parameters.
 
 
-### Types of parameters
+#### announce - 6
+
+<details><summary><code>announce(real, call_hash)</code></summary>
 
 ```rust
-spawner: T::AccountId,
-proxy_type: T::ProxyType,
-index: u16,
-height: T::BlockNumber,
-ext_index: u32
+real: T::AccountId
+call_hash: CallHashOf<T>
 ```
-
-</p>
 </details>
 
-<details><summary>6: announce(real, call_hash)</summary>
-<p>
-
-### Index
-
-`6`
-
-### Documentation
 
 Publish the hash of a proxy-call that will be made in the future.
 
@@ -1252,24 +1114,16 @@ Parameters:
 - `call_hash`: The hash of the call to be made by the `real` account.
 
 
-### Types of parameters
+#### remove_announcement - 7
+
+<details><summary><code>remove_announcement(real, call_hash)</code></summary>
 
 ```rust
-real: T::AccountId,
+real: T::AccountId
 call_hash: CallHashOf<T>
 ```
-
-</p>
 </details>
 
-<details><summary>7: remove_announcement(real, call_hash)</summary>
-<p>
-
-### Index
-
-`7`
-
-### Documentation
 
 Remove a given announcement.
 
@@ -1283,24 +1137,16 @@ Parameters:
 - `call_hash`: The hash of the call to be made by the `real` account.
 
 
-### Types of parameters
+#### reject_announcement - 8
+
+<details><summary><code>reject_announcement(delegate, call_hash)</code></summary>
 
 ```rust
-real: T::AccountId,
+delegate: T::AccountId
 call_hash: CallHashOf<T>
 ```
-
-</p>
 </details>
 
-<details><summary>8: reject_announcement(delegate, call_hash)</summary>
-<p>
-
-### Index
-
-`8`
-
-### Documentation
 
 Remove the given announcement of a delegate.
 
@@ -1314,24 +1160,18 @@ Parameters:
 - `call_hash`: The hash of the call to be made.
 
 
-### Types of parameters
+#### proxy_announced - 9
+
+<details><summary><code>proxy_announced(delegate, real, force_proxy_type, call)</code></summary>
 
 ```rust
-delegate: T::AccountId,
-call_hash: CallHashOf<T>
+delegate: T::AccountId
+real: T::AccountId
+force_proxy_type: Option<T::ProxyType>
+call: Box<<T as Config>::Call>
 ```
-
-</p>
 </details>
 
-<details><summary>9: proxy_announced(delegate, real, force_proxy_type, call)</summary>
-<p>
-
-### Index
-
-`9`
-
-### Documentation
 
 Dispatch the given `call` from an account that the sender is authorized for through
 `add_proxy`.
@@ -1346,29 +1186,17 @@ Parameters:
 - `call`: The call to be made by the `real` account.
 
 
-### Types of parameters
+### Utility - 64
+
+#### batch - 0
+
+<details><summary><code>batch(calls)</code></summary>
 
 ```rust
-delegate: T::AccountId,
-real: T::AccountId,
-force_proxy_type: Option<T::ProxyType>,
-call: Box<<T as Config>::Call>
+calls: Vec<<T as Config>::Call>
 ```
-
-</p>
 </details>
 
-
-### 64: Utility
-
-<details><summary>0: batch(calls)</summary>
-<p>
-
-### Index
-
-`0`
-
-### Documentation
 
 Send a batch of dispatch calls.
 
@@ -1381,23 +1209,16 @@ If origin is root then call are dispatch without checking origin filter. (This i
 bypassing `frame_system::Config::BaseCallFilter`).
 
 
-### Types of parameters
+#### as_derivative - 1
+
+<details><summary><code>as_derivative(index, call)</code></summary>
 
 ```rust
-calls: Vec<<T as Config>::Call>
+index: u16
+call: Box<<T as Config>::Call>
 ```
-
-</p>
 </details>
 
-<details><summary>1: as_derivative(index, call)</summary>
-<p>
-
-### Index
-
-`1`
-
-### Documentation
 
 Send a call through an indexed pseudonym of the sender.
 
@@ -1413,24 +1234,15 @@ NOTE: Prior to version *12, this was called `as_limited_sub`.
 
 The dispatch origin for this call must be _Signed_.
 
-### Types of parameters
+#### batch_all - 2
+
+<details><summary><code>batch_all(calls)</code></summary>
 
 ```rust
-index: u16,
-call: Box<<T as Config>::Call>
+calls: Vec<<T as Config>::Call>
 ```
-
-</p>
 </details>
 
-<details><summary>2: batch_all(calls)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
 
 Send a batch of dispatch calls and atomically execute them.
 The whole transaction will rollback and fail if any of the calls failed.
@@ -1444,233 +1256,211 @@ If origin is root then call are dispatch without checking origin filter. (This i
 bypassing `frame_system::Config::BaseCallFilter`).
 
 
-### Types of parameters
+#### force_batch - 4
+
+<details><summary><code>force_batch(calls)</code></summary>
 
 ```rust
 calls: Vec<<T as Config>::Call>
 ```
-
-</p>
 </details>
 
 
-### 65: Treasury
+Send a batch of dispatch calls.
+Unlike `batch`, it allows errors and won't interrupt.
 
-<details><summary>0: propose_spend(value, beneficiary)</summary>
-<p>
+May be called from any origin.
 
-### Index
+- `calls`: The calls to be dispatched from the same origin. The number of call must not
+  exceed the constant: `batched_calls_limit` (available in constant metadata).
 
-`0`
+If origin is root then call are dispatch without checking origin filter. (This includes
+bypassing `frame_system::Config::BaseCallFilter`).
 
-### Documentation
+
+### Treasury - 65
+
+#### propose_spend - 0
+
+<details><summary><code>propose_spend(value, beneficiary)</code></summary>
+
+```rust
+value: BalanceOf<T, I>
+beneficiary: <T::Lookup as StaticLookup>::Source
+```
+</details>
+
 
 Put forward a suggestion for spending. A deposit proportional to the value
 is reserved and slashed if the proposal is rejected. It is returned once the
 proposal is awarded.
 
 
-### Types of parameters
+#### spend - 3
+
+<details><summary><code>spend(amount, beneficiary)</code></summary>
 
 ```rust
-value: BalanceOf<T, I>,
+amount: BalanceOf<T, I>
 beneficiary: <T::Lookup as StaticLookup>::Source
 ```
-
-</p>
 </details>
+
+
+Propose and approve a spend of treasury funds.
+
+- `origin`: Must be `SpendOrigin` with the `Success` value being at least `amount`.
+- `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+- `beneficiary`: The destination account for the transfer.
+
+NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
+beneficiary.
+
+#### remove_approval - 4
+
+<details><summary><code>remove_approval(proposal_id)</code></summary>
+
+```rust
+proposal_id: ProposalIndex
+```
+</details>
+
+
+Force a previously approved proposal to be removed from the approval queue.
+The original deposit will no longer be returned.
+
+May only be called from `T::RejectOrigin`.
+- `proposal_id`: The index of a proposal
+
 
 
 
 ## Root calls
 
-There are **28** root calls organized in **12** pallets.
+There are **26** root calls from **12** pallets.
 
-### 0: System
+### System - 0
 
-<details><summary>0: fill_block(ratio)</summary>
-<p>
+#### fill_block - 0
 
-### Index
-
-`0`
-
-### Documentation
-
-A dispatch that will fill the block weight up to the given ratio.
-
-### Types of parameters
+<details><summary><code>fill_block(ratio)</code></summary>
 
 ```rust
 ratio: Perbill
 ```
-
-</p>
 </details>
 
-<details><summary>2: set_heap_pages(pages)</summary>
-<p>
 
-### Index
+A dispatch that will fill the block weight up to the given ratio.
 
-`2`
+#### set_heap_pages - 2
 
-### Documentation
-
-Set the number of pages in the WebAssembly environment's heap.
-
-### Types of parameters
+<details><summary><code>set_heap_pages(pages)</code></summary>
 
 ```rust
 pages: u64
 ```
-
-</p>
 </details>
 
-<details><summary>3: set_code(code)</summary>
-<p>
 
-### Index
+Set the number of pages in the WebAssembly environment's heap.
 
-`3`
+#### set_code - 3
 
-### Documentation
+<details><summary><code>set_code(code)</code></summary>
+
+```rust
+code: Vec<u8>
+```
+</details>
+
 
 Set the new runtime code.
 
 
-### Types of parameters
+#### set_code_without_checks - 4
+
+<details><summary><code>set_code_without_checks(code)</code></summary>
 
 ```rust
 code: Vec<u8>
 ```
-
-</p>
 </details>
 
-<details><summary>4: set_code_without_checks(code)</summary>
-<p>
-
-### Index
-
-`4`
-
-### Documentation
 
 Set the new runtime code without doing any checks of the given `code`.
 
 
-### Types of parameters
+#### set_storage - 5
 
-```rust
-code: Vec<u8>
-```
-
-</p>
-</details>
-
-<details><summary>5: set_storage(items)</summary>
-<p>
-
-### Index
-
-`5`
-
-### Documentation
-
-Set some items of storage.
-
-### Types of parameters
+<details><summary><code>set_storage(items)</code></summary>
 
 ```rust
 items: Vec<KeyValue>
 ```
-
-</p>
 </details>
 
-<details><summary>6: kill_storage(keys)</summary>
-<p>
 
-### Index
+Set some items of storage.
 
-`6`
+#### kill_storage - 6
 
-### Documentation
-
-Kill some items from storage.
-
-### Types of parameters
+<details><summary><code>kill_storage(keys)</code></summary>
 
 ```rust
 keys: Vec<Key>
 ```
-
-</p>
 </details>
 
-<details><summary>7: kill_prefix(prefix, subkeys)</summary>
-<p>
 
-### Index
+Kill some items from storage.
 
-`7`
+#### kill_prefix - 7
 
-### Documentation
+<details><summary><code>kill_prefix(prefix, subkeys)</code></summary>
+
+```rust
+prefix: Key
+subkeys: u32
+```
+</details>
+
 
 Kill all storage items with a key that starts with the given prefix.
 
 **NOTE:** We rely on the Root origin to provide us the number of subkeys under
 the prefix we are removing to accurately calculate the weight of this function.
 
-### Types of parameters
+### Babe - 3
+
+#### plan_config_change - 2
+
+<details><summary><code>plan_config_change(config)</code></summary>
 
 ```rust
-prefix: Key,
-subkeys: u32
+config: NextConfigDescriptor
 ```
-
-</p>
 </details>
 
-
-### 3: Babe
-
-<details><summary>2: plan_config_change(config)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
 
 Plan an epoch config change. The epoch config change is recorded and will be enacted on
 the next call to `enact_epoch_change`. The config will be activated one epoch after.
 Multiple calls to this method will replace any existing planned config change that had
 not been enacted yet.
 
-### Types of parameters
+### Balances - 6
+
+#### set_balance - 1
+
+<details><summary><code>set_balance(who, new_free, new_reserved)</code></summary>
 
 ```rust
-config: NextConfigDescriptor
+who: <T::Lookup as StaticLookup>::Source
+new_free: T::Balance
+new_reserved: T::Balance
 ```
-
-</p>
 </details>
 
-
-### 6: Balances
-
-<details><summary>1: set_balance(who, new_free, new_reserved)</summary>
-<p>
-
-### Index
-
-`1`
-
-### Documentation
 
 Set the balances of a given account.
 
@@ -1681,391 +1471,89 @@ it will reset the account nonce (`frame_system::AccountNonce`).
 
 The dispatch origin for this call is `root`.
 
-### Types of parameters
+#### force_transfer - 2
+
+<details><summary><code>force_transfer(source, dest, value)</code></summary>
 
 ```rust
-who: <T::Lookup as StaticLookup>::Source,
-new_free: T::Balance,
-new_reserved: T::Balance
+source: <T::Lookup as StaticLookup>::Source
+dest: <T::Lookup as StaticLookup>::Source
+value: T::Balance
 ```
-
-</p>
 </details>
 
-<details><summary>2: force_transfer(source, dest, value)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
 
 Exactly as `transfer`, except the origin must be root and the source account may be
 specified.
 
-### Types of parameters
+#### force_unreserve - 5
+
+<details><summary><code>force_unreserve(who, amount)</code></summary>
 
 ```rust
-source: <T::Lookup as StaticLookup>::Source,
-dest: <T::Lookup as StaticLookup>::Source,
-value: T::Balance
+who: <T::Lookup as StaticLookup>::Source
+amount: T::Balance
 ```
-
-</p>
 </details>
 
-<details><summary>5: force_unreserve(who, amount)</summary>
-<p>
-
-### Index
-
-`5`
-
-### Documentation
 
 Unreserve some balance from a user by force.
 
 Can only be called by ROOT.
 
-### Types of parameters
+### AuthorityMembers - 10
 
-```rust
-who: <T::Lookup as StaticLookup>::Source,
-amount: T::Balance
-```
+#### remove_member - 3
 
-</p>
-</details>
-
-
-### 10: AuthorityMembers
-
-<details><summary>3: prune_account_id_of(members_ids)</summary>
-<p>
-
-### Index
-
-`3`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-members_ids: Vec<T::MemberId>
-```
-
-</p>
-</details>
-
-<details><summary>4: remove_member(member_id)</summary>
-<p>
-
-### Index
-
-`4`
-
-### Documentation
-
-
-
-### Types of parameters
+<details><summary><code>remove_member(member_id)</code></summary>
 
 ```rust
 member_id: T::MemberId
 ```
-
-</p>
 </details>
 
 
-### 15: Grandpa
 
-<details><summary>2: note_stalled(delay, best_finalized_block_number)</summary>
-<p>
 
-### Index
+### Grandpa - 15
 
-`2`
+#### note_stalled - 2
 
-### Documentation
-
-Note that the current authority set of the GRANDPA finality gadget has
-stalled. This will trigger a forced authority set change at the beginning
-of the next session, to be enacted `delay` blocks after that. The delay
-should be high enough to safely assume that the block signalling the
-forced change will not be re-orged (e.g. 1000 blocks). The GRANDPA voters
-will start the new authority set using the given finalized block as base.
-Only callable by root.
-
-### Types of parameters
+<details><summary><code>note_stalled(delay, best_finalized_block_number)</code></summary>
 
 ```rust
-delay: T::BlockNumber,
+delay: T::BlockNumber
 best_finalized_block_number: T::BlockNumber
 ```
-
-</p>
 </details>
 
 
-### 41: Identity
+Note that the current authority set of the GRANDPA finality gadget has stalled.
 
-<details><summary>4: remove_identity(idty_index, idty_name)</summary>
-<p>
+This will trigger a forced authority set change at the beginning of the next session, to
+be enacted `delay` blocks after that. The `delay` should be high enough to safely assume
+that the block signalling the forced change will not be re-orged e.g. 1000 blocks.
+The block production rate (which may be slowed down because of finality lagging) should
+be taken into account when choosing the `delay`. The GRANDPA voters based on the new
+authority will start voting on top of `best_finalized_block_number` for new finalized
+blocks. `best_finalized_block_number` should be the highest of the latest finalized
+block of all validators of the new authority set.
 
-### Index
+Only callable by root.
 
-`4`
+### TechnicalCommittee - 23
 
-### Documentation
+#### set_members - 0
 
-
-
-### Types of parameters
+<details><summary><code>set_members(new_members, prime, old_count)</code></summary>
 
 ```rust
-idty_index: T::IdtyIndex,
-idty_name: Option<IdtyName>
+new_members: Vec<T::AccountId>
+prime: Option<T::AccountId>
+old_count: MemberCount
 ```
-
-</p>
 </details>
 
-<details><summary>5: prune_item_identities_names(names)</summary>
-<p>
-
-### Index
-
-`5`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-names: Vec<IdtyName>
-```
-
-</p>
-</details>
-
-<details><summary>6: prune_item_identity_index_of(accounts_ids)</summary>
-<p>
-
-### Index
-
-`6`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-accounts_ids: Vec<T::AccountId>
-```
-
-</p>
-</details>
-
-
-### 42: Membership
-
-<details><summary>0: force_request_membership(idty_id, metadata)</summary>
-<p>
-
-### Index
-
-`0`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-idty_id: T::IdtyId,
-metadata: T::MetaData
-```
-
-</p>
-</details>
-
-
-### 43: Cert
-
-<details><summary>0: force_add_cert(issuer, receiver, verify_rules)</summary>
-<p>
-
-### Index
-
-`0`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-issuer: T::IdtyIndex,
-receiver: T::IdtyIndex,
-verify_rules: bool
-```
-
-</p>
-</details>
-
-<details><summary>2: del_cert(issuer, receiver)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-issuer: T::IdtyIndex,
-receiver: T::IdtyIndex
-```
-
-</p>
-</details>
-
-<details><summary>3: remove_all_certs_received_by(idty_index)</summary>
-<p>
-
-### Index
-
-`3`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-idty_index: T::IdtyIndex
-```
-
-</p>
-</details>
-
-
-### 52: SmithsMembership
-
-<details><summary>0: force_request_membership(idty_id, metadata)</summary>
-<p>
-
-### Index
-
-`0`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-idty_id: T::IdtyId,
-metadata: T::MetaData
-```
-
-</p>
-</details>
-
-
-### 53: SmithsCert
-
-<details><summary>0: force_add_cert(issuer, receiver, verify_rules)</summary>
-<p>
-
-### Index
-
-`0`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-issuer: T::IdtyIndex,
-receiver: T::IdtyIndex,
-verify_rules: bool
-```
-
-</p>
-</details>
-
-<details><summary>2: del_cert(issuer, receiver)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-issuer: T::IdtyIndex,
-receiver: T::IdtyIndex
-```
-
-</p>
-</details>
-
-<details><summary>3: remove_all_certs_received_by(idty_index)</summary>
-<p>
-
-### Index
-
-`3`
-
-### Documentation
-
-
-
-### Types of parameters
-
-```rust
-idty_index: T::IdtyIndex
-```
-
-</p>
-</details>
-
-
-### 54: SmithsCollective
-
-<details><summary>0: set_members(new_members, prime, old_count)</summary>
-<p>
-
-### Index
-
-`0`
-
-### Documentation
 
 Set the collective's membership.
 
@@ -2079,7 +1567,7 @@ Requires root origin.
 NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but
       the weight estimations rely on it to estimate dispatchable weight.
 
-# WARNING:
+WARNING:
 
 The `pallet-collective` can also be managed by logic outside of the pallet through the
 implementation of the trait [`ChangeMembers`].
@@ -2087,25 +1575,15 @@ Any call to `set_members` must be careful that the member set doesn't get out of
 with other logic managing the member set.
 
 
-### Types of parameters
+#### disapprove_proposal - 5
+
+<details><summary><code>disapprove_proposal(proposal_hash)</code></summary>
 
 ```rust
-new_members: Vec<T::AccountId>,
-prime: Option<T::AccountId>,
-old_count: MemberCount
+proposal_hash: T::Hash
 ```
-
-</p>
 </details>
 
-<details><summary>5: disapprove_proposal(proposal_hash)</summary>
-<p>
-
-### Index
-
-`5`
-
-### Documentation
 
 Disapprove a proposal, close, and remove it from the system, regardless of its current
 state.
@@ -2116,102 +1594,211 @@ Parameters:
 * `proposal_hash`: The hash of the proposal that should be disapproved.
 
 
-### Types of parameters
+### Identity - 41
+
+#### remove_identity - 5
+
+<details><summary><code>remove_identity(idty_index, idty_name)</code></summary>
 
 ```rust
-proposal_hash: T::Hash
+idty_index: T::IdtyIndex
+idty_name: Option<IdtyName>
 ```
-
-</p>
 </details>
 
 
-### 64: Utility
 
-<details><summary>3: dispatch_as(as_origin, call)</summary>
-<p>
 
-### Index
+#### prune_item_identities_names - 6
 
-`3`
+<details><summary><code>prune_item_identities_names(names)</code></summary>
 
-### Documentation
+```rust
+names: Vec<IdtyName>
+```
+</details>
+
+
+
+
+### Membership - 42
+
+#### force_request_membership - 0
+
+<details><summary><code>force_request_membership(idty_id, metadata)</code></summary>
+
+```rust
+idty_id: T::IdtyId
+metadata: T::MetaData
+```
+</details>
+
+
+
+
+### Cert - 43
+
+#### force_add_cert - 0
+
+<details><summary><code>force_add_cert(issuer, receiver, verify_rules)</code></summary>
+
+```rust
+issuer: T::IdtyIndex
+receiver: T::IdtyIndex
+verify_rules: bool
+```
+</details>
+
+
+
+
+#### del_cert - 2
+
+<details><summary><code>del_cert(issuer, receiver)</code></summary>
+
+```rust
+issuer: T::IdtyIndex
+receiver: T::IdtyIndex
+```
+</details>
+
+
+
+
+#### remove_all_certs_received_by - 3
+
+<details><summary><code>remove_all_certs_received_by(idty_index)</code></summary>
+
+```rust
+idty_index: T::IdtyIndex
+```
+</details>
+
+
+
+
+### SmithsMembership - 52
+
+#### force_request_membership - 0
+
+<details><summary><code>force_request_membership(idty_id, metadata)</code></summary>
+
+```rust
+idty_id: T::IdtyId
+metadata: T::MetaData
+```
+</details>
+
+
+
+
+### SmithsCert - 53
+
+#### force_add_cert - 0
+
+<details><summary><code>force_add_cert(issuer, receiver, verify_rules)</code></summary>
+
+```rust
+issuer: T::IdtyIndex
+receiver: T::IdtyIndex
+verify_rules: bool
+```
+</details>
+
+
+
+
+#### del_cert - 2
+
+<details><summary><code>del_cert(issuer, receiver)</code></summary>
+
+```rust
+issuer: T::IdtyIndex
+receiver: T::IdtyIndex
+```
+</details>
+
+
+
+
+#### remove_all_certs_received_by - 3
+
+<details><summary><code>remove_all_certs_received_by(idty_index)</code></summary>
+
+```rust
+idty_index: T::IdtyIndex
+```
+</details>
+
+
+
+
+### Utility - 64
+
+#### dispatch_as - 3
+
+<details><summary><code>dispatch_as(as_origin, call)</code></summary>
+
+```rust
+as_origin: Box<T::PalletsOrigin>
+call: Box<<T as Config>::Call>
+```
+</details>
+
 
 Dispatches a function call with a provided origin.
 
 The dispatch origin for this call must be _Root_.
 
 
-### Types of parameters
 
-```rust
-as_origin: Box<T::PalletsOrigin>,
-call: Box<<T as Config>::Call>
-```
 
-</p>
-</details>
 
 
 
 ## Disabled calls
 
-There are **7** disabled calls organized in **4** pallets.
+There are **7** disabled calls from **4** pallets.
 
-### 0: System
+### System - 0
 
-<details><summary>1: remark(remark)</summary>
-<p>
+#### remark - 1
 
-### Index
+<details><summary><code>remark(remark)</code></summary>
 
-`1`
+```rust
+remark: Vec<u8>
+```
+</details>
 
-### Documentation
 
 Make some on-chain remark.
 
 
-### Types of parameters
+#### remark_with_event - 8
+
+<details><summary><code>remark_with_event(remark)</code></summary>
 
 ```rust
 remark: Vec<u8>
 ```
-
-</p>
 </details>
 
-<details><summary>8: remark_with_event(remark)</summary>
-<p>
-
-### Index
-
-`8`
-
-### Documentation
 
 Make some on-chain remark and emit event.
 
-### Types of parameters
+### Session - 14
+
+#### set_keys - 0
+
+<details><summary><code>set_keys(keys, proof)</code></summary>
 
 ```rust
-remark: Vec<u8>
+keys: T::Keys
+proof: Vec<u8>
 ```
-
-</p>
 </details>
 
-
-### 14: Session
-
-<details><summary>0: set_keys(keys, proof)</summary>
-<p>
-
-### Index
-
-`0`
-
-### Documentation
 
 Sets the session key(s) of the function caller to `keys`.
 Allows an account to set its session key prior to becoming a validator.
@@ -2220,24 +1807,14 @@ This doesn't take effect until the next session.
 The dispatch origin of this function must be signed.
 
 
-### Types of parameters
+#### purge_keys - 1
+
+<details><summary><code>purge_keys()</code></summary>
 
 ```rust
-keys: T::Keys,
-proof: Vec<u8>
 ```
-
-</p>
 </details>
 
-<details><summary>1: purge_keys()</summary>
-<p>
-
-### Index
-
-`1`
-
-### Documentation
 
 Removes any session key(s) of the function caller.
 
@@ -2249,72 +1826,43 @@ means being a controller account) or directly convertible into a validator ID (w
 usually means being a stash account).
 
 
-</p>
-</details>
+### Membership - 42
 
+#### claim_membership - 2
 
-### 42: Membership
-
-<details><summary>2: claim_membership(maybe_idty_id)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
-
-
-
-### Types of parameters
+<details><summary><code>claim_membership(maybe_idty_id)</code></summary>
 
 ```rust
 maybe_idty_id: Option<T::IdtyId>
 ```
-
-</p>
 </details>
 
-<details><summary>4: revoke_membership(maybe_idty_id)</summary>
-<p>
-
-### Index
-
-`4`
-
-### Documentation
 
 
 
-### Types of parameters
+#### revoke_membership - 4
+
+<details><summary><code>revoke_membership(maybe_idty_id)</code></summary>
 
 ```rust
 maybe_idty_id: Option<T::IdtyId>
 ```
-
-</p>
 </details>
 
 
-### 52: SmithsMembership
-
-<details><summary>2: claim_membership(maybe_idty_id)</summary>
-<p>
-
-### Index
-
-`2`
-
-### Documentation
 
 
+### SmithsMembership - 52
 
-### Types of parameters
+#### claim_membership - 2
+
+<details><summary><code>claim_membership(maybe_idty_id)</code></summary>
 
 ```rust
 maybe_idty_id: Option<T::IdtyId>
 ```
-
-</p>
 </details>
+
+
+
 

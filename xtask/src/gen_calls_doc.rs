@@ -17,14 +17,86 @@
 use anyhow::{bail, Context, Result};
 use codec::Decode;
 use scale_info::form::PortableForm;
+use serde::Serialize;
 use std::{
     fs::File,
     io::{Read, Write},
 };
+use tera::Tera;
+
+// consts
 
 const CALLS_DOC_FILEPATH: &str = "docs/api/runtime-calls.md";
+const TEMPLATES_GLOB: &str = "xtask/res/templates/*.md";
+
+// define structs and implementations
 
 type RuntimeCalls = Vec<Pallet>;
+
+#[derive(Clone, Serialize)]
+struct Pallet {
+    index: u8,
+    name: String,
+    calls: Vec<Call>,
+}
+
+impl Pallet {
+    fn new(
+        index: u8,
+        name: String,
+        scale_type_def: &scale_info::TypeDef<PortableForm>,
+    ) -> Result<Self> {
+        if let scale_info::TypeDef::Variant(calls_enum) = scale_type_def {
+            Ok(Self {
+                index,
+                name,
+                calls: calls_enum.variants().iter().map(Into::into).collect(),
+            })
+        } else {
+            bail!("Invalid metadata")
+        }
+    }
+}
+
+#[derive(Clone, Serialize)]
+struct Call {
+    documentation: String,
+    index: u8,
+    name: String,
+    params: Vec<CallParam>,
+}
+
+impl From<&scale_info::Variant<PortableForm>> for Call {
+    fn from(variant: &scale_info::Variant<PortableForm>) -> Self {
+        Self {
+            documentation: variant
+                .docs()
+                .iter()
+                .take_while(|line| !line.starts_with("# <weight>"))
+                .cloned()
+                .collect::<Vec<_>>()
+                .join("\n"),
+            index: variant.index(),
+            name: variant.name().to_owned(),
+            params: variant.fields().iter().map(Into::into).collect(),
+        }
+    }
+}
+
+#[derive(Clone, Serialize)]
+struct CallParam {
+    name: String,
+    type_name: String,
+}
+
+impl From<&scale_info::Field<PortableForm>> for CallParam {
+    fn from(field: &scale_info::Field<PortableForm>) -> Self {
+        Self {
+            name: field.name().cloned().unwrap_or_default(),
+            type_name: field.type_name().cloned().unwrap_or_default(),
+        }
+    }
+}
 
 enum CallCategory {
     Disabled,
@@ -81,65 +153,7 @@ impl CallCategory {
     }
 }
 
-#[derive(Clone)]
-struct Pallet {
-    index: u8,
-    name: String,
-    calls: Vec<Call>,
-}
-
-impl Pallet {
-    fn new(
-        index: u8,
-        name: String,
-        scale_type_def: &scale_info::TypeDef<PortableForm>,
-    ) -> Result<Self> {
-        if let scale_info::TypeDef::Variant(calls_enum) = scale_type_def {
-            Ok(Self {
-                index,
-                name,
-                calls: calls_enum.variants().iter().map(Into::into).collect(),
-            })
-        } else {
-            bail!("Invalid metadata")
-        }
-    }
-}
-
-#[derive(Clone)]
-struct Call {
-    docs: Vec<String>,
-    index: u8,
-    name: String,
-    params: Vec<CallParam>,
-}
-
-impl From<&scale_info::Variant<PortableForm>> for Call {
-    fn from(variant: &scale_info::Variant<PortableForm>) -> Self {
-        Self {
-            docs: variant.docs().to_vec(),
-            index: variant.index(),
-            name: variant.name().to_owned(),
-            params: variant.fields().iter().map(Into::into).collect(),
-        }
-    }
-}
-
-#[derive(Clone)]
-struct CallParam {
-    name: String,
-    type_name: String,
-}
-
-impl From<&scale_info::Field<PortableForm>> for CallParam {
-    fn from(field: &scale_info::Field<PortableForm>) -> Self {
-        Self {
-            name: field.name().cloned().unwrap_or_default(),
-            type_name: field.type_name().cloned().unwrap_or_default(),
-        }
-    }
-}
-
+/// generate runtime calls documentation
 pub(super) fn gen_calls_doc() -> Result<()> {
     // Read metadata
     let mut file = std::fs::File::open("resources/metadata.scale")
@@ -192,7 +206,9 @@ fn get_calls_from_metadata_v14(
     Ok(pallets)
 }
 
+/// use template to render markdown file with runtime calls documentation
 fn print_runtime_calls(pallets: RuntimeCalls) -> String {
+    // init variables
     let mut user_calls_counter = 0;
     let user_calls_pallets: RuntimeCalls = pallets
         .iter()
@@ -245,109 +261,24 @@ fn print_runtime_calls(pallets: RuntimeCalls) -> String {
         })
         .collect();
 
-    let mut output = String::new();
-
-    output.push_str("# Runtime calls\n\n");
-    output.push_str("Calls are categorized according to the dispatch origin they require:\n\n");
-    output.push_str(
-        r#"1. User calls: the dispatch origin for this kind of call must be Signed by
-the transactor. This is the only call category that can be submitted with an extrinsic.
-"#,
-    );
-    output.push_str(
-        r#"1. Root calls: This kind of call requires a special origin that can only be invoked
-through on-chain governance mechanisms.
-"#,
-    );
-    output.push_str(
-        r#"1. Inherent calls: This kind of call is invoked by the author of the block itself
-(usually automatically by the node).
-"#,
-    );
-    output.push_str(
-        r#"1. Disabled calls: These calls are disabled for different reasons (to be documented).
-"#,
-    );
-
-    output.push_str("\n\n## User calls\n\n");
-    output.push_str(&print_calls_category(
-        user_calls_counter,
-        "user",
-        user_calls_pallets,
-    ));
-
-    output.push_str("\n\n## Root calls\n\n");
-    output.push_str(&print_calls_category(
-        root_calls_counter,
-        "root",
-        root_calls_pallets,
-    ));
-
-    output.push_str("\n\n## Disabled calls\n\n");
-    output.push_str(&print_calls_category(
-        disabled_calls_counter,
-        "disabled",
-        disabled_calls_pallets,
-    ));
-
-    output
-}
-
-fn print_calls_category(calls_counter: usize, category_name: &str, pallets: Vec<Pallet>) -> String {
-    let mut output = String::new();
-    output.push_str(&format!(
-        "There are **{}** {} calls organized in **{}** pallets.\n",
-        calls_counter,
-        category_name,
-        pallets.len()
-    ));
-
-    for pallet in pallets {
-        output.push_str(&format!("\n### {}: {}\n\n", pallet.index, pallet.name));
-        for call in pallet.calls {
-            output.push_str(&format!(
-                "<details><summary>{}: {}({})</summary>\n<p>\n\n{}</p>\n</details>\n\n",
-                call.index,
-                call.name,
-                print_call_params(&call.params),
-                print_call_details(&call),
-            ));
+    // compile template
+    let tera = match Tera::new(TEMPLATES_GLOB) {
+        Ok(t) => t,
+        Err(e) => {
+            println!("Parsing error(s): {}", e);
+            ::std::process::exit(1);
         }
-    }
-    output
-}
+    };
 
-fn print_call_details(call: &Call) -> String {
-    let mut output = String::new();
-    output.push_str(&format!("### Index\n\n`{}`\n\n", call.index));
-    output.push_str(&format!(
-        "### Documentation\n\n{}\n\n",
-        call.docs
-            .iter()
-            .take_while(|line| !line.starts_with("# <weight>"))
-            .cloned()
-            .collect::<Vec<_>>()
-            .join("\n")
-    ));
-    if !call.params.is_empty() {
-        output.push_str("### Types of parameters\n\n```rust\n");
-        output.push_str(
-            &call
-                .params
-                .iter()
-                .map(|param| format!("{}: {}", param.name, param.type_name))
-                .collect::<Vec<_>>()
-                .join(",\n"),
-        );
-        output.push_str("\n```\n\n");
-    }
-    output
-}
+    // fills tera context for rendering
+    let mut context = tera::Context::new();
+    context.insert("user_calls_counter", &user_calls_counter);
+    context.insert("user_calls_pallets", &user_calls_pallets);
+    context.insert("root_calls_counter", &root_calls_counter);
+    context.insert("root_calls_pallets", &root_calls_pallets);
+    context.insert("disabled_calls_counter", &disabled_calls_counter);
+    context.insert("disabled_calls_pallets", &disabled_calls_pallets);
 
-fn print_call_params(call_params: &[CallParam]) -> String {
-    call_params
-        .iter()
-        .map(|param| param.name.clone())
-        .collect::<Vec<_>>()
-        .join(", ")
+    tera.render("runtime-calls.md", &context)
+        .expect("template error")
 }
