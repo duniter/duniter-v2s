@@ -45,9 +45,9 @@ services:
     command:
       - "--node-key-file=/var/lib/duniter/node.key"
       - "--public-addr"
-      - "--pruning=14400"
       # SERVER_DOMAIN should be replaced by a domain name that point on your server
       - "/dns/${SERVER_DOMAIN?SERVER_DOMAIN should be set}/tcp/30333"
       - "--rpc-cors=all"
       - "--rpc-methods=Unsafe"
       - "--validator"
+      - "--pruning=14400"
