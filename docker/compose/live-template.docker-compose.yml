@@ -14,10 +14,6 @@ services:
     command:
       - "--bootnodes"
       - "/dns/duniter-validator/tcp/30333/p2p/VALIDATOR_NODE_KEY"
-      - "--node-key-file"
-      - "/var/lib/duniter/node-key"
-      - "--rpc-cors"
-      - "all"
 
   duniter-validator:
     image: duniter/duniter-v2s:DUNITER_IMAGE_TAG
@@ -29,12 +25,7 @@ services:
       - ./duniter-validator/:/var/lib/duniter/
     environment:
       - DUNITER_CHAIN_NAME=/var/lib/duniter/CURRENCY-raw.json
+      - DUNITER_VALIDATOR=true
     command:
       - "--bootnodes"
       - "/dns/duniter-rpc/tcp/30333/p2p/RPC_NODE_KEY"
-      - "--node-key-file"
-      - "/var/lib/duniter/node-key"
-      - "--rpc-methods=Unsafe"
-      - "--validator"
-      - "--rpc-cors"
-      - "all"

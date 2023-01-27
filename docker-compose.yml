@@ -7,7 +7,7 @@ services:
   duniter-v2s:
     container_name: duniter-v2s
     # choose the version of the image here
-    image: duniter/duniter-v2s:v0.4.0
+    image: duniter/duniter-v2s:latest
     ports:
       # telemetry
       - 9615:9615
@@ -19,8 +19,7 @@ services:
       - 30333:30333
     environment:
       DUNITER_NODE_NAME: "duniter_local"
-      DUNITER_CHAIN_NAME: "dev"
-      #DUNITER_DISABLE_PROMETHEUS: "false"
+      DUNITER_CHAIN_NAME: "gdev"
     volumes:
       - duniter-local-data:/var/lib/duniter
 

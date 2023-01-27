@@ -2,7 +2,7 @@ version: "3.5"
 
 services:
   duniter-rpc:
-    image: duniter/duniter-v2s:v0.4.0
+    image: duniter/duniter-v2s:latest
     restart: unless-stopped
     ports:
       # telemetry
@@ -18,15 +18,11 @@ services:
       - duniter-rpc-data:/var/lib/duniter/
     environment:
       - DUNITER_CHAIN_NAME=gdev
-    command:
-      - "--node-key-file=/var/lib/duniter/node.key"
-      - "--public-addr"
-      # SERVER_DOMAIN should be replaced by a domain name that point on your server
-      - "/dns/${SERVER_DOMAIN?SERVER_DOMAIN should be set}/tcp/30333/ws"
-      - "--rpc-cors=all"
+      # RPC_SERVER_DOMAIN should be replaced by a domain name that point on your server
+      - DUNITER_PUBLIC_ADDR=/dns/${RPC_SERVER_DOMAIN?RPC_SERVER_DOMAIN should be set}/tcp/30333/ws
 
   duniter-validator:
-    image: duniter/duniter-v2s:v0.4.0
+    image: duniter/duniter-v2s:latest
     restart: unless-stopped
     ports:
       # telemetry
@@ -42,12 +38,8 @@ services:
       - duniter-validator-data:/var/lib/duniter/
     environment:
       - DUNITER_CHAIN_NAME=gdev
+      # VALIDATOR_SERVER_DOMAIN should be replaced by a domain name that point on your server
+      - DUNITER_PUBLIC_ADDR=/dns/${VALIDATOR_SERVER_DOMAIN?VALIDATOR_SERVER_DOMAIN should be set}/tcp/30333
+      - DUNITER_VALIDATOR=true
     command:
-      - "--node-key-file=/var/lib/duniter/node.key"
-      - "--public-addr"
-      # SERVER_DOMAIN should be replaced by a domain name that point on your server
-      - "/dns/${SERVER_DOMAIN?SERVER_DOMAIN should be set}/tcp/30333"
-      - "--rpc-cors=all"
-      - "--rpc-methods=Unsafe"
-      - "--validator"
       - "--pruning=14400"
