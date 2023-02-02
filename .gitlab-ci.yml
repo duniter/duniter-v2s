@@ -159,10 +159,12 @@ tests_debug:
     DUNITER_END2END_TESTS_SPAWN_NODE_TIMEOUT: "20"
   script:
     - cargo test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests
-    - cargo cucumber -i balance*
-    - cargo cucumber -i monetary*
-    - cargo cucumber -i transfer*
+    - cargo cucumber -i account_creation*
     - cargo cucumber -i certification*
+    - cargo cucumber -i identity_creation*
+    - cargo cucumber -i monetary_mass*
+    - cargo cucumber -i oneshot_account*
+    - cargo cucumber -i transfer_all*
   after_script:
     - cd target/debug/deps/
     - rm cucumber_tests-*.d
@@ -183,9 +185,12 @@ tests_release:
     DUNITER_END2END_TESTS_SPAWN_NODE_TIMEOUT: "20"
   script:
     - cargo test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests
-    - cargo cucumber -i balance*
-    - cargo cucumber -i monetary*
-    - cargo cucumber -i transfer*
+    - cargo cucumber -i account_creation*
+    - cargo cucumber -i certification*
+    - cargo cucumber -i identity_creation*
+    - cargo cucumber -i monetary_mass*
+    - cargo cucumber -i oneshot_account*
+    - cargo cucumber -i transfer_all*
   after_script:
     - cd target/debug/deps/
     - rm cucumber_tests-*.d
