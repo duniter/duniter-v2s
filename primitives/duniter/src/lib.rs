@@ -16,19 +16,16 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Bound length; forbid trailing or double spaces; accept only ascii alphanumeric or punctuation or space
+/// Rules for valid identity names are defined below
+/// - Bound length to 42
+/// - accept only ascii alphanumeric or - or _
 pub fn validate_idty_name(idty_name: &[u8]) -> bool {
     idty_name.len() >= 3
-        && idty_name.len() <= 64
-        && idty_name[0] != 32
-        && idty_name[idty_name.len() - 1] != 32
+        && idty_name.len() <= 42 // length smaller than 42
+        // all characters are alphanumeric or - or _
         && idty_name
             .iter()
-            .all(|c| c.is_ascii_alphanumeric() || c.is_ascii_punctuation() || *c == 32)
-        && idty_name
-            .iter()
-            .zip(idty_name.iter().skip(1))
-            .all(|(c1, c2)| *c1 != 32 || *c2 != 32)
+            .all(|c| c.is_ascii_alphanumeric() || *c == b'-' || *c == b'_')
 }
 
 #[cfg(test)]
@@ -37,12 +34,19 @@ mod tests {
 
     #[test]
     fn test_validate_idty_name() {
+        // --- allow
         assert!(validate_idty_name(b"B0b"));
-        assert!(validate_idty_name(b"lorem ipsum dolor-sit_amet."));
-        assert!(!validate_idty_name(b" space"));
-        assert!(!validate_idty_name(b"space "));
-        assert!(!validate_idty_name(b"double  space"));
+        assert!(validate_idty_name(b"lorem_ipsum-dolor-sit_amet"));
+        assert!(validate_idty_name(
+            b"1_______10________20________30________40_-"
+        ));
+        // --- disallow
+        assert!(!validate_idty_name(
+            b"1_______10________20________30________40_-_"
+        ));
+        assert!(!validate_idty_name(b"with space"));
         assert!(!validate_idty_name("non-ascii🌵".as_bytes()));
         assert!(!validate_idty_name("ğune".as_bytes()));
+        assert!(!validate_idty_name("toto!".as_bytes()));
     }
 }
