@@ -187,30 +187,7 @@ pub fn run() -> sc_cli::Result<()> {
     match &cli.subcommand {
         Some(Subcommand::BuildSpec(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.sync_run(|config| {
-                if cmd.shared_params.dev {
-                    match config.chain_spec.runtime_type() {
-                        #[cfg(feature = "g1")]
-                        RuntimeType::G1 => cmd.run(
-                            Box::new(chain_spec::g1::development_chain_spec()?),
-                            config.network,
-                        ),
-                        #[cfg(feature = "gtest")]
-                        RuntimeType::GTest => cmd.run(
-                            Box::new(chain_spec::gtest::development_chain_spec()?),
-                            config.network,
-                        ),
-                        #[cfg(feature = "gdev")]
-                        RuntimeType::GDev => cmd.run(
-                            Box::new(chain_spec::gdev::development_chain_spec()?),
-                            config.network,
-                        ),
-                        _ => panic!("unknown runtime"),
-                    }
-                } else {
-                    cmd.run(config.chain_spec, config.network)
-                }
-            })
+            runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
         }
         Some(Subcommand::CheckBlock(cmd)) => {
             let runner = cli.create_runner(cmd)?;
