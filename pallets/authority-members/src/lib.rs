@@ -521,6 +521,7 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
 
         if members_ids_to_add.is_empty() {
             if members_ids_to_del.is_empty() {
+                // when no change to the set of autorities, return None
                 return None;
             } else {
                 for member_id in &members_ids_to_del {
@@ -540,6 +541,7 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
             Self::deposit_event(Event::IncomingAuthorities(members_ids_to_add.clone()));
         }
 
+        // updates the list of OnlineAuthorities and returns the list of their key
         Some(
             OnlineAuthorities::<T>::mutate(|members_ids| {
                 for member_id in members_ids_to_del {

@@ -1,0 +1,3 @@
+# Duniter membership pallet
+
+Duniter membership is related to duniter Web of Trust and more specific than [parity membership pallet](https://github.com/paritytech/substrate/tree/master/frame/membership). It is used only internally by the identity, WoT, and distance pallets. In particular, it is adding the concept of "pending membership" which is an intermediate state where the identity is waiting to become member.

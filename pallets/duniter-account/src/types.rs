@@ -20,11 +20,17 @@ use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::traits::Zero;
 
+// see `struct AccountData` for details in substrate code
 #[derive(Clone, Decode, Default, Encode, Eq, MaxEncodedLen, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct AccountData<Balance> {
+    /// A random identifier that can not be chosen by the user
+    // this intends to be used as a robust identification system
     pub(super) random_id: Option<H256>,
+    // see Substrate AccountData
     pub(super) free: Balance,
+    // see Substrate AccountData
     pub(super) reserved: Balance,
+    // see Substrate AccountData
     fee_frozen: Balance,
 }
 

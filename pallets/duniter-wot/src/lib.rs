@@ -271,9 +271,9 @@ where
                 }
             }
             // Membership revocation cases:
-            // - Triggered by identity removal: the identity underlying will by removed by the
+            // - Triggered by main identity removal: the underlying identity will be removed by the
             // caller.
-            // - Triggered by the membership pallet: it's ondly possible for the sub-wot, so we
+            // - Triggered by the membership pallet: it's only possible for a sub-wot, so we
             // should not remove the underlying identity
             // So, in any case, we must do nothing
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipRevoked(_) => {}
