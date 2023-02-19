@@ -55,6 +55,21 @@ if [ "$DUNITER_DISABLE_TELEMETRY" = true ]; then
   set -- "$@" --no-telemetry
 fi
 
+DUNITER_PRUNING_PROFILE="${DUNITER_PRUNING_PROFILE:-default}"
+case "$DUNITER_PRUNING_PROFILE" in
+  default)
+    ;;
+  archive)
+    set -- "$@" --state-pruning archive --blocks-pruning archive
+    ;;
+  light)
+    set -- "$@" --blocks-pruning 14400
+    ;;
+  *)
+    echo "ERROR: ignoring unknown DUNITER_PRUNING_PROFILE value '$DUNITER_PRUNING_PROFILE'" >&2
+    ;;
+esac
+
 DUNITER_CHAIN_NAME="${DUNITER_CHAIN_NAME:-dev}"
 case "$DUNITER_CHAIN_NAME" in
   dev)

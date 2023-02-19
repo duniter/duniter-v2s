@@ -69,6 +69,7 @@ volumes:
 | `DUNITER_VALIDATOR` | Boolean (`true` / `false`) to run the node in validator mode. Configure the polkadot options `--validator --rpc-methods Unsafe`. | `false` |
 | `DUNITER_DISABLE_PROMETHEUS` | Boolean to disable the Prometheus endpoint on port 9615. | `false` |
 | `DUNITER_DISABLE_TELEMETRY` | Boolean to disable connecting to the Substrate tememetry server. | `false` |
+| `DUNITER_PRUNING_PROFILE` | * `default`<br> * `archive`: keep all blocks and state blocks<br> * `light`: keep only last 256 state blocks and last 14400 blocks (one day duration) | `default` |
 
 # Other duniter options
 
