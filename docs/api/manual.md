@@ -21,6 +21,16 @@ Only use `identity` pallet. The `membership` calls are disabled.
 1. Any account that already has membership and respects the identity creation period can create an identity for another account, using `identity.createIdentity`.
 1. The account has to confirm its identity with a name, using `identity.confirmIdentity`. The name must be ASCII alphanumeric, punctuation or space characters: ``/^[-!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~a-zA-Z0-9 ]{3,64}$/`` (additionally, trailing spaces and double spaces are forbidden, as a phishing countermeasure). If the name is already used, the call will fail.
 
+## Change key
+
+A member can request a key change via the `identity.change_onwner_key` call. It needs the following SCALE encoded (see SCALE encoding section below) payload:
+* The new owner key payload prefix (rust definition: `b"icok"`)
+* the genesis block hash. (rust type `[u8; 32]` (`H256`))
+* The identity index (rust type `u64`)
+* The old key (rust type `u64`)
+
+This payload must be signed with the new key.
+
 ## Revoke an identity
 
 Revoking an identity makes it lose its membership, hence UD creation and governance rights. Other data such as balance will remain.
@@ -29,9 +39,19 @@ This feature is useful in case the user has lost their private key since the rev
 
 ### Generate the revocation payload
 
-1. Scale-encode the revocation payload, that is the concatenation of the 32-bits public key and the genesis block hash.
-2. Store this payload and its signature.
+The revocation needs this SCALE encoded (see SCALE encoding section below) payload:
+* The revocation payload prefix (rust definition: `b"revo"`)
+* The identity index (rust type `u64`)
+* the genesis block hash. (rust type `[u8; 32]` (`H256`))
+
+This payload must be signed with the corresponding revocation key.
 
 ### Effectively revoke the identity
 
 1. From any origin that can pay the fee, use `identity.revokeIdentity` with the revocation payload.
+
+## SCALE encoding
+
+SCALE codec documentation: https://docs.substrate.io/reference/scale-codec/.
+
+At the end of this documentation you'll find links to SCALE codec implementation for other languages.
