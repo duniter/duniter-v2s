@@ -129,10 +129,11 @@ impl CallCategory {
                 "remove_identity" | "prune_item_identities_names" | "prune_item_identity_index_of",
             ) => Self::Root,
             ("Membership", "force_request_membership") => Self::Root,
-            ("Membership", "claim_membership" | "revoke_membership") => Self::Disabled,
+            ("Membership", "request_membership" | "claim_membership" | "revoke_membership") => {
+                Self::Disabled
+            }
             ("Cert", "force_add_cert" | "del_cert" | "remove_all_certs_received_by") => Self::Root,
             ("SmithsMembership", "force_request_membership") => Self::Root,
-            ("SmithsMembership", "claim_membership") => Self::Disabled,
             ("SmithsCert", "force_add_cert" | "del_cert" | "remove_all_certs_received_by") => {
                 Self::Root
             }

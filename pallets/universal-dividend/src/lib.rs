@@ -254,7 +254,9 @@ pub mod pallet {
 
     // INTERNAL FUNCTIONS //
     impl<T: Config> Pallet<T> {
+        /// create universal dividend
         fn create_ud(members_count: BalanceOf<T>) {
+            // get current value of UD and monetary mass
             let ud_amount = <CurrentUd<T>>::get();
             let monetary_mass = <MonetaryMass<T>>::get();
 
@@ -263,9 +265,14 @@ pub mod pallet {
                 core::mem::replace(next_ud_index, next_ud_index.saturating_add(1))
             });
 
+            // compute the new monetary mass
             let new_monetary_mass =
                 monetary_mass.saturating_add(ud_amount.saturating_mul(members_count));
+
+            // update the storage value of the monetary mass
             MonetaryMass::<T>::put(new_monetary_mass);
+
+            // emit an event to inform blockchain users that the holy UNIVERSAL DIVIDEND was created
             Self::deposit_event(Event::NewUdCreated {
                 amount: ud_amount,
                 index: ud_index,
@@ -273,6 +280,8 @@ pub mod pallet {
                 monetary_mass: new_monetary_mass,
             });
         }
+
+        /// claim all due universal dividend at a time
         fn do_claim_uds(who: &T::AccountId) -> DispatchResultWithPostInfo {
             T::MembersStorage::try_mutate_exists(who, |maybe_first_eligible_ud| {
                 if let Some(FirstEligibleUd(Some(ref mut first_ud_index))) = maybe_first_eligible_ud
@@ -304,6 +313,8 @@ pub mod pallet {
                 }
             })
         }
+
+        /// like balance.transfer, but give an amount in UD
         fn do_transfer_ud(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
@@ -321,11 +332,14 @@ pub mod pallet {
             )?;
             Ok(().into())
         }
-        fn reeval_ud(members_count: BalanceOf<T>) {
-            let ud_amount = <CurrentUd<T>>::get();
 
+        /// reevaluate the value of the universal dividend
+        fn reeval_ud(members_count: BalanceOf<T>) {
+            // get current value and monetary mass
+            let ud_amount = <CurrentUd<T>>::get();
             let monetary_mass = <MonetaryMass<T>>::get();
 
+            // compute new value
             let new_ud_amount = Self::reeval_ud_formula(
                 ud_amount,
                 T::SquareMoneyGrowthRate::get(),
@@ -336,6 +350,7 @@ pub mod pallet {
                 ),
             );
 
+            // update the storage value and the history of past reevals
             CurrentUd::<T>::put(new_ud_amount);
             PastReevals::<T>::mutate(|past_reevals| {
                 if past_reevals.len() == T::MaxPastReeval::get() as usize {
@@ -352,6 +367,8 @@ pub mod pallet {
                 members_count,
             });
         }
+
+        /// formula for Universal Dividend reevaluation
         fn reeval_ud_formula(
             ud_t: BalanceOf<T>,
             c_square: Perbill,
@@ -406,6 +423,8 @@ pub mod pallet {
         pub fn init_first_eligible_ud() -> FirstEligibleUd {
             CurrentUdIndex::<T>::get().into()
         }
+        /// function to call when removing a member
+        /// auto-claims UDs
         pub fn on_removed_member(first_ud_index: UdIndex, who: &T::AccountId) -> Weight {
             let current_ud_index = CurrentUdIndex::<T>::get();
             if first_ud_index < current_ud_index {

@@ -169,6 +169,7 @@ pub mod pallet {
 
     // STORAGE //
 
+    /// maps identity index to identity value
     #[pallet::storage]
     #[pallet::getter(fn identity)]
     pub type Identities<T: Config> = CountedStorageMap<
@@ -179,19 +180,22 @@ pub mod pallet {
         OptionQuery,
     >;
 
+    /// maps account id to identity index
     #[pallet::storage]
     #[pallet::getter(fn identity_index_of)]
     pub type IdentityIndexOf<T: Config> =
         StorageMap<_, Blake2_128, T::AccountId, T::IdtyIndex, OptionQuery>;
 
+    /// maps identity name to null type (simply a set)
     #[pallet::storage]
     #[pallet::getter(fn identity_by_did)]
     pub type IdentitiesNames<T: Config> = StorageMap<_, Blake2_128, IdtyName, (), OptionQuery>;
 
+    /// counter of the identity index to give to the next identity
     #[pallet::storage]
     pub(super) type NextIdtyIndex<T: Config> = StorageValue<_, T::IdtyIndex, ValueQuery>;
 
-    /// Identities by removed block
+    /// maps block number to the list of identities set to be removed at this bloc
     #[pallet::storage]
     #[pallet::getter(fn removable_on)]
     pub type IdentitiesRemovableOn<T: Config> =
@@ -312,6 +316,7 @@ pub mod pallet {
             T::OnIdtyChange::on_idty_change(idty_index, &IdtyEvent::Created { creator });
             Ok(().into())
         }
+
         /// Confirm the creation of an identity and give it a name
         ///
         /// - `idty_name`: the name uniquely associated to this identity. Must match the validation rules defined by the runtime.
@@ -355,7 +360,9 @@ pub mod pallet {
             T::OnIdtyChange::on_idty_change(idty_index, &IdtyEvent::Confirmed);
             Ok(().into())
         }
+
         #[pallet::weight(1_000_000_000)]
+        /// validate the owned identity (must meet the main wot requirements)
         pub fn validate_identity(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
@@ -517,6 +524,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(1_000_000_000)]
+        /// remove an identity from storage
         pub fn remove_identity(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
@@ -533,6 +541,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(1_000_000_000)]
+        /// remove identity names from storage
         pub fn prune_item_identities_names(
             origin: OriginFor<T>,
             names: Vec<IdtyName>,
@@ -547,6 +556,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(1_000_000_000)]
+        /// change sufficient ref count for given key
         pub fn fix_sufficients(
             origin: OriginFor<T>,
             owner_key: T::AccountId,
@@ -625,6 +635,7 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
+        /// perform identity removal
         pub(super) fn do_remove_identity(idty_index: T::IdtyIndex) -> Weight {
             if let Some(idty_val) = Identities::<T>::get(idty_index) {
                 let _ = T::RemoveIdentityConsumers::remove_idty_consumers(idty_index);
@@ -645,6 +656,7 @@ pub mod pallet {
             }
             Weight::zero()
         }
+        /// incremental counter for identity index
         fn get_next_idty_index() -> T::IdtyIndex {
             if let Ok(next_index) = <NextIdtyIndex<T>>::try_get() {
                 <NextIdtyIndex<T>>::put(next_index.saturating_add(T::IdtyIndex::one()));
@@ -654,6 +666,7 @@ pub mod pallet {
                 T::IdtyIndex::one()
             }
         }
+        /// remove identities planned for removal at the given block if their status did not change
         fn prune_identities(block_number: T::BlockNumber) -> Weight {
             let mut total_weight = Weight::zero();
 
@@ -670,16 +683,21 @@ pub mod pallet {
     }
 }
 
+// implement getting owner key of identity index
+
 impl<T: Config> sp_runtime::traits::Convert<T::IdtyIndex, Option<T::AccountId>> for Pallet<T> {
     fn convert(idty_index: T::IdtyIndex) -> Option<T::AccountId> {
         Identities::<T>::get(idty_index).map(|idty_val| idty_val.owner_key)
     }
 }
 
+// implement StoredMap trait for this pallet
+
 impl<T> frame_support::traits::StoredMap<T::AccountId, T::IdtyData> for Pallet<T>
 where
     T: Config,
 {
+    /// get identity data for an account id
     fn get(key: &T::AccountId) -> T::IdtyData {
         if let Some(idty_index) = Self::identity_index_of(key) {
             if let Some(idty_val) = Identities::<T>::get(idty_index) {
@@ -691,6 +709,7 @@ where
             Default::default()
         }
     }
+    /// mutate an account fiven a function of its data
     fn try_mutate_exists<R, E: From<sp_runtime::DispatchError>>(
         key: &T::AccountId,
         f: impl FnOnce(&mut Option<T::IdtyData>) -> Result<R, E>,

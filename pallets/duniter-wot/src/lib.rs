@@ -162,6 +162,7 @@ where
             // TODO replace this code by the commented one for distance feature
             /*let idty_cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
             idty_cert_meta.received_count >= T::MinCertForMembership::get() as u32*/
+            // in the main wot, automatically claim membership when the identity is validated
             pallet_membership::Pallet::<T, I>::claim_membership(
                 RawOrigin::Root.into(),
                 Some(idty_index),

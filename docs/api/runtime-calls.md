@@ -25,7 +25,7 @@ There are **68** user calls from **21** pallets.
 when: T::BlockNumber
 maybe_periodic: Option<schedule::Period<T::BlockNumber>>
 priority: schedule::Priority
-call: Box<CallOrHashOf<T>>
+call: Box<<T as Config>::RuntimeCall>
 ```
 </details>
 
@@ -50,11 +50,11 @@ Cancel an anonymously scheduled task.
 <details><summary><code>schedule_named(id, when, maybe_periodic, priority, call)</code></summary>
 
 ```rust
-id: Vec<u8>
+id: TaskName
 when: T::BlockNumber
 maybe_periodic: Option<schedule::Period<T::BlockNumber>>
 priority: schedule::Priority
-call: Box<CallOrHashOf<T>>
+call: Box<<T as Config>::RuntimeCall>
 ```
 </details>
 
@@ -66,7 +66,7 @@ Schedule a named task.
 <details><summary><code>cancel_named(id)</code></summary>
 
 ```rust
-id: Vec<u8>
+id: TaskName
 ```
 </details>
 
@@ -81,7 +81,7 @@ Cancel a named scheduled task.
 after: T::BlockNumber
 maybe_periodic: Option<schedule::Period<T::BlockNumber>>
 priority: schedule::Priority
-call: Box<CallOrHashOf<T>>
+call: Box<<T as Config>::RuntimeCall>
 ```
 </details>
 
@@ -94,11 +94,11 @@ Anonymously schedule a task after a delay.
 <details><summary><code>schedule_named_after(id, after, maybe_periodic, priority, call)</code></summary>
 
 ```rust
-id: Vec<u8>
+id: TaskName
 after: T::BlockNumber
 maybe_periodic: Option<schedule::Period<T::BlockNumber>>
 priority: schedule::Priority
-call: Box<CallOrHashOf<T>>
+call: Box<<T as Config>::RuntimeCall>
 ```
 </details>
 
@@ -131,7 +131,7 @@ be reported.
 <details><summary><code>transfer(dest, value)</code></summary>
 
 ```rust
-dest: <T::Lookup as StaticLookup>::Source
+dest: AccountIdLookupOf<T>
 value: T::Balance
 ```
 </details>
@@ -151,7 +151,7 @@ The dispatch origin for this call must be `Signed` by the transactor.
 <details><summary><code>transfer_keep_alive(dest, value)</code></summary>
 
 ```rust
-dest: <T::Lookup as StaticLookup>::Source
+dest: AccountIdLookupOf<T>
 value: T::Balance
 ```
 </details>
@@ -169,7 +169,7 @@ origin account.
 <details><summary><code>transfer_all(dest, keep_alive)</code></summary>
 
 ```rust
-dest: <T::Lookup as StaticLookup>::Source
+dest: AccountIdLookupOf<T>
 keep_alive: bool
 ```
 </details>
@@ -265,7 +265,7 @@ and the remaining amount to another account.
 </details>
 
 
-
+ask to leave the set of validators two sessions after
 
 #### go_online - 1
 
@@ -276,7 +276,7 @@ and the remaining amount to another account.
 </details>
 
 
-
+ask to join the set of validators two sessions after
 
 #### set_session_keys - 2
 
@@ -288,7 +288,7 @@ keys: T::KeysWrapper
 </details>
 
 
-
+declare new session keys to replace current ones
 
 ### Grandpa - 15
 
@@ -355,6 +355,11 @@ hash: T::Hash
 
 
 Clear an unrequested preimage from the runtime storage.
+
+If `len` is provided, then it will be a much cheaper operation.
+
+- `hash`: The hash of the preimage to be removed from the store.
+- `len`: The length of the preimage of `hash`.
 
 #### request_preimage - 2
 
@@ -443,7 +448,39 @@ Transaction fees will be waived if the member is voting on any particular propos
 for the first time and the call is successful. Subsequent vote changes will charge a
 fee.
 
-#### close - 4
+#### close_old_weight - 4
+
+<details><summary><code>close_old_weight(proposal_hash, index, proposal_weight_bound, length_bound)</code></summary>
+
+```rust
+proposal_hash: T::Hash
+index: ProposalIndex
+proposal_weight_bound: OldWeight
+length_bound: u32
+```
+</details>
+
+
+Close a vote that is either approved, disapproved or whose voting period has ended.
+
+May be called by any signed account in order to finish voting and close the proposal.
+
+If called before the end of the voting period it will only close the vote if it is
+has enough votes to be approved or disapproved.
+
+If called after the end of the voting period abstentions are counted as rejections
+unless there is a prime member set and the prime member cast an approval.
+
+If the close operation completes successfully with disapproval, the transaction fee will
+be waived. Otherwise execution of the approved operation will be charged to the caller.
+
++ `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed
+proposal.
++ `length_bound`: The upper bound for the length of the proposal in storage. Checked via
+`storage::read` so it is `size_of::<u32>() == 4` larger than the pure length.
+
+
+#### close - 6
 
 <details><summary><code>close(proposal_hash, index, proposal_weight_bound, length_bound)</code></summary>
 
@@ -514,19 +551,6 @@ value: BalanceOf<T>
 
 Transfer some liquid free balance to another account, in milliUD.
 
-#### force_set_first_eligible_ud - 3
-
-<details><summary><code>force_set_first_eligible_ud(who, first_eligible_ud)</code></summary>
-
-```rust
-who: T::AccountId
-first_eligible_ud: FirstEligibleUd
-```
-</details>
-
-
-
-
 ### Identity - 41
 
 #### create_identity - 0
@@ -571,7 +595,7 @@ idty_index: T::IdtyIndex
 </details>
 
 
-
+validate the owned identity (must meet the main wot requirements)
 
 #### change_owner_key - 3
 
@@ -624,21 +648,9 @@ inc: bool
 </details>
 
 
-
+change sufficient ref count for given key
 
 ### Membership - 42
-
-#### request_membership - 1
-
-<details><summary><code>request_membership(metadata)</code></summary>
-
-```rust
-metadata: T::MetaData
-```
-</details>
-
-
-
 
 #### renew_membership - 3
 
@@ -650,7 +662,7 @@ maybe_idty_id: Option<T::IdtyId>
 </details>
 
 
-
+extend the validity period of an active membership
 
 ### Cert - 43
 
@@ -683,7 +695,21 @@ metadata: T::MetaData
 </details>
 
 
+submit a membership request (must have a declared identity)
+(only available for sub wot, automatic for main wot)
 
+#### claim_membership - 2
+
+<details><summary><code>claim_membership(maybe_idty_id)</code></summary>
+
+```rust
+maybe_idty_id: Option<T::IdtyId>
+```
+</details>
+
+
+claim that the previously requested membership fullfills the requirements
+(only available for sub wot, automatic for main wot)
 
 #### renew_membership - 3
 
@@ -695,7 +721,7 @@ maybe_idty_id: Option<T::IdtyId>
 </details>
 
 
-
+extend the validity period of an active membership
 
 #### revoke_membership - 4
 
@@ -707,7 +733,8 @@ maybe_idty_id: Option<T::IdtyId>
 </details>
 
 
-
+revoke an active membership
+(only available for sub wot, automatic for main wot)
 
 ### SmithsCert - 53
 
@@ -801,7 +828,7 @@ The dispatch origin for this call must be _Signed_.
 
 ```rust
 other_signatories: Vec<T::AccountId>
-call: Box<<T as Config>::Call>
+call: Box<<T as Config>::RuntimeCall>
 ```
 </details>
 
@@ -819,14 +846,13 @@ Result is equivalent to the dispatched result.
 
 #### as_multi - 1
 
-<details><summary><code>as_multi(threshold, other_signatories, maybe_timepoint, call, store_call, max_weight)</code></summary>
+<details><summary><code>as_multi(threshold, other_signatories, maybe_timepoint, call, max_weight)</code></summary>
 
 ```rust
 threshold: u16
 other_signatories: Vec<T::AccountId>
 maybe_timepoint: Option<Timepoint<T::BlockNumber>>
-call: OpaqueCall<T>
-store_call: bool
+call: Box<<T as Config>::RuntimeCall>
 max_weight: Weight
 ```
 </details>
@@ -941,9 +967,9 @@ Request a randomness
 <details><summary><code>proxy(real, force_proxy_type, call)</code></summary>
 
 ```rust
-real: T::AccountId
+real: AccountIdLookupOf<T>
 force_proxy_type: Option<T::ProxyType>
-call: Box<<T as Config>::Call>
+call: Box<<T as Config>::RuntimeCall>
 ```
 </details>
 
@@ -960,13 +986,12 @@ Parameters:
 - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
 - `call`: The call to be made by the `real` account.
 
-
 #### add_proxy - 1
 
 <details><summary><code>add_proxy(delegate, proxy_type, delay)</code></summary>
 
 ```rust
-delegate: T::AccountId
+delegate: AccountIdLookupOf<T>
 proxy_type: T::ProxyType
 delay: T::BlockNumber
 ```
@@ -983,13 +1008,12 @@ Parameters:
 - `delay`: The announcement period required of the initial proxy. Will generally be
 zero.
 
-
 #### remove_proxy - 2
 
 <details><summary><code>remove_proxy(delegate, proxy_type, delay)</code></summary>
 
 ```rust
-delegate: T::AccountId
+delegate: AccountIdLookupOf<T>
 proxy_type: T::ProxyType
 delay: T::BlockNumber
 ```
@@ -1004,7 +1028,6 @@ Parameters:
 - `proxy`: The account that the `caller` would like to remove as a proxy.
 - `proxy_type`: The permissions currently enabled for the removed proxy account.
 
-
 #### remove_proxies - 3
 
 <details><summary><code>remove_proxies()</code></summary>
@@ -1018,13 +1041,12 @@ Unregister all proxy accounts for the sender.
 
 The dispatch origin for this call must be _Signed_.
 
-WARNING: This may be called on accounts created by `anonymous`, however if done, then
+WARNING: This may be called on accounts created by `pure`, however if done, then
 the unreserved fees will be inaccessible. **All access to this account will be lost.**
 
+#### create_pure - 4
 
-#### anonymous - 4
-
-<details><summary><code>anonymous(proxy_type, delay, index)</code></summary>
+<details><summary><code>create_pure(proxy_type, delay, index)</code></summary>
 
 ```rust
 proxy_type: T::ProxyType
@@ -1053,13 +1075,12 @@ same sender, with the same parameters.
 
 Fails if there are insufficient funds to pay for deposit.
 
+#### kill_pure - 5
 
-#### kill_anonymous - 5
-
-<details><summary><code>kill_anonymous(spawner, proxy_type, index, height, ext_index)</code></summary>
+<details><summary><code>kill_pure(spawner, proxy_type, index, height, ext_index)</code></summary>
 
 ```rust
-spawner: T::AccountId
+spawner: AccountIdLookupOf<T>
 proxy_type: T::ProxyType
 index: u16
 height: T::BlockNumber
@@ -1068,30 +1089,29 @@ ext_index: u32
 </details>
 
 
-Removes a previously spawned anonymous proxy.
+Removes a previously spawned pure proxy.
 
 WARNING: **All access to this account will be lost.** Any funds held in it will be
 inaccessible.
 
 Requires a `Signed` origin, and the sender account must have been created by a call to
-`anonymous` with corresponding parameters.
+`pure` with corresponding parameters.
 
-- `spawner`: The account that originally called `anonymous` to create this account.
-- `index`: The disambiguation index originally passed to `anonymous`. Probably `0`.
-- `proxy_type`: The proxy type originally passed to `anonymous`.
-- `height`: The height of the chain when the call to `anonymous` was processed.
-- `ext_index`: The extrinsic index in which the call to `anonymous` was processed.
+- `spawner`: The account that originally called `pure` to create this account.
+- `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+- `proxy_type`: The proxy type originally passed to `pure`.
+- `height`: The height of the chain when the call to `pure` was processed.
+- `ext_index`: The extrinsic index in which the call to `pure` was processed.
 
-Fails with `NoPermission` in case the caller is not a previously created anonymous
-account whose `anonymous` call has corresponding parameters.
-
+Fails with `NoPermission` in case the caller is not a previously created pure
+account whose `pure` call has corresponding parameters.
 
 #### announce - 6
 
 <details><summary><code>announce(real, call_hash)</code></summary>
 
 ```rust
-real: T::AccountId
+real: AccountIdLookupOf<T>
 call_hash: CallHashOf<T>
 ```
 </details>
@@ -1113,13 +1133,12 @@ Parameters:
 - `real`: The account that the proxy will make a call on behalf of.
 - `call_hash`: The hash of the call to be made by the `real` account.
 
-
 #### remove_announcement - 7
 
 <details><summary><code>remove_announcement(real, call_hash)</code></summary>
 
 ```rust
-real: T::AccountId
+real: AccountIdLookupOf<T>
 call_hash: CallHashOf<T>
 ```
 </details>
@@ -1136,13 +1155,12 @@ Parameters:
 - `real`: The account that the proxy will make a call on behalf of.
 - `call_hash`: The hash of the call to be made by the `real` account.
 
-
 #### reject_announcement - 8
 
 <details><summary><code>reject_announcement(delegate, call_hash)</code></summary>
 
 ```rust
-delegate: T::AccountId
+delegate: AccountIdLookupOf<T>
 call_hash: CallHashOf<T>
 ```
 </details>
@@ -1159,16 +1177,15 @@ Parameters:
 - `delegate`: The account that previously announced the call.
 - `call_hash`: The hash of the call to be made.
 
-
 #### proxy_announced - 9
 
 <details><summary><code>proxy_announced(delegate, real, force_proxy_type, call)</code></summary>
 
 ```rust
-delegate: T::AccountId
-real: T::AccountId
+delegate: AccountIdLookupOf<T>
+real: AccountIdLookupOf<T>
 force_proxy_type: Option<T::ProxyType>
-call: Box<<T as Config>::Call>
+call: Box<<T as Config>::RuntimeCall>
 ```
 </details>
 
@@ -1185,7 +1202,6 @@ Parameters:
 - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
 - `call`: The call to be made by the `real` account.
 
-
 ### Utility - 64
 
 #### batch - 0
@@ -1193,7 +1209,7 @@ Parameters:
 <details><summary><code>batch(calls)</code></summary>
 
 ```rust
-calls: Vec<<T as Config>::Call>
+calls: Vec<<T as Config>::RuntimeCall>
 ```
 </details>
 
@@ -1215,7 +1231,7 @@ bypassing `frame_system::Config::BaseCallFilter`).
 
 ```rust
 index: u16
-call: Box<<T as Config>::Call>
+call: Box<<T as Config>::RuntimeCall>
 ```
 </details>
 
@@ -1239,7 +1255,7 @@ The dispatch origin for this call must be _Signed_.
 <details><summary><code>batch_all(calls)</code></summary>
 
 ```rust
-calls: Vec<<T as Config>::Call>
+calls: Vec<<T as Config>::RuntimeCall>
 ```
 </details>
 
@@ -1261,7 +1277,7 @@ bypassing `frame_system::Config::BaseCallFilter`).
 <details><summary><code>force_batch(calls)</code></summary>
 
 ```rust
-calls: Vec<<T as Config>::Call>
+calls: Vec<<T as Config>::RuntimeCall>
 ```
 </details>
 
@@ -1286,7 +1302,7 @@ bypassing `frame_system::Config::BaseCallFilter`).
 
 ```rust
 value: BalanceOf<T, I>
-beneficiary: <T::Lookup as StaticLookup>::Source
+beneficiary: AccountIdLookupOf<T>
 ```
 </details>
 
@@ -1302,7 +1318,7 @@ proposal is awarded.
 
 ```rust
 amount: BalanceOf<T, I>
-beneficiary: <T::Lookup as StaticLookup>::Source
+beneficiary: AccountIdLookupOf<T>
 ```
 </details>
 
@@ -1455,7 +1471,7 @@ not been enacted yet.
 <details><summary><code>set_balance(who, new_free, new_reserved)</code></summary>
 
 ```rust
-who: <T::Lookup as StaticLookup>::Source
+who: AccountIdLookupOf<T>
 new_free: T::Balance
 new_reserved: T::Balance
 ```
@@ -1476,8 +1492,8 @@ The dispatch origin for this call is `root`.
 <details><summary><code>force_transfer(source, dest, value)</code></summary>
 
 ```rust
-source: <T::Lookup as StaticLookup>::Source
-dest: <T::Lookup as StaticLookup>::Source
+source: AccountIdLookupOf<T>
+dest: AccountIdLookupOf<T>
 value: T::Balance
 ```
 </details>
@@ -1491,7 +1507,7 @@ specified.
 <details><summary><code>force_unreserve(who, amount)</code></summary>
 
 ```rust
-who: <T::Lookup as StaticLookup>::Source
+who: AccountIdLookupOf<T>
 amount: T::Balance
 ```
 </details>
@@ -1513,7 +1529,7 @@ member_id: T::MemberId
 </details>
 
 
-
+remove an identity from the set of authorities
 
 ### Grandpa - 15
 
@@ -1607,7 +1623,7 @@ idty_name: Option<IdtyName>
 </details>
 
 
-
+remove an identity from storage
 
 #### prune_item_identities_names - 6
 
@@ -1619,7 +1635,7 @@ names: Vec<IdtyName>
 </details>
 
 
-
+remove identity names from storage
 
 ### Membership - 42
 
@@ -1634,7 +1650,7 @@ metadata: T::MetaData
 </details>
 
 
-
+request membership without checks
 
 ### Cert - 43
 
@@ -1650,7 +1666,7 @@ verify_rules: bool
 </details>
 
 
-
+add a certification without checks (only root)
 
 #### del_cert - 2
 
@@ -1663,7 +1679,7 @@ receiver: T::IdtyIndex
 </details>
 
 
-
+remove a certification (only root)
 
 #### remove_all_certs_received_by - 3
 
@@ -1675,7 +1691,7 @@ idty_index: T::IdtyIndex
 </details>
 
 
-
+remove all certifications received by an identity (only root)
 
 ### SmithsMembership - 52
 
@@ -1690,7 +1706,7 @@ metadata: T::MetaData
 </details>
 
 
-
+request membership without checks
 
 ### SmithsCert - 53
 
@@ -1706,7 +1722,7 @@ verify_rules: bool
 </details>
 
 
-
+add a certification without checks (only root)
 
 #### del_cert - 2
 
@@ -1719,7 +1735,7 @@ receiver: T::IdtyIndex
 </details>
 
 
-
+remove a certification (only root)
 
 #### remove_all_certs_received_by - 3
 
@@ -1731,7 +1747,7 @@ idty_index: T::IdtyIndex
 </details>
 
 
-
+remove all certifications received by an identity (only root)
 
 ### Utility - 64
 
@@ -1741,7 +1757,7 @@ idty_index: T::IdtyIndex
 
 ```rust
 as_origin: Box<T::PalletsOrigin>
-call: Box<<T as Config>::Call>
+call: Box<<T as Config>::RuntimeCall>
 ```
 </details>
 
@@ -1758,7 +1774,7 @@ The dispatch origin for this call must be _Root_.
 
 ## Disabled calls
 
-There are **7** disabled calls from **4** pallets.
+There are **7** disabled calls from **3** pallets.
 
 ### System - 0
 
@@ -1828,6 +1844,19 @@ usually means being a stash account).
 
 ### Membership - 42
 
+#### request_membership - 1
+
+<details><summary><code>request_membership(metadata)</code></summary>
+
+```rust
+metadata: T::MetaData
+```
+</details>
+
+
+submit a membership request (must have a declared identity)
+(only available for sub wot, automatic for main wot)
+
 #### claim_membership - 2
 
 <details><summary><code>claim_membership(maybe_idty_id)</code></summary>
@@ -1838,7 +1867,8 @@ maybe_idty_id: Option<T::IdtyId>
 </details>
 
 
-
+claim that the previously requested membership fullfills the requirements
+(only available for sub wot, automatic for main wot)
 
 #### revoke_membership - 4
 
@@ -1850,19 +1880,6 @@ maybe_idty_id: Option<T::IdtyId>
 </details>
 
 
-
-
-### SmithsMembership - 52
-
-#### claim_membership - 2
-
-<details><summary><code>claim_membership(maybe_idty_id)</code></summary>
-
-```rust
-maybe_idty_id: Option<T::IdtyId>
-```
-</details>
-
-
-
+revoke an active membership
+(only available for sub wot, automatic for main wot)
 

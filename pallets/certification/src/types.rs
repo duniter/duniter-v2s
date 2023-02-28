@@ -20,10 +20,14 @@ use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 
+/// certification metadata attached to an identity
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct IdtyCertMeta<BlockNumber: Default> {
+    /// count issued certifications
     pub issued_count: u32,
+    /// block before which identity not allowed to issue a new certification
     pub next_issuable_on: BlockNumber,
+    /// number of certifications received
     pub received_count: u32,
 }
 

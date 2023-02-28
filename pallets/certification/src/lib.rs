@@ -269,6 +269,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
+        /// add a certification without checks (only root)
         #[pallet::weight(1_000_000_000)]
         pub fn force_add_cert(
             origin: OriginFor<T>,
@@ -355,6 +356,7 @@ pub mod pallet {
             Self::do_add_cert(block_number, issuer, receiver)
         }
 
+        /// remove a certification (only root)
         #[pallet::weight(1_000_000_000)]
         pub fn del_cert(
             origin: OriginFor<T>,
@@ -366,6 +368,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// remove all certifications received by an identity (only root)
         #[pallet::weight(1_000_000_000)]
         pub fn remove_all_certs_received_by(
             origin: OriginFor<T>,
@@ -382,6 +385,7 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
+        /// perform cert add
         fn do_add_cert(
             block_number: T::BlockNumber,
             issuer: T::IdtyIndex,
@@ -438,6 +442,7 @@ pub mod pallet {
 
             Ok(().into())
         }
+        /// remove the certifications due to expire on the given block
         fn prune_certifications(block_number: T::BlockNumber) -> Weight {
             let mut total_weight = Weight::zero();
 
@@ -449,6 +454,7 @@ pub mod pallet {
 
             total_weight
         }
+        /// perform the certification removal
         fn remove_cert_inner(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
@@ -505,6 +511,7 @@ pub mod pallet {
     }
 }
 
+// implement setting next_issuable_on for certification period
 impl<T: Config<I>, I: 'static> SetNextIssuableOn<T::BlockNumber, T::IdtyIndex> for Pallet<T, I> {
     fn set_next_issuable_on(idty_index: T::IdtyIndex, next_issuable_on: T::BlockNumber) -> Weight {
         <StorageIdtyCertMeta<T, I>>::mutate_exists(idty_index, |cert_meta_opt| {

@@ -28,7 +28,7 @@ pub async fn set_balance(client: &Client, who: AccountKeyring, amount: u64) -> R
             .create_signed(
                 &gdev::tx()
                     .sudo()
-                    .sudo(gdev::runtime_types::gdev_runtime::Call::Balances(
+                    .sudo(gdev::runtime_types::gdev_runtime::RuntimeCall::Balances(
                         pallet_balances::pallet::Call::set_balance {
                             who: MultiAddress::Id(who.to_account_id()),
                             new_free: amount,

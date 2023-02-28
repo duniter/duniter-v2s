@@ -108,21 +108,26 @@ pub mod pallet {
 
     // STORAGE //
 
+    /// maps identity id to membership data
+    // (expiration block for instance)
     #[pallet::storage]
     #[pallet::getter(fn membership)]
     pub type Membership<T: Config<I>, I: 'static = ()> =
         CountedStorageMap<_, Twox64Concat, T::IdtyId, MembershipData<T::BlockNumber>, OptionQuery>;
 
+    /// maps block number to the list of identity id set to expire at this block
     #[pallet::storage]
     #[pallet::getter(fn memberships_expire_on)]
     pub type MembershipsExpireOn<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::IdtyId>, ValueQuery>;
 
+    /// maps identity id to pending membership metadata
     #[pallet::storage]
     #[pallet::getter(fn pending_membership)]
     pub type PendingMembership<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Twox64Concat, T::IdtyId, T::MetaData, OptionQuery>;
 
+    /// maps block number to the list of memberships set to expire at this block
     #[pallet::storage]
     #[pallet::getter(fn pending_memberships_expire_on)]
     pub type PendingMembershipsExpireOn<T: Config<I>, I: 'static = ()> =
@@ -133,19 +138,19 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config<I>, I: 'static = ()> {
-        /// A membership has acquired
+        /// A membership was acquired
         /// [idty_id]
         MembershipAcquired(T::IdtyId),
-        /// A membership has expired
+        /// A membership expired
         /// [idty_id]
         MembershipExpired(T::IdtyId),
-        /// A membership has renewed
+        /// A membership was renewed
         /// [idty_id]
         MembershipRenewed(T::IdtyId),
-        /// An identity requested membership
+        /// An membership was requested
         /// [idty_id]
         MembershipRequested(T::IdtyId),
-        /// A membership has revoked
+        /// A membership was revoked
         /// [idty_id]
         MembershipRevoked(T::IdtyId),
         /// A pending membership request has expired
@@ -191,6 +196,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
         #[pallet::weight(1_000_000_000)]
+        /// request membership without checks
         pub fn force_request_membership(
             origin: OriginFor<T>,
             idty_id: T::IdtyId,
@@ -202,6 +208,8 @@ pub mod pallet {
         }
 
         #[pallet::weight(1_000_000_000)]
+        /// submit a membership request (must have a declared identity)
+        /// (only available for sub wot, automatic for main wot)
         pub fn request_membership(
             origin: OriginFor<T>,
             metadata: T::MetaData,
@@ -218,6 +226,8 @@ pub mod pallet {
         }
 
         #[pallet::weight(1_000_000_000)]
+        /// claim that the previously requested membership fullfills the requirements
+        /// (only available for sub wot, automatic for main wot)
         pub fn claim_membership(
             origin: OriginFor<T>,
             maybe_idty_id: Option<T::IdtyId>,
@@ -244,6 +254,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(1_000_000_000)]
+        /// extend the validity period of an active membership
         pub fn renew_membership(
             origin: OriginFor<T>,
             maybe_idty_id: Option<T::IdtyId>,
@@ -264,6 +275,8 @@ pub mod pallet {
         }
 
         #[pallet::weight(1_000_000_000)]
+        /// revoke an active membership
+        /// (only available for sub wot, automatic for main wot)
         pub fn revoke_membership(
             origin: OriginFor<T>,
             maybe_idty_id: Option<T::IdtyId>,
@@ -284,12 +297,14 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
+        /// perform the membership renewal and emit events
         pub(super) fn do_renew_membership(idty_id: T::IdtyId) -> Weight {
             let total_weight = Self::do_renew_membership_inner(idty_id);
             Self::deposit_event(Event::MembershipRenewed(idty_id));
             T::OnEvent::on_event(&sp_membership::Event::MembershipRenewed(idty_id));
             total_weight
         }
+        /// perform the membership renewal
         fn do_renew_membership_inner(idty_id: T::IdtyId) -> Weight {
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             let expire_on = block_number + T::MembershipPeriod::get();
@@ -298,6 +313,7 @@ pub mod pallet {
             MembershipsExpireOn::<T, I>::append(expire_on, idty_id);
             Weight::zero()
         }
+        /// perform the membership request
         fn do_request_membership(
             idty_id: T::IdtyId,
             metadata: T::MetaData,
@@ -319,6 +335,7 @@ pub mod pallet {
 
             Ok(().into())
         }
+        /// check the origin and get identity id if valid
         fn ensure_origin_and_get_idty_id(
             origin: OriginFor<T>,
             maybe_idty_id: Option<T::IdtyId>,
@@ -332,6 +349,7 @@ pub mod pallet {
                 _ => Err(BadOrigin.into()),
             }
         }
+        /// perform the membership expiration if it has not been renewed meanwhile
         fn expire_memberships(block_number: T::BlockNumber) -> Weight {
             let mut total_weight: Weight = Weight::zero();
 
@@ -348,6 +366,7 @@ pub mod pallet {
 
             total_weight
         }
+        /// perform the expiration of pending membership planned at given block
         fn expire_pending_memberships(block_number: T::BlockNumber) -> Weight {
             let mut total_weight: Weight = Weight::zero();
 
@@ -363,20 +382,26 @@ pub mod pallet {
             total_weight
         }
 
+        /// check if identity is member
         pub(super) fn is_member_inner(idty_id: &T::IdtyId) -> bool {
             Membership::<T, I>::contains_key(idty_id)
         }
+        /// insert membership in storage
         fn insert_membership(idty_id: T::IdtyId, membership_data: MembershipData<T::BlockNumber>) {
             Membership::<T, I>::insert(idty_id, membership_data);
         }
+        /// retreive membership from storage
         fn get_membership(idty_id: &T::IdtyId) -> Option<MembershipData<T::BlockNumber>> {
             Membership::<T, I>::try_get(idty_id).ok()
         }
+        /// remove membership from storage
         fn remove_membership(idty_id: &T::IdtyId) -> bool {
             Membership::<T, I>::take(idty_id).is_some()
         }
     }
 }
+
+// implement traits
 
 impl<T: Config<I>, I: 'static> IsInPendingMemberships<T::IdtyId> for Pallet<T, I> {
     fn is_in_pending_memberships(idty_id: T::IdtyId) -> bool {

@@ -128,37 +128,45 @@ pub mod pallet {
 
     // STORAGE //
 
+    /// maps member id to account id
     #[pallet::storage]
     #[pallet::getter(fn account_id_of)]
     pub type AccountIdOf<T: Config> =
         StorageMap<_, Twox64Concat, T::MemberId, T::AccountId, OptionQuery>;
 
+    /// count the number of authorities
     #[pallet::storage]
     #[pallet::getter(fn authorities_counter)]
     pub type AuthoritiesCounter<T: Config> = StorageValue<_, u32, ValueQuery>;
 
+    /// list incoming authorities
     #[pallet::storage]
     #[pallet::getter(fn incoming)]
     pub type IncomingAuthorities<T: Config> = StorageValue<_, Vec<T::MemberId>, ValueQuery>;
 
+    /// list online authorities
     #[pallet::storage]
     #[pallet::getter(fn online)]
     pub type OnlineAuthorities<T: Config> = StorageValue<_, Vec<T::MemberId>, ValueQuery>;
 
+    /// list outgoing authorities
     #[pallet::storage]
     #[pallet::getter(fn outgoing)]
     pub type OutgoingAuthorities<T: Config> = StorageValue<_, Vec<T::MemberId>, ValueQuery>;
 
+    /// maps member id to member data
     #[pallet::storage]
     #[pallet::getter(fn member)]
     pub type Members<T: Config> =
         StorageMap<_, Twox64Concat, T::MemberId, MemberData<T::AccountId>, OptionQuery>;
 
+    /// maps session index to the list of member id set to expire at this session
     #[pallet::storage]
     #[pallet::getter(fn members_expire_on)]
     pub type MembersExpireOn<T: Config> =
         StorageMap<_, Twox64Concat, SessionIndex, Vec<T::MemberId>, ValueQuery>;
 
+    /// maps session index to the list of member id forced to rotate keys before this session
     #[pallet::storage]
     #[pallet::getter(fn must_rotate_keys_before)]
     pub type MustRotateKeysBefore<T: Config> =
@@ -220,6 +228,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(1_000_000_000)]
+        /// ask to leave the set of validators two sessions after
         pub fn go_offline(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // Verification phase //
             let who = ensure_signed(origin)?;
@@ -246,6 +255,7 @@ pub mod pallet {
             Ok(().into())
         }
         #[pallet::weight(1_000_000_000)]
+        /// ask to join the set of validators two sessions after
         pub fn go_online(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // Verification phase //
             let who = ensure_signed(origin)?;
@@ -282,6 +292,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(1_000_000_000)]
+        /// declare new session keys to replace current ones
         pub fn set_session_keys(
             origin: OriginFor<T>,
             keys: T::KeysWrapper,
@@ -314,6 +325,7 @@ pub mod pallet {
             Ok(().into())
         }
         #[pallet::weight(1_000_000_000)]
+        /// remove an identity from the set of authorities
         pub fn remove_member(
             origin: OriginFor<T>,
             member_id: T::MemberId,
@@ -330,8 +342,12 @@ pub mod pallet {
     // PUBLIC FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
-        /// Should be transactional
+        // Should be transactional (if an error occurs, storage should not be modified at all)
+        //  Execute the annotated function in a new storage transaction.
+        //  The return type of the annotated function must be `Result`. All changes to storage performed
+        //  by the annotated function are discarded if it returns `Err`, or committed if `Ok`.
         #[frame_support::transactional]
+        /// change owner key of an authority member
         pub fn change_owner_key(
             member_id: T::MemberId,
             new_owner_key: T::AccountId,
@@ -370,6 +386,7 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
+        /// perform authority member removal
         fn do_remove_member(member_id: T::MemberId, owner_key: T::AccountId) -> Weight {
             if Self::is_online(member_id) {
                 // Trigger the member deletion for next session
@@ -398,6 +415,7 @@ pub mod pallet {
 
             Weight::zero()
         }
+        /// perform planned expiration of authority member for the given session
         pub(super) fn expire_memberships(current_session_index: SessionIndex) {
             for member_id in MembersExpireOn::<T>::take(current_session_index) {
                 if let Some(member_data) = Members::<T>::get(member_id) {
@@ -414,6 +432,7 @@ pub mod pallet {
                 }
             }
         }
+        /// perform incoming authorities insertion
         fn insert_in(member_id: T::MemberId) -> bool {
             let not_already_inserted = IncomingAuthorities::<T>::mutate(|members_ids| {
                 if let Err(index) = members_ids.binary_search(&member_id) {
@@ -429,6 +448,7 @@ pub mod pallet {
             }
             not_already_inserted
         }
+        /// perform outgoing authority insertion
         fn insert_out(member_id: T::MemberId) -> bool {
             let not_already_inserted = OutgoingAuthorities::<T>::mutate(|members_ids| {
                 if let Err(index) = members_ids.binary_search(&member_id) {
@@ -448,21 +468,25 @@ pub mod pallet {
             }
             not_already_inserted
         }
+        /// check if member is incoming
         fn is_incoming(member_id: T::MemberId) -> bool {
             IncomingAuthorities::<T>::get()
                 .binary_search(&member_id)
                 .is_ok()
         }
+        /// check if member is online
         fn is_online(member_id: T::MemberId) -> bool {
             OnlineAuthorities::<T>::get()
                 .binary_search(&member_id)
                 .is_ok()
         }
+        /// check if member is outgoing
         fn is_outgoing(member_id: T::MemberId) -> bool {
             OutgoingAuthorities::<T>::get()
                 .binary_search(&member_id)
                 .is_ok()
         }
+        /// perform removal from incoming authorities
         fn remove_in(member_id: T::MemberId) {
             AuthoritiesCounter::<T>::mutate(|counter| counter.saturating_sub(1));
             IncomingAuthorities::<T>::mutate(|members_ids| {
@@ -471,6 +495,7 @@ pub mod pallet {
                 }
             })
         }
+        /// perform removal from online authorities
         fn remove_online(member_id: T::MemberId) {
             AuthoritiesCounter::<T>::mutate(|counter| counter.saturating_add(1));
             OnlineAuthorities::<T>::mutate(|members_ids| {
@@ -479,6 +504,7 @@ pub mod pallet {
                 }
             });
         }
+        /// perform removal from outgoing authorities
         fn remove_out(member_id: T::MemberId) {
             OutgoingAuthorities::<T>::mutate(|members_ids| {
                 if let Ok(index) = members_ids.binary_search(&member_id) {
@@ -486,6 +512,7 @@ pub mod pallet {
                 }
             });
         }
+        /// check that accountid is member
         fn verify_ownership_and_membership(
             who: &T::AccountId,
         ) -> Result<T::MemberId, DispatchError> {
@@ -596,6 +623,7 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
     }
 }
 
+// see substrate FullIdentification
 fn add_full_identification<T: Config>(
     validator_id: T::ValidatorId,
 ) -> Option<(T::ValidatorId, T::FullIdentification)> {
@@ -604,6 +632,7 @@ fn add_full_identification<T: Config>(
         .map(|full_ident| (validator_id, full_ident))
 }
 
+// implement SessionManager with FullIdentification
 impl<T: Config> pallet_session::historical::SessionManager<T::ValidatorId, T::FullIdentification>
     for Pallet<T>
 {

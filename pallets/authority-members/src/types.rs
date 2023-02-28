@@ -25,8 +25,11 @@ use sp_staking::SessionIndex;
 #[cfg_attr(feature = "std", derive(Debug, Deserialize, Serialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 pub struct MemberData<AccountId> {
+    /// session at which the membership expires
     pub expire_on_session: SessionIndex,
+    /// session before which the member must have rotated keys
     pub must_rotate_keys_before: SessionIndex,
+    /// pubkey of the member
     pub owner_key: AccountId,
 }
 
