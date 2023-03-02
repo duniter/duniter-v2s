@@ -1,3 +1,5 @@
+# this template is used in /scripts/create-live-network.sh script
+
 version: "3.5"
 
 services:

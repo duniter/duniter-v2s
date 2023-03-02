@@ -17,6 +17,7 @@
   - [Test](#test)
   - [Contribute](#contribute)
   - [Structure](#project-structure)
+- [docker](./docker/) docker-related documentation
 - [docs](./docs/)
   - [api](./docs/api/)
     - [manual](./docs/api/manual.md)
@@ -34,7 +35,7 @@
   - [user](./docs/user/)
     - [autocompletion](./docs/user/autocompletion.md)
     - [build-for-arm](./docs/user/build-for-arm.md)
-    - [rpc](./docs/user/rpc.md) deploy a permanent ǦDev mirror node
+    - [mirror](./docs/user/mirror.md) deploy a permanent ǦDev mirror node
     - [smith](./docs/user/smith.md) deploy a permanent ǦDev validator node
 - [end2end-tests](./end2end-tests/) automated end to end tests written with cucumber
 - [live-tests](./live-tests/) sanity checks to test the storage of a live chain

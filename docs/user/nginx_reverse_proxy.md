@@ -1,21 +1,5 @@
-# How to deploy a permanent rpc node on ĞDev network
 
-## Publish a node
-
-### Duniter part
-
-- Add this docker-compose template on your server:
-  [docker/compose/gdev-rpc.docker-compose.yml](https://git.duniter.org/nodes/rust/duniter-v2s/-/blob/master/docker/compose/gdev-mirror.docker-compose.yml)
-- Rename the file : `mv gdev-mirror.docker-compose.yml docker-compose.yml`
-- In the same folder, create a `.env` file that defime environment variables `SERVER_DOMAIN`:
-
-```bash
-SERVER_DOMAIN=YOUR_DOMAIN
-```
-
-- Do `docker compose up -d` to start your node
-
-### Reverse-proxy part (with Nginx)
+# Nginx reverse proxy example
 
 In `/etc/nginx/sites-enabled/gdev.YOUR_DOMAIN` put (you can probably do simpler):
 
@@ -66,13 +50,3 @@ and replace `YOUR_DOMAIN` by your domain each time.
 - `service nginx reload`
 
 Your node is now online as a rpc node. It's fully capable for wallet use.
-
-To go further, read [How to become a (black)smith](./smith.md)
-
-## Upgrade your node with minimal interruption
-
-1. Modify docker image tag on your compose file
-2. Run `docker compose pull`, this will pull the new image.
-3. Run `docker compose up -d --remove-orphans`, this will recreate the container
-4. Verify that your node restarted well `docker compose logs duniter-rpc`
-5. Remove the old image `docker images rmi duniter/duniter-v2s:OLD_TAG`
