@@ -88,3 +88,11 @@ Once you are happy with your `docker-compose.yml` file, run in the same folder:
 ```bash
 docker compose up -d
 ```
+
+## Running duniter subcommands or custom set of options
+
+To run duniter from the command line without the default configuration detailed in the "Environment variables" section use `--` as the first argument. For example:
+```
+$ docker run --rm duniter/duniter-v2s:latest -- key generate
+$ docker run --rm duniter/duniter-v2s:latest -- --chain gdev ...
+```

@@ -21,7 +21,7 @@ docker image that you have chosen.
 Generate a random secret phrase:
 
 ```bash
-$ docker run --rm -it --entrypoint duniter duniter/duniter-v2s:TAG key generate
+$ docker run --rm duniter/duniter-v2s:TAG -- key generate
 Secret phrase:       noble stay fury mean poverty delay stadium organ evil east vague can
   Secret seed:       0xb39c31fb10c5080721738880c2ea45412cb3df33df022bf8d9a51483b3a9b7a6
   Public key (hex):  0x90a0c2866034db9d05f8193a95fe5af8d5e12ab295a501c17c95cdbeaf226d62
@@ -35,7 +35,7 @@ Keep this secret phrase **carefully**, it will be used **several** times later.
 Then, generate the session keys:
 
 ```bash
-$ docker run --rm -it --entrypoint duniter duniter/duniter-v2s:TAG key generate-session-keys --chain CURRENCY_local --suri "<your secret phrase>"
+$ docker run --rm duniter/duniter-v2s:TAG -- key generate-session-keys --chain CURRENCY_local --suri "<your secret phrase>"
 Session Keys: 0x87189d723e1b2826c243bc433c718ac26ba60526932216a09102a254d54462b890a0c2866034db9d05f8193a95fe5af8d5e12ab295a501c17c95cdbeaf226d6290a0c2866034db9d05f8193a95fe5af8d5e12ab295a501c17c95cdbeaf226d6290a0c2866034db9d05f8193a95fe5af8d5e12ab295a501c17c95cdbeaf226d62
 ```
 
@@ -46,7 +46,7 @@ An example of genesis configuration file: `resources/gdev.json`
 ## 5. Generate raw spec
 
 ```docker
-docker run -v $HOME/dev/duniter-v2s/resources:/var/lib/duniter/resources -e DUNITER_GENESIS_CONFIG=/var/lib/duniter/resources/gdev.json --rm -it --entrypoint duniter duniter/duniter-v2s:TAG build-spec -lerror --chain=gdev-gl --raw > name-raw.json
+docker run -v $HOME/dev/duniter-v2s/resources:/var/lib/duniter/resources -e DUNITER_GENESIS_CONFIG=/var/lib/duniter/resources/gdev.json --rm duniter/duniter-v2s:TAG -- build-spec -lerror --chain=gdev-gl --raw > name-raw.json
 ```
 
 ```bash

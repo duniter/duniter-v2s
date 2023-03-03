@@ -31,8 +31,7 @@ mkdir -p $WORK_DIR/duniter-validator/chains/$CURRENCY
 
 # Helper to execute a duniter subcommand in docker
 function duniter_tmp () {
-  docker rm duniter-tmp > /dev/null
-  OUTPUT=$(docker run --name duniter-tmp -it --entrypoint duniter duniter/duniter-v2s:$DUNITER_IMAGE_TAG "$@")
+  OUTPUT=$(docker run --rm --name duniter-tmp duniter/duniter-v2s:$DUNITER_IMAGE_TAG -- "$@")
   echo "${OUTPUT::-1}"
 }
 
