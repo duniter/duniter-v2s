@@ -91,7 +91,7 @@ pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
             "RUNTIME_DIR=runtime/gdev",
             "-v",
             &format!("{}:/build", pwd),
-            "paritytech/srtool:1.62.0",
+            "paritytech/srtool:1.66.1-0.9.25",
             "build",
             "--app",
             "--json",
