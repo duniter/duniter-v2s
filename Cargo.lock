@@ -1553,7 +1553,7 @@ checksum = "c00704156a7de8df8da0911424e30c2049957b0a714542a44e05fe693dd85313"
 
 [[package]]
 name = "duniter"
-version = "0.3.0"
+version = "0.4.1"
 dependencies = [
  "async-io",
  "clap 4.0.30",
