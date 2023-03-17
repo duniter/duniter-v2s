@@ -10,7 +10,10 @@ version = '3.0.0'
 
 [features]
 default = ['std']
-runtime-benchmarks = ['frame-benchmarking']
+runtime-benchmarks = [
+    'frame-benchmarking/runtime-benchmarks',
+	'pallet-balances',
+]
 std = [
     'codec/std',
     'frame-support/std',
@@ -26,6 +29,9 @@ try-runtime = ['frame-support/try-runtime']
 
 # substrate
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+
+# benchmarks
+pallet-balances = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', optional = true, default-features = false }
 
 [dependencies.codec]
 default-features = false

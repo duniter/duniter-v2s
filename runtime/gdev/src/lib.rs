@@ -144,6 +144,7 @@ mod benches {
         // the that path resolves correctly in the generated file.
         [common_runtime::oneshot_account, OneshotAccount]
         [common_runtime::universal_dividend, UniversalDividend]
+        [common_runtime::provide_randomness, ProvideRandomness]
         [common_runtime::upgrade_origin, UpgradeOrigin]
         // Substrate
         [pallet_balances, Balances]

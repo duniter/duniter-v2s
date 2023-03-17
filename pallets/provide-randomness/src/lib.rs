@@ -1,4 +1,4 @@
-// Copyright 2021 Axiom-Team
+// Copyright 2021-2023 Axiom-Team
 //
 // This file is part of Duniter-v2S.
 //
@@ -16,6 +16,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::boxed_local)]
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
 mod types;
 
