@@ -146,6 +146,7 @@ mod benches {
         [common_runtime::universal_dividend, UniversalDividend]
         [common_runtime::provide_randomness, ProvideRandomness]
         [common_runtime::upgrade_origin, UpgradeOrigin]
+        [common_runtime::duniter_account, Account]
         // Substrate
         [pallet_balances, Balances]
         [frame_benchmarking::baseline, Baseline::<Runtime>]
