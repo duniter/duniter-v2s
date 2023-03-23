@@ -21,6 +21,7 @@
 mod benchmarking;
 
 mod types;
+pub mod weights;
 
 use frame_support::pallet_prelude::Weight;
 use sp_core::H256;
@@ -28,6 +29,7 @@ use sp_std::prelude::*;
 
 pub use pallet::*;
 pub use types::*;
+pub use weights::WeightInfo;
 
 pub type RequestId = u64;
 
@@ -88,6 +90,8 @@ pub mod pallet {
         type RandomnessFromOneEpochAgo: Randomness<H256, Self::BlockNumber>;
         /// The overarching event type.
         type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        /// Type representing the weight of this pallet
+        type WeightInfo: WeightInfo;
     }
 
     // STORAGE //
@@ -143,7 +147,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Request a randomness
-        #[pallet::weight(500_000_000)]
+        #[pallet::weight(T::WeightInfo::request())]
         pub fn request(
             origin: OriginFor<T>,
             randomness_type: RandomnessType,
@@ -168,7 +172,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_: T::BlockNumber) -> Weight {
-            let request_weight = Weight::from_ref_time(100_000);
+            let request_weight = T::WeightInfo::on_initialize(T::MaxRequests::get());
 
             let mut total_weight = Weight::zero();
 
