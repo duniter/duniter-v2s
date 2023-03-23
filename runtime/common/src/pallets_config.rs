@@ -315,6 +315,7 @@ macro_rules! pallets_config {
             type ParentBlockRandomness = pallet_babe::ParentBlockRandomness<Self>;
             type RandomnessFromOneEpochAgo = pallet_babe::RandomnessFromOneEpochAgo<Self>;
             type RuntimeEvent = RuntimeEvent;
+			type WeightInfo = common_runtime::weights::pallet_provide_randomness::WeightInfo<Runtime>;
         }
 
         parameter_types! {
