@@ -20,9 +20,11 @@
 mod benchmarking;
 
 mod types;
+pub mod weights;
 
 pub use pallet::*;
 pub use types::*;
+pub use weights::WeightInfo;
 
 use frame_support::pallet_prelude::*;
 use frame_support::traits::{OnUnbalanced, StoredMap};
@@ -61,6 +63,8 @@ pub mod pallet {
         type NewAccountPrice: Get<Self::Balance>;
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        /// Type representing the weight of this pallet
+        type WeightInfo: WeightInfo;
     }
 
     // STORAGE //
@@ -162,7 +166,9 @@ pub mod pallet {
                         H256(T::AccountIdToSalt::convert(account_id.clone())),
                     );
                     PendingRandomIdAssignments::<T>::insert(request_id, account_id);
-                    total_weight += Weight::from_ref_time(100_000);
+                    total_weight += <T as pallet::Config>::WeightInfo::on_initialize_sufficient(
+                        T::MaxNewAccountsPerBlock::get(),
+                    );
                 } else {
                     // If the account is not self-sufficient, it must pay the account creation fees
                     let account_data = frame_system::Pallet::<T>::get(&account_id);
@@ -198,7 +204,10 @@ pub mod pallet {
                                 H256(T::AccountIdToSalt::convert(account_id.clone())),
                             );
                             PendingRandomIdAssignments::<T>::insert(request_id, account_id);
-                            total_weight += Weight::from_ref_time(200_000);
+                            total_weight +=
+                                <T as pallet::Config>::WeightInfo::on_initialize_with_balance(
+                                    T::MaxNewAccountsPerBlock::get(),
+                                );
                         }
                     } else {
                         // The charges could not be deducted, we must destroy the account
@@ -213,7 +222,9 @@ pub mod pallet {
                         T::OnUnbalanced::on_unbalanced(pallet_balances::NegativeImbalance::new(
                             balance_to_suppr,
                         ));
-                        total_weight += Weight::from_ref_time(300_000);
+                        total_weight += <T as pallet::Config>::WeightInfo::on_initialize_no_balance(
+                            T::MaxNewAccountsPerBlock::get(),
+                        );
                     }
                 }
             }
@@ -236,9 +247,9 @@ where
                 who: account_id,
                 random_id: randomness,
             });
-            Weight::from_ref_time(200_000)
+            <T as pallet::Config>::WeightInfo::on_filled_randomness_pending()
         } else {
-            Weight::from_ref_time(100_000)
+            <T as pallet::Config>::WeightInfo::on_filled_randomness_no_pending()
         }
     }
 }
