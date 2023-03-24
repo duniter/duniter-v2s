@@ -31,4 +31,5 @@ pub mod pallet_timestamp;
 pub mod pallet_universal_dividend;
 pub mod pallet_upgrade_origin;
 pub mod pallet_provide_randomness;
+pub mod pallet_duniter_account;
 pub mod paritydb_weights;

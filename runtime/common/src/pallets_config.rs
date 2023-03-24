@@ -105,6 +105,7 @@ macro_rules! pallets_config {
             type MaxNewAccountsPerBlock = frame_support::pallet_prelude::ConstU32<1>;
             type NewAccountPrice = frame_support::traits::ConstU64<300>;
             type RuntimeEvent = RuntimeEvent;
+            type WeightInfo = common_runtime::weights::pallet_duniter_account::WeightInfo<Runtime>;
         }
 
         // BLOCK CREATION //
