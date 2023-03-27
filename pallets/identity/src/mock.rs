@@ -21,15 +21,25 @@ use frame_support::{
     traits::{Everything, GenesisBuild, OnFinalize, OnInitialize},
 };
 use frame_system as system;
-use sp_core::H256;
+use sp_core::{Pair, H256};
+use sp_keystore::{testing::KeyStore, KeystoreExt};
 use sp_runtime::{
-    testing::{Header, TestSignature, UintAuthorityId},
+    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
+    MultiSignature, MultiSigner,
 };
+use std::sync::Arc;
 
-type AccountId = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+pub type Signature = MultiSignature;
+pub type AccountPublic = <Signature as Verify>::Signer;
+pub type AccountId = <AccountPublic as IdentifyAccount>::AccountId;
+
+fn account(id: u8) -> AccountId {
+    let pair = sp_core::sr25519::Pair::from_seed(&[id; 32]);
+    MultiSigner::Sr25519(pair.public()).into_account()
+}
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -98,12 +108,12 @@ impl pallet_identity::Config for Test {
     type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = u64;
-    type NewOwnerKeySigner = UintAuthorityId;
-    type NewOwnerKeySignature = TestSignature;
+    type NewOwnerKeySigner = AccountPublic;
+    type NewOwnerKeySignature = Signature;
     type OnIdtyChange = ();
     type RemoveIdentityConsumers = ();
-    type RevocationSigner = UintAuthorityId;
-    type RevocationSignature = TestSignature;
+    type RevocationSigner = AccountPublic;
+    type RevocationSignature = Signature;
     type RuntimeEvent = RuntimeEvent;
 }
 
@@ -117,12 +127,16 @@ pub fn new_test_ext(gen_conf: pallet_identity::GenesisConfig<Test>) -> sp_io::Te
 
     frame_support::BasicExternalities::execute_with_storage(&mut t, || {
         // Some dedicated test account
-        frame_system::Pallet::<Test>::inc_sufficients(&1);
-        frame_system::Pallet::<Test>::inc_providers(&2);
-        frame_system::Pallet::<Test>::inc_providers(&3);
+        frame_system::Pallet::<Test>::inc_sufficients(&account(1));
+        frame_system::Pallet::<Test>::inc_providers(&account(2));
+        frame_system::Pallet::<Test>::inc_providers(&account(3));
     });
 
-    sp_io::TestExternalities::new(t)
+    let keystore = KeyStore::new();
+    let mut ext = sp_io::TestExternalities::new(t);
+    ext.register_extension(KeystoreExt(Arc::new(keystore)));
+    ext.execute_with(|| System::set_block_number(1));
+    ext
 }
 
 pub fn run_to_block(n: u64) {

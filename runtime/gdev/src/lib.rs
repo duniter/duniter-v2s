@@ -146,6 +146,7 @@ mod benches {
         [pallet_provide_randomness, ProvideRandomness]
         [pallet_upgrade_origin, UpgradeOrigin]
         [pallet_duniter_account, Account]
+        [pallet_identity, Identity]
         // Substrate
         [pallet_balances, Balances]
         [frame_benchmarking::baseline, Baseline::<Runtime>]

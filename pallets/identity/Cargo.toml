@@ -11,7 +11,7 @@ version = '3.0.0'
 
 [features]
 default = ['std']
-runtime-benchmarks = ['frame-benchmarking']
+runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
 std = [
     'codec/std',
     'frame-support/std',
@@ -68,6 +68,12 @@ default-features = false
 git = 'https://github.com/duniter/substrate'
 branch = 'duniter-substrate-v0.9.32'
 
+[dependencies.sp-io]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
+
 [dev-dependencies]
 serde = '1.0.119'
 sp-io = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32' }
+sp-keystore = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32' }

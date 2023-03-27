@@ -99,6 +99,12 @@ impl sp_runtime::traits::Verify for NewOwnerKeySignature {
     }
 }
 
+impl From<sp_core::sr25519::Signature> for NewOwnerKeySignature {
+    fn from(a: sp_core::sr25519::Signature) -> Self {
+        NewOwnerKeySignature(a)
+    }
+}
+
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct SmithMembershipMetaData<SessionKeysWrapper> {

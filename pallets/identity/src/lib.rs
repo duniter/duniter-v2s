@@ -1,4 +1,4 @@
-// Copyright 2021 Axiom-Team
+// Copyright 2021-2023 Axiom-Team
 //
 // This file is part of Duniter-v2S.
 //
@@ -26,8 +26,8 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-/*#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;*/
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarking;
 
 pub use pallet::*;
 pub use types::*;
