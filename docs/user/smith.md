@@ -28,7 +28,7 @@ When you have at least 3 certifications, your'in!
 - Generate and publish your session keys
   1. create an ssh bridge from your desktop/laptop to your server : `ssh -L 9945:localhost:9945 SSH_USER@YOUR_SERVER`
   2. In your browser go to [polkadotjs : ws://localhost:9945](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2Flocalhost%3A9945#/explorer)
-  3. In the UI : developer > appel RPC > author > rotateKey() and copy the result in clipboard
+  3. In the UI : developer > appel RPC > author > rotateKeys() and copy the result in clipboard
   4. In the UI : developer > extrinsics > YOUR_SMITH_ACCOUNT > authorityMembers > setSessionKeys(keys) then paste your session keys and run the query.
   5. In the UI : developer > extrinsics > YOUR_SMITH_ACCOUNT > authorityMembers > claimMembership(keys)
   6. **wait 48h to verify you keep sync**
