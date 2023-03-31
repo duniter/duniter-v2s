@@ -105,6 +105,8 @@ impl SubstrateCli for Cli {
             "gdev" => Box::new(chain_spec::gdev::ChainSpec::from_json_bytes(
                 &include_bytes!("../specs/gdev-raw.json")[..],
             )?),
+            #[cfg(feature = "gdev")]
+            "gdev-benchmark" => Box::new(chain_spec::gdev::benchmark_chain_spec()?),
             #[cfg(feature = "gtest")]
             "gtest_dev" => Box::new(chain_spec::gtest::development_chain_spec()?),
             #[cfg(feature = "gtest")]
