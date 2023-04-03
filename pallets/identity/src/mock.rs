@@ -115,6 +115,7 @@ impl pallet_identity::Config for Test {
     type RevocationSigner = AccountPublic;
     type RevocationSignature = Signature;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.

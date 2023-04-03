@@ -133,6 +133,7 @@ impl pallet_identity::Config for Test {
     type RevocationSigner = UintAuthorityId;
     type RevocationSignature = TestSignature;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
 }
 
 // Membership

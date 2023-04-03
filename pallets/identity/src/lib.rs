@@ -19,6 +19,7 @@
 
 pub mod traits;
 mod types;
+pub mod weights;
 
 #[cfg(test)]
 mod mock;
@@ -31,6 +32,7 @@ pub mod benchmarking;
 
 pub use pallet::*;
 pub use types::*;
+pub use weights::WeightInfo;
 
 use crate::traits::*;
 use codec::Codec;
@@ -109,6 +111,8 @@ pub mod pallet {
         type RevocationSignature: Parameter + Verify<Signer = Self::RevocationSigner>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        /// Type representing the weight of this pallet
+        type WeightInfo: WeightInfo;
     }
 
     // GENESIS STUFF //
@@ -258,7 +262,7 @@ pub mod pallet {
         /// - `owner_key`: the public key corresponding to the identity to be created
         ///
         /// The origin must be allowed to create an identity.
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::create_identity())]
         pub fn create_identity(
             origin: OriginFor<T>,
             owner_key: T::AccountId,
@@ -322,7 +326,7 @@ pub mod pallet {
         /// - `idty_name`: the name uniquely associated to this identity. Must match the validation rules defined by the runtime.
         ///
         /// The identity must have been created using `create_identity` before it can be confirmed.
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::confirm_identity())]
         pub fn confirm_identity(
             origin: OriginFor<T>,
             idty_name: IdtyName,
@@ -361,7 +365,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::validate_identity())]
         /// validate the owned identity (must meet the main wot requirements)
         pub fn validate_identity(
             origin: OriginFor<T>,
@@ -399,7 +403,7 @@ pub mod pallet {
         ///                  Must be signed by `new_key`.
         ///
         /// The origin should be the old identity owner key.
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::change_owner_key())]
         pub fn change_owner_key(
             origin: OriginFor<T>,
             new_key: T::AccountId,
@@ -482,7 +486,7 @@ pub mod pallet {
         ///                     Must be signed by `revocation_key`.
         ///
         /// Any signed origin can execute this call.
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::revoke_identity())]
         pub fn revoke_identity(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
@@ -523,7 +527,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::remove_identity())]
         /// remove an identity from storage
         pub fn remove_identity(
             origin: OriginFor<T>,
@@ -540,7 +544,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::prune_item_identities_names(names.len() as u32))]
         /// remove identity names from storage
         pub fn prune_item_identities_names(
             origin: OriginFor<T>,
@@ -555,7 +559,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::fix_sufficients())]
         /// change sufficient ref count for given key
         pub fn fix_sufficients(
             origin: OriginFor<T>,
