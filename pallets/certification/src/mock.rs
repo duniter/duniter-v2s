@@ -108,6 +108,7 @@ impl pallet_certification::Config for Test {
     type OnNewcert = ();
     type OnRemovedCert = ();
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
     type ValidityPeriod = ValidityPeriod;
 }
 

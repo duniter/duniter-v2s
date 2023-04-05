@@ -170,6 +170,7 @@ impl pallet_certification::Config<Instance1> for Test {
     type OnNewcert = DuniterWot;
     type OnRemovedCert = DuniterWot;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
     type ValidityPeriod = ValidityPeriod;
 }
 
@@ -222,6 +223,7 @@ impl pallet_certification::Config<Instance2> for Test {
     type OnNewcert = SmithsSubWot;
     type OnRemovedCert = SmithsSubWot;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
     type ValidityPeriod = SmithsValidityPeriod;
 }
 

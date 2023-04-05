@@ -16,10 +16,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod benchmarking;
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarking;
 
 pub mod traits;
 mod types;
+pub mod weights;
 
 #[cfg(test)]
 mod mock;
@@ -29,6 +31,7 @@ mod tests;
 
 pub use pallet::*;
 pub use types::*;
+pub use weights::WeightInfo;
 
 use crate::traits::*;
 use codec::Codec;
@@ -85,6 +88,8 @@ pub mod pallet {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self, I>>
             + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        /// Type representing the weight of this pallet
+        type WeightInfo: WeightInfo;
         #[pallet::constant]
         /// Duration of validity of a certification
         type ValidityPeriod: Get<Self::BlockNumber>;
@@ -272,7 +277,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
         /// add a certification without checks (only root)
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::force_add_cert())]
         pub fn force_add_cert(
             origin: OriginFor<T>,
             issuer: T::IdtyIndex,
@@ -315,7 +320,7 @@ pub mod pallet {
         /// - `receiver`: the account receiving the certification from the origin
         ///
         /// The origin must be allow to certify.
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::add_cert())]
         pub fn add_cert(
             origin: OriginFor<T>,
             issuer: T::IdtyIndex,
@@ -359,7 +364,7 @@ pub mod pallet {
         }
 
         /// remove a certification (only root)
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::del_cert())]
         pub fn del_cert(
             origin: OriginFor<T>,
             issuer: T::IdtyIndex,
@@ -371,7 +376,7 @@ pub mod pallet {
         }
 
         /// remove all certifications received by an identity (only root)
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::weight(T::WeightInfo::remove_all_certs_received_by(CertsByReceiver::<T, I>::get(idty_index).len() as u32))]
         pub fn remove_all_certs_received_by(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
