@@ -463,6 +463,7 @@ macro_rules! pallets_config {
             type OnNewcert = Wot;
             type OnRemovedCert = Wot;
             type RuntimeEvent = RuntimeEvent;
+            type WeightInfo = common_runtime::weights::pallet_certification_cert::WeightInfo<Runtime>;
             type ValidityPeriod = ValidityPeriod;
         }
 
@@ -497,6 +498,7 @@ macro_rules! pallets_config {
             type OnNewcert = SmithsSubWot;
             type OnRemovedCert = SmithsSubWot;
             type RuntimeEvent = RuntimeEvent;
+            type WeightInfo = common_runtime::weights::pallet_certification_smiths_cert::WeightInfo<Runtime>;
             type ValidityPeriod = SmithValidityPeriod;
         }
 
