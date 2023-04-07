@@ -19,15 +19,15 @@ Only members of the smith WoT can author blocks. This WoT is a subset of the mai
 3. Go to [a PolkadotJS web UI](https://polkadot.js.org/apps/?rpc=ws://127.0.0.1/ws:9945). (it's not the same thing as the browser extension)
   - If using another port or address, change it accordingly in the left panel.
 4. In the UI: developer > RPC call > author > rotateKeys() and copy the result in clipboard
-5. In the UI: developer > extrinsics > YOUR_SMITH_ACCOUNT > smithsMembership > requestMembership(metadata)
+5. In the UI: developer > extrinsics > YOUR_SMITH_ACCOUNT > smithMembership > requestMembership(metadata)
   - add your p2p endpoint (optional)
   - add your session keys
   - send the query
 6. Wait 48h to ensure your node keeps sync (**both** best **and** finalized block numbers must increase every 6s)
 7. Await at least 3 smith certifications. Members of the smith WoT can certify you with this extrinsic:
-  - In the UI: developer > extrinsics > CERTIFIER_SMITH_ACCOUNT > smithsCert > addCert(receiver)
+  - In the UI: developer > extrinsics > CERTIFIER_SMITH_ACCOUNT > smithCert > addCert(receiver)
   - This is not automatic, you can ask for certs on the forum or the Matrix chatroom.
-8. In the UI: developer > extrinsics > YOUR_SMITH_ACCOUNT > smithsMembership > claimMembership(maybe_idty_id)
+8. In the UI: developer > extrinsics > YOUR_SMITH_ACCOUNT > smithMembership > claimMembership(maybe_idty_id)
   - maybe_idty_id can be left empty since your identity id will be infered from your account address.
 
 All extrinsics can be sent while connected to any Duniter node, but the RPC calls need a direct connection to your server. As some RPC calls should not be publicly callable for security reasons, the only ways to call them is from the server localhost or using an SSH bridge or other kind of secure tunnel.

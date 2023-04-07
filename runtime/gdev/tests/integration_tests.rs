@@ -158,7 +158,7 @@ fn test_remove_smith_identity() {
             None
         ));
         // Verify events
-        System::assert_has_event(RuntimeEvent::SmithsMembership(
+        System::assert_has_event(RuntimeEvent::SmithMembership(
             pallet_membership::Event::MembershipRevoked(3),
         ));
         System::assert_has_event(RuntimeEvent::AuthorityMembers(

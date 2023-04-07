@@ -195,7 +195,7 @@ macro_rules! pallets_config {
         }
         impl pallet_authority_members::Config for Runtime {
             type KeysWrapper = opaque::SessionKeysWrapper;
-            type IsMember = SmithsMembership;
+            type IsMember = SmithMembership;
             type OnNewSession = OnNewSessionHandler<Runtime>;
             type OnRemovedMember = OnRemovedAuthorityMemberHandler<Runtime>;
             type MemberId = IdtyIndex;
@@ -428,7 +428,7 @@ macro_rules! pallets_config {
         impl pallet_identity::Config for Runtime {
 			type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
             type ConfirmPeriod = ConfirmPeriod;
-            type CheckIdtyCallAllowed = (Wot, SmithsSubWot);
+            type CheckIdtyCallAllowed = (Wot, SmithSubWot);
             type IdtyCreationPeriod = IdtyCreationPeriod;
 			type IdtyData = IdtyData;
             type IdtyIndex = IdtyIndex;
@@ -471,19 +471,19 @@ macro_rules! pallets_config {
 
         use frame_support::instances::Instance2;
         impl pallet_duniter_wot::Config<Instance2> for Runtime {
-            type FirstIssuableOn = SmithsWotFirstCertIssuableOn;
+            type FirstIssuableOn = SmithWotFirstCertIssuableOn;
             type IsSubWot = frame_support::traits::ConstBool<true>;
-            type MinCertForMembership = SmithsWotMinCertForMembership;
+            type MinCertForMembership = SmithWotMinCertForMembership;
             type MinCertForCreateIdtyRight = frame_support::traits::ConstU32<0>;
         }
 
         impl pallet_membership::Config<Instance2> for Runtime {
-            type CheckCallAllowed = SmithsSubWot;
+            type CheckCallAllowed = SmithSubWot;
             type IdtyId = IdtyIndex;
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type MembershipPeriod = SmithMembershipPeriod;
-            type MetaData = SmithsMembershipMetaData<opaque::SessionKeysWrapper>;
-            type OnEvent = OnSmithMembershipEventHandler<SmithsSubWot, Runtime>;
+            type MetaData = SmithMembershipMetaData<opaque::SessionKeysWrapper>;
+            type OnEvent = OnSmithMembershipEventHandler<SmithSubWot, Runtime>;
             type PendingMembershipPeriod = SmithPendingMembershipPeriod;
             type RuntimeEvent = RuntimeEvent;
         }
@@ -492,11 +492,11 @@ macro_rules! pallets_config {
             type CertPeriod = SmithCertPeriod;
             type IdtyIndex = IdtyIndex;
             type OwnerKeyOf = Identity;
-            type CheckCertAllowed = SmithsSubWot;
+            type CheckCertAllowed = SmithSubWot;
             type MaxByIssuer = SmithMaxByIssuer;
             type MinReceivedCertToBeAbleToIssueCert = SmithMinReceivedCertToBeAbleToIssueCert;
-            type OnNewcert = SmithsSubWot;
-            type OnRemovedCert = SmithsSubWot;
+            type OnNewcert = SmithSubWot;
+            type OnRemovedCert = SmithSubWot;
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_certification_smiths_cert::WeightInfo<Runtime>;
             type ValidityPeriod = SmithValidityPeriod;

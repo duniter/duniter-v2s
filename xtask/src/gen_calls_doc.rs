@@ -133,8 +133,8 @@ impl CallCategory {
                 Self::Disabled
             }
             ("Cert", "force_add_cert" | "del_cert" | "remove_all_certs_received_by") => Self::Root,
-            ("SmithsMembership", "force_request_membership") => Self::Root,
-            ("SmithsCert", "force_add_cert" | "del_cert" | "remove_all_certs_received_by") => {
+            ("SmithMembership", "force_request_membership") => Self::Root,
+            ("SmithCert", "force_add_cert" | "del_cert" | "remove_all_certs_received_by") => {
                 Self::Root
             }
             ("TechnicalCommittee", "set_members" | "disapprove_proposal") => Self::Root,

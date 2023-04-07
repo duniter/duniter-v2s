@@ -229,7 +229,7 @@ impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
                 // Some calls are never authorized from a proxied account
                 !matches!(
                     c,
-                    RuntimeCall::Cert(..) | RuntimeCall::Identity(..) | RuntimeCall::SmithsCert(..)
+                    RuntimeCall::Cert(..) | RuntimeCall::Identity(..) | RuntimeCall::SmithCert(..)
                 )
             }
             ProxyType::TransferOnly => {
@@ -284,10 +284,10 @@ common_runtime::pallets_config! {
     pub type SmithMembershipPeriod = pallet_duniter_test_parameters::SmithMembershipPeriod<Runtime>;
     pub type SmithPendingMembershipPeriod =
         pallet_duniter_test_parameters::SmithPendingMembershipPeriod<Runtime>;
-    pub type SmithsWotFirstCertIssuableOn =
-        pallet_duniter_test_parameters::SmithsWotFirstCertIssuableOn<Runtime>;
-    pub type SmithsWotMinCertForMembership =
-        pallet_duniter_test_parameters::SmithsWotMinCertForMembership<Runtime>;
+    pub type SmithWotFirstCertIssuableOn =
+        pallet_duniter_test_parameters::SmithWotFirstCertIssuableOn<Runtime>;
+    pub type SmithWotMinCertForMembership =
+        pallet_duniter_test_parameters::SmithWotMinCertForMembership<Runtime>;
 
     impl pallet_duniter_test_parameters::Config for Runtime {
         type CertCount = u32;
@@ -349,10 +349,10 @@ construct_runtime!(
         Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
         Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
 
-        // Smiths Sub-Wot
-        SmithsSubWot: pallet_duniter_wot::<Instance2>::{Pallet} = 50,
-        SmithsMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
-        SmithsCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
+        // Smith Sub-Wot
+        SmithSubWot: pallet_duniter_wot::<Instance2>::{Pallet} = 50,
+        SmithMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
+        SmithCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
 
         // Utilities
         AtomicSwap: pallet_atomic_swap::{Pallet, Call, Storage, Event<T>} = 60,

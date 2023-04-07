@@ -121,8 +121,8 @@ parameter_types! {
 /******************/
 
 parameter_types! {
-    pub const SmithsWotFirstCertIssuableOn: BlockNumber = DAYS;
-    pub const SmithsWotMinCertForMembership: u32 = 3;
+    pub const SmithWotFirstCertIssuableOn: BlockNumber = DAYS;
+    pub const SmithWotMinCertForMembership: u32 = 3;
 }
 
 // Membership

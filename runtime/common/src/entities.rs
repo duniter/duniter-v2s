@@ -101,18 +101,18 @@ impl sp_runtime::traits::Verify for NewOwnerKeySignature {
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-pub struct SmithsMembershipMetaData<SessionKeysWrapper> {
+pub struct SmithMembershipMetaData<SessionKeysWrapper> {
     pub owner_key: AccountId,
     pub p2p_endpoint: sp_runtime::RuntimeString,
     pub session_keys: SessionKeysWrapper,
 }
-impl<SessionKeysWrapper> Default for SmithsMembershipMetaData<SessionKeysWrapper> {
+impl<SessionKeysWrapper> Default for SmithMembershipMetaData<SessionKeysWrapper> {
     fn default() -> Self {
         unreachable!()
     }
 }
 impl<SessionKeysWrapper> sp_membership::traits::Validate<AccountId>
-    for SmithsMembershipMetaData<SessionKeysWrapper>
+    for SmithMembershipMetaData<SessionKeysWrapper>
 {
     fn validate(&self, who: &AccountId) -> bool {
         &self.owner_key == who

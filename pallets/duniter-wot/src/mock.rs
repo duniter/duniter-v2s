@@ -50,9 +50,9 @@ frame_support::construct_runtime!(
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>},
         Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>},
         Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>},
-        SmithsSubWot: pallet_duniter_wot::<Instance2>::{Pallet},
-        SmithsMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>},
-        SmithsCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>},
+        SmithSubWot: pallet_duniter_wot::<Instance2>::{Pallet},
+        SmithMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>},
+        SmithCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
 );
 
@@ -121,7 +121,7 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
 impl pallet_identity::Config for Test {
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
-    type CheckIdtyCallAllowed = (DuniterWot, SmithsSubWot);
+    type CheckIdtyCallAllowed = (DuniterWot, SmithSubWot);
     type IdtyCreationPeriod = IdtyCreationPeriod;
     type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
@@ -177,54 +177,54 @@ impl pallet_certification::Config<Instance1> for Test {
 // SMITHS SUB-WOT //
 
 parameter_types! {
-    pub const SmithsMinCertForMembership: u32 = 2;
-    pub const SmithsFirstIssuableOn: u64 = 2;
+    pub const SmithMinCertForMembership: u32 = 2;
+    pub const SmithFirstIssuableOn: u64 = 2;
 }
 
 impl pallet_duniter_wot::Config<Instance2> for Test {
     type IsSubWot = frame_support::traits::ConstBool<true>;
-    type MinCertForMembership = SmithsMinCertForMembership;
+    type MinCertForMembership = SmithMinCertForMembership;
     type MinCertForCreateIdtyRight = frame_support::traits::ConstU32<0>;
-    type FirstIssuableOn = SmithsFirstIssuableOn;
+    type FirstIssuableOn = SmithFirstIssuableOn;
 }
 
-// SmithsMembership
+// SmithMembership
 parameter_types! {
-    pub const SmithsMembershipPeriod: u64 = 20;
-    pub const SmithsPendingMembershipPeriod: u64 = 3;
+    pub const SmithMembershipPeriod: u64 = 20;
+    pub const SmithPendingMembershipPeriod: u64 = 3;
 }
 
 impl pallet_membership::Config<Instance2> for Test {
-    type CheckCallAllowed = SmithsSubWot;
+    type CheckCallAllowed = SmithSubWot;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
-    type MembershipPeriod = SmithsMembershipPeriod;
+    type MembershipPeriod = SmithMembershipPeriod;
     type MetaData = ();
-    type OnEvent = SmithsSubWot;
-    type PendingMembershipPeriod = SmithsPendingMembershipPeriod;
+    type OnEvent = SmithSubWot;
+    type PendingMembershipPeriod = SmithPendingMembershipPeriod;
     type RuntimeEvent = RuntimeEvent;
 }
 
-// SmithsCert
+// SmithCert
 parameter_types! {
-    pub const SmithsMaxByIssuer: u8 = 8;
-    pub const SmithsMinReceivedCertToBeAbleToIssueCert: u32 = 2;
-    pub const SmithsCertPeriod: u64 = 2;
-    pub const SmithsValidityPeriod: u64 = 10;
+    pub const SmithMaxByIssuer: u8 = 8;
+    pub const SmithMinReceivedCertToBeAbleToIssueCert: u32 = 2;
+    pub const SmithCertPeriod: u64 = 2;
+    pub const SmithValidityPeriod: u64 = 10;
 }
 
 impl pallet_certification::Config<Instance2> for Test {
-    type CertPeriod = SmithsCertPeriod;
+    type CertPeriod = SmithCertPeriod;
     type IdtyIndex = IdtyIndex;
     type OwnerKeyOf = Identity;
-    type CheckCertAllowed = SmithsSubWot;
-    type MaxByIssuer = SmithsMaxByIssuer;
-    type MinReceivedCertToBeAbleToIssueCert = SmithsMinReceivedCertToBeAbleToIssueCert;
-    type OnNewcert = SmithsSubWot;
-    type OnRemovedCert = SmithsSubWot;
+    type CheckCertAllowed = SmithSubWot;
+    type MaxByIssuer = SmithMaxByIssuer;
+    type MinReceivedCertToBeAbleToIssueCert = SmithMinReceivedCertToBeAbleToIssueCert;
+    type OnNewcert = SmithSubWot;
+    type OnRemovedCert = SmithSubWot;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    type ValidityPeriod = SmithsValidityPeriod;
+    type ValidityPeriod = SmithValidityPeriod;
 }
 
 pub const NAMES: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"];
@@ -285,7 +285,7 @@ pub fn new_test_ext(
                 (
                     i as u32,
                     sp_membership::MembershipData {
-                        expire_on: SmithsMembershipPeriod::get(),
+                        expire_on: SmithMembershipPeriod::get(),
                     },
                 )
             })
@@ -296,7 +296,7 @@ pub fn new_test_ext(
 
     pallet_certification::GenesisConfig::<Test, Instance2> {
         apply_cert_period_at_genesis: true,
-        certs_by_receiver: clique_wot(initial_smiths_len, SmithsValidityPeriod::get()),
+        certs_by_receiver: clique_wot(initial_smiths_len, SmithValidityPeriod::get()),
     }
     .assimilate_storage(&mut t)
     .unwrap();
@@ -321,9 +321,9 @@ pub fn run_to_block(n: u64) {
         Identity::on_finalize(System::block_number());
         Membership::on_finalize(System::block_number());
         Cert::on_finalize(System::block_number());
-        SmithsSubWot::on_finalize(System::block_number());
-        SmithsMembership::on_finalize(System::block_number());
-        SmithsCert::on_finalize(System::block_number());
+        SmithSubWot::on_finalize(System::block_number());
+        SmithMembership::on_finalize(System::block_number());
+        SmithCert::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
         System::reset_events();
         System::set_block_number(System::block_number() + 1);
@@ -332,9 +332,9 @@ pub fn run_to_block(n: u64) {
         Identity::on_initialize(System::block_number());
         Membership::on_initialize(System::block_number());
         Cert::on_initialize(System::block_number());
-        SmithsSubWot::on_initialize(System::block_number());
-        SmithsMembership::on_initialize(System::block_number());
-        SmithsCert::on_initialize(System::block_number());
+        SmithSubWot::on_initialize(System::block_number());
+        SmithMembership::on_initialize(System::block_number());
+        SmithCert::on_initialize(System::block_number());
     }
 }
 

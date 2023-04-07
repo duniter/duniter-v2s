@@ -683,7 +683,7 @@ Add a new certification or renew an existing one
 
 The origin must be allow to certify.
 
-### SmithsMembership - 52
+### SmithMembership - 52
 
 #### request_membership - 1
 
@@ -736,7 +736,7 @@ maybe_idty_id: Option<T::IdtyId>
 revoke an active membership
 (only available for sub wot, automatic for main wot)
 
-### SmithsCert - 53
+### SmithCert - 53
 
 #### add_cert - 1
 
@@ -1693,7 +1693,7 @@ idty_index: T::IdtyIndex
 
 remove all certifications received by an identity (only root)
 
-### SmithsMembership - 52
+### SmithMembership - 52
 
 #### force_request_membership - 0
 
@@ -1708,7 +1708,7 @@ metadata: T::MetaData
 
 request membership without checks
 
-### SmithsCert - 53
+### SmithCert - 53
 
 #### force_add_cert - 0
 

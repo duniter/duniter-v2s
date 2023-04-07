@@ -61,29 +61,29 @@ fn test_join_smiths() {
         run_to_block(2);
 
         // Dave shoud be able to request smith membership
-        assert_ok!(SmithsMembership::request_membership(
+        assert_ok!(SmithMembership::request_membership(
             RuntimeOrigin::signed(4),
             ()
         ));
-        System::assert_has_event(RuntimeEvent::SmithsMembership(
+        System::assert_has_event(RuntimeEvent::SmithMembership(
             pallet_membership::Event::MembershipRequested(4),
         ));
 
         // Then, Alice should be able to send a smith cert to Dave
         run_to_block(3);
-        assert_ok!(SmithsCert::add_cert(RuntimeOrigin::signed(1), 1, 4));
+        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(1), 1, 4));
 
         // Then, Bob should be able to send a smith cert to Dave
         run_to_block(4);
-        assert_ok!(SmithsCert::add_cert(RuntimeOrigin::signed(2), 2, 4));
+        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(2), 2, 4));
 
         // Then, Dave should be able to claim his membership
         run_to_block(4);
-        assert_ok!(SmithsMembership::claim_membership(
+        assert_ok!(SmithMembership::claim_membership(
             RuntimeOrigin::signed(4),
             Some(4)
         ));
-        System::assert_has_event(RuntimeEvent::SmithsMembership(
+        System::assert_has_event(RuntimeEvent::SmithMembership(
             pallet_membership::Event::MembershipAcquired(4),
         ));
     });
@@ -94,7 +94,7 @@ fn test_smith_certs_expirations_should_revoke_smith_membership() {
     new_test_ext(5, 3).execute_with(|| {
         // After block #10, alice membership should be revoked due to smith certs expiration
         run_to_block(10);
-        System::assert_has_event(RuntimeEvent::SmithsMembership(
+        System::assert_has_event(RuntimeEvent::SmithMembership(
             pallet_membership::Event::MembershipRevoked(1),
         ));
     });

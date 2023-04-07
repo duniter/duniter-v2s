@@ -35,8 +35,8 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub memberships: BTreeMap<u32, MembershipData>,
     pub parameters: Parameters,
     pub session_keys_map: BTreeMap<AccountId, SessionKeys>,
-    pub smiths_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
-    pub smiths_memberships: BTreeMap<u32, MembershipData>,
+    pub smith_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
+    pub smith_memberships: BTreeMap<u32, MembershipData>,
     pub sudo_key: Option<AccountId>,
     pub technical_committee_members: Vec<AccountId>,
 }
@@ -271,8 +271,8 @@ where
     let mut initial_authorities = BTreeMap::new();
     let mut online_authorities_counter = 0;
     let mut session_keys_map = BTreeMap::new();
-    let mut smiths_memberships = BTreeMap::new();
-    let mut smiths_certs_by_receiver = BTreeMap::new();
+    let mut smith_memberships = BTreeMap::new();
+    let mut smith_certs_by_receiver = BTreeMap::new();
     for (idty_name, smith_data) in smith_identities {
         let idty_index = idty_index_of
             .get(&idty_name)
@@ -336,10 +336,10 @@ where
                 .ok_or(format!("Identity '{}' not exist", issuer))?;
             receiver_certs.insert(*issuer_index, maybe_expire_on);
         }
-        smiths_certs_by_receiver.insert(*idty_index, receiver_certs);
+        smith_certs_by_receiver.insert(*idty_index, receiver_certs);
 
         // Memberships
-        smiths_memberships.insert(
+        smith_memberships.insert(
             *idty_index,
             MembershipData {
                 expire_on: genesis_smith_memberships_expire_on,
@@ -347,17 +347,17 @@ where
         );
     }
 
-    // Verify smiths certifications coherence
-    if smiths_certs_by_receiver.len() < smiths_memberships.len() {
+    // Verify smith certifications coherence
+    if smith_certs_by_receiver.len() < smith_memberships.len() {
         return Err(format!(
-            "{} smith identities has not received any smiths certifications",
-            smiths_memberships.len() - smiths_certs_by_receiver.len()
+            "{} smith identities have not received any smith certification",
+            smith_memberships.len() - smith_certs_by_receiver.len()
         ));
     }
-    for (idty_index, receiver_certs) in &smiths_certs_by_receiver {
+    for (idty_index, receiver_certs) in &smith_certs_by_receiver {
         if receiver_certs.len() < genesis_smith_certs_min_received as usize {
             return Err(format!(
-                "Identity n°{} has received only {}/{} smiths certifications)",
+                "Identity n°{} has received only {}/{} smith certifications)",
                 idty_index,
                 receiver_certs.len(),
                 genesis_smith_certs_min_received
@@ -380,8 +380,8 @@ where
         memberships,
         parameters,
         session_keys_map,
-        smiths_certs_by_receiver,
-        smiths_memberships,
+        smith_certs_by_receiver,
+        smith_memberships,
         sudo_key,
         technical_committee_members,
     };

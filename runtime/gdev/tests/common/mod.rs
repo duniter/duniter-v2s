@@ -112,8 +112,8 @@ impl ExtBuilder {
                 smith_cert_validity_period: 1_000,
                 smith_membership_period: 1_000,
                 smith_pending_membership_period: 500,
-                smiths_wot_first_cert_issuable_on: 20,
-                smiths_wot_min_cert_for_membership: 2,
+                smith_wot_first_cert_issuable_on: 20,
+                smith_wot_min_cert_for_membership: 2,
                 wot_first_cert_issuable_on: 20,
                 wot_min_cert_for_create_idty_right: 2,
                 wot_min_cert_for_membership: 2,
@@ -334,9 +334,9 @@ pub fn run_to_block(n: u32) {
         Identity::on_initialize(System::block_number());
         Membership::on_initialize(System::block_number());
         Cert::on_initialize(System::block_number());
-        SmithsSubWot::on_initialize(System::block_number());
-        SmithsMembership::on_initialize(System::block_number());
-        SmithsCert::on_initialize(System::block_number());
+        SmithSubWot::on_initialize(System::block_number());
+        SmithMembership::on_initialize(System::block_number());
+        SmithCert::on_initialize(System::block_number());
     }
 }
 

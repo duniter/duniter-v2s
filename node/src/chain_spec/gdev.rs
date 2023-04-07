@@ -21,7 +21,7 @@ use common_runtime::*;
 use gdev_runtime::{
     opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig, CertConfig,
     GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig, ParametersConfig, SessionConfig,
-    SmithsCertConfig, SmithsMembershipConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
+    SmithCertConfig, SmithMembershipConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
     UniversalDividendConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
@@ -150,7 +150,7 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
                     wasm_binary,
                     // Initial authorities len
                     1,
-                    // Initial smiths members len
+                    // Initial smith members len
                     3,
                     // Inital identities len
                     4,
@@ -353,8 +353,8 @@ fn gen_genesis_for_local_chain(
                 smith_cert_validity_period,
                 smith_membership_period,
                 smith_pending_membership_period: 500,
-                smiths_wot_first_cert_issuable_on: 20,
-                smiths_wot_min_cert_for_membership: 2,
+                smith_wot_first_cert_issuable_on: 20,
+                smith_wot_min_cert_for_membership: 2,
                 wot_first_cert_issuable_on: 20,
                 wot_min_cert_for_create_idty_right: 2,
                 wot_min_cert_for_membership: 2,
@@ -425,12 +425,12 @@ fn gen_genesis_for_local_chain(
             apply_cert_period_at_genesis: false,
             certs_by_receiver: clique_wot(initial_identities.len()),
         },
-        smiths_membership: SmithsMembershipConfig {
+        smith_membership: SmithMembershipConfig {
             memberships: (1..=initial_smiths_len)
                 .map(|i| (i as u32, MembershipData { expire_on: 0 }))
                 .collect(),
         },
-        smiths_cert: SmithsCertConfig {
+        smith_cert: SmithCertConfig {
             apply_cert_period_at_genesis: false,
             certs_by_receiver: clique_wot(initial_smiths_len),
         },
@@ -459,8 +459,8 @@ fn genesis_data_to_gdev_genesis_conf(
         memberships,
         parameters,
         session_keys_map,
-        smiths_certs_by_receiver,
-        smiths_memberships,
+        smith_certs_by_receiver,
+        smith_memberships,
         sudo_key,
         technical_committee_members,
     } = genesis_data;
@@ -517,12 +517,12 @@ fn genesis_data_to_gdev_genesis_conf(
             certs_by_receiver,
         },
         membership: MembershipConfig { memberships },
-        smiths_cert: SmithsCertConfig {
+        smith_cert: SmithCertConfig {
             apply_cert_period_at_genesis: true,
-            certs_by_receiver: smiths_certs_by_receiver,
+            certs_by_receiver: smith_certs_by_receiver,
         },
-        smiths_membership: SmithsMembershipConfig {
-            memberships: smiths_memberships,
+        smith_membership: SmithMembershipConfig {
+            memberships: smith_memberships,
         },
         universal_dividend: UniversalDividendConfig {
             first_reeval: first_ud_reeval,

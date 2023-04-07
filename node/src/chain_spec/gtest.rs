@@ -21,7 +21,7 @@ use common_runtime::*;
 use gtest_runtime::{
     opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
     BalancesConfig, CertConfig, GenesisConfig, IdentityConfig, IdtyValue, ImOnlineId,
-    MembershipConfig, SessionConfig, SmithsCertConfig, SmithsMembershipConfig, SudoConfig,
+    MembershipConfig, SessionConfig, SmithCertConfig, SmithMembershipConfig, SudoConfig,
     SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
@@ -72,7 +72,7 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
                 wasm_binary,
                 // Initial authorities len
                 1,
-                // Initial smiths members len
+                // Initial smith members len
                 3,
                 // Inital identities len
                 4,
@@ -275,7 +275,7 @@ fn gen_genesis_for_local_chain(
             apply_cert_period_at_genesis: false,
             certs_by_receiver: clique_wot(initial_identities.len()),
         },
-        smiths_membership: SmithsMembershipConfig {
+        smith_membership: SmithMembershipConfig {
             memberships: (1..=initial_smiths_len)
                 .map(|i| {
                     (
@@ -287,7 +287,7 @@ fn gen_genesis_for_local_chain(
                 })
                 .collect(),
         },
-        smiths_cert: SmithsCertConfig {
+        smith_cert: SmithCertConfig {
             apply_cert_period_at_genesis: false,
             certs_by_receiver: clique_wot(initial_smiths_len),
         },
