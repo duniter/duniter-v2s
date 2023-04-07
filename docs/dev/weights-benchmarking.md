@@ -14,21 +14,35 @@ The cross compiled binary is generated here: `target/armv7-unknown-linux-gnueab
 
 ## How to benchmarks weights of a Call/Hook/Pallet
 
-1. Create the benchmarking tests, see commit 31057e37be471e3f27d18c63818d57cc907b4b4f for a
+1. Create the benchmarking tests. See commit f5f2ae969ac592ba9957b0e40e18d6e4b0048473 for a
 complete real example.
-2. Run the benchmark test on your local machine:
-`cargo test -p <pallet> --features runtime-benchmarks`
-3. If the benchmark tests compiles and pass, compile the binary with benchmarks on your local
-machine: `cargo build --release --features runtime-benchmarks`
-4. Run the benchmarks on your local machine (to test if it work with a real runtime). The command
-is: `duniter benchmark pallet --chain=CURRENCY-dev --steps=50 --repeat=20 --pallet=pallet_universal_dividend --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=.`
-5. If it worked, use the generated file content to create or update by hand the `WeightInfo` trait and the `()` dummy implementation. Then use the `WeightInfo` tarit in the real code of the pallet. See 79e0fd4bf3b0579279fc957da5e2fdfc6d8a17fa for a
-complete real example.
-6. Redo steps `3.` and `4.` on the reference machine.
-7. Put the automatically generated file on `runtime/common/src/weights` and use it in the runtimes configuration.
-See cee7c3b2763ba402e807f126534d9cd39a8bd025 for a complete real example.
 
-Note 1: You *must* replace `CURRENCY` by the currency type, or for ĞDev use directly `--chain=gdev-benchmark`.
+2. Run the benchmark test on your local machine:
+
+```
+cargo test -p <pallet> --features runtime-benchmarks
+```
+
+3. If the benchmark tests compiles and pass, compile the binary with benchmarks on your local
+machine: 
+
+```
+cargo build --release --features runtime-benchmarks
+```
+
+4. Run the benchmarks on your local machine (to test if it work with a real runtime). See 0d1232cd0d8b5809e1586b48376f8952cebc0d27 for a complete real example. The command is: 
+
+```
+duniter benchmark pallet --chain=CHAINSPEC --steps=50 --repeat=20 --pallet=<pallet> --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=./runtime/common/src/weights/ 
+```
+
+5. Use the generated file content to create the `WeightInfo` trait and the `()` dummy implementation in `pallets/<pallet>/src/weights.rs`. Then use the `WeightInfo` trait in the real code of the pallet. See 62dcc17f2c0b922e883fbc6337a9e7da97fc3218 for a complete real example.
+
+6. Redo steps `3.` and `4.` on the reference machine.
+
+7. Use the `runtime/common/src/weights/pallet_<pallet>.rs` generated on the reference machine in the runtimes configuration. See  af62a3b9cfc42d6653b3a957836f58540c18e65a for a complete real example.
+
+Note 1: Use relevant chainspec for the benchmarks in place of `CHAINSPEC`. For example `--chain=gdev-benchmark` has already created identities that can be confirmed by pallet identity 
 
 Note 2: If the reference machine does not support wasmtime, you should replace `--wasm-execution=compiled`
 by `--wasm-execution=interpreted-i-know-what-i-do`.
@@ -39,7 +53,7 @@ by `--wasm-execution=interpreted-i-know-what-i-do`.
 2. Run base block benchmarks command:
 
 ```
-./duniter benchmark overhead --chain=gdev --execution=wasm --wasm-execution=interpreted-i-know-what-i-do --weight-path=. --warmup=10 --repeat=100
+duniter benchmark overhead --chain=gdev --execution=wasm --wasm-execution=interpreted-i-know-what-i-do --weight-path=. --warmup=10 --repeat=100
 ```
 
 3. Copy the generated file `block_weights.rs` in the codebase in folder `runtime/common/src/weights/`.
@@ -52,7 +66,7 @@ by `--wasm-execution=interpreted-i-know-what-i-do`.
 3. Run storage benchmarks command, example:
 
 ```
-./duniter benchmark storage -d=/mnt/ssd1/duniter-v2s/t1 --chain=gdev --mul=2 --weight-path=. --state-version=1
+duniter benchmark storage -d=/mnt/ssd1/duniter-v2s/t1 --chain=gdev --mul=2 --weight-path=. --state-version=1
 ```
 
 4. Copy the generated file `paritydb_weights.rs` in the codebase in folder `runtime/common/src/weights/`.
