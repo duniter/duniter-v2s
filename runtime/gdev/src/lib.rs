@@ -139,16 +139,13 @@ pub type TechnicalCommitteeInstance = Instance2;
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
     define_benchmarks!(
-        // Duniter
-        // NOTE: Make sure to prefix these with `common_runtime::` so
-        // the that path resolves correctly in the generated file.
-        [common_runtime::oneshot_account, OneshotAccount]
-        [common_runtime::universal_dividend, UniversalDividend]
-        [common_runtime::provide_randomness, ProvideRandomness]
-        [common_runtime::upgrade_origin, UpgradeOrigin]
-        [common_runtime::duniter_account, Account]
         [pallet_certification, Cert]
         [pallet_certification, SmithsCert]
+        [pallet_oneshot_account, OneshotAccount]
+        [pallet_universal_dividend, UniversalDividend]
+        [pallet_provide_randomness, ProvideRandomness]
+        [pallet_upgrade_origin, UpgradeOrigin]
+        [pallet_duniter_account, Account]
         // Substrate
         [pallet_balances, Balances]
         [frame_benchmarking::baseline, Baseline::<Runtime>]
