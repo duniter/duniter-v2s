@@ -440,6 +440,7 @@ macro_rules! pallets_config {
             type RevocationSigner = <Signature as sp_runtime::traits::Verify>::Signer;
             type RevocationSignature = Signature;
             type RuntimeEvent = RuntimeEvent;
+            type WeightInfo = common_runtime::weights::pallet_identity::WeightInfo<Runtime>;
         }
 
         impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {

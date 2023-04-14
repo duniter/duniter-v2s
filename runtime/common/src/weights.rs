@@ -31,6 +31,7 @@ pub mod pallet_timestamp;
 pub mod pallet_universal_dividend;
 pub mod pallet_upgrade_origin;
 pub mod pallet_provide_randomness;
+pub mod pallet_identity;
 pub mod pallet_duniter_account;
 pub mod pallet_certification_cert;
 pub mod pallet_certification_smiths_cert;
