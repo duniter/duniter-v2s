@@ -1,44 +1,76 @@
+# Workaround for https://github.com/containers/buildah/issues/4742
+FROM debian:bullseye-slim as target
+
 # ------------------------------------------------------------------------------
 # Build Stage
 # ------------------------------------------------------------------------------
 
-# Building for Debian buster because we need the binary to be compatible
-# with the image paritytech/ci-linux:production (currently based on
-# debian:buster-slim) used by the gitlab CI
-FROM rust:1-buster as build
+# When building for a foreign arch, use cross-compilation
+# https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
+FROM --platform=$BUILDPLATFORM rust:1-bullseye as build
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+
+# We need the target arch triplet in both Debian and rust flavor
+RUN echo "DEBIAN_ARCH_TRIPLET='$(dpkg-architecture -A${TARGETPLATFORM#linux/} -qDEB_TARGET_MULTIARCH)'" >>/root/dynenv
+RUN . /root/dynenv && \
+    echo "RUST_ARCH_TRIPLET='$(echo "$DEBIAN_ARCH_TRIPLET" | sed -E 's/-linux-/-unknown&/')'" >>/root/dynenv
+
 WORKDIR /root
 
 # Copy source tree
 COPY . .
 
-RUN test -x build/duniter || \
-    ( \
-        apt-get update && \
-        DEBIAN_FRONTEND=noninteractive apt-get install -y clang cmake protobuf-compiler \
-    )
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y clang cmake protobuf-compiler
 
 # build duniter
-ARG threads=1
-RUN test -x build/duniter || \
-    ( \
-        cargo build --release -j $threads && \
-        mkdir -p build && \
-        mv target/release/duniter build/ \
-    )
+ARG debug=0
+RUN if [ "$debug" = 0 ]; then \
+        echo "CARGO_OPTIONS=--release" >>/root/dynenv && \
+        echo "TARGET_FOLDER=release" >>/root/dynenv; \
+    else \
+        echo "TARGET_FOLDER=debug" >>/root/dynenv; \
+    fi
 
-# Create fake duniter-cucumber if is not exist
-# The goal is to avoid error later, this binary is optional
-RUN test -x build/duniter-cucumber || \
-    ( \
-        mkdir -p build && \
-        touch build/duniter-cucumber \
-    )
+# Configure cross-build environment if need be
+RUN set -x && \
+    if [ "$TARGETPLATFORM" != "$BUILDPLATFORM" ]; then \
+        . /root/dynenv && \
+        apt install -y gcc-$DEBIAN_ARCH_TRIPLET binutils-$DEBIAN_ARCH_TRIPLET && \
+        rustup target add "$RUST_ARCH_TRIPLET" && \
+        : https://github.com/rust-lang/cargo/issues/4133 && \
+        echo "RUSTFLAGS='-C linker=$DEBIAN_ARCH_TRIPLET-gcc'; export RUSTFLAGS" >>/root/dynenv; \
+    fi
+
+# Build
+RUN set -x && \
+    cat /root/dynenv && \
+    . /root/dynenv && \
+    cargo build --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" && \
+    mkdir -p build && \
+    mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/
+
+# Run tests if requested, expted when cross-building
+ARG cucumber=0
+RUN if [ "$cucumber" != 0 ] && [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then \
+        cargo test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests && \
+        cargo cucumber -i account_creation* && \
+        cargo cucumber -i certification* && \
+        cargo cucumber -i identity_creation* && \
+        cargo cucumber -i monetary_mass* && \
+        cargo cucumber -i oneshot_account* && \
+        cargo cucumber -i transfer_all* && \
+        cd target/debug/deps/ && \
+        rm cucumber_tests-*.d && \
+        mv cucumber_tests* ../../../build/duniter-cucumber; \
+    fi
 
 # ------------------------------------------------------------------------------
 # Final Stage
 # ------------------------------------------------------------------------------
 
-FROM debian:buster-slim
+FROM target
 
 LABEL maintainer="Gilles Filippini <gilles.filippini@pini.fr>"
 LABEL version="0.0.0"
@@ -54,6 +86,5 @@ ENTRYPOINT ["docker-entrypoint"]
 USER duniter
 
 # Intall
-COPY --from=build /root/build/duniter /usr/local/bin/duniter
-COPY --from=build /root/build/duniter-cucumber /usr/local/bin/duniter-cucumber
+COPY --from=build /root/build /usr/local/bin/
 COPY docker/docker-entrypoint /usr/local/bin/

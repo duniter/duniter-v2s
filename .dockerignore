@@ -6,3 +6,4 @@ docker/Dockerfile
 docker-compose.yml
 arm-build/
 **/target/
+build/
