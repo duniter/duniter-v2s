@@ -19,10 +19,10 @@ use common_runtime::constants::*;
 use common_runtime::entities::IdtyData;
 use common_runtime::*;
 use gdev_runtime::{
-    opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
-    BalancesConfig, CertConfig, GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig,
-    ParametersConfig, SessionConfig, SmithsCertConfig, SmithsMembershipConfig, SudoConfig,
-    SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
+    opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig, CertConfig,
+    GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig, ParametersConfig, SessionConfig,
+    SmithsCertConfig, SmithsMembershipConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
+    UniversalDividendConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
@@ -34,8 +34,8 @@ use std::collections::BTreeMap;
 
 pub type AuthorityKeys = (
     AccountId,
-    BabeId,
     GrandpaId,
+    BabeId,
     ImOnlineId,
     AuthorityDiscoveryId,
 );
@@ -53,16 +53,51 @@ const TOKEN_SYMBOL: &str = "ĞD";
 pub fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
     (
         get_account_id_from_seed::<sr25519::Public>(s),
-        get_from_seed::<BabeId>(s),
         get_from_seed::<GrandpaId>(s),
+        get_from_seed::<BabeId>(s),
         get_from_seed::<ImOnlineId>(s),
         get_from_seed::<AuthorityDiscoveryId>(s),
     )
 }
 
+/// Generate session keys
+fn get_session_keys_from_seed(s: &str) -> SessionKeys {
+    let authority_keys = get_authority_keys_from_seed(s);
+    session_keys(
+        authority_keys.1,
+        authority_keys.2,
+        authority_keys.3,
+        authority_keys.4,
+    )
+}
+
+/// get environment variable
+fn get_env_u32(env_var_name: &'static str, default_value: u32) -> u32 {
+    std::env::var(env_var_name)
+        .map_or(Ok(default_value), |s| s.parse())
+        .unwrap_or_else(|_| panic!("{} must be a number", env_var_name))
+}
+
+/// make session keys struct
+fn session_keys(
+    grandpa: GrandpaId,
+    babe: BabeId,
+    im_online: ImOnlineId,
+    authority_discovery: AuthorityDiscoveryId,
+) -> SessionKeys {
+    SessionKeys {
+        grandpa,
+        babe,
+        im_online,
+        authority_discovery,
+    }
+}
+
+/// generate development chainspec with Alice validator
 pub fn development_chain_spec() -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
+    // custom genesis
     if std::env::var("DUNITER_GENESIS_CONFIG").is_ok() {
         super::gen_genesis_data::generate_genesis_data(
             |genesis_data| {
@@ -71,7 +106,9 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
                     "Development",
                     // ID
                     "gdev",
+                    // chain type
                     sc_service::ChainType::Development,
+                    // constructor
                     move || genesis_data_to_gdev_genesis_conf(genesis_data.clone(), wasm_binary),
                     // Bootnodes
                     vec![],
@@ -95,15 +132,19 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
                     None,
                 )
             },
-            Some(get_authority_keys_from_seed("Alice").encode()),
+            Some(get_session_keys_from_seed("Alice").encode()),
         )
-    } else {
+    }
+    // generated genesis
+    else {
         Ok(ChainSpec::from_genesis(
             // Name
             "Development",
             // ID
             "gdev",
+            // chain type
             ChainType::Development,
+            // constructor
             move || {
                 gen_genesis_for_local_chain(
                     wasm_binary,
@@ -142,6 +183,7 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
     }
 }
 
+/// generate live network chainspecs
 pub fn gen_live_conf() -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
 
@@ -186,6 +228,7 @@ pub fn gen_live_conf() -> Result<ChainSpec, String> {
     )
 }
 
+/// generate local network chainspects
 pub fn local_testnet_config(
     initial_authorities_len: usize,
     initial_smiths_len: usize,
@@ -236,6 +279,7 @@ pub fn local_testnet_config(
     ))
 }
 
+/// generate genesis
 fn gen_genesis_for_local_chain(
     wasm_binary: &[u8],
     initial_authorities_len: usize,
@@ -324,9 +368,7 @@ fn gen_genesis_for_local_chain(
                 .map(|(i, keys)| (i as u32 + 1, (keys.0.clone(), i < initial_authorities_len)))
                 .collect(),
         },
-        balances: BalancesConfig {
-            balances: Default::default(),
-        },
+        balances: Default::default(),
         babe: BabeConfig {
             authorities: Vec::with_capacity(0),
             epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
@@ -401,26 +443,7 @@ fn gen_genesis_for_local_chain(
     }
 }
 
-fn get_env_u32(env_var_name: &'static str, default_value: u32) -> u32 {
-    std::env::var(env_var_name)
-        .map_or(Ok(default_value), |s| s.parse())
-        .unwrap_or_else(|_| panic!("{} must be a number", env_var_name))
-}
-
-fn session_keys(
-    babe: BabeId,
-    grandpa: GrandpaId,
-    im_online: ImOnlineId,
-    authority_discovery: AuthorityDiscoveryId,
-) -> SessionKeys {
-    SessionKeys {
-        babe,
-        grandpa,
-        im_online,
-        authority_discovery,
-    }
-}
-
+/// custom genesis
 fn genesis_data_to_gdev_genesis_conf(
     genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
     wasm_binary: &[u8],
@@ -456,7 +479,7 @@ fn genesis_data_to_gdev_genesis_conf(
         balances: Default::default(),
         babe: BabeConfig {
             authorities: Vec::with_capacity(0),
-            epoch_config: Some(common_runtime::constants::BABE_GENESIS_EPOCH_CONFIG),
+            epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
         },
         grandpa: Default::default(),
         im_online: Default::default(),
@@ -475,14 +498,14 @@ fn genesis_data_to_gdev_genesis_conf(
             identities: identities
                 .into_iter()
                 .enumerate()
-                .map(|(i, (name, pubkey))| common_runtime::GenesisIdty {
+                .map(|(i, (name, owner_key))| GenesisIdty {
                     index: i as u32 + 1,
                     name: common_runtime::IdtyName::from(name.as_str()),
                     value: common_runtime::IdtyValue {
                         data: IdtyData::new(),
                         next_creatable_identity_on: 0,
                         old_owner_key: None,
-                        owner_key: pubkey,
+                        owner_key,
                         removable_on: 0,
                         status: IdtyStatus::Validated,
                     },

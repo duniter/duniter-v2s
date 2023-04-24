@@ -99,12 +99,16 @@ impl GenSessionKeysCmd {
         }
 
         let mut buffer = [0; 32];
+        // grandpa
         buffer.copy_from_slice(&public_keys_bytes[..32]);
         println!("grandpa: {}", AccountId32::new(buffer));
+        // babe
         buffer.copy_from_slice(&public_keys_bytes[32..64]);
         println!("babe: {}", AccountId32::new(buffer));
+        // im_online
         buffer.copy_from_slice(&public_keys_bytes[64..96]);
         println!("im_online: {}", AccountId32::new(buffer));
+        // authority discovery
         buffer.copy_from_slice(&public_keys_bytes[96..]);
         println!("authority_discovery: {}", AccountId32::new(buffer));
 

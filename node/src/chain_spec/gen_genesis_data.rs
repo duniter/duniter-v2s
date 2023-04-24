@@ -294,7 +294,11 @@ where
                 return Err("session_keys field forbidden".to_owned());
             }
             if *idty_index == 1 {
+                // online authority
                 initial_authorities.insert(1, (identity.pubkey.clone(), true));
+            } else {
+                // authority but offline
+                initial_authorities.insert(*idty_index, (identity.pubkey.clone(), false));
             }
         } else {
             initial_authorities.insert(
@@ -319,11 +323,9 @@ where
             fake_session_keys_bytes
             //vec![initial_authorities.len() as u8; std::mem::size_of::<SK>()]
         };
-        session_keys_map.insert(
-            identity.pubkey.clone(),
-            SK::decode(&mut &session_keys_bytes[..])
-                .map_err(|_| format!("invalid session keys for idty {}", &idty_name))?,
-        );
+        let session_keys = SK::decode(&mut &session_keys_bytes[..])
+            .map_err(|_| format!("invalid session keys for idty {}", &idty_name))?;
+        session_keys_map.insert(identity.pubkey.clone(), session_keys);
 
         // Certifications
         let mut receiver_certs = BTreeMap::new();
