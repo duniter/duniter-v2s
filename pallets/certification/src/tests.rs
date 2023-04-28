@@ -175,3 +175,43 @@ fn test_cert_period() {
         ));
     });
 }
+
+#[test]
+fn test_cert_expiry() {
+    new_test_ext(DefaultCertificationConfig {
+        apply_cert_period_at_genesis: true,
+        certs_by_receiver: btreemap![
+            0 => btreemap![
+                1 => Some(5),
+                2 => Some(5),
+            ],
+            1 => btreemap![
+                0 => Some(6),
+                2 => Some(6),
+            ],
+            2 => btreemap![
+                0 => Some(7),
+                1 => Some(7),
+            ],
+        ],
+    })
+    .execute_with(|| {
+        run_to_block(5);
+        // Expiry of cert by issuer 1
+        System::assert_has_event(RuntimeEvent::DefaultCertification(Event::RemovedCert {
+            issuer: 1,
+            issuer_issued_count: 1,
+            receiver: 0,
+            receiver_received_count: 1,
+            expiration: true,
+        }));
+        // Expiry of cert by issuer 2
+        System::assert_has_event(RuntimeEvent::DefaultCertification(Event::RemovedCert {
+            receiver: 0,
+            issuer: 2,
+            issuer_issued_count: 1,
+            receiver_received_count: 0, // <-- No more cert received
+            expiration: true,
+        }));
+    });
+}
