@@ -471,7 +471,7 @@ pub mod pallet {
             let mut removed = false;
             CertsByReceiver::<T, I>::mutate_exists(receiver, |issuers_opt| {
                 let issuers = issuers_opt.get_or_insert(Vec::with_capacity(0));
-                if let Ok(index) = issuers.binary_search_by(|(issuer_, _)| issuer.cmp(issuer_)) {
+                if let Ok(index) = issuers.binary_search_by(|(issuer_, _)| issuer_.cmp(&issuer)) {
                     if let Some(block_number) = block_number_opt {
                         if let Some((_, removable_on)) = issuers.get(index) {
                             if *removable_on == block_number {
