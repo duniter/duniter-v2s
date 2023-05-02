@@ -91,7 +91,7 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 	}
 	// Storage: Identity IdentityIndexOf (r:2 w:2)
 	// Storage: Identity Identities (r:1 w:1)
-	// Storage: SmithsMembership Membership (r:1 w:0)
+	// Storage: SmithMembership Membership (r:1 w:0)
 	// Storage: System BlockHash (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
 	// Storage: AuthorityMembers Members (r:1 w:0)
@@ -102,7 +102,7 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
 	// Storage: Identity Identities (r:1 w:1)
-	// Storage: SmithsMembership Membership (r:1 w:0)
+	// Storage: SmithMembership Membership (r:1 w:0)
 	// Storage: System BlockHash (r:1 w:0)
 	// Storage: Membership Membership (r:1 w:1)
 	// Storage: Identity CounterForIdentities (r:1 w:1)
@@ -118,7 +118,7 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().writes(8 as u64))
 	}
 	// Storage: Identity Identities (r:1 w:1)
-	// Storage: SmithsMembership Membership (r:1 w:0)
+	// Storage: SmithMembership Membership (r:1 w:0)
 	// Storage: Membership Membership (r:1 w:1)
 	// Storage: Identity CounterForIdentities (r:1 w:1)
 	// Storage: System Account (r:1 w:1)

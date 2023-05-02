@@ -70,7 +70,7 @@ impl<T: frame_system::Config> pallet_certification::WeightInfo for WeightInfo<T>
 	// Storage: SmithsCert CertsByReceiver (r:1 w:1)
 	// Storage: SmithsCert StorageIdtyCertMeta (r:2 w:2)
 	// Storage: Parameters ParametersStorage (r:1 w:0)
-	// Storage: SmithsMembership Membership (r:1 w:0)
+	// Storage: SmithMembership Membership (r:1 w:0)
 	fn del_cert() -> Weight {
 		// Minimum execution time: 126_824 nanoseconds.
 		Weight::from_ref_time(130_111_000 as u64)
@@ -80,7 +80,7 @@ impl<T: frame_system::Config> pallet_certification::WeightInfo for WeightInfo<T>
 	// Storage: SmithsCert CertsByReceiver (r:1 w:1)
 	// Storage: SmithsCert StorageIdtyCertMeta (r:2 w:2)
 	// Storage: Parameters ParametersStorage (r:1 w:0)
-	// Storage: SmithsMembership Membership (r:1 w:0)
+	// Storage: SmithMembership Membership (r:1 w:0)
 	/// The range of component `i` is `[2, 1000]`.
 	/// The range of component `i` is `[2, 1000]`.
 	fn remove_all_certs_received_by(i: u32, ) -> Weight {

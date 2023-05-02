@@ -34,5 +34,5 @@ pub mod pallet_provide_randomness;
 pub mod pallet_identity;
 pub mod pallet_duniter_account;
 pub mod pallet_certification_cert;
-pub mod pallet_certification_smiths_cert;
+pub mod pallet_certification_smith_cert;
 pub mod paritydb_weights;

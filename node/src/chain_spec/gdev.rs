@@ -565,8 +565,8 @@ fn gen_genesis_for_benchmark_chain(
                 smith_cert_validity_period,
                 smith_membership_period,
                 smith_pending_membership_period: 500,
-                smiths_wot_first_cert_issuable_on: 20,
-                smiths_wot_min_cert_for_membership: 2,
+                smith_wot_first_cert_issuable_on: 20,
+                smith_wot_min_cert_for_membership: 2,
                 wot_first_cert_issuable_on: 20,
                 wot_min_cert_for_create_idty_right: 2,
                 wot_min_cert_for_membership: 2,
@@ -580,9 +580,7 @@ fn gen_genesis_for_benchmark_chain(
                 .map(|(i, keys)| (i as u32 + 1, (keys.0.clone(), i < initial_authorities_len)))
                 .collect(),
         },
-        balances: BalancesConfig {
-            balances: Default::default(),
-        },
+        balances: Default::default(),
         babe: BabeConfig {
             authorities: Vec::with_capacity(0),
             epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
@@ -662,12 +660,12 @@ fn gen_genesis_for_benchmark_chain(
             apply_cert_period_at_genesis: false,
             certs_by_receiver: clique_wot(initial_identities.len()),
         },
-        smiths_membership: SmithsMembershipConfig {
+        smith_membership: SmithMembershipConfig {
             memberships: (1..=initial_smiths_len)
                 .map(|i| (i as u32, MembershipData { expire_on: 0 }))
                 .collect(),
         },
-        smiths_cert: SmithsCertConfig {
+        smith_cert: SmithCertConfig {
             apply_cert_period_at_genesis: false,
             certs_by_receiver: clique_wot(initial_smiths_len),
         },
@@ -677,26 +675,6 @@ fn gen_genesis_for_benchmark_chain(
             initial_monetary_mass: initial_identities_len as u64 * first_ud,
         },
         treasury: Default::default(),
-    }
-}
-
-fn get_env_u32(env_var_name: &'static str, default_value: u32) -> u32 {
-    std::env::var(env_var_name)
-        .map_or(Ok(default_value), |s| s.parse())
-        .unwrap_or_else(|_| panic!("{} must be a number", env_var_name))
-}
-
-fn session_keys(
-    babe: BabeId,
-    grandpa: GrandpaId,
-    im_online: ImOnlineId,
-    authority_discovery: AuthorityDiscoveryId,
-) -> SessionKeys {
-    SessionKeys {
-        babe,
-        grandpa,
-        im_online,
-        authority_discovery,
     }
 }
 
