@@ -252,6 +252,56 @@ fn test_confirm_idty_ok() {
 }
 
 #[test]
+fn test_revoke_idty() {
+    new_test_ext(5, 1).execute_with(|| {
+        run_to_block(2);
+
+        // Alice identity can not be revoked because she's smith
+        assert_noop!(
+            Identity::revoke_identity(
+                RuntimeOrigin::signed(1),
+                1,
+                1,
+                TestSignature(
+                    1,
+                    (
+                        REVOCATION_PAYLOAD_PREFIX,
+                        RevocationPayload {
+                            idty_index: 1u32,
+                            genesis_hash: System::block_hash(0),
+                        }
+                    )
+                        .encode()
+                )
+            ),
+            pallet_duniter_wot::Error::<Test, Instance2>::NotAllowedToRemoveIdty
+        );
+
+        // Anyone should be able to submit Bob revocation certificate
+        assert_ok!(Identity::revoke_identity(
+            RuntimeOrigin::signed(42),
+            2,
+            2,
+            TestSignature(
+                2,
+                (
+                    REVOCATION_PAYLOAD_PREFIX,
+                    RevocationPayload {
+                        idty_index: 2u32,
+                        genesis_hash: System::block_hash(0),
+                    }
+                )
+                    .encode()
+            )
+        ));
+
+        System::assert_has_event(RuntimeEvent::Identity(
+            pallet_identity::Event::IdtyRemoved { idty_index: 2 },
+        ));
+    });
+}
+
+#[test]
 fn test_idty_membership_expire_them_requested() {
     new_test_ext(3, 2).execute_with(|| {
         run_to_block(4);

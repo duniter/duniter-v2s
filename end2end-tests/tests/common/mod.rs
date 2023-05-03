@@ -21,7 +21,10 @@ pub mod cert;
 pub mod identity;
 pub mod oneshot;
 
-#[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
+#[subxt::subxt(
+    runtime_metadata_path = "../resources/metadata.scale",
+    derive_for_all_types = "Eq, PartialEq"
+)]
 pub mod gdev {}
 
 use anyhow::anyhow;

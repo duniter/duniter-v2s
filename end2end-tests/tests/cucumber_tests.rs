@@ -313,6 +313,15 @@ async fn confirm_identity(world: &mut DuniterWorld, from: String, pseudo: String
     common::identity::confirm_identity(world.client(), from, pseudo).await
 }
 
+#[when(regex = r#"([a-zA-Z]+) validates ([a-zA-Z]+) identity"#)]
+async fn validate_identity(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
+    // input names to keyrings
+    let from = AccountKeyring::from_str(&from).expect("unknown from");
+    let to: u32 = common::identity::get_identity_index(world, to).await?;
+
+    common::identity::validate_identity(world.client(), from, to).await
+}
+
 // ===== then ====
 
 #[then(regex = r"([a-zA-Z]+) should have (\d+) (ĞD|cĞD)")]
@@ -430,28 +439,30 @@ async fn should_be_certified_by(
 
 use gdev::runtime_types::pallet_identity::types::IdtyStatus;
 
-#[then(regex = r"([a-zA-Z]+) identity should be created")]
-async fn identity_should_be_created(world: &mut DuniterWorld, receiver: String) -> Result<()> {
-    let identity_value = common::identity::get_identity_value(world, receiver).await?;
+// status from string
+impl FromStr for IdtyStatus {
+    type Err = String;
 
-    match identity_value.status {
-        IdtyStatus::Created => Ok(()),
-        IdtyStatus::ConfirmedByOwner | IdtyStatus::Validated => {
-            Err(anyhow::anyhow!("status not created").into())
+    fn from_str(input: &str) -> std::result::Result<IdtyStatus, String> {
+        match input {
+            "created" => Ok(IdtyStatus::Created),
+            "confirmed" => Ok(IdtyStatus::ConfirmedByOwner),
+            "validated" => Ok(IdtyStatus::Validated),
+            _ => Err(format!("'{input}' does not match a status")),
         }
     }
 }
 
-#[then(regex = r"([a-zA-Z]+) identity should be confirmed")]
-async fn identity_should_be_confirmed(world: &mut DuniterWorld, name: String) -> Result<()> {
+#[then(regex = r"([a-zA-Z]+) identity should be ([a-zA-Z ]+)")]
+async fn identity_status_should_be(
+    world: &mut DuniterWorld,
+    name: String,
+    status: String,
+) -> Result<()> {
     let identity_value = common::identity::get_identity_value(world, name).await?;
-
-    match identity_value.status {
-        IdtyStatus::ConfirmedByOwner => Ok(()),
-        IdtyStatus::Created | IdtyStatus::Validated => {
-            Err(anyhow::anyhow!("status not confirmed by owner").into())
-        }
-    }
+    let expected_status = IdtyStatus::from_str(&status)?;
+    assert_eq!(identity_value.status, expected_status);
+    Ok(())
 }
 
 // ============================================================

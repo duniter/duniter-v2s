@@ -72,8 +72,27 @@ pub async fn confirm_identity(client: &Client, from: AccountKeyring, pseudo: Str
     Ok(())
 }
 
-// get identity value from account keyring name
-pub async fn get_identity_value(world: &mut DuniterWorld, account: String) -> Result<IdtyValue> {
+pub async fn validate_identity(client: &Client, from: AccountKeyring, to: u32) -> Result<()> {
+    let from = PairSigner::new(from.pair());
+
+    let _events = create_block_with_extrinsic(
+        client,
+        client
+            .tx()
+            .create_signed(
+                &gdev::tx().identity().validate_identity(to),
+                &from,
+                BaseExtrinsicParamsBuilder::new(),
+            )
+            .await?,
+    )
+    .await?;
+
+    Ok(())
+}
+
+// get identity index from account keyring name
+pub async fn get_identity_index(world: &mut DuniterWorld, account: String) -> Result<u32> {
     let account = AccountKeyring::from_str(&account)
         .expect("unknown account")
         .to_account_id();
@@ -83,6 +102,12 @@ pub async fn get_identity_value(world: &mut DuniterWorld, account: String) -> Re
         .await?
         .ok_or_else(|| anyhow::anyhow!("identity {} has no associated index", account))
         .unwrap();
+
+    Ok(identity_index)
+}
+// get identity value from account keyring name
+pub async fn get_identity_value(world: &mut DuniterWorld, account: String) -> Result<IdtyValue> {
+    let identity_index = get_identity_index(world, account).await.unwrap();
 
     let identity_value = world
         .read(&gdev::storage().identity().identities(identity_index))
