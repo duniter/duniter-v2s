@@ -416,7 +416,7 @@ async fn should_be_certified_by(
         .await?;
 
     // look for certification by issuer/receiver pair
-    match issuers.binary_search_by(|(issuer_, _)| issuer_index.cmp(issuer_)) {
+    match issuers.binary_search_by(|(issuer_, _)| issuer_.cmp(&issuer_index)) {
         Ok(_) => Ok(()),
         Err(_) => Err(anyhow::anyhow!(
             "no certification found from {} to {}: {:?}",

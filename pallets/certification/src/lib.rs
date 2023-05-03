@@ -406,9 +406,16 @@ pub mod pallet {
             let mut created = false;
             CertsByReceiver::<T, I>::mutate_exists(receiver, |maybe_issuers| {
                 let issuers = maybe_issuers.get_or_insert(Vec::with_capacity(0));
-                if let Err(index) = issuers.binary_search_by(|(issuer_, _)| issuer.cmp(issuer_)) {
-                    issuers.insert(index, (issuer, removable_on));
-                    created = true;
+                match issuers.binary_search_by(|(issuer_, _)| issuer_.cmp(&issuer)) {
+                    // cert exists, must be renewed
+                    Ok(index) => {
+                        issuers[index] = (issuer, removable_on);
+                    }
+                    // cert does not exist, must be created
+                    Err(index) => {
+                        issuers.insert(index, (issuer, removable_on));
+                        created = true;
+                    }
                 }
             });
 
@@ -462,6 +469,7 @@ pub mod pallet {
             total_weight
         }
         /// perform the certification removal
+        /// if block number is given only remove cert if still set to expire at this block number
         fn remove_cert_inner(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
@@ -474,6 +482,7 @@ pub mod pallet {
                 if let Ok(index) = issuers.binary_search_by(|(issuer_, _)| issuer_.cmp(&issuer)) {
                     if let Some(block_number) = block_number_opt {
                         if let Some((_, removable_on)) = issuers.get(index) {
+                            // only remove cert if block number is matching
                             if *removable_on == block_number {
                                 issuers.remove(index);
                                 removed = true;

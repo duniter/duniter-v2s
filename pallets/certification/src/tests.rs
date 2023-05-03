@@ -176,6 +176,7 @@ fn test_cert_period() {
     });
 }
 
+// after given validity period, a certification should expire
 #[test]
 fn test_cert_expiry() {
     new_test_ext(DefaultCertificationConfig {
@@ -211,6 +212,51 @@ fn test_cert_expiry() {
             issuer: 2,
             issuer_issued_count: 1,
             receiver_received_count: 0, // <-- No more cert received
+            expiration: true,
+        }));
+    });
+}
+
+// when renewing a certification, it should not expire now, but later
+#[test]
+fn test_cert_renewal() {
+    new_test_ext(DefaultCertificationConfig {
+        apply_cert_period_at_genesis: false,
+        certs_by_receiver: btreemap![
+            0 => btreemap![
+                1 => Some(5),
+                2 => Some(20),
+            ],
+            1 => btreemap![
+                0 => Some(20),
+                2 => Some(20),
+            ],
+            2 => btreemap![
+                0 => Some(20),
+                1 => Some(20),
+            ],
+        ],
+    })
+    .execute_with(|| {
+        run_to_block(2);
+        // renew certification from bob to alice
+        // this certification should expire 10 blocks later (at block 12)
+        assert_eq!(
+            DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
+            Ok(().into())
+        );
+        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RenewedCert {
+            issuer: 1,
+            receiver: 0,
+        }));
+
+        run_to_block(12);
+        // expiry of previously renewed cert
+        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RemovedCert {
+            issuer: 1,
+            issuer_issued_count: 1,
+            receiver: 0,
+            receiver_received_count: 1,
             expiration: true,
         }));
     });
