@@ -21,10 +21,12 @@ mod check_nonce;
 #[cfg(test)]
 mod mock;
 mod types;
+pub mod weights;
 
 pub use check_nonce::CheckNonce;
 pub use pallet::*;
 pub use types::*;
+pub use weights::WeightInfo;
 
 use frame_support::pallet_prelude::*;
 use frame_support::traits::{
@@ -56,6 +58,8 @@ pub mod pallet {
         type Currency: Currency<Self::AccountId>;
         type InnerOnChargeTransaction: OnChargeTransaction<Self>;
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        /// Type representing the weight of this pallet
+        type WeightInfo: WeightInfo;
     }
 
     // STORAGE //
@@ -127,7 +131,7 @@ pub mod pallet {
         /// - `balance`: The balance to be transfered to this oneshot account.
         ///
         /// Origin account is kept alive.
-        #[pallet::weight(500_000_000)]
+        #[pallet::weight(T::WeightInfo::create_oneshot_account())]
         pub fn create_oneshot_account(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
@@ -165,7 +169,7 @@ pub mod pallet {
         /// - `block_height`: Must be a recent block number. The limit is `BlockHashCount` in the past. (this is to prevent replay attacks)
         /// - `dest`: The destination account.
         /// - `dest_is_oneshot`: If set to `true`, then a oneshot account is created at `dest`. Else, `dest` has to be an existing account.
-        #[pallet::weight(500_000_000)]
+        #[pallet::weight(T::WeightInfo::consume_oneshot_account())]
         pub fn consume_oneshot_account(
             origin: OriginFor<T>,
             block_height: T::BlockNumber,
@@ -223,7 +227,7 @@ pub mod pallet {
         /// - `dest2`: The second destination account.
         /// - `dest2_is_oneshot`: If set to `true`, then a oneshot account is created at `dest2`. Else, `dest2` has to be an existing account.
         /// - `balance1`: The amount transfered to `dest`, the leftover being transfered to `dest2`.
-        #[pallet::weight(500_000_000)]
+        #[pallet::weight(T::WeightInfo::consume_oneshot_account_with_remaining())]
         pub fn consume_oneshot_account_with_remaining(
             origin: OriginFor<T>,
             block_height: T::BlockNumber,

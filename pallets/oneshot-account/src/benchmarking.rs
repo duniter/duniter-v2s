@@ -29,10 +29,11 @@ use crate::Pallet;
 const SEED: u32 = 0;
 
 benchmarks! {
-    where_clause { where
+    where_clause {
+        where
         T: pallet_balances::Config,
         T::Balance: From<u64>,
-        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>
+        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>+From<T::Balance>
     }
     create_oneshot_account {
         let existential_deposit = T::ExistentialDeposit::get();
@@ -50,11 +51,6 @@ benchmarks! {
     verify {
         assert_eq!(Balances::<T>::free_balance(&caller), transfer_amount);
         assert_eq!(OneshotAccounts::<T>::get(&recipient), Some(transfer_amount.into()));
-    }
-    where_clause { where
-        T: pallet_balances::Config,
-        T::Balance: From<u64>,
-        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>+From<T::Balance>
     }
     consume_oneshot_account {
         let existential_deposit = T::ExistentialDeposit::get();
@@ -84,11 +80,6 @@ benchmarks! {
             Balances::<T>::free_balance(&recipient),
             existential_deposit.saturating_mul((3).into())
         );
-    }
-    where_clause { where
-        T: pallet_balances::Config,
-        T::Balance: From<u64>,
-        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>+From<T::Balance>
     }
     consume_oneshot_account_with_remaining {
         let existential_deposit = T::ExistentialDeposit::get();

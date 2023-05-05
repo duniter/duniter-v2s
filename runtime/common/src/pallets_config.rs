@@ -186,6 +186,7 @@ macro_rules! pallets_config {
             type Currency = Balances;
             type RuntimeEvent = RuntimeEvent;
             type InnerOnChargeTransaction = CurrencyAdapter<Balances, HandleFees>;
+            type WeightInfo = common_runtime::weights::pallet_oneshot_account::WeightInfo<Runtime>;
         }
 
         // CONSENSUS  //

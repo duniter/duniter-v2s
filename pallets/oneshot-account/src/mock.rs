@@ -104,6 +104,7 @@ impl pallet_oneshot_account::Config for Test {
     type Currency = Balances;
     type InnerOnChargeTransaction = CurrencyAdapter<Balances, HandleFees>;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
 }
 
 pub struct HandleFees;
