@@ -21,8 +21,7 @@ RUN test -x build/duniter || \
 ARG threads=1
 RUN test -x build/duniter || \
     ( \
-        CARGO_PROFILE_RELEASE_LTO="true" \
-            cargo build --release -j $threads && \
+        cargo build --release -j $threads && \
         mkdir -p build && \
         mv target/release/duniter build/ \
     )
