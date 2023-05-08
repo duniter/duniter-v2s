@@ -36,4 +36,6 @@ pub mod pallet_duniter_account;
 pub mod pallet_oneshot_account;
 pub mod pallet_certification_cert;
 pub mod pallet_certification_smith_cert;
+pub mod pallet_membership_membership;
+pub mod pallet_membership_smith_membership;
 pub mod paritydb_weights;

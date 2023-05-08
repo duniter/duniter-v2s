@@ -86,11 +86,13 @@ impl pallet_membership::Config for Test {
     type CheckCallAllowed = ();
     type IdtyId = IdtyId;
     type IdtyIdOf = ConvertInto;
+    type AccountIdOf = ConvertInto;
     type MembershipPeriod = MembershipPeriod;
     type MetaData = ();
     type OnEvent = ();
     type PendingMembershipPeriod = PendingMembershipPeriod;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.

@@ -448,11 +448,13 @@ macro_rules! pallets_config {
             type CheckCallAllowed = Wot;
             type IdtyId = IdtyIndex;
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
+            type AccountIdOf = common_runtime::providers::IdentityAccountIdProvider<Self>;
             type MembershipPeriod = MembershipPeriod;
             type MetaData = ();
             type OnEvent = OnMembershipEventHandler<Wot, Runtime>;
             type PendingMembershipPeriod = PendingMembershipPeriod;
             type RuntimeEvent = RuntimeEvent;
+            type WeightInfo = common_runtime::weights::pallet_membership_membership::WeightInfo<Runtime>;
         }
 
         impl pallet_certification::Config<Instance1> for Runtime {
@@ -483,11 +485,13 @@ macro_rules! pallets_config {
             type CheckCallAllowed = SmithSubWot;
             type IdtyId = IdtyIndex;
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
+            type AccountIdOf = common_runtime::providers::IdentityAccountIdProvider<Self>;
             type MembershipPeriod = SmithMembershipPeriod;
             type MetaData = SmithMembershipMetaData<opaque::SessionKeysWrapper>;
             type OnEvent = OnSmithMembershipEventHandler<SmithSubWot, Runtime>;
             type PendingMembershipPeriod = SmithPendingMembershipPeriod;
             type RuntimeEvent = RuntimeEvent;
+            type WeightInfo = common_runtime::weights::pallet_membership_smith_membership::WeightInfo<Runtime>;
         }
 
         impl pallet_certification::Config<Instance2> for Runtime {

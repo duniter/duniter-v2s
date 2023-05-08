@@ -140,13 +140,15 @@ pub type TechnicalCommitteeInstance = Instance2;
 mod benches {
     define_benchmarks!(
         [pallet_certification, Cert]
-        [pallet_certification, SmithsCert]
+        [pallet_certification, SmithCert]
         [pallet_oneshot_account, OneshotAccount]
         [pallet_universal_dividend, UniversalDividend]
         [pallet_provide_randomness, ProvideRandomness]
         [pallet_upgrade_origin, UpgradeOrigin]
         [pallet_duniter_account, Account]
         [pallet_identity, Identity]
+        [pallet_membership, Membership]
+        [pallet_membership, SmithMembership]
         // Substrate
         [pallet_balances, Balances]
         [frame_benchmarking::baseline, Baseline::<Runtime>]

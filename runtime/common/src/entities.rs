@@ -51,6 +51,18 @@ macro_rules! declare_session_keys {
                     Self::Identity::type_info()
                 }
             }
+
+            // Dummy implementation only for benchmarking
+            impl Default for SessionKeysWrapper {
+                fn default() -> Self {
+                    SessionKeysWrapper(SessionKeys{
+                        grandpa: sp_core::ed25519::Public([0u8; 32]).into(),
+                        babe: sp_core::sr25519::Public([0u8; 32]).into(),
+                        im_online: sp_core::sr25519::Public([0u8; 32]).into(),
+                        authority_discovery: sp_core::sr25519::Public([0u8; 32]).into(),
+                    })
+                }
+            }
         }
     }
 }
@@ -112,11 +124,27 @@ pub struct SmithMembershipMetaData<SessionKeysWrapper> {
     pub p2p_endpoint: sp_runtime::RuntimeString,
     pub session_keys: SessionKeysWrapper,
 }
-impl<SessionKeysWrapper> Default for SmithMembershipMetaData<SessionKeysWrapper> {
+
+impl<SessionKeysWrapper: Default> Default for SmithMembershipMetaData<SessionKeysWrapper> {
+    #[cfg(not(feature = "runtime-benchmarks"))]
     fn default() -> Self {
         unreachable!()
     }
+    #[cfg(feature = "runtime-benchmarks")]
+    // dummy implementation for benchmarking
+    fn default() -> Self {
+        SmithMembershipMetaData {
+            owner_key: AccountId::from([
+                // Dave (FIXME avoid stupid metadata)
+                48, 103, 33, 33, 29, 84, 4, 189, 157, 168, 142, 2, 4, 54, 10, 26, 154, 184, 184,
+                124, 102, 193, 188, 47, 205, 211, 127, 60, 34, 34, 204, 32,
+            ]),
+            p2p_endpoint: sp_runtime::RuntimeString::default(),
+            session_keys: SessionKeysWrapper::default(),
+        }
+    }
 }
+
 impl<SessionKeysWrapper> sp_membership::traits::Validate<AccountId>
     for SmithMembershipMetaData<SessionKeysWrapper>
 {

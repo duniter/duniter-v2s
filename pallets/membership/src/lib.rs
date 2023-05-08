@@ -23,10 +23,13 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-/*#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;*/
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+pub mod weights;
 
 pub use pallet::*;
+pub use weights::WeightInfo;
 
 use frame_support::dispatch::Weight;
 use frame_support::error::BadOrigin;
@@ -65,6 +68,8 @@ pub mod pallet {
         type IdtyId: Copy + MaybeSerializeDeserialize + Parameter + Ord;
         /// Something that give the IdtyId on an account id
         type IdtyIdOf: Convert<Self::AccountId, Option<Self::IdtyId>>;
+        /// Something that give the  account id on an OdtyId
+        type AccountIdOf: Convert<Self::IdtyId, Option<Self::AccountId>>;
         /// Optional metadata
         type MetaData: Default + Parameter + Validate<Self::AccountId>;
         #[pallet::constant]
@@ -78,6 +83,7 @@ pub mod pallet {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self, I>>
             + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        type WeightInfo: WeightInfo;
     }
 
     // GENESIS STUFF //
@@ -195,8 +201,8 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
-        #[pallet::weight(1_000_000_000)]
         /// request membership without checks
+        #[pallet::weight(T::WeightInfo::force_request_membership())]
         pub fn force_request_membership(
             origin: OriginFor<T>,
             idty_id: T::IdtyId,
@@ -207,9 +213,9 @@ pub mod pallet {
             Self::do_request_membership(idty_id, metadata)
         }
 
-        #[pallet::weight(1_000_000_000)]
         /// submit a membership request (must have a declared identity)
         /// (only available for sub wot, automatic for main wot)
+        #[pallet::weight(T::WeightInfo::request_membership())]
         pub fn request_membership(
             origin: OriginFor<T>,
             metadata: T::MetaData,
@@ -225,9 +231,9 @@ pub mod pallet {
             Self::do_request_membership(idty_id, metadata)
         }
 
-        #[pallet::weight(1_000_000_000)]
         /// claim that the previously requested membership fullfills the requirements
         /// (only available for sub wot, automatic for main wot)
+        #[pallet::weight(T::WeightInfo::claim_membership())]
         pub fn claim_membership(
             origin: OriginFor<T>,
             maybe_idty_id: Option<T::IdtyId>,
@@ -253,8 +259,8 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(1_000_000_000)]
         /// extend the validity period of an active membership
+        #[pallet::weight(T::WeightInfo::renew_membership())]
         pub fn renew_membership(
             origin: OriginFor<T>,
             maybe_idty_id: Option<T::IdtyId>,
@@ -274,9 +280,9 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(1_000_000_000)]
         /// revoke an active membership
         /// (only available for sub wot, automatic for main wot)
+        #[pallet::weight(T::WeightInfo::revoke_membership())]
         pub fn revoke_membership(
             origin: OriginFor<T>,
             maybe_idty_id: Option<T::IdtyId>,

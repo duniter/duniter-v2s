@@ -46,10 +46,10 @@ use sp_std::marker::PhantomData;
 /// Weight functions for `common_runtime::certification`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_certification::WeightInfo for WeightInfo<T> {
-	// Storage: SmithsCert StorageIdtyCertMeta (r:2 w:2)
+	// Storage: SmithCert StorageIdtyCertMeta (r:2 w:2)
 	// Storage: Parameters ParametersStorage (r:1 w:0)
-	// Storage: SmithsCert StorageCertsRemovableOn (r:1 w:1)
-	// Storage: SmithsCert CertsByReceiver (r:1 w:1)
+	// Storage: SmithCert StorageCertsRemovableOn (r:1 w:1)
+	// Storage: SmithCert CertsByReceiver (r:1 w:1)
 	fn force_add_cert() -> Weight {
 		// Minimum execution time: 125_287 nanoseconds.
 		Weight::from_ref_time(128_059_000 as u64)
@@ -57,18 +57,18 @@ impl<T: frame_system::Config> pallet_certification::WeightInfo for WeightInfo<T>
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
 	// Storage: Identity Identities (r:2 w:0)
-	// Storage: SmithsCert StorageIdtyCertMeta (r:2 w:2)
+	// Storage: SmithCert StorageIdtyCertMeta (r:2 w:2)
 	// Storage: Parameters ParametersStorage (r:1 w:0)
-	// Storage: SmithsCert StorageCertsRemovableOn (r:1 w:1)
-	// Storage: SmithsCert CertsByReceiver (r:1 w:1)
+	// Storage: SmithCert StorageCertsRemovableOn (r:1 w:1)
+	// Storage: SmithCert CertsByReceiver (r:1 w:1)
 	fn add_cert() -> Weight {
 		// Minimum execution time: 147_626 nanoseconds.
 		Weight::from_ref_time(152_571_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(7 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
-	// Storage: SmithsCert CertsByReceiver (r:1 w:1)
-	// Storage: SmithsCert StorageIdtyCertMeta (r:2 w:2)
+	// Storage: SmithCert CertsByReceiver (r:1 w:1)
+	// Storage: SmithCert StorageIdtyCertMeta (r:2 w:2)
 	// Storage: Parameters ParametersStorage (r:1 w:0)
 	// Storage: SmithMembership Membership (r:1 w:0)
 	fn del_cert() -> Weight {
@@ -77,8 +77,8 @@ impl<T: frame_system::Config> pallet_certification::WeightInfo for WeightInfo<T>
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
-	// Storage: SmithsCert CertsByReceiver (r:1 w:1)
-	// Storage: SmithsCert StorageIdtyCertMeta (r:2 w:2)
+	// Storage: SmithCert CertsByReceiver (r:1 w:1)
+	// Storage: SmithCert StorageIdtyCertMeta (r:2 w:2)
 	// Storage: Parameters ParametersStorage (r:1 w:0)
 	// Storage: SmithMembership Membership (r:1 w:0)
 	/// The range of component `i` is `[2, 1000]`.

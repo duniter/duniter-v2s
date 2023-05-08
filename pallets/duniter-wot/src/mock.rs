@@ -146,10 +146,12 @@ impl pallet_membership::Config<Instance1> for Test {
     type CheckCallAllowed = DuniterWot;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
+    type AccountIdOf = ();
     type MembershipPeriod = MembershipPeriod;
     type MetaData = ();
     type OnEvent = DuniterWot;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
     type PendingMembershipPeriod = PendingMembershipPeriod;
 }
 
@@ -199,10 +201,12 @@ impl pallet_membership::Config<Instance2> for Test {
     type CheckCallAllowed = SmithSubWot;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
+    type AccountIdOf = ();
     type MembershipPeriod = SmithMembershipPeriod;
     type MetaData = ();
     type OnEvent = SmithSubWot;
     type PendingMembershipPeriod = SmithPendingMembershipPeriod;
+    type WeightInfo = ();
     type RuntimeEvent = RuntimeEvent;
 }
 

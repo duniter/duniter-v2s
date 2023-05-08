@@ -11,7 +11,9 @@ version = '3.0.0'
 
 [features]
 default = ['std']
-runtime-benchmarks = ['frame-benchmarking']
+runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
+]
 std = [
     'codec/std',
     'frame-support/std',
@@ -72,6 +74,7 @@ branch = 'duniter-substrate-v0.9.32'
 default-features = false
 git = 'https://github.com/duniter/substrate'
 branch = 'duniter-substrate-v0.9.32'
+
 
 ### DOC ###
 
