@@ -41,7 +41,7 @@ check_labels:
     - ./scripts/check_labels.sh $CI_MERGE_REQUEST_LABELS $CI_MERGE_REQUEST_MILESTONE
 
 .env:
-  image: paritytech/ci-linux:1.68.2-buster
+  image: paritytech/ci-linux:production
   tags:
     - podman
 
