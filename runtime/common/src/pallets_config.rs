@@ -221,8 +221,11 @@ macro_rules! pallets_config {
             type NextSessionRotation = Babe;
             type ReportUnresponsiveness = Offences;
             type UnsignedPriority = ImOnlineUnsignedPriority;
-            type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
+            type WeightInfo = common_runtime::weights::pallet_im_online::WeightInfo<Runtime>;
+            #[cfg(not(feature = "runtime-benchmarks"))]
             type MaxKeys = MaxAuthorities;
+            #[cfg(feature = "runtime-benchmarks")]
+            type MaxKeys = frame_support::traits::ConstU32<1_000>; // At least 1000 to be benchmarkable see https://github.com/paritytech/substrate/blob/e94cb0dafd4f30ff29512c1c00ec513ada7d2b5d/frame/im-online/src/benchmarking.rs#L35
             type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
             type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
         }
@@ -240,7 +243,7 @@ macro_rules! pallets_config {
             type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, AuthorityMembers>;
             type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
             type Keys = opaque::SessionKeys;
-            type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
+            type WeightInfo = common_runtime::weights::pallet_session::WeightInfo<Runtime>;
         }
         impl pallet_session::historical::Config for Runtime {
             type FullIdentification = ValidatorFullIdentification;
@@ -292,7 +295,7 @@ macro_rules! pallets_config {
         }
 
         impl pallet_preimage::Config for Runtime {
-            type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
+            type WeightInfo = common_runtime::weights::pallet_preimage::WeightInfo<Runtime>;
             type RuntimeEvent = RuntimeEvent;
             type Currency = Balances;
             type ManagerOrigin = EnsureRoot<AccountId>;
@@ -341,7 +344,7 @@ macro_rules! pallets_config {
             type CallHasher = BlakeTwo256;
             type AnnouncementDepositBase = AnnouncementDepositBase;
             type AnnouncementDepositFactor = AnnouncementDepositFactor;
-            type WeightInfo = common_runtime::weights::pallet_proxy::WeightInfo<Self>;
+            type WeightInfo = common_runtime::weights::pallet_proxy::WeightInfo<Runtime>;
         }
 
         parameter_types! {
@@ -355,14 +358,14 @@ macro_rules! pallets_config {
             type DepositBase = DepositBase;
             type DepositFactor = DepositFactor;
             type MaxSignatories = MaxSignatories;
-            type WeightInfo = common_runtime::weights::pallet_multisig::WeightInfo<Self>;
+            type WeightInfo = common_runtime::weights::pallet_multisig::WeightInfo<Runtime>;
         }
 
         impl pallet_utility::Config for Runtime {
             type RuntimeEvent = RuntimeEvent;
             type RuntimeCall = RuntimeCall;
             type PalletsOrigin = OriginCaller;
-            type WeightInfo = pallet_utility::weights::SubstrateWeight<Self>;
+            type WeightInfo = common_runtime::weights::pallet_utility::WeightInfo<Runtime>;
         }
 
         parameter_types! {
@@ -390,7 +393,7 @@ macro_rules! pallets_config {
             type SpendFunds = TreasurySpendFunds<Self>;
             type SpendPeriod = SpendPeriod;
             type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u64>;
-            type WeightInfo = pallet_treasury::weights::SubstrateWeight<Self>;
+			type WeightInfo = common_runtime::weights::pallet_treasury::WeightInfo<Runtime>;
         }
 
         // UNIVERSAL DIVIDEND //
@@ -530,8 +533,11 @@ macro_rules! pallets_config {
             type MotionDuration = TechnicalCommitteeMotionDuration;
             type MaxProposals = frame_support::pallet_prelude::ConstU32<20>;
             type MaxMembers = frame_support::pallet_prelude::ConstU32<100>;
+            type WeightInfo = common_runtime::weights::pallet_collective::WeightInfo<Runtime>;
+            #[cfg(not(feature = "runtime-benchmarks"))]
             type DefaultVote = TechnicalCommitteeDefaultVote;
-            type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+            #[cfg(feature = "runtime-benchmarks")]
+            type DefaultVote = pallet_collective::PrimeDefaultVote; // Overwrite with a  default vote that can return `true` sometimes as it is necessary for benchmarking
         }
     };
 }

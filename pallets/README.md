@@ -20,4 +20,5 @@ These pallets are at the core of Duniter/Ğ1 currency
 - **`duniter-test-parameters`** Test parameters only used in ĞDev to allow tweaking parameters more easily.
 - **`oneshot-account`** Oneshot accounts are light accounts only used once for anonimity or convenience use case.
 - **`provide-randomness`** Lets blockchain users ask for a verifiable random number.
+- **`session-benchmarking`** Benchmarks the session pallet.
 - **`upgrade-origin`** Allows some origins to dispatch a call as root.

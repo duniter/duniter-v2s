@@ -18,6 +18,7 @@ use crate::*;
 use common_runtime::constants::*;
 use common_runtime::{Balance, BlockNumber};
 use frame_support::parameter_types;
+use frame_support::traits::EitherOfDiverse;
 use frame_support::weights::constants::WEIGHT_PER_SECOND;
 use sp_arithmetic::Perbill;
 use sp_runtime::transaction_validity::TransactionPriority;
@@ -99,7 +100,9 @@ parameter_types! {
 }
 
 // Treasury
-pub type TreasuryApproveOrigin =
-    pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCommitteeInstance, 1, 2>;
+pub type TreasuryApproveOrigin = EitherOfDiverse<
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCommitteeInstance, 1, 2>,
+>; // Root is needed for benchmarking
 pub type TreasuryRejectOrigin =
     pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCommitteeInstance, 1, 3>;

@@ -154,6 +154,7 @@ mod benches {
         [pallet_balances, Balances]
         [frame_benchmarking::baseline, Baseline::<Runtime>]
         [pallet_collective, TechnicalCommittee]
+        [pallet_session, SessionBench::<Runtime>]
         [pallet_im_online, ImOnline]
         [pallet_multisig, Multisig]
         [pallet_preimage, Preimage]

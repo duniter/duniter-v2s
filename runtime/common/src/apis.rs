@@ -239,6 +239,7 @@ macro_rules! runtime_apis {
 					use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
 					use frame_support::traits::StorageInfoTrait;
 
+                    use pallet_session_benchmarking::Pallet as SessionBench;
 					use frame_system_benchmarking::Pallet as SystemBench;
 					use frame_benchmarking::baseline::Pallet as Baseline;
 
@@ -258,9 +259,11 @@ macro_rules! runtime_apis {
 					use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
 					// Trying to add benchmarks directly to some pallets caused cyclic dependency issues.
 					// To get around that, we separated the benchmarks into its own crate.
+                    use pallet_session_benchmarking::Pallet as SessionBench;
 					use frame_system_benchmarking::Pallet as SystemBench;
 					use frame_benchmarking::baseline::Pallet as Baseline;
 
+					impl pallet_session_benchmarking::Config for Runtime {}
 					impl frame_system_benchmarking::Config for Runtime {}
 					impl frame_benchmarking::baseline::Config for Runtime {}
 

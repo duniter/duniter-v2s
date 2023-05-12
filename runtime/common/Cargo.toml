@@ -15,11 +15,15 @@ runtime-benchmarks = [
 	"pallet-babe/runtime-benchmarks",
     'pallet-balances/runtime-benchmarks',
     'pallet-certification/runtime-benchmarks',
+    'pallet-collective/runtime-benchmarks',
     'pallet-duniter-wot/runtime-benchmarks',
     'pallet-identity/runtime-benchmarks',
     'pallet-membership/runtime-benchmarks',
+    'pallet-im-online/runtime-benchmarks',
     'pallet-multisig/runtime-benchmarks',
     'pallet-proxy/runtime-benchmarks',
+    'pallet-preimage/runtime-benchmarks',
+    'pallet-session-benchmarking/runtime-benchmarks',
     'pallet-treasury/runtime-benchmarks',
     'pallet-upgrade-origin/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
@@ -74,6 +78,7 @@ pallet-oneshot-account = { path = '../../pallets/oneshot-account', default-featu
 pallet-provide-randomness = { path = '../../pallets/provide-randomness', default-features = false }
 pallet-upgrade-origin = { path = '../../pallets/upgrade-origin', default-features = false }
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
+pallet-session-benchmarking = { path = '../../pallets/session-benchmarking', default-features = false }
 sp-membership = { path = '../../primitives/membership', default-features = false }
 
 # Crates.io
@@ -89,13 +94,17 @@ frame-support = { git = 'https://github.com/duniter/substrate', branch = 'dunite
 frame-system = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-babe = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-balances = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-collective = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-grandpa = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-im-online = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-multisig = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-preimage = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-proxy = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-scheduler = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-session = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-timestamp = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-treasury = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+pallet-utility = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 sp-arithmetic = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 sp-consensus-babe = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 sp-core = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }

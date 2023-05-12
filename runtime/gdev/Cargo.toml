@@ -38,6 +38,7 @@ runtime-benchmarks = [
     'pallet-multisig/runtime-benchmarks',
     'pallet-oneshot-account/runtime-benchmarks',
     'pallet-preimage/runtime-benchmarks',
+    'pallet-session-benchmarking/runtime-benchmarks',
     'pallet-proxy/runtime-benchmarks',
     'pallet-scheduler/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
@@ -145,6 +146,7 @@ pallet-membership = { path = '../../pallets/membership', default-features = fals
 pallet-oneshot-account = { path = '../../pallets/oneshot-account', default-features = false }
 pallet-provide-randomness = { path = '../../pallets/provide-randomness', default-features = false }
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
+pallet-session-benchmarking = { path = '../../pallets/session-benchmarking', default-features = false }
 pallet-upgrade-origin = { path = '../../pallets/upgrade-origin', default-features = false }
 sp-membership = { path = '../../primitives/membership', default-features = false }
 
