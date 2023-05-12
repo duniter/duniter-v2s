@@ -51,6 +51,7 @@ benchmarks_instance_pallet! {
     force_add_cert {
         let issuer: T::IdtyIndex = 1.into();
         let receiver: T::IdtyIndex = 2.into();
+        Pallet::<T, I>::del_cert(RawOrigin::Root.into(), issuer, receiver)?;
         let receiver_cert: u32 = StorageIdtyCertMeta::<T, I>::get(receiver).received_count;
         let issuer_cert: u32 = StorageIdtyCertMeta::<T, I>::get(issuer).issued_count;
     }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), issuer, receiver, true)
@@ -59,10 +60,11 @@ benchmarks_instance_pallet! {
     }
     add_cert {
         let issuer: T::IdtyIndex = 1.into();
-        let issuer_cert: u32 = StorageIdtyCertMeta::<T, I>::get(issuer).issued_count;
         let caller: T::AccountId  = T::OwnerKeyOf::convert(issuer).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         let receiver: T::IdtyIndex = 2.into();
+        Pallet::<T, I>::del_cert(RawOrigin::Root.into(), issuer, receiver)?;
+        let issuer_cert: u32 = StorageIdtyCertMeta::<T, I>::get(issuer).issued_count;
         let receiver_cert: u32 = StorageIdtyCertMeta::<T, I>::get(receiver).received_count;
     }: _<T::RuntimeOrigin>(caller_origin, issuer, receiver)
     verify {
