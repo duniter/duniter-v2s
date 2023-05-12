@@ -19,6 +19,7 @@
 
 pub mod traits;
 mod types;
+pub mod weights;
 
 #[cfg(test)]
 mod mock;
@@ -26,11 +27,12 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-/*#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;*/
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
 pub use pallet::*;
 pub use types::*;
+pub use weights::WeightInfo;
 
 use self::traits::*;
 use frame_support::traits::Get;
@@ -63,7 +65,7 @@ pub mod pallet {
     pub trait Config:
         frame_system::Config + pallet_session::Config + pallet_session::historical::Config
     {
-        type KeysWrapper: Parameter + Into<Self::Keys>;
+        type KeysWrapper: Parameter + Into<Self::Keys> + From<Self::Keys>;
         type IsMember: IsMember<Self::MemberId>;
         type OnNewSession: OnNewSession;
         type OnRemovedMember: OnRemovedMember<Self::MemberId>;
@@ -78,6 +80,7 @@ pub mod pallet {
         type MemberIdOf: Convert<Self::AccountId, Option<Self::MemberId>>;
         type RemoveMemberOrigin: EnsureOrigin<Self::RuntimeOrigin>;
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        type WeightInfo: WeightInfo;
     }
 
     // GENESIS STUFF //
@@ -227,8 +230,8 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(1_000_000_000)]
         /// ask to leave the set of validators two sessions after
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::go_offline())]
         pub fn go_offline(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // Verification phase //
             let who = ensure_signed(origin)?;
@@ -254,8 +257,8 @@ pub mod pallet {
 
             Ok(().into())
         }
-        #[pallet::weight(1_000_000_000)]
         /// ask to join the set of validators two sessions after
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::go_online())]
         pub fn go_online(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // Verification phase //
             let who = ensure_signed(origin)?;
@@ -291,8 +294,8 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(1_000_000_000)]
         /// declare new session keys to replace current ones
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_session_keys())]
         pub fn set_session_keys(
             origin: OriginFor<T>,
             keys: T::KeysWrapper,
@@ -324,8 +327,8 @@ pub mod pallet {
 
             Ok(().into())
         }
-        #[pallet::weight(1_000_000_000)]
         /// remove an identity from the set of authorities
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_member())]
         pub fn remove_member(
             origin: OriginFor<T>,
             member_id: T::MemberId,

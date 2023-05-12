@@ -159,6 +159,7 @@ impl pallet_authority_members::Config for Test {
     type OnRemovedMember = ();
     type RemoveMemberOrigin = system::EnsureRoot<u64>;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.

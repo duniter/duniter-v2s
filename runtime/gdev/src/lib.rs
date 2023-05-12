@@ -149,6 +149,7 @@ mod benches {
         [pallet_identity, Identity]
         [pallet_membership, Membership]
         [pallet_membership, SmithMembership]
+        [pallet_authority_members, AuthorityMembers]
         // Substrate
         [pallet_balances, Balances]
         [frame_benchmarking::baseline, Baseline::<Runtime>]

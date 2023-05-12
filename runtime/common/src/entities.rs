@@ -43,6 +43,11 @@ macro_rules! declare_session_keys {
                     keys_wrapper.0
                 }
             }
+             impl From<SessionKeys> for SessionKeysWrapper {
+                fn from(session_keys: SessionKeys) -> SessionKeysWrapper {
+                    SessionKeysWrapper(session_keys)
+                }
+            }
 
             impl scale_info::TypeInfo for SessionKeysWrapper {
                 type Identity = [u8; 128];

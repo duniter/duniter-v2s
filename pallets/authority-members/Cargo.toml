@@ -11,7 +11,9 @@ version = '3.0.0'
 
 [features]
 default = ['std']
-runtime-benchmarks = ['frame-benchmarking']
+runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
+]
 std = [
     'codec/std',
     'frame-support/std',

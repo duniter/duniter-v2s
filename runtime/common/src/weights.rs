@@ -38,4 +38,5 @@ pub mod pallet_certification_cert;
 pub mod pallet_certification_smith_cert;
 pub mod pallet_membership_membership;
 pub mod pallet_membership_smith_membership;
+pub mod pallet_authority_members;
 pub mod paritydb_weights;
