@@ -392,7 +392,7 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
-        /// perform cert add
+        /// perform cert addition or renewal
         fn do_add_cert(
             block_number: T::BlockNumber,
             issuer: T::IdtyIndex,
@@ -438,6 +438,7 @@ pub mod pallet {
                         cert_meta.received_count
                     });
 
+                // emit NewCert event
                 Self::deposit_event(Event::NewCert {
                     issuer,
                     issuer_issued_count,
@@ -451,12 +452,18 @@ pub mod pallet {
                     receiver_received_count,
                 );
             } else {
+                // Update next_issuable_on in StorageIdtyCertMeta for issuer
+                StorageIdtyCertMeta::<T, I>::mutate(issuer, |issuer_idty_cert_meta| {
+                    issuer_idty_cert_meta.next_issuable_on = block_number + T::CertPeriod::get();
+                });
+                // emit RenewedCert event
                 Self::deposit_event(Event::RenewedCert { issuer, receiver });
             }
 
             Ok(().into())
         }
         /// remove the certifications due to expire on the given block
+        // (run at on_initialize step)
         fn prune_certifications(block_number: T::BlockNumber) -> Weight {
             let mut total_weight = Weight::zero();
 

@@ -16,7 +16,7 @@
 
 use crate::mock::*;
 use crate::{Error, Event};
-use frame_support::assert_ok;
+use frame_support::{assert_noop, assert_ok};
 use maplit::btreemap;
 use sp_std::collections::btree_map::BTreeMap;
 
@@ -251,6 +251,111 @@ fn test_cert_renewal() {
         }));
 
         run_to_block(12);
+        // expiry of previously renewed cert
+        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RemovedCert {
+            issuer: 1,
+            issuer_issued_count: 1,
+            receiver: 0,
+            receiver_received_count: 1,
+            expiration: true,
+        }));
+    });
+}
+
+// when renewing a certification, issuer should not be able to emit a new cert before certification delay
+#[test]
+fn test_cert_renewal_cert_delay() {
+    new_test_ext(DefaultCertificationConfig {
+        apply_cert_period_at_genesis: false,
+        certs_by_receiver: btreemap![
+            0 => btreemap![
+                1 => Some(5),
+                2 => Some(20),
+            ],
+            1 => btreemap![
+                0 => Some(20),
+                2 => Some(20),
+            ],
+            2 => btreemap![
+                0 => Some(20),
+                1 => Some(20),
+            ],
+        ],
+    })
+    .execute_with(|| {
+        run_to_block(2);
+        // renew certification from bob to alice
+        assert_eq!(
+            DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
+            Ok(().into())
+        );
+        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RenewedCert {
+            issuer: 1,
+            receiver: 0,
+        }));
+
+        run_to_block(3);
+        // try to renew again
+        assert_noop!(
+            DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
+            Error::<Test, _>::NotRespectCertPeriod,
+        );
+        // no renewal event should be emitted
+        assert_eq!(System::events().last(), None);
+    });
+}
+
+// when renewing a certification, the certification should not expire before new expiration
+#[test]
+fn test_cert_renewal_expiration() {
+    new_test_ext(DefaultCertificationConfig {
+        apply_cert_period_at_genesis: false,
+        certs_by_receiver: btreemap![
+            0 => btreemap![
+                1 => Some(5),
+                2 => Some(20),
+            ],
+            1 => btreemap![
+                0 => Some(20),
+                2 => Some(20),
+            ],
+            2 => btreemap![
+                0 => Some(20),
+                1 => Some(20),
+            ],
+        ],
+    })
+    .execute_with(|| {
+        run_to_block(2);
+        // renew certification from bob to alice
+        // this certification should expire 10 blocks later (at block 12)
+        assert_eq!(
+            DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
+            Ok(().into())
+        );
+        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RenewedCert {
+            issuer: 1,
+            receiver: 0,
+        }));
+
+        run_to_block(4);
+        // renew certification from bob to alice again
+        // this certification should expire 10 blocks later (at block 14)
+        assert_eq!(
+            DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
+            Ok(().into())
+        );
+        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RenewedCert {
+            issuer: 1,
+            receiver: 0,
+        }));
+
+        // no certification should expire at these blocks
+        // hint : prune_certifications checks that the certification has not been renewed
+        run_to_block(12);
+        assert_eq!(System::events().last(), None);
+
+        run_to_block(14);
         // expiry of previously renewed cert
         System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RemovedCert {
             issuer: 1,
