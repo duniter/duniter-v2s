@@ -83,7 +83,7 @@ parameter_types! {
 }
 
 impl pallet_membership::Config for Test {
-    type CheckCallAllowed = ();
+    type CheckMembershipCallAllowed = ();
     type IdtyId = IdtyId;
     type IdtyIdOf = ConvertInto;
     type AccountIdOf = ConvertInto;

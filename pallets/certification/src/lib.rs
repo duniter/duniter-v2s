@@ -276,45 +276,6 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
-        /// add a certification without checks (only root)
-        #[pallet::weight(T::WeightInfo::force_add_cert())]
-        pub fn force_add_cert(
-            origin: OriginFor<T>,
-            issuer: T::IdtyIndex,
-            receiver: T::IdtyIndex,
-            verify_rules: bool,
-        ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
-
-            // Forbid self cert
-            ensure!(issuer != receiver, Error::<T, I>::CannotCertifySelf);
-
-            let block_number = frame_system::pallet::Pallet::<T>::block_number();
-
-            if verify_rules {
-                // Verify rule MinReceivedCertToBeAbleToIssueCert
-                let issuer_idty_cert_meta = StorageIdtyCertMeta::<T, I>::get(issuer);
-                ensure!(
-                    issuer_idty_cert_meta.received_count
-                        >= T::MinReceivedCertToBeAbleToIssueCert::get(),
-                    Error::<T, I>::NotEnoughCertReceived
-                );
-
-                // Verify rule MaxByIssuer
-                ensure!(
-                    issuer_idty_cert_meta.issued_count < T::MaxByIssuer::get(),
-                    Error::<T, I>::IssuedTooManyCert
-                );
-
-                // Verify rule CertPeriod
-                ensure!(
-                    block_number >= issuer_idty_cert_meta.next_issuable_on,
-                    Error::<T, I>::NotRespectCertPeriod
-                );
-            };
-
-            Self::do_add_cert(block_number, issuer, receiver)
-        }
         /// Add a new certification or renew an existing one
         ///
         /// - `receiver`: the account receiving the certification from the origin
@@ -392,6 +353,41 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
+        /// add a certification without checks
+        pub fn do_add_cert_checked(
+            issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
+            verify_rules: bool,
+        ) -> DispatchResultWithPostInfo {
+            // Forbid self cert
+            ensure!(issuer != receiver, Error::<T, I>::CannotCertifySelf);
+
+            let block_number = frame_system::pallet::Pallet::<T>::block_number();
+
+            if verify_rules {
+                // Verify rule MinReceivedCertToBeAbleToIssueCert
+                let issuer_idty_cert_meta = StorageIdtyCertMeta::<T, I>::get(issuer);
+                ensure!(
+                    issuer_idty_cert_meta.received_count
+                        >= T::MinReceivedCertToBeAbleToIssueCert::get(),
+                    Error::<T, I>::NotEnoughCertReceived
+                );
+
+                // Verify rule MaxByIssuer
+                ensure!(
+                    issuer_idty_cert_meta.issued_count < T::MaxByIssuer::get(),
+                    Error::<T, I>::IssuedTooManyCert
+                );
+
+                // Verify rule CertPeriod
+                ensure!(
+                    block_number >= issuer_idty_cert_meta.next_issuable_on,
+                    Error::<T, I>::NotRespectCertPeriod
+                );
+            };
+
+            Self::do_add_cert(block_number, issuer, receiver)
+        }
         /// perform cert addition or renewal
         fn do_add_cert(
             block_number: T::BlockNumber,

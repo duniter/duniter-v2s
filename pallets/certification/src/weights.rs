@@ -20,7 +20,7 @@ use frame_support::weights::{constants::RocksDbWeight, Weight};
 
 /// Weight functions needed for pallet_universal_dividend.
 pub trait WeightInfo {
-    fn force_add_cert() -> Weight;
+    fn do_add_cert_checked() -> Weight;
     fn add_cert() -> Weight;
     fn del_cert() -> Weight;
     fn remove_all_certs_received_by(i: u32) -> Weight;
@@ -32,7 +32,7 @@ impl WeightInfo for () {
     // Storage: Parameters ParametersStorage (r:1 w:0)
     // Storage: Cert StorageCertsRemovableOn (r:1 w:1)
     // Storage: Cert CertsByReceiver (r:1 w:1)
-    fn force_add_cert() -> Weight {
+    fn do_add_cert_checked() -> Weight {
         // Minimum execution time: 221_467 nanoseconds.
         Weight::from_ref_time(227_833_000 as u64)
             .saturating_add(RocksDbWeight::get().reads(5 as u64))

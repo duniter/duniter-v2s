@@ -13,7 +13,7 @@ through on-chain governance mechanisms.
 
 ## User calls
 
-There are **68** user calls from **21** pallets.
+There are **69** user calls from **21** pallets.
 
 ### Scheduler - 2
 
@@ -652,12 +652,23 @@ change sufficient ref count for given key
 
 ### Membership - 42
 
-#### renew_membership - 3
+#### claim_membership - 1
 
-<details><summary><code>renew_membership(maybe_idty_id)</code></summary>
+<details><summary><code>claim_membership()</code></summary>
 
 ```rust
-maybe_idty_id: Option<T::IdtyId>
+```
+</details>
+
+
+claim pending membership to become actual memberhip
+the requested membership must fullfill requirements
+
+#### renew_membership - 2
+
+<details><summary><code>renew_membership()</code></summary>
+
+```rust
 ```
 </details>
 
@@ -666,7 +677,7 @@ extend the validity period of an active membership
 
 ### Cert - 43
 
-#### add_cert - 1
+#### add_cert - 0
 
 <details><summary><code>add_cert(issuer, receiver)</code></summary>
 
@@ -685,7 +696,7 @@ The origin must be allow to certify.
 
 ### SmithMembership - 52
 
-#### request_membership - 1
+#### request_membership - 0
 
 <details><summary><code>request_membership(metadata)</code></summary>
 
@@ -698,37 +709,34 @@ metadata: T::MetaData
 submit a membership request (must have a declared identity)
 (only available for sub wot, automatic for main wot)
 
-#### claim_membership - 2
+#### claim_membership - 1
 
-<details><summary><code>claim_membership(maybe_idty_id)</code></summary>
+<details><summary><code>claim_membership()</code></summary>
 
 ```rust
-maybe_idty_id: Option<T::IdtyId>
 ```
 </details>
 
 
-claim that the previously requested membership fullfills the requirements
-(only available for sub wot, automatic for main wot)
+claim pending membership to become actual memberhip
+the requested membership must fullfill requirements
 
-#### renew_membership - 3
+#### renew_membership - 2
 
-<details><summary><code>renew_membership(maybe_idty_id)</code></summary>
+<details><summary><code>renew_membership()</code></summary>
 
 ```rust
-maybe_idty_id: Option<T::IdtyId>
 ```
 </details>
 
 
 extend the validity period of an active membership
 
-#### revoke_membership - 4
+#### revoke_membership - 3
 
-<details><summary><code>revoke_membership(maybe_idty_id)</code></summary>
+<details><summary><code>revoke_membership()</code></summary>
 
 ```rust
-maybe_idty_id: Option<T::IdtyId>
 ```
 </details>
 
@@ -738,7 +746,7 @@ revoke an active membership
 
 ### SmithCert - 53
 
-#### add_cert - 1
+#### add_cert - 0
 
 <details><summary><code>add_cert(issuer, receiver)</code></summary>
 
@@ -1353,7 +1361,7 @@ May only be called from `T::RejectOrigin`.
 
 ## Root calls
 
-There are **26** root calls from **12** pallets.
+There are **22** root calls from **10** pallets.
 
 ### System - 0
 
@@ -1637,38 +1645,9 @@ names: Vec<IdtyName>
 
 remove identity names from storage
 
-### Membership - 42
-
-#### force_request_membership - 0
-
-<details><summary><code>force_request_membership(idty_id, metadata)</code></summary>
-
-```rust
-idty_id: T::IdtyId
-metadata: T::MetaData
-```
-</details>
-
-
-request membership without checks
-
 ### Cert - 43
 
-#### force_add_cert - 0
-
-<details><summary><code>force_add_cert(issuer, receiver, verify_rules)</code></summary>
-
-```rust
-issuer: T::IdtyIndex
-receiver: T::IdtyIndex
-verify_rules: bool
-```
-</details>
-
-
-add a certification without checks (only root)
-
-#### del_cert - 2
+#### del_cert - 1
 
 <details><summary><code>del_cert(issuer, receiver)</code></summary>
 
@@ -1681,7 +1660,7 @@ receiver: T::IdtyIndex
 
 remove a certification (only root)
 
-#### remove_all_certs_received_by - 3
+#### remove_all_certs_received_by - 2
 
 <details><summary><code>remove_all_certs_received_by(idty_index)</code></summary>
 
@@ -1693,38 +1672,9 @@ idty_index: T::IdtyIndex
 
 remove all certifications received by an identity (only root)
 
-### SmithMembership - 52
-
-#### force_request_membership - 0
-
-<details><summary><code>force_request_membership(idty_id, metadata)</code></summary>
-
-```rust
-idty_id: T::IdtyId
-metadata: T::MetaData
-```
-</details>
-
-
-request membership without checks
-
 ### SmithCert - 53
 
-#### force_add_cert - 0
-
-<details><summary><code>force_add_cert(issuer, receiver, verify_rules)</code></summary>
-
-```rust
-issuer: T::IdtyIndex
-receiver: T::IdtyIndex
-verify_rules: bool
-```
-</details>
-
-
-add a certification without checks (only root)
-
-#### del_cert - 2
+#### del_cert - 1
 
 <details><summary><code>del_cert(issuer, receiver)</code></summary>
 
@@ -1737,7 +1687,7 @@ receiver: T::IdtyIndex
 
 remove a certification (only root)
 
-#### remove_all_certs_received_by - 3
+#### remove_all_certs_received_by - 2
 
 <details><summary><code>remove_all_certs_received_by(idty_index)</code></summary>
 
@@ -1774,7 +1724,7 @@ The dispatch origin for this call must be _Root_.
 
 ## Disabled calls
 
-There are **7** disabled calls from **3** pallets.
+There are **6** disabled calls from **3** pallets.
 
 ### System - 0
 
@@ -1844,7 +1794,7 @@ usually means being a stash account).
 
 ### Membership - 42
 
-#### request_membership - 1
+#### request_membership - 0
 
 <details><summary><code>request_membership(metadata)</code></summary>
 
@@ -1857,25 +1807,11 @@ metadata: T::MetaData
 submit a membership request (must have a declared identity)
 (only available for sub wot, automatic for main wot)
 
-#### claim_membership - 2
+#### revoke_membership - 3
 
-<details><summary><code>claim_membership(maybe_idty_id)</code></summary>
-
-```rust
-maybe_idty_id: Option<T::IdtyId>
-```
-</details>
-
-
-claim that the previously requested membership fullfills the requirements
-(only available for sub wot, automatic for main wot)
-
-#### revoke_membership - 4
-
-<details><summary><code>revoke_membership(maybe_idty_id)</code></summary>
+<details><summary><code>revoke_membership()</code></summary>
 
 ```rust
-maybe_idty_id: Option<T::IdtyId>
 ```
 </details>
 

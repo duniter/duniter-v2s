@@ -449,7 +449,7 @@ macro_rules! pallets_config {
         }
 
         impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {
-            type CheckCallAllowed = Wot;
+            type CheckMembershipCallAllowed = Wot;
             type IdtyId = IdtyIndex;
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type AccountIdOf = common_runtime::providers::IdentityAccountIdProvider<Self>;
@@ -486,7 +486,7 @@ macro_rules! pallets_config {
         }
 
         impl pallet_membership::Config<Instance2> for Runtime {
-            type CheckCallAllowed = SmithSubWot;
+            type CheckMembershipCallAllowed = SmithSubWot;
             type IdtyId = IdtyIndex;
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type AccountIdOf = common_runtime::providers::IdentityAccountIdProvider<Self>;

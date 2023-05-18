@@ -24,6 +24,7 @@ use frame_support::Parameter;
 use pallet_identity::IdtyEvent;
 use sp_runtime::traits::IsMember;
 
+// new session handler
 pub struct OnNewSessionHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_authority_members::traits::OnNewSession for OnNewSessionHandler<Runtime>
 where
@@ -35,8 +36,8 @@ where
     }
 }
 
+// identity change runtime handler
 pub struct OnIdtyChangeHandler<Runtime>(core::marker::PhantomData<Runtime>);
-
 impl<T> pallet_identity::traits::OnIdtyChange<T> for OnIdtyChangeHandler<T>
 where
     T: frame_system::Config<AccountId = AccountId>,
@@ -47,14 +48,8 @@ where
     fn on_idty_change(idty_index: IdtyIndex, idty_event: &IdtyEvent<T>) -> Weight {
         match idty_event {
             IdtyEvent::Validated => {
-                pallet_identity::Identities::<T>::mutate_exists(idty_index, |idty_val_opt| {
-                    if let Some(ref mut idty_val) = idty_val_opt {
-                        idty_val.data = IdtyData {
-                            first_eligible_ud:
-                                pallet_universal_dividend::Pallet::<T>::init_first_eligible_ud(),
-                        }
-                    }
-                });
+                // when identity is validated, it starts getting right to UD
+                // but this is handeled by membership event handler (MembershipAcquired)
             }
             IdtyEvent::ChangedOwnerKey { new_owner_key } => {
                 if let Err(e) = pallet_authority_members::Pallet::<T>::change_owner_key(
@@ -73,8 +68,8 @@ where
     }
 }
 
+// membership event runtime handler
 pub struct OnMembershipEventHandler<Inner, Runtime>(core::marker::PhantomData<(Inner, Runtime)>);
-
 impl<
         Inner: sp_membership::traits::OnEvent<IdtyIndex, ()>,
         Runtime: frame_system::Config<AccountId = AccountId>
@@ -85,7 +80,9 @@ impl<
 {
     fn on_event(membership_event: &sp_membership::Event<IdtyIndex, ()>) -> Weight {
         (match membership_event {
-            sp_membership::Event::MembershipRevoked(idty_index) => {
+            // when membership is removed, call on_removed_member handler which auto claims UD
+            sp_membership::Event::MembershipRevoked(idty_index)
+            | sp_membership::Event::MembershipExpired(idty_index) => {
                 if let Some(idty_value) = pallet_identity::Identities::<Runtime>::get(idty_index) {
                     if let Some(first_ud_index) = idty_value.data.first_eligible_ud.into() {
                         pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
@@ -99,15 +96,31 @@ impl<
                     Runtime::DbWeight::get().reads(1)
                 }
             }
-            _ => Weight::zero(),
+            // when main membership is acquired, it starts getting right to UD
+            sp_membership::Event::MembershipAcquired(idty_index, _) => {
+                pallet_identity::Identities::<Runtime>::mutate_exists(idty_index, |idty_val_opt| {
+                    if let Some(ref mut idty_val) = idty_val_opt {
+                        idty_val.data = IdtyData {
+                            first_eligible_ud:
+                                pallet_universal_dividend::Pallet::<Runtime>::init_first_eligible_ud(
+                                ),
+                        }
+                    }
+                });
+                Weight::zero()
+            }
+            // in other case, ther is nothing to do
+            sp_membership::Event::MembershipRenewed(_)
+            | sp_membership::Event::MembershipRequested(_)
+            | sp_membership::Event::PendingMembershipExpired(_) => Weight::zero(),
         }) + Inner::on_event(membership_event)
     }
 }
 
+// smith membership event handler
 pub struct OnSmithMembershipEventHandler<Inner, Runtime>(
     core::marker::PhantomData<(Inner, Runtime)>,
 );
-
 impl<
         IdtyIndex: Copy + Parameter,
         SessionKeysWrapper: Clone,
@@ -167,6 +180,7 @@ impl<
     }
 }
 
+// authority member removal handler
 pub struct OnRemovedAuthorityMemberHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_authority_members::traits::OnRemovedMember<IdtyIndex>
     for OnRemovedAuthorityMemberHandler<Runtime>
@@ -174,18 +188,14 @@ where
     Runtime: frame_system::Config + pallet_membership::Config<Instance2, IdtyId = IdtyIndex>,
 {
     fn on_removed_member(idty_index: IdtyIndex) -> Weight {
-        if let Err(e) = pallet_membership::Pallet::<Runtime, Instance2>::revoke_membership(
-            frame_system::RawOrigin::Root.into(),
-            Some(idty_index),
-        ) {
-            sp_std::if_std! {
-                println!("fail to revoke membership: {:?}", e)
-            }
-        }
+        // TODO investigate why we should remove smith membership when removing authority member
+        pallet_membership::Pallet::<Runtime, Instance2>::force_revoke_membership(idty_index);
+        // TODO investigate why weight zero
         Weight::zero()
     }
 }
 
+// identity removal handler
 pub struct RemoveIdentityConsumersImpl<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_identity::traits::RemoveIdentityConsumers<IdtyIndex>
     for RemoveIdentityConsumersImpl<Runtime>
@@ -198,33 +208,16 @@ where
     fn remove_idty_consumers(idty_index: IdtyIndex) -> Weight {
         // Remove smith member
         if pallet_membership::Pallet::<Runtime, Instance2>::is_member(&idty_index) {
-            if let Err(e) = pallet_membership::Pallet::<Runtime, Instance2>::revoke_membership(
-                frame_system::RawOrigin::Root.into(),
-                Some(idty_index),
-            ) {
-                log::error!(
-                    target: "runtime::common",
-                    "Logic error: fail to revoke smith membership in remove_idty_consumers(): {:?}",
-                    e
-                );
-            }
+            pallet_membership::Pallet::<Runtime, Instance2>::force_revoke_membership(idty_index);
         }
         // Remove "classic" member
-        if let Err(e) = pallet_membership::Pallet::<Runtime, Instance1>::revoke_membership(
-            frame_system::RawOrigin::Root.into(),
-            Some(idty_index),
-        ) {
-            log::error!(
-                target: "runtime::common",
-                "Logic error: fail to revoke membership in remove_idty_consumers(): {:?}",
-                e
-            );
-        }
+        pallet_membership::Pallet::<Runtime, Instance1>::force_revoke_membership(idty_index);
 
         Weight::zero()
     }
 }
 
+// spend treasury handler
 pub struct TreasurySpendFunds<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_treasury::SpendFunds<Runtime> for TreasurySpendFunds<Runtime>
 where

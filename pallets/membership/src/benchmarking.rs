@@ -37,12 +37,6 @@ benchmarks_instance_pallet! {
         where
             T::IdtyId: From<u32>,
     }
-    force_request_membership {
-        let idty: T::IdtyId = 5.into();
-    }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), idty, T::MetaData ::default() )
-    verify {
-        assert_has_event::<T, I>(Event::<T, I>::MembershipRequested(idty).into());
-    }
     request_membership {
         // Dave identity (4)
         // for main wot, no constraints
@@ -57,7 +51,7 @@ benchmarks_instance_pallet! {
         call.dispatch_bypass_filter(caller_origin).ok();
     }
     verify {
-        if T::CheckCallAllowed::check_idty_allowed_to_request_membership(&idty).is_ok() {
+        if T::CheckMembershipCallAllowed::check_idty_allowed_to_request_membership(&idty).is_ok() {
             assert_has_event::<T, I>(Event::<T, I>::MembershipRequested(idty).into());
         }
     }

@@ -16,11 +16,14 @@
 
 use crate::mock::*;
 use crate::{Error, Event};
-use frame_support::assert_ok;
+use frame_support::{assert_noop, assert_ok};
 use maplit::btreemap;
 use sp_membership::traits::*;
 use sp_membership::MembershipData;
 use sp_runtime::traits::IsMember;
+
+// alias
+type RtEvent = RuntimeEvent;
 
 fn default_gen_conf() -> DefaultMembershipConfig {
     DefaultMembershipConfig {
@@ -49,10 +52,10 @@ fn test_genesis_build() {
 fn test_membership_already_acquired() {
     new_test_ext(default_gen_conf()).execute_with(|| {
         run_to_block(1);
-        // Merbership 0 cannot be reclaimed
-        assert_eq!(
-            DefaultMembership::claim_membership(RuntimeOrigin::signed(0), None),
-            Err(Error::<Test, _>::MembershipAlreadyAcquired.into())
+        // Membership 0 cannot be reclaimed because there is no membership request
+        assert_noop!(
+            DefaultMembership::claim_membership(RuntimeOrigin::signed(0)),
+            Error::<Test, _>::MembershipRequestNotFound
         );
     });
 }
@@ -61,73 +64,97 @@ fn test_membership_already_acquired() {
 fn test_membership_request_not_found() {
     new_test_ext(default_gen_conf()).execute_with(|| {
         run_to_block(1);
-        // Merbership 0 cannot be reclaimed
-        assert_eq!(
-            DefaultMembership::claim_membership(RuntimeOrigin::signed(1), None),
-            Err(Error::<Test, _>::MembershipRequestNotFound.into())
+        // Membership 0 cannot be reclaimed
+        assert_noop!(
+            DefaultMembership::claim_membership(RuntimeOrigin::signed(1)),
+            Error::<Test, _>::MembershipRequestNotFound
         );
     });
 }
 
-#[test]
-fn test_membership_renewal() {
-    new_test_ext(default_gen_conf()).execute_with(|| {
-        run_to_block(2);
-        // Merbership 0 can be renewable on block #2
-        assert_ok!(DefaultMembership::renew_membership(
-            RuntimeOrigin::signed(0),
-            None
-        ),);
-        assert_eq!(
-            System::events()[0].event,
-            RuntimeEvent::DefaultMembership(Event::MembershipRenewed(0))
-        );
-    });
-}
-
+/// test membership expiration
+// membership should be moved to pending membership and expire after
 #[test]
 fn test_membership_expiration() {
     new_test_ext(default_gen_conf()).execute_with(|| {
-        // Merbership 0 should not expired on block #2
+        // Membership 0 should not expired on block #2
         run_to_block(2);
-        assert!(DefaultMembership::is_member(&0),);
-        // Merbership 0 should expire on block #3
+        assert!(DefaultMembership::is_member(&0));
+        // Membership 0 should expire on block #3
         run_to_block(3);
-        assert!(!DefaultMembership::is_member(&0),);
-        assert_eq!(
-            System::events()[0].event,
-            RuntimeEvent::DefaultMembership(Event::MembershipExpired(0))
-        );
+        assert!(!DefaultMembership::is_member(&0));
+        System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipExpired(0)));
+        // it should be added to pending membership and expire on block #6
+        run_to_block(6);
+        System::assert_has_event(RtEvent::DefaultMembership(Event::PendingMembershipExpired(
+            0,
+        )));
     });
 }
 
+/// test membership renewal
+// there is no limit for membership renewal outside wot rules (number of certs, distance rule)
+#[test]
+fn test_membership_renewal() {
+    new_test_ext(default_gen_conf()).execute_with(|| {
+        // membership still valid at block 2
+        run_to_block(2);
+        assert!(DefaultMembership::is_member(&0));
+        // Membership 0 can be renewed
+        assert_ok!(DefaultMembership::renew_membership(RuntimeOrigin::signed(
+            0
+        ),));
+        System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipRenewed(0)));
+        // membership should not expire at block 3 to 6 because it has been renewed
+        run_to_block(3);
+        assert!(DefaultMembership::is_member(&0));
+        run_to_block(6);
+        assert!(DefaultMembership::is_member(&0));
+        // membership should expire at block 7 (2+5)
+        run_to_block(7);
+        assert!(!DefaultMembership::is_member(&0));
+        System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipExpired(0)));
+    });
+}
+
+/// test membership renewal for non member identity
+#[test]
+fn test_membership_renewal_nope() {
+    new_test_ext(default_gen_conf()).execute_with(|| {
+        run_to_block(2);
+        assert!(!DefaultMembership::is_member(&1));
+        // Membership 1 can not be renewed
+        assert_noop!(
+            DefaultMembership::renew_membership(RuntimeOrigin::signed(1)),
+            Error::<Test, _>::MembershipNotFound,
+        );
+        run_to_block(3);
+        assert!(!DefaultMembership::is_member(&1));
+    });
+}
+
+/// test membership revocation
 #[test]
 fn test_membership_revocation() {
     new_test_ext(default_gen_conf()).execute_with(|| {
         run_to_block(1);
-        // Merbership 0 can be revocable on block #1
-        assert_ok!(DefaultMembership::revoke_membership(
-            RuntimeOrigin::signed(0),
-            None
-        ),);
-        assert_eq!(
-            System::events()[0].event,
-            RuntimeEvent::DefaultMembership(Event::MembershipRevoked(0))
-        );
+        // Membership 0 can be revocable on block #1
+        assert_ok!(DefaultMembership::revoke_membership(RuntimeOrigin::signed(
+            0
+        ),));
+        System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipRevoked(0)));
 
         // Membership 0 can re-request membership
         run_to_block(5);
         assert_ok!(DefaultMembership::request_membership(
             RuntimeOrigin::signed(0),
             ()
-        ),);
-        assert_eq!(
-            System::events()[0].event,
-            RuntimeEvent::DefaultMembership(Event::MembershipRequested(0))
-        );
+        ));
+        System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipRequested(0)));
     });
 }
 
+/// test pending membership expiration
 #[test]
 fn test_pending_membership_expiration() {
     new_test_ext(Default::default()).execute_with(|| {
@@ -136,68 +163,58 @@ fn test_pending_membership_expiration() {
         assert_ok!(DefaultMembership::request_membership(
             RuntimeOrigin::signed(0),
             ()
-        ),);
-        assert_eq!(
-            System::events()[0].event,
-            RuntimeEvent::DefaultMembership(Event::MembershipRequested(0))
-        );
+        ));
+        System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipRequested(0)));
 
         // Then, idty 0 shold still in pending memberships until PendingMembershipPeriod ended
         run_to_block(PendingMembershipPeriod::get());
-        assert!(DefaultMembership::is_in_pending_memberships(0),);
+        assert!(DefaultMembership::is_in_pending_memberships(0));
 
         // Then, idty 0 request should expire after PendingMembershipPeriod
         run_to_block(1 + PendingMembershipPeriod::get());
-        assert!(!DefaultMembership::is_in_pending_memberships(0),);
-        assert_eq!(
-            System::events()[0].event,
-            RuntimeEvent::DefaultMembership(Event::PendingMembershipExpired(0))
-        );
+        assert!(!DefaultMembership::is_in_pending_memberships(0));
+        System::assert_has_event(RtEvent::DefaultMembership(Event::PendingMembershipExpired(
+            0,
+        )));
     })
 }
 
+/// test membership workflow
+// - request membership
+// - claim membership
+// - renew membership
+// - membership expiry
 #[test]
 fn test_membership_workflow() {
     new_test_ext(Default::default()).execute_with(|| {
-        // Idty 0 request membership
+        // - Idty 0 request membership
         run_to_block(1);
         assert_ok!(DefaultMembership::request_membership(
             RuntimeOrigin::signed(0),
             ()
-        ),);
-        assert_eq!(
-            System::events()[0].event,
-            RuntimeEvent::DefaultMembership(Event::MembershipRequested(0))
-        );
+        ));
+        System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipRequested(0)));
 
-        // Then, idty 0 claim membership
+        // - Then, idty 0 claim membership
         run_to_block(2);
-        assert_ok!(DefaultMembership::claim_membership(
-            RuntimeOrigin::signed(0),
-            None
-        ),);
-        assert_eq!(
-            System::events()[0].event,
-            RuntimeEvent::DefaultMembership(Event::MembershipAcquired(0))
-        );
+        assert_ok!(DefaultMembership::claim_membership(RuntimeOrigin::signed(
+            0
+        ),));
+        System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipAcquired(0)));
 
-        // Then, idty 0 claim renewal, should success
+        // - Then, idty 0 claim renewal, should success
         run_to_block(2);
-        assert_ok!(DefaultMembership::renew_membership(
-            RuntimeOrigin::signed(0),
-            None
-        ),);
+        assert_ok!(DefaultMembership::renew_membership(RuntimeOrigin::signed(
+            0
+        ),));
 
-        // Then, idty 0 shoul still member until membership period ended
-        run_to_block(2 + MembershipPeriod::get() - 1);
+        // idty 0 should still be member until membership period ended
+        run_to_block(6); // 2 + 5 - 1
         assert!(DefaultMembership::is_member(&0));
 
-        // Then, idty 0 shoul expire after membership period
-        run_to_block(2 + MembershipPeriod::get());
-        assert!(!DefaultMembership::is_member(&0),);
-        assert_eq!(
-            System::events()[0].event,
-            RuntimeEvent::DefaultMembership(Event::MembershipExpired(0))
-        );
+        // - Then, idty 0 should expire after membership period
+        run_to_block(7); // 2 + 5
+        assert!(!DefaultMembership::is_member(&0));
+        System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipExpired(0)));
     });
 }

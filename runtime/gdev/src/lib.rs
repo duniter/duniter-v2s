@@ -168,30 +168,16 @@ mod benches {
 }
 
 pub struct BaseCallFilter;
-#[cfg(not(feature = "runtime-benchmarks"))]
+
+// implement filter
 impl Contains<RuntimeCall> for BaseCallFilter {
     fn contains(call: &RuntimeCall) -> bool {
         !matches!(
             call,
-            /*RuntimeCall::System(
-                frame_system::Call::remark { .. } | frame_system::Call::remark_with_event { .. }
-            ) | */
+            // in main web of trust, membership request and revoke are handeled through identity pallet
+            // the user can not call them directly
             RuntimeCall::Membership(
                 pallet_membership::Call::request_membership { .. }
-                    | pallet_membership::Call::claim_membership { .. }
-                    | pallet_membership::Call::revoke_membership { .. }
-            ) | RuntimeCall::Session(_)
-        )
-    }
-}
-#[cfg(feature = "runtime-benchmarks")]
-impl Contains<RuntimeCall> for BaseCallFilter {
-    fn contains(call: &RuntimeCall) -> bool {
-        !matches!(
-            call,
-            RuntimeCall::Membership(
-                pallet_membership::Call::request_membership { .. }
-                    | pallet_membership::Call::claim_membership { .. }
                     | pallet_membership::Call::revoke_membership { .. }
             ) | RuntimeCall::Session(_)
         )

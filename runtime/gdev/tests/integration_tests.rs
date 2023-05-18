@@ -26,7 +26,7 @@ use sp_runtime::MultiAddress;
 
 #[test]
 fn verify_treasury_account() {
-    println!("{}", Treasury::account_id());
+    // println!("{}", Treasury::account_id());
 }
 
 #[test]
@@ -81,6 +81,7 @@ fn test_genesis_build() {
     });
 }
 
+/// test calling remove_identity
 #[test]
 fn test_remove_identity() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
@@ -103,6 +104,104 @@ fn test_remove_identity() {
         ));
     });
 }
+
+/// test identity is validated when membership is claimed
+#[test]
+fn test_validate_identity_when_claim() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(AccountKeyring::Ferdie.to_account_id(), 1000)])
+        .build()
+        .execute_with(|| {
+            run_to_block(1);
+            // alice create identity for Eve
+            assert_ok!(Identity::create_identity(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                AccountKeyring::Eve.to_account_id(),
+            ));
+            run_to_block(2);
+            // eve confirms her identity
+            assert_ok!(Identity::confirm_identity(
+                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                "Eeeeeveeeee".into(),
+            ));
+            run_to_block(3);
+            // eve gets certified by bob and charlie
+            assert_ok!(Cert::add_cert(
+                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+                2,
+                5
+            ));
+            assert_ok!(Cert::add_cert(
+                frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
+                3,
+                5
+            ));
+
+            // eve can claim her membership
+            assert_ok!(Membership::claim_membership(
+                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+            ));
+
+            System::assert_has_event(RuntimeEvent::Membership(
+                pallet_membership::Event::MembershipAcquired(5),
+            ));
+
+            // ferdie can not validate eve identity because already validated
+            assert_noop!(
+                Identity::validate_identity(
+                    frame_system::RawOrigin::Signed(AccountKeyring::Ferdie.to_account_id()).into(),
+                    5,
+                ),
+                pallet_identity::Error::<Runtime>::IdtyAlreadyValidated
+            );
+        });
+}
+
+/// test membership expiry
+#[test]
+fn test_membership_expiry() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        run_to_block(100);
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::MembershipExpired(1),
+        ));
+        // membership expiry should not trigger identity removal
+        assert!(!System::events().iter().any(|record| record.event
+            == RuntimeEvent::Identity(pallet_identity::Event::IdtyRemoved { idty_index: 1 })));
+    });
+}
+
+/// test membership renewal
+#[test]
+fn test_membership_renewal() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        // renew at block 2
+        run_to_block(2);
+        assert_ok!(Membership::renew_membership(
+            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+        ));
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::MembershipRenewed(1),
+        ));
+
+        // renew at block 3
+        run_to_block(3);
+        assert_ok!(Membership::renew_membership(
+            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+        ));
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::MembershipRenewed(1),
+        ));
+
+        // should expire at block 103 = 3+100
+        run_to_block(103);
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::MembershipExpired(1),
+        ));
+    });
+}
+
+// test that UD are auto claimed when identity is removed
 #[test]
 fn test_remove_identity_after_one_ud() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
@@ -147,6 +246,95 @@ fn test_remove_identity_after_one_ud() {
     });
 }
 
+/// test that UD are auto claimed when membership expires
+/// and that claimed UD matches expectations
+#[test]
+fn test_ud_claimed_membership_on_and_off() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        // UD are created every 10 blocks from block 0
+        run_to_block(10);
+        System::assert_has_event(RuntimeEvent::UniversalDividend(
+            pallet_universal_dividend::Event::NewUdCreated {
+                amount: 1000,
+                index: 1,
+                monetary_mass: 4000,
+                members_count: 4,
+            },
+        ));
+        // UD not claimed, still initial balance to 0
+        assert_eq!(
+            Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+            0
+        );
+
+        run_to_block(11);
+        // alice identity expires
+        assert_ok!(Membership::force_expire_membership(1));
+        System::assert_has_event(RuntimeEvent::UniversalDividend(
+            pallet_universal_dividend::Event::UdsAutoPaidAtRemoval {
+                count: 1,
+                total: 1_000,
+                who: AccountKeyring::Alice.to_account_id(),
+            },
+        ));
+        // alice balances should be increased by 1 UD
+        assert_eq!(
+            Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+            1000
+        );
+
+        // UD number 2
+        run_to_block(20);
+        System::assert_has_event(RuntimeEvent::UniversalDividend(
+            pallet_universal_dividend::Event::NewUdCreated {
+                amount: 1000,
+                index: 2,
+                monetary_mass: 7000, // 4000 + 3 × 1000
+                members_count: 3,    // alice is not member at this UD
+            },
+        ));
+
+        // alice claims back her membership
+        assert_ok!(Membership::claim_membership(
+            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into()
+        ));
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::MembershipAcquired(1),
+        ));
+
+        // UD number 3
+        run_to_block(30);
+        System::assert_has_event(RuntimeEvent::UniversalDividend(
+            pallet_universal_dividend::Event::NewUdCreated {
+                amount: 1000,
+                index: 3,
+                monetary_mass: 11000, // 7000 + 4 × 1000
+                members_count: 4,     // alice is member again at this UD
+            },
+        ));
+
+        // one block later, alice claims her new UD
+        run_to_block(31);
+        assert_ok!(UniversalDividend::claim_uds(
+            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into()
+        ));
+        System::assert_has_event(RuntimeEvent::UniversalDividend(
+            pallet_universal_dividend::Event::UdsClaimed {
+                count: 1,
+                total: 1_000,
+                who: AccountKeyring::Alice.to_account_id(),
+            },
+        ));
+        assert_eq!(
+            Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+            2000 // one more UD
+        );
+
+        // println!("{:?}", System::events());
+    });
+}
+
+/// test when root removes and identity, all consumers should be deleted
 #[test]
 fn test_remove_smith_identity() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
@@ -382,6 +570,7 @@ fn test_create_new_idty_without_founds() {
         });
 }
 
+/// test that newly validated identity gets initialized with the next UD
 #[test]
 fn test_validate_new_idty_after_few_uds() {
     ExtBuilder::new(1, 3, 4)
@@ -425,17 +614,72 @@ fn test_validate_new_idty_after_few_uds() {
                 5,
             ));
 
-            // The new member should have first_eligible_ud equal to one
+            // The new member should have first_eligible_ud equal to three
             assert!(Identity::identity(5).is_some());
             assert_eq!(
                 Identity::identity(5).unwrap().data,
                 IdtyData {
+                    // first eligible UD will be at block 30
                     first_eligible_ud: pallet_universal_dividend::FirstEligibleUd::from(3),
                 }
             );
         });
 }
 
+/// test that newly validated identity gets initialized with the next UD
+// even when the method used is membership claim
+#[test]
+fn test_claim_memberhsip_after_few_uds() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (AccountKeyring::Alice.to_account_id(), 1_000),
+            (AccountKeyring::Bob.to_account_id(), 1_000),
+            (AccountKeyring::Charlie.to_account_id(), 1_000),
+            (AccountKeyring::Eve.to_account_id(), 1_000),
+        ])
+        .build()
+        .execute_with(|| {
+            run_to_block(21);
+
+            // Should be able to create an identity
+            assert_ok!(Identity::create_identity(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                AccountKeyring::Eve.to_account_id(),
+            ));
+
+            // At next block, the created identity should be confirmed by its owner
+            run_to_block(22);
+            assert_ok!(Identity::confirm_identity(
+                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                pallet_identity::IdtyName::from("Eve"),
+            ));
+
+            // At next block, Bob should be able to certify the new identity
+            run_to_block(23);
+            assert_ok!(Cert::add_cert(
+                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+                2,
+                5,
+            ));
+
+            // eve should be able to claim her membership
+            assert_ok!(Membership::claim_membership(
+                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+            ));
+
+            // The new member should have first_eligible_ud equal to three
+            assert!(Identity::identity(5).is_some());
+            assert_eq!(
+                Identity::identity(5).unwrap().data,
+                IdtyData {
+                    // first eligible UD will be at block 30
+                    first_eligible_ud: pallet_universal_dividend::FirstEligibleUd::from(3),
+                }
+            );
+        });
+}
+
+/// test oneshot accounts
 #[test]
 fn test_oneshot_accounts() {
     ExtBuilder::new(1, 3, 4)

@@ -367,6 +367,7 @@ pub mod pallet {
 
         #[pallet::weight(T::WeightInfo::validate_identity())]
         /// validate the owned identity (must meet the main wot requirements)
+        // automatically claim membership if not done
         pub fn validate_identity(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
@@ -499,6 +500,7 @@ pub mod pallet {
 
             ensure!(
                 if let Some((ref old_owner_key, last_change)) = idty_value.old_owner_key {
+                    // old owner key can also revoke the identity until the period expired
                     revocation_key == idty_value.owner_key
                         || (&revocation_key == old_owner_key
                             && frame_system::Pallet::<T>::block_number()
@@ -509,8 +511,10 @@ pub mod pallet {
                 Error::<T>::InvalidRevocationKey
             );
 
+            // make sure that no wot prevents identity removal
             T::CheckIdtyCallAllowed::check_remove_identity(idty_index)?;
 
+            // then check payload signature
             let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
             let revocation_payload = RevocationPayload {
                 genesis_hash,
@@ -523,6 +527,7 @@ pub mod pallet {
                 Error::<T>::InvalidRevocationSig
             );
 
+            // finally if all checks pass, remove identity
             Self::do_remove_identity(idty_index);
             Ok(().into())
         }
@@ -639,6 +644,22 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
+        /// try to validate identity
+        // (used when membership is claimed first)
+        pub fn try_validate_identity(idty_index: T::IdtyIndex) {
+            if let Some(mut idty_value) = Identities::<T>::get(idty_index) {
+                // only does something if identity is not yet validated
+                if idty_value.status != IdtyStatus::Validated {
+                    idty_value.removable_on = T::BlockNumber::zero();
+                    idty_value.status = IdtyStatus::Validated;
+
+                    <Identities<T>>::insert(idty_index, idty_value);
+                    Self::deposit_event(Event::IdtyValidated { idty_index });
+                }
+                // already validated, no need to re-validate
+            }
+        }
+
         /// perform identity removal
         pub(super) fn do_remove_identity(idty_index: T::IdtyIndex) -> Weight {
             if let Some(idty_val) = Identities::<T>::get(idty_index) {

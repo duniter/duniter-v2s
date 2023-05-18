@@ -143,7 +143,7 @@ parameter_types! {
 }
 
 impl pallet_membership::Config<Instance1> for Test {
-    type CheckCallAllowed = DuniterWot;
+    type CheckMembershipCallAllowed = DuniterWot;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
     type AccountIdOf = ();
@@ -198,7 +198,7 @@ parameter_types! {
 }
 
 impl pallet_membership::Config<Instance2> for Test {
-    type CheckCallAllowed = SmithSubWot;
+    type CheckMembershipCallAllowed = SmithSubWot;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
     type AccountIdOf = ();

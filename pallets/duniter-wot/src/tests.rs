@@ -55,6 +55,7 @@ fn test_creator_not_allowed_to_create_idty() {
     });
 }
 
+/// test smith joining workflow
 #[test]
 fn test_join_smiths() {
     new_test_ext(5, 3).execute_with(|| {
@@ -79,27 +80,26 @@ fn test_join_smiths() {
 
         // Then, Dave should be able to claim his membership
         run_to_block(4);
-        assert_ok!(SmithMembership::claim_membership(
-            RuntimeOrigin::signed(4),
-            Some(4)
-        ));
+        assert_ok!(SmithMembership::claim_membership(RuntimeOrigin::signed(4),));
         System::assert_has_event(RuntimeEvent::SmithMembership(
             pallet_membership::Event::MembershipAcquired(4),
         ));
     });
 }
 
+/// test smith membership expiry after cert expiration
 #[test]
-fn test_smith_certs_expirations_should_revoke_smith_membership() {
+fn test_smith_certs_expirations_should_expire_smith_membership() {
     new_test_ext(5, 3).execute_with(|| {
         // After block #10, alice membership should be revoked due to smith certs expiration
         run_to_block(10);
         System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipRevoked(1),
+            pallet_membership::Event::MembershipExpired(1),
         ));
     });
 }
 
+/// test that smith can not change owner key
 #[test]
 fn test_smith_member_cant_change_its_idty_address() {
     new_test_ext(5, 3).execute_with(|| {
@@ -124,6 +124,7 @@ fn test_smith_member_cant_change_its_idty_address() {
     });
 }
 
+/// members of the smith subwot can not remove their identity
 #[test]
 fn test_smith_member_cant_revoke_its_idty() {
     new_test_ext(5, 3).execute_with(|| {
@@ -147,6 +148,7 @@ fn test_smith_member_cant_revoke_its_idty() {
     });
 }
 
+/// test identity creation and that a first cert is emitted
 #[test]
 fn test_create_idty_ok() {
     new_test_ext(5, 2).execute_with(|| {
@@ -173,6 +175,7 @@ fn test_create_idty_ok() {
     });
 }
 
+/// test identity validation
 #[test]
 fn test_new_idty_validation() {
     new_test_ext(5, 2).execute_with(|| {
@@ -196,6 +199,12 @@ fn test_new_idty_validation() {
             receiver: 6,
             receiver_received_count: 2,
         }));
+
+        // Ferdie should not be able to claim membership
+        // assert_noop!(
+        //     Membership::claim_membership(RuntimeOrigin::signed(6)),
+        //     pallet_membership::Error::<Test, Instance1>::xxx
+        // );
 
         // Anyone should be able to validate Ferdie identity
         run_to_block(5);
@@ -301,15 +310,16 @@ fn test_revoke_idty() {
     });
 }
 
+/// test that expired membership lose the identity and can not be certified
 #[test]
-fn test_idty_membership_expire_them_requested() {
+fn test_idty_membership_expire() {
     new_test_ext(3, 2).execute_with(|| {
         run_to_block(4);
 
         // Alice renews her membership
-        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(1), None));
+        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(1)));
         // Bob renews his membership
-        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(2), None));
+        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(2)));
 
         // Charlie's membership should expire at block #8
         run_to_block(8);
@@ -318,11 +328,22 @@ fn test_idty_membership_expire_them_requested() {
         System::assert_has_event(RuntimeEvent::Membership(
             pallet_membership::Event::MembershipExpired(3),
         ));
+        // membership expiry should not trigger identity removal
+        assert!(!System::events().iter().any(|record| record.event
+            == RuntimeEvent::Identity(pallet_identity::Event::IdtyRemoved { idty_index: 3 })));
+        // it should be moved to pending membership instead
+        assert!(Membership::pending_membership(3).is_some());
+
+        // then pending membership should expire and identity should finally be removed
+        run_to_block(11);
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::PendingMembershipExpired(3),
+        ));
         System::assert_has_event(RuntimeEvent::Identity(
             pallet_identity::Event::IdtyRemoved { idty_index: 3 },
         ));
 
-        // Charlie's identity should be removed at block #8
+        // Charlie's identity should be removed at block #11
         assert!(Identity::identity(3).is_none());
 
         // Alice can't renew her cert to Charlie

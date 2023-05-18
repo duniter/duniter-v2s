@@ -128,15 +128,9 @@ impl CallCategory {
                 "Identity",
                 "remove_identity" | "prune_item_identities_names" | "prune_item_identity_index_of",
             ) => Self::Root,
-            ("Membership", "force_request_membership") => Self::Root,
-            ("Membership", "request_membership" | "claim_membership" | "revoke_membership") => {
-                Self::Disabled
-            }
-            ("Cert", "force_add_cert" | "del_cert" | "remove_all_certs_received_by") => Self::Root,
-            ("SmithMembership", "force_request_membership") => Self::Root,
-            ("SmithCert", "force_add_cert" | "del_cert" | "remove_all_certs_received_by") => {
-                Self::Root
-            }
+            ("Membership", "request_membership" | "revoke_membership") => Self::Disabled,
+            ("Cert", "del_cert" | "remove_all_certs_received_by") => Self::Root,
+            ("SmithCert", "del_cert" | "remove_all_certs_received_by") => Self::Root,
             ("TechnicalCommittee", "set_members" | "disapprove_proposal") => Self::Root,
             ("Utility", "dispatch_as") => Self::Root,
             ("Treasury", "approve_proposal" | "reject_proposal") => Self::OtherOrigin,
