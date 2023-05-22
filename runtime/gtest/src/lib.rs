@@ -22,6 +22,10 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+#[cfg(feature = "runtime-benchmarks")]
+#[macro_use]
+extern crate frame_benchmarking;
+
 pub mod parameters;
 
 pub use self::parameters::*;
@@ -29,8 +33,8 @@ pub use common_runtime::{
     constants::*, entities::*, handlers::*, AccountId, Address, Balance, BlockNumber,
     FullIdentificationOfImpl, GetCurrentEpochIndex, Hash, Header, IdtyIndex, Index, Signature,
 };
+pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
-pub use pallet_identity::{IdtyStatus, IdtyValue};
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as session_historical;
 pub use pallet_timestamp::Call as TimestampCall;
@@ -112,7 +116,7 @@ pub type SignedExtra = (
     frame_system::CheckTxVersion<Runtime>,
     frame_system::CheckGenesis<Runtime>,
     frame_system::CheckEra<Runtime>,
-    frame_system::CheckNonce<Runtime>,
+    pallet_oneshot_account::CheckNonce<Runtime>,
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
@@ -161,14 +165,16 @@ mod benches {
 }
 
 pub struct BaseCallFilter;
+
+// implement filter
 impl Contains<RuntimeCall> for BaseCallFilter {
     fn contains(call: &RuntimeCall) -> bool {
         !matches!(
             call,
-            RuntimeCall::System(
-                frame_system::Call::remark { .. } | frame_system::Call::remark_with_event { .. }
-            ) | RuntimeCall::Membership(
-                pallet_membership::Call::claim_membership { .. }
+            // in main web of trust, membership request and revoke are handeled through identity pallet
+            // the user can not call them directly
+            RuntimeCall::Membership(
+                pallet_membership::Call::request_membership { .. }
                     | pallet_membership::Call::revoke_membership { .. }
             ) | RuntimeCall::Session(_)
         )
@@ -194,6 +200,7 @@ pub enum ProxyType {
     AlmostAny = 0,
     TransferOnly = 1,
     CancelProxy = 2,
+    TechnicalCommitteePropose = 3,
 }
 impl Default for ProxyType {
     fn default() -> Self {
@@ -222,11 +229,19 @@ impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
                     RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
                 )
             }
+            ProxyType::TechnicalCommitteePropose => {
+                matches!(
+                    c,
+                    RuntimeCall::TechnicalCommittee(pallet_collective::Call::propose { .. })
+                )
+            }
         }
     }
 }
 
+// Configure FRAME pallets to include in runtime.
 common_runtime::pallets_config! {
+
     impl pallet_sudo::Config for Runtime {
         type RuntimeEvent = RuntimeEvent;
         type RuntimeCall = RuntimeCall;
@@ -254,7 +269,7 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 32,
         OneshotAccount: pallet_oneshot_account::{Pallet, Call, Storage, Event<T>} = 7,
 
-        // Consensus support.
+        // Consensus support
         AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 11,
         Offences: pallet_offences::{Pallet, Storage, Event} = 12,
@@ -264,7 +279,7 @@ construct_runtime!(
         ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 16,
         AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 17,
 
-        // Governance stuff.
+        // Governance stuff
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
         UpgradeOrigin: pallet_upgrade_origin::{Pallet, Call, Event} = 21,
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 22,

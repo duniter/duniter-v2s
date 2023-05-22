@@ -307,20 +307,29 @@ trait BenchmarkCallSigner<RuntimeCall: Encode + Clone, Signer: Pair> {
     ) -> sp_runtime::OpaqueExtrinsic;
 }
 
+#[cfg(feature = "g1")]
+use g1_runtime as runtime;
 #[cfg(feature = "gdev")]
-impl BenchmarkCallSigner<gdev_runtime::RuntimeCall, sp_core::sr25519::Pair>
-    for super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>
-{
+use gdev_runtime as runtime;
+#[cfg(feature = "gdev")]
+type FullClient = super::FullClient<runtime::RuntimeApi, super::GDevExecutor>;
+#[cfg(feature = "gtest")]
+use gtest_runtime as runtime;
+#[cfg(feature = "gtest")]
+type FullClient = super::FullClient<runtime::RuntimeApi, super::GTestExecutor>;
+
+#[cfg(any(feature = "gdev", feature = "gtest"))]
+impl BenchmarkCallSigner<runtime::RuntimeCall, sp_core::sr25519::Pair> for FullClient {
     fn sign_call(
         &self,
-        call: gdev_runtime::RuntimeCall,
+        call: runtime::RuntimeCall,
         nonce: u32,
         current_block: u64,
         period: u64,
         genesis: sp_core::H256,
         acc: sp_core::sr25519::Pair,
     ) -> sp_runtime::OpaqueExtrinsic {
-        use gdev_runtime as runtime;
+        // use runtime;
 
         let extra: runtime::SignedExtra = (
             frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),

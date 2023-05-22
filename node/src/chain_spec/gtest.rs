@@ -19,10 +19,10 @@ use common_runtime::constants::*;
 use common_runtime::entities::IdtyData;
 use common_runtime::*;
 use gtest_runtime::{
-    opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
-    BalancesConfig, CertConfig, GenesisConfig, IdentityConfig, IdtyValue, ImOnlineId,
-    MembershipConfig, SessionConfig, SmithCertConfig, SmithMembershipConfig, SudoConfig,
-    SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
+    opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig, CertConfig,
+    GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig, SessionConfig, SmithCertConfig,
+    SmithMembershipConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
+    UniversalDividendConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
@@ -34,8 +34,8 @@ use std::collections::BTreeMap;
 
 pub type AuthorityKeys = (
     AccountId,
-    BabeId,
     GrandpaId,
+    BabeId,
     ImOnlineId,
     AuthorityDiscoveryId,
 );
@@ -51,57 +51,136 @@ const TOKEN_SYMBOL: &str = "ĞT";
 pub fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
     (
         get_account_id_from_seed::<sr25519::Public>(s),
-        get_from_seed::<BabeId>(s),
         get_from_seed::<GrandpaId>(s),
+        get_from_seed::<BabeId>(s),
         get_from_seed::<ImOnlineId>(s),
         get_from_seed::<AuthorityDiscoveryId>(s),
     )
 }
 
+/// Generate session keys
+fn get_session_keys_from_seed(s: &str) -> SessionKeys {
+    let authority_keys = get_authority_keys_from_seed(s);
+    session_keys(
+        authority_keys.1,
+        authority_keys.2,
+        authority_keys.3,
+        authority_keys.4,
+    )
+}
+
+/// make session keys struct
+fn session_keys(
+    grandpa: GrandpaId,
+    babe: BabeId,
+    im_online: ImOnlineId,
+    authority_discovery: AuthorityDiscoveryId,
+) -> SessionKeys {
+    SessionKeys {
+        grandpa,
+        babe,
+        im_online,
+        authority_discovery,
+    }
+}
+
+/// generate development chainspec with Alice validator
 pub fn development_chain_spec() -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
 
-    Ok(ChainSpec::from_genesis(
-        // Name
-        "Ğtest Development",
-        // ID
-        "gtest_dev",
-        ChainType::Development,
-        move || {
-            gen_genesis_for_local_chain(
-                wasm_binary,
-                // Initial authorities len
-                1,
-                // Initial smith members len
-                3,
-                // Inital identities len
-                4,
-                // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                true,
-            )
-        },
-        // Bootnodes
-        vec![],
-        // Telemetry
-        None,
-        // Protocol ID
-        None,
-        //Fork ID
-        None,
-        // Properties
-        Some(
-            serde_json::json!({
+    // custom genesis when DUNITER_GTEST_GENESIS is set
+    if let Ok(genesis_json_path) = std::env::var("DUNITER_GTEST_GENESIS") {
+        // log
+        log::info!("loading genesis from {genesis_json_path}");
+        // return chainspecs
+        Ok(ChainSpec::from_genesis(
+            // Name
+            "ĞTest Development",
+            // ID
+            "gtest_dev",
+            // chain type
+            sc_service::ChainType::Development,
+            // genesis config constructor
+            move || {
+                super::gtest_genesis::build_genesis(
+                    // path of json genesis
+                    &genesis_json_path,
+                    // wasm binary
+                    wasm_binary,
+                    // replace authority by Alice
+                    Some(get_session_keys_from_seed("Alice").encode()),
+                )
+                .expect("genesis building failed")
+            },
+            // Bootnodes
+            vec![],
+            // Telemetry
+            None,
+            // Protocol ID
+            None,
+            //Fork ID
+            None,
+            // Properties
+            Some(
+                serde_json::json!({
                     "tokenDecimals": TOKEN_DECIMALS,
                     "tokenSymbol": TOKEN_SYMBOL,
-            })
-            .as_object()
-            .expect("must be a map")
-            .clone(),
-        ),
-        // Extensions
-        None,
-    ))
+                })
+                .as_object()
+                .expect("must be a map")
+                .clone(),
+            ),
+            // Extensions
+            None,
+        ))
+    } else {
+        // log
+        log::info!("generating genesis");
+        // generated genesis
+        Ok(ChainSpec::from_genesis(
+            // Name
+            "ĞTest Development",
+            // ID
+            "gtest_dev",
+            // chain type
+            ChainType::Development,
+            // constructor
+            move || {
+                gen_genesis_for_local_chain(
+                    wasm_binary,
+                    // Initial authorities len
+                    1,
+                    // Initial smith members len
+                    3,
+                    // Inital identities len
+                    4,
+                    // Sudo account
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    true,
+                )
+            },
+            // Bootnodes
+            vec![],
+            // Telemetry
+            None,
+            // Protocol ID
+            None,
+            //Fork ID
+            None,
+            // Properties
+            Some(
+                serde_json::json!({
+                        "tokenDecimals": TOKEN_DECIMALS,
+                        "tokenSymbol": TOKEN_SYMBOL,
+                })
+                .as_object()
+                .expect("must be a map")
+                .clone(),
+            ),
+            // Extensions
+            None,
+        ))
+    }
 }
 
 pub fn local_testnet_config(
@@ -113,7 +192,7 @@ pub fn local_testnet_config(
 
     Ok(ChainSpec::from_genesis(
         // Name
-        "Ğtest Local Testnet",
+        "ĞTest Local Testnet",
         // ID
         "gtest_local",
         ChainType::Local,
@@ -209,9 +288,7 @@ fn gen_genesis_for_local_chain(
                 .map(|(i, keys)| (i as u32 + 1, (keys.0.clone(), true)))
                 .collect(),
         },
-        balances: BalancesConfig {
-            balances: Vec::with_capacity(0),
-        },
+        balances: Default::default(),
         babe: BabeConfig {
             authorities: Vec::with_capacity(0),
             epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
@@ -297,19 +374,5 @@ fn gen_genesis_for_local_chain(
             initial_monetary_mass: 0,
         },
         treasury: Default::default(),
-    }
-}
-
-fn session_keys(
-    babe: BabeId,
-    grandpa: GrandpaId,
-    im_online: ImOnlineId,
-    authority_discovery: AuthorityDiscoveryId,
-) -> SessionKeys {
-    SessionKeys {
-        babe,
-        grandpa,
-        im_online,
-        authority_discovery,
     }
 }

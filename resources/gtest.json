@@ -1,0 +1,331 @@
+{
+  "first_ud": 10000,
+  "first_ud_reeval": 100800,
+  "initial_monetary_mass": 531481,
+  "identities": {
+    "old_user1": {
+      "index": 7777,
+      "owner_key": "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw",
+      "membership_expire_on": 0,
+      "next_cert_issuable_on": 0,
+      "balance": 12,
+      "certs_received": {
+        "elois": 10
+      }
+    },
+    "old_user2": {
+      "index": 8888,
+      "owner_key": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+      "membership_expire_on": 0,
+      "next_cert_issuable_on": 0,
+      "balance": 12,
+      "certs_received": {
+        "elois": 10
+      }
+    },
+    "old_user3": {
+      "index": 6666,
+      "owner_key": "5Fxune7f71ZbpP2FoY3mhYcmM596Erhv1gRue4nsPwkxMR4n",
+      "membership_expire_on": 0,
+      "next_cert_issuable_on": 0,
+      "balance": 12,
+      "certs_received": {
+        "elois": 10
+      }
+    },
+    "elois": {
+      "index": 2,
+      "owner_key": "5CUjxa4wVKMj3FqKdqAUf7zcEMr4MYAjXeWmUf44B41neLmJ",
+      "membership_expire_on": 1000,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "poka": 100,
+        "cgeek": 100,
+        "vit": 100,
+        "tuxmain": 100,
+        "HugoTrentesaux": 100,
+        "ManUtopiK": 100,
+        "moul": 100,
+        "1000i100": 100,
+        "kapis": 100,
+        "DavidB": 100,
+        "Gamaliel": 100,
+        "wellno1": 100,
+        "old_user1": 50
+      }
+    },
+    "HugoTrentesaux": {
+      "index": 344,
+      "owner_key": "5Dq8xjvkmbz7q4g2LbZgyExD26VSCutfEc6n4W4AfQeVHZqz",
+      "old_owner_key": "5Dq8xjvkmbz7q4g2LbZgyExD26VSCutfEc6n4W4AfQeVHZqz",
+      "membership_expire_on": 1000,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "poka": 100,
+        "vit": 100,
+        "tuxmain": 100,
+        "elois": 100,
+        "moul": 100,
+        "1000i100": 100,
+        "ManUtopiK": 100,
+        "kapis": 100,
+        "DavidB": 100,
+        "Gamaliel": 100,
+        "wellno1": 100
+      }
+    },
+    "poka": {
+      "index": 62,
+      "owner_key": "5CQ8T4qpbYJq7uVsxGPQ5q2df7x3Wa4aRY6HUWMBYjfLZhnn",
+      "membership_expire_on": 1000,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "cgeek": 100,
+        "vit": 100,
+        "tuxmain": 100,
+        "elois": 100,
+        "HugoTrentesaux": 100
+      }
+    },
+    "tuxmain": {
+      "index": 1401,
+      "owner_key": "5D2DnScFpxoEUXDwZbJH18tRsQMygBSh1F6YCcWvTYzKY2W7",
+      "membership_expire_on": 1000,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "cgeek": 100,
+        "elois": 100,
+        "HugoTrentesaux": 100,
+        "ManUtopiK": 100,
+        "poka": 100,
+        "moul": 100,
+        "1000i100": 100
+      }
+    },
+    "vit": {
+      "index": 20,
+      "owner_key": "5DqkYGjiT5TFm2pGMUBMuZW4sw13vDEZmxqkxmky5AoQvUwd",
+      "membership_expire_on": 1000,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "cgeek": 100,
+        "elois": 100,
+        "HugoTrentesaux": 100,
+        "ManUtopiK": 100,
+        "poka": 100,
+        "tuxmain": 100,
+        "moul": 100
+      }
+    },
+    "cgeek": {
+      "index": 1,
+      "owner_key": "5DP7ze5cJwtHbqXaP2aNtJ5jkULzcTCqXuMzDvk9JjneFjfq",
+      "membership_expire_on": 1000,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "poka": 100,
+        "vit": 100,
+        "tuxmain": 100,
+        "elois": 100,
+        "HugoTrentesaux": 100,
+        "moul": 100
+      }
+    },
+    "ManUtopiK": {
+      "index": 2316,
+      "owner_key": "5DUjwHRqPayt3tAZk1fqEgU99xZB9jzBHKy2sMSTNcc7m9D1",
+      "membership_expire_on": 1000,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "poka": 100,
+        "vit": 100,
+        "tuxmain": 100,
+        "elois": 100,
+        "HugoTrentesaux": 100,
+        "1000i100": 100
+      }
+    },
+    "1000i100": {
+      "index": 72,
+      "owner_key": "5CCrBS67BrpBx3ihGHc72HZp3eHHbETxWFuNfwbbdoGSJFN8",
+      "membership_expire_on": 1000,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "elois": 100,
+        "poka": 100,
+        "cgeek": 100,
+        "vit": 100,
+        "tuxmain": 100,
+        "HugoTrentesaux": 100,
+        "ManUtopiK": 100,
+        "moul": 100
+      }
+    },
+    "moul": {
+      "index": 32,
+      "owner_key": "5EPGRtBYLwfDinnaAXsscM3FkffRADpJRrkZETqW8N6uhp22",
+      "membership_expire_on": 1000,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "ManUtopiK": 100,
+        "vit": 100,
+        "tuxmain": 100,
+        "elois": 100,
+        "HugoTrentesaux": 100,
+        "1000i100": 100
+      }
+    },
+    "Gamaliel": {
+      "index": 3994,
+      "owner_key": "5DS9iWBXW56N7XbeVyyp6CB7m4LeE5fGJYrUR9HDSStT5JN9",
+      "membership_expire_on": 0,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "DavidB": 100,
+        "wellno1": 100,
+        "kapis": 100
+      }
+    },
+    "kapis": {
+      "index": 3883,
+      "owner_key": "5HJyyim1W8Y1UD8LAbBL7cQQLjGofMoD45RtRSAmhkFQxrvs",
+      "membership_expire_on": 22,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "DavidB": 100,
+        "wellno1": 100,
+        "Gamaliel": 100,
+        "HugoTrentesaux": 100,
+        "elois": 100
+      }
+    },
+    "DavidB": {
+      "index": 2277,
+      "owner_key": "5HKTDdXHj3MojiPRcEsVU9JaHyif5gg2br1sy3JZbsjuQebP",
+      "membership_expire_on": 0,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "kapis": 100,
+        "wellno1": 100,
+        "Gamaliel": 100
+      }
+    },
+    "wellno1": {
+      "index": 9999,
+      "owner_key": "5DyEZNkSuK5i8wZiXtvL63zqpye9zPBsPRauCjQkMuVzZYX7",
+      "membership_expire_on": 0,
+      "next_cert_issuable_on": 100,
+      "balance": 10000,
+      "certs_received": {
+        "DavidB": 100,
+        "kapis": 100,
+        "Gamaliel": 100
+      }
+    }
+  },
+  "smiths": {
+    "elois": {
+      "certs_received": [
+        "poka",
+        "cgeek",
+        "vit",
+        "tuxmain",
+        "HugoTrentesaux",
+        "kapis"
+      ],
+      "session_keys": "0x92743b12d55242276539d7256951cdfda85371caefbd325396da9331011b737d14084d2537f77e786a75b9bcbe351051fad52946ec211724b5e8c93bb8aa7a6f14084d2537f77e786a75b9bcbe351051fad52946ec211724b5e8c93bb8aa7a6f14084d2537f77e786a75b9bcbe351051fad52946ec211724b5e8c93bb8aa7a6f"
+    },
+    "poka": {
+      "certs_received": [
+        "cgeek",
+        "vit",
+        "tuxmain",
+        "elois",
+        "HugoTrentesaux"
+      ]
+    },
+    "tuxmain": {
+      "certs_received": [
+        "cgeek",
+        "elois",
+        "HugoTrentesaux",
+        "poka",
+        "kapis"
+      ]
+    },
+    "vit": {
+      "certs_received": [
+        "cgeek",
+        "elois",
+        "HugoTrentesaux",
+        "poka",
+        "tuxmain"
+      ]
+    },
+    "cgeek": {
+      "certs_received": [
+        "poka",
+        "vit",
+        "tuxmain",
+        "elois",
+        "HugoTrentesaux"
+      ]
+    },
+    "HugoTrentesaux": {
+      "certs_received": [
+        "poka",
+        "vit",
+        "tuxmain",
+        "elois",
+        "kapis"
+      ]
+    },
+    "1000i100": {
+      "certs_received": [
+        "cgeek",
+        "vit",
+        "tuxmain",
+        "elois",
+        "HugoTrentesaux",
+        "poka"
+      ]
+    },
+    "kapis": {
+      "certs_received": [
+        "elois",
+        "tuxmain",
+        "HugoTrentesaux",
+        "1000i100",
+        "vit"
+      ]
+    }
+  },
+  "wallets": {
+    "5C558MohmEJ3Z1o1wv8AAR7dFc3ZsUQZGBUHLxvHetWaN53U": 304,
+    "5C56NAAgLYBXEiWsRhRD2vKZquSgZHULUuiCWpcVg8k21Kex": 5000,
+    "5C59KZ3X6AEt23FSLxsLvtXqN41SHyaWa5CQmXiYLUek3ECd": 24507,
+    "5C5KjPbZfvwFXh24KkKEjeofCNng2tZM4YjJN8mMYhLAzn8H": 1042,
+    "5C5VrnckbfuizDDFn9ubcQDEKSnRFbB3jfa5kMaQxmRFzLJX": 10800,
+    "5C5YfjAyZnLPfyMQNreng5knFW87PRTVphRhPUXpWszF7sB9": 200,
+    "5C5YfjAyZnLPfyMQNreng5knFW87PRTVphRkQoupWszF7pte": 359592
+  },
+  "sudo_key": "5Hm8sBbwuLAU99dBezvgtnRmZCrUy9mhqmbQMFyGTaeATYg7",
+  "technical_committee": [
+    "elois",
+    "cgeek",
+    "tuxmain",
+    "HugoTrentesaux"
+  ]
+}
