@@ -34,7 +34,7 @@ fn assert_has_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::R
 fn add_certs<T: Config<I>, I: 'static>(i: u32, receiver: T::IdtyIndex) -> Result<(), &'static str> {
     Pallet::<T, I>::remove_all_certs_received_by(RawOrigin::Root.into(), receiver)?;
     for j in 1..i {
-        Pallet::<T, I>::do_add_cert_checked(RawOrigin::Root.into(), j.into(), receiver, false)?;
+        Pallet::<T, I>::do_add_cert_checked(j.into(), receiver, false)?;
     }
     assert!(
         CertsByReceiver::<T, I>::get(receiver).len() as u32 == i - 1,
@@ -63,7 +63,7 @@ benchmarks_instance_pallet! {
     del_cert {
         let issuer: T::IdtyIndex = 1.into();
         let receiver: T::IdtyIndex = 0.into();
-        Pallet::<T, I>::do_add_cert_checked(RawOrigin::Root.into(), issuer, receiver, false)?;
+        Pallet::<T, I>::do_add_cert_checked(issuer, receiver, false)?;
         let receiver_cert: u32 = StorageIdtyCertMeta::<T, I>::get(receiver).received_count;
         let issuer_cert: u32 = StorageIdtyCertMeta::<T, I>::get(issuer).issued_count;
     }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), issuer, receiver)

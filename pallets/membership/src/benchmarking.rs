@@ -61,7 +61,7 @@ benchmarks_instance_pallet! {
         PendingMembership::<T, I>::insert(idty.clone(), T::MetaData::default());
         let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-    }: _<T::RuntimeOrigin>(caller_origin, Some(idty))
+    }: _<T::RuntimeOrigin>(caller_origin)
     verify {
         assert_has_event::<T, I>(Event::<T, I>::MembershipAcquired(idty).into());
     }
@@ -69,7 +69,7 @@ benchmarks_instance_pallet! {
         let idty: T::IdtyId = 3.into();
         let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-    }: _<T::RuntimeOrigin>(caller_origin, Some(idty))
+    }: _<T::RuntimeOrigin>(caller_origin)
     verify {
         assert_has_event::<T, I>(Event::<T, I>::MembershipRenewed(idty).into());
     }
@@ -77,7 +77,7 @@ benchmarks_instance_pallet! {
         let idty: T::IdtyId = 3.into();
         let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-    }: _<T::RuntimeOrigin>(caller_origin, Some(idty))
+    }: _<T::RuntimeOrigin>(caller_origin)
     verify {
         assert_has_event::<T, I>(Event::<T, I>::MembershipRevoked(idty).into());
     }
