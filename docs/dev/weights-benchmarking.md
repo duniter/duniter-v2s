@@ -24,16 +24,16 @@ cargo test -p <pallet> --features runtime-benchmarks
 ```
 
 3. If the benchmark tests compiles and pass, compile the binary with benchmarks on your local
-machine: 
+machine:
 
 ```
 cargo build --release --features runtime-benchmarks
 ```
 
-4. Run the benchmarks on your local machine (to test if it work with a real runtime). See 0d1232cd0d8b5809e1586b48376f8952cebc0d27 for a complete real example. The command is: 
+4. Run the benchmarks on your local machine (to test if it work with a real runtime). See 0d1232cd0d8b5809e1586b48376f8952cebc0d27 for a complete real example. The command is:
 
 ```
-duniter benchmark pallet --chain=CHAINSPEC --steps=50 --repeat=20 --pallet=<pallet> --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=./runtime/common/src/weights/ 
+duniter benchmark pallet --chain=CHAINSPEC --steps=50 --repeat=20 --pallet=<pallet> --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=./runtime/common/src/weights/
 ```
 
 5. Use the generated file content to create the `WeightInfo` trait and the `()` dummy implementation in `pallets/<pallet>/src/weights.rs`. Then use the `WeightInfo` trait in the real code of the pallet. See 62dcc17f2c0b922e883fbc6337a9e7da97fc3218 for a complete real example.
@@ -42,7 +42,7 @@ duniter benchmark pallet --chain=CHAINSPEC --steps=50 --repeat=20 --pallet=<pall
 
 7. Use the `runtime/common/src/weights/pallet_<pallet>.rs` generated on the reference machine in the runtimes configuration. See  af62a3b9cfc42d6653b3a957836f58540c18e65a for a complete real example.
 
-Note 1: Use relevant chainspec for the benchmarks in place of `CHAINSPEC`. For example `--chain=gdev-benchmark` has already created identities that can be confirmed by pallet identity 
+Note 1: Use relevant chainspec for the benchmarks in place of `CHAINSPEC`. For example `--chain=gdev-benchmark` has already created identities that can be confirmed by pallet identity
 
 Note 2: If the reference machine does not support wasmtime, you should replace `--wasm-execution=compiled`
 by `--wasm-execution=interpreted-i-know-what-i-do`.
@@ -53,11 +53,10 @@ by `--wasm-execution=interpreted-i-know-what-i-do`.
 2. Run base block benchmarks command:
 
 ```
-duniter benchmark overhead --chain=gdev --execution=wasm --wasm-execution=interpreted-i-know-what-i-do --weight-path=. --warmup=10 --repeat=100
+duniter benchmark overhead --chain=gdev-benchmark --execution=wasm --wasm-execution=compiled --weight-path=./runtime/common/src/weights/ --warmup=10 --repeat=100
 ```
 
-3. Copy the generated file `block_weights.rs` in the codebase in folder `runtime/common/src/weights/`.
-4. Commit changes and open an MR.
+3. Commit changes and open an MR.
 
 ## Generate storage benchmarking
 

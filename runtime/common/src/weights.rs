@@ -20,6 +20,7 @@
 #![allow(clippy::unnecessary_cast)]
 
 pub mod block_weights;
+pub mod extrinsic_weights;
 pub mod frame_system;
 pub mod pallet_babe;
 pub mod pallet_balances;

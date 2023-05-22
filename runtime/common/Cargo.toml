@@ -58,6 +58,7 @@ std = [
     'sp-membership/std',
     'sp-runtime/std',
     'sp-std/std',
+    'sp-weights/std',
 ]
 try-runtime = [
 	"frame-support/try-runtime",
@@ -110,6 +111,7 @@ sp-consensus-babe = { git = 'https://github.com/duniter/substrate', branch = 'du
 sp-core = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 sp-runtime = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 sp-std = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
+sp-weights = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 
 
 # substrate benchmarks

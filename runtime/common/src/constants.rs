@@ -69,7 +69,7 @@ pub fn block_weights(
     expected_block_weight: Weight,
     normal_ratio: sp_arithmetic::Perbill,
 ) -> frame_system::limits::BlockWeights {
-    let base_weight = DbWeight::get().reads(1) + DbWeight::get().writes(1);
+    let base_weight = crate::weights::extrinsic_weights::ExtrinsicBaseWeight::get();
     let normal_weight = normal_ratio * expected_block_weight;
     frame_system::limits::BlockWeights::builder()
         .base_block(crate::weights::block_weights::BlockExecutionWeight::get())

@@ -177,7 +177,10 @@ macro_rules! pallets_config {
         impl pallet_transaction_payment::Config for Runtime {
             type OnChargeTransaction = OneshotAccount;
             type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
+            #[cfg(not(feature = "runtime-benchmarks"))]
             type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance>;
+            #[cfg(feature = "runtime-benchmarks")]
+            type WeightToFee = frame_support::weights::ConstantMultiplier::<u64, sp_core::ConstU64<0u64>>;
             type LengthToFee = common_runtime::fees::LengthToFeeImpl<Balance>;
             type FeeMultiplierUpdate = ();
             type RuntimeEvent = RuntimeEvent;
