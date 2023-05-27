@@ -98,6 +98,7 @@ impl sc_executor::NativeExecutionDispatch for G1Executor {
     }
 }
 
+#[derive(Debug)]
 pub enum RuntimeType {
     G1,
     GDev,
@@ -115,11 +116,9 @@ impl IdentifyRuntimeType for Box<dyn sc_chain_spec::ChainSpec> {
     fn runtime_type(&self) -> RuntimeType {
         if self.id().starts_with("g1") {
             RuntimeType::G1
-        } else if self.id().starts_with("gdem") {
-            RuntimeType::GTest
         } else if self.id().starts_with("dev") || self.id().starts_with("gdev") {
             RuntimeType::GDev
-        } else if self.id().starts_with("gt") {
+        } else if self.id().starts_with("gtest") {
             RuntimeType::GTest
         } else {
             panic!("unknown runtime")

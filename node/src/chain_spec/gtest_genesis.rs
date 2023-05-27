@@ -38,7 +38,8 @@ static SMITH_MIN_CERT: u32 = parameters::SmithWotMinCertForMembership::get();
 
 // define structure of json
 #[derive(Clone, Deserialize)]
-struct GenesisJson {
+#[serde(deny_unknown_fields)]
+pub struct GenesisJson {
     identities: HashMap<String, Identity>,
     smiths: HashMap<String, Smith>,
     first_ud: u64,
@@ -96,8 +97,8 @@ fn validate_idty_name(idty_name: &str) -> bool {
 /// ============================================================================================ ///
 /// build genesis from json file
 pub fn build_genesis(
-    // path of genesis config
-    genesis_config_path: &str,
+    // genesis data build from json
+    genesis_data: GenesisJson,
     // wasm binary
     wasm_binary: &[u8],
     // useful to enforce Alice authority when developing
@@ -119,28 +120,6 @@ pub fn build_genesis(
                 .as_secs()
         };
     log::info!("genesis timestamp: {}", genesis_timestamp);
-
-    // open json genesis file
-    let file = std::fs::File::open(&genesis_config_path).map_err(|e| {
-        format!(
-            "Error opening gen conf file `{}`: {}",
-            genesis_config_path, e
-        )
-    })?;
-
-    // memory map the file to avoid loading it in memory
-    let bytes = unsafe {
-        memmap2::Mmap::map(&file).map_err(|e| {
-            format!(
-                "Error mmaping gen conf file `{}`: {}",
-                genesis_config_path, e
-            )
-        })?
-    };
-
-    // parse the json file
-    let genesis_data: GenesisJson = serde_json::from_slice(&bytes)
-        .map_err(|e| format!("Error parsing gen conf file: {}", e))?;
 
     // declare variables for building genesis
     // -------------------------------------

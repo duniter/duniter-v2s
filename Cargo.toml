@@ -99,6 +99,7 @@ sc-executor = { git = "https://github.com/duniter/substrate", branch = "duniter-
 sc-finality-grandpa = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32" }
 sc-keystore = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32" }
 sc-network = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32" }
+sc-network-common = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32" }
 sc-rpc-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32" }
 sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32", default-features = false }
 sc-telemetry = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32" }

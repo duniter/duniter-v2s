@@ -18,13 +18,18 @@ use super::*;
 use common_runtime::constants::*;
 use common_runtime::entities::IdtyData;
 use common_runtime::*;
+use gtest_genesis::{build_genesis, GenesisJson};
 use gtest_runtime::{
     opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig, CertConfig,
     GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig, SessionConfig, SmithCertConfig,
     SmithMembershipConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
     UniversalDividendConfig, WASM_BINARY,
 };
+use jsonrpsee::core::JsonValue;
+use sc_network_common::config::MultiaddrWithPeerId; // in the future available in sc_network::config
 use sc_service::ChainType;
+use sc_telemetry::TelemetryEndpoints;
+use serde::Deserialize;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{blake2_256, sr25519, Encode, H256};
@@ -32,6 +37,7 @@ use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_membership::MembershipData;
 use std::collections::BTreeMap;
 
+pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
 pub type AuthorityKeys = (
     AccountId,
     GrandpaId,
@@ -39,14 +45,6 @@ pub type AuthorityKeys = (
     ImOnlineId,
     AuthorityDiscoveryId,
 );
-
-pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
-
-const TOKEN_DECIMALS: usize = 2;
-const TOKEN_SYMBOL: &str = "ĞT";
-// The URL for the telemetry server.
-// const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
-
 /// Generate an authority keys.
 pub fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
     (
@@ -57,7 +55,6 @@ pub fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
         get_from_seed::<AuthorityDiscoveryId>(s),
     )
 }
-
 /// Generate session keys
 fn get_session_keys_from_seed(s: &str) -> SessionKeys {
     let authority_keys = get_authority_keys_from_seed(s);
@@ -68,7 +65,6 @@ fn get_session_keys_from_seed(s: &str) -> SessionKeys {
         authority_keys.4,
     )
 }
-
 /// make session keys struct
 fn session_keys(
     grandpa: GrandpaId,
@@ -84,14 +80,50 @@ fn session_keys(
     }
 }
 
+// === client specifications ===
+
+/// emulate client specifications to get them from json
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
+pub struct ClientSpec {
+    name: String,
+    id: String,
+    chain_type: ChainType,
+    boot_nodes: Vec<MultiaddrWithPeerId>,
+    telemetry_endpoints: Option<TelemetryEndpoints>,
+    // protocol_id: Option<String>,
+    // #[serde(default = "Default::default", skip_serializing_if = "Option::is_none")]
+    // fork_id: Option<String>,
+    properties: Option<serde_json::Map<std::string::String, JsonValue>>,
+    // #[serde(default)]
+    // code_substitutes: BTreeMap<String, Bytes>,
+}
+
+// === development chainspecs ===
+
 /// generate development chainspec with Alice validator
-pub fn development_chain_spec() -> Result<ChainSpec, String> {
+// there is some code duplication because we can not use ClientSpec
+pub fn development_chainspecs() -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
 
     // custom genesis when DUNITER_GTEST_GENESIS is set
     if let Ok(genesis_json_path) = std::env::var("DUNITER_GTEST_GENESIS") {
         // log
         log::info!("loading genesis from {genesis_json_path}");
+        // open json genesis file
+        let file = std::fs::File::open(&genesis_json_path)
+            .map_err(|e| format!("Error opening gen conf file `{}`: {}", genesis_json_path, e))?;
+        // memory map the file to avoid loading it in memory
+        let bytes = unsafe {
+            memmap2::Mmap::map(&file).map_err(|e| {
+                format!("Error mmaping gen conf file `{}`: {}", genesis_json_path, e)
+            })?
+        };
+        // parse the json file
+        let genesis_data: GenesisJson = serde_json::from_slice(&bytes)
+            .map_err(|e| format!("Error parsing gen conf file: {}", e))?;
+
         // return chainspecs
         Ok(ChainSpec::from_genesis(
             // Name
@@ -102,9 +134,9 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
             sc_service::ChainType::Development,
             // genesis config constructor
             move || {
-                super::gtest_genesis::build_genesis(
-                    // path of json genesis
-                    &genesis_json_path,
+                build_genesis(
+                    // genesis data built from json
+                    genesis_data.clone(),
                     // wasm binary
                     wasm_binary,
                     // replace authority by Alice
@@ -123,8 +155,8 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
             // Properties
             Some(
                 serde_json::json!({
-                    "tokenDecimals": TOKEN_DECIMALS,
-                    "tokenSymbol": TOKEN_SYMBOL,
+                    "tokenDecimals": 2,
+                    "tokenSymbol": "ĞT",
                 })
                 .as_object()
                 .expect("must be a map")
@@ -146,7 +178,7 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
             ChainType::Development,
             // constructor
             move || {
-                gen_genesis_for_local_chain(
+                generate_genesis(
                     wasm_binary,
                     // Initial authorities len
                     1,
@@ -156,7 +188,6 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
                     4,
                     // Sudo account
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    true,
                 )
             },
             // Bootnodes
@@ -170,8 +201,8 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
             // Properties
             Some(
                 serde_json::json!({
-                        "tokenDecimals": TOKEN_DECIMALS,
-                        "tokenSymbol": TOKEN_SYMBOL,
+                    "tokenDecimals": 2,
+                    "tokenSymbol": "ĞT",
                 })
                 .as_object()
                 .expect("must be a map")
@@ -183,63 +214,58 @@ pub fn development_chain_spec() -> Result<ChainSpec, String> {
     }
 }
 
-pub fn local_testnet_config(
-    initial_authorities_len: usize,
-    initial_smiths_len: usize,
-    initial_identities_len: usize,
+// === live chainspecs ===
+
+/// live chainspecs
+// one smith must have session keys
+pub fn live_chainspecs(
+    client_spec: ClientSpec,
+    genesis_data: GenesisJson,
 ) -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
 
+    // return chainspecs
     Ok(ChainSpec::from_genesis(
         // Name
-        "ĞTest Local Testnet",
+        client_spec.name.as_str(),
         // ID
-        "gtest_local",
-        ChainType::Local,
+        client_spec.id.as_str(),
+        // chain type
+        client_spec.chain_type,
+        // genesis config constructor
         move || {
-            gen_genesis_for_local_chain(
+            build_genesis(
+                // genesis data
+                genesis_data.clone(),
+                // wasm binary
                 wasm_binary,
-                // Initial authorities len
-                initial_authorities_len,
-                // Initial smiths len,
-                initial_smiths_len,
-                // Initial identities len
-                initial_identities_len,
-                // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                true,
+                // do not replace session keys
+                None,
             )
+            .expect("genesis building failed")
         },
         // Bootnodes
-        vec![],
-        // Telemetry
-        None,
+        client_spec.boot_nodes,
+        // Telemetry (by default, enable telemetry, can be disabled with argument)
+        client_spec.telemetry_endpoints,
         // Protocol ID
         None,
-        //Fork ID
+        // Fork ID
         None,
         // Properties
-        Some(
-            serde_json::json!({
-                    "tokenDecimals": TOKEN_DECIMALS,
-                    "tokenSymbol": TOKEN_SYMBOL,
-            })
-            .as_object()
-            .expect("must be a map")
-            .clone(),
-        ),
+        client_spec.properties,
         // Extensions
         None,
     ))
 }
 
-fn gen_genesis_for_local_chain(
+/// generate a genesis with given number of smith and identities
+fn generate_genesis(
     wasm_binary: &[u8],
     initial_authorities_len: usize,
     initial_smiths_len: usize,
     initial_identities_len: usize,
     root_key: AccountId,
-    _enable_println: bool,
 ) -> GenesisConfig {
     assert!(initial_identities_len <= 6);
     assert!(initial_smiths_len <= initial_identities_len);

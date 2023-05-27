@@ -18,6 +18,8 @@
 pub mod key;
 pub mod utils;
 
+#[cfg(feature = "gtest")]
+use crate::chain_spec::{gtest, gtest_genesis};
 use crate::cli::{Cli, Subcommand};
 #[cfg(feature = "g1")]
 use crate::service::G1Executor;
@@ -103,37 +105,73 @@ impl SubstrateCli for Cli {
 
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         Ok(match id {
+            // === GDEV ===
+            // developement chainspec with Alice validator
+            // optionally from DUNITER_GENESIS_CONFIG file otherwise generated
             #[cfg(feature = "gdev")]
             "dev" => Box::new(chain_spec::gdev::development_chain_spec()?),
+            // local testnet with generated genesis and Alice validator
             #[cfg(feature = "gdev")]
-            "local" | "gdev_local" => Box::new(chain_spec::gdev::local_testnet_config(1, 3, 4)?),
+            "gdev_local" => Box::new(chain_spec::gdev::local_testnet_config(1, 3, 4)?),
+            // chainspecs for live network (generated or DUNITER_GENESIS_CONFIG)
+            // but must have a smith with declared session keys
             #[cfg(feature = "gdev")]
-            "local2" => Box::new(chain_spec::gdev::local_testnet_config(2, 3, 4)?),
-            #[cfg(feature = "gdev")]
-            "local3" => Box::new(chain_spec::gdev::local_testnet_config(3, 3, 4)?),
-            #[cfg(feature = "gdev")]
-            "local4" => Box::new(chain_spec::gdev::local_testnet_config(4, 4, 5)?),
-            #[cfg(feature = "gdev")]
-            "gdev-gl" | "gdev_gl" => Box::new(chain_spec::gdev::gen_live_conf()?),
+            "gdev_live" => Box::new(chain_spec::gdev::gen_live_conf()?),
+            // hardcoded previously generated raw chainspecs
+            // yields a pointlessly heavy binary because of hexadecimal-text-encoded values
             #[cfg(feature = "gdev")]
             "gdev" => Box::new(chain_spec::gdev::ChainSpec::from_json_bytes(
                 &include_bytes!("../specs/gdev-raw.json")[..],
             )?),
+            // config used for benckmarks
             #[cfg(feature = "gdev")]
             "gdev-benchmark" => Box::new(chain_spec::gdev::benchmark_chain_spec()?),
+            // === GTEST ===
+            // dev chainspecs with Alice validator
+            // provide DUNITER_GTEST_GENESIS env var if you want to build genesis from json
+            // otherwise you get a local testnet with generated genesis
             #[cfg(feature = "gtest")]
-            "gtest_dev" => Box::new(chain_spec::gtest::development_chain_spec()?),
+            "gtest_dev" => Box::new(chain_spec::gtest::development_chainspecs()?),
+            // chainspecs for live network
+            // must have following files in node/specs folder:
+            // - gtest.json
+            // - gtest_client-specs.json
             #[cfg(feature = "gtest")]
-            "gtest_local" => Box::new(chain_spec::gtest::local_testnet_config(2, 3, 4)?),
-            #[cfg(feature = "gtest")]
-            "gtest_local3" => Box::new(chain_spec::gtest::local_testnet_config(3, 3, 4)?),
-            #[cfg(feature = "gtest")]
-            "gtest_local4" => Box::new(chain_spec::gtest::local_testnet_config(4, 4, 5)?),
+            "gtest_live" => {
+                const JSON_CLIENT_SPEC: &str = "./node/specs/gtest_client-specs.json";
+                const JSON_GENESIS: &str = "./node/specs/gtest_genesis.json";
+                let client_spec: gtest::ClientSpec = serde_json::from_slice(
+                    &std::fs::read(JSON_CLIENT_SPEC)
+                        .map_err(|e| format!("failed to read {JSON_CLIENT_SPEC} {e}"))?[..],
+                )
+                .map_err(|e| format!("failed to parse {e}"))?;
+                let genesis_data: gtest_genesis::GenesisJson = serde_json::from_slice(
+                    &std::fs::read(JSON_GENESIS)
+                        .map_err(|e| format!("failed to read {JSON_GENESIS} {e}"))?[..],
+                )
+                .map_err(|e| format!("failed to parse {e}"))?;
+                // rebuild chainspecs from these files
+                Box::new(chain_spec::gtest::live_chainspecs(
+                    client_spec,
+                    genesis_data,
+                )?)
+            }
+            // return hardcoded live chainspecs
+            // embed client spec and genesis to avoid embeding hexadecimal runtime
+            // and having hexadecimal runtime in git history
             #[cfg(feature = "gtest")]
             "gtest" => {
-                unimplemented!()
-                //Box::new(chain_spec::gtest::ChainSpec::from_json_file(file_path)?)
+                let client_spec: gtest::ClientSpec =
+                    serde_json::from_slice(include_bytes!("../specs/gtest_client-specs.json"))
+                        .unwrap();
+                let genesis_data: gtest_genesis::GenesisJson =
+                    serde_json::from_slice(include_bytes!("../specs/gtest_genesis.json")).unwrap();
+                Box::new(chain_spec::gtest::live_chainspecs(
+                    client_spec,
+                    genesis_data,
+                )?)
             }
+            // === G1 ===
             #[cfg(feature = "g1")]
             "g1" => {
                 unimplemented!()
@@ -153,8 +191,6 @@ impl SubstrateCli for Cli {
 
                 let runtime_type = if starts_with("g1") {
                     RuntimeType::G1
-                } else if starts_with("gdem") {
-                    RuntimeType::GTest
                 } else if starts_with("dev") || starts_with("gdev") {
                     RuntimeType::GDev
                 } else if starts_with("gt") {
@@ -188,7 +224,7 @@ impl SubstrateCli for Cli {
             RuntimeType::GTest => &gtest_runtime::VERSION,
             #[cfg(feature = "gdev")]
             RuntimeType::GDev => &gdev_runtime::VERSION,
-            _ => panic!("unknown runtime"),
+            _ => panic!("unknown runtime {:?}", spec.runtime_type()),
         }
     }
 }

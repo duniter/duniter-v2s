@@ -98,6 +98,9 @@ impl From<Cert> for (String, Option<u32>) {
     }
 }
 
+/// generate genesis data from a json file
+/// takes DUNITER_GENESIS_CONFIG env var if present or duniter-gen-conf.json by default
+// this function is targeting dev chainspecs, do not use in production network
 pub fn generate_genesis_data<CS, P, SK, F>(
     f: F,
     maybe_force_authority: Option<Vec<u8>>,

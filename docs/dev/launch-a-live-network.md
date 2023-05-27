@@ -67,7 +67,7 @@ An example of genesis configuration file: `resources/gdev.json`. Paste your sess
 ### Generate raw spec
 
 ```docker
-docker run -v $HOME/dev/duniter-v2s/resources:/var/lib/duniter/resources -e DUNITER_GENESIS_CONFIG=/var/lib/duniter/resources/gdev.json --rm duniter/duniter-v2s:TAG -- build-spec -lerror --chain=gdev-gl --raw > name-raw.json
+docker run -v $HOME/dev/duniter-v2s/resources:/var/lib/duniter/resources -e DUNITER_GENESIS_CONFIG=/var/lib/duniter/resources/gdev.json --rm duniter/duniter-v2s:TAG -- build-spec -lerror --chain=gdev_live --raw > name-raw.json
 ```
 
 ```bash

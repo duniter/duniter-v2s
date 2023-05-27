@@ -1598,6 +1598,7 @@ dependencies = [
  "sc-finality-grandpa",
  "sc-keystore",
  "sc-network",
+ "sc-network-common",
  "sc-rpc-api",
  "sc-service",
  "sc-telemetry",
