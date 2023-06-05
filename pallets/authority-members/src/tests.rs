@@ -17,8 +17,11 @@
 use super::*;
 use crate::mock::*;
 use crate::MemberData;
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_err, assert_noop, assert_ok};
+use frame_system::RawOrigin;
 use sp_runtime::testing::UintAuthorityId;
+use sp_runtime::traits::BadOrigin;
+use sp_staking::offence::OffenceDetails;
 
 const EMPTY: Vec<u64> = Vec::new();
 
@@ -126,6 +129,7 @@ fn test_max_keys_life_rule() {
     });
 }
 
+/// tests consequences of go_offline call
 #[test]
 fn test_go_offline() {
     new_test_ext(3).execute_with(|| {
@@ -135,9 +139,11 @@ fn test_go_offline() {
         assert_ok!(AuthorityMembers::go_offline(RuntimeOrigin::signed(9)),);
 
         // Verify state
+        assert_eq!(Session::current_index(), 0); // we are currently at session 0
         assert_eq!(AuthorityMembers::incoming(), EMPTY);
         assert_eq!(AuthorityMembers::online(), vec![3, 6, 9]);
         assert_eq!(AuthorityMembers::outgoing(), vec![9]);
+        assert_eq!(AuthorityMembers::blacklist(), EMPTY);
         assert_eq!(
             AuthorityMembers::member(9),
             Some(MemberData {
@@ -147,7 +153,9 @@ fn test_go_offline() {
             })
         );
 
-        // Member 9 should be "deprogrammed" at the next session
+        // Member 9 should be "deprogrammed" at the next session (session 1)
+        // it should be out at session 2 and
+        // the expiry should be 2 sessions after that (session 4)
         run_to_block(5);
         assert_eq!(
             AuthorityMembers::member(9),
@@ -178,6 +186,7 @@ fn test_go_offline() {
     });
 }
 
+/// tests consequences of go_online call
 #[test]
 fn test_go_online() {
     new_test_ext(3).execute_with(|| {
@@ -319,6 +328,217 @@ fn test_go_offline_then_go_online_in_same_session() {
                 must_rotate_keys_before: 5,
                 owner_key: 9,
             })
+        );
+    });
+}
+
+// === offence handling tests below ===
+
+/// test offence handling with disconnect strategy
+// the offenders should be disconnected (same as go_offline)
+// they should be able to go_online after
+#[test]
+fn test_offence_disconnect() {
+    new_test_ext(3).execute_with(|| {
+        run_to_block(1);
+
+        on_offence(
+            &[OffenceDetails {
+                offender: (9, ()),
+                reporters: vec![],
+            }],
+            pallet_offences::SlashStrategy::Disconnect,
+        );
+        on_offence(
+            &[OffenceDetails {
+                offender: (3, ()),
+                reporters: vec![],
+            }],
+            pallet_offences::SlashStrategy::Disconnect,
+        );
+
+        // Verify state
+        assert_eq!(AuthorityMembers::incoming(), EMPTY);
+        assert_eq!(AuthorityMembers::online(), vec![3, 6, 9]);
+        assert_eq!(AuthorityMembers::outgoing(), vec![3, 9]);
+        assert_eq!(AuthorityMembers::blacklist(), EMPTY);
+
+        // Member 9 and 3 should be "deprogrammed" at the next session
+        run_to_block(5);
+        assert_eq!(
+            AuthorityMembers::member(9),
+            Some(MemberData {
+                expire_on_session: 4,
+                must_rotate_keys_before: 5,
+                owner_key: 9,
+            })
+        );
+        assert_eq!(
+            AuthorityMembers::member(3),
+            Some(MemberData {
+                expire_on_session: 4,
+                must_rotate_keys_before: 5,
+                owner_key: 3,
+            })
+        );
+        assert_eq!(AuthorityMembers::members_expire_on(4), vec![3, 9],);
+        assert_eq!(Session::current_index(), 1);
+        assert_eq!(Session::validators(), vec![3, 6, 9]);
+        assert_eq!(Session::queued_keys().len(), 1);
+        assert_eq!(Session::queued_keys()[0].0, 6);
+
+        // Member 9 and 3 should be **effectively** out at session 2
+        run_to_block(10);
+        assert_eq!(Session::current_index(), 2);
+        assert_eq!(Session::validators(), vec![6]);
+
+        // Member 9 and 3 should be removed at session 4
+        run_to_block(20);
+        assert_eq!(Session::current_index(), 4);
+        assert_eq!(Session::validators(), vec![6]);
+        assert_eq!(AuthorityMembers::members_expire_on(4), EMPTY);
+        assert_eq!(AuthorityMembers::member(3), None);
+        assert_eq!(AuthorityMembers::member(9), None);
+
+        // Member 9 and 3 should be allowed to set session keys and go online
+        run_to_block(25);
+        assert_ok!(AuthorityMembers::set_session_keys(
+            RuntimeOrigin::signed(9),
+            UintAuthorityId(9).into(),
+        ));
+        assert_ok!(AuthorityMembers::set_session_keys(
+            RuntimeOrigin::signed(3),
+            UintAuthorityId(3).into(),
+        ));
+        assert_ok!(AuthorityMembers::go_online(RuntimeOrigin::signed(9)),);
+        assert_ok!(AuthorityMembers::go_online(RuntimeOrigin::signed(3)),);
+
+        // Report an offence again
+        run_to_block(35);
+        on_offence(
+            &[OffenceDetails {
+                offender: (3, ()),
+                reporters: vec![],
+            }],
+            pallet_offences::SlashStrategy::Disconnect,
+        );
+
+        // Verify state, 6 is out of life now, only 3 should be outgoing now
+        assert_eq!(AuthorityMembers::incoming(), EMPTY);
+        assert_eq!(AuthorityMembers::online(), vec![3, 9]);
+        assert_eq!(AuthorityMembers::outgoing(), vec![3]);
+        assert_eq!(AuthorityMembers::blacklist(), EMPTY);
+    });
+}
+
+/// test offence handling with blacklist strategy
+// member 9 is offender, should be blacklisted
+#[test]
+fn test_offence_black_list() {
+    new_test_ext(3).execute_with(|| {
+        // at block 0 begins session 0
+        run_to_block(1);
+
+        on_offence(
+            &[OffenceDetails {
+                offender: (9, ()),
+                reporters: vec![],
+            }],
+            pallet_offences::SlashStrategy::BlackList,
+        );
+
+        // Verify state
+        // same as `test_go_offline`
+        assert_eq!(AuthorityMembers::online(), vec![3, 6, 9]);
+        assert_eq!(AuthorityMembers::outgoing(), vec![9]);
+        assert_eq!(AuthorityMembers::blacklist(), vec![9]);
+
+        // Member 9 should be "deprogrammed" at the next session
+        run_to_block(5);
+        assert_eq!(AuthorityMembers::members_expire_on(4), vec![9],);
+        assert_eq!(Session::current_index(), 1);
+        assert_eq!(Session::validators(), vec![3, 6, 9]);
+        assert_eq!(AuthorityMembers::blacklist(), vec![9]); // still in blacklist
+
+        // Member 9 should be **effectively** out at session 2
+        run_to_block(10);
+        assert_eq!(Session::current_index(), 2);
+        assert_eq!(Session::validators(), vec![3, 6]);
+        assert_eq!(AuthorityMembers::blacklist(), vec![9]); // still in blacklist
+
+        // Member 9 should be removed at session 4
+        run_to_block(20);
+        assert_eq!(Session::current_index(), 4);
+        assert_eq!(Session::validators(), vec![3, 6]);
+        assert_eq!(AuthorityMembers::members_expire_on(4), EMPTY);
+        assert_eq!(AuthorityMembers::member(9), None);
+        assert_eq!(AuthorityMembers::blacklist(), vec![9]); // still in blacklist
+    });
+}
+
+/// tests that blacklisting prevents 9 from going online
+#[test]
+fn test_offence_black_list_prevent_from_going_online() {
+    new_test_ext(3).execute_with(|| {
+        run_to_block(1);
+
+        on_offence(
+            &[OffenceDetails {
+                offender: (9, ()),
+                reporters: vec![],
+            }],
+            pallet_offences::SlashStrategy::BlackList,
+        );
+
+        // Verify state
+        assert_eq!(AuthorityMembers::incoming(), EMPTY);
+        assert_eq!(AuthorityMembers::online(), vec![3, 6, 9]);
+        assert_eq!(AuthorityMembers::outgoing(), vec![9]);
+        assert_eq!(AuthorityMembers::blacklist(), vec![9]);
+        assert_eq!(
+            AuthorityMembers::member(9),
+            Some(MemberData {
+                expire_on_session: 0,
+                must_rotate_keys_before: 5,
+                owner_key: 9,
+            })
+        );
+
+        // for detail, see `test_go_offline`
+        // Member 9 is "deprogrammed" at the next session
+        // Member 9 is **effectively** out at session 2
+        // Member 9 is removed at session 4
+
+        // Member 9 should not be allowed to go online
+        run_to_block(25);
+        assert_ok!(AuthorityMembers::set_session_keys(
+            RuntimeOrigin::signed(9),
+            UintAuthorityId(9).into(),
+        ));
+        assert_err!(
+            AuthorityMembers::go_online(RuntimeOrigin::signed(9)),
+            Error::<Test>::MemberIdBlackListed
+        );
+
+        // Should not be able to auto remove from blacklist
+        assert_err!(
+            AuthorityMembers::remove_member_from_blacklist(RuntimeOrigin::signed(9), 9),
+            BadOrigin
+        );
+        assert_eq!(AuthorityMembers::blacklist(), vec![9]);
+
+        // Authorized should be able to remove from blacklist
+        assert_ok!(AuthorityMembers::remove_member_from_blacklist(
+            RawOrigin::Root.into(),
+            9
+        ));
+        assert_eq!(AuthorityMembers::blacklist(), EMPTY);
+        System::assert_last_event(Event::MemberRemovedFromBlackList(9).into());
+
+        // Authorized should not be able to remove a non-existing member from blacklist
+        assert_err!(
+            AuthorityMembers::remove_member_from_blacklist(RawOrigin::Root.into(), 9),
+            Error::<Test>::MemberNotBlackListed
         );
     });
 }

@@ -5040,6 +5040,7 @@ dependencies = [
  "frame-system",
  "log",
  "maplit",
+ "pallet-offences",
  "pallet-session",
  "parity-scale-codec",
  "scale-info",
@@ -5304,8 +5305,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-offences"
-version = "4.0.0-dev"
-source = "git+https://github.com/duniter/substrate?branch=duniter-substrate-v0.9.32#7f8b8db65b441ce1d1b2ffb26ebde314b54e117c"
+version = "3.0.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5314,6 +5314,8 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-staking",
  "sp-std",

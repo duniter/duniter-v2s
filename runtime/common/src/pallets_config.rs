@@ -235,7 +235,7 @@ macro_rules! pallets_config {
         impl pallet_offences::Config for Runtime {
             type RuntimeEvent = RuntimeEvent;
             type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
-            type OnOffenceHandler = ();
+            type OnOffenceHandler = AuthorityMembers;
         }
         impl pallet_session::Config for Runtime {
             type RuntimeEvent = RuntimeEvent;
@@ -255,7 +255,7 @@ macro_rules! pallets_config {
         impl pallet_grandpa::Config for Runtime {
             type RuntimeEvent = RuntimeEvent;
 
-            type KeyOwnerProofSystem = ();
+            type KeyOwnerProofSystem = Historical;
 
             type KeyOwnerProof =
                 <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
@@ -265,7 +265,11 @@ macro_rules! pallets_config {
                 GrandpaId,
             )>>::IdentificationTuple;
 
-            type HandleEquivocation = ();
+        type HandleEquivocation = pallet_grandpa::EquivocationHandler<
+                Self::KeyOwnerIdentification,
+                Offences,
+                ReportLongevity,
+            >;
 
             type WeightInfo = common_runtime::weights::pallet_grandpa::WeightInfo<Runtime>;
 

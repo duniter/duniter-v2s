@@ -30,6 +30,9 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+pub mod impls;
+pub use impls::*;
+
 pub use pallet::*;
 pub use types::*;
 pub use weights::WeightInfo;
@@ -175,6 +178,11 @@ pub mod pallet {
     pub type MustRotateKeysBefore<T: Config> =
         StorageMap<_, Twox64Concat, SessionIndex, Vec<T::MemberId>, ValueQuery>;
 
+    // Blacklist.
+    #[pallet::storage]
+    #[pallet::getter(fn blacklist)]
+    pub type BlackList<T: Config> = StorageValue<_, Vec<T::MemberId>, ValueQuery>;
+
     // HOOKS //
 
     // EVENTS //
@@ -198,6 +206,9 @@ pub mod pallet {
         /// this member will be removed from the authority set in 2 sessions.
         /// [member_id]
         MemberRemoved(T::MemberId),
+        /// A member has been removed from the blacklist.
+        /// [member_id]
+        MemberRemovedFromBlackList(T::MemberId),
     }
 
     // ERRORS //
@@ -212,6 +223,10 @@ pub mod pallet {
         AlreadyOutgoing,
         /// Not found owner key
         MemberIdNotFound,
+        /// Member is blacklisted
+        MemberIdBlackListed,
+        /// Member is not blacklisted
+        MemberNotBlackListed,
         /// Member not found
         MemberNotFound,
         /// Neither online nor scheduled
@@ -264,6 +279,9 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             let member_id = Self::verify_ownership_and_membership(&who)?;
 
+            if Self::is_blacklisted(member_id) {
+                return Err(Error::<T>::MemberIdBlackListed.into());
+            }
             if !Members::<T>::contains_key(member_id) {
                 return Err(Error::<T>::MemberNotFound.into());
             }
@@ -339,6 +357,23 @@ pub mod pallet {
             Self::do_remove_member(member_id, member_data.owner_key);
 
             Ok(().into())
+        }
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_member_from_blacklist())]
+        /// remove an identity from the blacklist
+        pub fn remove_member_from_blacklist(
+            origin: OriginFor<T>,
+            member_id: T::MemberId,
+        ) -> DispatchResultWithPostInfo {
+            T::RemoveMemberOrigin::ensure_origin(origin)?;
+            BlackList::<T>::mutate(|members_ids| {
+                if let Ok(index) = members_ids.binary_search(&member_id) {
+                    members_ids.remove(index);
+                    Self::deposit_event(Event::MemberRemovedFromBlackList(member_id));
+                    Ok(().into())
+                } else {
+                    Err(Error::<T>::MemberNotBlackListed.into())
+                }
+            })
         }
     }
 
@@ -452,7 +487,7 @@ pub mod pallet {
             not_already_inserted
         }
         /// perform outgoing authority insertion
-        fn insert_out(member_id: T::MemberId) -> bool {
+        pub fn insert_out(member_id: T::MemberId) -> bool {
             let not_already_inserted = OutgoingAuthorities::<T>::mutate(|members_ids| {
                 if let Err(index) = members_ids.binary_search(&member_id) {
                     members_ids.insert(index, member_id);
@@ -488,6 +523,10 @@ pub mod pallet {
             OutgoingAuthorities::<T>::get()
                 .binary_search(&member_id)
                 .is_ok()
+        }
+        /// check if member is blacklisted
+        fn is_blacklisted(member_id: T::MemberId) -> bool {
+            BlackList::<T>::get().contains(&member_id)
         }
         /// perform removal from incoming authorities
         fn remove_in(member_id: T::MemberId) {

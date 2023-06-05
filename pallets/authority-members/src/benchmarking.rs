@@ -68,6 +68,15 @@ benchmarks! {
     verify {
         assert_has_event::<T>(Event::<T>::MemberRemoved(id).into());
     }
+     remove_member_from_blacklist {
+        let id: T::MemberId = OnlineAuthorities::<T>::get()[0];
+        BlackList::<T>::mutate(|blacklist| {
+            blacklist.push(id);
+        });
+    }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), id)
+    verify {
+        assert_has_event::<T>(Event::<T>::MemberRemovedFromBlackList(id).into());
+    }
 
      impl_benchmark_test_suite!(
             Pallet,

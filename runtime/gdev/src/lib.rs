@@ -318,7 +318,7 @@ construct_runtime!(
         Offences: pallet_offences::{Pallet, Storage, Event} = 12,
         Historical: session_historical::{Pallet} = 13,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 14,
-        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event} = 15,
+        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event, ValidateUnsigned} = 15,
         ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 16,
         AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 17,
 

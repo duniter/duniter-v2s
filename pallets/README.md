@@ -18,6 +18,7 @@ These pallets are at the core of Duniter/Ğ1 currency
 ## Functional pallets
 
 - **`duniter-test-parameters`** Test parameters only used in ĞDev to allow tweaking parameters more easily.
+- **`offences`** Sorts offences that will be executed by the `authority-members` pallet.
 - **`oneshot-account`** Oneshot accounts are light accounts only used once for anonimity or convenience use case.
 - **`provide-randomness`** Lets blockchain users ask for a verifiable random number.
 - **`session-benchmarking`** Benchmarks the session pallet.

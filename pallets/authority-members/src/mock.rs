@@ -23,6 +23,8 @@ use frame_support::{
     BasicExternalities,
 };
 use frame_system as system;
+use pallet_offences::traits::OnOffenceHandler;
+use pallet_offences::SlashStrategy;
 use pallet_session::ShouldEndSession;
 use sp_core::{crypto::key_types::DUMMY, H256};
 use sp_runtime::{
@@ -31,6 +33,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, ConvertInto, IdentityLookup, IsMember, OpaqueKeys},
     KeyTypeId,
 };
+use sp_staking::offence::OffenceDetails;
 
 type AccountId = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -204,4 +207,14 @@ pub fn run_to_block(n: u64) {
         AuthorityMembers::on_initialize(System::block_number());
         Session::on_initialize(System::block_number());
     }
+}
+
+pub(crate) fn on_offence(
+    offenders: &[OffenceDetails<
+        AccountId,
+        pallet_session::historical::IdentificationTuple<Test>,
+    >],
+    slash_strategy: SlashStrategy,
+) {
+    AuthorityMembers::on_offence(offenders, slash_strategy, 0);
 }

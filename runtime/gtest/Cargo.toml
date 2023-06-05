@@ -146,6 +146,7 @@ pallet-universal-dividend = { path = '../../pallets/universal-dividend', default
 pallet-session-benchmarking = { path = '../../pallets/session-benchmarking', default-features = false }
 pallet-upgrade-origin = { path = '../../pallets/upgrade-origin', default-features = false }
 sp-membership = { path = '../../primitives/membership', default-features = false }
+pallet-offences = { path = '../../pallets/offences', default-features = false }
 
 # crates.io
 codec = { package = "parity-scale-codec", version = "3.1.5", features = ["derive"], default-features = false }
@@ -169,7 +170,6 @@ pallet-balances = { git = 'https://github.com/duniter/substrate', branch = 'duni
 pallet-collective = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-grandpa = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-im-online = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
-pallet-offences = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-multisig = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-preimage = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-proxy = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }

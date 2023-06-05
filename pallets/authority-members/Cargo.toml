@@ -21,6 +21,7 @@ std = [
     'frame-benchmarking/std',
     'log/std',
     'pallet-session/std',
+    'pallet-offences/std',
     'serde',
     'sp-core/std',
     'sp-membership/std',
@@ -32,6 +33,7 @@ try-runtime = ['frame-support/try-runtime']
 
 [dependencies]
 # local
+pallet-offences = { path = "../offences", default-features = false }
 sp-membership = { path = "../../primitives/membership", default-features = false }
 
 # crates.io

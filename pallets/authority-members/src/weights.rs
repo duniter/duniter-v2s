@@ -24,6 +24,7 @@ pub trait WeightInfo {
     fn go_online() -> Weight;
     fn set_session_keys() -> Weight;
     fn remove_member() -> Weight;
+    fn remove_member_from_blacklist() -> Weight;
 }
 
 // Insecure weights implementation, use it for tests only!
@@ -84,5 +85,12 @@ impl WeightInfo for () {
         Weight::from_ref_time(256_761_000 as u64)
             .saturating_add(RocksDbWeight::get().reads(9 as u64))
             .saturating_add(RocksDbWeight::get().writes(13 as u64))
+    }
+    // Storage: AuthorityMembers BlackList (r:1 w:1)
+    fn remove_member_from_blacklist() -> Weight {
+        // Minimum execution time: 60_023 nanoseconds.
+        Weight::from_ref_time(60_615_000 as u64)
+            .saturating_add(RocksDbWeight::get().reads(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
 }
