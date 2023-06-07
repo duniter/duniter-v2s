@@ -32,9 +32,10 @@ use parity_scale_codec::Encode;
 use serde_json::Value;
 use sp_keyring::AccountKeyring;
 use std::io::prelude::*;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
+use std::time::{Duration, Instant};
 use subxt::ext::{sp_core, sp_runtime};
 use subxt::rpc::rpc_params;
 use subxt::tx::BaseExtrinsicParamsBuilder;
@@ -218,34 +219,30 @@ fn spawn_full_node(
     }
 }
 
-fn wait_until_log_line(expected_log_line: &str, log_file_path: &str, timeout: std::time::Duration) {
-    let (tx, rx) = std::sync::mpsc::channel();
-    let mut watcher = notify::watcher(tx, std::time::Duration::from_millis(100)).unwrap();
-    use notify::Watcher as _;
-    watcher
-        .watch(log_file_path, notify::RecursiveMode::NonRecursive)
-        .unwrap();
-
-    let mut pos = 0;
+fn wait_until_log_line(expected_log_line: &str, log_file_path: &str, timeout: Duration) {
+    let start = Instant::now();
     loop {
-        match rx.recv_timeout(timeout) {
-            Ok(notify::DebouncedEvent::Write(_)) => {
-                let mut file = std::fs::File::open(log_file_path).unwrap();
-                file.seek(std::io::SeekFrom::Start(pos)).unwrap();
-                pos = file.metadata().unwrap().len();
-                let reader = std::io::BufReader::new(file);
+        let now = Instant::now();
+        if now.duration_since(start) > timeout {
+            eprintln!("Timeout starting node");
+            std::process::exit(1);
+        }
+        if has_log_line(log_file_path, expected_log_line) {
+            // Ready
+            return;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+}
 
-                for line in reader.lines() {
-                    if line.expect("fail to read line").contains(expected_log_line) {
-                        return;
-                    }
-                }
-            }
-            Ok(_) => {}
-            Err(err) => {
-                eprintln!("Error: {:?}", err);
-                std::process::exit(1);
-            }
+fn has_log_line(log_file_path: &str, expected_log_line: &str) -> bool {
+    let mut file = std::fs::File::open(log_file_path).unwrap();
+    file.seek(std::io::SeekFrom::Start(0)).unwrap();
+    let reader = std::io::BufReader::new(file);
+    for line in reader.lines() {
+        if line.expect("fail to read line").contains(expected_log_line) {
+            return true;
         }
     }
+    false
 }

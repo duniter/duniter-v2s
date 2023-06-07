@@ -472,6 +472,15 @@ struct CustomOpts {
     /// Keep running
     #[clap(short, long)]
     keep_running: bool,
+
+    /// For compliance with Jetbrains IDE which pushes extra args.
+    /// https://youtrack.jetbrains.com/issue/CPP-33071/cargo-test-adds-extra-options-which-conflict-with-Cucumber
+    #[clap(short, long)]
+    format: Option<String>,
+    #[clap(short, long = "show-output")]
+    show_output: bool,
+    #[clap(short = 'Z', long)]
+    z: Option<String>,
 }
 
 const DOCKER_FEATURES_PATH: &str = "/var/lib/duniter/cucumber-features";
