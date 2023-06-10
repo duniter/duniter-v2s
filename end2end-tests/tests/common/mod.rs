@@ -220,18 +220,52 @@ fn spawn_full_node(
 }
 
 fn wait_until_log_line(expected_log_line: &str, log_file_path: &str, timeout: Duration) {
-    let start = Instant::now();
-    loop {
-        let now = Instant::now();
-        if now.duration_since(start) > timeout {
-            eprintln!("Timeout starting node");
-            std::process::exit(1);
+    if cfg!(target_os = "macos") {
+        // MacOs seems to not be able to use inotify (buggy)
+        // So we use a specific implementation for `wait_until_log_line()` here
+        let start = Instant::now();
+        loop {
+            let now = Instant::now();
+            if now.duration_since(start) > timeout {
+                eprintln!("Timeout starting node");
+                std::process::exit(1);
+            }
+            if has_log_line(log_file_path, expected_log_line) {
+                // Ready
+                return;
+            }
+            std::thread::sleep(Duration::from_millis(100));
         }
-        if has_log_line(log_file_path, expected_log_line) {
-            // Ready
-            return;
+    } else {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let mut watcher = notify::watcher(tx, std::time::Duration::from_millis(100)).unwrap();
+        use notify::Watcher as _;
+        watcher
+            .watch(log_file_path, notify::RecursiveMode::NonRecursive)
+            .unwrap();
+
+        let mut pos = 0;
+        loop {
+            match rx.recv_timeout(timeout) {
+                Ok(notify::DebouncedEvent::Write(_)) => {
+                    let mut file = std::fs::File::open(log_file_path).unwrap();
+                    file.seek(std::io::SeekFrom::Start(pos)).unwrap();
+                    pos = file.metadata().unwrap().len();
+                    let reader = std::io::BufReader::new(file);
+
+                    for line in reader.lines() {
+                        if line.expect("fail to read line").contains(expected_log_line) {
+                            return;
+                        }
+                    }
+                }
+                Ok(_) => {}
+                Err(err) => {
+                    eprintln!("Error: {:?}", err);
+                    std::process::exit(1);
+                }
+            }
         }
-        std::thread::sleep(Duration::from_millis(100));
     }
 }
 
