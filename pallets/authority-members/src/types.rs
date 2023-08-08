@@ -20,25 +20,16 @@ use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_staking::SessionIndex;
 
 #[cfg_attr(feature = "std", derive(Debug, Deserialize, Serialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 pub struct MemberData<AccountId> {
-    /// session at which the membership expires
-    pub expire_on_session: SessionIndex,
-    /// session before which the member must have rotated keys
-    pub must_rotate_keys_before: SessionIndex,
     /// pubkey of the member
     pub owner_key: AccountId,
 }
 
 impl<AccountId> MemberData<AccountId> {
-    pub fn new_genesis(must_rotate_keys_before: SessionIndex, owner_key: AccountId) -> Self {
-        MemberData {
-            expire_on_session: 0,
-            must_rotate_keys_before,
-            owner_key,
-        }
+    pub fn new_genesis(owner_key: AccountId) -> Self {
+        MemberData { owner_key }
     }
 }

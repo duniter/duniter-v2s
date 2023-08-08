@@ -75,10 +75,6 @@ pub mod pallet {
         /// Max number of authorities allowed
         #[pallet::constant]
         type MaxAuthorities: Get<u32>;
-        #[pallet::constant]
-        type MaxKeysLife: Get<SessionIndex>;
-        #[pallet::constant]
-        type MaxOfflineSessions: Get<SessionIndex>;
         type MemberId: Copy + Ord + MaybeSerializeDeserialize + Parameter;
         type MemberIdOf: Convert<Self::AccountId, Option<Self::MemberId>>;
         type RemoveMemberOrigin: EnsureOrigin<Self::RuntimeOrigin>;
@@ -106,10 +102,7 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             for (member_id, (account_id, _is_online)) in &self.initial_authorities {
-                Members::<T>::insert(
-                    member_id,
-                    MemberData::new_genesis(T::MaxKeysLife::get(), account_id.to_owned()),
-                );
+                Members::<T>::insert(member_id, MemberData::new_genesis(account_id.to_owned()));
             }
             let mut members_ids = self
                 .initial_authorities
@@ -128,7 +121,6 @@ pub mod pallet {
 
             AuthoritiesCounter::<T>::put(members_ids.len() as u32);
             OnlineAuthorities::<T>::put(members_ids.clone());
-            MustRotateKeysBefore::<T>::insert(T::MaxKeysLife::get(), members_ids);
         }
     }
 
@@ -165,18 +157,6 @@ pub mod pallet {
     #[pallet::getter(fn member)]
     pub type Members<T: Config> =
         StorageMap<_, Twox64Concat, T::MemberId, MemberData<T::AccountId>, OptionQuery>;
-
-    /// maps session index to the list of member id set to expire at this session
-    #[pallet::storage]
-    #[pallet::getter(fn members_expire_on)]
-    pub type MembersExpireOn<T: Config> =
-        StorageMap<_, Twox64Concat, SessionIndex, Vec<T::MemberId>, ValueQuery>;
-
-    /// maps session index to the list of member id forced to rotate keys before this session
-    #[pallet::storage]
-    #[pallet::getter(fn must_rotate_keys_before)]
-    pub type MustRotateKeysBefore<T: Config> =
-        StorageMap<_, Twox64Concat, SessionIndex, Vec<T::MemberId>, ValueQuery>;
 
     // Blacklist.
     #[pallet::storage]
@@ -327,21 +307,7 @@ pub mod pallet {
             }
             .dispatch_bypass_filter(origin)?;
 
-            let current_session_index = pallet_session::Pallet::<T>::current_index();
-            let expire_on_session =
-                current_session_index.saturating_add(T::MaxOfflineSessions::get());
-            let must_rotate_keys_before =
-                current_session_index.saturating_add(T::MaxKeysLife::get());
-
-            Members::<T>::mutate_exists(member_id, |member_data_opt| {
-                let mut member_data = member_data_opt.get_or_insert(MemberData {
-                    expire_on_session,
-                    must_rotate_keys_before,
-                    owner_key: who,
-                });
-                member_data.must_rotate_keys_before = must_rotate_keys_before;
-            });
-            MustRotateKeysBefore::<T>::append(must_rotate_keys_before, member_id);
+            Members::<T>::insert(member_id, MemberData { owner_key: who });
 
             Ok(().into())
         }
@@ -452,23 +418,6 @@ pub mod pallet {
             let _ = T::OnRemovedMember::on_removed_member(member_id);
 
             Weight::zero()
-        }
-        /// perform planned expiration of authority member for the given session
-        pub(super) fn expire_memberships(current_session_index: SessionIndex) {
-            for member_id in MembersExpireOn::<T>::take(current_session_index) {
-                if let Some(member_data) = Members::<T>::get(member_id) {
-                    if member_data.expire_on_session == current_session_index {
-                        Self::do_remove_member(member_id, member_data.owner_key);
-                    }
-                }
-            }
-            for member_id in MustRotateKeysBefore::<T>::take(current_session_index) {
-                if let Some(member_data) = Members::<T>::get(member_id) {
-                    if member_data.must_rotate_keys_before == current_session_index {
-                        Self::do_remove_member(member_id, member_data.owner_key);
-                    }
-                }
-            }
         }
         /// perform incoming authorities insertion
         fn insert_in(member_id: T::MemberId) -> bool {
@@ -584,7 +533,7 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
     ///
     /// `new_session(session)` is guaranteed to be called before `end_session(session-1)`. In other
     /// words, a new session must always be planned before an ongoing one can be finished.
-    fn new_session(session_index: SessionIndex) -> Option<Vec<T::ValidatorId>> {
+    fn new_session(_session_index: SessionIndex) -> Option<Vec<T::ValidatorId>> {
         let members_ids_to_add = IncomingAuthorities::<T>::take();
         let members_ids_to_del = OutgoingAuthorities::<T>::take();
 
@@ -593,17 +542,6 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
                 // when no change to the set of autorities, return None
                 return None;
             } else {
-                for member_id in &members_ids_to_del {
-                    // Apply MaxOfflineSessions rule
-                    let expire_on_session =
-                        session_index.saturating_add(T::MaxOfflineSessions::get());
-                    Members::<T>::mutate_exists(member_id, |member_data_opt| {
-                        if let Some(ref mut member_data) = member_data_opt {
-                            member_data.expire_on_session = expire_on_session;
-                        }
-                    });
-                    MembersExpireOn::<T>::append(expire_on_session, member_id);
-                }
                 Self::deposit_event(Event::OutgoingAuthorities(members_ids_to_del.clone()));
             }
         } else {
@@ -660,7 +598,6 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
     ///
     /// The session start to be used for validation.
     fn start_session(start_index: SessionIndex) {
-        Self::expire_memberships(start_index);
         T::OnNewSession::on_new_session(start_index);
     }
 }

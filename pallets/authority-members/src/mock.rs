@@ -154,8 +154,6 @@ impl pallet_authority_members::Config for Test {
     type KeysWrapper = MockSessionKeys;
     type IsMember = TestIsSmithMember;
     type MaxAuthorities = ConstU32<4>;
-    type MaxKeysLife = ConstU32<5>;
-    type MaxOfflineSessions = ConstU32<2>;
     type MemberId = u64;
     type MemberIdOf = ConvertInto;
     type OnNewSession = ();

@@ -35,27 +35,15 @@ fn test_genesis_build() {
         assert_eq!(AuthorityMembers::outgoing(), EMPTY);
         assert_eq!(
             AuthorityMembers::member(3),
-            Some(MemberData {
-                expire_on_session: 0,
-                must_rotate_keys_before: 5,
-                owner_key: 3,
-            })
+            Some(MemberData { owner_key: 3 })
         );
         assert_eq!(
             AuthorityMembers::member(6),
-            Some(MemberData {
-                expire_on_session: 0,
-                must_rotate_keys_before: 5,
-                owner_key: 6,
-            })
+            Some(MemberData { owner_key: 6 })
         );
         assert_eq!(
             AuthorityMembers::member(9),
-            Some(MemberData {
-                expire_on_session: 0,
-                must_rotate_keys_before: 5,
-                owner_key: 9,
-            })
+            Some(MemberData { owner_key: 9 })
         );
 
         // Verify Session state
@@ -71,61 +59,6 @@ fn test_new_session_shoud_not_change_authorities_set() {
 
         assert_eq!(Session::current_index(), 1);
         assert_eq!(Session::validators(), vec![3, 6, 9]);
-    });
-}
-
-#[test]
-fn test_max_keys_life_rule() {
-    new_test_ext(3).execute_with(|| {
-        run_to_block(11);
-
-        assert_eq!(Session::current_index(), 2);
-        assert_eq!(Session::validators(), vec![3, 6, 9]);
-
-        // Member 3 and 6 rotate their sessions keys
-        assert_ok!(AuthorityMembers::set_session_keys(
-            RuntimeOrigin::signed(3),
-            UintAuthorityId(3).into()
-        ),);
-        assert_ok!(AuthorityMembers::set_session_keys(
-            RuntimeOrigin::signed(6),
-            UintAuthorityId(6).into()
-        ),);
-
-        // Verify state
-        assert_eq!(
-            AuthorityMembers::member(3),
-            Some(MemberData {
-                expire_on_session: 0,
-                must_rotate_keys_before: 7,
-                owner_key: 3,
-            })
-        );
-        assert_eq!(
-            AuthorityMembers::member(6),
-            Some(MemberData {
-                expire_on_session: 0,
-                must_rotate_keys_before: 7,
-                owner_key: 6,
-            })
-        );
-
-        // Member 9 should expire at session 5
-        run_to_block(26);
-        assert_eq!(Session::current_index(), 5);
-        assert_eq!(AuthorityMembers::online(), vec![3, 6]);
-        assert_eq!(AuthorityMembers::member(9), None);
-
-        // Member 9 should be "deprogrammed" but still in the authorities set for 1 session
-        assert_eq!(Session::queued_keys().len(), 2);
-        assert_eq!(Session::queued_keys()[0].0, 3);
-        assert_eq!(Session::queued_keys()[1].0, 6);
-        assert_eq!(Session::validators(), vec![3, 6, 9]);
-
-        // Member 9 should be **effectively** out at session 6
-        run_to_block(31);
-        assert_eq!(Session::current_index(), 6);
-        assert_eq!(Session::validators(), vec![3, 6]);
     });
 }
 
@@ -146,43 +79,25 @@ fn test_go_offline() {
         assert_eq!(AuthorityMembers::blacklist(), EMPTY);
         assert_eq!(
             AuthorityMembers::member(9),
-            Some(MemberData {
-                expire_on_session: 0,
-                must_rotate_keys_before: 5,
-                owner_key: 9,
-            })
+            Some(MemberData { owner_key: 9 })
         );
 
-        // Member 9 should be "deprogrammed" at the next session (session 1)
-        // it should be out at session 2 and
-        // the expiry should be 2 sessions after that (session 4)
+        // Member 9 should be outgoing at the next session (session 1).
+        // They should be out at session 2.
         run_to_block(5);
         assert_eq!(
             AuthorityMembers::member(9),
-            Some(MemberData {
-                expire_on_session: 4,
-                must_rotate_keys_before: 5,
-                owner_key: 9,
-            })
+            Some(MemberData { owner_key: 9 })
         );
-        assert_eq!(AuthorityMembers::members_expire_on(4), vec![9],);
         assert_eq!(Session::current_index(), 1);
         assert_eq!(Session::validators(), vec![3, 6, 9]);
         assert_eq!(Session::queued_keys().len(), 2);
         assert_eq!(Session::queued_keys()[0].0, 3);
         assert_eq!(Session::queued_keys()[1].0, 6);
 
-        // Member 9 should be **effectively** out at session 2
         run_to_block(10);
         assert_eq!(Session::current_index(), 2);
         assert_eq!(Session::validators(), vec![3, 6]);
-
-        // Member 9 should be removed at session 4
-        run_to_block(20);
-        assert_eq!(Session::current_index(), 4);
-        assert_eq!(Session::validators(), vec![3, 6]);
-        assert_eq!(AuthorityMembers::members_expire_on(4), EMPTY);
-        assert_eq!(AuthorityMembers::member(9), None);
     });
 }
 
@@ -199,11 +114,7 @@ fn test_go_online() {
         ));
         assert_eq!(
             AuthorityMembers::member(12),
-            Some(MemberData {
-                expire_on_session: 2,
-                must_rotate_keys_before: 5,
-                owner_key: 12,
-            })
+            Some(MemberData { owner_key: 12 })
         );
 
         // Member 12 should be able to go online
@@ -215,11 +126,7 @@ fn test_go_online() {
         assert_eq!(AuthorityMembers::outgoing(), EMPTY);
         assert_eq!(
             AuthorityMembers::member(12),
-            Some(MemberData {
-                expire_on_session: 2,
-                must_rotate_keys_before: 5,
-                owner_key: 12,
-            })
+            Some(MemberData { owner_key: 12 })
         );
 
         // Member 12 should be "programmed" at the next session
@@ -295,11 +202,7 @@ fn test_go_online_then_go_offline_in_same_session() {
         assert_eq!(AuthorityMembers::outgoing(), EMPTY);
         assert_eq!(
             AuthorityMembers::member(12),
-            Some(MemberData {
-                expire_on_session: 2,
-                must_rotate_keys_before: 5,
-                owner_key: 12,
-            })
+            Some(MemberData { owner_key: 12 })
         );
     });
 }
@@ -323,11 +226,7 @@ fn test_go_offline_then_go_online_in_same_session() {
         assert_eq!(AuthorityMembers::outgoing(), EMPTY);
         assert_eq!(
             AuthorityMembers::member(9),
-            Some(MemberData {
-                expire_on_session: 0,
-                must_rotate_keys_before: 5,
-                owner_key: 9,
-            })
+            Some(MemberData { owner_key: 9 })
         );
     });
 }
@@ -363,42 +262,25 @@ fn test_offence_disconnect() {
         assert_eq!(AuthorityMembers::outgoing(), vec![3, 9]);
         assert_eq!(AuthorityMembers::blacklist(), EMPTY);
 
-        // Member 9 and 3 should be "deprogrammed" at the next session
+        // Member 9 and 3 should be outgoing at the next session
         run_to_block(5);
         assert_eq!(
             AuthorityMembers::member(9),
-            Some(MemberData {
-                expire_on_session: 4,
-                must_rotate_keys_before: 5,
-                owner_key: 9,
-            })
+            Some(MemberData { owner_key: 9 })
         );
         assert_eq!(
             AuthorityMembers::member(3),
-            Some(MemberData {
-                expire_on_session: 4,
-                must_rotate_keys_before: 5,
-                owner_key: 3,
-            })
+            Some(MemberData { owner_key: 3 })
         );
-        assert_eq!(AuthorityMembers::members_expire_on(4), vec![3, 9],);
         assert_eq!(Session::current_index(), 1);
         assert_eq!(Session::validators(), vec![3, 6, 9]);
         assert_eq!(Session::queued_keys().len(), 1);
         assert_eq!(Session::queued_keys()[0].0, 6);
 
-        // Member 9 and 3 should be **effectively** out at session 2
+        // Member 9 and 3 should be out at session 2
         run_to_block(10);
         assert_eq!(Session::current_index(), 2);
         assert_eq!(Session::validators(), vec![6]);
-
-        // Member 9 and 3 should be removed at session 4
-        run_to_block(20);
-        assert_eq!(Session::current_index(), 4);
-        assert_eq!(Session::validators(), vec![6]);
-        assert_eq!(AuthorityMembers::members_expire_on(4), EMPTY);
-        assert_eq!(AuthorityMembers::member(3), None);
-        assert_eq!(AuthorityMembers::member(9), None);
 
         // Member 9 and 3 should be allowed to set session keys and go online
         run_to_block(25);
@@ -423,9 +305,8 @@ fn test_offence_disconnect() {
             pallet_offences::SlashStrategy::Disconnect,
         );
 
-        // Verify state, 6 is out of life now, only 3 should be outgoing now
         assert_eq!(AuthorityMembers::incoming(), EMPTY);
-        assert_eq!(AuthorityMembers::online(), vec![3, 9]);
+        assert_eq!(AuthorityMembers::online(), vec![3, 6, 9]);
         assert_eq!(AuthorityMembers::outgoing(), vec![3]);
         assert_eq!(AuthorityMembers::blacklist(), EMPTY);
     });
@@ -453,25 +334,16 @@ fn test_offence_black_list() {
         assert_eq!(AuthorityMembers::outgoing(), vec![9]);
         assert_eq!(AuthorityMembers::blacklist(), vec![9]);
 
-        // Member 9 should be "deprogrammed" at the next session
+        // Member 9 should be outgoing at the next session
         run_to_block(5);
-        assert_eq!(AuthorityMembers::members_expire_on(4), vec![9],);
         assert_eq!(Session::current_index(), 1);
         assert_eq!(Session::validators(), vec![3, 6, 9]);
         assert_eq!(AuthorityMembers::blacklist(), vec![9]); // still in blacklist
 
-        // Member 9 should be **effectively** out at session 2
+        // Member 9 should be out at session 2
         run_to_block(10);
         assert_eq!(Session::current_index(), 2);
         assert_eq!(Session::validators(), vec![3, 6]);
-        assert_eq!(AuthorityMembers::blacklist(), vec![9]); // still in blacklist
-
-        // Member 9 should be removed at session 4
-        run_to_block(20);
-        assert_eq!(Session::current_index(), 4);
-        assert_eq!(Session::validators(), vec![3, 6]);
-        assert_eq!(AuthorityMembers::members_expire_on(4), EMPTY);
-        assert_eq!(AuthorityMembers::member(9), None);
         assert_eq!(AuthorityMembers::blacklist(), vec![9]); // still in blacklist
     });
 }
@@ -497,11 +369,7 @@ fn test_offence_black_list_prevent_from_going_online() {
         assert_eq!(AuthorityMembers::blacklist(), vec![9]);
         assert_eq!(
             AuthorityMembers::member(9),
-            Some(MemberData {
-                expire_on_session: 0,
-                must_rotate_keys_before: 5,
-                owner_key: 9,
-            })
+            Some(MemberData { owner_key: 9 })
         );
 
         // for detail, see `test_go_offline`

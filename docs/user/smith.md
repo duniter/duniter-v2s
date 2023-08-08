@@ -38,8 +38,7 @@ rotateKeys can be called anytime you want. Then you have to call setSessionKeys 
 
 Once all the previous steps are completed, you can start to actually author blocks.
 
-1. In the UI: developer > extrinsics > YOUR_SMITH_ACCOUNT > authorityMembers > goOnline()
-2. Every less than 2 months, make the RPC call author.rotateKeys then the extrinsic authorityMembers.setSessionKeys.
+In the UI: developer > extrinsics > YOUR_SMITH_ACCOUNT > authorityMembers > goOnline()
 
 If you're not able to monitor, reboot, act on your node, goOffline() to avoid penalty to the blockchain and to you. It will take effect after 2h, so please do it in advance if you plan to disconnect your server soon. goOnline can always be called after this, but after 100 days without authoring blocks you will loose your smith membership.
 

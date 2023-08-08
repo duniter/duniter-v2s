@@ -205,8 +205,6 @@ macro_rules! pallets_config {
             type MemberId = IdtyIndex;
             type MemberIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type MaxAuthorities = MaxAuthorities;
-            type MaxKeysLife = frame_support::pallet_prelude::ConstU32<1_500>;
-            type MaxOfflineSessions = frame_support::pallet_prelude::ConstU32<2_400>;
             type RemoveMemberOrigin = EnsureRoot<Self::AccountId>;
             type RuntimeEvent = RuntimeEvent;
 			type WeightInfo = common_runtime::weights::pallet_authority_members::WeightInfo<Runtime>;

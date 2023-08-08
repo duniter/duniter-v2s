@@ -16,10 +16,6 @@ To become part of Duniter authorities, one has to complete these steps:
 
 Then one can "go online" and "go offline" to enter or leave two sessions after.
 
-## Staying in the set of authorities
-
-If a smith is offline more than `MaxOfflineSessions`, he leaves the set of authorities.
-
 ## Some vocabulary
 
 *Smiths* are people allowed to forge blocks, but in details this is:
