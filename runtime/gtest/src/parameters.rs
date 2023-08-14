@@ -80,9 +80,8 @@ frame_support::parameter_types! {
 parameter_types! {
     // 0.002_381_440 = 0.0488^2
     pub const SquareMoneyGrowthRate: Perbill = Perbill::from_parts(2_381_440);
-    pub const UdCreationPeriod: BlockNumber = DAYS;
-    pub const UdFirstReeval: BlockNumber = 2 * DAYS;
-    pub const UdReevalPeriod: BlockNumber = 100_800; // 86400 * 7 / 6
+    pub const UdCreationPeriod: BlockNumber = 86_400_000; // 1 day
+    pub const UdReevalPeriod: BlockNumber = 7 * 86_400_000; // 7 days
 }
 
 /*******/

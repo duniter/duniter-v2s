@@ -128,6 +128,7 @@ try-runtime = [
 ]
 
 [dev-dependencies]
+sp-consensus-slots = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32' }
 sp-consensus-vrf = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32' }
 sp-finality-grandpa = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32' }
 sp-io = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32' }

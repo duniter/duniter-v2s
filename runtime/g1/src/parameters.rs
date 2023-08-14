@@ -16,7 +16,7 @@
 
 use crate::*;
 use common_runtime::constants::*;
-use common_runtime::{Balance, BlockNumber};
+use common_runtime::{Balance, BlockNumber, Moment};
 use frame_support::parameter_types;
 use frame_support::weights::constants::WEIGHT_PER_SECOND;
 use sp_arithmetic::Perbill;
@@ -80,8 +80,8 @@ frame_support::parameter_types! {
 parameter_types! {
     // 0.002_381_440 = 0.0488^2
     pub const SquareMoneyGrowthRate: Perbill = Perbill::from_parts(2_381_440);
-    pub const UdCreationPeriod: BlockNumber = DAYS;
-    pub const UdReevalPeriod: BlockNumber = 2_620_800; // 86400 * 182 / 6
+    pub const UdCreationPeriod: Moment = 86_400_000; // 1 day
+    pub const UdReevalPeriod: Moment = 15_778_800_000; // 1/2 year
 }
 
 /*******/

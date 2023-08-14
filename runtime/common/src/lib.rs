@@ -63,6 +63,9 @@ pub type Signature = sp_runtime::MultiSignature;
 /// Index of an identity
 pub type IdtyIndex = u32;
 
+/// Time in milliseconds
+pub type Moment = u64;
+
 pub struct FullIdentificationOfImpl;
 impl sp_runtime::traits::Convert<AccountId, Option<entities::ValidatorFullIdentification>>
     for FullIdentificationOfImpl

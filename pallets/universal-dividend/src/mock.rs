@@ -28,8 +28,9 @@ use sp_runtime::{
     BuildStorage,
 };
 
+pub const BLOCK_TIME: u64 = 6_000;
+
 type Balance = u64;
-type BlockNumber = u64;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -41,6 +42,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         UniversalDividend: pallet_universal_dividend::{Pallet, Storage, Config<T>, Event<T>},
     }
@@ -79,6 +81,17 @@ impl system::Config for Test {
 }
 
 parameter_types! {
+    pub const MinimumPeriod: u64 = 3_000;
+}
+
+impl pallet_timestamp::Config for Test {
+    type Moment = u64;
+    type OnTimestampSet = UniversalDividend;
+    type MinimumPeriod = MinimumPeriod;
+    type WeightInfo = ();
+}
+
+parameter_types! {
     pub const ExistentialDeposit: Balance = 10;
     pub const MaxLocks: u32 = 50;
 }
@@ -98,8 +111,8 @@ impl pallet_balances::Config for Test {
 parameter_types! {
     pub const MembersCount: u64 = 3;
     pub const SquareMoneyGrowthRate: Perbill = Perbill::from_percent(10);
-    pub const UdCreationPeriod: BlockNumber = 2;
-    pub const UdReevalPeriod: BlockNumber = 8;
+    pub const UdCreationPeriod: u64 = 12_000;
+    pub const UdReevalPeriod: u64 = 48_000;
 }
 
 pub struct TestMembersStorage;
@@ -138,7 +151,7 @@ impl Iterator for TestMembersStorageIter {
 }
 
 impl pallet_universal_dividend::Config for Test {
-    type BlockNumberIntoBalance = sp_runtime::traits::ConvertInto;
+    type MomentIntoBalance = sp_runtime::traits::ConvertInto;
     type Currency = pallet_balances::Pallet<Test>;
     type MaxPastReeval = frame_support::traits::ConstU32<2>;
     type MembersCount = MembersCount;
@@ -174,5 +187,6 @@ pub fn run_to_block(n: u64) {
         System::set_block_number(System::block_number() + 1);
         System::on_initialize(System::block_number());
         UniversalDividend::on_initialize(System::block_number());
+        Timestamp::set_timestamp(System::block_number() * BLOCK_TIME);
     }
 }

@@ -72,10 +72,10 @@ fn get_session_keys_from_seed(s: &str) -> SessionKeys {
 }
 
 /// get environment variable
-fn get_env_u32(env_var_name: &'static str, default_value: u32) -> u32 {
+fn get_env<T: std::str::FromStr>(env_var_name: &'static str, default_value: T) -> T {
     std::env::var(env_var_name)
         .map_or(Ok(default_value), |s| s.parse())
-        .unwrap_or_else(|_| panic!("{} must be a number", env_var_name))
+        .unwrap_or_else(|_| panic!("{} must be a {}", env_var_name, std::any::type_name::<T>()))
 }
 
 /// make session keys struct
@@ -339,14 +339,14 @@ fn gen_genesis_for_local_chain(
     assert!(initial_smiths_len <= initial_identities_len);
     assert!(initial_authorities_len <= initial_smiths_len);
 
-    let babe_epoch_duration = get_env_u32("DUNITER_BABE_EPOCH_DURATION", 30) as u64;
-    let cert_validity_period = get_env_u32("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
-    let first_ud = 1_000;
-    let membership_period = get_env_u32("DUNITER_MEMBERSHIP_PERIOD", 1_000);
-    let smith_cert_validity_period = get_env_u32("DUNITER_SMITH_CERT_VALIDITY_PERIOD", 1_000);
-    let smith_membership_period = get_env_u32("DUNITER_SMITH_MEMBERSHIP_PERIOD", 1_000);
-    let ud_creation_period = get_env_u32("DUNITER_UD_CREATION_PERIOD", 10);
-    let ud_reeval_period = get_env_u32("DUNITER_UD_REEEVAL_PERIOD", 200);
+    let babe_epoch_duration = get_env("DUNITER_BABE_EPOCH_DURATION", 30);
+    let cert_validity_period = get_env("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
+    let membership_period = get_env("DUNITER_MEMBERSHIP_PERIOD", 1_000);
+    let smith_cert_validity_period = get_env("DUNITER_SMITH_CERT_VALIDITY_PERIOD", 1_000);
+    let smith_membership_period = get_env("DUNITER_SMITH_MEMBERSHIP_PERIOD", 1_000);
+    let ud_creation_period = get_env("DUNITER_UD_CREATION_PERIOD", 60_000);
+    let ud_reeval_period = get_env("DUNITER_UD_REEEVAL_PERIOD", 1_200_000);
+    let ud = 1_000;
 
     let initial_smiths = (0..initial_smiths_len)
         .map(|i| get_authority_keys_from_seed(NAMES[i]))
@@ -374,7 +374,7 @@ fn gen_genesis_for_local_chain(
                         owner_key.clone(),
                         GenesisAccountData {
                             random_id: H256(blake2_256(&(i as u32, owner_key).encode())),
-                            balance: first_ud,
+                            balance: ud,
                             is_identity: true,
                         },
                     )
@@ -482,9 +482,10 @@ fn gen_genesis_for_local_chain(
             certs_by_receiver: clique_wot(initial_smiths_len),
         },
         universal_dividend: UniversalDividendConfig {
-            first_reeval: 100,
-            first_ud,
-            initial_monetary_mass: initial_identities_len as u64 * first_ud,
+            first_reeval: None,
+            first_ud: None,
+            initial_monetary_mass: initial_identities_len as u64 * ud,
+            ud,
         },
         treasury: Default::default(),
     }
@@ -504,14 +505,14 @@ fn gen_genesis_for_benchmark_chain(
     assert!(initial_smiths_len <= initial_identities_len);
     assert!(initial_authorities_len <= initial_smiths_len);
 
-    let babe_epoch_duration = get_env_u32("DUNITER_BABE_EPOCH_DURATION", 30) as u64;
-    let cert_validity_period = get_env_u32("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
-    let first_ud = 1_000;
-    let membership_period = get_env_u32("DUNITER_MEMBERSHIP_PERIOD", 1_000);
-    let smith_cert_validity_period = get_env_u32("DUNITER_SMITH_CERT_VALIDITY_PERIOD", 1_000);
-    let smith_membership_period = get_env_u32("DUNITER_SMITH_MEMBERSHIP_PERIOD", 1_000);
-    let ud_creation_period = get_env_u32("DUNITER_UD_CREATION_PERIOD", 10);
-    let ud_reeval_period = get_env_u32("DUNITER_UD_REEEVAL_PERIOD", 200);
+    let babe_epoch_duration = get_env("DUNITER_BABE_EPOCH_DURATION", 30);
+    let cert_validity_period = get_env("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
+    let membership_period = get_env("DUNITER_MEMBERSHIP_PERIOD", 1_000);
+    let smith_cert_validity_period = get_env("DUNITER_SMITH_CERT_VALIDITY_PERIOD", 1_000);
+    let smith_membership_period = get_env("DUNITER_SMITH_MEMBERSHIP_PERIOD", 1_000);
+    let ud_creation_period = get_env("DUNITER_UD_CREATION_PERIOD", 60_000);
+    let ud_reeval_period = get_env("DUNITER_UD_REEEVAL_PERIOD", 1_200_000);
+    let ud = 1_000;
 
     let initial_smiths = (0..initial_smiths_len)
         .map(|i| get_authority_keys_from_seed(NAMES[i]))
@@ -539,7 +540,7 @@ fn gen_genesis_for_benchmark_chain(
                         owner_key.clone(),
                         GenesisAccountData {
                             random_id: H256(blake2_256(&(i as u32, owner_key).encode())),
-                            balance: first_ud,
+                            balance: ud,
                             is_identity: true,
                         },
                     )
@@ -670,9 +671,10 @@ fn gen_genesis_for_benchmark_chain(
             certs_by_receiver: clique_wot(initial_smiths_len),
         },
         universal_dividend: UniversalDividendConfig {
-            first_reeval: 100,
-            first_ud,
-            initial_monetary_mass: initial_identities_len as u64 * first_ud,
+            first_reeval: None,
+            first_ud: None,
+            initial_monetary_mass: initial_identities_len as u64 * ud,
+            ud,
         },
         treasury: Default::default(),
     }
@@ -698,6 +700,7 @@ fn genesis_data_to_gdev_genesis_conf(
         smith_memberships,
         sudo_key,
         technical_committee_members,
+        ud,
     } = genesis_data;
 
     gdev_runtime::GenesisConfig {
@@ -763,6 +766,7 @@ fn genesis_data_to_gdev_genesis_conf(
             first_reeval: first_ud_reeval,
             first_ud,
             initial_monetary_mass,
+            ud,
         },
         treasury: Default::default(),
     }

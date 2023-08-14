@@ -29,12 +29,12 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
-use frame_support::traits::{tokens::ExistenceRequirement, Currency};
+use frame_support::traits::{tokens::ExistenceRequirement, Currency, OnTimestampSet};
 use sp_arithmetic::{
     per_things::Perbill,
     traits::{One, Saturating, Zero},
 };
-use sp_runtime::traits::StaticLookup;
+use sp_runtime::traits::{Get, MaybeSerializeDeserialize, StaticLookup};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -58,9 +58,9 @@ pub mod pallet {
     pub struct Pallet<T>(_);
 
     #[pallet::config]
-    pub trait Config: frame_system::Config {
-        // BlockNumber into Balance converter
-        type BlockNumberIntoBalance: Convert<Self::BlockNumber, BalanceOf<Self>>;
+    pub trait Config: frame_system::Config + pallet_timestamp::Config {
+        // Moment into Balance converter
+        type MomentIntoBalance: Convert<Self::Moment, BalanceOf<Self>>;
         // The currency
         type Currency: Currency<Self::AccountId>;
         #[pallet::constant]
@@ -79,11 +79,11 @@ pub mod pallet {
         /// Square of the money growth rate per ud reevaluation period
         type SquareMoneyGrowthRate: Get<Perbill>;
         #[pallet::constant]
-        /// Universal dividend creation period
-        type UdCreationPeriod: Get<Self::BlockNumber>;
+        /// Universal dividend creation period (ms)
+        type UdCreationPeriod: Get<Self::Moment>;
         #[pallet::constant]
-        /// Universal dividend reevaluation period (in number of blocks)
-        type UdReevalPeriod: Get<Self::BlockNumber>;
+        /// Universal dividend reevaluation period (ms)
+        type UdReevalPeriod: Get<Self::Moment>;
         #[pallet::constant]
         /// The number of units to divide the amounts expressed in number of UDs
         /// Example: If you wish to express the UD amounts with a maximum precision of the order
@@ -131,7 +131,12 @@ pub mod pallet {
     /// Next UD reevaluation
     #[pallet::storage]
     #[pallet::getter(fn next_reeval)]
-    pub type NextReeval<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
+    pub type NextReeval<T: Config> = StorageValue<_, T::Moment, OptionQuery>;
+
+    /// Next UD creation
+    #[pallet::storage]
+    #[pallet::getter(fn next_ud)]
+    pub type NextUd<T: Config> = StorageValue<_, T::Moment, OptionQuery>;
 
     /// Past UD reevaluations
     #[pallet::storage]
@@ -142,39 +147,53 @@ pub mod pallet {
     // GENESIS
 
     #[pallet::genesis_config]
-    pub struct GenesisConfig<T: Config> {
-        pub first_reeval: T::BlockNumber,
-        pub first_ud: BalanceOf<T>,
+    pub struct GenesisConfig<T: Config>
+    where
+        <T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
+    {
+        /// If None, it will be set to one period after the first block with a timestamp
+        pub first_reeval: Option<T::Moment>,
+        /// If None, it will be set to one period after the first block with a timestamp
+        pub first_ud: Option<T::Moment>,
         pub initial_monetary_mass: BalanceOf<T>,
         #[cfg(test)]
         pub initial_members: Vec<T::AccountId>,
+        pub ud: BalanceOf<T>,
     }
 
     #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
+    impl<T: Config> Default for GenesisConfig<T>
+    where
+        <T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
+    {
         fn default() -> Self {
             Self {
-                first_reeval: Default::default(),
-                first_ud: Default::default(),
+                first_reeval: None,
+                first_ud: None,
                 initial_monetary_mass: Default::default(),
                 #[cfg(test)]
                 initial_members: Default::default(),
+                ud: Default::default(),
             }
         }
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> GenesisBuild<T> for GenesisConfig<T>
+    where
+        <T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
+    {
         fn build(&self) {
-            assert!(!self.first_ud.is_zero());
+            assert!(!self.ud.is_zero());
             assert!(self.initial_monetary_mass >= T::Currency::total_issuance());
 
-            <CurrentUd<T>>::put(self.first_ud);
+            <CurrentUd<T>>::put(self.ud);
             <MonetaryMass<T>>::put(self.initial_monetary_mass);
-            NextReeval::<T>::put(self.first_reeval);
+            NextReeval::<T>::set(self.first_reeval);
+            NextUd::<T>::set(self.first_ud);
             let mut past_reevals = BoundedVec::default();
             past_reevals
-                .try_push((1, self.first_ud))
+                .try_push((1, self.ud))
                 .expect("MaxPastReeval should be greather than zero");
             PastReevals::<T>::put(past_reevals);
 
@@ -183,29 +202,6 @@ pub mod pallet {
                 for member in &self.initial_members {
                     TestMembers::<T>::insert(member, FirstEligibleUd::min());
                 }
-            }
-        }
-    }
-
-    // HOOKS //
-
-    #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(n: T::BlockNumber) -> Weight {
-            if (n % T::UdCreationPeriod::get()).is_zero() {
-                let current_members_count = T::MembersCount::get();
-                let next_reeval = NextReeval::<T>::get();
-                if n >= next_reeval {
-                    NextReeval::<T>::put(next_reeval.saturating_add(T::UdReevalPeriod::get()));
-                    Self::reeval_ud(current_members_count);
-                    Self::create_ud(current_members_count);
-                    T::WeightInfo::on_initialize_ud_reevalued()
-                } else {
-                    Self::create_ud(current_members_count);
-                    T::WeightInfo::on_initialize_ud_created()
-                }
-            } else {
-                T::WeightInfo::on_initialize()
             }
         }
     }
@@ -255,7 +251,7 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
     impl<T: Config> Pallet<T> {
         /// create universal dividend
-        fn create_ud(members_count: BalanceOf<T>) {
+        pub(crate) fn create_ud(members_count: BalanceOf<T>) {
             // get current value of UD and monetary mass
             let ud_amount = <CurrentUd<T>>::get();
             let monetary_mass = <MonetaryMass<T>>::get();
@@ -334,7 +330,7 @@ pub mod pallet {
         }
 
         /// reevaluate the value of the universal dividend
-        fn reeval_ud(members_count: BalanceOf<T>) {
+        pub(crate) fn reeval_ud(members_count: BalanceOf<T>) {
             // get current value and monetary mass
             let ud_amount = <CurrentUd<T>>::get();
             let monetary_mass = <MonetaryMass<T>>::get();
@@ -345,7 +341,7 @@ pub mod pallet {
                 T::SquareMoneyGrowthRate::get(),
                 monetary_mass,
                 members_count,
-                T::BlockNumberIntoBalance::convert(
+                T::MomentIntoBalance::convert(
                     T::UdReevalPeriod::get() / T::UdCreationPeriod::get(),
                 ),
             );
@@ -391,13 +387,13 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Claim Universal Dividends
-        #[pallet::weight(T::WeightInfo::claim_uds(T::MaxPastReeval::get()))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::claim_uds(T::MaxPastReeval::get()))]
         pub fn claim_uds(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             Self::do_claim_uds(&who)
         }
         /// Transfer some liquid free balance to another account, in milliUD.
-        #[pallet::weight(T::WeightInfo::transfer_ud())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer_ud())]
         pub fn transfer_ud(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
@@ -407,7 +403,7 @@ pub mod pallet {
         }
 
         /// Transfer some liquid free balance to another account, in milliUD.
-        #[pallet::weight(T::WeightInfo::transfer_ud_keep_alive())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer_ud_keep_alive())]
         pub fn transfer_ud_keep_alive(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
@@ -443,6 +439,35 @@ pub mod pallet {
             } else {
                 T::DbWeight::get().reads(1)
             }
+        }
+    }
+}
+
+impl<T: Config> OnTimestampSet<T::Moment> for Pallet<T>
+where
+    <T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
+{
+    fn on_timestamp_set(moment: T::Moment) {
+        let next_ud = NextUd::<T>::get().unwrap_or_else(|| {
+            let next_ud = moment.saturating_add(T::UdCreationPeriod::get());
+            NextUd::<T>::put(next_ud);
+            next_ud
+        });
+        if moment >= next_ud {
+            let current_members_count = T::MembersCount::get();
+            let next_reeval = NextReeval::<T>::get().unwrap_or_else(|| {
+                let next_reeval = moment.saturating_add(T::UdReevalPeriod::get());
+                NextReeval::<T>::put(next_reeval);
+                next_reeval
+            });
+            // Reevaluation may happen later than expected, but this has no effect before a new UD
+            // is created. This is why we can check for reevaluation only when creating UD.
+            if moment >= next_reeval {
+                NextReeval::<T>::put(next_reeval.saturating_add(T::UdReevalPeriod::get()));
+                Self::reeval_ud(current_members_count);
+            }
+            Self::create_ud(current_members_count);
+            NextUd::<T>::put(next_ud.saturating_add(T::UdCreationPeriod::get()));
         }
     }
 }

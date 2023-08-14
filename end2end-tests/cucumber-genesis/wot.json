@@ -1,6 +1,6 @@
 {
-  "first_ud": 1000,
-  "first_ud_reeval": 100,
+  "first_ud": null,
+  "first_ud_reeval": null,
   "genesis_parameters": {
     "genesis_certs_min_received": 2,
     "genesis_memberships_expire_on": 100000,
@@ -39,8 +39,8 @@
     "idty_creation_period": 50,
     "membership_period": 1000,
     "pending_membership_period": 500,
-    "ud_creation_period": 10,
-    "ud_reeval_period": 100,
+    "ud_creation_period": 60000,
+    "ud_reeval_period": 600000,
     "smith_cert_period": 15,
     "smith_cert_max_by_issuer": 8,
     "smith_cert_min_received_cert_to_issue_cert": 2,
@@ -65,5 +65,6 @@
     }
   },
   "sudo_key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-  "technical_committee": ["Alice", "Bob", "Charlie"]
+  "technical_committee": ["Alice", "Bob", "Charlie"],
+  "ud": 1000
 }

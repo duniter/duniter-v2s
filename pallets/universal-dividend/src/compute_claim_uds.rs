@@ -30,6 +30,7 @@ pub(super) fn compute_claim_uds<Balance: AtLeast32BitUnsigned>(
             let count = current_ud_index - first_ud_index;
             total_amount += Balance::from(count) * ud_amount;
             total_count += count;
+            // First unclaimed UD is reached; stop counting now.
             break;
         } else {
             let count = current_ud_index - ud_index;

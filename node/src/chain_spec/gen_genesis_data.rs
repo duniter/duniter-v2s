@@ -27,8 +27,8 @@ const EXISTENTIAL_DEPOSIT: u64 = 200;
 pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub accounts: BTreeMap<AccountId, GenesisAccountData<u64>>,
     pub certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
-    pub first_ud: u64,
-    pub first_ud_reeval: u32,
+    pub first_ud: Option<u64>,
+    pub first_ud_reeval: Option<u64>,
     pub identities: Vec<(String, AccountId)>,
     pub initial_authorities: BTreeMap<u32, (AccountId, bool)>,
     pub initial_monetary_mass: u64,
@@ -39,6 +39,7 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub smith_memberships: BTreeMap<u32, MembershipData>,
     pub sudo_key: Option<AccountId>,
     pub technical_committee_members: Vec<AccountId>,
+    pub ud: u64,
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -51,8 +52,8 @@ pub struct ParamsAppliedAtGenesis {
 
 #[derive(Deserialize, Serialize)]
 struct GenesisConfig<Parameters> {
-    first_ud: u64,
-    first_ud_reeval: u32,
+    first_ud: Option<u64>,
+    first_ud_reeval: Option<u64>,
     genesis_parameters: ParamsAppliedAtGenesis,
     identities: BTreeMap<String, Idty>,
     #[serde(default)]
@@ -61,6 +62,7 @@ struct GenesisConfig<Parameters> {
     smith_identities: BTreeMap<String, SmithData>,
     sudo_key: Option<AccountId>,
     technical_committee: Vec<String>,
+    ud: u64,
     #[serde(default)]
     wallets: BTreeMap<AccountId, u64>,
 }
@@ -155,6 +157,7 @@ where
         identities,
         smith_identities,
         technical_committee,
+        ud,
         wallets,
     } = genesis_config;
 
@@ -387,6 +390,7 @@ where
         smith_memberships,
         sudo_key,
         technical_committee_members,
+        ud,
     };
 
     Ok(f(genesis_data))

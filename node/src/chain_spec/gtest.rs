@@ -271,7 +271,7 @@ fn generate_genesis(
     assert!(initial_smiths_len <= initial_identities_len);
     assert!(initial_authorities_len <= initial_smiths_len);
 
-    let first_ud = 1_000;
+    let ud = 1_000;
 
     let initial_smiths = (0..initial_smiths_len)
         .map(|i| get_authority_keys_from_seed(NAMES[i]))
@@ -299,7 +299,7 @@ fn generate_genesis(
                         owner_key.clone(),
                         GenesisAccountData {
                             random_id: H256(blake2_256(&(i as u32, owner_key).encode())),
-                            balance: first_ud,
+                            balance: ud,
                             is_identity: true,
                         },
                     )
@@ -395,9 +395,10 @@ fn generate_genesis(
             certs_by_receiver: clique_wot(initial_smiths_len),
         },
         universal_dividend: UniversalDividendConfig {
-            first_reeval: 100,
-            first_ud: 1_000,
+            first_reeval: 600_000,
+            first_ud: 6_000,
             initial_monetary_mass: 0,
+            ud,
         },
         treasury: Default::default(),
     }

@@ -20,10 +20,11 @@ use frame_support::{assert_err, assert_ok, assert_storage_noop};
 #[test]
 fn test_claim_uds() {
     new_test_ext(UniversalDividendConfig {
-        first_reeval: 8,
-        first_ud: 1_000,
+        first_reeval: Some(48_000),
+        first_ud: Some(12_000),
         initial_monetary_mass: 0,
         initial_members: vec![1, 2, 3],
+        ud: 1_000,
     })
     .execute_with(|| {
         // In the beginning there was no money
@@ -118,16 +119,126 @@ fn test_claim_uds() {
             who: 3,
         }));
         assert_eq!(Balances::free_balance(3), 4_075);
+
+        // At block #16, the second reevaluated UD should be created
+        run_to_block(16);
+        assert_eq!(UniversalDividend::total_money_created(), 25_671);
+
+        // Charlie can claim new UD, he must receive exactly four UDs
+        assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(3)));
+        System::assert_has_event(RuntimeEvent::UniversalDividend(crate::Event::UdsClaimed {
+            count: 4,
+            total: 4_482,
+            who: 3,
+        }));
+        assert_eq!(Balances::free_balance(3), 8557);
+    });
+}
+
+#[test]
+fn test_claim_uds_using_genesis_timestamp() {
+    new_test_ext(UniversalDividendConfig {
+        first_reeval: None,
+        first_ud: None,
+        initial_monetary_mass: 0,
+        initial_members: vec![1, 2, 3],
+        ud: 1_000,
+    })
+    .execute_with(|| {
+        // In the beginning there was no money
+        assert_eq!(Balances::free_balance(1), 0);
+        assert_eq!(Balances::free_balance(2), 0);
+        assert_eq!(Balances::free_balance(3), 0);
+        assert_eq!(Balances::free_balance(4), 0);
+        assert_eq!(UniversalDividend::total_money_created(), 0);
+
+        // Alice can claim UDs, but this should be a no-op.
+        run_to_block(1);
+        assert_storage_noop!(assert_ok!(UniversalDividend::claim_uds(
+            RuntimeOrigin::signed(1)
+        )));
+        assert_eq!(Balances::free_balance(1), 0);
+
+        // Dave is not a member, he can't claim UDs
+        assert_err!(
+            UniversalDividend::claim_uds(RuntimeOrigin::signed(4)),
+            crate::Error::<Test>::AccountNotAllowedToClaimUds
+        );
+
+        // At block #3, the first UD must be created, but nobody should receive money
+        run_to_block(3);
+        assert_eq!(UniversalDividend::total_money_created(), 3_000);
+        assert_eq!(Balances::free_balance(1), 0);
+        assert_eq!(Balances::free_balance(2), 0);
+        assert_eq!(Balances::free_balance(3), 0);
+        assert_eq!(Balances::free_balance(4), 0);
+
+        // Alice can claim UDs, and this time she must receive exactly one UD
+        assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(1)));
+        System::assert_has_event(RuntimeEvent::UniversalDividend(crate::Event::UdsClaimed {
+            count: 1,
+            total: 1_000,
+            who: 1,
+        }));
+        assert_eq!(Balances::free_balance(1), 1_000);
+        // Others members should not receive any UDs with Alice claim
+        assert_eq!(Balances::free_balance(2), 0);
+        assert_eq!(Balances::free_balance(3), 0);
+        assert_eq!(Balances::free_balance(4), 0);
+
+        // At block #5, the second UD must be created, but nobody should receive money
+        run_to_block(5);
+        assert_eq!(UniversalDividend::total_money_created(), 6_000);
+        assert_eq!(Balances::free_balance(1), 1_000);
+        assert_eq!(Balances::free_balance(2), 0);
+        assert_eq!(Balances::free_balance(3), 0);
+        assert_eq!(Balances::free_balance(4), 0);
+
+        // Alice can claim UDs, And she must receive exactly one UD (the second one)
+        assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(1)));
+        System::assert_has_event(RuntimeEvent::UniversalDividend(crate::Event::UdsClaimed {
+            count: 1,
+            total: 1_000,
+            who: 1,
+        }));
+        assert_eq!(Balances::free_balance(1), 2_000);
+        // Others members should not receive any UDs with Alice claim
+        assert_eq!(Balances::free_balance(2), 0);
+        assert_eq!(Balances::free_balance(3), 0);
+        assert_eq!(Balances::free_balance(4), 0);
+
+        // Bob can claim UDs, he must receive exactly two UDs
+        assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(2)));
+        System::assert_has_event(RuntimeEvent::UniversalDividend(crate::Event::UdsClaimed {
+            count: 2,
+            total: 2_000,
+            who: 2,
+        }));
+        assert_eq!(Balances::free_balance(2), 2_000);
+        // Others members should not receive any UDs with Alice and Bob claims
+        assert_eq!(Balances::free_balance(3), 0);
+        assert_eq!(Balances::free_balance(4), 0);
+
+        // Dave is still not a member, he still can't claim UDs.
+        assert_err!(
+            UniversalDividend::claim_uds(RuntimeOrigin::signed(4)),
+            crate::Error::<Test>::AccountNotAllowedToClaimUds
+        );
+
+        // At block #11, the first reevaluated UD should be created
+        run_to_block(11);
+        assert_eq!(UniversalDividend::total_money_created(), 15_300);
     });
 }
 
 #[test]
 fn test_ud_creation() {
     new_test_ext(UniversalDividendConfig {
-        first_reeval: 8,
-        first_ud: 1_000,
+        first_reeval: Some(48_000),
+        first_ud: Some(12_000),
         initial_monetary_mass: 0,
         initial_members: vec![1, 2, 3],
+        ud: 1_000,
     })
     .execute_with(|| {
         // In the beginning there was no money

@@ -141,7 +141,7 @@ macro_rules! pallets_config {
 
         impl pallet_timestamp::Config for Runtime {
             type Moment = u64;
-            type OnTimestampSet = Babe;
+            type OnTimestampSet = (Babe, UniversalDividend);
             type MinimumPeriod = MinimumPeriod;
             type WeightInfo = common_runtime::weights::pallet_timestamp::WeightInfo<Runtime>;
         }
@@ -413,10 +413,10 @@ macro_rules! pallets_config {
 		}
 
         impl pallet_universal_dividend::Config for Runtime {
-            type BlockNumberIntoBalance = sp_runtime::traits::ConvertInto;
+            type MomentIntoBalance = sp_runtime::traits::ConvertInto;
             type Currency = pallet_balances::Pallet<Runtime>;
             type RuntimeEvent = RuntimeEvent;
-			type MaxPastReeval = frame_support::traits::ConstU32<4>;
+			type MaxPastReeval = frame_support::traits::ConstU32<160>;
             type MembersCount = MembersCount;
             type MembersStorage = common_runtime::providers::UdMembersStorage<Runtime>;
 			type MembersStorageIter = common_runtime::providers::UdMembersStorageIter<Runtime>;

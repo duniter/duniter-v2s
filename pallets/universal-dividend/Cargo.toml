@@ -19,6 +19,7 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'frame-benchmarking/std',
+    'pallet-timestamp/std',
 	"serde",
     "sp-arithmetic/std",
     "sp-io/std",
@@ -42,6 +43,11 @@ git = 'https://github.com/duniter/substrate'
 branch = 'duniter-substrate-v0.9.32'
 
 [dependencies.frame-system]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
+
+[dependencies.pallet-timestamp]
 default-features = false
 git = 'https://github.com/duniter/substrate'
 branch = 'duniter-substrate-v0.9.32'

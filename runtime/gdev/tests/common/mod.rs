@@ -44,6 +44,7 @@ pub type AuthorityKeys = (
     AuthorityDiscoveryId,
 );
 
+pub const BLOCK_TIME: u64 = 6_000;
 pub const NAMES: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"];
 
 pub struct ExtBuilder {
@@ -104,8 +105,8 @@ impl ExtBuilder {
                 idty_creation_period: 50,
                 membership_period: 100,
                 pending_membership_period: 500,
-                ud_creation_period: 10,
-                ud_reeval_period: 10 * 20,
+                ud_creation_period: 60_000,
+                ud_reeval_period: 60_000 * 20,
                 smith_cert_period: 15,
                 smith_cert_max_by_issuer: 8,
                 smith_cert_min_received_cert_to_issue_cert: 2,
@@ -266,9 +267,10 @@ impl ExtBuilder {
         .unwrap();
 
         pallet_universal_dividend::GenesisConfig::<Runtime> {
-            first_reeval: 100,
-            first_ud: 1_000,
+            first_reeval: Some(600_000),
+            first_ud: Some(24_000),
             initial_monetary_mass: 0,
+            ud: 1_000,
         }
         .assimilate_storage(&mut t)
         .unwrap();
@@ -309,6 +311,11 @@ pub fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
     )
 }
 
+fn mock_babe_initialize(n: u32) {
+    let slot: sp_consensus_slots::Slot = (n as u64).into();
+    pallet_babe::CurrentSlot::<Runtime>::put(slot);
+}
+
 pub fn run_to_block(n: u32) {
     while System::block_number() < n {
         // Finalize the previous block
@@ -325,7 +332,7 @@ pub fn run_to_block(n: u32) {
         // Initialize the new block
         Account::on_initialize(System::block_number());
         Scheduler::on_initialize(System::block_number());
-        //Babe::on_initialize(System::block_number());
+        mock_babe_initialize(System::block_number());
         Authorship::on_initialize(System::block_number());
         Session::on_initialize(System::block_number());
 
@@ -337,6 +344,8 @@ pub fn run_to_block(n: u32) {
         SmithSubWot::on_initialize(System::block_number());
         SmithMembership::on_initialize(System::block_number());
         SmithCert::on_initialize(System::block_number());
+
+        Timestamp::set_timestamp(System::block_number() as u64 * BLOCK_TIME);
     }
 }
 

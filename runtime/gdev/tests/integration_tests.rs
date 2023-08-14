@@ -206,7 +206,11 @@ fn test_membership_renewal() {
 fn test_remove_identity_after_one_ud() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         //println!("UdCreationPeriod={}", <Runtime as pallet_universal_dividend::Config>::UdCreationPeriod::get());
-        run_to_block(<Runtime as pallet_universal_dividend::Config>::UdCreationPeriod::get() + 1);
+        run_to_block(
+            (<Runtime as pallet_universal_dividend::Config>::UdCreationPeriod::get()
+                / <Runtime as pallet_babe::Config>::ExpectedBlockTime::get()
+                + 1) as u32,
+        );
 
         assert_ok!(Identity::remove_identity(
             frame_system::RawOrigin::Root.into(),
@@ -251,8 +255,8 @@ fn test_remove_identity_after_one_ud() {
 #[test]
 fn test_ud_claimed_membership_on_and_off() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
-        // UD are created every 10 blocks from block 0
-        run_to_block(10);
+        // UD are created every 10 blocks from block 4
+        run_to_block(4);
         System::assert_has_event(RuntimeEvent::UniversalDividend(
             pallet_universal_dividend::Event::NewUdCreated {
                 amount: 1000,
@@ -267,7 +271,7 @@ fn test_ud_claimed_membership_on_and_off() {
             0
         );
 
-        run_to_block(11);
+        run_to_block(13);
         // alice identity expires
         assert_ok!(Membership::force_expire_membership(1));
         System::assert_has_event(RuntimeEvent::UniversalDividend(
@@ -284,7 +288,7 @@ fn test_ud_claimed_membership_on_and_off() {
         );
 
         // UD number 2
-        run_to_block(20);
+        run_to_block(14);
         System::assert_has_event(RuntimeEvent::UniversalDividend(
             pallet_universal_dividend::Event::NewUdCreated {
                 amount: 1000,
@@ -303,7 +307,7 @@ fn test_ud_claimed_membership_on_and_off() {
         ));
 
         // UD number 3
-        run_to_block(30);
+        run_to_block(24);
         System::assert_has_event(RuntimeEvent::UniversalDividend(
             pallet_universal_dividend::Event::NewUdCreated {
                 amount: 1000,
@@ -314,7 +318,7 @@ fn test_ud_claimed_membership_on_and_off() {
         ));
 
         // one block later, alice claims her new UD
-        run_to_block(31);
+        run_to_block(25);
         assert_ok!(UniversalDividend::claim_uds(
             frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into()
         ));
