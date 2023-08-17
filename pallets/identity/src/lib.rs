@@ -188,12 +188,13 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn identity_index_of)]
     pub type IdentityIndexOf<T: Config> =
-        StorageMap<_, Blake2_128, T::AccountId, T::IdtyIndex, OptionQuery>;
+        StorageMap<_, Blake2_128Concat, T::AccountId, T::IdtyIndex, OptionQuery>;
 
     /// maps identity name to null type (simply a set)
     #[pallet::storage]
     #[pallet::getter(fn identity_by_did)]
-    pub type IdentitiesNames<T: Config> = StorageMap<_, Blake2_128, IdtyName, (), OptionQuery>;
+    pub type IdentitiesNames<T: Config> =
+        StorageMap<_, Blake2_128Concat, IdtyName, (), OptionQuery>;
 
     /// counter of the identity index to give to the next identity
     #[pallet::storage]
