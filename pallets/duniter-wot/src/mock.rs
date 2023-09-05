@@ -322,6 +322,7 @@ pub fn new_test_ext(
 
 pub fn run_to_block(n: u64) {
     while System::block_number() < n {
+        // finalize previous block
         DuniterWot::on_finalize(System::block_number());
         Identity::on_finalize(System::block_number());
         Membership::on_finalize(System::block_number());
@@ -330,8 +331,10 @@ pub fn run_to_block(n: u64) {
         SmithMembership::on_finalize(System::block_number());
         SmithCert::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
+        // reset events and change block number
         System::reset_events();
         System::set_block_number(System::block_number() + 1);
+        // initialize next block
         System::on_initialize(System::block_number());
         DuniterWot::on_initialize(System::block_number());
         Identity::on_initialize(System::block_number());

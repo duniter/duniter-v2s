@@ -365,21 +365,12 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
         if receiver_received_count < T::MinCertForMembership::get()
             && pallet_membership::Pallet::<T, I>::is_member(&receiver)
         {
-            if T::IsSubWot::get() {
-                // expire receiver membership
-                // it gives him a bit of time to get back enough certs
-                if let Err(e) = <pallet_membership::Pallet<T, I>>::force_expire_membership(receiver)
-                {
-                    sp_std::if_std! {
-                        println!("fail to expire membership: {:?}", e)
-                    }
+            // expire receiver membership
+            // it gives him a bit of time to get back enough certs
+            if let Err(e) = <pallet_membership::Pallet<T, I>>::force_expire_membership(receiver) {
+                sp_std::if_std! {
+                    println!("fail to expire membership: {:?}", e)
                 }
-            } else {
-                // Revoke receiver membership and disable his identity
-                Self::dispath_idty_call(pallet_identity::Call::remove_identity {
-                    idty_index: receiver,
-                    idty_name: None,
-                });
             }
         }
         Weight::zero()
