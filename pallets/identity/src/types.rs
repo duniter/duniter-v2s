@@ -37,6 +37,14 @@ pub enum IdtyEvent<T: crate::Config> {
     Removed { status: IdtyStatus },
 }
 
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum IdtyRemovalReason<OtherReason: TypeInfo + Decode + Encode + Eq + Clone> {
+    Expired,
+    Manual,
+    Other(OtherReason),
+    Revoked,
+}
+
 /// name of the identity, ascii encoded
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug)]
 pub struct IdtyName(pub Vec<u8>);

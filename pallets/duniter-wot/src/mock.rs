@@ -126,6 +126,7 @@ impl pallet_identity::Config for Test {
     type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = IdtyIndex;
+    type IdtyRemovalOtherReason = IdtyRemovalWotReason;
     type NewOwnerKeySigner = UintAuthorityId;
     type NewOwnerKeySignature = TestSignature;
     type OnIdtyChange = DuniterWot;

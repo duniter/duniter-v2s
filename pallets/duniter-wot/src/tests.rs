@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::mock::*;
 use crate::mock::{Identity, System};
 use crate::pallet as pallet_duniter_wot;
+use crate::{mock::*, IdtyRemovalWotReason};
 use codec::Encode;
 use frame_support::instances::{Instance1, Instance2};
 use frame_support::{assert_noop, assert_ok};
@@ -326,7 +326,10 @@ fn test_revoke_idty() {
         ));
 
         System::assert_has_event(RuntimeEvent::Identity(
-            pallet_identity::Event::IdtyRemoved { idty_index: 2 },
+            pallet_identity::Event::IdtyRemoved {
+                idty_index: 2,
+                reason: pallet_identity::IdtyRemovalReason::<IdtyRemovalWotReason>::Revoked,
+            },
         ));
     });
 }
@@ -351,7 +354,12 @@ fn test_idty_membership_expire() {
         ));
         // membership expiry should not trigger identity removal
         assert!(!System::events().iter().any(|record| record.event
-            == RuntimeEvent::Identity(pallet_identity::Event::IdtyRemoved { idty_index: 3 })));
+            == RuntimeEvent::Identity(pallet_identity::Event::IdtyRemoved {
+                idty_index: 3,
+                reason: pallet_identity::IdtyRemovalReason::Other(
+                    IdtyRemovalWotReason::MembershipExpired
+                )
+            })));
         // it should be moved to pending membership instead
         assert!(Membership::pending_membership(3).is_some());
 
@@ -361,7 +369,12 @@ fn test_idty_membership_expire() {
             pallet_membership::Event::PendingMembershipExpired(3),
         ));
         System::assert_has_event(RuntimeEvent::Identity(
-            pallet_identity::Event::IdtyRemoved { idty_index: 3 },
+            pallet_identity::Event::IdtyRemoved {
+                idty_index: 3,
+                reason: pallet_identity::IdtyRemovalReason::Other(
+                    IdtyRemovalWotReason::MembershipExpired,
+                ),
+            },
         ));
 
         // Charlie's identity should be removed at block #11
@@ -494,7 +507,12 @@ fn test_certification_expire() {
         ));
         // and the identity is removed
         System::assert_has_event(RuntimeEvent::Identity(
-            pallet_identity::Event::IdtyRemoved { idty_index: 1 },
+            pallet_identity::Event::IdtyRemoved {
+                idty_index: 1,
+                reason: pallet_identity::IdtyRemovalReason::Other(
+                    IdtyRemovalWotReason::MembershipExpired,
+                ),
+            },
         ));
     })
 }

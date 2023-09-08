@@ -96,6 +96,8 @@ pub mod pallet {
             + MaxEncodedLen;
         /// Handle logic to validate an identity name
         type IdtyNameValidator: IdtyNameValidator;
+        /// Additional reasons for identity removal
+        type IdtyRemovalOtherReason: Clone + Codec + Debug + Eq + TypeInfo;
         /// On identity confirmed by its owner
         type OnIdtyChange: OnIdtyChange<Self>;
         /// Signing key of new owner key payload
@@ -248,7 +250,10 @@ pub mod pallet {
         },
         /// An identity has been removed
         /// [idty_index]
-        IdtyRemoved { idty_index: T::IdtyIndex },
+        IdtyRemoved {
+            idty_index: T::IdtyIndex,
+            reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>,
+        },
     }
 
     // CALLS //
@@ -529,7 +534,7 @@ pub mod pallet {
             );
 
             // finally if all checks pass, remove identity
-            Self::do_remove_identity(idty_index);
+            Self::do_remove_identity(idty_index, IdtyRemovalReason::Revoked);
             Ok(().into())
         }
 
@@ -539,10 +544,11 @@ pub mod pallet {
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
             idty_name: Option<IdtyName>,
+            reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            Self::do_remove_identity(idty_index);
+            Self::do_remove_identity(idty_index, reason);
             if let Some(idty_name) = idty_name {
                 <IdentitiesNames<T>>::remove(idty_name);
             }
@@ -662,7 +668,10 @@ pub mod pallet {
         }
 
         /// perform identity removal
-        pub(super) fn do_remove_identity(idty_index: T::IdtyIndex) -> Weight {
+        pub(super) fn do_remove_identity(
+            idty_index: T::IdtyIndex,
+            reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>,
+        ) -> Weight {
             if let Some(idty_val) = Identities::<T>::get(idty_index) {
                 let _ = T::RemoveIdentityConsumers::remove_idty_consumers(idty_index);
                 IdentityIndexOf::<T>::remove(&idty_val.owner_key);
@@ -672,7 +681,7 @@ pub mod pallet {
                 if let Some((old_owner_key, _last_change)) = idty_val.old_owner_key {
                     frame_system::Pallet::<T>::dec_sufficients(&old_owner_key);
                 }
-                Self::deposit_event(Event::IdtyRemoved { idty_index });
+                Self::deposit_event(Event::IdtyRemoved { idty_index, reason });
                 T::OnIdtyChange::on_idty_change(
                     idty_index,
                     &IdtyEvent::Removed {
@@ -699,7 +708,8 @@ pub mod pallet {
             for (idty_index, idty_status) in IdentitiesRemovableOn::<T>::take(block_number) {
                 if let Ok(idty_val) = <Identities<T>>::try_get(idty_index) {
                     if idty_val.removable_on == block_number && idty_val.status == idty_status {
-                        total_weight += Self::do_remove_identity(idty_index)
+                        total_weight +=
+                            Self::do_remove_identity(idty_index, IdtyRemovalReason::Expired)
                     }
                 }
             }

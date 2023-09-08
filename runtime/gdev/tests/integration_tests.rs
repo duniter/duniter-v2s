@@ -90,7 +90,8 @@ fn test_remove_identity() {
         assert_ok!(Identity::remove_identity(
             frame_system::RawOrigin::Root.into(),
             4,
-            None
+            None,
+            pallet_identity::IdtyRemovalReason::Manual
         ));
 
         System::assert_has_event(RuntimeEvent::Membership(
@@ -100,7 +101,10 @@ fn test_remove_identity() {
             account: AccountKeyring::Dave.to_account_id(),
         }));
         System::assert_has_event(RuntimeEvent::Identity(
-            pallet_identity::Event::IdtyRemoved { idty_index: 4 },
+            pallet_identity::Event::IdtyRemoved {
+                idty_index: 4,
+                reason: pallet_identity::IdtyRemovalReason::Manual,
+            },
         ));
     });
 }
@@ -167,7 +171,10 @@ fn test_membership_expiry() {
         ));
         // membership expiry should not trigger identity removal
         assert!(!System::events().iter().any(|record| record.event
-            == RuntimeEvent::Identity(pallet_identity::Event::IdtyRemoved { idty_index: 1 })));
+            == RuntimeEvent::Identity(pallet_identity::Event::IdtyRemoved {
+                idty_index: 1,
+                reason: pallet_identity::IdtyRemovalReason::Expired
+            })));
     });
 }
 
@@ -215,7 +222,8 @@ fn test_remove_identity_after_one_ud() {
         assert_ok!(Identity::remove_identity(
             frame_system::RawOrigin::Root.into(),
             4,
-            None
+            None,
+            pallet_identity::IdtyRemovalReason::Manual
         ));
 
         // Verify events
@@ -238,7 +246,10 @@ fn test_remove_identity_after_one_ud() {
             },
         ));
         System::assert_has_event(RuntimeEvent::Identity(
-            pallet_identity::Event::IdtyRemoved { idty_index: 4 },
+            pallet_identity::Event::IdtyRemoved {
+                idty_index: 4,
+                reason: pallet_identity::IdtyRemovalReason::Manual,
+            },
         ));
 
         // Verify state
@@ -347,7 +358,8 @@ fn test_remove_smith_identity() {
         assert_ok!(Identity::remove_identity(
             frame_system::RawOrigin::Root.into(),
             3,
-            None
+            None,
+            pallet_identity::IdtyRemovalReason::Manual
         ));
         // Verify events
         System::assert_has_event(RuntimeEvent::SmithMembership(
@@ -360,7 +372,10 @@ fn test_remove_smith_identity() {
             pallet_membership::Event::MembershipRevoked(3),
         ));
         System::assert_has_event(RuntimeEvent::Identity(
-            pallet_identity::Event::IdtyRemoved { idty_index: 3 },
+            pallet_identity::Event::IdtyRemoved {
+                idty_index: 3,
+                reason: pallet_identity::IdtyRemovalReason::Manual,
+            },
         ));
     });
 }

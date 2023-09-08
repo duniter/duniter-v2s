@@ -216,7 +216,7 @@ benchmarks! {
         let signature = sr25519_sign(0.into(), &caller_public, &message).unwrap().into();
     }: _<T::RuntimeOrigin>(account.origin.clone(), account.index.clone().into(), caller.clone(), signature)
     verify {
-        assert_has_event::<T>(Event::<T>::IdtyRemoved { idty_index: account.index }.into());
+        assert_has_event::<T>(Event::<T>::IdtyRemoved { idty_index: account.index, reason: IdtyRemovalReason::Revoked }.into());
         assert!(IdentityIndexOf::<T>::get(&account.key).is_none(), "Identity not revoked");
     }
 
@@ -224,13 +224,13 @@ benchmarks! {
         let new_identity: T::AccountId = account("new_identity", 2, SEED);
         let account: Account<T> = create_one_identity(new_identity)?;
         let identities = Pallet::<T>::identities_count();
-    }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), account.index.clone(),Some(account.name.clone()))
+    }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), account.index.clone(), Some(account.name.clone()), IdtyRemovalReason::Manual)
     verify {
         assert!(
             Pallet::<T>::identities_count() == identities - 1,
             "Identities not removed"
         );
-        assert_has_event::<T>(Event::<T>::IdtyRemoved { idty_index: account.index }.into());
+        assert_has_event::<T>(Event::<T>::IdtyRemoved { idty_index: account.index, reason: IdtyRemovalReason::Manual }.into());
         assert!(IdentityIndexOf::<T>::get(&account.key).is_none(), "Identity not removed");
     }
 

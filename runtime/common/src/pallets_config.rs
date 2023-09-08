@@ -443,6 +443,7 @@ macro_rules! pallets_config {
 			type IdtyData = IdtyData;
             type IdtyIndex = IdtyIndex;
             type IdtyNameValidator = IdtyNameValidatorImpl;
+            type IdtyRemovalOtherReason = pallet_duniter_wot::IdtyRemovalWotReason;
             type NewOwnerKeySigner = <NewOwnerKeySignature as sp_runtime::traits::Verify>::Signer;
 			type NewOwnerKeySignature = NewOwnerKeySignature;
             type OnIdtyChange = (common_runtime::handlers::OnIdtyChangeHandler<Runtime>, Wot);

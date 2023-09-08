@@ -17,6 +17,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
+mod types;
+
 #[cfg(test)]
 mod mock;
 
@@ -27,6 +29,7 @@ mod tests;
 mod benchmarking;*/
 
 pub use pallet::*;
+pub use types::*;
 
 use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::pallet_prelude::*;
@@ -57,8 +60,10 @@ pub mod pallet {
     pub trait Config<I: 'static = ()>:
         frame_system::Config
         + pallet_certification::Config<I, IdtyIndex = IdtyIndex>
-        + pallet_identity::Config<IdtyIndex = IdtyIndex>
-        + pallet_membership::Config<I, IdtyId = IdtyIndex>
+        + pallet_identity::Config<
+            IdtyIndex = IdtyIndex,
+            IdtyRemovalOtherReason = IdtyRemovalWotReason,
+        > + pallet_membership::Config<I, IdtyId = IdtyIndex>
     {
         #[pallet::constant]
         type FirstIssuableOn: Get<Self::BlockNumber>;
@@ -80,7 +85,7 @@ pub mod pallet {
                 block_number + T::FirstIssuableOn::get(),
             );
         }
-        pub(super) fn dispath_idty_call(idty_call: pallet_identity::Call<T>) -> bool {
+        pub(super) fn dispatch_idty_call(idty_call: pallet_identity::Call<T>) -> bool {
             if !T::IsSubWot::get() {
                 if let Err(e) = idty_call.dispatch_bypass_filter(RawOrigin::Root.into()) {
                     sp_std::if_std! {
@@ -288,9 +293,12 @@ where
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipRenewed(_) => {}
             sp_membership::Event::<IdtyIndex, MetaData>::MembershipRequested(_) => {}
             sp_membership::Event::<IdtyIndex, MetaData>::PendingMembershipExpired(idty_index) => {
-                Self::dispath_idty_call(pallet_identity::Call::remove_identity {
+                Self::dispatch_idty_call(pallet_identity::Call::remove_identity {
                     idty_index: *idty_index,
                     idty_name: None,
+                    reason: pallet_identity::IdtyRemovalReason::Other(
+                        IdtyRemovalWotReason::MembershipExpired,
+                    ),
                 });
             }
         }
@@ -366,7 +374,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
             && pallet_membership::Pallet::<T, I>::is_member(&receiver)
         {
             // expire receiver membership
-            // it gives him a bit of time to get back enough certs
+            // it gives them a bit of time to get back enough certs
             if let Err(e) = <pallet_membership::Pallet<T, I>>::force_expire_membership(receiver) {
                 sp_std::if_std! {
                     println!("fail to expire membership: {:?}", e)

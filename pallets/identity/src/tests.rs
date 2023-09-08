@@ -129,6 +129,7 @@ fn test_create_identity_but_not_confirm_it() {
 
         System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
             idty_index: 2,
+            reason: crate::IdtyRemovalReason::<()>::Expired,
         }));
 
         // We shoud be able to recreate the identity
@@ -496,6 +497,7 @@ fn test_idty_revocation() {
         }));
         System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
             idty_index: 1,
+            reason: crate::IdtyRemovalReason::<()>::Revoked,
         }));
 
         run_to_block(2);
