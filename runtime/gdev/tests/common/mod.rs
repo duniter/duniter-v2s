@@ -22,6 +22,7 @@ use frame_support::instances::{Instance1, Instance2};
 use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
 use gdev_runtime::opaque::SessionKeys;
 use gdev_runtime::*;
+use pallet_authority_members::OnNewSession;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::{AuthorityId as BabeId, Slot};
 use sp_consensus_vrf::schnorrkel::{VRFOutput, VRFProof};
@@ -319,8 +320,9 @@ fn mock_babe_initialize(n: u32) {
 pub fn run_to_block(n: u32) {
     while System::block_number() < n {
         // Finalize the previous block
-        //Babe::on_finalize(System::block_number());
+        Babe::on_finalize(System::block_number());
         //Timestamp::on_finalize(System::block_number());
+        Distance::on_finalize(System::block_number());
         TransactionPayment::on_finalize(System::block_number());
         Authorship::on_finalize(System::block_number());
         Grandpa::on_finalize(System::block_number());
@@ -329,12 +331,22 @@ pub fn run_to_block(n: u32) {
         System::reset_events();
         System::set_block_number(System::block_number() + 1);
 
+        // Current slot is not incremented by BABE
+        pallet_babe::CurrentSlot::<Runtime>::put(pallet_babe::CurrentSlot::<Runtime>::get() + 1);
+
         // Initialize the new block
         Account::on_initialize(System::block_number());
         Scheduler::on_initialize(System::block_number());
         mock_babe_initialize(System::block_number());
-        Authorship::on_initialize(System::block_number());
         Session::on_initialize(System::block_number());
+        Authorship::on_initialize(System::block_number());
+
+        /*if session_before != session_after {
+            Distance::on_new_session(session_after);
+        } else {
+            use pallet_session::ShouldEndSession;
+            assert!(!Babe::should_end_session(System::block_number()));
+        }*/
 
         UniversalDividend::on_initialize(System::block_number());
         Wot::on_initialize(System::block_number());
@@ -346,6 +358,7 @@ pub fn run_to_block(n: u32) {
         SmithCert::on_initialize(System::block_number());
 
         Timestamp::set_timestamp(System::block_number() as u64 * BLOCK_TIME);
+        Distance::on_initialize(System::block_number());
     }
 }
 

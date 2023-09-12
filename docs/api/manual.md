@@ -20,6 +20,9 @@ Only use `identity` pallet. The `membership` calls are disabled.
 1. The account that wants to gain membership needs to exists.
 1. Any account that already has membership and respects the identity creation period can create an identity for another account, using `identity.createIdentity`.
 1. The account has to confirm its identity with a name, using `identity.confirmIdentity`. The name must be ASCII alphanumeric, punctuation or space characters: ``/^[-!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~a-zA-Z0-9 ]{3,64}$/`` (additionally, trailing spaces and double spaces are forbidden, as a phishing countermeasure). If the name is already used, the call will fail.
+1. 4 different member accounts must certify the account using `cert.addCert`.
+1. The distance evaluation must be requested for the pending identity using `distance.evaluateDistance`.
+1. 3 sessions later, if the distance rule is respected, `identity.validateIdentity` can be called.
 
 ## Change key
 

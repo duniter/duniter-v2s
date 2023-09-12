@@ -25,11 +25,15 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+pub mod traits;
+
 /*#[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;*/
 
 pub use pallet::*;
 pub use types::*;
+
+use traits::*;
 
 use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::pallet_prelude::*;
@@ -65,6 +69,8 @@ pub mod pallet {
             IdtyRemovalOtherReason = IdtyRemovalWotReason,
         > + pallet_membership::Config<I, IdtyId = IdtyIndex>
     {
+        /// Distance evaluation provider
+        type IsDistanceOk: IsDistanceOk<IdtyIndex>;
         #[pallet::constant]
         type FirstIssuableOn: Get<Self::BlockNumber>;
         #[pallet::constant]
@@ -247,7 +253,8 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::CheckMembershipCallAllowed
     fn check_idty_allowed_to_claim_membership(idty_index: &IdtyIndex) -> Result<(), DispatchError> {
         let idty_cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
         ensure!(
-            idty_cert_meta.received_count >= T::MinCertForMembership::get(),
+            idty_cert_meta.received_count >= T::MinCertForMembership::get()
+                && T::IsDistanceOk::is_distance_ok(idty_index),
             Error::<T, I>::IdtyNotAllowedToClaimMembership
         );
         Ok(())
@@ -257,7 +264,8 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::CheckMembershipCallAllowed
     fn check_idty_allowed_to_renew_membership(idty_index: &IdtyIndex) -> Result<(), DispatchError> {
         if let Some(idty_value) = pallet_identity::Pallet::<T>::identity(idty_index) {
             ensure!(
-                idty_value.status == IdtyStatus::Validated,
+                idty_value.status == IdtyStatus::Validated
+                    && T::IsDistanceOk::is_distance_ok(idty_index),
                 Error::<T, I>::IdtyNotAllowedToRenewMembership
             );
         } else {

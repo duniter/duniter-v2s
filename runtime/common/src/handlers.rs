@@ -28,11 +28,11 @@ use sp_runtime::traits::IsMember;
 pub struct OnNewSessionHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_authority_members::traits::OnNewSession for OnNewSessionHandler<Runtime>
 where
-    Runtime: pallet_provide_randomness::Config,
+    Runtime: pallet_provide_randomness::Config + pallet_distance::Config,
 {
-    fn on_new_session(_index: sp_staking::SessionIndex) -> Weight {
+    fn on_new_session(index: sp_staking::SessionIndex) -> Weight {
         pallet_provide_randomness::Pallet::<Runtime>::on_new_epoch();
-        Weight::zero()
+        pallet_distance::Pallet::<Runtime>::on_new_session(index)
     }
 }
 

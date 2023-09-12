@@ -14,6 +14,7 @@ async-trait = "0.1"
 clap = { version = "3.2.23", features = ["derive"] }
 ctrlc = "3.2.2"
 cucumber = "0.11"
+distance-oracle = { path = "../distance-oracle", default_features = false }
 env_logger = "0.9.0"
 hex = "0.4"
 notify = "4.0"
@@ -26,4 +27,4 @@ tokio = { version = "1.15.0", features = ["macros"] }
 
 [[test]]
 name = "cucumber_tests"
-harness = false  # allows Cucumber to print output instead of libtest
+harness = false         # allows Cucumber to print output instead of libtest

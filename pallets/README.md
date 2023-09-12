@@ -10,7 +10,7 @@ These pallets are at the core of Duniter/Ğ1 currency
 - **`certification`** Certifications are the "edges" of Duniter's dynamic directed graph. They mean the acceptation of a Licence.
 - **`duniter-account`** Duniter customized the `AccountData` defined in the `Balances` pallet to introduce a `RandomId`.
 - **`duniter-wot`** Merges identities, membership, certifications and distance pallets to implement Duniter Web of Trust.
-- **`duniter-distance`** Offchain worker used to compute distance criterion.
+- **`distance`** Publishes median of distance computation results provided by inherents coming from `distance-oracle` workers.
 - **`identity`** Identities are the "nodes" of Duniter's dynamic directed graph. They are one-to-one mapping to human being.
 - **`membership`** Membership defines the state of identities. They can be member or not of the different WoTs.
 - **`universal-dividend`** UD is at the basis of Ğ1 "libre currency". It is both a kind of "basic income" and a measure unit.

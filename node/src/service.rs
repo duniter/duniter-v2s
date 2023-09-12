@@ -31,7 +31,7 @@ use sc_service::{error::Error as ServiceError, Configuration, PartialComponents,
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_core::H256;
 use sp_runtime::traits::BlakeTwo256;
-use std::{sync::Arc, time::Duration};
+use std::{path::PathBuf, sync::Arc, time::Duration};
 
 type FullClient<RuntimeApi, Executor> =
     sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>;
@@ -309,7 +309,7 @@ where
             Some(Box::new(justification_import)),
             client.clone(),
             select_chain.clone(),
-            move |_, ()| async move {
+            move |_parent, ()| async move {
                 let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                 let slot =
@@ -431,6 +431,20 @@ where
 
     let mut command_sink_opt = None;
     if role.is_authority() {
+        let distance_dir = config.base_path.as_ref().map_or_else(
+            || {
+                PathBuf::from(format!(
+                    "/tmp/duniter/chains/{}/distance",
+                    config.chain_spec.id()
+                ))
+            },
+            |base_path| {
+                base_path
+                    .config_dir(config.chain_spec.id())
+                    .join("distance")
+            },
+        );
+
         let proposer_factory = sc_basic_authorship::ProposerFactory::new(
             task_manager.spawn_handle(),
             client.clone(),
@@ -438,6 +452,9 @@ where
             prometheus_registry.as_ref(),
             telemetry.as_ref().map(|x| x.handle()),
         );
+
+        let sync_cryptostore_ptr = keystore_container.sync_keystore();
+        let client = client.clone();
 
         if sealing.is_manual_consensus() {
             let commands_stream: Box<dyn Stream<Item = EngineCommand<H256>> + Send + Sync + Unpin> =
@@ -489,7 +506,6 @@ where
                 )
                 .expect("failed to create BabeConsensusDataProvider");
 
-            let client_clone = client.clone();
             task_manager.spawn_essential_handle().spawn_blocking(
                 "manual-seal",
                 Some("block-authoring"),
@@ -501,8 +517,14 @@ where
                     commands_stream,
                     select_chain,
                     consensus_data_provider: Some(Box::new(babe_consensus_data_provider)),
-                    create_inherent_data_providers: move |_, _| {
-                        let client = client_clone.clone();
+                    create_inherent_data_providers: move |parent, _| {
+                        let client = client.clone();
+                        let distance_dir = distance_dir.clone();
+                        let babe_owner_keys =
+                            std::sync::Arc::new(sp_keystore::SyncCryptoStore::sr25519_public_keys(
+                                sync_cryptostore_ptr.as_ref(),
+                                sp_runtime::KeyTypeId(*b"babe"),
+                            ));
                         async move {
                             let timestamp =
                                 manual_seal::consensus::timestamp::SlotTimestampProvider::new_babe(
@@ -512,13 +534,20 @@ where
                             let babe = sp_consensus_babe::inherents::InherentDataProvider::new(
                                 timestamp.slot(),
                             );
-                            Ok((timestamp, babe))
+                            let distance =
+                                dc_distance::create_distance_inherent_data_provider::<
+                                    Block,
+                                    FullClient<RuntimeApi, Executor>,
+                                    FullBackend,
+                                >(
+                                    &*client, parent, distance_dir, &babe_owner_keys.clone()
+                                )?;
+                            Ok((timestamp, babe, distance))
                         }
                     },
                 }),
             );
         } else {
-            let client_clone = client.clone();
             let slot_duration = babe_link.config().slot_duration();
             let babe_config = babe::BabeParams {
                 keystore: keystore_container.sync_keystore(),
@@ -529,12 +558,19 @@ where
                 sync_oracle: network.clone(),
                 justification_sync_link: network.clone(),
                 create_inherent_data_providers: move |parent, ()| {
-                    let client_clone = client_clone.clone();
+                    // This closure is called during each block generation.
+
+                    let client = client.clone();
+                    let distance_dir = distance_dir.clone();
+                    let babe_owner_keys =
+                        std::sync::Arc::new(sp_keystore::SyncCryptoStore::sr25519_public_keys(
+                            sync_cryptostore_ptr.as_ref(),
+                            sp_runtime::KeyTypeId(*b"babe"),
+                        ));
 
                     async move {
                         let uncles = sc_consensus_uncles::create_uncles_inherent_data_provider(
-                            &*client_clone,
-                            parent,
+                            &*client, parent,
                         )?;
 
                         let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
@@ -545,7 +581,15 @@ where
                                     slot_duration,
                                 );
 
-                        Ok((slot, timestamp, uncles))
+                        let distance = dc_distance::create_distance_inherent_data_provider::<
+                            Block,
+                            FullClient<RuntimeApi, Executor>,
+                            FullBackend,
+                        >(
+                            &*client, parent, distance_dir, &babe_owner_keys.clone()
+                        )?;
+
+                        Ok((slot, timestamp, uncles, distance))
                     }
                 },
                 force_authoring,

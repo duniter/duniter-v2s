@@ -50,7 +50,7 @@ runtime-benchmarks = [
 ]
 std = [
     'codec/std',
-	'common-runtime/std',
+    'common-runtime/std',
     'frame-executive/std',
     'frame-support/std',
     'frame-system-rpc-runtime-api/std',
@@ -64,6 +64,7 @@ std = [
     'pallet-balances/std',
     'pallet-certification/std',
     'pallet-collective/std',
+    'pallet-distance/std',
     'pallet-duniter-test-parameters/std',
     'pallet-duniter-account/std',
     'pallet-duniter-wot/std',
@@ -74,10 +75,10 @@ std = [
     'pallet-provide-randomness/std',
     'pallet-im-online/std',
     'pallet-multisig/std',
-	"pallet-offences/std",
+    "pallet-offences/std",
     'pallet-preimage/std',
     'pallet-proxy/std',
-	"pallet-scheduler/std",
+    "pallet-scheduler/std",
     'pallet-session/std',
     'pallet-sudo/std',
     'pallet-universal-dividend/std',
@@ -87,14 +88,15 @@ std = [
     'pallet-transaction-payment/std',
     'pallet-treasury/std',
     'pallet-utility/std',
-	"serde/std",
-	"serde_derive",
+    "serde/std",
+    "serde_derive",
     'sp-api/std',
     'sp-arithmetic/std',
     'sp-authority-discovery/std',
     'sp-block-builder/std',
     'sp-consensus-babe/std',
     'sp-core/std',
+    'sp-distance/std',
     'sp-inherents/std',
     'sp-offchain/std',
     'sp-membership/std',
@@ -139,6 +141,7 @@ sp-keyring = { git = 'https://github.com/duniter/substrate', branch = 'duniter-s
 common-runtime = { path = "../common", default-features = false }
 pallet-authority-members = { path = '../../pallets/authority-members', default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
+pallet-distance = { path = "../../pallets/distance", default-features = false }
 pallet-duniter-test-parameters = { path = '../../pallets/duniter-test-parameters', default-features = false }
 pallet-duniter-account = { path = '../../pallets/duniter-account', default-features = false }
 pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
@@ -150,13 +153,18 @@ pallet-provide-randomness = { path = '../../pallets/provide-randomness', default
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
 pallet-session-benchmarking = { path = '../../pallets/session-benchmarking', default-features = false }
 pallet-upgrade-origin = { path = '../../pallets/upgrade-origin', default-features = false }
+sp-distance = { path = '../../primitives/distance', default-features = false }
 sp-membership = { path = '../../primitives/membership', default-features = false }
 
 # crates.io
-codec = { package = "parity-scale-codec", version = "3.1.5", features = ["derive"], default-features = false }
+codec = { package = "parity-scale-codec", version = "3.1.5", features = [
+    "derive",
+], default-features = false }
 log = { version = "0.4.17", default-features = false }
 hex-literal = { version = '0.3.1', optional = true }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1.1", default-features = false, features = [
+    "derive",
+] }
 serde = { version = "1.0.101", default-features = false }
 serde_derive = { version = "1.0.101", optional = true }
 
@@ -165,7 +173,7 @@ frame-try-runtime = { git = 'https://github.com/duniter/substrate', branch = 'du
 frame-executive = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 frame-support = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 frame-system = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
-frame-system-rpc-runtime-api = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false}
+frame-system-rpc-runtime-api = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-atomic-swap = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-authority-discovery = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-authorship = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }

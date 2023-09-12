@@ -430,6 +430,7 @@ macro_rules! pallets_config {
         use frame_support::instances::Instance1;
         impl pallet_duniter_wot::Config<Instance1> for Runtime {
             type FirstIssuableOn = WotFirstCertIssuableOn;
+            type IsDistanceOk = common_runtime::providers::MainWotIsDistanceOk<Runtime>;
             type IsSubWot = frame_support::traits::ConstBool<false>;
             type MinCertForMembership = WotMinCertForMembership;
             type MinCertForCreateIdtyRight = WotMinCertForCreateIdtyRight;
@@ -480,12 +481,22 @@ macro_rules! pallets_config {
             type WeightInfo = common_runtime::weights::pallet_certification_cert::WeightInfo<Runtime>;
             type ValidityPeriod = ValidityPeriod;
         }
+        parameter_types! {
+            pub const MinAccessibleReferees: Perbill = Perbill::from_percent(80);
+        }
+        impl pallet_distance::Config for Runtime {
+            type Currency = Balances;
+            type EvaluationPrice = frame_support::traits::ConstU64<1000>;
+            type MinAccessibleReferees = MinAccessibleReferees;
+            type ResultExpiration = frame_support::traits::ConstU32<720>;
+        }
 
         // SMITHS SUB-WOT //
 
         use frame_support::instances::Instance2;
         impl pallet_duniter_wot::Config<Instance2> for Runtime {
             type FirstIssuableOn = SmithWotFirstCertIssuableOn;
+            type IsDistanceOk = pallet_duniter_wot::traits::DistanceAlwaysOk;
             type IsSubWot = frame_support::traits::ConstBool<true>;
             type MinCertForMembership = SmithWotMinCertForMembership;
             type MinCertForCreateIdtyRight = frame_support::traits::ConstU32<0>;

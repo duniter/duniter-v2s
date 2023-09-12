@@ -120,12 +120,17 @@ impl World for DuniterWorld {
 struct DuniterWorldInner {
     client: Client,
     process: Process,
+    ws_port: u16,
 }
 
 impl DuniterWorldInner {
     async fn new(maybe_genesis_conf_file: Option<PathBuf>) -> Self {
-        let (client, process) = spawn_node(maybe_genesis_conf_file).await;
-        DuniterWorldInner { client, process }
+        let (client, process, ws_port) = spawn_node(maybe_genesis_conf_file).await;
+        DuniterWorldInner {
+            client,
+            process,
+            ws_port,
+        }
     }
     fn kill(&mut self) {
         self.process.kill();
@@ -317,9 +322,30 @@ async fn confirm_identity(world: &mut DuniterWorld, from: String, pseudo: String
 async fn validate_identity(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
     // input names to keyrings
     let from = AccountKeyring::from_str(&from).expect("unknown from");
-    let to: u32 = common::identity::get_identity_index(world, to).await?;
+    let to: u32 = common::identity::get_identity_index(world, to)
+        .await
+        .unwrap();
 
     common::identity::validate_identity(world.client(), from, to).await
+}
+
+#[when(regex = r#"([a-zA-Z]+) requests distance evaluation"#)]
+async fn request_distance_evaluation(world: &mut DuniterWorld, who: String) -> Result<()> {
+    let who = AccountKeyring::from_str(&who).expect("unknown origin");
+
+    common::distance::request_evaluation(world.client(), who).await
+}
+
+#[when(regex = r#"([a-zA-Z]+) runs distance oracle"#)]
+async fn run_distance_oracle(world: &mut DuniterWorld, who: String) -> Result<()> {
+    let who = AccountKeyring::from_str(&who).expect("unknown origin");
+
+    common::distance::run_oracle(
+        world.client(),
+        who,
+        format!("ws://127.0.0.1:{}", world.inner.as_ref().unwrap().ws_port),
+    )
+    .await
 }
 
 // ===== then ====
@@ -434,6 +460,67 @@ async fn should_be_certified_by(
             issuers
         )
         .into()),
+    }
+}
+
+#[then(regex = r"([a-zA-Z]+) should have distance result in (\d+) sessions?")]
+async fn should_have_distance_result_in_sessions(
+    world: &mut DuniterWorld,
+    who: String,
+    sessions: u32,
+) -> Result<()> {
+    assert!(sessions < 3, "Session number must be < 3");
+
+    let who = AccountKeyring::from_str(&who).unwrap().to_account_id();
+
+    let idty_id = world
+        .read(&gdev::storage().identity().identity_index_of(&who))
+        .await?
+        .unwrap();
+
+    let current_session = world
+        .read(&gdev::storage().session().current_index())
+        .await?
+        .unwrap_or_default();
+
+    let pool = world
+        .read(&match (current_session + sessions) % 3 {
+            0 => gdev::storage().distance().evaluation_pool0(),
+            1 => gdev::storage().distance().evaluation_pool1(),
+            2 => gdev::storage().distance().evaluation_pool2(),
+            _ => unreachable!("n%3<3"),
+        })
+        .await
+        .unwrap()
+        .ok_or_else(|| anyhow::anyhow!("given pool is empty"))?;
+
+    for (sample_idty, _) in pool.evaluations.0 {
+        if sample_idty == idty_id {
+            return Ok(());
+        }
+    }
+
+    Err(anyhow::anyhow!("no evaluation in given pool").into())
+}
+
+#[then(regex = r"([a-zA-Z]+) should have distance ok")]
+async fn should_have_distance_ok(world: &mut DuniterWorld, who: String) -> Result<()> {
+    let who = AccountKeyring::from_str(&who).unwrap().to_account_id();
+
+    let idty_id = world
+        .read(&gdev::storage().identity().identity_index_of(&who))
+        .await?
+        .unwrap();
+
+    match world
+        .read(&gdev::storage().distance().identity_distance_status(idty_id))
+        .await?
+    {
+        Some((_, gdev::runtime_types::pallet_distance::types::DistanceStatus::Valid)) => Ok(()),
+        Some((_, gdev::runtime_types::pallet_distance::types::DistanceStatus::Pending)) => {
+            Err(anyhow::anyhow!("pending distance status").into())
+        }
+        None => Err(anyhow::anyhow!("no distance status").into()),
     }
 }
 

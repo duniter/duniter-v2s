@@ -101,6 +101,7 @@ impl pallet_duniter_wot::Config<Instance1> for Test {
     type MinCertForMembership = MinCertForMembership;
     type MinCertForCreateIdtyRight = MinCertForCreateIdtyRight;
     type FirstIssuableOn = FirstIssuableOn;
+    type IsDistanceOk = crate::traits::DistanceAlwaysOk;
 }
 
 // Identity
@@ -190,6 +191,7 @@ impl pallet_duniter_wot::Config<Instance2> for Test {
     type MinCertForMembership = SmithMinCertForMembership;
     type MinCertForCreateIdtyRight = frame_support::traits::ConstU32<0>;
     type FirstIssuableOn = SmithFirstIssuableOn;
+    type IsDistanceOk = crate::traits::DistanceAlwaysOk;
 }
 
 // SmithMembership

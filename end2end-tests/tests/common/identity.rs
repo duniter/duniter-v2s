@@ -84,9 +84,11 @@ pub async fn validate_identity(client: &Client, from: AccountKeyring, to: u32) -
                 &from,
                 BaseExtrinsicParamsBuilder::new(),
             )
-            .await?,
+            .await
+            .unwrap(),
     )
-    .await?;
+    .await
+    .unwrap();
 
     Ok(())
 }

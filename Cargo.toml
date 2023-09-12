@@ -32,10 +32,10 @@ runtime-benchmarks = [
     'sc-client-db/runtime-benchmarks',
 ]
 try-runtime = [
-	#"g1-runtime/try-runtime",
-	"gdev-runtime/try-runtime",
-	#"gtest-runtime/try-runtime",
-	"try-runtime-cli"
+    #"g1-runtime/try-runtime",
+    "gdev-runtime/try-runtime",
+    #"gtest-runtime/try-runtime",
+    "try-runtime-cli",
 ]
 
 [build-dependencies]
@@ -48,19 +48,28 @@ rusty-hook = "^0.11.2"
 
 # Dependencies for specific targets
 [target.'cfg(any(target_arch="x86_64", target_arch="aarch64"))'.dependencies]
-sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32", default-features = false, features = ["wasmtime"] }
-sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32", default-features = false, features = ["wasmtime"] }
-sp-trie = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32", features = ["memory-tracker"] }
+sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32", default-features = false, features = [
+    "wasmtime",
+] }
+sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32", default-features = false, features = [
+    "wasmtime",
+] }
+sp-trie = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32", features = [
+    "memory-tracker",
+] }
 
 
 [dependencies]
 # local dependencies
 common-runtime = { path = 'runtime/common' }
+dc-distance = { path = 'client/distance' }
+distance-oracle = { path = 'distance-oracle', optional = true }
 g1-runtime = { path = 'runtime/g1', optional = true }
 gdev-runtime = { path = 'runtime/gdev', optional = true }
 gtest-runtime = { path = 'runtime/gtest', optional = true }
 pallet-certification = { path = 'pallets/certification' }
 pallet-oneshot-account = { path = 'pallets/oneshot-account' }
+sp-distance = { path = 'primitives/distance' }
 sp-membership = { path = 'primitives/membership' }
 
 # crates.io dependencies
@@ -131,9 +140,12 @@ try-runtime-cli = { git = "https://github.com/duniter/substrate", branch = "duni
 resolver = "2"
 
 members = [
+    'client/distance',
+    'distance-oracle',
     'end2end-tests',
     'live-tests',
     'pallets/certification',
+    'pallets/distance',
     'pallets/duniter-test-parameters',
     'pallets/duniter-test-parameters/macro',
     'pallets/duniter-wot',
@@ -144,6 +156,7 @@ members = [
     'pallets/universal-dividend',
     'pallets/upgrade-origin',
     'primitives/membership',
+    'primitives/distance',
     'runtime/common',
     'runtime/gdev',
     'xtask',

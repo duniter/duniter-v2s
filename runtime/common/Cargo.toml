@@ -8,11 +8,11 @@ edition = "2021"
 
 [features]
 runtime-benchmarks = [
-	"frame-benchmarking/runtime-benchmarks",
+    "frame-benchmarking/runtime-benchmarks",
     'frame-support/runtime-benchmarks',
     'frame-system-benchmarking/runtime-benchmarks',
     'frame-system/runtime-benchmarks',
-	"pallet-babe/runtime-benchmarks",
+    "pallet-babe/runtime-benchmarks",
     'pallet-balances/runtime-benchmarks',
     'pallet-certification/runtime-benchmarks',
     'pallet-collective/runtime-benchmarks',
@@ -38,6 +38,7 @@ std = [
     'pallet-babe/std',
     'pallet-balances/std',
     'pallet-certification/std',
+    'pallet-distance/std',
     'pallet-duniter-account/std',
     'pallet-duniter-wot/std',
     'pallet-grandpa/std',
@@ -50,27 +51,29 @@ std = [
     'pallet-scheduler/std',
     'pallet-timestamp/std',
     'pallet-treasury/std',
-	'pallet-universal-dividend/std',
-	"serde/std",
-	"serde_derive",
+    'pallet-universal-dividend/std',
+    "serde/std",
+    "serde_derive",
     'sp-arithmetic/std',
     'sp-core/std',
+    'sp-distance/std',
     'sp-membership/std',
     'sp-runtime/std',
     'sp-std/std',
     'sp-weights/std',
 ]
 try-runtime = [
-	"frame-support/try-runtime",
-	"frame-system/try-runtime",
-	"pallet-babe/try-runtime",
-	"pallet-grandpa/try-runtime",
+    "frame-support/try-runtime",
+    "frame-system/try-runtime",
+    "pallet-babe/try-runtime",
+    "pallet-grandpa/try-runtime",
 ]
 
 [dependencies]
 duniter-primitives = { path = '../../primitives/duniter', default-features = false }
 pallet-authority-members = { path = '../../pallets/authority-members', default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
+pallet-distance = { path = "../../pallets/distance", default-features = false }
 pallet-duniter-account = { path = '../../pallets/duniter-account', default-features = false }
 pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
@@ -80,12 +83,17 @@ pallet-provide-randomness = { path = '../../pallets/provide-randomness', default
 pallet-upgrade-origin = { path = '../../pallets/upgrade-origin', default-features = false }
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
 pallet-session-benchmarking = { path = '../../pallets/session-benchmarking', default-features = false }
+sp-distance = { path = '../../primitives/distance', default-features = false }
 sp-membership = { path = '../../primitives/membership', default-features = false }
 
 # Crates.io
-codec = { package = "parity-scale-codec", version = "3.1.5", features = ["derive"], default-features = false }
+codec = { package = "parity-scale-codec", version = "3.1.5", features = [
+    "derive",
+], default-features = false }
 log = { version = "0.4.14", default-features = false }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1.1", default-features = false, features = [
+    "derive",
+] }
 serde = { version = "1.0.101", default-features = false }
 serde_derive = { version = "1.0.101", optional = true }
 smallvec = "1.6.1"

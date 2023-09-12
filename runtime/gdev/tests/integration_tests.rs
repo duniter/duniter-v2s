@@ -113,7 +113,10 @@ fn test_remove_identity() {
 #[test]
 fn test_validate_identity_when_claim() {
     ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![(AccountKeyring::Ferdie.to_account_id(), 1000)])
+        .with_initial_balances(vec![
+            (AccountKeyring::Eve.to_account_id(), 2000),
+            (AccountKeyring::Ferdie.to_account_id(), 1000),
+        ])
         .build()
         .execute_with(|| {
             run_to_block(1);
@@ -140,6 +143,20 @@ fn test_validate_identity_when_claim() {
                 3,
                 5
             ));
+
+            assert_ok!(Distance::request_distance_evaluation(
+                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+            ));
+
+            run_to_block(51); // Pass 2 sessions
+            assert_ok!(Distance::force_update_evaluation(
+                frame_system::RawOrigin::Root.into(),
+                AccountKeyring::Alice.to_account_id(),
+                pallet_distance::ComputationResult {
+                    distances: vec![Perbill::one()],
+                }
+            ));
+            run_to_block(76); // Pass 1 session
 
             // eve can claim her membership
             assert_ok!(Membership::claim_membership(
@@ -181,31 +198,47 @@ fn test_membership_expiry() {
 /// test membership renewal
 #[test]
 fn test_membership_renewal() {
-    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
-        // renew at block 2
-        run_to_block(2);
-        assert_ok!(Membership::renew_membership(
-            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
-        ));
-        System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipRenewed(1),
-        ));
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 2000)])
+        .build()
+        .execute_with(|| {
+            assert_ok!(Distance::request_distance_evaluation(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+            ));
 
-        // renew at block 3
-        run_to_block(3);
-        assert_ok!(Membership::renew_membership(
-            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
-        ));
-        System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipRenewed(1),
-        ));
+            run_to_block(51); // Pass 2 sessions
+            assert_ok!(Distance::force_update_evaluation(
+                frame_system::RawOrigin::Root.into(),
+                AccountKeyring::Alice.to_account_id(),
+                pallet_distance::ComputationResult {
+                    distances: vec![Perbill::one()],
+                }
+            ));
+            run_to_block(76); // Pass 1 session
 
-        // should expire at block 103 = 3+100
-        run_to_block(103);
-        System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipExpired(1),
-        ));
-    });
+            // renew at block 76
+            assert_ok!(Membership::renew_membership(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+            ));
+            System::assert_has_event(RuntimeEvent::Membership(
+                pallet_membership::Event::MembershipRenewed(1),
+            ));
+
+            // renew at block 77
+            run_to_block(77);
+            assert_ok!(Membership::renew_membership(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+            ));
+            System::assert_has_event(RuntimeEvent::Membership(
+                pallet_membership::Event::MembershipRenewed(1),
+            ));
+
+            // should expire at block 177 = 77+100
+            run_to_block(177);
+            System::assert_has_event(RuntimeEvent::Membership(
+                pallet_membership::Event::MembershipExpired(1),
+            ));
+        });
 }
 
 // test that UD are auto claimed when identity is removed
@@ -310,6 +343,14 @@ fn test_ud_claimed_membership_on_and_off() {
         ));
 
         // alice claims back her membership
+        assert_ok!(Distance::force_set_distance_status(
+            frame_system::RawOrigin::Root.into(),
+            1,
+            Some((
+                AccountKeyring::Alice.to_account_id(),
+                pallet_distance::DistanceStatus::Valid
+            ))
+        ));
         assert_ok!(Membership::claim_membership(
             frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into()
         ));
@@ -628,6 +669,14 @@ fn test_validate_new_idty_after_few_uds() {
                 2,
                 5,
             ));
+            assert_ok!(Distance::force_set_distance_status(
+                frame_system::RawOrigin::Root.into(),
+                5,
+                Some((
+                    AccountKeyring::Bob.to_account_id(),
+                    pallet_distance::DistanceStatus::Valid
+                ))
+            ));
             assert_ok!(Identity::validate_identity(
                 frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
                 5,
@@ -646,7 +695,7 @@ fn test_validate_new_idty_after_few_uds() {
 }
 
 /// test that newly validated identity gets initialized with the next UD
-// even when the method used is membership claim
+/// even when the method used is membership claim
 #[test]
 fn test_claim_memberhsip_after_few_uds() {
     ExtBuilder::new(1, 3, 4)
@@ -654,7 +703,6 @@ fn test_claim_memberhsip_after_few_uds() {
             (AccountKeyring::Alice.to_account_id(), 1_000),
             (AccountKeyring::Bob.to_account_id(), 1_000),
             (AccountKeyring::Charlie.to_account_id(), 1_000),
-            (AccountKeyring::Eve.to_account_id(), 1_000),
         ])
         .build()
         .execute_with(|| {
@@ -682,6 +730,14 @@ fn test_claim_memberhsip_after_few_uds() {
             ));
 
             // eve should be able to claim her membership
+            assert_ok!(Distance::force_set_distance_status(
+                frame_system::RawOrigin::Root.into(),
+                5,
+                Some((
+                    AccountKeyring::Eve.to_account_id(),
+                    pallet_distance::DistanceStatus::Valid
+                ))
+            ));
             assert_ok!(Membership::claim_membership(
                 frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
             ));

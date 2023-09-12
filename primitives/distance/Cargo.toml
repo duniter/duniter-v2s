@@ -1,0 +1,67 @@
+[package]
+authors = ['tuxmain <tuxmain@zettascript.org>']
+description = 'primitives for pallet distance.'
+edition = "2021"
+homepage = 'https://duniter.org'
+license = 'AGPL-3.0'
+name = 'sp-distance'
+readme = 'README.md'
+repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
+version = '3.0.0'
+
+[features]
+default = ['std']
+std = [
+    'async-trait',
+    'codec/std',
+    'frame-support/std',
+    'serde',
+    'sp-inherents/std',
+    'sp-runtime/std',
+    'sp-std/std',
+    'thiserror'
+]
+try-runtime = ['frame-support/try-runtime']
+
+[dependencies]
+async-trait = { version = "0.1.50", optional = true }
+thiserror = { version = "1.0.30", optional = true }
+
+# substrate
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = "3.1.5"
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
+
+[dependencies.serde]
+version = "1.0.101"
+optional = true
+features = ["derive"]
+
+[dependencies.sp-inherents]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
+
+### DOC ###
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']

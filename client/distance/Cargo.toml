@@ -1,0 +1,51 @@
+[package]
+authors = ['tuxmain <tuxmain@zettascript.org>']
+description = 'Duniter client distance'
+edition = '2021'
+homepage = 'https://duniter.org'
+license = 'AGPL-3.0'
+name = 'dc-distance'
+readme = 'README.md'
+repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
+version = '1.0.0'
+
+[dependencies]
+
+pallet-distance = { path = "../../pallets/distance" }
+sp-distance = { path = "../../primitives/distance" }
+
+log = "0.4"
+thiserror = "1.0.30"
+
+# substrate
+scale-info = { version = "2.1.1", features = ["derive"] }
+
+[dependencies.codec]
+features = ['derive']
+package = 'parity-scale-codec'
+version = '3.1.5'
+
+[dependencies.frame-support]
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
+
+[dependencies.sc-client-api]
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
+
+[dependencies.sp-core]
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
+
+[dependencies.sp-keystore]
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
+
+[dependencies.sp-runtime]
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
+
+### DOC ###
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']

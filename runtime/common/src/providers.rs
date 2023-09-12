@@ -106,3 +106,18 @@ where
         }
     }
 }
+
+pub struct MainWotIsDistanceOk<T>(PhantomData<T>);
+
+impl<T> pallet_duniter_wot::traits::IsDistanceOk<<T as pallet_identity::Config>::IdtyIndex>
+    for MainWotIsDistanceOk<T>
+where
+    T: pallet_distance::Config,
+{
+    fn is_distance_ok(idty_id: &<T as pallet_identity::Config>::IdtyIndex) -> bool {
+        matches!(
+            pallet_distance::Pallet::<T>::identity_distance_status(idty_id),
+            Some((_, pallet_distance::DistanceStatus::Valid))
+        )
+    }
+}

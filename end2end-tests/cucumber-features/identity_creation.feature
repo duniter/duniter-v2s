@@ -5,8 +5,9 @@ Feature: Identity creation
     # - account creation fees (3 ĞD) 
     # - existential deposit (2 ĞD)
     # - transaction fees (below 1 ĞD)
-    When alice sends 6 ĞD to dave
-    When bob sends 6 ĞD to eve
+    When alice sends 7 ĞD to dave
+    When bob sends 750 cĞD to dave
+    When charlie sends 6 ĞD to eve
     # alice last certification is counted from block zero
     # then next cert can be done after cert_period, which is 15
     When 15 block later
@@ -20,6 +21,12 @@ Feature: Identity creation
     When charlie certifies dave
     Then dave should be certified by bob
     Then dave should be certified by charlie
-    When 3 block later
+    When dave requests distance evaluation
+    Then dave should have distance result in 2 sessions
+    When 30 blocks later
+    Then dave should have distance result in 1 session
+    When alice runs distance oracle
+    When 30 blocks later
+    Then dave should have distance ok
     When eve validates dave identity
     Then dave identity should be validated

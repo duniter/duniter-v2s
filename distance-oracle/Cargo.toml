@@ -1,0 +1,44 @@
+[package]
+name = "distance-oracle"
+version = "0.1.0"
+authors = ["tuxmain <tuxmain@zettascript.org>"]
+repository = "https://git.duniter.org/nodes/rust/duniter-v2s"
+license = "AGPL-3.0-only"
+edition = "2021"
+
+[dependencies]
+sp-distance = { path = "../primitives/distance" }
+
+codec = { package = "parity-scale-codec", version = "3.1.5" }
+fnv = "1.0.7"
+log = "0.4.17"
+num-traits = "0.2.15"
+rayon = "1.7.0"
+simple_logger = "4.2.0"
+sp-core = { git = "https://github.com/duniter/substrate.git", branch = "duniter-substrate-v0.9.32" }
+sp-runtime = { git = "https://github.com/duniter/substrate.git", branch = "duniter-substrate-v0.9.32" }
+subxt = { git = 'https://github.com/duniter/subxt.git', branch = "duniter-substrate-v0.9.32" }
+time = "<=0.3.23"# required for MSRV
+time-macros = "=0.2.10"
+
+# standalone only
+clap = { version = "4.0", features = ["derive"], optional = true }
+tokio = { version = "1.15.0", features = [
+	"rt-multi-thread",
+	"macros",
+], optional = true }
+
+[dev-dependencies]
+bincode = "1.3.3"
+dubp-wot = "0.11.1"
+flate2 = { version = "1.0", features = [
+	"zlib-ng-compat",
+], default-features = false }
+
+[features]
+default = ["standalone"]
+standalone = ["clap", "tokio"]
+
+[[bin]]
+name = "distance-oracle"
+required-features = ["standalone"]

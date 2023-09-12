@@ -1,41 +1,36 @@
 [package]
-authors = ['librelois <c@elo.tf>']
-description = 'FRAME pallet duniter wot.'
-edition = "2021"
+authors = ['tuxmain <tuxmain@zettascript.org>']
+description = 'FRAME pallet distance.'
+edition = '2021'
 homepage = 'https://duniter.org'
 license = 'AGPL-3.0'
-name = 'pallet-duniter-wot'
+name = 'pallet-distance'
 readme = 'README.md'
 repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
-version = '3.0.0'
+version = '1.0.0'
 
 [features]
 default = ['std']
-runtime-benchmarks = ['frame-benchmarking']
 std = [
     'codec/std',
     'frame-support/std',
-    'frame-system/std',
-    'frame-benchmarking/std',
-    'pallet-certification/std',
-    'pallet-distance/std',
+    'pallet-authority-members/std',
+    'pallet-authorship/std',
     'pallet-identity/std',
     'pallet-membership/std',
-    'serde',
+    'pallet-session/std',
     'sp-core/std',
-    'sp-io/std',
-    'sp-membership/std',
+    'sp-distance/std',
     'sp-runtime/std',
     'sp-std/std',
 ]
-try-runtime = ['frame-support/try-runtime']
 
 [dependencies]
-pallet-certification = { path = "../certification", default-features = false }
+
+pallet-authority-members = { path = "../authority-members", default-features = false }
 pallet-identity = { path = "../identity", default-features = false }
-pallet-distance = { path = "../distance", default-features = false }
 pallet-membership = { path = "../membership", default-features = false }
-sp-membership = { path = "../../primitives/membership", default-features = false }
+sp-distance = { path = "../../primitives/distance", default-features = false }
 
 # substrate
 scale-info = { version = "2.1.1", default-features = false, features = [
@@ -46,13 +41,7 @@ scale-info = { version = "2.1.1", default-features = false, features = [
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
-version = "3.1.5"
-
-[dependencies.frame-benchmarking]
-default-features = false
-git = 'https://github.com/duniter/substrate'
-optional = true
-branch = 'duniter-substrate-v0.9.32'
+version = '3.1.5'
 
 [dependencies.frame-support]
 default-features = false
@@ -64,17 +53,22 @@ default-features = false
 git = 'https://github.com/duniter/substrate'
 branch = 'duniter-substrate-v0.9.32'
 
-[dependencies.serde]
-version = "1.0.101"
-optional = true
-features = ["derive"]
+[dependencies.pallet-authorship]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
+
+[dependencies.pallet-session]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.32'
 
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/duniter/substrate'
 branch = 'duniter-substrate-v0.9.32'
 
-[dependencies.sp-io]
+[dependencies.sp-inherents]
 default-features = false
 git = 'https://github.com/duniter/substrate'
 branch = 'duniter-substrate-v0.9.32'
@@ -93,11 +87,3 @@ branch = 'duniter-substrate-v0.9.32'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
-[dev-dependencies.serde]
-version = '1.0.119'
-
-### DEV ###
-
-[dev-dependencies.sp-io]
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'

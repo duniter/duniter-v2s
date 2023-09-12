@@ -18,6 +18,7 @@
 
 pub mod balances;
 pub mod cert;
+pub mod distance;
 pub mod identity;
 pub mod oneshot;
 
@@ -86,6 +87,7 @@ impl Process {
     }
 }
 
+pub const DISTANCE_ORACLE_LOCAL_PATH: &str = "../target/debug/distance-oracle";
 const DUNITER_DOCKER_PATH: &str = "/usr/local/bin/duniter";
 const DUNITER_LOCAL_PATH: &str = "../target/debug/duniter";
 
@@ -95,7 +97,7 @@ struct FullNode {
     ws_port: u16,
 }
 
-pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Client, Process) {
+pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Client, Process, u16) {
     println!("maybe_genesis_conf_file={:?}", maybe_genesis_conf_file);
     let duniter_binary_path = std::env::var("DUNITER_BINARY_PATH").unwrap_or_else(|_| {
         if std::path::Path::new(DUNITER_DOCKER_PATH).exists() {
@@ -118,7 +120,7 @@ pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Client, Pr
         .await
         .expect("fail to connect to node");
 
-    (client, process)
+    (client, process, ws_port)
 }
 
 pub async fn create_empty_block(client: &Client) -> Result<()> {
@@ -174,6 +176,9 @@ fn spawn_full_node(
     let log_file_path = format!("duniter-v2s-{}.log", ws_port);
     let log_file = std::fs::File::create(&log_file_path).expect("fail to create log file");
 
+    // Clean previous data
+    std::fs::remove_dir_all("/tmp/duniter-cucumber").ok();
+
     // Command
     let process = Process(
         Command::new(duniter_binary_path)
@@ -181,13 +186,14 @@ fn spawn_full_node(
                 [
                     "--no-telemetry",
                     "--no-prometheus",
-                    "--tmp",
                     "--port",
                     &p2p_port.to_string(),
                     "--rpc-port",
                     &rpc_port.to_string(),
                     "--ws-port",
                     &ws_port.to_string(),
+                    "--base-path",
+                    "/tmp/duniter-cucumber",
                 ]
                 .iter()
                 .chain(args),
@@ -279,4 +285,21 @@ fn has_log_line(log_file_path: &str, expected_log_line: &str) -> bool {
         }
     }
     false
+}
+
+pub fn spawn_distance_oracle(distance_oracle_binary_path: &str, duniter_rpc_port: u16) {
+    Command::new(distance_oracle_binary_path)
+        .args(
+            [
+                "-u",
+                &format!("ws://127.0.0.1:{duniter_rpc_port}"),
+                "-d",
+                "/tmp/duniter-cucumber/chains/gdev/distance",
+            ]
+            .iter(),
+        )
+        .spawn()
+        .expect("failed to spawn distance oracle")
+        .wait()
+        .unwrap();
 }

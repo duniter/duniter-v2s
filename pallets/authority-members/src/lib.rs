@@ -17,6 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
+pub mod impls;
 pub mod traits;
 mod types;
 pub mod weights;
@@ -30,17 +31,15 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-pub mod impls;
 pub use impls::*;
-
 pub use pallet::*;
+pub use sp_staking::SessionIndex;
+pub use traits::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
-use self::traits::*;
 use frame_support::traits::Get;
 use sp_runtime::traits::Convert;
-use sp_staking::SessionIndex;
 use sp_std::prelude::*;
 
 #[frame_support::pallet]
