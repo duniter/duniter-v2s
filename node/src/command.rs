@@ -127,27 +127,33 @@ impl SubstrateCli for Cli {
             #[cfg(feature = "gdev")]
             "gdev-benchmark" => Box::new(chain_spec::gdev::benchmark_chain_spec()?),
             // === GTEST ===
-            // dev chainspecs with Alice validator
+            // generate dev chainspecs with Alice validator
             // provide DUNITER_GTEST_GENESIS env var if you want to build genesis from json
             // otherwise you get a local testnet with generated genesis
             #[cfg(feature = "gtest")]
             "gtest_dev" => Box::new(chain_spec::gtest::development_chainspecs()?),
             // chainspecs for live network
-            // must have following files in node/specs folder:
-            // - gtest.json
-            // - gtest_client-specs.json
+            // must have following files in ./node/specs folder or overwrite with env var:
+            // - gtest.json / DUNITER_GTEST_GENESIS
+            // - gtest_client-specs.json / DUNITER_GTEST_CLIENT_SPEC
             #[cfg(feature = "gtest")]
             "gtest_live" => {
                 const JSON_CLIENT_SPEC: &str = "./node/specs/gtest_client-specs.json";
                 const JSON_GENESIS: &str = "./node/specs/gtest_genesis.json";
                 let client_spec: gtest::ClientSpec = serde_json::from_slice(
-                    &std::fs::read(JSON_CLIENT_SPEC)
-                        .map_err(|e| format!("failed to read {JSON_CLIENT_SPEC} {e}"))?[..],
+                    &std::fs::read(
+                        std::env::var("DUNITER_GTEST_CLIENT_SPEC")
+                            .unwrap_or_else(|_| JSON_CLIENT_SPEC.to_string()),
+                    )
+                    .map_err(|e| format!("failed to read {JSON_CLIENT_SPEC} {e}"))?[..],
                 )
                 .map_err(|e| format!("failed to parse {e}"))?;
                 let genesis_data: gtest_genesis::GenesisJson = serde_json::from_slice(
-                    &std::fs::read(JSON_GENESIS)
-                        .map_err(|e| format!("failed to read {JSON_GENESIS} {e}"))?[..],
+                    &std::fs::read(
+                        std::env::var("DUNITER_GTEST_GENESIS")
+                            .unwrap_or_else(|_| JSON_GENESIS.to_string()),
+                    )
+                    .map_err(|e| format!("failed to read {JSON_GENESIS} {e}"))?[..],
                 )
                 .map_err(|e| format!("failed to parse {e}"))?;
                 // rebuild chainspecs from these files
@@ -156,21 +162,16 @@ impl SubstrateCli for Cli {
                     genesis_data,
                 )?)
             }
-            // return hardcoded live chainspecs
+            // return hardcoded live chainspecs, only with embed feature
             // embed client spec and genesis to avoid embeding hexadecimal runtime
             // and having hexadecimal runtime in git history
-            #[cfg(feature = "gtest")]
-            "gtest" => {
-                let client_spec: gtest::ClientSpec =
-                    serde_json::from_slice(include_bytes!("../specs/gtest_client-specs.json"))
-                        .unwrap();
-                let genesis_data: gtest_genesis::GenesisJson =
-                    serde_json::from_slice(include_bytes!("../specs/gtest_genesis.json")).unwrap();
-                Box::new(chain_spec::gtest::live_chainspecs(
-                    client_spec,
-                    genesis_data,
-                )?)
-            }
+            // will only build on a branch that has a file
+            // ./node/specs/gtest-raw.json
+            #[cfg(all(feature = "gtest", feature = "embed"))]
+            "gtest" => Box::new(chain_spec::gtest::ChainSpec::from_json_bytes(
+                &include_bytes!("../specs/gtest-raw.json")[..],
+            )?),
+
             // === G1 ===
             #[cfg(feature = "g1")]
             "g1" => {

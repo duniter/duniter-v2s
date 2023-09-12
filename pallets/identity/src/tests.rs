@@ -87,6 +87,19 @@ fn test_no_identity() {
     });
 }
 
+/// test that next identity index is correctly initialized and incremented
+#[test]
+fn test_identity_index() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice(), bob()],
+    })
+    .execute_with(|| {
+        assert_eq!(Identity::identities_count(), 2);
+        // assert_eq!(NextIdtyIndex, 3); // TODO see if we can debug that
+        // TODO create identity and check it was incremented
+    });
+}
+
 #[test]
 fn test_create_identity_ok() {
     new_test_ext(IdentityConfig {

@@ -395,8 +395,9 @@ fn generate_genesis(
             certs_by_receiver: clique_wot(initial_smiths_len),
         },
         universal_dividend: UniversalDividendConfig {
-            first_reeval: 600_000,
-            first_ud: 6_000,
+            // TODO FIXME
+            first_reeval: Some(600_000),
+            first_ud: Some(6_000),
             initial_monetary_mass: 0,
             ud,
         },

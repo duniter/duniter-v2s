@@ -72,7 +72,9 @@ parameter_types! {
 
 // Balances
 frame_support::parameter_types! {
-    pub const ExistentialDeposit: Balance = 200;
+    // we take 100 of existential deposit to mimic duniter v1
+    // and avoid loosing too many accounts during the migration
+    pub const ExistentialDeposit: Balance = 100;
     pub const MaxLocks: u32 = 50;
 }
 

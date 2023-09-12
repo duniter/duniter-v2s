@@ -23,6 +23,7 @@ use gtest_runtime::{
     SmithMembershipConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
     UniversalDividendConfig,
 };
+use num_format::{Locale, ToFormattedString};
 use serde::Deserialize;
 use sp_core::{blake2_256, Decode, Encode, H256};
 use std::collections::{BTreeMap, HashMap};
@@ -40,13 +41,25 @@ static SMITH_MIN_CERT: u32 = parameters::SmithWotMinCertForMembership::get();
 #[derive(Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct GenesisJson {
+    /// identity-related data
+    // (pseudo, membership, certifications, account balance)
     identities: HashMap<String, Identity>,
+    /// smith-related data
+    // (smith memberships, smith certifications, session keys of bootstrapper)
     smiths: HashMap<String, Smith>,
+    /// time of the first ud reeval
+    first_ud_reeval: u64,
+    /// time of the first ud
     first_ud: u64,
-    first_ud_reeval: u32,
+    /// value of the first ud
+    ud: u64,
+    /// initial monetary mass (must match what is available on accounts)
     initial_monetary_mass: u64,
+    /// amount on the accounts (must be above existential deposit)
     wallets: HashMap<AccountId, u64>, // u128
+    /// optional sudo key
     sudo_key: Option<AccountId>,
+    /// list of names of people in initial technical committee
     technical_committee: Vec<String>,
 }
 
@@ -78,12 +91,6 @@ struct Smith {
     certs_received: Vec<String>,
 }
 
-// Timestamp to block number
-// fn to_bn(genesis_timestamp: u64, timestamp: u64) -> u32 {
-//     let duration_in_secs = timestamp.saturating_sub(genesis_timestamp);
-//     (duration_in_secs / 6) as u32
-// }
-
 // copied from duniter primitives
 fn validate_idty_name(idty_name: &str) -> bool {
     idty_name.len() >= 3
@@ -106,29 +113,12 @@ pub fn build_genesis(
 ) -> Result<GenesisConfig, String> {
     // preparatory steps
 
-    // define genesis timestamp
-    let genesis_timestamp: u64 =
-        if let Ok(genesis_timestamp) = std::env::var("DUNITER_GENESIS_TIMESTAMP") {
-            genesis_timestamp
-                .parse()
-                .map_err(|_| "DUNITER_GENESIS_TIMESTAMP must be a number".to_owned())?
-        } else {
-            use std::time::SystemTime;
-            SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .expect("SystemTime before UNIX EPOCH!")
-                .as_secs()
-        };
-    log::info!("genesis timestamp: {}", genesis_timestamp);
-
     // declare variables for building genesis
     // -------------------------------------
     // track if fatal error occured, but let processing continue
     let mut fatal = false;
     // monetary mass for double check
-    let mut monetary_mass = 0u64; // u128
-                                  // wallet index to generate random id
-    let mut wallet_index: u32 = 0;
+    let mut monetary_mass = 0u64;
     // counter for online authorities at genesis
     let mut counter_online_authorities = 0;
     // track identity index
@@ -172,12 +162,11 @@ pub fn build_genesis(
         // double check the monetary mass
         monetary_mass += balance;
 
-        wallet_index += 1;
         // json prevents duplicate wallets
         accounts.insert(
             pubkey.clone(),
             GenesisAccountData {
-                random_id: H256(blake2_256(&(wallet_index, &pubkey).encode())),
+                random_id: H256(blake2_256(&(balance, &pubkey).encode())),
                 balance: *balance,
                 is_identity: false,
             },
@@ -187,26 +176,27 @@ pub fn build_genesis(
     // IDENTITIES //
     for (name, identity) in &genesis_data.identities {
         // identity name
-        if !validate_idty_name(&name) {
+        if !validate_idty_name(name) {
             return Err(format!("Identity name '{}' is invalid", &name));
         }
 
-        // check existential deposit
-        if identity.balance < EXISTENTIAL_DEPOSIT {
-            if identity.membership_expire_on != 0 {
-                log::warn!(
-                    "expired identity {name} has {} cǦT which is below {EXISTENTIAL_DEPOSIT}",
-                    identity.balance
-                );
-                fatal = true;
-            } else {
-                // member identities can still be below existential deposit thanks to sufficient
-                log::info!(
-                    "identity {name} has {} cǦT which is below {EXISTENTIAL_DEPOSIT}",
-                    identity.balance
-                );
-            }
-        }
+        // do not check existential deposit of identities
+        // // check existential deposit
+        // if identity.balance < EXISTENTIAL_DEPOSIT {
+        //     if identity.membership_expire_on == 0 {
+        //         log::warn!(
+        //             "expired identity {name} has {} cǦT which is below {EXISTENTIAL_DEPOSIT}",
+        //             identity.balance
+        //         );
+        //         fatal = true;
+        //     } else {
+        //         member identities can still be below existential deposit thanks to sufficient
+        //         log::info!(
+        //             "identity {name} has {} cǦT which is below {EXISTENTIAL_DEPOSIT}",
+        //             identity.balance
+        //         );
+        //     }
+        // }
 
         // Money
         // check that wallet with same owner_key does not exist
@@ -249,10 +239,8 @@ pub fn build_genesis(
                 value: common_runtime::IdtyValue {
                     data: IdtyData::new(),
                     next_creatable_identity_on: identity.next_cert_issuable_on,
-                    old_owner_key: match identity.old_owner_key.clone() {
-                        Some(address) => Some((address, 0)), // FIXME old owner key expiration
-                        None => None,
-                    },
+                    // FIXME old owner key expiration
+                    old_owner_key: identity.old_owner_key.clone().map(|address| (address, 0)),
                     // old_owner_key: None,
                     owner_key: identity.owner_key.clone(),
                     // TODO remove the removable_on field of identity
@@ -274,6 +262,8 @@ pub fn build_genesis(
             );
         }
     }
+    // sort the identities by index for reproducibility (should have been a vec in json)
+    identities.sort_unstable_by(|a, b| (a.index as u32).cmp(&(b.index as u32)));
 
     // Technical Comittee //
     // NOTE : when changing owner key, the technical committee is not changed
@@ -287,11 +277,11 @@ pub fn build_genesis(
     }
 
     // CERTIFICATIONS //
-    for (_, identity) in &genesis_data.identities {
+    for identity in genesis_data.identities.values() {
         let mut certs = BTreeMap::new();
         for (issuer, expire_on) in &identity.certs_received {
             if let Some(issuer) = &genesis_data.identities.get(issuer) {
-                certs.insert(issuer.index, Some(expire_on.clone()));
+                certs.insert(issuer.index, Some(*expire_on));
                 counter_cert += 1;
             } else {
                 log::error!("Identity '{}' does not exist", issuer);
@@ -363,7 +353,7 @@ pub fn build_genesis(
     for (idty_index, receiver_certs) in &certs_by_receiver {
         if receiver_certs.len() < MIN_CERT as usize {
             let name = identity_index.get(idty_index).unwrap();
-            let identity = genesis_data.identities.get(name.clone()).unwrap();
+            let identity = genesis_data.identities.get(&(*name).clone()).unwrap();
             if identity.membership_expire_on != 0 {
                 log::warn!(
                     "[{}] has received only {}/{} certifications",
@@ -397,8 +387,11 @@ pub fn build_genesis(
     // check monetary mass
     if monetary_mass != genesis_data.initial_monetary_mass {
         log::warn!(
-            "actuel monetary_mass ({monetary_mass}) and initial_monetary_mass ({}) do not match",
-            genesis_data.initial_monetary_mass
+            "actual monetary_mass ({}) and initial_monetary_mass ({}) do not match",
+            monetary_mass.to_formatted_string(&Locale::en),
+            genesis_data
+                .initial_monetary_mass
+                .to_formatted_string(&Locale::en)
         );
         fatal = true;
     }
@@ -436,14 +429,14 @@ pub fn build_genesis(
     );
     assert_eq!(
         accounts.len(),
-        identity_index.len() + &genesis_data.wallets.len()
+        identity_index.len() + genesis_data.wallets.len()
     );
     // no inactive tech comm
     for tech_com_member in &genesis_data.technical_committee {
         assert!(!inactive_identities.values().any(|&v| v == tech_com_member));
     }
     // no inactive smith
-    for (smith, _) in &genesis_data.smiths {
+    for smith in genesis_data.smiths.keys() {
         assert!(!inactive_identities.values().any(|&v| v == smith));
     }
 
@@ -498,8 +491,9 @@ pub fn build_genesis(
             memberships: smith_memberships,
         },
         universal_dividend: UniversalDividendConfig {
-            first_reeval: genesis_data.first_ud_reeval,
-            first_ud: genesis_data.first_ud,
+            first_reeval: Some(genesis_data.first_ud_reeval),
+            first_ud: Some(genesis_data.first_ud),
+            ud: genesis_data.ud,
             initial_monetary_mass: genesis_data.initial_monetary_mass,
         },
         treasury: Default::default(),

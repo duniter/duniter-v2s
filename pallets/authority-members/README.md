@@ -3,7 +3,7 @@
 In a permissioned network, we have to define the set of authorities, and among these authorities, the ones validators in the next session. That's what authority members pallet does. In practice:
 
 - it manages a `Members` set with some custom rules
-- it implements the `SessionManager` trait from the session frame pallet
+- it implements the `SessionManager` trait from the FRAME session pallet
 
 ## Entering the set of authorities
 

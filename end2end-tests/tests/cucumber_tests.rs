@@ -454,7 +454,7 @@ async fn should_be_certified_by(
     match issuers.binary_search_by(|(issuer_, _)| issuer_.cmp(&issuer_index)) {
         Ok(_) => Ok(()),
         Err(_) => Err(anyhow::anyhow!(
-            "no certification found from {} to {}: {:?}",
+            "no certification found from {} ({issuer_index}) to {} ({receiver_index}): {:?}",
             issuer,
             receiver,
             issuers

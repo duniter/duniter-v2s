@@ -151,13 +151,20 @@ pub mod pallet {
     where
         <T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
     {
-        /// If None, it will be set to one period after the first block with a timestamp
+        /// moment of the first UD reeval
+        // If None, it will be set to one period after the first block with a timestamp
         pub first_reeval: Option<T::Moment>,
-        /// If None, it will be set to one period after the first block with a timestamp
+        /// moment of the first UD generation
+        // If None, it will be set to one period after the first block with a timestamp
         pub first_ud: Option<T::Moment>,
+        /// initial monetary mass (should match total issuance)
         pub initial_monetary_mass: BalanceOf<T>,
+        /// accounts of initial members
+        // (only for test purpose)
         #[cfg(test)]
         pub initial_members: Vec<T::AccountId>,
+        /// value of the first UD
+        /// expressed in amount of currency
         pub ud: BalanceOf<T>,
     }
 

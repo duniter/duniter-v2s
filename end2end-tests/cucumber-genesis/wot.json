@@ -10,22 +10,34 @@
   "identities": {
     "Alice": {
       "balance": 1000,
-      "certs": ["Bob", "Charlie"],
+      "certs": [
+        "Bob",
+        "Charlie"
+      ],
       "pubkey": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
     },
     "Bob": {
       "balance": 1000,
-      "certs": ["Alice", "Charlie"],
+      "certs": [
+        "Alice",
+        "Charlie"
+      ],
       "pubkey": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
     },
     "Charlie": {
       "balance": 1000,
-      "certs": ["Alice", "Bob"],
+      "certs": [
+        "Alice",
+        "Bob"
+      ],
       "pubkey": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y"
     },
     "Dave": {
       "balance": 1000,
-      "certs": ["Alice", "Bob"],
+      "certs": [
+        "Alice",
+        "Bob"
+      ],
       "pubkey": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"
     }
   },
@@ -55,16 +67,29 @@
   },
   "smiths": {
     "Alice": {
-      "certs": ["Bob", "Charlie"]
+      "certs": [
+        "Bob",
+        "Charlie"
+      ]
     },
     "Bob": {
-      "certs": ["Alice", "Charlie"]
+      "certs": [
+        "Alice",
+        "Charlie"
+      ]
     },
     "Charlie": {
-      "certs": ["Alice", "Bob"]
+      "certs": [
+        "Alice",
+        "Bob"
+      ]
     }
   },
   "sudo_key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-  "technical_committee": ["Alice", "Bob", "Charlie"],
+  "technical_committee": [
+    "Alice",
+    "Bob",
+    "Charlie"
+  ],
   "ud": 1000
 }

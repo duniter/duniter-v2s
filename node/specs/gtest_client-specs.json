@@ -2,11 +2,7 @@
     "name": "ĞTest",
     "id": "gtest",
     "chainType": "Live",
-    "bootNodes": [
-        "/dns/gdev.p2p.legal/tcp/30334/p2p/12D3KooW9v5WsP38qU1kmafvA4CDw2vzYnFoWtdUqwonZtJK597r",
-        "/dns/gdev.elo.tf/tcp/30334/p2p/12D3KooWH4gAzvcRRCH8bFGZYomCGn3tosXDGtnL5yVVMkpGRL7B",
-        "/dns/gdev.librelois.fr/tcp/30334/p2p/12D3KooWMb8hmxdtBQhGLB8caokbAZQ3YokN9erMe6oAEsPDrwYf"
-    ],
+    "bootNodes": [],
     "telemetryEndpoints": [
         [
             "/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F",

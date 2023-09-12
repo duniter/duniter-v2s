@@ -1,6 +1,6 @@
 [package]
 authors = ['librelois <c@elo.tf>']
-description = 'FRAME pallet oneshot account.'
+description = 'duniter pallet oneshot account.'
 edition = '2018'
 homepage = 'https://duniter.org'
 license = 'AGPL-3.0'

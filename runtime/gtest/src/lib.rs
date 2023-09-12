@@ -239,7 +239,7 @@ impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
     }
 }
 
-// Configure FRAME pallets to include in runtime.
+// Configure pallets to include in runtime.
 common_runtime::pallets_config! {
 
     impl pallet_sudo::Config for Runtime {
@@ -248,7 +248,7 @@ common_runtime::pallets_config! {
     }
 }
 
-// Create the runtime by composing the FRAME pallets that were previously configured.
+// Create the runtime by composing the pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
         Block = Block,

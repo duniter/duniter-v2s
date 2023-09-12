@@ -1,6 +1,6 @@
 [package]
 authors = ['librelois <c@elo.tf>']
-description = 'FRAME pallet to upgrade specified origin to root.'
+description = 'duniter pallet to upgrade specified origin to root.'
 edition = "2021"
 homepage = 'https://duniter.org'
 license = 'AGPL-3.0'

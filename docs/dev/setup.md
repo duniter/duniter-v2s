@@ -35,7 +35,7 @@ Use a terminal shell to execute the following commands:
 ```bash
 sudo apt update
 # May prompt for location information
-sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
+sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
 ```
 
 ### Arch Linux
@@ -79,3 +79,16 @@ rustup update nightly
 rustup update stable
 rustup target add wasm32-unknown-unknown --toolchain nightly
 ```
+
+
+### Installing mold linker to decrease build time
+
+Mold (modern linker) (https://github.com/rui314/mold) decreases the build time. Install it through your system package for example then add the following to your `~/.cargo/config`:
+
+```toml
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
+```
+
+(see https://forum.duniter.org/t/decrease-duniter-build-time/10170 on the forum)

@@ -159,7 +159,11 @@ pub mod pallet {
             identities.sort_unstable_by(|a, b| a.index.cmp(&b.index));
 
             for idty in identities.into_iter() {
-                let idty_index = Pallet::<T>::get_next_idty_index();
+                // if get_next_idty_index() is not called
+                // then NextIdtyIndex is not incremented
+                let _ = Pallet::<T>::get_next_idty_index();
+                // use instead custom provided index
+                let idty_index = idty.index;
                 if idty.value.removable_on > T::BlockNumber::zero() {
                     <IdentitiesRemovableOn<T>>::append(
                         idty.value.removable_on,

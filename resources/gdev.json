@@ -1,6 +1,7 @@
 {
-  "first_ud": 10000,
-  "first_ud_reeval": 100800,
+  "ud": 1000,
+  "first_ud": 6000,
+  "first_ud_reeval": 600000,
   "genesis_parameters": {
     "genesis_certs_expire_on": 2102400,
     "genesis_certs_min_received": 3,
@@ -30,12 +31,22 @@
     },
     "Elois2": {
       "balance": 10000,
-      "certs": ["tuxmain", "Elois", "HugoTrentesaux"],
+      "certs": [
+        "tuxmain",
+        "Elois",
+        "HugoTrentesaux"
+      ],
       "pubkey": "5GFEEx7kqvP4QEPCAXkALeYCG7m8DiA5LQ4YzW62j7FytQyg"
     },
     "poka": {
       "balance": 10000,
-      "certs": ["cgeek", "vit", "tuxmain", "Elois", "HugoTrentesaux"],
+      "certs": [
+        "cgeek",
+        "vit",
+        "tuxmain",
+        "Elois",
+        "HugoTrentesaux"
+      ],
       "pubkey": "5CQ8T4qpbYJq7uVsxGPQ5q2df7x3Wa4aRY6HUWMBYjfLZhnn"
     },
     "tuxmain": {
@@ -66,7 +77,14 @@
     },
     "cgeek": {
       "balance": 10000,
-      "certs": ["poka", "vit", "tuxmain", "Elois", "HugoTrentesaux", "moul"],
+      "certs": [
+        "poka",
+        "vit",
+        "tuxmain",
+        "Elois",
+        "HugoTrentesaux",
+        "moul"
+      ],
       "pubkey": "5DP7ze5cJwtHbqXaP2aNtJ5jkULzcTCqXuMzDvk9JjneFjfq"
     },
     "HugoTrentesaux": {
@@ -126,22 +144,38 @@
     },
     "Gamaliel": {
       "balance": 10000,
-      "certs": ["David B", "wellno1", "kapis"],
+      "certs": [
+        "David B",
+        "wellno1",
+        "kapis"
+      ],
       "pubkey": "5DS9iWBXW56N7XbeVyyp6CB7m4LeE5fGJYrUR9HDSStT5JN9"
     },
     "kapis": {
       "balance": 10000,
-      "certs": ["David B", "wellno1", "Gamaliel"],
+      "certs": [
+        "David B",
+        "wellno1",
+        "Gamaliel"
+      ],
       "pubkey": "5HJyyim1W8Y1UD8LAbBL7cQQLjGofMoD45RtRSAmhkFQxrvs"
     },
     "David B": {
       "balance": 10000,
-      "certs": ["kapis", "wellno1", "Gamaliel"],
+      "certs": [
+        "kapis",
+        "wellno1",
+        "Gamaliel"
+      ],
       "pubkey": "5HKTDdXHj3MojiPRcEsVU9JaHyif5gg2br1sy3JZbsjuQebP"
     },
     "wellno1": {
       "balance": 10000,
-      "certs": ["David B", "kapis", "Gamaliel"],
+      "certs": [
+        "David B",
+        "kapis",
+        "Gamaliel"
+      ],
       "pubkey": "5DyEZNkSuK5i8wZiXtvL63zqpye9zPBsPRauCjQkMuVzZYX7"
     }
   },
@@ -171,34 +205,90 @@
   },
   "smiths": {
     "Elois": {
-      "certs": ["poka", "cgeek", "vit", "tuxmain", "HugoTrentesaux", "kapis"],
+      "certs": [
+        "poka",
+        "cgeek",
+        "vit",
+        "tuxmain",
+        "HugoTrentesaux",
+        "kapis"
+      ],
       "session_keys": "0x92743b12d55242276539d7256951cdfda85371caefbd325396da9331011b737d14084d2537f77e786a75b9bcbe351051fad52946ec211724b5e8c93bb8aa7a6f14084d2537f77e786a75b9bcbe351051fad52946ec211724b5e8c93bb8aa7a6f14084d2537f77e786a75b9bcbe351051fad52946ec211724b5e8c93bb8aa7a6f"
     },
     "Elois2": {
-      "certs": ["tuxmain", "Elois", "HugoTrentesaux"]
+      "certs": [
+        "tuxmain",
+        "Elois",
+        "HugoTrentesaux"
+      ]
     },
     "poka": {
-      "certs": ["cgeek", "vit", "tuxmain", "Elois", "HugoTrentesaux"]
+      "certs": [
+        "cgeek",
+        "vit",
+        "tuxmain",
+        "Elois",
+        "HugoTrentesaux"
+      ]
     },
     "tuxmain": {
-      "certs": ["cgeek", "Elois", "HugoTrentesaux", "poka", "kapis"]
+      "certs": [
+        "cgeek",
+        "Elois",
+        "HugoTrentesaux",
+        "poka",
+        "kapis"
+      ]
     },
     "vit": {
-      "certs": ["cgeek", "Elois", "HugoTrentesaux", "poka"]
+      "certs": [
+        "cgeek",
+        "Elois",
+        "HugoTrentesaux",
+        "poka"
+      ]
     },
     "cgeek": {
-      "certs": ["poka", "vit", "tuxmain", "Elois", "HugoTrentesaux"]
+      "certs": [
+        "poka",
+        "vit",
+        "tuxmain",
+        "Elois",
+        "HugoTrentesaux"
+      ]
     },
     "HugoTrentesaux": {
-      "certs": ["poka", "vit", "tuxmain", "Elois", "kapis"]
+      "certs": [
+        "poka",
+        "vit",
+        "tuxmain",
+        "Elois",
+        "kapis"
+      ]
     },
     "1000i100": {
-      "certs": ["cgeek", "vit", "tuxmain", "Elois", "HugoTrentesaux", "poka"]
+      "certs": [
+        "cgeek",
+        "vit",
+        "tuxmain",
+        "Elois",
+        "HugoTrentesaux",
+        "poka"
+      ]
     },
     "kapis": {
-      "certs": ["Elois","tuxmain","HugoTrentesaux"]
+      "certs": [
+        "Elois",
+        "tuxmain",
+        "HugoTrentesaux"
+      ]
     }
   },
   "sudo_key": "5Hm8sBbwuLAU99dBezvgtnRmZCrUy9mhqmbQMFyGTaeATYg7",
-  "technical_committee": ["Elois", "cgeek", "tuxmain", "HugoTrentesaux"]
+  "technical_committee": [
+    "Elois",
+    "cgeek",
+    "tuxmain",
+    "HugoTrentesaux"
+  ]
 }
