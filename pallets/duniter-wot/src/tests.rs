@@ -516,3 +516,118 @@ fn test_certification_expire() {
         ));
     })
 }
+
+/// test some cases where identity should not be able to issue cert
+// - when source or target is not member (sub wot)
+// - when source or target membership is pending (both wot)
+#[test]
+fn test_cert_can_not_be_issued() {
+    new_test_ext(4, 3).execute_with(|| {
+        // smith cert Bob → Alice not renewed
+        // cert Bob → Alice not renewed
+        // --- BLOCK 2 ---
+        run_to_block(2);
+        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(1), 1, 2)); // +10
+        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(2), 2, 3)); // +10
+        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(3), 3, 1)); // +10
+        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(1), 1, 2)); // +20
+        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 2, 3)); // +20
+        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 4)); // +20
+        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(4), 4, 1)); // +20
+                                                                    // --- BLOCK 4 ---
+        run_to_block(4);
+        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(1), 1, 3)); // +10
+        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(3), 3, 2)); // +10
+        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 2, 4)); // +20
+        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 2)); // +20
+        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(4), 4, 3)); // +20
+                                                                    // --- BLOCK 7 ---
+        run_to_block(7);
+        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(3), 3, 1)); // +10
+        assert_ok!(SmithMembership::renew_membership(RuntimeOrigin::signed(1))); // +20
+        assert_ok!(SmithMembership::renew_membership(RuntimeOrigin::signed(2))); // +20
+        assert_ok!(SmithMembership::renew_membership(RuntimeOrigin::signed(3))); // +20
+        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(1))); // + 8
+        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(2))); // + 8
+        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(3))); // + 8
+        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(4))); // + 8
+
+        // smith cert Bob → Alice expires at block 10
+        run_to_block(10);
+        // println!("{:?}", System::events());
+        System::assert_has_event(RuntimeEvent::SmithCert(
+            pallet_certification::Event::RemovedCert {
+                issuer: 2,                  // Bob
+                issuer_issued_count: 1,     // Bob → Charlie only
+                receiver: 1,                // Alice
+                receiver_received_count: 1, // Charlie → Alice only
+                expiration: true,
+            },
+        ));
+        // in consequence, since Alice has only 1/2 smith certification remaining, she looses smith membership
+        System::assert_has_event(RuntimeEvent::SmithMembership(
+            pallet_membership::Event::MembershipExpired(1),
+        ));
+
+        run_to_block(11);
+        // /!\ COUNTERINTUITIVE BEHAVIOR
+        // Dave should not be able to receive a smith cert since he did not request smith membership
+        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(3), 3, 4));
+        // Bob renews his smith certification towards Alice
+        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(2), 2, 1));
+        // now Alice has enough certs
+        assert_eq!(
+            SmithCert::idty_cert_meta(1),
+            pallet_certification::IdtyCertMeta {
+                issued_count: 2, // → Bob, → Charlie
+                // since Alice got back to min number of received certs to be able to issue cert
+                // her next_issuable_on was updated to block_number (11) + cert_period (2)
+                next_issuable_on: 13, // 11 + 2
+                received_count: 2     // ← Bob, ← Charlie
+            }
+        );
+
+        // because Alice did not claim membership, she is not member at this point
+        assert_eq!(SmithMembership::membership(1), None);
+        run_to_block(13);
+        // /!\ COUNTERINTUITIVE BEHAVIOR
+        // Alice is not smith member, she should not be able to issue cert
+        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(1), 1, 2));
+
+        run_to_block(14);
+        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(1))); // + 8
+        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(2))); // + 8
+        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(3))); // + 8
+        assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(4))); // + 8
+
+        run_to_block(20);
+        // println!("{:?}", System::events());
+        System::assert_has_event(RuntimeEvent::Cert(
+            pallet_certification::Event::RemovedCert {
+                issuer: 2,                  // Bob
+                issuer_issued_count: 2,     // depends of the order of cert expiration
+                receiver: 1,                // Alice
+                receiver_received_count: 2, // depends of the order of cert expiration
+                expiration: true,
+            },
+        ));
+        // other certifications expire, but not Dave → Alice
+        // in consequence, since Alice has only 1/2 certification remaining, she looses membership
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::MembershipExpired(1), // pending membership expires at 23
+        ));
+
+        run_to_block(21);
+        // println!("{:?}", System::events());
+        // Charlie certifies Alice so she again has enough certs
+        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 1));
+        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(4), 4, 1)); // renew
+                                                                    // Alice did not claim membership, she is not member
+                                                                    // but her cert delay has been reset (→ 23)
+        assert_eq!(Membership::membership(1), None);
+
+        // run_to_block(23);
+        // if identity of alice was not removed because pending for too long
+        // she would have been able to emit a cert without being member
+    })
+}

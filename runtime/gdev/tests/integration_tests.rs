@@ -632,6 +632,42 @@ fn test_remove_smith_identity() {
     });
 }
 
+#[test]
+fn test_smith_certification() {
+    // 3 smith (1. alice, 2. bob, 3. charlie)
+    // 4 identities (4. dave)
+    // no identity 5. eve
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        run_to_block(1);
+
+        // alice can renew smith cert to bob
+        assert_ok!(SmithCert::add_cert(
+            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+            1, // alice
+            2  // bob
+        ));
+
+        // THIS IS STRANGE BEHAVIOR
+        // bob can add new smith cert to to dave even he did not requested smith membership
+        assert_ok!(SmithCert::add_cert(
+            frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+            2, // bob
+            4  // dave
+        ));
+
+        // charlie can not add new cert to eve (no identity)
+        assert_noop!(
+            SmithCert::add_cert(
+                frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
+                3, // charlie
+                5  // eve
+            ),
+            // SmithSubWot::Error::IdtyNotFound,
+            pallet_duniter_wot::Error::<gdev_runtime::Runtime, pallet_certification::Instance2>::IdtyNotFound,
+        );
+    });
+}
+
 /// test create new account with balance lower than existential deposit
 // the treasury gets the dust
 #[test]

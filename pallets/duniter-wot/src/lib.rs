@@ -208,7 +208,22 @@ where
 impl<T: Config<I>, I: 'static> pallet_certification::traits::CheckCertAllowed<IdtyIndex>
     for Pallet<T, I>
 {
+    // check the following:
+    // - issuer has identity
+    // - issuer identity is validated
+    // - receiver has identity
+    // - receiver identity is confirmed or validated
+    //
+    // /!\ do not check the following:
+    // - receiver has membership
+    // - issuer has membership
+    // this has the following consequences:
+    // - receiver can receive smith certification without having requested membership
+    // - issuer can issue cert even if he lost his membership
+    //   (not renewed or passed below cert threshold and above again without claiming membership)
+    // this is counterintuitive behavior but not a big problem
     fn check_cert_allowed(issuer: IdtyIndex, receiver: IdtyIndex) -> Result<(), DispatchError> {
+        // ensure issuer has validated identity
         if let Some(issuer_data) = pallet_identity::Pallet::<T>::identity(issuer) {
             ensure!(
                 issuer_data.status == IdtyStatus::Validated,
@@ -217,6 +232,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::CheckCertAllowed<Id
         } else {
             return Err(Error::<T, I>::IdtyNotFound.into());
         }
+        // ensure receiver has confirmed or validated identity
         if let Some(receiver_data) = pallet_identity::Pallet::<T>::identity(receiver) {
             match receiver_data.status {
                 IdtyStatus::ConfirmedByOwner | IdtyStatus::Validated => {} // able to receive cert
