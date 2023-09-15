@@ -19,7 +19,7 @@ use crate::*;
 pub struct MigrationsV400;
 impl frame_support::traits::OnRuntimeUpgrade for MigrationsV400 {
     fn on_runtime_upgrade() -> Weight {
-        let mut weight = Weight::from_ref_time(1_000_000_000); // Safety margin
+        let mut weight = Weight::from_parts(1_000_000_000, 0); // Safety margin
 
         type OldvalueType = AccountId;
 

@@ -50,23 +50,23 @@ version = "3.1.5"
 default-features = false
 git = 'https://github.com/duniter/substrate'
 optional = true
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.pallet-session]
 default-features = false
 features = ["historical"]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.serde]
 version = "1.0.101"
@@ -76,22 +76,22 @@ features = ["derive"]
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-staking]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 ### DOC ###
 
@@ -108,4 +108,4 @@ version = '1.0.119'
 
 [dev-dependencies.sp-io]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'

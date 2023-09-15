@@ -84,7 +84,7 @@ impl<IdtyIndex: Decode + Encode + PartialEq + TypeInfo> InherentDataProvider<Idt
 impl<IdtyIndex: Decode + Encode + PartialEq + TypeInfo + Send + Sync>
     sp_inherents::InherentDataProvider for InherentDataProvider<IdtyIndex>
 {
-    fn provide_inherent_data(
+    async fn provide_inherent_data(
         &self,
         inherent_data: &mut InherentData,
     ) -> Result<(), sp_inherents::Error> {

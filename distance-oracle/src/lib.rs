@@ -41,17 +41,15 @@ pub mod runtime {}
 pub enum RuntimeConfig {}
 impl subxt::config::Config for RuntimeConfig {
     type Index = u32;
-    type BlockNumber = u32;
+    // type BlockNumber = u32;
     type Hash = sp_core::H256;
-    type Hashing = subxt::ext::sp_runtime::traits::BlakeTwo256;
+    type Hasher = subxt::config::substrate::BlakeTwo256;
     type AccountId = AccountId;
     type Address = subxt::ext::sp_runtime::MultiAddress<Self::AccountId, u32>;
-    type Header = subxt::ext::sp_runtime::generic::Header<
-        Self::BlockNumber,
-        subxt::ext::sp_runtime::traits::BlakeTwo256,
-    >;
+    type Header =
+        subxt::config::substrate::SubstrateHeader<u32, subxt::config::substrate::BlakeTwo256>;
     type Signature = subxt::ext::sp_runtime::MultiSignature;
-    type ExtrinsicParams = subxt::tx::BaseExtrinsicParams<Self, Tip>;
+    type ExtrinsicParams = subxt::config::extrinsic_params::BaseExtrinsicParams<Self, Tip>;
 }
 
 #[derive(Copy, Clone, Debug, Default, Encode)]
@@ -89,7 +87,11 @@ impl Default for Settings {
 }
 
 pub async fn run_and_save(client: &api::Client, settings: Settings) {
-    let Some((evaluation, current_session, evaluation_result_path)) = run(client, &settings, true).await else {return};
+    let Some((evaluation, current_session, evaluation_result_path)) =
+        run(client, &settings, true).await
+    else {
+        return;
+    };
 
     let mut evaluation_result_file = std::fs::OpenOptions::new()
         .write(true)
@@ -152,10 +154,10 @@ pub async fn run(
 
     // Fetch the pending identities
     let Some(evaluation_pool) = api::current_pool(client, parent_hash, current_session).await
-         else {
-            debug!("Nothing to do: Pool does not exist");
-            return None
-        };
+    else {
+        debug!("Nothing to do: Pool does not exist");
+        return None;
+    };
 
     // Stop if nothing to evaluate
     if evaluation_pool.evaluations.0.is_empty() {

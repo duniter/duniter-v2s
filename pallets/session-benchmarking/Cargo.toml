@@ -21,37 +21,37 @@ pallet-authority-members = { path = "../authority-members", default-features = f
 default-features = false
 git = 'https://github.com/duniter/substrate'
 optional = true
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.pallet-session]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-session]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.parity-scale-codec]
 default-features = false
@@ -62,22 +62,22 @@ version = "3.1.5"
 [dev-dependencies.pallet-balances]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dev-dependencies.pallet-timestamp]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dev-dependencies.sp-core]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dev-dependencies.sp-io]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [features]
 default = ["std"]

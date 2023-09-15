@@ -20,7 +20,7 @@ use sc_cli::{
 use sc_keystore::LocalKeystore;
 use sc_service::config::{BasePath, KeystoreConfig};
 use sp_core::crypto::{AccountId32, KeyTypeId, SecretString};
-use sp_keystore::{SyncCryptoStore, SyncCryptoStorePtr};
+use sp_keystore::{Keystore, KeystorePtr};
 use std::sync::Arc;
 
 #[derive(Debug, clap::Subcommand)]
@@ -82,18 +82,17 @@ impl GenSessionKeysCmd {
         let mut public_keys_bytes = Vec::with_capacity(128);
         for (key_type_id, crypto_scheme) in KEY_TYPES {
             let (keystore, public) = match self.keystore_params.keystore_config(&config_dir)? {
-                (_, KeystoreConfig::Path { path, password }) => {
+                KeystoreConfig::Path { path, password } => {
                     let public =
                         with_crypto_scheme!(crypto_scheme, to_vec(&suri, password.clone()))?;
-                    let keystore: SyncCryptoStorePtr =
-                        Arc::new(LocalKeystore::open(path, password)?);
+                    let keystore: KeystorePtr = Arc::new(LocalKeystore::open(path, password)?);
                     (keystore, public)
                 }
                 _ => unreachable!("keystore_config always returns path and password; qed"),
             };
 
-            SyncCryptoStore::insert_unknown(&*keystore, key_type_id, &suri, &public[..])
-                .map_err(|_| Error::KeyStoreOperation)?;
+            Keystore::insert(&*keystore, key_type_id, &suri, &public[..])
+                .map_err(|_| Error::KeystoreOperation)?;
 
             public_keys_bytes.extend_from_slice(&public[..]);
         }

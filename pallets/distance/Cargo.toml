@@ -46,42 +46,42 @@ version = '3.1.5'
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.pallet-authorship]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.pallet-session]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-inherents]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 ### DOC ###
 

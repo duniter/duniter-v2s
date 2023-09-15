@@ -22,7 +22,7 @@ use sp_keyring::AccountKeyring;
 use subxt::tx::PairSigner;
 
 type BlockNumber = u32;
-type AccountId = subxt::ext::sp_core::crypto::AccountId32;
+type AccountId = subxt::utils::AccountId32;
 type IdtyData = gdev::runtime_types::common_runtime::entities::IdtyData;
 type IdtyValue =
     gdev::runtime_types::pallet_identity::types::IdtyValue<BlockNumber, AccountId, IdtyData>;
@@ -42,7 +42,7 @@ pub async fn create_identity(
         client
             .tx()
             .create_signed(
-                &gdev::tx().identity().create_identity(to),
+                &gdev::tx().identity().create_identity(to.into()),
                 &from,
                 BaseExtrinsicParamsBuilder::new(),
             )
@@ -94,13 +94,15 @@ pub async fn validate_identity(client: &Client, from: AccountKeyring, to: u32) -
 }
 
 // get identity index from account keyring name
-pub async fn get_identity_index(world: &mut DuniterWorld, account: String) -> Result<u32> {
-    let account = AccountKeyring::from_str(&account)
+pub async fn get_identity_index(world: &DuniterWorld, account: String) -> Result<u32> {
+    let account: AccountId = AccountKeyring::from_str(&account)
         .expect("unknown account")
-        .to_account_id();
+        .to_account_id()
+        .into();
 
     let identity_index = world
         .read(&gdev::storage().identity().identity_index_of(&account))
+        .await
         .await?
         .ok_or_else(|| anyhow::anyhow!("identity {} has no associated index", account))
         .unwrap();
@@ -108,11 +110,12 @@ pub async fn get_identity_index(world: &mut DuniterWorld, account: String) -> Re
     Ok(identity_index)
 }
 // get identity value from account keyring name
-pub async fn get_identity_value(world: &mut DuniterWorld, account: String) -> Result<IdtyValue> {
+pub async fn get_identity_value(world: &DuniterWorld, account: String) -> Result<IdtyValue> {
     let identity_index = get_identity_index(world, account).await.unwrap();
 
     let identity_value = world
         .read(&gdev::storage().identity().identities(identity_index))
+        .await
         .await?
         .ok_or_else(|| {
             anyhow::anyhow!(

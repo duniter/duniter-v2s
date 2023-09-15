@@ -38,7 +38,6 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
     /// Configuration trait.
@@ -83,6 +82,7 @@ pub mod pallet {
         /// Dispatches a function call from root origin.
         ///
         /// The weight of this call is defined by the caller.
+        #[pallet::call_index(0)]
         #[pallet::weight({
 			let dispatch_info = call.get_dispatch_info();
 			(
@@ -109,6 +109,7 @@ pub mod pallet {
         /// caller to specify the weight of the call.
         ///
         /// The weight of this call is defined by the caller.
+        #[pallet::call_index(1)]
         #[pallet::weight((*_weight, call.get_dispatch_info().class))]
         pub fn dispatch_as_root_unchecked_weight(
             origin: OriginFor<T>,

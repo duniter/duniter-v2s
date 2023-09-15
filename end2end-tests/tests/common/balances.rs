@@ -18,7 +18,7 @@ use super::gdev;
 use super::gdev::runtime_types::pallet_balances;
 use super::*;
 use sp_keyring::AccountKeyring;
-use subxt::{ext::sp_runtime::MultiAddress, tx::PairSigner};
+use subxt::{tx::PairSigner, utils::MultiAddress};
 
 pub async fn set_balance(client: &Client, who: AccountKeyring, amount: u64) -> Result<()> {
     let _events = create_block_with_extrinsic(
@@ -29,10 +29,9 @@ pub async fn set_balance(client: &Client, who: AccountKeyring, amount: u64) -> R
                 &gdev::tx()
                     .sudo()
                     .sudo(gdev::runtime_types::gdev_runtime::RuntimeCall::Balances(
-                        pallet_balances::pallet::Call::set_balance {
-                            who: MultiAddress::Id(who.to_account_id()),
+                        pallet_balances::pallet::Call::force_set_balance {
+                            who: MultiAddress::Id(who.to_account_id().into()),
                             new_free: amount,
-                            new_reserved: 0,
                         },
                     )),
                 &PairSigner::new(SUDO_ACCOUNT.pair()),
@@ -81,7 +80,7 @@ pub async fn transfer_all(client: &Client, from: AccountKeyring, to: AccountKeyr
         client
             .tx()
             .create_signed(
-                &gdev::tx().balances().transfer_all(to.clone().into(), false),
+                &gdev::tx().balances().transfer_all(to.into(), false),
                 &from,
                 BaseExtrinsicParamsBuilder::new(),
             )

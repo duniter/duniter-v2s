@@ -62,7 +62,6 @@ pub mod pallet {
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
@@ -147,6 +146,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Request a randomness
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::request())]
         pub fn request(
             origin: OriginFor<T>,

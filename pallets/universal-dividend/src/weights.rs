@@ -32,7 +32,7 @@ pub trait WeightInfo {
 impl WeightInfo for () {
     // Storage: (r:0 w:0)
     fn on_initialize() -> Weight {
-        Weight::from_ref_time(2_260_000)
+        Weight::from_parts(2_260_000, 0)
     }
     // Storage: Membership CounterForMembership (r:1 w:0)
     // Storage: UniversalDividend NextReeval (r:1 w:0)
@@ -40,7 +40,7 @@ impl WeightInfo for () {
     // Storage: UniversalDividend MonetaryMass (r:1 w:1)
     // Storage: UniversalDividend CurrentUdIndex (r:1 w:1)
     fn on_initialize_ud_created() -> Weight {
-        Weight::from_ref_time(20_160_000)
+        Weight::from_parts(20_160_000, 0)
             .saturating_add(RocksDbWeight::get().reads(5))
             .saturating_add(RocksDbWeight::get().writes(2))
     }
@@ -51,7 +51,7 @@ impl WeightInfo for () {
     // Storage: UniversalDividend PastReevals (r:1 w:1)
     // Storage: UniversalDividend CurrentUdIndex (r:1 w:1)
     fn on_initialize_ud_reevalued() -> Weight {
-        Weight::from_ref_time(32_770_000)
+        Weight::from_parts(32_770_000, 0)
             .saturating_add(RocksDbWeight::get().reads(6))
             .saturating_add(RocksDbWeight::get().writes(5))
     }
@@ -60,9 +60,9 @@ impl WeightInfo for () {
     // Storage: UniversalDividend CurrentUdIndex (r:1 w:0)
     // Storage: UniversalDividend PastReevals (r:1 w:0)
     fn claim_uds(n: u32) -> Weight {
-        Weight::from_ref_time(32_514_000)
+        Weight::from_parts(32_514_000, 0)
             // Standard Error: 32_000
-            .saturating_add(Weight::from_ref_time(8_000).saturating_mul(n as u64))
+            .saturating_add(Weight::from_parts(8_000, 0).saturating_mul(n as u64))
             .saturating_add(RocksDbWeight::get().reads(4))
             .saturating_add(RocksDbWeight::get().writes(1))
     }
@@ -70,7 +70,7 @@ impl WeightInfo for () {
     // Storage: System Account (r:1 w:1)
     // Storage: Account PendingNewAccounts (r:0 w:1)
     fn transfer_ud() -> Weight {
-        Weight::from_ref_time(53_401_000)
+        Weight::from_parts(53_401_000, 0)
             .saturating_add(RocksDbWeight::get().reads(2))
             .saturating_add(RocksDbWeight::get().writes(2))
     }
@@ -78,7 +78,7 @@ impl WeightInfo for () {
     // Storage: System Account (r:1 w:1)
     // Storage: Account PendingNewAccounts (r:0 w:1)
     fn transfer_ud_keep_alive() -> Weight {
-        Weight::from_ref_time(33_420_000)
+        Weight::from_parts(33_420_000, 0)
             .saturating_add(RocksDbWeight::get().reads(2))
             .saturating_add(RocksDbWeight::get().writes(2))
     }

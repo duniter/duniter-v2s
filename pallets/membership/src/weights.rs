@@ -20,7 +20,6 @@ use frame_support::weights::{constants::RocksDbWeight, Weight};
 
 /// Weight functions needed for pallet_universal_dividend.
 pub trait WeightInfo {
-    fn force_request_membership() -> Weight;
     fn request_membership() -> Weight;
     fn claim_membership() -> Weight;
     fn renew_membership() -> Weight;
@@ -29,21 +28,11 @@ pub trait WeightInfo {
 
 // Insecure weights implementation, use it for tests only!
 impl WeightInfo for () {
-    // Storage: Membership PendingMembership (r:1 w:1)
-    // Storage: Membership Membership (r:1 w:0)
-    // Storage: Parameters ParametersStorage (r:1 w:0)
-    // Storage: Membership PendingMembershipsExpireOn (r:1 w:1)
-    fn force_request_membership() -> Weight {
-        // Minimum execution time: 89_725 nanoseconds.
-        Weight::from_ref_time(98_333_000 as u64)
-            .saturating_add(RocksDbWeight::get().reads(4 as u64))
-            .saturating_add(RocksDbWeight::get().writes(2 as u64))
-    }
     // Storage: Identity IdentityIndexOf (r:1 w:0)
     // Storage: Identity Identities (r:1 w:0)
     fn request_membership() -> Weight {
         // Minimum execution time: 48_477 nanoseconds.
-        Weight::from_ref_time(50_689_000 as u64)
+        Weight::from_parts(50_689_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(2 as u64))
     }
     // Storage: Identity IdentityIndexOf (r:1 w:0)
@@ -55,7 +44,7 @@ impl WeightInfo for () {
     // Storage: Membership MembershipsExpireOn (r:1 w:1)
     fn claim_membership() -> Weight {
         // Minimum execution time: 144_079 nanoseconds.
-        Weight::from_ref_time(146_565_000 as u64)
+        Weight::from_parts(146_565_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(7 as u64))
             .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
@@ -66,7 +55,7 @@ impl WeightInfo for () {
     // Storage: Membership MembershipsExpireOn (r:1 w:1)
     fn renew_membership() -> Weight {
         // Minimum execution time: 120_859 nanoseconds.
-        Weight::from_ref_time(124_222_000 as u64)
+        Weight::from_parts(124_222_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(5 as u64))
             .saturating_add(RocksDbWeight::get().writes(2 as u64))
     }
@@ -77,7 +66,7 @@ impl WeightInfo for () {
     // Storage: UniversalDividend CurrentUdIndex (r:1 w:0)
     fn revoke_membership() -> Weight {
         // Minimum execution time: 109_486 nanoseconds.
-        Weight::from_ref_time(113_303_000 as u64)
+        Weight::from_parts(113_303_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(5 as u64))
             .saturating_add(RocksDbWeight::get().writes(2 as u64))
     }

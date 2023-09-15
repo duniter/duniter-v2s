@@ -56,7 +56,6 @@ pub mod pallet {
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
@@ -225,6 +224,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// ask to leave the set of validators two sessions after
+        #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::go_offline())]
         pub fn go_offline(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // Verification phase //
@@ -252,6 +252,7 @@ pub mod pallet {
             Ok(().into())
         }
         /// ask to join the set of validators two sessions after
+        #[pallet::call_index(1)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::go_online())]
         pub fn go_online(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // Verification phase //
@@ -292,6 +293,7 @@ pub mod pallet {
         }
 
         /// declare new session keys to replace current ones
+        #[pallet::call_index(2)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_session_keys())]
         pub fn set_session_keys(
             origin: OriginFor<T>,
@@ -311,6 +313,7 @@ pub mod pallet {
             Ok(().into())
         }
         /// remove an identity from the set of authorities
+        #[pallet::call_index(3)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_member())]
         pub fn remove_member(
             origin: OriginFor<T>,
@@ -323,6 +326,7 @@ pub mod pallet {
 
             Ok(().into())
         }
+        #[pallet::call_index(4)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_member_from_blacklist())]
         /// remove an identity from the blacklist
         pub fn remove_member_from_blacklist(

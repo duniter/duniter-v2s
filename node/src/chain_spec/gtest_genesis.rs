@@ -457,7 +457,7 @@ pub fn build_genesis(
         authority_members: AuthorityMembersConfig {
             initial_authorities,
         },
-        balances: Default::default(),
+        balances: Default::default(), // FIXME
         babe: BabeConfig {
             authorities: Vec::with_capacity(0),
             epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),

@@ -21,7 +21,7 @@ use frame_support::{
     traits::{Everything, OnFinalize, OnInitialize},
 };
 use frame_system as system;
-use sp_core::H256;
+use sp_core::{ConstU32, H256};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
@@ -106,6 +106,10 @@ impl pallet_balances::Config for Test {
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type RuntimeEvent = RuntimeEvent;
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {
@@ -171,7 +175,9 @@ pub fn new_test_ext(
 ) -> sp_io::TestExternalities {
     GenesisConfig {
         system: SystemConfig::default(),
-        balances: BalancesConfig::default(),
+        balances: BalancesConfig {
+            total_issuance: gen_conf.initial_monetary_mass,
+        },
         universal_dividend: gen_conf,
     }
     .build_storage()

@@ -38,20 +38,19 @@ impl<Balance: Zero> AccountData<Balance> {
     pub fn set_balances(&mut self, new_balances: pallet_balances::AccountData<Balance>) {
         self.free = new_balances.free;
         self.reserved = new_balances.reserved;
-        self.fee_frozen = new_balances.fee_frozen;
-    }
-    pub fn was_providing(&self) -> bool {
-        !self.free.is_zero() || !self.reserved.is_zero()
+        self.fee_frozen = new_balances.frozen;
     }
 }
 
+// convert Duniter AccountData to Balances AccountData
+// needed for trait implementation
 impl<Balance: Zero> From<AccountData<Balance>> for pallet_balances::AccountData<Balance> {
     fn from(account_data: AccountData<Balance>) -> Self {
         Self {
             free: account_data.free,
             reserved: account_data.reserved,
-            misc_frozen: Zero::zero(),
-            fee_frozen: account_data.fee_frozen,
+            frozen: account_data.fee_frozen,
+            flags: Default::default(), // default flags since not used
         }
     }
 }

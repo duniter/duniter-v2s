@@ -52,7 +52,6 @@ pub mod pallet {
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
     //#[pallet::without_storage_info]
     pub struct Pallet<T>(_);
@@ -192,10 +191,11 @@ pub mod pallet {
     {
         fn build(&self) {
             assert!(!self.ud.is_zero());
-            assert!(self.initial_monetary_mass >= T::Currency::total_issuance());
 
             <CurrentUd<T>>::put(self.ud);
+            // totalissuance should be updated to the same amount
             <MonetaryMass<T>>::put(self.initial_monetary_mass);
+
             NextReeval::<T>::set(self.first_reeval);
             NextUd::<T>::set(self.first_ud);
             let mut past_reevals = BoundedVec::default();
@@ -394,12 +394,14 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Claim Universal Dividends
+        #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::claim_uds(T::MaxPastReeval::get()))]
         pub fn claim_uds(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             Self::do_claim_uds(&who)
         }
         /// Transfer some liquid free balance to another account, in milliUD.
+        #[pallet::call_index(1)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer_ud())]
         pub fn transfer_ud(
             origin: OriginFor<T>,
@@ -410,6 +412,7 @@ pub mod pallet {
         }
 
         /// Transfer some liquid free balance to another account, in milliUD.
+        #[pallet::call_index(2)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer_ud_keep_alive())]
         pub fn transfer_ud_keep_alive(
             origin: OriginFor<T>,

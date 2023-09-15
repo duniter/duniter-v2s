@@ -19,16 +19,16 @@ use common_runtime::constants::*;
 use common_runtime::entities::IdtyData;
 use common_runtime::*;
 use gdev_runtime::{
-    opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig, CertConfig,
-    GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig, ParametersConfig, SessionConfig,
-    SmithCertConfig, SmithMembershipConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
-    UniversalDividendConfig, WASM_BINARY,
+    opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
+    BalancesConfig, CertConfig, GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig,
+    ParametersConfig, SessionConfig, SmithCertConfig, SmithMembershipConfig, SudoConfig,
+    SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
+use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{blake2_256, sr25519, Encode, H256};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_membership::MembershipData;
 use std::collections::BTreeMap;
 
@@ -339,14 +339,15 @@ fn gen_genesis_for_local_chain(
     assert!(initial_smiths_len <= initial_identities_len);
     assert!(initial_authorities_len <= initial_smiths_len);
 
-    let babe_epoch_duration = get_env("DUNITER_BABE_EPOCH_DURATION", 30) as u64;
+    let babe_epoch_duration = get_env("DUNITER_BABE_EPOCH_DURATION", 30);
     let cert_validity_period = get_env("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
     let membership_period = get_env("DUNITER_MEMBERSHIP_PERIOD", 1_000);
     let smith_cert_validity_period = get_env("DUNITER_SMITH_CERT_VALIDITY_PERIOD", 1_000);
     let smith_membership_period = get_env("DUNITER_SMITH_MEMBERSHIP_PERIOD", 1_000);
-    let ud_creation_period = get_env("DUNITER_UD_CREATION_PERIOD", 60_000);
-    let ud_reeval_period = get_env("DUNITER_UD_REEEVAL_PERIOD", 1_200_000);
+    let ud_creation_period = get_env("DUNITER_UD_CREATION_PERIOD", 60_000) as u64;
+    let ud_reeval_period = get_env("DUNITER_UD_REEEVAL_PERIOD", 1_200_000) as u64;
     let ud = 1_000;
+    let monetary_mass = initial_identities_len as u64 * ud;
 
     let initial_smiths = (0..initial_smiths_len)
         .map(|i| get_authority_keys_from_seed(NAMES[i]))
@@ -415,7 +416,9 @@ fn gen_genesis_for_local_chain(
                 .map(|(i, keys)| (i as u32 + 1, (keys.0.clone(), i < initial_authorities_len)))
                 .collect(),
         },
-        balances: Default::default(),
+        balances: BalancesConfig {
+            total_issuance: monetary_mass,
+        },
         babe: BabeConfig {
             authorities: Vec::with_capacity(0),
             epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
@@ -484,7 +487,7 @@ fn gen_genesis_for_local_chain(
         universal_dividend: UniversalDividendConfig {
             first_reeval: None,
             first_ud: None,
-            initial_monetary_mass: initial_identities_len as u64 * ud,
+            initial_monetary_mass: monetary_mass,
             ud,
         },
         treasury: Default::default(),
@@ -505,14 +508,15 @@ fn gen_genesis_for_benchmark_chain(
     assert!(initial_smiths_len <= initial_identities_len);
     assert!(initial_authorities_len <= initial_smiths_len);
 
-    let babe_epoch_duration = get_env("DUNITER_BABE_EPOCH_DURATION", 30) as u64;
+    let babe_epoch_duration = get_env("DUNITER_BABE_EPOCH_DURATION", 30);
     let cert_validity_period = get_env("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
     let membership_period = get_env("DUNITER_MEMBERSHIP_PERIOD", 1_000);
     let smith_cert_validity_period = get_env("DUNITER_SMITH_CERT_VALIDITY_PERIOD", 1_000);
     let smith_membership_period = get_env("DUNITER_SMITH_MEMBERSHIP_PERIOD", 1_000);
-    let ud_creation_period = get_env("DUNITER_UD_CREATION_PERIOD", 60_000);
-    let ud_reeval_period = get_env("DUNITER_UD_REEEVAL_PERIOD", 1_200_000);
+    let ud_creation_period = get_env("DUNITER_UD_CREATION_PERIOD", 60_000) as u64;
+    let ud_reeval_period = get_env("DUNITER_UD_REEEVAL_PERIOD", 1_200_000) as u64;
     let ud = 1_000;
+    let monetary_mass = initial_identities_len as u64 * ud;
 
     let initial_smiths = (0..initial_smiths_len)
         .map(|i| get_authority_keys_from_seed(NAMES[i]))
@@ -581,7 +585,9 @@ fn gen_genesis_for_benchmark_chain(
                 .map(|(i, keys)| (i as u32 + 1, (keys.0.clone(), i < initial_authorities_len)))
                 .collect(),
         },
-        balances: Default::default(),
+        balances: BalancesConfig {
+            total_issuance: monetary_mass,
+        },
         babe: BabeConfig {
             authorities: Vec::with_capacity(0),
             epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
@@ -714,7 +720,9 @@ fn genesis_data_to_gdev_genesis_conf(
         authority_members: AuthorityMembersConfig {
             initial_authorities,
         },
-        balances: Default::default(),
+        balances: BalancesConfig {
+            total_issuance: initial_monetary_mass,
+        },
         babe: BabeConfig {
             authorities: Vec::with_capacity(0),
             epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),

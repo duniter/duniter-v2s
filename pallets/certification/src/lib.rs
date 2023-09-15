@@ -51,7 +51,6 @@ pub mod pallet {
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T, I = ()>(PhantomData<(T, I)>);
@@ -281,6 +280,7 @@ pub mod pallet {
         /// - `receiver`: the account receiving the certification from the origin
         ///
         /// The origin must be allow to certify.
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::add_cert())]
         pub fn add_cert(
             origin: OriginFor<T>,
@@ -325,6 +325,7 @@ pub mod pallet {
         }
 
         /// remove a certification (only root)
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::del_cert())]
         pub fn del_cert(
             origin: OriginFor<T>,
@@ -337,6 +338,7 @@ pub mod pallet {
         }
 
         /// remove all certifications received by an identity (only root)
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::remove_all_certs_received_by(CertsByReceiver::<T, I>::get(idty_index).len() as u32))]
         pub fn remove_all_certs_received_by(
             origin: OriginFor<T>,

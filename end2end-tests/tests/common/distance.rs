@@ -19,8 +19,8 @@ use super::gdev::runtime_types::pallet_identity;
 use super::*;
 use crate::DuniterWorld;
 use sp_keyring::AccountKeyring;
-use subxt::ext::sp_runtime::AccountId32;
 use subxt::tx::{PairSigner, Signer};
+use subxt::utils::AccountId32;
 
 pub async fn request_evaluation(client: &Client, origin: AccountKeyring) -> Result<()> {
     let origin = PairSigner::new(origin.pair());

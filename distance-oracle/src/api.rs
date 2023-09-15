@@ -20,7 +20,7 @@ use sp_core::H256;
 use subxt::storage::StorageKey;
 
 pub type Client = subxt::OnlineClient<crate::RuntimeConfig>;
-pub type AccountId = subxt::ext::sp_runtime::AccountId32;
+pub type AccountId = subxt::utils::AccountId32;
 pub type IdtyIndex = u32;
 
 pub async fn client(rpc_url: String) -> Client {
@@ -30,21 +30,14 @@ pub async fn client(rpc_url: String) -> Client {
 }
 
 pub async fn parent_hash(client: &Client) -> H256 {
-    client
-        .storage()
-        .fetch(&runtime::storage().system().parent_hash(), None)
-        .await
-        .expect("Cannot fetch parent hash")
-        .expect("Parent hash is None")
+    client.rpc().block_hash(None).await.unwrap().unwrap()
 }
 
 pub async fn current_session(client: &Client, parent_hash: H256) -> u32 {
     client
         .storage()
-        .fetch(
-            &runtime::storage().session().current_index(),
-            Some(parent_hash),
-        )
+        .at(parent_hash)
+        .fetch(&runtime::storage().session().current_index())
         .await
         .expect("Cannot fetch current session")
         .unwrap_or_default()
@@ -57,15 +50,13 @@ pub async fn current_pool(
 ) -> Option<runtime::runtime_types::pallet_distance::types::EvaluationPool<AccountId, IdtyIndex>> {
     client
         .storage()
-        .fetch(
-            &match current_session % 3 {
-                0 => runtime::storage().distance().evaluation_pool1(),
-                1 => runtime::storage().distance().evaluation_pool2(),
-                2 => runtime::storage().distance().evaluation_pool0(),
-                _ => unreachable!("n%3<3"),
-            },
-            Some(parent_hash),
-        )
+        .at(parent_hash)
+        .fetch(&match current_session % 3 {
+            0 => runtime::storage().distance().evaluation_pool1(),
+            1 => runtime::storage().distance().evaluation_pool2(),
+            2 => runtime::storage().distance().evaluation_pool0(),
+            _ => unreachable!("n%3<3"),
+        })
         .await
         .expect("Cannot fetch current pool")
 }
@@ -73,10 +64,8 @@ pub async fn current_pool(
 pub async fn evaluation_block(client: &Client, parent_hash: H256) -> H256 {
     client
         .storage()
-        .fetch(
-            &runtime::storage().distance().evaluation_block(),
-            Some(parent_hash),
-        )
+        .at(parent_hash)
+        .fetch(&runtime::storage().distance().evaluation_block())
         .await
         .expect("Cannot fetch evaluation block")
         .expect("No evaluation block")
@@ -86,11 +75,8 @@ pub async fn member_iter(client: &Client, evaluation_block: H256) -> MemberIter 
     MemberIter(
         client
             .storage()
-            .iter(
-                runtime::storage().membership().membership(0),
-                100,
-                Some(evaluation_block),
-            )
+            .at(evaluation_block)
+            .iter(runtime::storage().membership().membership(0), 100)
             .await
             .expect("Cannot fetch memberships"),
     )
@@ -100,9 +86,7 @@ pub struct MemberIter(
     subxt::storage::KeyIter<
         crate::RuntimeConfig,
         Client,
-        subxt::metadata::DecodeStaticType<
-            runtime::runtime_types::sp_membership::MembershipData<u32>,
-        >,
+        runtime::runtime_types::sp_membership::MembershipData<u32>,
     >,
 );
 
@@ -120,23 +104,14 @@ pub async fn cert_iter(client: &Client, evaluation_block: H256) -> CertIter {
     CertIter(
         client
             .storage()
-            .iter(
-                runtime::storage().cert().certs_by_receiver(0),
-                100,
-                Some(evaluation_block),
-            )
+            .at(evaluation_block)
+            .iter(runtime::storage().cert().certs_by_receiver(0), 100)
             .await
             .expect("Cannot fetch certifications"),
     )
 }
 
-pub struct CertIter(
-    subxt::storage::KeyIter<
-        crate::RuntimeConfig,
-        Client,
-        subxt::metadata::DecodeStaticType<Vec<(IdtyIndex, u32)>>,
-    >,
-);
+pub struct CertIter(subxt::storage::KeyIter<crate::RuntimeConfig, Client, Vec<(IdtyIndex, u32)>>);
 
 impl CertIter {
     pub async fn next(

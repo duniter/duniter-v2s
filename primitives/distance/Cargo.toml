@@ -24,7 +24,7 @@ std = [
 try-runtime = ['frame-support/try-runtime']
 
 [dependencies]
-async-trait = { version = "0.1.50", optional = true }
+async-trait = { version = "0.1", optional = true }
 thiserror = { version = "1.0.30", optional = true }
 
 # substrate
@@ -39,7 +39,7 @@ version = "3.1.5"
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.serde]
 version = "1.0.101"
@@ -49,17 +49,17 @@ features = ["derive"]
 [dependencies.sp-inherents]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 ### DOC ###
 

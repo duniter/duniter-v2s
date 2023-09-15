@@ -19,10 +19,12 @@
 mod median;
 mod traits;
 mod types;
+mod weights;
 
 pub use pallet::*;
 pub use traits::*;
 pub use types::*;
+// pub use weights::WeightInfo;
 
 use frame_support::traits::StorageVersion;
 use pallet_authority_members::SessionIndex;
@@ -37,7 +39,7 @@ pub const MAX_EVALUATIONS_PER_SESSION: u32 = 600;
 /// Maximum number of evaluators in a session
 pub const MAX_EVALUATORS_PER_SESSION: u32 = 100;
 
-#[frame_support::pallet]
+#[frame_support::pallet(dev_mode)] // dev mode while waiting for benchmarks
 pub mod pallet {
     use super::*;
     use frame_support::{pallet_prelude::*, traits::ReservableCurrency};
@@ -48,7 +50,7 @@ pub mod pallet {
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
+    // #[pallet::generate_store(pub(super) trait Store)] // deprecated
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<T>);
@@ -69,6 +71,8 @@ pub mod pallet {
         type MinAccessibleReferees: Get<Perbill>;
         /// Number of session to keep a positive evaluation result
         type ResultExpiration: Get<u32>;
+        // /// Type representing the weight of this pallet
+        // type WeightInfo: WeightInfo;
     }
 
     // STORAGE //
@@ -190,7 +194,9 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Request an identity to be evaluated
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::call_index(0)]
+        #[pallet::weight(0)]
+        // #[pallet::weight(T::WeightInfo::request_distance_evaluation())]
         pub fn request_distance_evaluation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
@@ -207,7 +213,9 @@ pub mod pallet {
         }
 
         /// (Inherent) Push an evaluation result to the pool
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::call_index(1)]
+        #[pallet::weight(0)]
+        // #[pallet::weight(T::WeightInfo::update_evaluation())]
         pub fn update_evaluation(
             origin: OriginFor<T>,
             computation_result: ComputationResult,
@@ -226,7 +234,9 @@ pub mod pallet {
         }
 
         /// Push an evaluation result to the pool
-        #[pallet::weight(1_000_000_000)]
+        #[pallet::call_index(2)]
+        #[pallet::weight(0)]
+        // #[pallet::weight(T::WeightInfo::force_update_evaluation())]
         pub fn force_update_evaluation(
             origin: OriginFor<T>,
             evaluator: <T as frame_system::Config>::AccountId,
@@ -244,7 +254,9 @@ pub mod pallet {
         /// * `status.0` is the account for whom the price will be unreserved or slashed
         ///   when the evaluation completes.
         /// * `status.1` is the status of the evaluation.
-        #[pallet::weight(1_000_000)]
+        #[pallet::call_index(3)]
+        #[pallet::weight(0)]
+        // #[pallet::weight(T::WeightInfo::force_set_distance_status())]
         pub fn force_set_distance_status(
             origin: OriginFor<T>,
             identity: <T as pallet_identity::Config>::IdtyIndex,

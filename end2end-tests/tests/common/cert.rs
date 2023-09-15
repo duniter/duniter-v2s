@@ -18,7 +18,7 @@ use super::gdev;
 use super::gdev::runtime_types::pallet_certification;
 use super::*;
 use sp_keyring::AccountKeyring;
-use subxt::{ext::sp_runtime::MultiAddress, tx::PairSigner};
+use subxt::{tx::PairSigner, utils::MultiAddress};
 
 pub async fn certify(client: &Client, from: AccountKeyring, to: AccountKeyring) -> Result<()> {
     let signer = PairSigner::new(from.pair());
@@ -27,12 +27,18 @@ pub async fn certify(client: &Client, from: AccountKeyring, to: AccountKeyring) 
 
     let issuer_index = client
         .storage()
-        .fetch(&gdev::storage().identity().identity_index_of(&from), None)
+        .at_latest()
+        .await
+        .unwrap()
+        .fetch(&gdev::storage().identity().identity_index_of(&from.into()))
         .await?
         .unwrap();
     let receiver_index = client
         .storage()
-        .fetch(&gdev::storage().identity().identity_index_of(&to), None)
+        .at_latest()
+        .await
+        .unwrap()
+        .fetch(&gdev::storage().identity().identity_index_of(&to.into()))
         .await?
         .unwrap();
 

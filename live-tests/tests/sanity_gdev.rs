@@ -72,18 +72,17 @@ async fn main() -> anyhow::Result<()> {
     sanity_tests_at(client, maybe_block_hash).await
 }
 
-async fn sanity_tests_at(client: Client, maybe_block_hash: Option<H256>) -> anyhow::Result<()> {
+async fn sanity_tests_at(client: Client, _maybe_block_hash: Option<H256>) -> anyhow::Result<()> {
     // ===== Collect storage ===== //
 
     // Collect accounts
-    let mut accounts = HashMap::new();
+    let mut accounts: HashMap<AccountId32, AccountInfo> = HashMap::new();
     let mut account_iter = client
         .storage()
-        .iter(
-            gdev::storage().system().account_root(),
-            100,
-            maybe_block_hash,
-        )
+        .at_latest()
+        .await
+        .unwrap()
+        .iter(gdev::storage().system().account_root(), 100)
         .await?;
     while let Some((key, account_info)) = account_iter.next().await? {
         let mut account_id_bytes = [0u8; 32];
@@ -93,31 +92,37 @@ async fn sanity_tests_at(client: Client, maybe_block_hash: Option<H256>) -> anyh
     println!("accounts: {}.", accounts.len());
 
     // Collect identities
-    let mut identities = HashMap::new();
+    let mut identities: HashMap<IdtyIndex, IdtyValue> = HashMap::new();
     let mut idty_iter = client
         .storage()
-        .iter(
-            gdev::storage().identity().identities_root(),
-            100,
-            maybe_block_hash,
-        )
+        .at_latest()
+        .await
+        .unwrap()
+        .iter(gdev::storage().identity().identities_root(), 100)
         .await?;
     while let Some((key, idty_value)) = idty_iter.next().await? {
         let mut idty_index_bytes = [0u8; 4];
         idty_index_bytes.copy_from_slice(&key.0[40..]);
-        identities.insert(IdtyIndex::from_le_bytes(idty_index_bytes), idty_value);
+        let idty_val = IdtyValue {
+            data: idty_value.data,
+            next_creatable_identity_on: idty_value.next_creatable_identity_on,
+            old_owner_key: None, // Not used in the live test, skip the conversion
+            owner_key: AccountId32::from(idty_value.owner_key.0),
+            removable_on: idty_value.removable_on,
+            status: idty_value.status,
+        };
+        identities.insert(IdtyIndex::from_le_bytes(idty_index_bytes), idty_val);
     }
     println!("identities: {}.", identities.len());
 
     // Collect identity_index_of
-    let mut identity_index_of = HashMap::new();
+    let mut identity_index_of: HashMap<[u8; 16], IdtyIndex> = HashMap::new();
     let mut idty_index_of_iter = client
         .storage()
-        .iter(
-            gdev::storage().identity().identity_index_of_root(),
-            100,
-            maybe_block_hash,
-        )
+        .at_latest()
+        .await
+        .unwrap()
+        .iter(gdev::storage().identity().identity_index_of_root(), 100)
         .await?;
     while let Some((key, idty_index)) = idty_index_of_iter.next().await? {
         let mut blake2_128_bytes = [0u8; 16];

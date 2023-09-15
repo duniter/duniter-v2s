@@ -64,37 +64,39 @@ impl DuniterWorld {
         self.ignore_errors
     }
     // Read storage entry on last block
-    fn read<'a, Address>(
+    async fn read<'a, Address>(
         &self,
         address: &'a Address,
     ) -> impl std::future::Future<
-        Output = std::result::Result<
-            Option<<Address::Target as subxt::metadata::DecodeWithMetadata>::Target>,
-            subxt::error::Error,
-        >,
+        Output = std::result::Result<Option<Address::Target>, subxt::error::Error>,
     > + 'a
     where
         Address: subxt::storage::StorageAddress<IsFetchable = subxt::storage::address::Yes> + 'a,
     {
-        self.client().storage().fetch(address, None)
+        self.client()
+            .storage()
+            .at_latest()
+            .await
+            .unwrap()
+            .fetch(address)
     }
     // Read storage entry with default value (on last block)
-    fn read_or_default<'a, Address>(
+    async fn read_or_default<'a, Address>(
         &self,
         address: &'a Address,
-    ) -> impl std::future::Future<
-        Output = std::result::Result<
-            <Address::Target as subxt::metadata::DecodeWithMetadata>::Target,
-            subxt::error::Error,
-        >,
-    > + 'a
+    ) -> impl std::future::Future<Output = std::result::Result<Address::Target, subxt::error::Error>> + 'a
     where
         Address: subxt::storage::StorageAddress<
                 IsFetchable = subxt::storage::address::Yes,
                 IsDefaultable = subxt::storage::address::Yes,
             > + 'a,
     {
-        self.client().storage().fetch_or_default(address, None)
+        self.client()
+            .storage()
+            .at_latest()
+            .await
+            .unwrap()
+            .fetch_or_default(address)
     }
 }
 
@@ -149,6 +151,7 @@ fn parse_amount(amount: u64, unit: &str) -> (u64, bool) {
 
 // ===== given =====
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[given(regex = r"([a-zA-Z]+) ha(?:ve|s) (\d+) (ĞD|cĞD|UD|mUD)")]
 async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: String) -> Result<()> {
     // Parse inputs
@@ -158,6 +161,7 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
     if is_ud {
         let current_ud_amount = world
             .read(&gdev::storage().universal_dividend().current_ud())
+            .await
             .await?
             .unwrap_or_default();
         amount = (amount * current_ud_amount) / 1_000;
@@ -171,6 +175,7 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
 
 // ===== when =====
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r"(\d+) blocks? later")]
 async fn n_blocks_later(world: &mut DuniterWorld, n: usize) -> Result<()> {
     for _ in 0..n {
@@ -179,6 +184,7 @@ async fn n_blocks_later(world: &mut DuniterWorld, n: usize) -> Result<()> {
     Ok(())
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r"([a-zA-Z]+) sends? (\d+) (ĞD|cĞD|UD|mUD) to ([a-zA-Z]+)$")]
 async fn transfer(
     world: &mut DuniterWorld,
@@ -205,6 +211,7 @@ async fn transfer(
     }
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r"([a-zA-Z]+) sends? (\d+) (ĞD|cĞD) to oneshot ([a-zA-Z]+)")]
 async fn create_oneshot_account(
     world: &mut DuniterWorld,
@@ -223,6 +230,7 @@ async fn create_oneshot_account(
     common::oneshot::create_oneshot_account(world.client(), from, amount, to).await
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r"oneshot ([a-zA-Z]+) consumes? into (oneshot|account) ([a-zA-Z]+)")]
 async fn consume_oneshot_account(
     world: &mut DuniterWorld,
@@ -246,6 +254,7 @@ async fn consume_oneshot_account(
     regex = r"oneshot ([a-zA-Z]+) consumes? (\d+) (ĞD|cĞD) into (oneshot|account) ([a-zA-Z]+) and the rest into (oneshot|account) ([a-zA-Z]+)"
 )]
 #[allow(clippy::too_many_arguments)]
+#[allow(clippy::needless_pass_by_ref_mut)]
 async fn consume_oneshot_account_with_remaining(
     world: &mut DuniterWorld,
     from: String,
@@ -284,6 +293,7 @@ async fn consume_oneshot_account_with_remaining(
     .await
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r"([a-zA-Z]+) sends? all (?:his|her) (?:ĞDs?|DUs?|UDs?) to ([a-zA-Z]+)")]
 async fn send_all_to(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
     // Parse inputs
@@ -293,6 +303,7 @@ async fn send_all_to(world: &mut DuniterWorld, from: String, to: String) -> Resu
     common::balances::transfer_all(world.client(), from, to).await
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r"([a-zA-Z]+) certifies ([a-zA-Z]+)")]
 async fn certifies(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
     // Parse inputs
@@ -302,6 +313,7 @@ async fn certifies(world: &mut DuniterWorld, from: String, to: String) -> Result
     common::cert::certify(world.client(), from, to).await
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r"([a-zA-Z]+) creates identity for ([a-zA-Z]+)")]
 async fn creates_identity(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
     // Parse inputs
@@ -311,6 +323,7 @@ async fn creates_identity(world: &mut DuniterWorld, from: String, to: String) ->
     common::identity::create_identity(world.client(), from, to).await
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r#"([a-zA-Z]+) confirms (?:his|her) identity with pseudo "([a-zA-Z]+)""#)]
 async fn confirm_identity(world: &mut DuniterWorld, from: String, pseudo: String) -> Result<()> {
     let from = AccountKeyring::from_str(&from).expect("unknown from");
@@ -318,6 +331,7 @@ async fn confirm_identity(world: &mut DuniterWorld, from: String, pseudo: String
     common::identity::confirm_identity(world.client(), from, pseudo).await
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r#"([a-zA-Z]+) validates ([a-zA-Z]+) identity"#)]
 async fn validate_identity(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
     // input names to keyrings
@@ -329,6 +343,7 @@ async fn validate_identity(world: &mut DuniterWorld, from: String, to: String) -
     common::identity::validate_identity(world.client(), from, to).await
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r#"([a-zA-Z]+) requests distance evaluation"#)]
 async fn request_distance_evaluation(world: &mut DuniterWorld, who: String) -> Result<()> {
     let who = AccountKeyring::from_str(&who).expect("unknown origin");
@@ -336,6 +351,7 @@ async fn request_distance_evaluation(world: &mut DuniterWorld, who: String) -> R
     common::distance::request_evaluation(world.client(), who).await
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r#"([a-zA-Z]+) runs distance oracle"#)]
 async fn run_distance_oracle(world: &mut DuniterWorld, who: String) -> Result<()> {
     let who = AccountKeyring::from_str(&who).expect("unknown origin");
@@ -350,6 +366,7 @@ async fn run_distance_oracle(world: &mut DuniterWorld, who: String) -> Result<()
 
 // ===== then ====
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[then(regex = r"([a-zA-Z]+) should have (\d+) (ĞD|cĞD)")]
 async fn should_have(
     world: &mut DuniterWorld,
@@ -358,18 +375,21 @@ async fn should_have(
     unit: String,
 ) -> Result<()> {
     // Parse inputs
-    let who = AccountKeyring::from_str(&who)
+    let who: subxt::utils::AccountId32 = AccountKeyring::from_str(&who)
         .expect("unknown to")
-        .to_account_id();
+        .to_account_id()
+        .into();
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
     let who_account = world
         .read_or_default(&gdev::storage().system().account(&who))
+        .await
         .await?;
     assert_eq!(who_account.data.free, amount);
     Ok(())
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[then(regex = r"([a-zA-Z]+) should have oneshot (\d+) (ĞD|cĞD)")]
 async fn should_have_oneshot(
     world: &mut DuniterWorld,
@@ -378,18 +398,21 @@ async fn should_have_oneshot(
     unit: String,
 ) -> Result<()> {
     // Parse inputs
-    let who = AccountKeyring::from_str(&who)
+    let who: subxt::utils::AccountId32 = AccountKeyring::from_str(&who)
         .expect("unknown to")
-        .to_account_id();
+        .to_account_id()
+        .into();
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
     let oneshot_amount = world
         .read(&gdev::storage().oneshot_account().oneshot_accounts(&who))
+        .await
         .await?;
     assert_eq!(oneshot_amount.unwrap_or(0), amount);
     Ok(())
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[then(regex = r"Current UD amount should be (\d+).(\d+)")]
 async fn current_ud_amount_should_be(
     world: &mut DuniterWorld,
@@ -399,21 +422,25 @@ async fn current_ud_amount_should_be(
     let expected = (amount * 100) + cents;
     let actual = world
         .read_or_default(&gdev::storage().universal_dividend().current_ud())
+        .await
         .await?;
     assert_eq!(actual, expected);
     Ok(())
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[then(regex = r"Monetary mass should be (\d+).(\d+)")]
 async fn monetary_mass_should_be(world: &mut DuniterWorld, amount: u64, cents: u64) -> Result<()> {
     let expected = (amount * 100) + cents;
     let actual = world
         .read_or_default(&gdev::storage().universal_dividend().monetary_mass())
+        .await
         .await?;
     assert_eq!(actual, expected);
     Ok(())
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[then(regex = r"([a-zA-Z]+) should be certified by ([a-zA-Z]+)")]
 async fn should_be_certified_by(
     world: &mut DuniterWorld,
@@ -421,12 +448,14 @@ async fn should_be_certified_by(
     issuer: String,
 ) -> Result<()> {
     // Parse inputs
-    let receiver_account = AccountKeyring::from_str(&receiver)
+    let receiver_account: subxt::utils::AccountId32 = AccountKeyring::from_str(&receiver)
         .expect("unknown to")
-        .to_account_id();
-    let issuer_account = AccountKeyring::from_str(&issuer)
+        .to_account_id()
+        .into();
+    let issuer_account: subxt::utils::AccountId32 = AccountKeyring::from_str(&issuer)
         .expect("unknown to")
-        .to_account_id();
+        .to_account_id()
+        .into();
 
     // get corresponding identities index
     let issuer_index = world
@@ -435,6 +464,7 @@ async fn should_be_certified_by(
                 .identity()
                 .identity_index_of(&issuer_account),
         )
+        .await
         .await?
         .unwrap();
     let receiver_index = world
@@ -443,11 +473,13 @@ async fn should_be_certified_by(
                 .identity()
                 .identity_index_of(&receiver_account),
         )
+        .await
         .await?
         .unwrap();
 
     let issuers = world
         .read_or_default(&gdev::storage().cert().certs_by_receiver(receiver_index))
+        .await
         .await?;
 
     // look for certification by issuer/receiver pair
@@ -463,6 +495,7 @@ async fn should_be_certified_by(
     }
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[then(regex = r"([a-zA-Z]+) should have distance result in (\d+) sessions?")]
 async fn should_have_distance_result_in_sessions(
     world: &mut DuniterWorld,
@@ -474,12 +507,14 @@ async fn should_have_distance_result_in_sessions(
     let who = AccountKeyring::from_str(&who).unwrap().to_account_id();
 
     let idty_id = world
-        .read(&gdev::storage().identity().identity_index_of(&who))
+        .read(&gdev::storage().identity().identity_index_of(&who.into()))
+        .await
         .await?
         .unwrap();
 
     let current_session = world
         .read(&gdev::storage().session().current_index())
+        .await
         .await?
         .unwrap_or_default();
 
@@ -490,6 +525,7 @@ async fn should_have_distance_result_in_sessions(
             2 => gdev::storage().distance().evaluation_pool2(),
             _ => unreachable!("n%3<3"),
         })
+        .await
         .await
         .unwrap()
         .ok_or_else(|| anyhow::anyhow!("given pool is empty"))?;
@@ -503,17 +539,20 @@ async fn should_have_distance_result_in_sessions(
     Err(anyhow::anyhow!("no evaluation in given pool").into())
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[then(regex = r"([a-zA-Z]+) should have distance ok")]
 async fn should_have_distance_ok(world: &mut DuniterWorld, who: String) -> Result<()> {
     let who = AccountKeyring::from_str(&who).unwrap().to_account_id();
 
     let idty_id = world
-        .read(&gdev::storage().identity().identity_index_of(&who))
+        .read(&gdev::storage().identity().identity_index_of(&who.into()))
+        .await
         .await?
         .unwrap();
 
     match world
         .read(&gdev::storage().distance().identity_distance_status(idty_id))
+        .await
         .await?
     {
         Some((_, gdev::runtime_types::pallet_distance::types::DistanceStatus::Valid)) => Ok(()),
@@ -540,6 +579,7 @@ impl FromStr for IdtyStatus {
     }
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 #[then(regex = r"([a-zA-Z]+) identity should be ([a-zA-Z ]+)")]
 async fn identity_status_should_be(
     world: &mut DuniterWorld,

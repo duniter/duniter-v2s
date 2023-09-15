@@ -119,20 +119,13 @@ macro_rules! pallets_config {
 
             type DisabledValidators = Session;
 
-            type KeyOwnerProofSystem = Historical;
-
-            type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
+            type KeyOwnerProof = <Historical as KeyOwnerProofSystem<(
                 KeyTypeId,
                 pallet_babe::AuthorityId,
             )>>::Proof;
 
-            type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-                KeyTypeId,
-                pallet_babe::AuthorityId,
-            )>>::IdentificationTuple;
-
-            type HandleEquivocation =
-                pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
+            type EquivocationReportSystem =
+                pallet_babe::EquivocationReportSystem<Self, Offences, Historical, ReportLongevity>;
 
             type WeightInfo = common_runtime::weights::pallet_babe::WeightInfo<Runtime>;
 
@@ -154,12 +147,28 @@ macro_rules! pallets_config {
             type ReserveIdentifier = [u8; 8];
             /// The type for recording an account's balance.
             type Balance = Balance;
-            type DustRemoval = Treasury;
+            type DustRemoval = HandleDust;
             type ExistentialDeposit = ExistentialDeposit;
             type AccountStore = Account;
+			type HoldIdentifier = ();
+			type FreezeIdentifier = ();
+			type MaxHolds = frame_support::pallet_prelude::ConstU32<0>;
+			type MaxFreezes = frame_support::pallet_prelude::ConstU32<0>;
             /// The ubiquitous event type.
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_balances::WeightInfo<Runtime>;
+        }
+
+        // Take Dust from Balances and put it in the Treasury pot
+        pub struct HandleDust;
+        type CreditOf = frame_support::traits::tokens::fungible::Credit<AccountId, Balances>;
+        impl frame_support::traits::OnUnbalanced<CreditOf> for HandleDust {
+            fn on_nonzero_unbalanced(amount: CreditOf) {
+                use frame_support::traits::Currency as _;
+                use frame_support::traits::Imbalance as _;
+                let imbalance = NegativeImbalance::new(amount.peek());
+                Balances::resolve_creating(&Treasury::account_id(), imbalance);
+            }
         }
 
         pub struct HandleFees;
@@ -211,8 +220,6 @@ macro_rules! pallets_config {
         }
         impl pallet_authorship::Config for Runtime {
             type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
-            type UncleGenerations = UncleGenerations;
-            type FilterUncle = ();
             type EventHandler = ImOnline;
         }
         impl pallet_im_online::Config for Runtime {
@@ -253,26 +260,20 @@ macro_rules! pallets_config {
         impl pallet_grandpa::Config for Runtime {
             type RuntimeEvent = RuntimeEvent;
 
-            type KeyOwnerProofSystem = Historical;
-
             type KeyOwnerProof =
-                <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
+                <Historical as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
 
-            type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-                KeyTypeId,
-                GrandpaId,
-            )>>::IdentificationTuple;
-
-        type HandleEquivocation = pallet_grandpa::EquivocationHandler<
-                Self::KeyOwnerIdentification,
-                Offences,
-                ReportLongevity,
-            >;
+            type EquivocationReportSystem =
+            		pallet_grandpa::EquivocationReportSystem<Self, Offences, Historical, ReportLongevity>;
 
             type WeightInfo = common_runtime::weights::pallet_grandpa::WeightInfo<Runtime>;
 
             type MaxAuthorities = MaxAuthorities;
-        }
+			type MaxSetIdSessionEntries = MaxSetIdSessionEntries;
+		}
+parameter_types! {
+	pub const MaxSetIdSessionEntries: u32 = 1000;//BondingDuration::get() * SessionsPerEra::get();
+}
 
         // ONCHAIN GOVERNANCE //
 
@@ -542,6 +543,7 @@ macro_rules! pallets_config {
         }
         parameter_types! {
             pub const TechnicalCommitteeMotionDuration: BlockNumber = 7 * DAYS;
+pub MaxProposalWeight: Weight = Perbill::from_percent(50) * BlockWeights::get().max_block;
         }
         impl pallet_collective::Config<Instance2> for Runtime {
             type RuntimeOrigin = RuntimeOrigin;
@@ -551,6 +553,8 @@ macro_rules! pallets_config {
             type MaxProposals = frame_support::pallet_prelude::ConstU32<20>;
             type MaxMembers = frame_support::pallet_prelude::ConstU32<100>;
             type WeightInfo = common_runtime::weights::pallet_collective::WeightInfo<Runtime>;
+type SetMembersOrigin = EnsureRoot<AccountId>;
+type MaxProposalWeight = MaxProposalWeight;
             #[cfg(not(feature = "runtime-benchmarks"))]
             type DefaultVote = TechnicalCommitteeDefaultVote;
             #[cfg(feature = "runtime-benchmarks")]

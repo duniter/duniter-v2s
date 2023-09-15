@@ -18,7 +18,7 @@ use crate::{self as pallet_oneshot_account};
 use frame_support::{parameter_types, traits::Everything, weights::IdentityFee};
 use frame_system as system;
 use pallet_transaction_payment::CurrencyAdapter;
-use sp_core::H256;
+use sp_core::{ConstU32, H256};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
@@ -91,6 +91,10 @@ impl pallet_balances::Config for Test {
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type RuntimeEvent = RuntimeEvent;
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
 }
 impl pallet_transaction_payment::Config for Test {
     type RuntimeEvent = RuntimeEvent;
@@ -118,7 +122,7 @@ impl frame_support::traits::OnUnbalanced<NegativeImbalance> for HandleFees {
 pub fn new_test_ext() -> sp_io::TestExternalities {
     GenesisConfig {
         system: SystemConfig::default(),
-        balances: BalancesConfig::default(),
+        balances: BalancesConfig::default(), // FIXME (explicit absence of oneshot account in genesis)
     }
     .build_storage()
     .unwrap()

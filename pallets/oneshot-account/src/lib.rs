@@ -40,14 +40,8 @@ use sp_std::convert::TryInto;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::traits::StorageVersion;
-
-    /// The current storage version.
-    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
-    #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -131,6 +125,7 @@ pub mod pallet {
         /// - `balance`: The balance to be transfered to this oneshot account.
         ///
         /// Origin account is kept alive.
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::create_oneshot_account())]
         pub fn create_oneshot_account(
             origin: OriginFor<T>,
@@ -169,6 +164,7 @@ pub mod pallet {
         /// - `block_height`: Must be a recent block number. The limit is `BlockHashCount` in the past. (this is to prevent replay attacks)
         /// - `dest`: The destination account.
         /// - `dest_is_oneshot`: If set to `true`, then a oneshot account is created at `dest`. Else, `dest` has to be an existing account.
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::consume_oneshot_account())]
         pub fn consume_oneshot_account(
             origin: OriginFor<T>,
@@ -227,6 +223,7 @@ pub mod pallet {
         /// - `dest2`: The second destination account.
         /// - `dest2_is_oneshot`: If set to `true`, then a oneshot account is created at `dest2`. Else, `dest2` has to be an existing account.
         /// - `balance1`: The amount transfered to `dest`, the leftover being transfered to `dest2`.
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::consume_oneshot_account_with_remaining())]
         pub fn consume_oneshot_account_with_remaining(
             origin: OriginFor<T>,

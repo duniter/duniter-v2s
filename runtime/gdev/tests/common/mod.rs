@@ -25,11 +25,11 @@ use gdev_runtime::*;
 use pallet_authority_members::OnNewSession;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::{AuthorityId as BabeId, Slot};
-use sp_consensus_vrf::schnorrkel::{VRFOutput, VRFProof};
+use sp_consensus_babe::{VrfOutput, VrfProof};
+use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::IsWrappedBy;
 use sp_core::sr25519;
 use sp_core::{Encode, Pair, Public, H256};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_membership::MembershipData;
 use sp_runtime::testing::{Digest, DigestItem};
 use sp_runtime::traits::{IdentifyAccount, Verify};
@@ -154,6 +154,12 @@ impl ExtBuilder {
             .build_storage::<Runtime>()
             .unwrap();
 
+        // compute total monetary mass
+        let monetary_mass = initial_accounts
+            .values()
+            .map(|balance| balance.balance)
+            .sum();
+
         pallet_authority_members::GenesisConfig::<Runtime> {
             initial_authorities: initial_smiths
                 .iter()
@@ -172,7 +178,14 @@ impl ExtBuilder {
         .unwrap();*/
 
         pallet_duniter_account::GenesisConfig::<Runtime> {
-            accounts: initial_accounts,
+            accounts: initial_accounts.clone(),
+        }
+        .assimilate_storage(&mut t)
+        .unwrap();
+
+        // Necessary to initialize TotalIssuance
+        pallet_balances::GenesisConfig::<Runtime> {
+            total_issuance: monetary_mass,
         }
         .assimilate_storage(&mut t)
         .unwrap();
@@ -270,7 +283,7 @@ impl ExtBuilder {
         pallet_universal_dividend::GenesisConfig::<Runtime> {
             first_reeval: Some(600_000),
             first_ud: Some(24_000),
-            initial_monetary_mass: 0,
+            initial_monetary_mass: monetary_mass,
             ud: 1_000,
         }
         .assimilate_storage(&mut t)
@@ -313,12 +326,16 @@ pub fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
 }
 
 fn mock_babe_initialize(n: u32) {
-    let slot: sp_consensus_slots::Slot = (n as u64).into();
+    let slot: sp_consensus_babe::Slot = (n as u64).into();
     pallet_babe::CurrentSlot::<Runtime>::put(slot);
+    // force epoch change based on session
+    let session = Session::current_index() as u64;
+    pallet_babe::EpochIndex::<Runtime>::put(session);
 }
 
 pub fn run_to_block(n: u32) {
     while System::block_number() < n {
+        // ---
         // Finalize the previous block
         Babe::on_finalize(System::block_number());
         //Timestamp::on_finalize(System::block_number());
@@ -327,6 +344,7 @@ pub fn run_to_block(n: u32) {
         Authorship::on_finalize(System::block_number());
         Grandpa::on_finalize(System::block_number());
 
+        // ---
         // Set the new block number and author
         System::reset_events();
         System::set_block_number(System::block_number() + 1);
@@ -337,8 +355,8 @@ pub fn run_to_block(n: u32) {
         // Initialize the new block
         Account::on_initialize(System::block_number());
         Scheduler::on_initialize(System::block_number());
-        mock_babe_initialize(System::block_number());
         Session::on_initialize(System::block_number());
+        mock_babe_initialize(System::block_number());
         Authorship::on_initialize(System::block_number());
 
         /*if session_before != session_after {
@@ -348,6 +366,7 @@ pub fn run_to_block(n: u32) {
             assert!(!Babe::should_end_session(System::block_number()));
         }*/
 
+        // ---
         UniversalDividend::on_initialize(System::block_number());
         Wot::on_initialize(System::block_number());
         Identity::on_initialize(System::block_number());

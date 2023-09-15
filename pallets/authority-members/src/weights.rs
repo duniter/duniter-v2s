@@ -38,7 +38,7 @@ impl WeightInfo for () {
     // Storage: AuthorityMembers AuthoritiesCounter (r:1 w:1)
     fn go_offline() -> Weight {
         // Minimum execution time: 120_876 nanoseconds.
-        Weight::from_ref_time(122_190_000 as u64)
+        Weight::from_parts(122_190_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(7 as u64))
             .saturating_add(RocksDbWeight::get().writes(2 as u64))
     }
@@ -52,7 +52,7 @@ impl WeightInfo for () {
     // Storage: AuthorityMembers AuthoritiesCounter (r:1 w:1)
     fn go_online() -> Weight {
         // Minimum execution time: 145_521 nanoseconds.
-        Weight::from_ref_time(157_428_000 as u64)
+        Weight::from_parts(157_428_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(8 as u64))
             .saturating_add(RocksDbWeight::get().writes(2 as u64))
     }
@@ -66,7 +66,7 @@ impl WeightInfo for () {
     // Storage: AuthorityMembers MustRotateKeysBefore (r:1 w:1)
     fn set_session_keys() -> Weight {
         // Minimum execution time: 181_682 nanoseconds.
-        Weight::from_ref_time(192_995_000 as u64)
+        Weight::from_parts(192_995_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(11 as u64))
             .saturating_add(RocksDbWeight::get().writes(3 as u64))
     }
@@ -82,14 +82,14 @@ impl WeightInfo for () {
     // Storage: Session KeyOwner (r:0 w:4)
     fn remove_member() -> Weight {
         // Minimum execution time: 246_592 nanoseconds.
-        Weight::from_ref_time(256_761_000 as u64)
+        Weight::from_parts(256_761_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(9 as u64))
             .saturating_add(RocksDbWeight::get().writes(13 as u64))
     }
     // Storage: AuthorityMembers BlackList (r:1 w:1)
     fn remove_member_from_blacklist() -> Weight {
         // Minimum execution time: 60_023 nanoseconds.
-        Weight::from_ref_time(60_615_000 as u64)
+        Weight::from_parts(60_615_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }

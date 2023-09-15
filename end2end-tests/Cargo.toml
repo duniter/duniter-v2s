@@ -18,12 +18,13 @@ distance-oracle = { path = "../distance-oracle", default_features = false }
 env_logger = "0.9.0"
 hex = "0.4"
 notify = "4.0"
-parity-scale-codec = "3.1.5"
+parity-scale-codec = "3.4.0"
 portpicker = "0.1.1"
-serde_json = "1.0.64"
-sp-keyring = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32" }
-subxt = { git = 'https://github.com/duniter/subxt.git', branch = 'duniter-substrate-v0.9.32' }
-tokio = { version = "1.15.0", features = ["macros"] }
+serde_json = "1.0.96"
+sp-keyring = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
+subxt = { git = 'https://github.com/duniter/subxt.git', branch = 'duniter-substrate-v0.9.42', default-features = false, features = ["substrate-compat", "jsonrpsee-ws"] }
+tokio = { version = "1.28", features = ["macros", "time", "rt-multi-thread"], default-features = false }
+sp-runtime = {  git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false , features = ["std"] }
 
 [[test]]
 name = "cucumber_tests"

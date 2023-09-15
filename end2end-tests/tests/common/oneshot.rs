@@ -19,10 +19,8 @@ use super::gdev::runtime_types::pallet_balances;
 use super::gdev::runtime_types::pallet_oneshot_account;
 use super::*;
 use sp_keyring::AccountKeyring;
-use subxt::{
-    ext::sp_runtime::{AccountId32, MultiAddress},
-    tx::PairSigner,
-};
+use subxt::utils::AccountId32;
+use subxt::{tx::PairSigner, utils::MultiAddress};
 
 pub enum Account {
     Normal(AccountKeyring),

@@ -44,7 +44,7 @@ impl WeightInfo for () {
     // Storage: Cert CertsByReceiver (r:1 w:1)
     fn create_identity() -> Weight {
         // Minimum execution time: 440_987 nanoseconds.
-        Weight::from_ref_time(462_747_000 as u64)
+        Weight::from_parts(462_747_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(13 as u64))
             .saturating_add(RocksDbWeight::get().writes(11 as u64))
     }
@@ -57,7 +57,7 @@ impl WeightInfo for () {
     // Storage: Membership PendingMembershipsExpireOn (r:1 w:1)
     fn confirm_identity() -> Weight {
         // Minimum execution time: 186_617 nanoseconds.
-        Weight::from_ref_time(309_527_000 as u64)
+        Weight::from_parts(309_527_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(7 as u64))
             .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
@@ -71,7 +71,7 @@ impl WeightInfo for () {
     // Storage: UniversalDividend CurrentUdIndex (r:1 w:0)
     fn validate_identity() -> Weight {
         // Minimum execution time: 299_920 nanoseconds.
-        Weight::from_ref_time(320_025_000 as u64)
+        Weight::from_parts(320_025_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(8 as u64))
             .saturating_add(RocksDbWeight::get().writes(5 as u64))
     }
@@ -83,7 +83,7 @@ impl WeightInfo for () {
     // Storage: AuthorityMembers Members (r:1 w:0)
     fn change_owner_key() -> Weight {
         // Minimum execution time: 442_260 nanoseconds.
-        Weight::from_ref_time(728_714_000 as u64)
+        Weight::from_parts(728_714_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(7 as u64))
             .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
@@ -99,7 +99,7 @@ impl WeightInfo for () {
     // Storage: Identity IdentityIndexOf (r:0 w:1)
     fn revoke_identity() -> Weight {
         // Minimum execution time: 494_407 nanoseconds.
-        Weight::from_ref_time(800_824_000 as u64)
+        Weight::from_parts(800_824_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(10 as u64))
             .saturating_add(RocksDbWeight::get().writes(8 as u64))
     }
@@ -115,7 +115,7 @@ impl WeightInfo for () {
     // Storage: Identity IdentitiesNames (r:0 w:1)
     fn remove_identity() -> Weight {
         // Minimum execution time: 302_574 nanoseconds.
-        Weight::from_ref_time(504_132_000 as u64)
+        Weight::from_parts(504_132_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(9 as u64))
             .saturating_add(RocksDbWeight::get().writes(9 as u64))
     }
@@ -123,15 +123,15 @@ impl WeightInfo for () {
     /// The range of component `i` is `[1, 1000]`.
     fn prune_item_identities_names(i: u32) -> Weight {
         // Minimum execution time: 22_533 nanoseconds.
-        Weight::from_ref_time(282_674_421 as u64)
+        Weight::from_parts(282_674_421 as u64, 0)
             // Standard Error: 170_391
-            .saturating_add(Weight::from_ref_time(5_660_460 as u64).saturating_mul(i as u64))
+            .saturating_add(Weight::from_parts(5_660_460 as u64, 0).saturating_mul(i as u64))
             .saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
     }
     // Storage: System Account (r:1 w:1)
     fn fix_sufficients() -> Weight {
         // Minimum execution time: 112_793 nanoseconds.
-        Weight::from_ref_time(122_192_000 as u64)
+        Weight::from_parts(122_192_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }

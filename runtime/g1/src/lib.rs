@@ -64,7 +64,9 @@ pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{EqualPrivilegeOnly, KeyOwnerProofSystem, Randomness},
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        constants::{
+            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
+        },
         Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
     },
     StorageValue,
@@ -255,7 +257,7 @@ construct_runtime!(
 
         // Consensus support.
         AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-        Authorship: pallet_authorship::{Pallet, Call, Storage} = 11,
+        Authorship: pallet_authorship::{Pallet, Storage} = 11,
         Offences: pallet_offences::{Pallet, Storage, Event} = 12,
         Historical: session_historical::{Pallet} = 13,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 14,

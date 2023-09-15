@@ -244,25 +244,25 @@ pub fn run() -> sc_cli::Result<()> {
         }
         Some(Subcommand::CheckBlock(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|mut config| {
+            runner.async_run(|config| {
                 let (client, _, import_queue, task_manager) =
-                    service::new_chain_ops(&mut config, cli.sealing.is_manual_consensus())?;
+                    service::new_chain_ops(&config, cli.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
         Some(Subcommand::ExportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|mut config| {
+            runner.async_run(|config| {
                 let (client, _, _, task_manager) =
-                    service::new_chain_ops(&mut config, cli.sealing.is_manual_consensus())?;
+                    service::new_chain_ops(&config, cli.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, config.database), task_manager))
             })
         }
         Some(Subcommand::ExportState(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|mut config| {
+            runner.async_run(|config| {
                 let (client, _, _, task_manager) =
-                    service::new_chain_ops(&mut config, cli.sealing.is_manual_consensus())?;
+                    service::new_chain_ops(&config, cli.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, config.chain_spec), task_manager))
             })
         }
@@ -277,7 +277,7 @@ pub fn run() -> sc_cli::Result<()> {
                 }
 
                 let (client, _, import_queue, task_manager) =
-                    service::new_chain_ops(&mut config, cli.sealing.is_manual_consensus())?;
+                    service::new_chain_ops(&config, cli.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
@@ -287,9 +287,9 @@ pub fn run() -> sc_cli::Result<()> {
         }
         Some(Subcommand::Revert(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|mut config| {
+            runner.async_run(|config| {
                 let (client, backend, _, task_manager) =
-                    service::new_chain_ops(&mut config, cli.sealing.is_manual_consensus())?;
+                    service::new_chain_ops(&config, cli.sealing.is_manual_consensus())?;
                 let aux_revert = Box::new(|client, backend, blocks| {
                     service::revert_backend(client, backend, blocks)
                 });
@@ -312,11 +312,11 @@ pub fn run() -> sc_cli::Result<()> {
         }
         #[cfg(feature = "runtime-benchmarks")]
         Some(Subcommand::Benchmark(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
+            let runner = cli.create_runner(&**cmd)?;
             let chain_spec = &runner.config().chain_spec;
             ensure_dev(chain_spec)?;
 
-            match cmd {
+            match &**cmd {
                 BenchmarkCmd::Storage(cmd) => runner.sync_run(|mut config| {
                     let (client, backend, _, _) = service::new_chain_ops(&mut config, false)?;
                     let db = backend.expose_db();

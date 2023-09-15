@@ -77,20 +77,6 @@ impl system::Config for Test {
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-pub struct EnsureRoot;
-impl frame_support::traits::EnsureOrigin<(RuntimeOrigin, IdtyIndex, IdtyIndex)> for EnsureRoot {
-    type Success = ();
-
-    fn try_origin(
-        o: (RuntimeOrigin, IdtyIndex, IdtyIndex),
-    ) -> Result<Self::Success, (RuntimeOrigin, IdtyIndex, IdtyIndex)> {
-        match o.0.clone().into() {
-            Ok(system::RawOrigin::Root) => Ok(()),
-            _ => Err(o),
-        }
-    }
-}
-
 parameter_types! {
     pub const MaxByIssuer: u32 = 4;
     pub const MinReceivedCertToBeAbleToIssueCert: u32 = 2;

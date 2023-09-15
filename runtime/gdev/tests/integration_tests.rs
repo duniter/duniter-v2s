@@ -81,31 +81,229 @@ fn test_genesis_build() {
     });
 }
 
+/// test initial state
+///
+/// in order to make sure that it does not change accidentally
+#[test]
+fn test_initial_state() {
+    ExtBuilder::new(1, 2, 3)
+        .with_initial_balances(vec![
+            (AccountKeyring::Alice.to_account_id(), 1_000),
+            (AccountKeyring::Bob.to_account_id(), 200),
+            (AccountKeyring::Charlie.to_account_id(), 100), // below ED allowed for identities
+            (AccountKeyring::Dave.to_account_id(), 900),
+        ])
+        .build()
+        .execute_with(|| {
+            run_to_block(1);
+
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                1_000
+            );
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Bob.to_account_id()),
+                200
+            );
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Charlie.to_account_id()),
+                100
+            );
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Dave.to_account_id()),
+                900
+            );
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
+                0
+            );
+            // total issuance and monetary mass should be coherent
+            assert_eq!(Balances::total_issuance(), 2_200);
+            assert_eq!(
+                pallet_universal_dividend::MonetaryMass::<Runtime>::get(),
+                2_200
+            );
+        });
+}
+
+/// test total issuance against monetary mass
+/// the monetary mass represents the claimable monetary mass
+/// the total issuance represents the actually claimed currency
+#[test]
+fn test_total_issuance_vs_monetary_mass() {
+    ExtBuilder::new(1, 2, 3)
+        .with_initial_balances(vec![
+            (AccountKeyring::Alice.to_account_id(), 2000),
+            (AccountKeyring::Bob.to_account_id(), 1000),
+            (AccountKeyring::Charlie.to_account_id(), 0),
+        ])
+        .build()
+        .execute_with(|| {
+            let ud_creation_period =
+                <Runtime as pallet_universal_dividend::Config>::UdCreationPeriod::get();
+            assert_eq!(ud_creation_period, 60_000); // this is 10 blocks × 6 seconds in milliseconds
+
+            run_to_block(1);
+            // total issuance and monetary mass should be coherent
+            assert_eq!(Balances::total_issuance(), 3000);
+            assert_eq!(
+                pallet_universal_dividend::MonetaryMass::<Runtime>::get(),
+                3000
+            );
+            // first UD creation
+            run_to_block(11);
+            assert_eq!(Balances::total_issuance(), 3000);
+            assert_eq!(
+                pallet_universal_dividend::MonetaryMass::<Runtime>::get(),
+                6000
+            );
+            // Alice claims her UD
+            assert_ok!(UniversalDividend::claim_uds(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into()
+            ));
+            assert_eq!(Balances::total_issuance(), 4000);
+            assert_eq!(
+                pallet_universal_dividend::MonetaryMass::<Runtime>::get(),
+                6000
+            );
+            // second UD creation
+            run_to_block(21);
+            // Bob claims his 2 UDs
+            assert_ok!(UniversalDividend::claim_uds(
+                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into()
+            ));
+            assert_eq!(Balances::total_issuance(), 6000);
+            assert_eq!(
+                pallet_universal_dividend::MonetaryMass::<Runtime>::get(),
+                9000
+            );
+        });
+}
+
+/// test identity go below ED
+#[test]
+fn test_identity_below_ed() {
+    ExtBuilder::new(1, 1, 1)
+        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 900)])
+        .build()
+        .execute_with(|| {
+            run_to_block(1);
+            // new behavior : nobody is able to go below ED without killing the account
+            // a transfer below ED will lead to frozen token error
+            assert_noop!(
+                Balances::transfer(
+                    frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                    MultiAddress::Id(AccountKeyring::Bob.to_account_id()),
+                    800
+                ),
+                sp_runtime::TokenError::Frozen
+            );
+            // // Old behavior below
+            // // Should be able to go below existential deposit, loose dust, and still not die
+            // assert_ok!(Balances::transfer(
+            //     frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+            //     MultiAddress::Id(AccountKeyring::Bob.to_account_id()),
+            //     800
+            // ));
+            // assert_eq!(
+            //     Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+            //     0
+            // );
+            // assert_eq!(
+            //     Balances::free_balance(AccountKeyring::Bob.to_account_id()),
+            //     800
+            // );
+            // // since alice is identity, her account should not be killed even she lost currency below ED
+            // System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Transfer {
+            //     from: AccountKeyring::Alice.to_account_id(),
+            //     to: AccountKeyring::Bob.to_account_id(),
+            //     amount: 800,
+            // }));
+            // System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::DustLost {
+            //     account: AccountKeyring::Alice.to_account_id(),
+            //     amount: 100,
+            // }));
+            // System::assert_has_event(RuntimeEvent::System(frame_system::Event::NewAccount {
+            //     account: AccountKeyring::Bob.to_account_id(),
+            // }));
+            // System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Endowed {
+            //     account: AccountKeyring::Bob.to_account_id(),
+            //     free_balance: 800,
+            // }));
+        })
+}
+
+/// test session change
+// session duration is set to 25 blocks
+// this is to test that mock code behaves well
+#[test]
+fn test_session_change() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        assert_eq!(<Runtime as pallet_babe::Config>::EpochDuration::get(), 25);
+        assert_eq!(Session::current_index(), 0);
+        assert_eq!(Babe::epoch_index(), 0);
+        assert_eq!(Babe::current_epoch_start(), 0u64);
+        run_to_block(2);
+        assert_eq!(Session::current_index(), 0);
+        assert_eq!(Babe::epoch_index(), 0);
+        run_to_block(24);
+        assert_eq!(Session::current_index(), 0);
+        assert_eq!(Babe::epoch_index(), 0);
+        run_to_block(25);
+        assert_eq!(Session::current_index(), 1);
+        assert_eq!(Babe::epoch_index(), 1);
+        assert_eq!(Babe::current_epoch_start(), 25u64);
+        run_to_block(26);
+        assert_eq!(Session::current_index(), 1);
+        assert_eq!(Babe::epoch_index(), 1);
+        run_to_block(50);
+        assert_eq!(Session::current_index(), 2);
+        assert_eq!(Babe::epoch_index(), 2);
+        assert_eq!(Babe::current_epoch_start(), 50u64);
+        run_to_block(51);
+        assert_eq!(Session::current_index(), 2);
+        assert_eq!(Babe::epoch_index(), 2);
+        run_to_block(52);
+        assert_eq!(Session::current_index(), 2);
+        assert_eq!(Babe::epoch_index(), 2);
+        run_to_block(60);
+        assert_eq!(Session::current_index(), 2);
+        assert_eq!(Babe::epoch_index(), 2);
+        assert_eq!(Babe::current_epoch_start(), 50u64);
+        run_to_block(75);
+        assert_eq!(Session::current_index(), 3);
+        assert_eq!(Babe::epoch_index(), 3);
+        run_to_block(100);
+        assert_eq!(Session::current_index(), 4);
+        assert_eq!(Babe::epoch_index(), 4);
+    })
+}
+
 /// test calling remove_identity
 #[test]
 fn test_remove_identity() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         run_to_block(2);
-
+        // remove the identity
         assert_ok!(Identity::remove_identity(
             frame_system::RawOrigin::Root.into(),
             4,
             None,
             pallet_identity::IdtyRemovalReason::Manual
         ));
-
         System::assert_has_event(RuntimeEvent::Membership(
             pallet_membership::Event::MembershipRevoked(4),
         ));
-        System::assert_has_event(RuntimeEvent::System(frame_system::Event::KilledAccount {
-            account: AccountKeyring::Dave.to_account_id(),
-        }));
         System::assert_has_event(RuntimeEvent::Identity(
             pallet_identity::Event::IdtyRemoved {
                 idty_index: 4,
                 reason: pallet_identity::IdtyRemovalReason::Manual,
             },
         ));
+        // since Dave does not have ED, his account is killed
+        System::assert_has_event(RuntimeEvent::System(frame_system::Event::KilledAccount {
+            account: AccountKeyring::Dave.to_account_id(),
+        }));
     });
 }
 
@@ -252,6 +450,20 @@ fn test_remove_identity_after_one_ud() {
                 + 1) as u32,
         );
 
+        // before UD, dave has 0 (initial amount)
+        run_to_block(1);
+        assert_eq!(
+            Balances::free_balance(AccountKeyring::Dave.to_account_id()),
+            0
+        );
+
+        // go after UD creation block
+        run_to_block(
+            (<Runtime as pallet_universal_dividend::Config>::UdCreationPeriod::get()
+                / <Runtime as pallet_babe::Config>::ExpectedBlockTime::get()
+                + 1) as u32,
+        );
+        // remove identity
         assert_ok!(Identity::remove_identity(
             frame_system::RawOrigin::Root.into(),
             4,
@@ -260,23 +472,22 @@ fn test_remove_identity_after_one_ud() {
         ));
 
         // Verify events
-        System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipRevoked(4),
-        ));
-        System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Deposit {
-            who: AccountKeyring::Dave.to_account_id(),
-            amount: 1_000,
-        }));
-        System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Endowed {
-            account: AccountKeyring::Dave.to_account_id(),
-            free_balance: 1_000,
-        }));
+        // universal dividend was automatically paid to dave
         System::assert_has_event(RuntimeEvent::UniversalDividend(
             pallet_universal_dividend::Event::UdsAutoPaidAtRemoval {
                 count: 1,
                 total: 1_000,
                 who: AccountKeyring::Dave.to_account_id(),
             },
+        ));
+        // dave account actually received this UD
+        System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Deposit {
+            who: AccountKeyring::Dave.to_account_id(),
+            amount: 1_000,
+        }));
+        // membership and identity were actually removed
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::MembershipRevoked(4),
         ));
         System::assert_has_event(RuntimeEvent::Identity(
             pallet_identity::Event::IdtyRemoved {
@@ -285,7 +496,7 @@ fn test_remove_identity_after_one_ud() {
             },
         ));
 
-        // Verify state
+        // thanks to the new UD, Dave has existential deposit and is not killed
         assert!(Identity::identity(4).is_none());
         assert_eq!(
             Balances::free_balance(AccountKeyring::Dave.to_account_id()),
@@ -305,11 +516,11 @@ fn test_ud_claimed_membership_on_and_off() {
             pallet_universal_dividend::Event::NewUdCreated {
                 amount: 1000,
                 index: 1,
-                monetary_mass: 4000,
+                monetary_mass: 4_000, // 0 (initial) + 4 * 1000 (produced)
                 members_count: 4,
             },
         ));
-        // UD not claimed, still initial balance to 0
+        // UD not claimed, still initial balance to initial 0
         assert_eq!(
             Balances::free_balance(AccountKeyring::Alice.to_account_id()),
             0
@@ -337,8 +548,8 @@ fn test_ud_claimed_membership_on_and_off() {
             pallet_universal_dividend::Event::NewUdCreated {
                 amount: 1000,
                 index: 2,
-                monetary_mass: 7000, // 4000 + 3 × 1000
-                members_count: 3,    // alice is not member at this UD
+                monetary_mass: 7_000, // 4000 + 3 × 1000
+                members_count: 3,     // alice is not member at this UD
             },
         ));
 
@@ -421,6 +632,8 @@ fn test_remove_smith_identity() {
     });
 }
 
+/// test create new account with balance lower than existential deposit
+// the treasury gets the dust
 #[test]
 fn test_create_new_account_with_insufficient_balance() {
     ExtBuilder::new(1, 3, 4)
@@ -475,6 +688,7 @@ fn test_create_new_account_with_insufficient_balance() {
         });
 }
 
+/// test new account creation
 #[test]
 fn test_create_new_account() {
     ExtBuilder::new(1, 3, 4)
@@ -533,27 +747,33 @@ fn test_create_new_account() {
 
             // We can't remove the account until the random id is assigned
             run_to_block(4);
+            // can not remove using transfer
             assert_noop!(
                 Balances::transfer(
                     frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
                     MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
                     200
                 ),
-                pallet_balances::Error::<Runtime>::KeepAlive,
+                sp_runtime::DispatchError::ConsumerRemaining,
             );
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 200
             );
-            assert_ok!(Balances::transfer_all(
-                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
-                MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
-                false
-            ),);
+            // can not remove using transfer_all either
+            assert_noop!(
+                Balances::transfer_all(
+                    frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                    MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
+                    false
+                ),
+                sp_runtime::DispatchError::ConsumerRemaining,
+            );
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 200
             );
+            // TODO detail account removal
         });
 }
 

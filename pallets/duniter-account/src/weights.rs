@@ -40,9 +40,9 @@ impl WeightInfo for () {
     /// The range of component `i` is `[0, 1]`.
     fn on_initialize_sufficient(i: u32) -> Weight {
         // Minimum execution time: 12_958 nanoseconds.
-        Weight::from_ref_time(14_907_902 as u64)
+        Weight::from_parts(14_907_902 as u64, 0)
             // Standard Error: 550_025
-            .saturating_add(Weight::from_ref_time(79_482_297 as u64).saturating_mul(i as u64))
+            .saturating_add(Weight::from_parts(79_482_297 as u64, 0).saturating_mul(i as u64))
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().reads((6 as u64).saturating_mul(i as u64)))
             .saturating_add(RocksDbWeight::get().writes((6 as u64).saturating_mul(i as u64)))
@@ -58,9 +58,9 @@ impl WeightInfo for () {
     /// The range of component `i` is `[0, 1]`.
     fn on_initialize_with_balance(i: u32) -> Weight {
         // Minimum execution time: 12_965 nanoseconds.
-        Weight::from_ref_time(16_754_718 as u64)
+        Weight::from_parts(16_754_718 as u64, 0)
             // Standard Error: 1_790_537
-            .saturating_add(Weight::from_ref_time(164_043_481 as u64).saturating_mul(i as u64))
+            .saturating_add(Weight::from_parts(164_043_481 as u64, 0).saturating_mul(i as u64))
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().reads((6 as u64).saturating_mul(i as u64)))
             .saturating_add(RocksDbWeight::get().writes((6 as u64).saturating_mul(i as u64)))
@@ -69,23 +69,23 @@ impl WeightInfo for () {
     /// The range of component `i` is `[0, 1]`.
     fn on_initialize_no_balance(i: u32) -> Weight {
         // Minimum execution time: 12_912 nanoseconds.
-        Weight::from_ref_time(13_846_469 as u64)
+        Weight::from_parts(13_846_469 as u64, 0)
             // Standard Error: 115_598
-            .saturating_add(Weight::from_ref_time(67_524_530 as u64).saturating_mul(i as u64))
+            .saturating_add(Weight::from_parts(67_524_530 as u64, 0).saturating_mul(i as u64))
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
     }
     // Storage: Account PendingRandomIdAssignments (r:1 w:1)
     fn on_filled_randomness_pending() -> Weight {
         // Minimum execution time: 66_963 nanoseconds.
-        Weight::from_ref_time(69_757_000 as u64)
+        Weight::from_parts(69_757_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Account PendingRandomIdAssignments (r:1 w:0)
     fn on_filled_randomness_no_pending() -> Weight {
         // Minimum execution time: 16_088 nanoseconds.
-        Weight::from_ref_time(27_963_000 as u64)
+        Weight::from_parts(27_963_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
     }
 }

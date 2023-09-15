@@ -27,23 +27,23 @@ version = '3.1.5'
 
 [dependencies.frame-support]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sc-client-api]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-core]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-keystore]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-runtime]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 ### DOC ###
 

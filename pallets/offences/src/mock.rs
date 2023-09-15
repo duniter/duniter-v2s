@@ -114,7 +114,7 @@ pub const KIND: [u8; 16] = *b"test_report_1234";
 
 /// Returns all offence details for the specific `kind` happened at the specific time slot.
 pub fn offence_reports(kind: Kind, time_slot: u128) -> Vec<OffenceDetails<u64, u64>> {
-    <crate::ConcurrentReportsIndex<Runtime>>::get(kind, &time_slot.encode())
+    <crate::ConcurrentReportsIndex<Runtime>>::get(kind, time_slot.encode())
         .into_iter()
         .map(|report_id| {
             <crate::Reports<Runtime>>::get(report_id)

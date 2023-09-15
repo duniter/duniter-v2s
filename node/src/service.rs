@@ -22,11 +22,11 @@ use self::client::{Client, ClientHandle, RuntimeApiCollection};
 use async_io::Timer;
 use common_runtime::Block;
 use futures::{Stream, StreamExt};
-use manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
-use sc_client_api::BlockBackend;
+use sc_client_api::client::BlockBackend;
+use sc_consensus_grandpa::SharedVoterState;
+use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
 pub use sc_executor::NativeElseWasmExecutor;
-use sc_finality_grandpa::SharedVoterState;
-use sc_keystore::LocalKeystore;
+use sc_network_common::sync::warp::WarpSyncParams;
 use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_core::H256;
@@ -129,7 +129,7 @@ impl IdentifyRuntimeType for Box<dyn sc_chain_spec::ChainSpec> {
 /// Builds a new object suitable for chain operations.
 #[allow(clippy::type_complexity)]
 pub fn new_chain_ops(
-    config: &mut Configuration,
+    config: &Configuration,
     manual_consensus: bool,
 ) -> Result<
     (
@@ -193,7 +193,7 @@ pub fn new_chain_ops(
     }
 }
 
-type FullGrandpaBlockImport<RuntimeApi, Executor> = sc_finality_grandpa::GrandpaBlockImport<
+type FullGrandpaBlockImport<RuntimeApi, Executor> = sc_consensus_grandpa::GrandpaBlockImport<
     FullBackend,
     Block,
     FullClient<RuntimeApi, Executor>,
@@ -212,13 +212,18 @@ pub fn new_partial<RuntimeApi, Executor>(
         sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
         sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>,
         (
-            babe::BabeBlockImport<
+            sc_consensus_babe::BabeBlockImport<
                 Block,
                 FullClient<RuntimeApi, Executor>,
                 FullGrandpaBlockImport<RuntimeApi, Executor>,
             >,
-            babe::BabeLink<Block>,
-            sc_finality_grandpa::LinkHalf<Block, FullClient<RuntimeApi, Executor>, FullSelectChain>,
+            sc_consensus_babe::BabeLink<Block>,
+            Option<sc_consensus_babe::BabeWorkerHandle<Block>>,
+            sc_consensus_grandpa::LinkHalf<
+                Block,
+                FullClient<RuntimeApi, Executor>,
+                FullSelectChain,
+            >,
             Option<Telemetry>,
         ),
     >,
@@ -233,12 +238,6 @@ where
         RuntimeApiCollection<StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
-    if config.keystore_remote.is_some() {
-        return Err(ServiceError::Other(
-            "Remote Keystores are not supported.".to_owned(),
-        ));
-    }
-
     let telemetry = config
         .telemetry_endpoints
         .clone()
@@ -250,12 +249,7 @@ where
         })
         .transpose()?;
 
-    let executor = NativeElseWasmExecutor::<Executor>::new(
-        config.wasm_method,
-        config.default_heap_pages,
-        config.max_runtime_instances,
-        config.runtime_cache_size,
-    );
+    let executor = sc_service::new_native_or_wasm_executor(config);
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts::<Block, RuntimeApi, _>(
@@ -282,28 +276,32 @@ where
         client.clone(),
     );
 
-    let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
+    let client_ = client.clone();
+    let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
         client.clone(),
-        &(client.clone() as Arc<_>),
+        &(client_ as Arc<_>),
         select_chain.clone(),
         telemetry.as_ref().map(|x| x.handle()),
     )?;
 
     let justification_import = grandpa_block_import.clone();
 
-    let babe_config = babe::configuration(&*client)?;
-    let (babe_block_import, babe_link) =
-        babe::block_import(babe_config, grandpa_block_import, client.clone())?;
+    let (babe_block_import, babe_link) = sc_consensus_babe::block_import(
+        sc_consensus_babe::configuration(&*client)?,
+        grandpa_block_import,
+        client.clone(),
+    )?;
 
-    let import_queue = if consensus_manual {
-        manual_seal::import_queue(
+    let (import_queue, babe_worker_handle) = if consensus_manual {
+        let import_queue = sc_consensus_manual_seal::import_queue(
             Box::new(babe_block_import.clone()),
             &task_manager.spawn_essential_handle(),
             config.prometheus_registry(),
-        )
+        );
+        (import_queue, None)
     } else {
         let slot_duration = babe_link.config().slot_duration();
-        babe::import_queue(
+        let (queue, handle) = sc_consensus_babe::import_queue(
             babe_link.clone(),
             babe_block_import.clone(),
             Some(Box::new(justification_import)),
@@ -317,13 +315,13 @@ where
                         *timestamp,
                         slot_duration,
                     );
-
                 Ok((slot, timestamp))
             },
             &task_manager.spawn_essential_handle(),
             config.prometheus_registry(),
             telemetry.as_ref().map(|x| x.handle()),
-        )?
+        )?;
+        (queue, Some(handle))
     };
 
     Ok(sc_service::PartialComponents {
@@ -334,15 +332,14 @@ where
         keystore_container,
         select_chain,
         transaction_pool,
-        other: (babe_block_import, babe_link, grandpa_link, telemetry),
+        other: (
+            babe_block_import,
+            babe_link,
+            babe_worker_handle,
+            grandpa_link,
+            telemetry,
+        ),
     })
-}
-
-fn remote_keystore(_url: &str) -> Result<Arc<LocalKeystore>, &'static str> {
-    // FIXME: here would the concrete keystore be built,
-    //        must return a concrete type (NOT `LocalKeystore`) that
-    //        implements `CryptoStore` and `SyncCryptoStore`
-    Err("Remote Keystore not supported.")
 }
 
 /// Builds a new service for a full client.
@@ -364,25 +361,13 @@ where
         backend,
         mut task_manager,
         import_queue,
-        mut keystore_container,
+        keystore_container,
         select_chain,
         transaction_pool,
-        other: (block_import, babe_link, grandpa_link, mut telemetry),
+        other: (block_import, babe_link, babe_worker_handle, grandpa_link, mut telemetry),
     } = new_partial::<RuntimeApi, Executor>(&config, sealing.is_manual_consensus())?;
 
-    if let Some(url) = &config.keystore_remote {
-        match remote_keystore(url) {
-            Ok(k) => keystore_container.set_remote_keystore(k),
-            Err(e) => {
-                return Err(ServiceError::Other(format!(
-                    "Error hooking up remote keystore for {}: {}",
-                    url, e
-                )))
-            }
-        };
-    }
-
-    let grandpa_protocol_name = sc_finality_grandpa::protocol_standard_name(
+    let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
         &client
             .block_hash(0)
             .ok()
@@ -393,16 +378,16 @@ where
     config
         .network
         .extra_sets
-        .push(sc_finality_grandpa::grandpa_peers_set_config(
+        .push(sc_consensus_grandpa::grandpa_peers_set_config(
             grandpa_protocol_name.clone(),
         ));
-    let warp_sync = Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
+    let warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
         backend.clone(),
         grandpa_link.shared_authority_set().clone(),
         Vec::default(),
     ));
 
-    let (network, system_rpc_tx, tx_handler_controller, network_starter) =
+    let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
             client: client.clone(),
@@ -410,7 +395,7 @@ where
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: None,
-            warp_sync: Some(warp_sync),
+            warp_sync_params: Some(WarpSyncParams::WithProvider(warp_sync)),
         })?;
 
     if config.offchain_worker.enabled {
@@ -453,7 +438,7 @@ where
             telemetry.as_ref().map(|x| x.handle()),
         );
 
-        let sync_cryptostore_ptr = keystore_container.sync_keystore();
+        let keystore_ptr = keystore_container.keystore();
         let client = client.clone();
 
         if sealing.is_manual_consensus() {
@@ -493,9 +478,9 @@ where
                 };
 
             let babe_consensus_data_provider =
-                manual_seal::consensus::babe::BabeConsensusDataProvider::new(
+                sc_consensus_manual_seal::consensus::babe::BabeConsensusDataProvider::new(
                     client.clone(),
-                    keystore_container.sync_keystore(),
+                    keystore_container.keystore(),
                     babe_link.epoch_changes().clone(),
                     vec![(
                         sp_consensus_babe::AuthorityId::from(
@@ -515,19 +500,19 @@ where
                     client: client.clone(),
                     pool: transaction_pool.clone(),
                     commands_stream,
-                    select_chain,
+                    select_chain: select_chain.clone(),
                     consensus_data_provider: Some(Box::new(babe_consensus_data_provider)),
                     create_inherent_data_providers: move |parent, _| {
                         let client = client.clone();
                         let distance_dir = distance_dir.clone();
                         let babe_owner_keys =
-                            std::sync::Arc::new(sp_keystore::SyncCryptoStore::sr25519_public_keys(
-                                sync_cryptostore_ptr.as_ref(),
+                            std::sync::Arc::new(sp_keystore::Keystore::sr25519_public_keys(
+                                keystore_ptr.as_ref(),
                                 sp_runtime::KeyTypeId(*b"babe"),
                             ));
                         async move {
                             let timestamp =
-                                manual_seal::consensus::timestamp::SlotTimestampProvider::new_babe(
+                                sc_consensus_manual_seal::consensus::timestamp::SlotTimestampProvider::new_babe(
                                     client.clone(),
                                 )
                                 .map_err(|err| format!("{:?}", err))?;
@@ -549,37 +534,38 @@ where
             );
         } else {
             let slot_duration = babe_link.config().slot_duration();
-            let babe_config = babe::BabeParams {
-                keystore: keystore_container.sync_keystore(),
+            let babe_config = sc_consensus_babe::BabeParams {
+                keystore: keystore_container.keystore(),
                 client: client.clone(),
-                select_chain,
+                select_chain: select_chain.clone(),
                 block_import,
                 env: proposer_factory,
-                sync_oracle: network.clone(),
-                justification_sync_link: network.clone(),
+                sync_oracle: sync_service.clone(),
+                justification_sync_link: sync_service.clone(),
                 create_inherent_data_providers: move |parent, ()| {
                     // This closure is called during each block generation.
 
                     let client = client.clone();
                     let distance_dir = distance_dir.clone();
                     let babe_owner_keys =
-                        std::sync::Arc::new(sp_keystore::SyncCryptoStore::sr25519_public_keys(
-                            sync_cryptostore_ptr.as_ref(),
+                        std::sync::Arc::new(sp_keystore::Keystore::sr25519_public_keys(
+                            keystore_ptr.as_ref(),
                             sp_runtime::KeyTypeId(*b"babe"),
                         ));
 
                     async move {
-                        let uncles = sc_consensus_uncles::create_uncles_inherent_data_provider(
-                            &*client, parent,
-                        )?;
-
                         let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                         let slot =
-                            sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                                    *timestamp,
-                                    slot_duration,
-                                );
+						sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+							*timestamp,
+							slot_duration,
+						);
+
+                        let storage_proof =
+                            sp_transaction_storage_proof::registration::new_data_provider(
+                                &*client, &parent,
+                            )?;
 
                         let distance = dc_distance::create_distance_inherent_data_provider::<
                             Block,
@@ -589,22 +575,22 @@ where
                             &*client, parent, distance_dir, &babe_owner_keys.clone()
                         )?;
 
-                        Ok((slot, timestamp, uncles, distance))
+                        Ok((slot, timestamp, storage_proof, distance))
                     }
                 },
                 force_authoring,
                 backoff_authoring_blocks,
                 babe_link,
-                block_proposal_slot_portion: babe::SlotProportion::new(2f32 / 3f32),
+                block_proposal_slot_portion: sc_consensus_babe::SlotProportion::new(2f32 / 3f32),
                 max_block_proposal_slot_portion: None,
                 telemetry: telemetry.as_ref().map(|x| x.handle()),
             };
-            let babe = babe::start_babe(babe_config)?;
+            let babe = sc_consensus_babe::start_babe(babe_config)?;
 
             // the BABE authoring task is considered essential, i.e. if it
             // fails we take down the service with it.
             task_manager.spawn_essential_handle().spawn_blocking(
-                "babe",
+                "babe-proposer",
                 Some("block-authoring"),
                 babe,
             );
@@ -613,23 +599,23 @@ where
 
     let rpc_extensions_builder = {
         let client = client.clone();
-        //let keystore = keystore_container.sync_keystore();
         let pool = transaction_pool.clone();
-        //let select_chain = select_chain.clone();
-        //let chain_spec = config.chain_spec.cloned_box();
+        let select_chain = select_chain;
+        let chain_spec = config.chain_spec.cloned_box();
+        let keystore = keystore_container.keystore().clone();
+        let babe_deps = babe_worker_handle.map(|babe_worker_handle| crate::rpc::BabeDeps {
+            babe_worker_handle,
+            keystore: keystore.clone(),
+        });
 
         Box::new(move |deny_unsafe, _| {
             let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: pool.clone(),
-                //select_chain: select_chain.clone(),
-                //chain_spec: chain_spec.cloned_box(),
+                select_chain: select_chain.clone(),
+                chain_spec: chain_spec.cloned_box(),
                 deny_unsafe,
-                /*babe: crate::rpc::BabeDeps {
-                    babe_config: babe_config.clone(),
-                    shared_epoch_changes: shared_epoch_changes.clone(),
-                    keystore: keystore.clone(),
-                },*/
+                babe: babe_deps.clone(),
                 command_sink_opt: command_sink_opt.clone(),
             };
 
@@ -641,8 +627,9 @@ where
         config,
         backend,
         network: network.clone(),
+        sync_service: sync_service.clone(),
         client,
-        keystore: keystore_container.sync_keystore(),
+        keystore: keystore_container.keystore(),
         task_manager: &mut task_manager,
         transaction_pool,
         rpc_builder: rpc_extensions_builder,
@@ -654,12 +641,12 @@ where
     // if the node isn't actively participating in consensus then it doesn't
     // need a keystore, regardless of which protocol we use below.
     let keystore = if role.is_authority() {
-        Some(keystore_container.sync_keystore())
+        Some(keystore_container.keystore())
     } else {
         None
     };
 
-    let grandpa_config = sc_finality_grandpa::Config {
+    let grandpa_config = sc_consensus_grandpa::Config {
         // FIXME #1578 make this available through chainspec
         gossip_duration: Duration::from_millis(333),
         justification_period: 512,
@@ -678,11 +665,12 @@ where
         // and vote data availability than the observer. The observer has not
         // been tested extensively yet and having most nodes in a network run it
         // could lead to finality stalls.
-        let grandpa_config = sc_finality_grandpa::GrandpaParams {
+        let grandpa_config = sc_consensus_grandpa::GrandpaParams {
             config: grandpa_config,
             link: grandpa_link,
+            sync: sync_service,
             network,
-            voting_rule: sc_finality_grandpa::VotingRulesBuilder::default().build(),
+            voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
             prometheus_registry,
             shared_voter_state: SharedVoterState::empty(),
             telemetry: telemetry.as_ref().map(|x| x.handle()),
@@ -693,7 +681,7 @@ where
         task_manager.spawn_essential_handle().spawn_blocking(
             "grandpa-voter",
             None,
-            sc_finality_grandpa::run_grandpa_voter(grandpa_config)?,
+            sc_consensus_grandpa::run_grandpa_voter(grandpa_config)?,
         );
     }
 
@@ -736,8 +724,8 @@ impl client::ExecuteWithClient for RevertConsensus {
     {
         // Revert consensus-related components.
         // The operations are not correlated, thus call order is not relevant.
-        babe::revert(client.clone(), self.backend, self.blocks)?;
-        sc_finality_grandpa::revert(client, self.blocks)?;
+        sc_consensus_babe::revert(client.clone(), self.backend, self.blocks)?;
+        sc_consensus_grandpa::revert(client, self.blocks)?;
         Ok(())
     }
 }

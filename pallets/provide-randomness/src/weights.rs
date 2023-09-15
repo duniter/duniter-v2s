@@ -34,7 +34,7 @@ impl WeightInfo for () {
     // Storage: ProvideRandomness RequestsReadyAtEpoch (r:1 w:1)
     fn request() -> Weight {
         // Minimum execution time: 321_822 nanoseconds.
-        Weight::from_ref_time(338_919_000 as u64)
+        Weight::from_parts(338_919_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(6 as u64))
             .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
@@ -47,9 +47,9 @@ impl WeightInfo for () {
     /// The range of component `i` is `[1, 100]`.
     fn on_initialize(i: u32) -> Weight {
         // Minimum execution time: 175_645 nanoseconds.
-        Weight::from_ref_time(461_442_906 as u64)
+        Weight::from_parts(461_442_906 as u64, 0)
             // Standard Error: 1_523_561
-            .saturating_add(Weight::from_ref_time(43_315_015 as u64).saturating_mul(i as u64))
+            .saturating_add(Weight::from_parts(43_315_015 as u64, 0).saturating_mul(i as u64))
             .saturating_add(RocksDbWeight::get().reads(4 as u64))
             .saturating_add(RocksDbWeight::get().reads((2 as u64).saturating_mul(i as u64)))
             .saturating_add(RocksDbWeight::get().writes(3 as u64))

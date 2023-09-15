@@ -2,7 +2,7 @@
 Feature: Balance transfer all
 
   Scenario: If bob sends all his ĞDs to Dave
-    When bob sends all her ĞDs to dave
+    When bob sends all his ĞDs to dave
     """
     Bob is a member, as such he is not allowed to empty his account completely,
     if he tries to do so, the existence deposit (2 ĞD) must remain.

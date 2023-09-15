@@ -15,9 +15,9 @@ log = "0.4.17"
 num-traits = "0.2.15"
 rayon = "1.7.0"
 simple_logger = "4.2.0"
-sp-core = { git = "https://github.com/duniter/substrate.git", branch = "duniter-substrate-v0.9.32" }
-sp-runtime = { git = "https://github.com/duniter/substrate.git", branch = "duniter-substrate-v0.9.32" }
-subxt = { git = 'https://github.com/duniter/subxt.git', branch = "duniter-substrate-v0.9.32" }
+sp-core = { git = "https://github.com/duniter/substrate.git", branch = "duniter-substrate-v0.9.42" }
+sp-runtime = { git = "https://github.com/duniter/substrate.git", branch = "duniter-substrate-v0.9.42" }
+subxt = { git = 'https://github.com/duniter/subxt.git', branch = "duniter-substrate-v0.9.42" }
 time = "<=0.3.23"# required for MSRV
 time-macros = "=0.2.10"
 

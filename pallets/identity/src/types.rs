@@ -85,9 +85,10 @@ impl<'de> serde::Deserialize<'de> for IdtyName {
 /// used for temporary period before validation
 /// also used for buffer when losing membership before being deleted
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum IdtyStatus {
     /// created through a first certification
+    #[default]
     Created,
     /// confirmed by owner with a name published
     ConfirmedByOwner,
@@ -95,11 +96,6 @@ pub enum IdtyStatus {
     Validated,
     // disabled by the main web of trust, deletion planned
     // Disabled,
-}
-impl Default for IdtyStatus {
-    fn default() -> Self {
-        IdtyStatus::Created
-    }
 }
 
 /// identity value (as in key/value)

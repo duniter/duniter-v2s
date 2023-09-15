@@ -26,28 +26,48 @@ pub use sc_rpc_api::DenyUnsafe;
 use common_runtime::Block;
 use common_runtime::{AccountId, Balance, Index};
 use jsonrpsee::RpcModule;
+use sc_consensus_babe::BabeApi;
+use sc_consensus_babe::BabeWorkerHandle;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use sp_consensus::SelectChain;
+use sp_keystore::KeystorePtr;
 use std::sync::Arc;
 
+/// Extra dependencies for BABE.
+#[derive(Clone)]
+pub struct BabeDeps {
+    /// A handle to the BABE worker for issuing requests.
+    pub babe_worker_handle: BabeWorkerHandle<Block>,
+    /// The keystore that manages the keys of the node.
+    pub keystore: KeystorePtr,
+}
+
 /// Full client dependencies.
-pub struct FullDeps<C, P> {
+pub struct FullDeps<C, P, SC> {
     /// The client instance to use.
     pub client: Arc<C>,
     /// Transaction pool instance.
     pub pool: Arc<P>,
+    /// The SelectChain Strategy
+    pub select_chain: SC,
+    /// A copy of the chain spec.
+    pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
     /// Whether to deny unsafe calls
     pub deny_unsafe: DenyUnsafe,
     /// Manual seal command sink
-    pub command_sink_opt:
-        Option<futures::channel::mpsc::Sender<manual_seal::EngineCommand<sp_core::H256>>>,
+    pub command_sink_opt: Option<
+        futures::channel::mpsc::Sender<sc_consensus_manual_seal::EngineCommand<sp_core::H256>>,
+    >,
+    /// BABE specific dependencies.
+    pub babe: Option<BabeDeps>,
 }
 
 /// Instantiate all full RPC extensions.
-pub fn create_full<C, P>(
-    deps: FullDeps<C, P>,
+pub fn create_full<C, P, SC>(
+    deps: FullDeps<C, P, SC>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>,
@@ -55,24 +75,45 @@ where
     C: Send + Sync + 'static,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+    C::Api: BabeApi<Block>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + 'static,
+    SC: SelectChain<Block> + 'static,
 {
-    use manual_seal::rpc::{ManualSeal, ManualSealApiServer};
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+    use sc_consensus_babe_rpc::{Babe, BabeApiServer};
+    use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApiServer};
     use substrate_frame_rpc_system::{System, SystemApiServer};
 
     let mut module = RpcModule::new(());
     let FullDeps {
         client,
         pool,
+        select_chain,
+        chain_spec: _,
         deny_unsafe,
         command_sink_opt,
+        babe,
     } = deps;
 
+    if let Some(babe) = babe {
+        let BabeDeps {
+            babe_worker_handle,
+            keystore,
+        } = babe;
+        module.merge(
+            Babe::new(
+                client.clone(),
+                babe_worker_handle,
+                keystore,
+                select_chain,
+                deny_unsafe,
+            )
+            .into_rpc(),
+        )?;
+    }
     module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
     module.merge(TransactionPayment::new(client).into_rpc())?;
-
     if let Some(command_sink) = command_sink_opt {
         // We provide the rpc handler with the sending end of the channel to allow the rpc
         // send EngineCommands to the background block authorship task.

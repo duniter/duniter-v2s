@@ -53,7 +53,6 @@ pub mod pallet {
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T, I = ()>(_);
@@ -203,6 +202,7 @@ pub mod pallet {
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
         /// submit a membership request (must have a declared identity)
         /// (only available for sub wot, automatic for main wot)
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::request_membership())]
         pub fn request_membership(
             origin: OriginFor<T>,
@@ -222,6 +222,7 @@ pub mod pallet {
         /// claim pending membership to become actual memberhip
         /// the requested membership must fullfill requirements
         // for main wot claim_membership is called automatically when validating identity
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::claim_membership())]
         pub fn claim_membership(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // get identity
@@ -233,6 +234,7 @@ pub mod pallet {
         }
 
         /// extend the validity period of an active membership
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::renew_membership())]
         pub fn renew_membership(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // Verify phase
@@ -253,6 +255,7 @@ pub mod pallet {
 
         /// revoke an active membership
         /// (only available for sub wot, automatic for main wot)
+        #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::revoke_membership())]
         pub fn revoke_membership(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // Verify phase

@@ -55,7 +55,6 @@ pub mod pallet {
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
@@ -272,6 +271,7 @@ pub mod pallet {
         /// - `owner_key`: the public key corresponding to the identity to be created
         ///
         /// The origin must be allowed to create an identity.
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::create_identity())]
         pub fn create_identity(
             origin: OriginFor<T>,
@@ -336,6 +336,7 @@ pub mod pallet {
         /// - `idty_name`: the name uniquely associated to this identity. Must match the validation rules defined by the runtime.
         ///
         /// The identity must have been created using `create_identity` before it can be confirmed.
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::confirm_identity())]
         pub fn confirm_identity(
             origin: OriginFor<T>,
@@ -375,6 +376,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::validate_identity())]
         /// validate the owned identity (must meet the main wot requirements)
         // automatically claim membership if not done
@@ -414,6 +416,7 @@ pub mod pallet {
         ///                  Must be signed by `new_key`.
         ///
         /// The origin should be the old identity owner key.
+        #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::change_owner_key())]
         pub fn change_owner_key(
             origin: OriginFor<T>,
@@ -497,6 +500,7 @@ pub mod pallet {
         ///                     Must be signed by `revocation_key`.
         ///
         /// Any signed origin can execute this call.
+        #[pallet::call_index(4)]
         #[pallet::weight(T::WeightInfo::revoke_identity())]
         pub fn revoke_identity(
             origin: OriginFor<T>,
@@ -542,6 +546,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::call_index(5)]
         #[pallet::weight(T::WeightInfo::remove_identity())]
         /// remove an identity from storage
         pub fn remove_identity(
@@ -560,6 +565,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::call_index(6)]
         #[pallet::weight(T::WeightInfo::prune_item_identities_names(names.len() as u32))]
         /// remove identity names from storage
         pub fn prune_item_identities_names(
@@ -575,6 +581,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::call_index(7)]
         #[pallet::weight(T::WeightInfo::fix_sufficients())]
         /// change sufficient ref count for given key
         pub fn fix_sufficients(

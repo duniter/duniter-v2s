@@ -34,43 +34,43 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 serde = { version = "1.0.101", features = ["derive"], optional = true }
 
 # substrate bencharks
-frame-benchmarking = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', optional = true, default-features = false }
-pallet-balances = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', optional = true, default-features = false }
+frame-benchmarking = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', optional = true, default-features = false }
+pallet-balances = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', optional = true, default-features = false }
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.pallet-timestamp]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-arithmetic]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-io]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 ### DOC ###
 
@@ -85,16 +85,16 @@ serde = { version = "1.0.101", features = ["derive"] }
 
 [dev-dependencies.pallet-balances]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dev-dependencies.sp-core]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dev-dependencies.sp-io]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'
 
 [dev-dependencies.sp-runtime]
 git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.32'
+branch = 'duniter-substrate-v0.9.42'

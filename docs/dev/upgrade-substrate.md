@@ -5,8 +5,10 @@ We need to keep up to date with Substrate. Here is an empirical guide.
 Let's say for the example that we want to upgrade from `v0.9.26` to `v0.9.32`.
 
 ## Upgrade Substrate fork
-
-TBD (only Élois has done this for now)
+1. Checkout the latest Substrate Polkadot branch `polkadot-v0.9.xy` in [our Substrate](https://github.com/duniter/substrate/)
+2. Create a new branch `duniter-substrate-v0.9.xy`
+3. Cherry-pick `3ad5e1a1fdac5398d4911272a34e1f16c1bdd8f0`, `87ef489034ca2b15c4f30da387e06b1f6716d9a2` and `c36ab4f32454318a47777b24b6533c44121fc10b`
+4. Run `cargo check` to check the cherry-picking
 
 ## Upgrade Subxt fork
 

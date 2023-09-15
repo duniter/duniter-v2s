@@ -37,9 +37,9 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
+use subxt::config::extrinsic_params::BaseExtrinsicParamsBuilder;
 use subxt::ext::{sp_core, sp_runtime};
 use subxt::rpc::rpc_params;
-use subxt::tx::BaseExtrinsicParamsBuilder;
 
 pub type Client = subxt::OnlineClient<GdevConfig>;
 pub type Event = gdev::Event;
@@ -50,14 +50,14 @@ pub type TxProgress = subxt::tx::TxProgress<GdevConfig, Client>;
 pub enum GdevConfig {}
 impl subxt::config::Config for GdevConfig {
     type Index = u32;
-    type BlockNumber = u32;
     type Hash = sp_core::H256;
-    type Hashing = sp_runtime::traits::BlakeTwo256;
-    type AccountId = sp_runtime::AccountId32;
+    type AccountId = subxt::utils::AccountId32;
     type Address = sp_runtime::MultiAddress<Self::AccountId, u32>;
-    type Header = sp_runtime::generic::Header<Self::BlockNumber, sp_runtime::traits::BlakeTwo256>;
+    type Header =
+        subxt::config::substrate::SubstrateHeader<u32, subxt::config::substrate::BlakeTwo256>;
+    type Hasher = subxt::config::substrate::BlakeTwo256;
     type Signature = sp_runtime::MultiSignature;
-    type ExtrinsicParams = subxt::tx::BaseExtrinsicParams<Self, Tip>;
+    type ExtrinsicParams = subxt::config::extrinsic_params::BaseExtrinsicParams<Self, Tip>;
 }
 
 #[derive(Copy, Clone, Debug, Default, Encode)]

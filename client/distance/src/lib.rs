@@ -43,15 +43,13 @@ where
     IdtyIndex: Decode + Encode + PartialEq + TypeInfo,
 {
     let &[owner_key] = owner_keys else {
-        return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(
-            None
-        ))
+        return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
     };
     let owner_key = sp_runtime::AccountId32::new(owner_key.0);
 
     let session_index = client
         .storage(
-            &parent,
+            parent,
             &StorageKey(
                 frame_support::storage::storage_prefix(b"Session", b"CurrentIndex").to_vec(),
             ),
@@ -63,7 +61,7 @@ where
 
     let published_results = client
         .storage(
-            &parent,
+            parent,
             &StorageKey(
                 frame_support::storage::storage_prefix(
                     b"Distance",

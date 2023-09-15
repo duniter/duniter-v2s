@@ -383,8 +383,8 @@ fn test_idty_revocation_with_old_key() {
                 (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode()
             )
         ));
-        assert!(Identity::identity(&1).is_some());
-        let idty_val = Identity::identity(&1).unwrap();
+        assert!(Identity::identity(1).is_some());
+        let idty_val = Identity::identity(1).unwrap();
         assert_eq!(idty_val.owner_key, account(10).id);
         assert_eq!(idty_val.old_owner_key, Some((account(1).id, 1)));
 
@@ -433,8 +433,8 @@ fn test_idty_revocation_with_old_key_after_old_key_expiration() {
                 (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode()
             )
         ));
-        assert!(Identity::identity(&1).is_some());
-        let idty_val = Identity::identity(&1).unwrap();
+        assert!(Identity::identity(1).is_some());
+        let idty_val = Identity::identity(1).unwrap();
         assert_eq!(idty_val.owner_key, account(10).id);
         assert_eq!(idty_val.old_owner_key, Some((account(1).id, 1)));
 

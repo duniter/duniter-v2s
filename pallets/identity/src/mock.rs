@@ -22,7 +22,7 @@ use frame_support::{
 };
 use frame_system as system;
 use sp_core::{Pair, H256};
-use sp_keystore::{testing::KeyStore, KeystoreExt};
+use sp_keystore::{testing::MemoryKeystore, KeystoreExt};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
@@ -134,7 +134,7 @@ pub fn new_test_ext(gen_conf: pallet_identity::GenesisConfig<Test>) -> sp_io::Te
         frame_system::Pallet::<Test>::inc_providers(&account(3));
     });
 
-    let keystore = KeyStore::new();
+    let keystore = MemoryKeystore::new();
     let mut ext = sp_io::TestExternalities::new(t);
     ext.register_extension(KeystoreExt(Arc::new(keystore)));
     ext.execute_with(|| System::set_block_number(1));

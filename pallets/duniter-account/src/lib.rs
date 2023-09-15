@@ -31,7 +31,7 @@ use frame_support::traits::{OnUnbalanced, StoredMap};
 use frame_system::pallet_prelude::*;
 use pallet_provide_randomness::RequestId;
 use sp_core::H256;
-use sp_runtime::traits::{Convert, Saturating, Zero};
+use sp_runtime::traits::{Convert, Saturating};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -42,7 +42,6 @@ pub mod pallet {
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
@@ -105,9 +104,22 @@ pub mod pallet {
                 |account| {
                     account.data.random_id = None;
                     account.data.free = T::ExistentialDeposit::get();
-                    account.providers = 1;
+                    account.sufficients = 1; // the treasury will always be self-sufficient
                 },
             );
+
+            // ensure no duplicate
+            let endowed_accounts = self
+                .accounts
+                .keys()
+                .cloned()
+                .collect::<std::collections::BTreeSet<_>>();
+
+            assert!(
+                endowed_accounts.len() == self.accounts.len(),
+                "duplicate balances in genesis."
+            );
+
             // Classic accounts
             for (
                 account_id,
@@ -118,16 +130,23 @@ pub mod pallet {
                 },
             ) in &self.accounts
             {
-                assert!(!balance.is_zero() || *is_identity);
+                // if the balance is below existential deposit, the account must be an identity
+                assert!(balance >= &T::ExistentialDeposit::get() || *is_identity);
+                // mutate account
                 frame_system::Account::<T>::mutate(account_id, |account| {
                     account.data.random_id = Some(*random_id);
-                    if !balance.is_zero() {
-                        account.data.free = *balance;
-                        account.providers = 1;
-                    }
+                    account.data.free = *balance;
                     if *is_identity {
+                        // if the account is an identity, his identity is sufficient for the account existance
                         account.sufficients = 1;
                     }
+                    if balance >= &T::ExistentialDeposit::get() {
+                        // accounts above existential deposit self-provide
+                        account.providers = 1;
+                    }
+                    // WARN (disabled) all genesis accounts provide for themselves whether they have existential deposit or not
+                    // this is needed to migrate Ğ1 data where identities with zero Ğ1 can exist
+                    // account.providers = 1;
                 });
             }
         }
@@ -289,7 +308,7 @@ where
         f: impl FnOnce(&mut Option<pallet_balances::AccountData<Balance>>) -> Result<R, E>,
     ) -> Result<R, E> {
         let account = frame_system::Account::<T>::get(account_id);
-        let was_providing = account.data.was_providing();
+        let was_providing = account.data != T::AccountData::default();
         let mut some_data = if was_providing {
             Some(account.data.into())
         } else {
@@ -297,19 +316,31 @@ where
         };
         let result = f(&mut some_data)?;
         let is_providing = some_data.is_some();
-        if !was_providing && is_providing {
-            frame_system::Pallet::<T>::inc_providers(account_id);
-            PendingNewAccounts::<T>::insert(account_id, ());
-        } else if was_providing && !is_providing {
-            match frame_system::Pallet::<T>::dec_providers(account_id)? {
-                frame_system::DecRefStatus::Reaped => return Ok(result),
-                frame_system::DecRefStatus::Exists => {
-                    // Update value as normal...
+        match (was_providing, is_providing) {
+            // the account has just been created, increment its provider and request a random_id
+            (false, true) => {
+                frame_system::Pallet::<T>::inc_providers(account_id);
+                PendingNewAccounts::<T>::insert(account_id, ());
+            }
+            // the account was existing but is not anymore, decrement the provider
+            (true, false) => {
+                match frame_system::Pallet::<T>::dec_providers(account_id)? {
+                    frame_system::DecRefStatus::Reaped => return Ok(result),
+                    frame_system::DecRefStatus::Exists => {
+                        // Update value as normal
+                    }
                 }
             }
-        } else if !was_providing && !is_providing {
-            return Ok(result);
+            // mutation on unprovided account
+            (false, false) => {
+                return Ok(result);
+            }
+            // mutation on provided account
+            (true, true) => {
+                // Update value as normal
+            }
         }
+        // do mutate the account by setting the balances
         frame_system::Account::<T>::mutate(account_id, |a| {
             a.data.set_balances(some_data.unwrap_or_default())
         });

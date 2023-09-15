@@ -50,7 +50,7 @@ impl Pallet {
             Ok(Self {
                 index,
                 name,
-                calls: calls_enum.variants().iter().map(Into::into).collect(),
+                calls: calls_enum.variants.iter().map(Into::into).collect(),
             })
         } else {
             bail!("Invalid metadata")
@@ -70,15 +70,15 @@ impl From<&scale_info::Variant<PortableForm>> for Call {
     fn from(variant: &scale_info::Variant<PortableForm>) -> Self {
         Self {
             documentation: variant
-                .docs()
+                .docs
                 .iter()
                 .take_while(|line| !line.starts_with("# <weight>"))
                 .cloned()
                 .collect::<Vec<_>>()
                 .join("\n"),
-            index: variant.index(),
-            name: variant.name().to_owned(),
-            params: variant.fields().iter().map(Into::into).collect(),
+            index: variant.index,
+            name: variant.name.to_owned(),
+            params: variant.fields.iter().map(Into::into).collect(),
         }
     }
 }
@@ -92,8 +92,8 @@ struct CallParam {
 impl From<&scale_info::Field<PortableForm>> for CallParam {
     fn from(field: &scale_info::Field<PortableForm>) -> Self {
         Self {
-            name: field.name().cloned().unwrap_or_default(),
-            type_name: field.type_name().cloned().unwrap_or_default(),
+            name: field.clone().name.unwrap_or_default(),
+            type_name: field.clone().type_name.unwrap_or_default(),
         }
     }
 }
@@ -186,8 +186,8 @@ fn get_calls_from_metadata_v14(
     let mut pallets = Vec::new();
     for pallet in metadata_v14.pallets {
         if let Some(calls) = pallet.calls {
-            if let Some(calls_type) = metadata_v14.types.resolve(calls.ty.id()) {
-                let pallet = Pallet::new(pallet.index, pallet.name.clone(), calls_type.type_def())?;
+            if let Some(calls_type) = metadata_v14.types.resolve(calls.ty.id) {
+                let pallet = Pallet::new(pallet.index, pallet.name.clone(), &calls_type.type_def)?;
                 let calls_len = pallet.calls.len();
                 println!("{}: {} ({} calls)", pallet.index, pallet.name, calls_len);
                 pallets.push(pallet);

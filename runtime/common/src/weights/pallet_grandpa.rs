@@ -20,7 +20,7 @@
 use frame_support::{
     traits::Get,
     weights::{
-        constants::{WEIGHT_PER_MICROS, WEIGHT_PER_NANOS},
+        constants::{WEIGHT_REF_TIME_PER_MICROS, WEIGHT_REF_TIME_PER_NANOS},
         Weight,
     },
 };
@@ -35,19 +35,21 @@ impl<T: frame_system::Config> pallet_grandpa::WeightInfo for WeightInfo<T> {
         let validator_count = validator_count.max(100) as u64;
 
         // checking membership proof
-        (WEIGHT_PER_MICROS * 35)
-            .saturating_add((WEIGHT_PER_NANOS * 175).saturating_mul(validator_count))
+        (Weight::from_parts(WEIGHT_REF_TIME_PER_MICROS, 0) * 35)
+            .saturating_add(Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS, 0) * 175)
+            .saturating_mul(validator_count)
             .saturating_add(T::DbWeight::get().reads(5))
             // check equivocation proof
-            .saturating_add(WEIGHT_PER_MICROS * 95)
+            .saturating_add(Weight::from_parts(WEIGHT_REF_TIME_PER_MICROS, 0) * 95)
             // report offence
-            .saturating_add(WEIGHT_PER_MICROS * 110)
+            .saturating_add(Weight::from_parts(WEIGHT_REF_TIME_PER_MICROS, 0) * 110)
             .saturating_add(T::DbWeight::get().writes(3))
             // fetching set id -> session index mappings
             .saturating_add(T::DbWeight::get().reads(2))
     }
 
     fn note_stalled() -> Weight {
-        (WEIGHT_PER_MICROS * 3).saturating_add(T::DbWeight::get().writes(1))
+        (Weight::from_parts(WEIGHT_REF_TIME_PER_MICROS, 0) * 3)
+            .saturating_add(T::DbWeight::get().writes(1))
     }
 }
