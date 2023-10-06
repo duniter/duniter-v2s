@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-#[cfg(feature = "gdev")]
+// Common to all Duniter blockchains
 pub mod gen_genesis_data;
 
 #[cfg(feature = "g1")]
@@ -23,8 +23,6 @@ pub mod g1;
 pub mod gdev;
 #[cfg(feature = "gtest")]
 pub mod gtest;
-#[cfg(feature = "gtest")]
-pub mod gtest_genesis;
 
 use common_runtime::{AccountId, IdtyIndex, Signature};
 use sp_core::{Pair, Public};

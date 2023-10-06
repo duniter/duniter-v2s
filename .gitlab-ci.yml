@@ -2,6 +2,9 @@
 # - podman: use 'podman' to build multiplatform images
 
 stages:
+  - prepare_spec
+  - build_spec
+  - create_release
   - schedule
   - labels
   - quality
@@ -43,7 +46,7 @@ check_labels:
 .env:
   image: paritytech/ci-linux:production
   tags:
-    - podman
+    - kepler
 
 fmt_and_clippy:
   extends: .env
@@ -67,7 +70,7 @@ fmt_and_clippy:
     - echo podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
     - podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
   tags:
-    - podman
+    - kepler
 
 .docker_deploy:
   stage: deploy
@@ -140,6 +143,101 @@ test_release:
     IMAGE_NAME: "duniter/duniter-v2s-test"
     IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
     PODMAN_BUILD_OPTIONS: "--target build --build-arg cucumber=1"
+
+create_g1_data_job:
+  stage: prepare_spec
+  rules:
+    - when: always
+  image: python:3.9.18
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+    LEVELDB_PATH: /dump/duniter_default/data/leveldb
+  script:
+    # Duniter 1.8.6 dump
+    - mkdir /dump
+    - cd /dump
+    - curl https://dl.cgeek.fr/public/backup-g1-duniter-1.8.6.tgz -o g1-dump.tgz
+    - tar xvzf g1-dump.tgz
+    - rm g1-dump.tgz
+    - mv backup-g1-duniter-1.8.6 duniter_default
+    - ls -alh /dump
+    - ls -alh /dump/duniter_default
+    # py-g1-migrator conversion
+    - git clone https://git.duniter.org/tools/py-g1-migrator.git -b import_identities_from_leveldb /py-g1-migrator
+    - cd /py-g1-migrator
+    - rm -rf inputs/*
+    - apt-get update
+    - apt-get install -y sqlite3 libleveldb-dev jq
+    - pip install -r requirements.txt
+    - ./main.py
+    - 'cat output/gtest_genesis.json | jq "{ identities : .identities, wallets : .wallets, initial_monetary_mass: .initial_monetary_mass }" > output/g1-data.json'
+    - cp output/g1-data.json $CI_PROJECT_DIR/resources
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/resources
+    expire_in: 1 day
+  tags:
+    - kepler
+
+create_runtime:
+  stage: prepare_spec
+  rules:
+    - when: never
+  image: paritytech/srtool:1.62.0
+  variables:
+    PACKAGE: "gdev-runtime"
+    RUNTIME_DIR: "runtime/gdev"
+    SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
+  script:
+    # Copy sources to the expected directory of srtool
+    - cp -R * /build/
+    # Build the runtime
+    - /srtool/build --app --json -cM > $SRTOOL_OUTPUT
+    - mv /build/runtime/gdev/target $CI_PROJECT_DIR/runtime/gdev/target/
+    - . $CARGO_HOME/env
+  artifacts:
+    name: "runtime"
+    paths:
+      - $CI_PROJECT_DIR/resources
+      - $CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/
+      - $CI_PROJECT_DIR/srtool_output.json
+    expire_in: 1 day
+  tags:
+    - kepler
+
+create_gdev_raw_spec:
+  stage: build_spec
+  rules:
+    - when: never
+  image: rust:1-bullseye
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+  script:
+    - apt-get update
+    - apt-get install -y clang cmake protobuf-compiler
+    - cargo run -- build-spec -lerror --chain=gdev_live --raw > resources/gdev-raw.json
+  artifacts:
+    name: "runtime"
+    paths:
+      - $CI_PROJECT_DIR/resources
+    expire_in: 1 day
+  tags:
+    - kepler
+
+create_release:
+  stage: create_release
+  rules:
+    - when: never
+  image: rust:1-bullseye
+  script:
+    # Release creation + link to artifacts
+    - export G1_DATA_URL="$CI_JOB_URL/artifacts/file/resources/g1-data.json"
+    - export GDEV_WASM_URL="$CI_JOB_URL/artifacts/file/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm"
+    - export SRTOOL_OUTPUT_URL="$CI_JOB_URL/artifacts/file/srtool_output.json"
+    - export GDEV_RAW_SPEC_URL="$CI_JOB_URL/artifacts/file/resources/gdev-raw.json"
+    - cargo xtask release-runtime 600
+  tags:
+    - kepler
 
 deploy_docker_debug_sha:
   stage: deploy

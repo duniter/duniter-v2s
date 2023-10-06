@@ -65,26 +65,11 @@
     "wot_min_cert_for_create_idty_right": 2,
     "wot_min_cert_for_membership": 2
   },
-  "smiths": {
-    "Alice": {
-      "certs": [
-        "Bob",
-        "Charlie"
-      ]
-    },
-    "Bob": {
-      "certs": [
-        "Alice",
-        "Charlie"
-      ]
-    },
-    "Charlie": {
-      "certs": [
-        "Alice",
-        "Bob"
-      ]
-    }
-  },
+  "clique_smiths": [
+    { "name":  "Alice" },
+    { "name":  "Bob" },
+    { "name":  "Charlie" }
+  ],
   "sudo_key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
   "technical_committee": [
     "Alice",

@@ -19,6 +19,7 @@ mod get_changes;
 
 use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
+use std::fs;
 use std::io::Read;
 use std::process::Command;
 
@@ -60,48 +61,20 @@ struct CoreVersion {
 }
 
 pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
-    // Get current dir
-    let pwd = std::env::current_dir()?
-        .into_os_string()
-        .into_string()
-        .map_err(|_| anyhow!("Fail to read current dir path: invalid utf8 string!"))?;
-
     // TODO: check spec_version in the code and bump if necessary (with a commit)
-
     // TODO: create and push a git tag runtime-{spec_version}
 
     // Create target folder for runtime build
-    Command::new("mkdir")
-        .args(["-p", "runtime/gdev/target"])
-        .status()?;
-    Command::new("chmod")
-        .args(["777", "runtime/gdev/target"])
-        .status()?;
-
     // Build the new runtime
-    println!("Build gdev-runtime… (take a while)");
-    let output = Command::new("docker")
-        .args([
-            "run",
-            "-i",
-            "--rm",
-            "-e",
-            "PACKAGE=gdev-runtime",
-            "-e",
-            "RUNTIME_DIR=runtime/gdev",
-            "-v",
-            &format!("{}:/build", pwd),
-            "paritytech/srtool:1.62.0",
-            "build",
-            "--app",
-            "--json",
-            "-cM",
-        ])
-        .output()?;
+    println!("Read srtool output… ");
+    let output = fs::read_to_string(
+        std::env::var("SRTOOL_OUTPUT").unwrap_or_else(|_| "srtool_output.json".to_string()),
+    )
+    .expect("srtool JSON output could not be read");
 
     // Read the srtool json output
     let srtool: Srtool = serde_json::from_str(
-        std::str::from_utf8(&output.stdout)?
+        output
             .lines()
             .last()
             .ok_or_else(|| anyhow!("empty srtool output"))?,
@@ -112,12 +85,29 @@ pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
     let release_notes = gen_release_notes(spec_version, srtool)
         .await
         .with_context(|| "Fail to generate release notes")?;
-
+    let release_notes = "test release notes".to_string();
     // TODO: Call gitlab API to publish the release notes (and upload the wasm)
     println!("{}", release_notes);
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
-    create_release::create_release(gitlab_token, spec_version, release_notes).await?;
+    let g1_data_url =
+        std::env::var("G1_DATA_URL").with_context(|| "missing env var G1_DATA_URL")?;
+    let srtool_output_url =
+        std::env::var("SRTOOL_OUTPUT_URL").with_context(|| "missing env var SRTOOL_OUTPUT_URL")?;
+    let gdev_wasm_url =
+        std::env::var("GDEV_WASM_URL").with_context(|| "missing env var GDEV_WASM_URL")?;
+    let gdev_raw_spec_url =
+        std::env::var("GDEV_RAW_SPEC_URL").with_context(|| "missing env var GDEV_RAW_SPEC_URL")?;
+    create_release::create_release(
+        gitlab_token,
+        spec_version,
+        release_notes,
+        g1_data_url,
+        srtool_output_url,
+        gdev_wasm_url,
+        gdev_raw_spec_url,
+    )
+    .await?;
 
     Ok(())
 }

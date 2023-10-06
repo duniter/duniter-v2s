@@ -85,6 +85,7 @@ pub mod pallet {
     pub struct GenesisConfig<T: Config> {
         pub accounts:
             sp_std::collections::btree_map::BTreeMap<T::AccountId, GenesisAccountData<T::Balance>>,
+        pub treasury_balance: T::Balance,
     }
 
     #[cfg(feature = "std")]
@@ -92,6 +93,7 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 accounts: Default::default(),
+                treasury_balance: T::ExistentialDeposit::get(),
             }
         }
     }
@@ -104,7 +106,7 @@ pub mod pallet {
                 pallet_treasury::Pallet::<T>::account_id(),
                 |account| {
                     account.data.random_id = None;
-                    account.data.free = T::ExistentialDeposit::get();
+                    account.data.free = self.treasury_balance;
                     account.providers = 1;
                 },
             );

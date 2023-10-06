@@ -112,7 +112,11 @@ pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Client, Pr
         p2p_port: _,
         ws_port,
     } = spawn_full_node(
-        &["--dev", "--execution=Native", "--sealing=manual"],
+        &[
+            "--chain=gdev_local",
+            "--execution=Native",
+            "--sealing=manual",
+        ],
         &duniter_binary_path,
         maybe_genesis_conf_file,
     );
@@ -169,7 +173,8 @@ fn spawn_full_node(
     // Env vars
     let mut envs = Vec::new();
     if let Some(genesis_conf_file) = maybe_genesis_conf_file {
-        envs.push(("DUNITER_GENESIS_CONFIG", genesis_conf_file));
+        envs.push(("DUNITER_GENESIS_CONFIG", genesis_conf_file.clone()));
+        envs.push(("DUNITER_GENESIS_DATA", genesis_conf_file));
     }
 
     // Logs

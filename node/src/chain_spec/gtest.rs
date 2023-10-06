@@ -15,15 +15,15 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
+use crate::chain_spec::gen_genesis_data::{CommonParameters, GenesisData, SessionKeysProvider};
 use common_runtime::constants::*;
 use common_runtime::entities::IdtyData;
 use common_runtime::*;
-use gtest_genesis::{build_genesis, GenesisJson};
 use gtest_runtime::{
-    opaque::SessionKeys, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig, CertConfig,
-    GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig, SessionConfig, SmithCertConfig,
-    SmithMembershipConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
-    UniversalDividendConfig, WASM_BINARY,
+    opaque::SessionKeys, parameters, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
+    CertConfig, GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig, Perbill,
+    SessionConfig, SmithCertConfig, SmithMembershipConfig, SudoConfig, SystemConfig,
+    TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_network_common::config::MultiaddrWithPeerId; // in the future available in sc_network::config
@@ -45,6 +45,48 @@ pub type AuthorityKeys = (
     ImOnlineId,
     AuthorityDiscoveryId,
 );
+
+const TOKEN_DECIMALS: usize = 2;
+const TOKEN_SYMBOL: &str = "ĞT";
+
+#[derive(Default, Clone, Deserialize)]
+// No parameters for GTest (unlike GDev)
+struct GenesisParameters {}
+
+struct GTestSKP;
+impl SessionKeysProvider<SessionKeys> for GTestSKP {
+    fn session_keys(keys: &AuthorityKeys) -> SessionKeys {
+        let cloned = keys.clone();
+        SessionKeys {
+            grandpa: cloned.1,
+            babe: cloned.2,
+            im_online: cloned.3,
+            authority_discovery: cloned.4,
+        }
+    }
+}
+
+fn get_parameters(_: &Option<GenesisParameters>) -> CommonParameters {
+    CommonParameters {
+        currency_name: TOKEN_SYMBOL,
+        decimals: TOKEN_DECIMALS,
+        existential_deposit: parameters::ExistentialDeposit::get(),
+        membership_period: parameters::MembershipPeriod::get(),
+        cert_period: parameters::CertPeriod::get(),
+        smith_membership_period: parameters::SmithMembershipPeriod::get(),
+        smith_certs_validity_period: parameters::SmithValidityPeriod::get(),
+        min_cert: parameters::WotMinCertForMembership::get(),
+        smith_min_cert: parameters::SmithWotMinCertForMembership::get(),
+        cert_max_by_issuer: parameters::MaxByIssuer::get(),
+        cert_validity_period: parameters::ValidityPeriod::get(),
+        c2: parameters::SquareMoneyGrowthRate::get(),
+        ud_creation_period: parameters::UdCreationPeriod::get() as u64, // TODO: cast?
+        distance_min_accessible_referees: Perbill::from_percent(80),    // TODO: generalize
+        max_depth: 5,                                                   // TODO: generalize value
+        ud_reeval_period: parameters::UdReevalPeriod::get() as u64,     // TODO: cast?
+    }
+}
+
 /// Generate an authority keys.
 pub fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
     (
@@ -104,127 +146,55 @@ pub struct ClientSpec {
 
 /// generate development chainspec with Alice validator
 // there is some code duplication because we can not use ClientSpec
-pub fn development_chainspecs() -> Result<ChainSpec, String> {
+pub fn development_chainspecs(json_file_path: &str) -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
-
-    // custom genesis when DUNITER_GTEST_GENESIS is set
-    if let Ok(genesis_json_path) = std::env::var("DUNITER_GTEST_GENESIS") {
-        // log
-        log::info!("loading genesis from {genesis_json_path}");
-        // open json genesis file
-        let file = std::fs::File::open(&genesis_json_path)
-            .map_err(|e| format!("Error opening gen conf file `{}`: {}", genesis_json_path, e))?;
-        // memory map the file to avoid loading it in memory
-        let bytes = unsafe {
-            memmap2::Mmap::map(&file).map_err(|e| {
-                format!("Error mmaping gen conf file `{}`: {}", genesis_json_path, e)
-            })?
-        };
-        // parse the json file
-        let genesis_data: GenesisJson = serde_json::from_slice(&bytes)
-            .map_err(|e| format!("Error parsing gen conf file: {}", e))?;
-
-        // return chainspecs
-        Ok(ChainSpec::from_genesis(
-            // Name
-            "ĞTest Development",
-            // ID
-            "gtest_dev",
-            // chain type
-            sc_service::ChainType::Development,
-            // genesis config constructor
-            move || {
-                build_genesis(
-                    // genesis data built from json
-                    genesis_data.clone(),
-                    // wasm binary
-                    wasm_binary,
-                    // replace authority by Alice
-                    Some(get_session_keys_from_seed("Alice").encode()),
+    Ok(ChainSpec::from_genesis(
+        // Name
+        "ĞTest Development",
+        // ID
+        "gtest_dev",
+        // chain type
+        sc_service::ChainType::Development,
+        // constructor
+        move || {
+            let genesis_data =
+                gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
+                    json_file_path.to_owned(),
+                    get_parameters,
+                    Some("Alice".to_owned()),
                 )
-                .expect("genesis building failed")
-            },
-            // Bootnodes
-            vec![],
-            // Telemetry
-            None,
-            // Protocol ID
-            None,
-            //Fork ID
-            None,
-            // Properties
-            Some(
-                serde_json::json!({
-                    "tokenDecimals": 2,
-                    "tokenSymbol": "ĞT",
-                })
-                .as_object()
-                .expect("must be a map")
-                .clone(),
-            ),
-            // Extensions
-            None,
-        ))
-    } else {
-        // log
-        log::info!("generating genesis");
-        // generated genesis
-        Ok(ChainSpec::from_genesis(
-            // Name
-            "ĞTest Development",
-            // ID
-            "gtest_dev",
-            // chain type
-            ChainType::Development,
-            // constructor
-            move || {
-                generate_genesis(
-                    wasm_binary,
-                    // Initial authorities len
-                    1,
-                    // Initial smith members len
-                    3,
-                    // Inital identities len
-                    4,
-                    // Sudo account
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                )
-            },
-            // Bootnodes
-            vec![],
-            // Telemetry
-            None,
-            // Protocol ID
-            None,
-            //Fork ID
-            None,
-            // Properties
-            Some(
-                serde_json::json!({
-                    "tokenDecimals": 2,
-                    "tokenSymbol": "ĞT",
-                })
-                .as_object()
-                .expect("must be a map")
-                .clone(),
-            ),
-            // Extensions
-            None,
-        ))
-    }
+                .expect("Genesis Data must be buildable");
+            genesis_data_to_gtest_genesis_conf(genesis_data, wasm_binary)
+        },
+        // Bootnodes
+        vec![],
+        // Telemetry
+        None,
+        // Protocol ID
+        None,
+        //Fork ID
+        None,
+        // Properties
+        Some(
+            serde_json::json!({
+                "tokenDecimals": TOKEN_DECIMALS,
+                "tokenSymbol": TOKEN_SYMBOL,
+            })
+            .as_object()
+            .expect("must be a map")
+            .clone(),
+        ),
+        // Extensions
+        None,
+    ))
 }
 
 // === live chainspecs ===
 
 /// live chainspecs
 // one smith must have session keys
-pub fn live_chainspecs(
-    client_spec: ClientSpec,
-    genesis_data: GenesisJson,
-) -> Result<ChainSpec, String> {
+pub fn live_chainspecs(client_spec: ClientSpec, json_file_path: &str) -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
-
-    // return chainspecs
     Ok(ChainSpec::from_genesis(
         // Name
         client_spec.name.as_str(),
@@ -234,15 +204,14 @@ pub fn live_chainspecs(
         client_spec.chain_type,
         // genesis config constructor
         move || {
-            build_genesis(
-                // genesis data
-                genesis_data.clone(),
-                // wasm binary
-                wasm_binary,
-                // do not replace session keys
-                None,
-            )
-            .expect("genesis building failed")
+            let genesis_data =
+                gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
+                    json_file_path.to_owned(),
+                    get_parameters,
+                    None,
+                )
+                .expect("Genesis Data must be buildable");
+            genesis_data_to_gtest_genesis_conf(genesis_data, wasm_binary)
         },
         // Bootnodes
         client_spec.boot_nodes,
@@ -259,60 +228,44 @@ pub fn live_chainspecs(
     ))
 }
 
-/// generate a genesis with given number of smith and identities
-fn generate_genesis(
+/// custom genesis
+fn genesis_data_to_gtest_genesis_conf(
+    genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
     wasm_binary: &[u8],
-    initial_authorities_len: usize,
-    initial_smiths_len: usize,
-    initial_identities_len: usize,
-    root_key: AccountId,
-) -> GenesisConfig {
-    assert!(initial_identities_len <= 6);
-    assert!(initial_smiths_len <= initial_identities_len);
-    assert!(initial_authorities_len <= initial_smiths_len);
+) -> gtest_runtime::GenesisConfig {
+    gen_genesis_data::dump_for_indexer(&genesis_data);
 
-    let ud = 1_000;
+    let super::gen_genesis_data::GenesisData {
+        accounts,
+        treasury_balance,
+        certs_by_receiver,
+        first_ud,
+        first_ud_reeval,
+        identities,
+        initial_authorities,
+        initial_monetary_mass,
+        memberships,
+        parameters,
+        session_keys_map,
+        smith_certs_by_receiver,
+        smith_memberships,
+        sudo_key,
+        technical_committee_members,
+        ud,
+    } = genesis_data;
 
-    let initial_smiths = (0..initial_smiths_len)
-        .map(|i| get_authority_keys_from_seed(NAMES[i]))
-        .collect::<Vec<AuthorityKeys>>();
-    let initial_identities = (0..initial_identities_len)
-        .map(|i| {
-            (
-                IdtyName::from(NAMES[i]),
-                get_account_id_from_seed::<sr25519::Public>(NAMES[i]),
-            )
-        })
-        .collect::<BTreeMap<IdtyName, AccountId>>();
-
-    GenesisConfig {
+    gtest_runtime::GenesisConfig {
         system: SystemConfig {
             // Add Wasm runtime to storage.
             code: wasm_binary.to_vec(),
         },
         account: AccountConfig {
-            accounts: initial_identities
-                .iter()
-                .enumerate()
-                .map(|(i, (_, owner_key))| {
-                    (
-                        owner_key.clone(),
-                        GenesisAccountData {
-                            random_id: H256(blake2_256(&(i as u32, owner_key).encode())),
-                            balance: ud,
-                            is_identity: true,
-                        },
-                    )
-                })
-                .collect(),
+            accounts,
+            treasury_balance,
         },
         authority_discovery: Default::default(),
         authority_members: AuthorityMembersConfig {
-            initial_authorities: initial_smiths
-                .iter()
-                .enumerate()
-                .map(|(i, keys)| (i as u32 + 1, (keys.0.clone(), true)))
-                .collect(),
+            initial_authorities,
         },
         balances: Default::default(),
         babe: BabeConfig {
@@ -322,84 +275,53 @@ fn generate_genesis(
         grandpa: Default::default(),
         im_online: Default::default(),
         session: SessionConfig {
-            keys: initial_smiths
-                .iter()
-                .map(|x| {
-                    (
-                        x.0.clone(),
-                        x.0.clone(),
-                        session_keys(x.1.clone(), x.2.clone(), x.3.clone(), x.4.clone()),
-                    )
-                })
+            keys: session_keys_map
+                .into_iter()
+                .map(|(account_id, session_keys)| (account_id.clone(), account_id, session_keys))
                 .collect::<Vec<_>>(),
         },
-        sudo: SudoConfig {
-            // Assign network admin rights.
-            key: Some(root_key),
-        },
+        sudo: SudoConfig { key: sudo_key },
         technical_committee: TechnicalCommitteeConfig {
-            members: initial_smiths
-                .iter()
-                .map(|x| x.0.clone())
-                .collect::<Vec<_>>(),
+            members: technical_committee_members,
             ..Default::default()
         },
         identity: IdentityConfig {
-            identities: initial_identities
-                .iter()
+            identities: identities
+                .into_iter()
                 .enumerate()
-                .map(|(i, (name, owner_key))| common_runtime::GenesisIdty {
+                .map(|(i, (name, owner_key, old_owner_key))| GenesisIdty {
                     index: i as u32 + 1,
-                    name: name.clone(),
-                    value: IdtyValue {
+                    name: common_runtime::IdtyName::from(name.as_str()),
+                    value: common_runtime::IdtyValue {
                         data: IdtyData::new(),
-                        next_creatable_identity_on: Default::default(),
-                        old_owner_key: None,
-                        owner_key: owner_key.clone(),
+                        next_creatable_identity_on: 0,
+                        old_owner_key: old_owner_key.clone().map(|address| (address, 0)),
+                        owner_key,
                         removable_on: 0,
                         status: IdtyStatus::Validated,
                     },
                 })
                 .collect(),
         },
-        membership: MembershipConfig {
-            memberships: (1..=initial_identities.len())
-                .map(|i| {
-                    (
-                        i as u32,
-                        MembershipData {
-                            expire_on: gtest_runtime::MembershipPeriod::get(),
-                        },
-                    )
-                })
-                .collect(),
-        },
         cert: CertConfig {
-            apply_cert_period_at_genesis: false,
-            certs_by_receiver: clique_wot(initial_identities.len()),
+            apply_cert_period_at_genesis: true,
+            certs_by_receiver,
+        },
+        membership: MembershipConfig { memberships },
+        smith_cert: SmithCertConfig {
+            apply_cert_period_at_genesis: true,
+            certs_by_receiver: smith_certs_by_receiver,
         },
         smith_membership: SmithMembershipConfig {
-            memberships: (1..=initial_smiths_len)
-                .map(|i| {
-                    (
-                        i as u32,
-                        MembershipData {
-                            expire_on: gtest_runtime::SmithMembershipPeriod::get(),
-                        },
-                    )
-                })
-                .collect(),
-        },
-        smith_cert: SmithCertConfig {
-            apply_cert_period_at_genesis: false,
-            certs_by_receiver: clique_wot(initial_smiths_len),
+            memberships: smith_memberships,
         },
         universal_dividend: UniversalDividendConfig {
-            // TODO FIXME
-            first_reeval: Some(600_000),
-            first_ud: Some(6_000),
-            initial_monetary_mass: 0,
+            first_reeval: first_ud_reeval,
+            first_ud,
+            initial_monetary_mass,
             ud,
+            #[cfg(test)]
+            initial_members: vec![],
         },
         treasury: Default::default(),
     }

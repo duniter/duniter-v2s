@@ -29,12 +29,42 @@ pub(super) async fn create_release(
     gitlab_token: String,
     spec_version: u32,
     release_notes: String,
+    g1_data_url: String,
+    srtool_output_url: String,
+    gdev_wasm_url: String,
+    gdev_raw_spec_url: String,
 ) -> Result<()> {
     // this is the important line
     let request_body = CreateReleaseMutation::build_query(create_release_mutation::Variables {
         branch: format!("release/runtime-{}", spec_version - (spec_version % 100)),
         description: release_notes,
         milestone: format!("runtime-{}", spec_version),
+        links: vec![
+            create_release_mutation::ReleaseAssetLinkInput {
+                directAssetPath: None,
+                linkType: None,
+                name: "g1-data.json".to_string(),
+                url: g1_data_url,
+            },
+            create_release_mutation::ReleaseAssetLinkInput {
+                directAssetPath: None,
+                linkType: None,
+                name: "srtool_output.json".to_string(),
+                url: srtool_output_url,
+            },
+            create_release_mutation::ReleaseAssetLinkInput {
+                directAssetPath: None,
+                linkType: None,
+                name: "gdev_runtime.compact.compressed.wasm".to_string(),
+                url: gdev_wasm_url,
+            },
+            create_release_mutation::ReleaseAssetLinkInput {
+                directAssetPath: None,
+                linkType: None,
+                name: "gdev-raw.json".to_string(),
+                url: gdev_raw_spec_url,
+            },
+        ],
     });
 
     let client = reqwest::Client::new();

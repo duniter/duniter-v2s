@@ -559,6 +559,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
 
 [[package]]
+name = "bs58"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f5353f36341f7451062466f0b755b96ac3a9547e4d7f6b70d603fc721a7d7896"
+dependencies = [
+ "tinyvec",
+]
+
+[[package]]
 name = "bstr"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1592,7 +1601,7 @@ dependencies = [
  "sp-distance",
  "sp-runtime",
  "subxt",
- "time 0.1.45",
+ "time 0.3.23",
  "time-macros",
  "tokio",
 ]
@@ -1643,6 +1652,7 @@ name = "duniter"
 version = "0.3.0"
 dependencies = [
  "async-io",
+ "bs58 0.5.0",
  "clap 4.1.4",
  "clap_complete",
  "common-runtime",
@@ -1664,6 +1674,7 @@ dependencies = [
  "num-format",
  "pallet-certification",
  "pallet-grandpa",
+ "pallet-im-online",
  "pallet-oneshot-account",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
@@ -3903,7 +3914,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "799676bb0807c788065e57551c6527d461ad572162b0519d1958946ff9e0539d"
 dependencies = [
  "asn1_der",
- "bs58",
+ "bs58 0.4.0",
  "ed25519-dalek",
  "either",
  "fnv",
@@ -4595,7 +4606,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c580bfdd8803cce319b047d239559a22f809094aaea4ac13902a1fdcfcd4261"
 dependencies = [
  "arrayref",
- "bs58",
+ "bs58 0.4.0",
  "byteorder",
  "data-encoding",
  "multihash",
@@ -9915,7 +9926,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "digest 0.10.6",
  "rand 0.8.5",
  "static_assertions",
