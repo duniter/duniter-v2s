@@ -101,9 +101,20 @@ struct GenesisConfig<Parameters> {
 
 #[derive(Deserialize, Serialize)]
 pub struct GenesisIndexerExport {
-    first_ud: Option<u64>,
-    first_ud_reeval: Option<u64>,
-    ud: u64,
+    pub accounts: BTreeMap<AccountId, GenesisAccountData<u64>>,
+    pub treasury_balance: u64,
+    pub certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
+    pub first_ud: Option<u64>,
+    pub first_ud_reeval: Option<u64>,
+    pub identities: Vec<(String, AccountId, Option<AccountId>)>,
+    pub initial_authorities: BTreeMap<u32, (AccountId, bool)>,
+    pub initial_monetary_mass: u64,
+    pub memberships: BTreeMap<u32, MembershipData>,
+    pub smith_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
+    pub smith_memberships: BTreeMap<u32, MembershipData>,
+    pub sudo_key: Option<AccountId>,
+    pub technical_committee_members: Vec<AccountId>,
+    pub ud: u64,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -1167,9 +1178,20 @@ pub fn genesis_data_to_indexer_export<P: DeserializeOwned, SK: Decode>(
     genesis_data: &GenesisData<P, SK>,
 ) -> GenesisIndexerExport {
     GenesisIndexerExport {
-        first_ud: genesis_data.first_ud,
-        first_ud_reeval: genesis_data.first_ud_reeval,
-        ud: genesis_data.ud,
+        accounts: genesis_data.accounts.clone(),
+        treasury_balance: genesis_data.treasury_balance.clone(),
+        certs_by_receiver: genesis_data.certs_by_receiver.clone(),
+        first_ud: genesis_data.first_ud.clone(),
+        first_ud_reeval: genesis_data.first_ud_reeval.clone(),
+        identities: genesis_data.identities.clone(),
+        initial_authorities: genesis_data.initial_authorities.clone(),
+        initial_monetary_mass: genesis_data.initial_monetary_mass.clone(),
+        memberships: genesis_data.memberships.clone(),
+        smith_certs_by_receiver: genesis_data.smith_certs_by_receiver.clone(),
+        smith_memberships: genesis_data.smith_memberships.clone(),
+        sudo_key: genesis_data.sudo_key.clone(),
+        technical_committee_members: genesis_data.technical_committee_members.clone(),
+        ud: genesis_data.ud.clone(),
     }
 }
 
@@ -1233,7 +1255,7 @@ pub fn dump_for_indexer<Parameters: DeserializeOwned, SessionKeys: Decode>(
         let export: GenesisIndexerExport = genesis_data_to_indexer_export(&genesis_data);
         fs::write(
             &path,
-            serde_json::to_string(&export).expect("should be serializable"),
+            serde_json::to_string_pretty(&export).expect("should be serializable"),
         )
         .unwrap_or_else(|_| panic!("Could not export genesis data to {}", &path));
     }
