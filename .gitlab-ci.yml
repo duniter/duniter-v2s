@@ -168,8 +168,6 @@ create_g1_data_job:
     - tar xvzf g1-dump.tgz
     - rm g1-dump.tgz
     - mv backup-g1-duniter-1.8.6 duniter_default
-    - ls -alh /dump
-    - ls -alh /dump/duniter_default
     # py-g1-migrator conversion
     - git clone https://git.duniter.org/tools/py-g1-migrator.git -b import_identities_from_leveldb /py-g1-migrator
     - cd /py-g1-migrator
@@ -177,8 +175,14 @@ create_g1_data_job:
     - apt-get update
     - apt-get install -y sqlite3 libleveldb-dev jq
     - pip install -r requirements.txt
+    # Export identities and wallets
     - ./main.py
-    - 'cat output/gtest_genesis.json | jq "{ identities : .identities, wallets : .wallets, initial_monetary_mass: .initial_monetary_mass }" > output/g1-data.json'
+    # Export transaction history
+    - sqlite3 /dump/duniter_default/txs.db --json "select time,comment,issuers,outputs from txs;" > inputs/transactions_history.json 2>> inputs/txs.err
+    - ./generate_transactions_history.py
+    # Merge in one file
+    - 'jq -s "{ identities: .[0].identities, wallets: .[0].wallets, initial_monetary_mass: .[0].initial_monetary_mass, transactions_history: .[1] }" output/gtest_genesis.json output/history.json > output/g1-data.json'
+    # Make the exported file available for next jobs
     - cp output/g1-data.json $CI_PROJECT_DIR/resources
   artifacts:
     paths:

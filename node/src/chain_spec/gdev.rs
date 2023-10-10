@@ -60,7 +60,7 @@ fn get_parameters(parameters_from_file: &Option<GenesisParameters>) -> CommonPar
     let parameters_from_file =
         parameters_from_file.expect("parameters must be defined in file for GDev");
     CommonParameters {
-        currency_name: TOKEN_SYMBOL,
+        currency_name: TOKEN_SYMBOL.to_string(),
         decimals: TOKEN_DECIMALS,
         existential_deposit: EXISTENTIAL_DEPOSIT,
         membership_period: parameters_from_file.membership_period,
@@ -291,8 +291,6 @@ fn genesis_data_to_gdev_genesis_conf(
     genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
     wasm_binary: &[u8],
 ) -> gdev_runtime::GenesisConfig {
-    gen_genesis_data::dump_for_indexer(&genesis_data);
-
     let super::gen_genesis_data::GenesisData {
         accounts,
         treasury_balance,
@@ -304,6 +302,7 @@ fn genesis_data_to_gdev_genesis_conf(
         initial_monetary_mass,
         memberships,
         parameters,
+        common_parameters,
         session_keys_map,
         smith_certs_by_receiver,
         smith_memberships,

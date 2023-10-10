@@ -76,6 +76,7 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub initial_monetary_mass: u64,
     pub memberships: BTreeMap<u32, MembershipData>,
     pub parameters: Option<Parameters>,
+    pub common_parameters: Option<CommonParameters>,
     pub session_keys_map: BTreeMap<AccountId, SessionKeys>,
     pub smith_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
     pub smith_memberships: BTreeMap<u32, MembershipData>,
@@ -101,20 +102,32 @@ struct GenesisConfig<Parameters> {
 
 #[derive(Deserialize, Serialize)]
 pub struct GenesisIndexerExport {
-    pub accounts: BTreeMap<AccountId, GenesisAccountData<u64>>,
-    pub treasury_balance: u64,
-    pub certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
-    pub first_ud: Option<u64>,
-    pub first_ud_reeval: Option<u64>,
-    pub identities: Vec<(String, AccountId, Option<AccountId>)>,
-    pub initial_authorities: BTreeMap<u32, (AccountId, bool)>,
-    pub initial_monetary_mass: u64,
-    pub memberships: BTreeMap<u32, MembershipData>,
-    pub smith_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
-    pub smith_memberships: BTreeMap<u32, MembershipData>,
-    pub sudo_key: Option<AccountId>,
-    pub technical_committee_members: Vec<AccountId>,
-    pub ud: u64,
+    first_ud: Option<u64>,
+    first_ud_reeval: Option<u64>,
+    genesis_parameters: CommonParameters,
+    identities: HashMap<String, IdentityV2>,
+    smiths: BTreeMap<String, SmithData>,
+    sudo_key: Option<AccountId>,
+    technical_committee: Vec<String>,
+    ud: u64,
+    wallets: BTreeMap<AccountId, u64>,
+    transactions_history: Option<BTreeMap<AccountId, Vec<TransactionV2>>>,
+}
+
+#[derive(Deserialize, Serialize)]
+struct TransactionV1 {
+    issuer: PubkeyV1,
+    amount: String,
+    written_time: Option<u32>,
+    comment: String,
+}
+
+#[derive(Deserialize, Serialize)]
+struct TransactionV2 {
+    issuer: AccountId,
+    amount: String,
+    written_time: Option<u32>,
+    comment: String,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -123,6 +136,7 @@ struct GenesisMigrationData {
     identities: BTreeMap<String, IdentityV1>,
     #[serde(default)]
     wallets: BTreeMap<PubkeyV1, u64>,
+    transactions_history: Option<BTreeMap<PubkeyV1, Vec<TransactionV1>>>,
 }
 
 // Base58 encoded Ed25519 public key
@@ -150,7 +164,7 @@ struct IdentityV1 {
     /// timestamp at which the membership is set to expire (0 for expired members)
     membership_expire_on: TimestampV1,
     /// timestamp at which the next cert can be emitted
-    next_cert_issuable_on: TimestampV1,
+    next_cert_issuable_on: TimestampV1, // TODO: unused?
     /// balance of the account of this identity
     balance: u64,
     /// certs received with their expiration block
@@ -949,7 +963,7 @@ where
         }
     }
     // no inactive smith
-    for SmithData { name: smith, .. } in smiths {
+    for SmithData { name: smith, .. } in &smiths {
         let inactive_smiths: Vec<_> = inactive_identities
             .values()
             .filter(|&v| *v == smith)
@@ -966,6 +980,63 @@ where
         panic!();
     }
 
+    // Indexer output
+    if let Ok(path) = std::env::var("DUNITER_GENESIS_EXPORT") {
+        // genesis_certs_min_received => min_cert
+        // genesis_memberships_expire_on => membership_period
+        // genesis_smith_certs_min_received => smith_min_cert
+        // genesis_smith_memberships_expire_on => smith_membership_period
+        let export = GenesisIndexerExport {
+            first_ud: first_ud.clone(),
+            first_ud_reeval: first_ud_reeval.clone(),
+            genesis_parameters: common_parameters.clone(),
+            identities: identities_v2,
+            sudo_key: sudo_key.clone(),
+            technical_committee: technical_committee.clone(),
+            ud: ud.clone(),
+            wallets: accounts
+                .iter()
+                .map(|(account_id, data)| (account_id.clone(), data.balance))
+                .collect(),
+            smiths: (&smiths.clone())
+                .iter()
+                .map(|smith| {
+                    (
+                        smith.name.clone(),
+                        SmithData {
+                            name: smith.name.clone(),
+                            session_keys: smith.session_keys.clone(),
+                            certs_received: smith.certs_received.clone(),
+                        },
+                    )
+                })
+                .collect::<BTreeMap<String, SmithData>>(),
+            transactions_history: genesis_data.transactions_history.map(|history| {
+                history
+                    .iter()
+                    .map(|(pubkey, txs)| {
+                        (
+                            v1_pubkey_to_account_id(pubkey.clone()),
+                            txs.iter()
+                                .map(|tx| TransactionV2 {
+                                    issuer: v1_pubkey_to_account_id(tx.issuer.clone()),
+                                    amount: tx.amount.clone(),
+                                    written_time: tx.written_time,
+                                    comment: tx.comment.clone(),
+                                })
+                                .collect::<Vec<TransactionV2>>(),
+                        )
+                    })
+                    .collect::<BTreeMap<AccountId, Vec<TransactionV2>>>()
+            }),
+        };
+        fs::write(
+            &path,
+            serde_json::to_string_pretty(&export).expect("should be serializable"),
+        )
+        .unwrap_or_else(|_| panic!("Could not export genesis data to {}", &path));
+    }
+
     let genesis_data = GenesisData {
         accounts,
         treasury_balance,
@@ -980,6 +1051,7 @@ where
         initial_monetary_mass,
         memberships,
         parameters,
+        common_parameters: Some(common_parameters),
         session_keys_map,
         smith_certs_by_receiver,
         smith_memberships,
@@ -1074,6 +1146,7 @@ where
             .map(|i| (i as u32, MembershipData { expire_on: 0 }))
             .collect(),
         parameters: Some(parameters),
+        common_parameters: None,
         session_keys_map,
         smith_certs_by_receiver: clique_wot(initial_smiths_len),
         smith_memberships: (1..=initial_smiths_len)
@@ -1174,27 +1247,6 @@ fn validate_idty_name(name: &str) -> bool {
     name.len() <= 64
 }
 
-pub fn genesis_data_to_indexer_export<P: DeserializeOwned, SK: Decode>(
-    genesis_data: &GenesisData<P, SK>,
-) -> GenesisIndexerExport {
-    GenesisIndexerExport {
-        accounts: genesis_data.accounts.clone(),
-        treasury_balance: genesis_data.treasury_balance.clone(),
-        certs_by_receiver: genesis_data.certs_by_receiver.clone(),
-        first_ud: genesis_data.first_ud.clone(),
-        first_ud_reeval: genesis_data.first_ud_reeval.clone(),
-        identities: genesis_data.identities.clone(),
-        initial_authorities: genesis_data.initial_authorities.clone(),
-        initial_monetary_mass: genesis_data.initial_monetary_mass.clone(),
-        memberships: genesis_data.memberships.clone(),
-        smith_certs_by_receiver: genesis_data.smith_certs_by_receiver.clone(),
-        smith_memberships: genesis_data.smith_memberships.clone(),
-        sudo_key: genesis_data.sudo_key.clone(),
-        technical_committee_members: genesis_data.technical_committee_members.clone(),
-        ud: genesis_data.ud.clone(),
-    }
-}
-
 pub type AuthorityKeys = (
     AccountId,
     GrandpaId,
@@ -1209,9 +1261,10 @@ pub trait SessionKeysProvider<SessionKeys: Encode> {
     fn session_keys(keys: &AuthorityKeys) -> SessionKeys;
 }
 
+#[derive(Default, Deserialize, Serialize, Clone)]
 pub struct CommonParameters {
     // TODO: replace u32 by BlockNumber when appropriate
-    pub currency_name: &'static str,
+    pub currency_name: String,
     pub decimals: usize,
     pub existential_deposit: u64,
     pub membership_period: u32,
@@ -1246,19 +1299,6 @@ fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
         get_from_seed::<ImOnlineId>(s),
         get_from_seed::<AuthorityDiscoveryId>(s),
     )
-}
-
-pub fn dump_for_indexer<Parameters: DeserializeOwned, SessionKeys: Decode>(
-    genesis_data: &GenesisData<Parameters, SessionKeys>,
-) {
-    if let Ok(path) = std::env::var("DUNITER_GENESIS_EXPORT") {
-        let export: GenesisIndexerExport = genesis_data_to_indexer_export(&genesis_data);
-        fs::write(
-            &path,
-            serde_json::to_string_pretty(&export).expect("should be serializable"),
-        )
-        .unwrap_or_else(|_| panic!("Could not export genesis data to {}", &path));
-    }
 }
 
 /// Converts a Duniter v1 public key (Ed25519) to an Account Id.

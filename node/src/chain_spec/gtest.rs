@@ -68,7 +68,7 @@ impl SessionKeysProvider<SessionKeys> for GTestSKP {
 
 fn get_parameters(_: &Option<GenesisParameters>) -> CommonParameters {
     CommonParameters {
-        currency_name: TOKEN_SYMBOL,
+        currency_name: TOKEN_SYMBOL.to_string(),
         decimals: TOKEN_DECIMALS,
         existential_deposit: parameters::ExistentialDeposit::get(),
         membership_period: parameters::MembershipPeriod::get(),
@@ -233,8 +233,6 @@ fn genesis_data_to_gtest_genesis_conf(
     genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
     wasm_binary: &[u8],
 ) -> gtest_runtime::GenesisConfig {
-    gen_genesis_data::dump_for_indexer(&genesis_data);
-
     let super::gen_genesis_data::GenesisData {
         accounts,
         treasury_balance,
