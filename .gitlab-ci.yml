@@ -156,7 +156,15 @@ create_g1_data_job:
     # Duniter 1.8.6 dump
     - mkdir /dump
     - cd /dump
-    - curl https://dl.cgeek.fr/public/backup-g1-duniter-1.8.6.tgz -o g1-dump.tgz
+    # Export file constructed using Duniter 1.8.7:
+    #  - bin/duniter sync g1.cgeek.fr --store-txs --nointeractive --mdb 1.8.7
+    #  - mkdir -p /tmp/backup-g1-duniter-1.8.7
+    #  - cp -R $HOME/.config/duniter/1.8.7/data /tmp/backup-g1-duniter-1.8.7
+    #  - cp -R $HOME/.config/duniter/1.8.7/g1 /tmp/backup-g1-duniter-1.8.7
+    #  - cp -R $HOME/.config/duniter/1.8.7/txs.db /tmp/backup-g1-duniter-1.8.7
+    #  - tar -cvzf /tmp/backup-g1-duniter-1.8.7.tgz /tmp/backup-g1-duniter-1.8.7
+    # Then the file is uploaded to dl.cgeek.fr manually
+    - curl https://dl.cgeek.fr/public/backup-g1-duniter-1.8.7.tgz -o g1-dump.tgz
     - tar xvzf g1-dump.tgz
     - rm g1-dump.tgz
     - mv backup-g1-duniter-1.8.6 duniter_default
