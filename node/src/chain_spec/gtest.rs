@@ -146,7 +146,7 @@ pub struct ClientSpec {
 
 /// generate development chainspec with Alice validator
 // there is some code duplication because we can not use ClientSpec
-pub fn development_chainspecs(json_file_path: &str) -> Result<ChainSpec, String> {
+pub fn development_chainspecs(json_file_path: String) -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
     Ok(ChainSpec::from_genesis(
         // Name
@@ -159,7 +159,7 @@ pub fn development_chainspecs(json_file_path: &str) -> Result<ChainSpec, String>
         move || {
             let genesis_data =
                 gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
-                    json_file_path.to_owned(),
+                    json_file_path.clone(),
                     get_parameters,
                     Some("Alice".to_owned()),
                 )
@@ -193,7 +193,10 @@ pub fn development_chainspecs(json_file_path: &str) -> Result<ChainSpec, String>
 
 /// live chainspecs
 // one smith must have session keys
-pub fn live_chainspecs(client_spec: ClientSpec, json_file_path: &str) -> Result<ChainSpec, String> {
+pub fn live_chainspecs(
+    client_spec: ClientSpec,
+    json_file_path: String,
+) -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
     Ok(ChainSpec::from_genesis(
         // Name
@@ -206,7 +209,7 @@ pub fn live_chainspecs(client_spec: ClientSpec, json_file_path: &str) -> Result<
         move || {
             let genesis_data =
                 gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
-                    json_file_path.to_owned(),
+                    json_file_path.clone(),
                     get_parameters,
                     None,
                 )
@@ -244,6 +247,7 @@ fn genesis_data_to_gtest_genesis_conf(
         initial_monetary_mass,
         memberships,
         parameters,
+        common_parameters,
         session_keys_map,
         smith_certs_by_receiver,
         smith_memberships,

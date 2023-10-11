@@ -137,7 +137,7 @@ impl SubstrateCli for Cli {
             // otherwise you get a local testnet with generated genesis
             #[cfg(feature = "gtest")]
             "gtest_dev" => Box::new(chain_spec::gtest::development_chainspecs(
-                "resources/gtest.json",
+                "resources/gtest.json".to_string(),
             )?),
             // chainspecs for live network
             // must have following files in ./node/specs folder or overwrite with env var:
@@ -157,7 +157,7 @@ impl SubstrateCli for Cli {
                 // rebuild chainspecs from these files
                 Box::new(chain_spec::gtest::live_chainspecs(
                     client_spec,
-                    "resources/gtest.json",
+                    "resources/gtest.json".to_string(),
                 )?)
             }
             // return hardcoded live chainspecs, only with embed feature
