@@ -36,6 +36,7 @@ use sp_runtime::Perbill;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::{Debug, Display, Formatter};
 use std::fs;
+use std::ops::{Add, Sub};
 
 static G1_DUNITER_V1_EXISTENTIAL_DEPOSIT: u64 = 100;
 static G1_DUNITER_V1_DECIMALS: usize = 2;
@@ -241,7 +242,8 @@ where
         std::env::var("DUNITER_GENESIS_CONFIG").unwrap_or_else(|_| json_file_path.to_owned()),
     )?;
 
-    let treasury_funder = v1_pubkey_to_account_id(treasury_funder);
+    let treasury_funder = v1_pubkey_to_account_id(treasury_funder)
+        .expect("treasury founder must have a valid public key");
 
     let common_parameters = get_common_parameters(&parameters);
 
@@ -296,7 +298,8 @@ where
                 name,
                 IdentityV2 {
                     index: i.index,
-                    owner_key: v1_pubkey_to_account_id(i.owner_key),
+                    owner_key: v1_pubkey_to_account_id(i.owner_key)
+                        .expect("a G1 identity necessarily has a valid pubkey"),
                     old_owner_key: None,
                     membership_expire_on: timestamp_to_relative_blocs(
                         i.membership_expire_on,
@@ -390,6 +393,7 @@ where
     // smith certifications
     let mut smith_certs_by_receiver = BTreeMap::new();
     let mut initial_monetary_mass = 0;
+    let mut invalid_wallets = 0;
     //let mut total_dust = 0;
 
     // FORCED AUTHORITY //
@@ -463,15 +467,19 @@ where
         monetary_mass += balance;
 
         // json prevents duplicate wallets
-        let owner_key = v1_pubkey_to_account_id(pubkey.clone());
-        accounts.insert(
-            owner_key.clone(),
-            GenesisAccountData {
-                random_id: H256(blake2_256(&(balance, &owner_key).encode())),
-                balance: *balance,
-                is_identity: false,
-            },
-        );
+        if let Ok(owner_key) = v1_pubkey_to_account_id(pubkey.clone()) {
+            accounts.insert(
+                owner_key.clone(),
+                GenesisAccountData {
+                    random_id: H256(blake2_256(&(balance, &owner_key).encode())),
+                    balance: *balance,
+                    is_identity: false,
+                },
+            );
+        } else {
+            log::warn!("wallet {pubkey} has wrong format");
+            invalid_wallets = invalid_wallets.add(1);
+        }
     }
 
     // Technical Comittee //
@@ -949,7 +957,7 @@ where
     );
     assert_eq!(
         accounts.len(),
-        identity_index.len() + genesis_data.wallets.len()
+        identity_index.len() + genesis_data.wallets.len().sub(invalid_wallets)
     );
     // no inactive tech comm
     for tech_com_member in &technical_committee {
@@ -1014,12 +1022,18 @@ where
             transactions_history: genesis_data.transactions_history.map(|history| {
                 history
                     .iter()
+                    // Avoid wrong pubkeys in tx history
+                    .filter(|(pubkey, _)| v1_pubkey_to_account_id((*pubkey).clone()).is_ok())
                     .map(|(pubkey, txs)| {
                         (
-                            v1_pubkey_to_account_id(pubkey.clone()),
+                            v1_pubkey_to_account_id(pubkey.clone())
+                                .expect("already checked account"),
                             txs.iter()
+                                // Avoid wrong pubkeys in tx history
+                                .filter(|tx| v1_pubkey_to_account_id(tx.issuer.clone()).is_ok())
                                 .map(|tx| TransactionV2 {
-                                    issuer: v1_pubkey_to_account_id(tx.issuer.clone()),
+                                    issuer: v1_pubkey_to_account_id(tx.issuer.clone())
+                                        .expect("already checked tx.issuer"),
                                     amount: tx.amount.clone(),
                                     written_time: tx.written_time,
                                     comment: tx.comment.clone(),
@@ -1303,17 +1317,20 @@ fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
 
 /// Converts a Duniter v1 public key (Ed25519) to an Account Id.
 /// No need to convert to address.
-fn v1_pubkey_to_account_id(pubkey: PubkeyV1) -> AccountId {
+fn v1_pubkey_to_account_id(pubkey: PubkeyV1) -> Result<AccountId, String> {
     let bytes = bs58::decode(pubkey.0)
         .into_vec()
         .expect("Duniter v1 pubkey should be decodable");
+    if bytes.len() > 32 {
+        return Err("Pubkey is too long".to_string());
+    }
     let prepend = vec![0u8; 32 - &bytes.len()];
     let bytes: [u8; 32] = [prepend.as_slice(), bytes.as_slice()]
         .concat()
         .as_slice()
         .try_into()
         .expect("incorrect pubkey length");
-    AccountPublic::from(ed25519::Public::from_raw(bytes)).into_account()
+    Ok(AccountPublic::from(ed25519::Public::from_raw(bytes)).into_account())
 }
 
 fn timestamp_to_relative_blocs(timestamp: TimestampV1, start: u64) -> u32 {
@@ -1348,8 +1365,19 @@ mod tests {
             v1_pubkey_to_account_id(PubkeyV1 {
                 0: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ".to_string()
             })
+            .unwrap()
             .to_ss58check_with_version(Ss58AddressFormat::custom(42)),
             "5CfdJjEgh3jDkg3bzmZ1ED1xVhXAARtNmZJWbcXh53rU8z5a".to_owned()
+        );
+    }
+
+    #[test]
+    fn test_pubkey_with_33_bytes() {
+        assert_eq!(
+            v1_pubkey_to_account_id(PubkeyV1 {
+                0: "d2meevcahfts2gqmvmrw5hzi25jddikk4nc4u1fkwrau".to_string()
+            }),
+            Err("Pubkey is too long".to_owned())
         );
     }
 }
