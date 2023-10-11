@@ -68,7 +68,6 @@ distance-oracle = { path = 'distance-oracle', optional = true }
 g1-runtime = { path = 'runtime/g1', optional = true }
 gdev-runtime = { path = 'runtime/gdev', optional = true }
 gtest-runtime = { path = 'runtime/gtest', optional = true }
-pallet-im-online = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-certification = { path = 'pallets/certification' }
 pallet-oneshot-account = { path = 'pallets/oneshot-account' }
 sp-distance = { path = 'primitives/distance' }
@@ -96,6 +95,7 @@ frame-benchmarking = { git = "https://github.com/duniter/substrate", branch = "d
 frame-benchmarking-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32" }
 frame-system = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32", default-features = false }
 pallet-grandpa = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32" }
+pallet-im-online = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.32', default-features = false }
 pallet-transaction-payment = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32", default-features = false }
 pallet-transaction-payment-rpc = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.32" }
