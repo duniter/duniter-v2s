@@ -768,7 +768,7 @@ where
     }
     if treasury_balance < common_parameters.existential_deposit {
         log::error!(
-            "Treasury balance {} is inferior to existencial deposit {}",
+            "Treasury balance {} is inferior to existential deposit {}",
             treasury_balance,
             common_parameters.existential_deposit
         );
