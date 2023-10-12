@@ -2,9 +2,9 @@
 # - podman: use 'podman' to build multiplatform images
 
 stages:
-  - prepare_spec
-  - build_spec
-  - create_release
+#  - prepare_spec
+#  - build_spec
+#  - create_release
   - schedule
   - labels
   - quality
