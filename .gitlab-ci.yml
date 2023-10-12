@@ -235,21 +235,21 @@ test_release:
 #    expire_in: 1 day
 #  tags:
 #    - kepler
-
-create_release:
-  stage: create_release
-  rules:
-    - when: never
-  image: rust:1-bullseye
-  script:
-    # Release creation + link to artifacts
-    - export G1_DATA_URL="$CI_JOB_URL/artifacts/file/resources/g1-data.json"
-    - export GDEV_WASM_URL="$CI_JOB_URL/artifacts/file/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm"
-    - export SRTOOL_OUTPUT_URL="$CI_JOB_URL/artifacts/file/srtool_output.json"
-    - export GDEV_RAW_SPEC_URL="$CI_JOB_URL/artifacts/file/resources/gdev-raw.json"
-    - cargo xtask release-runtime 600
-  tags:
-    - kepler
+#
+#create_release:
+#  stage: create_release
+#  rules:
+#    - when: never
+#  image: rust:1-bullseye
+#  script:
+#    # Release creation + link to artifacts
+#    - export G1_DATA_URL="$CI_JOB_URL/artifacts/file/resources/g1-data.json"
+#    - export GDEV_WASM_URL="$CI_JOB_URL/artifacts/file/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm"
+#    - export SRTOOL_OUTPUT_URL="$CI_JOB_URL/artifacts/file/srtool_output.json"
+#    - export GDEV_RAW_SPEC_URL="$CI_JOB_URL/artifacts/file/resources/gdev-raw.json"
+#    - cargo xtask release-runtime 600
+#  tags:
+#    - kepler
 
 deploy_docker_debug_sha:
   stage: deploy
