@@ -20,18 +20,14 @@ use common_runtime::constants::*;
 use common_runtime::entities::IdtyData;
 use common_runtime::*;
 use gdev_runtime::{
-    opaque::SessionKeys, parameters, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
-    CertConfig, GenesisConfig, IdentityConfig, MembershipConfig, ParametersConfig, SessionConfig,
+    opaque::SessionKeys, parameters, AccountConfig, AuthorityMembersConfig, BabeConfig, CertConfig,
+    GenesisConfig, IdentityConfig, MembershipConfig, ParametersConfig, SessionConfig,
     SmithCertConfig, SmithMembershipConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
     UniversalDividendConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
-use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
-use sp_consensus_babe::AuthorityId as BabeId;
-use sp_core::{sr25519, Encode};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_core::sr25519;
 use sp_runtime::Perbill;
-use std::fs;
 
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
 
@@ -302,7 +298,7 @@ fn genesis_data_to_gdev_genesis_conf(
         initial_monetary_mass,
         memberships,
         parameters,
-        common_parameters,
+        common_parameters: _,
         session_keys_map,
         smith_certs_by_receiver,
         smith_memberships,

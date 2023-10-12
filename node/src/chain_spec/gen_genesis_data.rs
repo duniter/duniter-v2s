@@ -18,23 +18,19 @@ use crate::chain_spec::{
     clique_wot, get_account_id_from_seed, get_from_seed, AccountPublic, NAMES,
 };
 use common_runtime::constants::DAYS;
-use common_runtime::entities::IdtyData;
 use common_runtime::*;
 use log::{error, warn};
-use num_format::Locale::id;
 use num_format::{Locale, ToFormattedString};
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
-use sp_core::crypto::{AccountId32, Ss58AddressFormat};
-use sp_core::hexdisplay::AsBytesRef;
-use sp_core::{blake2_256, ed25519, map, sr25519, Decode, Encode, H256};
+use sp_core::{blake2_256, ed25519, sr25519, Decode, Encode, H256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::IdentifyAccount;
 use sp_runtime::Perbill;
 use std::collections::{BTreeMap, HashMap};
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Display, Formatter};
 use std::fs;
 use std::ops::{Add, Sub};
 
@@ -258,7 +254,7 @@ where
     check_parameters_consistency(&genesis_data.wallets, &first_ud, &first_ud_reeval, &ud)?;
 
     // Remove expired certs since export
-    &genesis_data
+    genesis_data
         .identities
         .iter_mut()
         .for_each(|(receiver, i)| {
@@ -271,14 +267,14 @@ where
             });
         });
 
-    &genesis_data.identities.iter_mut().for_each(|(name, i)| {
+    genesis_data.identities.iter_mut().for_each(|(name, i)| {
         if (i.membership_expire_on.0 as u64) < genesis_timestamp {
             i.membership_expire_on = TimestampV1(0);
             log::warn!("{} membership expired since export", name);
         }
     });
 
-    &genesis_data.identities.iter_mut().for_each(|(name, i)| {
+    genesis_data.identities.iter_mut().for_each(|(name, i)| {
         if i.membership_expire_on.0 != 0
             && i.certs_received.len() < common_parameters.min_cert as usize
         {
@@ -392,7 +388,6 @@ where
     let mut smith_memberships = BTreeMap::new();
     // smith certifications
     let mut smith_certs_by_receiver = BTreeMap::new();
-    let mut initial_monetary_mass = 0;
     let mut invalid_wallets = 0;
     //let mut total_dust = 0;
 
@@ -1062,7 +1057,7 @@ where
             .map(|i| (i.name, i.owned_key, i.old_owned_key))
             .collect(),
         initial_authorities,
-        initial_monetary_mass,
+        initial_monetary_mass: genesis_data.initial_monetary_mass,
         memberships,
         parameters,
         common_parameters: Some(common_parameters),
@@ -1251,12 +1246,6 @@ fn get_genesis_timestamp() -> Result<u64, String> {
     }
 }
 
-// Timestamp to block number
-fn to_bn(genesis_timestamp: u64, timestamp: u64) -> u32 {
-    let duration_in_secs = timestamp.saturating_sub(genesis_timestamp);
-    (duration_in_secs / 6) as u32
-}
-
 fn validate_idty_name(name: &str) -> bool {
     name.len() <= 64
 }
@@ -1294,14 +1283,6 @@ pub struct CommonParameters {
     pub distance_min_accessible_referees: Perbill,
     pub max_depth: u32,
     pub ud_reeval_period: u64,
-}
-
-/// Generate session keys
-fn get_session_keys_from_seed<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKeys>>(
-    s: &str,
-) -> SessionKeys {
-    let authority_keys = get_authority_keys_from_seed(s);
-    SKP::session_keys(&authority_keys)
 }
 
 /// Generate an authority keys.
