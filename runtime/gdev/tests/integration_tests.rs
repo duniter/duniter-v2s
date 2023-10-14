@@ -433,7 +433,7 @@ fn test_create_new_account_with_insufficient_balance() {
             assert_ok!(Balances::transfer(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
-                400
+                300
             ));
 
             System::assert_has_event(RuntimeEvent::System(frame_system::Event::NewAccount {
@@ -441,12 +441,12 @@ fn test_create_new_account_with_insufficient_balance() {
             }));
             System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Endowed {
                 account: AccountKeyring::Eve.to_account_id(),
-                free_balance: 400,
+                free_balance: 300,
             }));
             System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Transfer {
                 from: AccountKeyring::Alice.to_account_id(),
                 to: AccountKeyring::Eve.to_account_id(),
-                amount: 400,
+                amount: 300,
             }));
 
             // At next block, the new account must be reaped because its balance is not sufficient
@@ -456,22 +456,23 @@ fn test_create_new_account_with_insufficient_balance() {
             System::assert_has_event(RuntimeEvent::Account(
                 pallet_duniter_account::Event::ForceDestroy {
                     who: AccountKeyring::Eve.to_account_id(),
-                    balance: 400,
+                    balance: 300,
                 },
             ));
             System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Deposit {
                 who: Treasury::account_id(),
-                amount: 400,
+                amount: 300,
             }));
             System::assert_has_event(RuntimeEvent::Treasury(pallet_treasury::Event::Deposit {
-                value: 400,
+                value: 300,
             }));
 
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 0
             );
-            assert_eq!(Balances::free_balance(Treasury::account_id()), 600);
+            // 100 initial + 300 recycled from Eve account's destructuion
+            assert_eq!(Balances::free_balance(Treasury::account_id()), 400);
         });
 }
 
@@ -523,7 +524,8 @@ fn test_create_new_account() {
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 200
             );
-            assert_eq!(Balances::free_balance(Treasury::account_id()), 500);
+            // 100 initial + 300 deposit
+            assert_eq!(Balances::free_balance(Treasury::account_id()), 400);
 
             // A random id request should be registered
             assert_eq!(
@@ -550,9 +552,10 @@ fn test_create_new_account() {
                 MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
                 false
             ),);
+            // Only 100 could be transfered because account must keep its ExistentialDeposit
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                200
+                100
             );
         });
 }
