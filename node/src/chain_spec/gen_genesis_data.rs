@@ -415,18 +415,19 @@ where
             );
         }
         // Forced authority gets its required certs from first "minCert" WoT identities (fake certs)
-        let identities_keys = identities_v2
+        let mut new_certs: HashMap<String, u32> = HashMap::new();
+        identities_v2
             .keys()
             .take(common_parameters.min_cert as usize)
             .map(String::clone)
-            .collect::<Vec<String>>();
+            .for_each(|issuer| {
+                new_certs.insert(issuer, common_parameters.cert_period);
+            });
         let authority = identities_v2
             .get_mut(name)
             .expect("authority must exist or be created");
-        identities_keys.into_iter().for_each(|issuer| {
-            authority
-                .certs_received
-                .insert(issuer, common_parameters.cert_period);
+        new_certs.into_iter().for_each(|(issuer, c)| {
+            authority.certs_received.insert(issuer, c);
         });
         // Add forced authority to smiths (whether explicit smith WoT or clique)
         if let Some(smith_identities) = &mut smith_identities {
@@ -574,7 +575,7 @@ where
         }
     }
     // sort the identities by index for reproducibility (should have been a vec in json)
-    identities.sort_unstable_by(|a, b| (a.index as u32).cmp(&(b.index as u32)));
+    identities.sort_unstable_by(|a, b| a.index.cmp(&b.index));
 
     // CERTIFICATIONS //
     for identity in identities_v2.values() {
@@ -673,10 +674,9 @@ where
                     .for_each(|other_smith| {
                         let issuer_index = &identities_v2
                             .get(other_smith.name.as_str())
-                            .expect(
-                                format!("Identity '{}' does not exist", other_smith.name.as_str())
-                                    .as_str(),
-                            )
+                            .unwrap_or_else(|| {
+                                panic!("Identity '{}' does not exist", other_smith.name.as_str())
+                            })
                             .index;
                         certs.insert(*issuer_index, None);
                     });
@@ -990,18 +990,18 @@ where
         // genesis_smith_certs_min_received => smith_min_cert
         // genesis_smith_memberships_expire_on => smith_membership_period
         let export = GenesisIndexerExport {
-            first_ud: first_ud.clone(),
-            first_ud_reeval: first_ud_reeval.clone(),
+            first_ud,
+            first_ud_reeval,
             genesis_parameters: common_parameters.clone(),
             identities: identities_v2,
             sudo_key: sudo_key.clone(),
-            technical_committee: technical_committee.clone(),
-            ud: ud.clone(),
+            technical_committee,
+            ud,
             wallets: accounts
                 .iter()
                 .map(|(account_id, data)| (account_id.clone(), data.balance))
                 .collect(),
-            smiths: (&smiths.clone())
+            smiths: (smiths)
                 .iter()
                 .map(|smith| {
                     (
@@ -1105,7 +1105,7 @@ where
 
     let mut session_keys_map = BTreeMap::new();
     initial_smiths.iter().for_each(|x| {
-        let session_keys_bytes = SKP::session_keys(&x).encode();
+        let session_keys_bytes = SKP::session_keys(x).encode();
         let sk = SK::decode(&mut &session_keys_bytes[..])
             .map_err(|_| format!("invalid session keys for idty {}", x.0.clone()))
             .unwrap();
@@ -1342,9 +1342,9 @@ mod tests {
     #[test]
     fn test_v1_pubkey_to_v2_address_translation() {
         assert_eq!(
-            v1_pubkey_to_account_id(PubkeyV1 {
-                0: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ".to_string()
-            })
+            v1_pubkey_to_account_id(PubkeyV1(
+                "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ".to_string()
+            ))
             .unwrap()
             .to_ss58check_with_version(Ss58AddressFormat::custom(42)),
             "5CfdJjEgh3jDkg3bzmZ1ED1xVhXAARtNmZJWbcXh53rU8z5a".to_owned()
@@ -1354,9 +1354,9 @@ mod tests {
     #[test]
     fn test_pubkey_with_33_bytes() {
         assert_eq!(
-            v1_pubkey_to_account_id(PubkeyV1 {
-                0: "d2meevcahfts2gqmvmrw5hzi25jddikk4nc4u1fkwrau".to_string()
-            }),
+            v1_pubkey_to_account_id(PubkeyV1(
+                "d2meevcahfts2gqmvmrw5hzi25jddikk4nc4u1fkwrau".to_string()
+            )),
             Err("Pubkey is too long".to_owned())
         );
     }

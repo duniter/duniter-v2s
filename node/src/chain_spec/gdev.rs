@@ -351,7 +351,7 @@ fn genesis_data_to_gdev_genesis_conf(
                     value: common_runtime::IdtyValue {
                         data: IdtyData::new(),
                         next_creatable_identity_on: 0,
-                        old_owner_key: old_owner_key.clone().map(|address| (address, 0)),
+                        old_owner_key: old_owner_key.map(|address| (address, 0)),
                         owner_key,
                         removable_on: 0,
                         status: IdtyStatus::Validated,
@@ -376,8 +376,6 @@ fn genesis_data_to_gdev_genesis_conf(
             first_ud,
             initial_monetary_mass,
             ud,
-            #[cfg(test)]
-            initial_members: vec![],
         },
         treasury: Default::default(),
     }
