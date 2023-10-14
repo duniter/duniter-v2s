@@ -21,7 +21,6 @@ use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
 use std::fs;
 use std::io::Read;
-use std::process::Command;
 
 #[derive(Default, Deserialize)]
 struct Srtool {
@@ -85,7 +84,6 @@ pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
     let release_notes = gen_release_notes(spec_version, srtool)
         .await
         .with_context(|| "Fail to generate release notes")?;
-    let release_notes = "test release notes".to_string();
     // TODO: Call gitlab API to publish the release notes (and upload the wasm)
     println!("{}", release_notes);
     let gitlab_token =

@@ -1330,8 +1330,7 @@ fn seconds_to_blocs(seconds: u32) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sp_core::crypto::Ss58Codec;
-    use std::str::FromStr;
+    use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
 
     #[test]
     fn test_timestamp_to_relative_blocs() {
