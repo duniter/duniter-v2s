@@ -70,7 +70,7 @@ fmt_and_clippy:
     - echo podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
     - podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
   tags:
-    - kepler
+    - podman
 
 .docker_deploy:
   stage: deploy
