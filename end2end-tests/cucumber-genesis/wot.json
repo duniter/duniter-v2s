@@ -9,36 +9,48 @@
   },
   "identities": {
     "Alice": {
+      "index": 1,
       "balance": 1000,
-      "certs": [
-        "Bob",
-        "Charlie"
-      ],
-      "pubkey": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+      "certs_received": {
+        "Bob": 2700000000,
+        "Charlie": 2700000000
+      },
+      "owner_address": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "membership_expire_on": 2700000000,
+      "next_cert_issuable_on": 0
     },
     "Bob": {
+      "index": 2,
       "balance": 1000,
-      "certs": [
-        "Alice",
-        "Charlie"
-      ],
-      "pubkey": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+      "certs_received": {
+        "Alice": 2700000000,
+        "Charlie": 2700000000
+      },
+      "owner_address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+      "membership_expire_on": 2700000000,
+      "next_cert_issuable_on": 0
     },
     "Charlie": {
+      "index": 3,
       "balance": 1000,
-      "certs": [
-        "Alice",
-        "Bob"
-      ],
-      "pubkey": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y"
+      "certs_received": {
+        "Alice": 2700000000,
+        "Bob": 2700000000
+      },
+      "owner_address": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+      "membership_expire_on": 2700000000,
+      "next_cert_issuable_on": 0
     },
     "Dave": {
+      "index": 4,
       "balance": 1000,
-      "certs": [
-        "Alice",
-        "Bob"
-      ],
-      "pubkey": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"
+      "certs_received": {
+        "Alice": 2700000000,
+        "Bob": 2700000000
+      },
+      "owner_address": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+      "membership_expire_on": 2700000000,
+      "next_cert_issuable_on": 0
     }
   },
   "parameters": {
@@ -76,5 +88,7 @@
     "Bob",
     "Charlie"
   ],
-  "ud": 1000
+  "treasury_funder": "FHNpKmJrUtusuvKPGomAygQqeiks98bdV6yD61Stb6vg",
+  "ud": 1000,
+  "initial_monetary_mass": 4000
 }

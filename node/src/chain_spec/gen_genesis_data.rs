@@ -155,7 +155,9 @@ struct IdentityV1 {
     /// indentity index matching the order of appearance in the Ǧ1v1 blockchain
     index: u32,
     /// Base58 public key in Ğ1v1
-    owner_key: PubkeyV1,
+    owner_pubkey: Option<PubkeyV1>,
+    /// Ğ1v2 address
+    owner_address: Option<AccountId>,
     /// Optional Base58 public key in Ğ1v1
     old_owner_key: Option<PubkeyV1>,
     /// timestamp at which the membership is set to expire (0 for expired members)
@@ -164,7 +166,7 @@ struct IdentityV1 {
     next_cert_issuable_on: TimestampV1, // TODO: unused?
     /// balance of the account of this identity
     balance: u64,
-    /// certs received with their expiration block
+    /// certs received with their expiration timestamp
     certs_received: HashMap<String, TimestampV1>,
 }
 
@@ -286,16 +288,41 @@ where
         }
     });
 
+    genesis_data.identities.iter().for_each(|(name, i)| {
+        if i.owner_pubkey.is_some() && i.owner_address.is_some() {
+            log::warn!(
+                "{} both has a pubkey and an address defined - address will be used",
+                name
+            );
+        }
+        if i.owner_pubkey.is_none() && i.owner_address.is_none() {
+            log::warn!(
+                "{} both has a pubkey and an address defined - address will be used",
+                name
+            );
+        }
+    });
+
     let mut identities_v2: HashMap<String, IdentityV2> = genesis_data
         .identities
         .into_iter()
         .map(|(name, i)| {
             (
-                name,
+                name.clone(),
                 IdentityV2 {
                     index: i.index,
-                    owner_key: v1_pubkey_to_account_id(i.owner_key)
-                        .expect("a G1 identity necessarily has a valid pubkey"),
+                    owner_key: i
+                        .owner_pubkey
+                        .map(|pubkey| {
+                            v1_pubkey_to_account_id(pubkey)
+                                .expect("a G1 identity necessarily has a valid pubkey")
+                        })
+                        .unwrap_or_else(|| {
+                            i.owner_address.expect(
+                                format!("neither pubkey nor address is defined for {}", name)
+                                    .as_str(),
+                            )
+                        }),
                     old_owner_key: None,
                     membership_expire_on: timestamp_to_relative_blocs(
                         i.membership_expire_on,
@@ -418,6 +445,7 @@ where
         let mut new_certs: HashMap<String, u32> = HashMap::new();
         identities_v2
             .keys()
+            .filter(|issuer| issuer != &name)
             .take(common_parameters.min_cert as usize)
             .map(String::clone)
             .for_each(|issuer| {
@@ -429,22 +457,31 @@ where
         new_certs.into_iter().for_each(|(issuer, c)| {
             authority.certs_received.insert(issuer, c);
         });
+        let sk: SessionKeys = SKP::session_keys(&get_authority_keys_from_seed(name.as_str()));
+        let forced_authority_session_keys = format!("0x{}", hex::encode(sk.encode())).to_string();
         // Add forced authority to smiths (whether explicit smith WoT or clique)
         if let Some(smith_identities) = &mut smith_identities {
             smith_identities.insert(
                 name.clone(),
                 SmithData {
                     name: name.clone(),
-                    session_keys: None,
+                    session_keys: Some(forced_authority_session_keys.clone()),
                     certs_received: vec![],
                 },
             );
         }
         if let Some(clique_smiths) = &mut clique_smiths {
-            clique_smiths.push(CliqueSmith {
-                name: name.clone(),
-                session_keys: None,
-            });
+            let existing = clique_smiths.iter_mut().find(|s| &s.name == name);
+            if let Some(smith) = existing {
+                // Forced authority is already set in smiths: but we force its session keys
+                smith.session_keys = Some(forced_authority_session_keys);
+            } else {
+                // Forced authority is not known in smiths: we add it with its session keys
+                clique_smiths.push(CliqueSmith {
+                    name: name.clone(),
+                    session_keys: Some(forced_authority_session_keys),
+                });
+            }
         }
     }
 
@@ -1183,18 +1220,13 @@ fn check_parameters_consistency(
         return Err(format!("Wallet {} is empty", account));
     }
 
-    if first_reeval.is_none() {
-        return Err("Please provied a value for `first_ud_reeval`".to_owned());
-    }
-    if first_ud.is_none() {
-        return Err("Please provied a value for `first_ud`".to_owned());
-    }
-    if first_ud.unwrap() > first_reeval.unwrap() {
-        return Err(format!(
-            "`first_ud` ({}) should be lower than `first_ud_reeval` ({})",
-            first_ud.unwrap(),
-            first_reeval.unwrap()
-        ));
+    if let (Some(first_ud), Some(first_reeval)) = (first_ud, first_reeval) {
+        if first_ud > first_reeval {
+            return Err(format!(
+                "`first_ud` ({}) should be lower than `first_ud_reeval` ({})",
+                first_ud, first_reeval
+            ));
+        }
     }
     if *ud == 0 {
         return Err("`ud` is expected to be > 0".to_owned());
@@ -1331,6 +1363,8 @@ fn seconds_to_blocs(seconds: u32) -> u32 {
 mod tests {
     use super::*;
     use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
+    use sp_core::ByteArray;
+    use std::str::FromStr;
 
     #[test]
     fn test_timestamp_to_relative_blocs() {
@@ -1359,5 +1393,14 @@ mod tests {
             )),
             Err("Pubkey is too long".to_owned())
         );
+    }
+
+    #[test]
+    fn test_address_to_pubkey_v1() {
+        let account = AccountId::from_str("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY")
+            .expect("valid address");
+        let pubkey = bs58::encode(account.as_slice()).into_vec();
+        let pubkey = String::from_utf8(pubkey).expect("valid conversion");
+        assert_eq!(pubkey, "FHNpKmJrUtusuvKPGomAygQqeiks98bdV6yD61Stb6vg");
     }
 }
