@@ -38,11 +38,11 @@ pub struct DuniterWorld {
 
 impl DuniterWorld {
     // Write methods
-    async fn init(&mut self, maybe_genesis_conf_file: Option<PathBuf>) {
+    async fn init(&mut self, maybe_genesis_conf_file: Option<PathBuf>, no_spawn: bool) {
         if let Some(ref mut inner) = self.inner {
             inner.kill();
         }
-        self.inner = Some(DuniterWorldInner::new(maybe_genesis_conf_file).await);
+        self.inner = Some(DuniterWorldInner::new(maybe_genesis_conf_file, no_spawn).await);
     }
     fn kill(&mut self) {
         if let Some(ref mut inner) = self.inner {
@@ -119,13 +119,13 @@ impl World for DuniterWorld {
 
 struct DuniterWorldInner {
     client: Client,
-    process: Process,
+    process: Option<Process>,
     ws_port: u16,
 }
 
 impl DuniterWorldInner {
-    async fn new(maybe_genesis_conf_file: Option<PathBuf>) -> Self {
-        let (client, process, ws_port) = spawn_node(maybe_genesis_conf_file).await;
+    async fn new(maybe_genesis_conf_file: Option<PathBuf>, no_spawn: bool) -> Self {
+        let (client, process, ws_port) = spawn_node(maybe_genesis_conf_file, no_spawn).await;
         DuniterWorldInner {
             client,
             process,
@@ -133,7 +133,9 @@ impl DuniterWorldInner {
         }
     }
     fn kill(&mut self) {
-        self.process.kill();
+        if let Some(p) = &mut self.process {
+            p.kill();
+        }
     }
 }
 
@@ -559,6 +561,9 @@ struct CustomOpts {
     /// Keep running
     #[clap(short, long)]
     keep_running: bool,
+    /// Do not spawn a node, reuse expected node on port 9944
+    #[clap(long)]
+    no_spawn: bool,
 
     /// For compliance with Jetbrains IDE which pushes extra args.
     /// https://youtrack.jetbrains.com/issue/CPP-33071/cargo-test-adds-extra-options-which-conflict-with-Cucumber
@@ -587,6 +592,7 @@ async fn main() {
 
     let opts = cucumber::cli::Opts::<_, _, _, CustomOpts>::parsed();
     let keep_running = opts.custom.keep_running;
+    let no_spawn = opts.custom.no_spawn;
 
     // Handle crtl+C
     let running = Arc::new(AtomicBool::new(true));
@@ -599,7 +605,7 @@ async fn main() {
     DuniterWorld::cucumber()
         //.fail_on_skipped()
         .max_concurrent_scenarios(4)
-        .before(|feature, _rule, scenario, world| {
+        .before(move |feature, _rule, scenario, world| {
             let mut genesis_conf_file_path = PathBuf::new();
             genesis_conf_file_path.push("cucumber-genesis");
             genesis_conf_file_path.push(&format!(
@@ -607,7 +613,7 @@ async fn main() {
                 genesis_conf_name(&feature.tags, &scenario.tags)
             ));
             world.set_ignore_errors(ignore_errors(&scenario.tags));
-            Box::pin(world.init(Some(genesis_conf_file_path)))
+            Box::pin(world.init(Some(genesis_conf_file_path), no_spawn))
         })
         .after(move |_feature, _rule, _scenario, maybe_world| {
             if keep_running {

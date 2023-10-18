@@ -104,7 +104,10 @@ struct FullNode {
     ws_port: u16,
 }
 
-pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Client, Process, u16) {
+pub async fn spawn_node(
+    maybe_genesis_conf_file: Option<PathBuf>,
+    no_spawn: bool,
+) -> (Client, Option<Process>, u16) {
     println!("maybe_genesis_conf_file={:?}", maybe_genesis_conf_file);
     let duniter_binary_path = std::env::var("DUNITER_BINARY_PATH").unwrap_or_else(|_| {
         if std::path::Path::new(DUNITER_DOCKER_PATH).exists() {
@@ -114,29 +117,36 @@ pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Client, Pr
         }
     });
 
-    let FullNode {
-        process,
-        p2p_port: _,
-        ws_port,
-    } = spawn_full_node(
-        &[
-            "--chain=gdev_dev",
-            "--execution=Native",
-            "--sealing=manual",
-            // Necessary options which were previously set by --dev option:
-            "--force-authoring",
-            "--rpc-cors=all",
-            "--alice",
-            "--tmp",
-        ],
-        &duniter_binary_path,
-        maybe_genesis_conf_file,
-    );
-    let client = Client::from_url(format!("ws://127.0.0.1:{}", ws_port))
+    let mut the_ws_port = 9944;
+    let mut opt_process = None;
+    // Eventually spawn a node (we most likely will - unless --no-spawn option is used)
+    if !no_spawn {
+        let FullNode {
+            process,
+            p2p_port: _,
+            ws_port,
+        } = spawn_full_node(
+            &[
+                "--chain=gdev_dev",
+                "--execution=Native",
+                "--sealing=manual",
+                // Necessary options which were previously set by --dev option:
+                "--force-authoring",
+                "--rpc-cors=all",
+                "--alice",
+                "--tmp",
+            ],
+            &duniter_binary_path,
+            maybe_genesis_conf_file,
+        );
+        opt_process = Some(process);
+        the_ws_port = ws_port;
+    }
+    let client = Client::from_url(format!("ws://127.0.0.1:{}", the_ws_port))
         .await
         .expect("fail to connect to node");
 
-    (client, process, ws_port)
+    (client, opt_process, the_ws_port)
 }
 
 pub async fn create_empty_block(client: &Client) -> Result<()> {
