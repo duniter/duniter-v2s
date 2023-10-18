@@ -120,9 +120,14 @@ pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Client, Pr
         ws_port,
     } = spawn_full_node(
         &[
-            "--chain=gdev_local",
+            "--chain=gdev_dev",
             "--execution=Native",
             "--sealing=manual",
+            // Necessary options which were previously set by --dev option:
+            "--force-authoring",
+            "--rpc-cors=all",
+            "--alice",
+            "--tmp",
         ],
         &duniter_binary_path,
         maybe_genesis_conf_file,
@@ -204,8 +209,6 @@ fn spawn_full_node(
                     &rpc_port.to_string(),
                     "--ws-port",
                     &ws_port.to_string(),
-                    "--base-path",
-                    "/tmp/duniter-cucumber",
                 ]
                 .iter()
                 .chain(args),
