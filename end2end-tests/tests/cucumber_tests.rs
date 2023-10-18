@@ -613,7 +613,7 @@ async fn main() {
             if keep_running {
                 while running.load(Ordering::SeqCst) {}
             }
-
+            // Early kill (not waiting destructor) to save CPU/memory
             if let Some(world) = maybe_world {
                 world.kill();
             }

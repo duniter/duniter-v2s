@@ -87,6 +87,13 @@ impl Process {
     }
 }
 
+// Do not let the process keep running after the tests ended
+impl Drop for Process {
+    fn drop(&mut self) {
+        self.kill()
+    }
+}
+
 pub const DISTANCE_ORACLE_LOCAL_PATH: &str = "../target/debug/distance-oracle";
 const DUNITER_DOCKER_PATH: &str = "/usr/local/bin/duniter";
 const DUNITER_LOCAL_PATH: &str = "../target/debug/duniter";
