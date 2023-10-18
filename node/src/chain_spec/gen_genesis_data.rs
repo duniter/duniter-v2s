@@ -318,10 +318,9 @@ where
                                 .expect("a G1 identity necessarily has a valid pubkey")
                         })
                         .unwrap_or_else(|| {
-                            i.owner_address.expect(
-                                format!("neither pubkey nor address is defined for {}", name)
-                                    .as_str(),
-                            )
+                            i.owner_address.unwrap_or_else(|| {
+                                panic!("neither pubkey nor address is defined for {}", name)
+                            })
                         }),
                     old_owner_key: None,
                     membership_expire_on: timestamp_to_relative_blocs(
@@ -458,7 +457,7 @@ where
             authority.certs_received.insert(issuer, c);
         });
         let sk: SessionKeys = SKP::session_keys(&get_authority_keys_from_seed(name.as_str()));
-        let forced_authority_session_keys = format!("0x{}", hex::encode(sk.encode())).to_string();
+        let forced_authority_session_keys = format!("0x{}", hex::encode(sk.encode()));
         // Add forced authority to smiths (whether explicit smith WoT or clique)
         if let Some(smith_identities) = &mut smith_identities {
             smith_identities.insert(

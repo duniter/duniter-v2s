@@ -29,12 +29,12 @@ pub async fn certify(client: &Client, from: AccountKeyring, to: AccountKeyring) 
         .storage()
         .fetch(&gdev::storage().identity().identity_index_of(&from), None)
         .await?
-        .expect(format!("{} issuer must exist", from.to_string()).as_str());
+        .unwrap_or_else(|| panic!("{} issuer must exist", from));
     let receiver_index = client
         .storage()
         .fetch(&gdev::storage().identity().identity_index_of(&to), None)
         .await?
-        .expect(format!("{} issuer must exist", from.to_string()).as_str());
+        .unwrap_or_else(|| panic!("{} issuer must exist", from));
 
     let _events = create_block_with_extrinsic(
         client,
