@@ -5,10 +5,10 @@ Feature: Balance transfer all
     When bob sends all her ĞDs to dave
     """
     Bob is a member, as such he is not allowed to empty his account completely,
-    if he tries to do so, the existence deposit (2 ĞD) must remain.
+    if he tries to do so, the existence deposit (1 ĞD) must remain.
     """
-    Then bob should have 2 ĞD
+    Then bob should have 1 ĞD
     """
-    10 ĞD (initial Bob balance) - 2 ĞD (Existential deposit) - 0.02 ĞD (transaction fees)
+    10 ĞD (initial Bob balance) - 1 ĞD (Existential deposit) - 0.02 ĞD (transaction fees)
     """
-    Then dave should have 798 cĞD
+    Then dave should have 898 cĞD

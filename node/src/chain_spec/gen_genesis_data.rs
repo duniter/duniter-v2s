@@ -442,9 +442,16 @@ where
         }
         // Forced authority gets its required certs from first "minCert" WoT identities (fake certs)
         let mut new_certs: HashMap<String, u32> = HashMap::new();
+        let certs_of_authority = &identities_v2.get(name).unwrap().certs_received;
         identities_v2
             .keys()
-            .filter(|issuer| issuer != &name)
+            // Identities which are not the authority and have not already certified her
+            .filter(|issuer| {
+                issuer != &name
+                    && !certs_of_authority
+                        .iter()
+                        .any(|(authority_issuer, _)| issuer == &authority_issuer)
+            })
             .take(common_parameters.min_cert as usize)
             .map(String::clone)
             .for_each(|issuer| {

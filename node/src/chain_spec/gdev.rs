@@ -360,7 +360,7 @@ fn genesis_data_to_gdev_genesis_conf(
                 .collect(),
         },
         cert: CertConfig {
-            apply_cert_period_at_genesis: true,
+            apply_cert_period_at_genesis: false,
             certs_by_receiver,
         },
         membership: MembershipConfig { memberships },
