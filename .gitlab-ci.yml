@@ -72,6 +72,7 @@ fmt_and_clippy:
 .docker_deploy:
   stage: deploy
   before_script:
+    - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
     - podman login -u "duniterteam" -p "$DUNITERTEAM_PASSWD" docker.io
   tags:
     - podman
