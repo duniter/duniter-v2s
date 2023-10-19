@@ -54,8 +54,7 @@ RUN set -x && \
 # Run tests if requested, expted when cross-building
 ARG cucumber=0
 RUN if [ "$cucumber" != 0 ] && [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then \
-        cargo tu && \
-        cargo cucumber && \
+        cargo ta && \
         cd target/debug/deps/ && \
         rm cucumber_tests-*.d && \
         mv cucumber_tests* ../../../build/duniter-cucumber; \
