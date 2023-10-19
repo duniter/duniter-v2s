@@ -54,13 +54,8 @@ RUN set -x && \
 # Run tests if requested, expted when cross-building
 ARG cucumber=0
 RUN if [ "$cucumber" != 0 ] && [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then \
-        cargo test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests && \
-        cargo cucumber -i account_creation* && \
-        cargo cucumber -i certification* && \
-        cargo cucumber -i identity_creation* && \
-        cargo cucumber -i monetary_mass* && \
-        cargo cucumber -i oneshot_account* && \
-        cargo cucumber -i transfer_all* && \
+        cargo tu && \
+        cargo cucumber && \
         cd target/debug/deps/ && \
         rm cucumber_tests-*.d && \
         mv cucumber_tests* ../../../build/duniter-cucumber; \

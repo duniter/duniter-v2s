@@ -1,8 +1,9 @@
 [alias]
-cucumber = "test -p duniter-end2end-tests --test cucumber_tests --"
 sanity-gdev = "test -p duniter-live-tests --test sanity_gdev -- --nocapture"
 tu = "test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests"
+ti = "test -p duniter-end2end-tests --test cucumber_tests --"
+ta = "test --workspace --exclude duniter-live-tests"
 tb = "test --features runtime-benchmarks -p"
 rbp = "run --release --features runtime-benchmarks -- benchmark pallet --chain=dev --steps=50 --repeat=20 --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=. --pallet"
 xtask = "run --package xtask --"
-
+cucumber-node = "test -- --chain=gdev_dev --execution=Native --sealing=manual --force-authoring --rpc-cors=all --tmp --ws-port 9944 --alice"
