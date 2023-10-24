@@ -124,7 +124,7 @@ impl SubstrateCli for Cli {
             )?),
             // hardcoded previously generated raw chainspecs
             // yields a pointlessly heavy binary because of hexadecimal-text-encoded values
-            #[cfg(all(feature = "gtest", feature = "embed"))]
+            #[cfg(all(feature = "gdev", feature = "embed"))]
             "gdev" => Box::new(chain_spec::gdev::ChainSpec::from_json_bytes(
                 &include_bytes!("../specs/gdev-raw.json")[..],
             )?),
