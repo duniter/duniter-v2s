@@ -296,10 +296,7 @@ where
             );
         }
         if i.owner_pubkey.is_none() && i.owner_address.is_none() {
-            log::warn!(
-                "{} both has a pubkey and an address defined - address will be used",
-                name
-            );
+            log::error!("{} neither has a pubkey and an address defined", name);
         }
     });
 
