@@ -171,7 +171,7 @@ pub mod pallet {
                     )
                 }
                 <Identities<T>>::insert(idty_index, idty.value.clone());
-                IdentitiesNames::<T>::insert(idty.name.clone(), ());
+                IdentitiesNames::<T>::insert(idty.name.clone(), idty_index);
                 IdentityIndexOf::<T>::insert(idty.value.owner_key, idty_index);
             }
         }
@@ -200,7 +200,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn identity_by_did)]
     pub type IdentitiesNames<T: Config> =
-        StorageMap<_, Blake2_128Concat, IdtyName, (), OptionQuery>;
+        StorageMap<_, Blake2_128Concat, IdtyName, T::IdtyIndex, OptionQuery>;
 
     /// counter of the identity index to give to the next identity
     #[pallet::storage]
@@ -365,7 +365,7 @@ pub mod pallet {
             idty_value.status = IdtyStatus::ConfirmedByOwner;
 
             <Identities<T>>::insert(idty_index, idty_value);
-            <IdentitiesNames<T>>::insert(idty_name.clone(), ());
+            <IdentitiesNames<T>>::insert(idty_name.clone(), idty_index);
             Self::deposit_event(Event::IdtyConfirmed {
                 idty_index,
                 owner_key: who,
