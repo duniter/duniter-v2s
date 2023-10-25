@@ -196,7 +196,7 @@ pub mod pallet {
     pub type IdentityIndexOf<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, T::IdtyIndex, OptionQuery>;
 
-    /// maps identity name to null type (simply a set)
+    /// maps identity name to identity index (simply a set)
     #[pallet::storage]
     #[pallet::getter(fn identity_by_did)]
     pub type IdentitiesNames<T: Config> =
