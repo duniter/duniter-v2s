@@ -345,18 +345,20 @@ fn genesis_data_to_gdev_genesis_conf(
             identities: identities
                 .into_iter()
                 .enumerate()
-                .map(|(i, (name, owner_key, old_owner_key))| GenesisIdty {
-                    index: i as u32 + 1,
-                    name: common_runtime::IdtyName::from(name.as_str()),
-                    value: common_runtime::IdtyValue {
-                        data: IdtyData::new(),
-                        next_creatable_identity_on: 0,
-                        old_owner_key: old_owner_key.map(|address| (address, 0)),
-                        owner_key,
-                        removable_on: 0,
-                        status: IdtyStatus::Validated,
+                .map(
+                    |(_, (idty_index, name, owner_key, old_owner_key))| GenesisIdty {
+                        index: idty_index,
+                        name: common_runtime::IdtyName::from(name.as_str()),
+                        value: common_runtime::IdtyValue {
+                            data: IdtyData::new(),
+                            next_creatable_identity_on: 0,
+                            old_owner_key: old_owner_key.map(|address| (address, 0)),
+                            owner_key,
+                            removable_on: 0,
+                            status: IdtyStatus::Validated,
+                        },
                     },
-                })
+                )
                 .collect(),
         },
         cert: CertConfig {

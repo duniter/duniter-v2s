@@ -68,7 +68,7 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
     pub first_ud: Option<u64>,
     pub first_ud_reeval: Option<u64>,
-    pub identities: Vec<(String, AccountId, Option<AccountId>)>,
+    pub identities: Vec<(u32, String, AccountId, Option<AccountId>)>,
     pub initial_authorities: BTreeMap<u32, (AccountId, bool)>,
     pub initial_monetary_mass: u64,
     pub memberships: BTreeMap<u32, MembershipData>,
@@ -191,7 +191,9 @@ struct IdentityV2 {
 
 #[derive(Clone, Deserialize, Serialize)]
 struct SmithData {
+    idty_index: u32,
     name: String,
+    account: AccountId,
     /// optional pre-set session keys (at least for the smith bootstraping the blockchain)
     session_keys: Option<String>,
     #[serde(default)]
@@ -417,18 +419,18 @@ where
     // FORCED AUTHORITY //
     // If this authority is defined (most likely Alice), then it must exist in both _identities_
     // and _smiths_. We create all this, for *development purposes* (used with `gdev_dev` or `gtest_dev` chains).
-    if let Some(name) = &maybe_force_authority {
+    if let Some(authority_name) = &maybe_force_authority {
         // The identity might already exist, notably: G1 "Alice" already exists
-        if let Some(authority) = identities_v2.get_mut(name) {
+        if let Some(authority) = identities_v2.get_mut(authority_name) {
             // Force authority to be active
             authority.membership_expire_on = common_parameters.membership_period;
         } else {
             // Not found: we must create it
             identities_v2.insert(
-                name.clone(),
+                authority_name.clone(),
                 IdentityV2 {
                     index: (identities_v2.len() as u32 + 1),
-                    owner_key: get_account_id_from_seed::<sr25519::Public>(name),
+                    owner_key: get_account_id_from_seed::<sr25519::Public>(authority_name),
                     balance: common_parameters.existential_deposit,
                     certs_received: HashMap::new(),
                     membership_expire_on: common_parameters.membership_period,
@@ -436,15 +438,15 @@ where
                     next_cert_issuable_on: 0,
                 },
             );
-        }
+        };
         // Forced authority gets its required certs from first "minCert" WoT identities (fake certs)
         let mut new_certs: HashMap<String, u32> = HashMap::new();
-        let certs_of_authority = &identities_v2.get(name).unwrap().certs_received;
+        let certs_of_authority = &identities_v2.get(authority_name).unwrap().certs_received;
         identities_v2
             .keys()
             // Identities which are not the authority and have not already certified her
             .filter(|issuer| {
-                issuer != &name
+                issuer != &authority_name
                     && !certs_of_authority
                         .iter()
                         .any(|(authority_issuer, _)| issuer == &authority_issuer)
@@ -455,33 +457,36 @@ where
                 new_certs.insert(issuer, common_parameters.cert_period);
             });
         let authority = identities_v2
-            .get_mut(name)
+            .get_mut(authority_name)
             .expect("authority must exist or be created");
         new_certs.into_iter().for_each(|(issuer, c)| {
             authority.certs_received.insert(issuer, c);
         });
-        let sk: SessionKeys = SKP::session_keys(&get_authority_keys_from_seed(name.as_str()));
+        let sk: SessionKeys =
+            SKP::session_keys(&get_authority_keys_from_seed(authority_name.as_str()));
         let forced_authority_session_keys = format!("0x{}", hex::encode(sk.encode()));
         // Add forced authority to smiths (whether explicit smith WoT or clique)
         if let Some(smith_identities) = &mut smith_identities {
             smith_identities.insert(
-                name.clone(),
+                authority_name.clone(),
                 SmithData {
-                    name: name.clone(),
+                    idty_index: authority.index,
+                    name: authority_name.clone(),
+                    account: authority.owner_key.clone(),
                     session_keys: Some(forced_authority_session_keys.clone()),
                     certs_received: vec![],
                 },
             );
         }
         if let Some(clique_smiths) = &mut clique_smiths {
-            let existing = clique_smiths.iter_mut().find(|s| &s.name == name);
+            let existing = clique_smiths.iter_mut().find(|s| &s.name == authority_name);
             if let Some(smith) = existing {
                 // Forced authority is already set in smiths: but we force its session keys
                 smith.session_keys = Some(forced_authority_session_keys);
             } else {
                 // Forced authority is not known in smiths: we add it with its session keys
                 clique_smiths.push(CliqueSmith {
-                    name: name.clone(),
+                    name: authority_name.clone(),
                     session_keys: Some(forced_authority_session_keys),
                 });
             }
@@ -660,10 +665,22 @@ where
         // From a clique
         clique
             .iter()
-            .map(|smith| SmithData {
-                name: smith.name.clone(),
-                session_keys: smith.session_keys.clone(),
-                certs_received: vec![],
+            .map(|smith| {
+                let idty_index = identity_index
+                    .iter()
+                    .find(|(_, v)| ***v == smith.name)
+                    .map(|(k, _)| *k)
+                    .expect("smith must have an identity");
+                SmithData {
+                    idty_index,
+                    name: smith.name.clone(),
+                    account: identities_v2
+                        .get(smith.name.as_str())
+                        .map(|i| i.owner_key.clone())
+                        .expect("identity must exist"),
+                    session_keys: smith.session_keys.clone(),
+                    certs_received: vec![],
+                }
             })
             .collect::<Vec<SmithData>>()
     } else {
@@ -817,6 +834,30 @@ where
         );
         fatal = true;
     }
+
+    smiths.iter().for_each(|smith| {
+        log::info!(
+            "[Smith] {} ({} - {})",
+            smith.idty_index,
+            smith.account,
+            smith.name.clone()
+        );
+    });
+
+    initial_authorities
+        .iter()
+        .for_each(|(index, (authority_account, online))| {
+            log::info!(
+                "[Authority] {} : {} ({} - {})",
+                index,
+                if *online { "online" } else { "offline" },
+                authority_account,
+                identity_index
+                    .get(index)
+                    .expect("authority should have an identity")
+                    .clone()
+            );
+        });
 
     // give genesis info
     log::info!(
@@ -1047,7 +1088,9 @@ where
                     (
                         smith.name.clone(),
                         SmithData {
+                            idty_index: smith.idty_index,
                             name: smith.name.clone(),
+                            account: smith.account.clone(),
                             session_keys: smith.session_keys.clone(),
                             certs_received: smith.certs_received.clone(),
                         },
@@ -1094,7 +1137,7 @@ where
         first_ud_reeval,
         identities: identities
             .into_iter()
-            .map(|i| (i.name, i.owned_key, i.old_owned_key))
+            .map(|i| (i.index, i.name, i.owned_key, i.old_owned_key))
             .collect(),
         initial_authorities,
         initial_monetary_mass: genesis_data.initial_monetary_mass,
@@ -1155,8 +1198,9 @@ where
     let identities_ = initial_identities
         .iter()
         .enumerate()
-        .map(|(_, (name, owner_key))| {
+        .map(|(i, (name, owner_key))| {
             (
+                i as u32,
                 String::from_utf8(name.0.clone()).unwrap(),
                 owner_key.clone(),
                 None,
