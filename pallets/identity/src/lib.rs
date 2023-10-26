@@ -114,6 +114,9 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
+        /// Type representing the a distance handler to prepare identity for benchmarking
+        #[cfg(feature = "runtime-benchmarks")]
+        type BenchmarkSetupHandler: SetDistance<Self::IdtyIndex, Self::AccountId>;
     }
 
     // GENESIS STUFF //

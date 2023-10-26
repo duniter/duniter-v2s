@@ -454,6 +454,8 @@ parameter_types! {
             type RevocationSignature = Signature;
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_identity::WeightInfo<Runtime>;
+            #[cfg(feature = "runtime-benchmarks")]
+            type BenchmarkSetupHandler = common_runtime::providers::BenchmarkSetupHandler<Runtime>;
         }
 
         impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {
@@ -467,6 +469,8 @@ parameter_types! {
             type PendingMembershipPeriod = PendingMembershipPeriod;
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_membership_membership::WeightInfo<Runtime>;
+            #[cfg(feature = "runtime-benchmarks")]
+            type BenchmarkSetupHandler = common_runtime::providers::BenchmarkSetupHandler<Runtime>;
         }
 
         impl pallet_certification::Config<Instance1> for Runtime {
@@ -514,6 +518,8 @@ parameter_types! {
             type PendingMembershipPeriod = SmithPendingMembershipPeriod;
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_membership_smith_membership::WeightInfo<Runtime>;
+            #[cfg(feature = "runtime-benchmarks")]
+            type BenchmarkSetupHandler = common_runtime::providers::BenchmarkSetupHandler<Runtime>;
         }
 
         impl pallet_certification::Config<Instance2> for Runtime {

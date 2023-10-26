@@ -276,6 +276,27 @@ pub mod pallet {
         }
     }
 
+    // BENCHMARK FUNCTIONS //
+
+    impl<T: Config> Pallet<T> {
+        /// Force the distance status using IdtyIndex and AccountId
+        /// only to prepare identity for benchmarking.
+        pub fn set_distance_status(
+            identity: <T as pallet_identity::Config>::IdtyIndex,
+            status: Option<(<T as frame_system::Config>::AccountId, DistanceStatus)>,
+        ) -> DispatchResult {
+            IdentityDistanceStatus::<T>::set(identity, status);
+            DistanceStatusExpireOn::<T>::mutate(
+                pallet_session::CurrentIndex::<T>::get() + T::ResultExpiration::get(),
+                move |identities| {
+                    identities
+                        .try_push(identity)
+                        .map_err(|_| Error::<T>::ManyEvaluationsInBlock.into())
+                },
+            )
+        }
+    }
+
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {

@@ -121,3 +121,34 @@ where
         )
     }
 }
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BenchmarkSetupHandler<T>(PhantomData<T>);
+
+// Macro implementing the BenchmarkSetupHandler trait for pallets requiring identity preparation for benchmarks.
+#[cfg(feature = "runtime-benchmarks")]
+macro_rules! impl_benchmark_setup_handler {
+    ($t:ty) => {
+        impl<T> $t for BenchmarkSetupHandler<T>
+        where
+            T: pallet_distance::Config,
+        {
+            fn force_status_ok(
+                idty_id: &<T as pallet_identity::Config>::IdtyIndex,
+                account: &<T as frame_system::Config>::AccountId,
+            ) -> () {
+                let _ = pallet_distance::Pallet::<T>::set_distance_status(
+                    *idty_id,
+                    Some((account.clone(), pallet_distance::DistanceStatus::Valid)),
+                );
+            }
+            // TODO: All the required preparation for the benchmarks, depending on the coupling
+            // between pallets, would be implemented here when moving away from prepared identities from the gdev-benchmark.
+        }
+    };
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl_benchmark_setup_handler!(pallet_membership::SetDistance<<T as pallet_identity::Config>::IdtyIndex, T::AccountId>);
+#[cfg(feature = "runtime-benchmarks")]
+impl_benchmark_setup_handler!(pallet_identity::traits::SetDistance<<T as pallet_identity::Config>::IdtyIndex, T::AccountId>);

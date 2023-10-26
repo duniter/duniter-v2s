@@ -42,6 +42,16 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use std::collections::BTreeMap;
 
+#[cfg(feature = "runtime-benchmarks")]
+pub trait SetDistance<IdtyId, AccountId> {
+    fn force_status_ok(idty_index: &IdtyId, account: &AccountId) -> ();
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl<IdtyId, AccountId> SetDistance<IdtyId, AccountId> for () {
+    fn force_status_ok(_idty_id: &IdtyId, _account: &AccountId) -> () {}
+}
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -83,6 +93,8 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self, I>>
             + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type WeightInfo: WeightInfo;
+        #[cfg(feature = "runtime-benchmarks")]
+        type BenchmarkSetupHandler: SetDistance<u32, Self::AccountId>;
     }
 
     // GENESIS STUFF //

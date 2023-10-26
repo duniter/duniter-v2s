@@ -93,6 +93,8 @@ impl pallet_membership::Config for Test {
     type PendingMembershipPeriod = PendingMembershipPeriod;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkSetupHandler = ();
 }
 
 // Build genesis storage according to the mock runtime.

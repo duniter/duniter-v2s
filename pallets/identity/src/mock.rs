@@ -117,6 +117,8 @@ impl pallet_identity::Config for Test {
     type RevocationSignature = Signature;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkSetupHandler = ();
 }
 
 // Build genesis storage according to the mock runtime.

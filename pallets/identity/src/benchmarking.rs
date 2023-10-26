@@ -147,6 +147,7 @@ benchmarks! {
         let owner_key: T::AccountId = Identities::<T>::get(index).unwrap().owner_key;
         let owner_key_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(owner_key.clone()).into();
         Pallet::<T>::confirm_identity(owner_key_origin.clone(), name.clone())?;
+        T::BenchmarkSetupHandler::force_status_ok(&index, &owner_key);
     }: _<T::RuntimeOrigin>(caller_origin, index)
     verify {
         assert_has_event::<T>(Event::<T>::IdtyValidated { idty_index: index }.into());

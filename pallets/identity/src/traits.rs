@@ -76,3 +76,13 @@ impl<IndtyIndex> RemoveIdentityConsumers<IndtyIndex> for () {
         Weight::zero()
     }
 }
+
+#[cfg(feature = "runtime-benchmarks")]
+pub trait SetDistance<IndtyIndex, AccountId> {
+    fn force_status_ok(idty_index: &IndtyIndex, account: &AccountId) -> ();
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl<IdtyIndex, AccountId> SetDistance<IdtyIndex, AccountId> for () {
+    fn force_status_ok(_idty_id: &IdtyIndex, _account: &AccountId) -> () {}
+}

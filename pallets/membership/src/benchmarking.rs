@@ -56,19 +56,23 @@ benchmarks_instance_pallet! {
         }
     }
     claim_membership {
-        let idty: T::IdtyId = 3.into();
+        let idty_index: u32 = 3;
+        let idty: T::IdtyId = idty_index.into();
         Membership::<T, I>::take(idty);
         PendingMembership::<T, I>::insert(idty.clone(), T::MetaData::default());
         let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
+        T::BenchmarkSetupHandler::force_status_ok(&idty_index, &caller);
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
         assert_has_event::<T, I>(Event::<T, I>::MembershipAcquired(idty).into());
     }
     renew_membership {
-        let idty: T::IdtyId = 3.into();
+        let idty_index: u32 = 3;
+        let idty: T::IdtyId = idty_index.into();
         let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
+        T::BenchmarkSetupHandler::force_status_ok(&idty_index, &caller);
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
         assert_has_event::<T, I>(Event::<T, I>::MembershipRenewed(idty).into());
