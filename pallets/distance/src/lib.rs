@@ -66,6 +66,7 @@ pub mod pallet {
             <Self::Currency as frame_support::traits::Currency<Self::AccountId>>::Balance,
         >;
         /// Minimum ratio of accessible referees
+        #[pallet::constant]
         type MinAccessibleReferees: Get<Perbill>;
         /// Number of session to keep a positive evaluation result
         type ResultExpiration: Get<u32>;
