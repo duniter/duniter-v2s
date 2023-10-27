@@ -83,7 +83,7 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
 }
 
 #[derive(Deserialize, Serialize)]
-struct GenesisConfig<Parameters> {
+struct GenesisInput<Parameters> {
     first_ud: Option<u64>,
     first_ud_reeval: Option<u64>,
     #[serde(default)]
@@ -228,7 +228,7 @@ where
 {
     let genesis_timestamp: u64 = get_genesis_timestamp()?;
 
-    let GenesisConfig {
+    let GenesisInput {
         sudo_key,
         treasury_funder,
         first_ud,
@@ -238,7 +238,7 @@ where
         mut clique_smiths,
         technical_committee,
         ud,
-    } = get_genesis_config::<P>(
+    } = get_genesis_input::<P>(
         std::env::var("DUNITER_GENESIS_CONFIG").unwrap_or_else(|_| json_file_path.to_owned()),
     )?;
 
@@ -855,7 +855,6 @@ where
                 identity_index
                     .get(index)
                     .expect("authority should have an identity")
-                    .clone()
             );
         });
 
@@ -1281,9 +1280,9 @@ fn check_parameters_consistency(
     Ok(())
 }
 
-fn get_genesis_config<P: Default + DeserializeOwned>(
+fn get_genesis_input<P: Default + DeserializeOwned>(
     json_file_path: String,
-) -> Result<GenesisConfig<P>, String> {
+) -> Result<GenesisInput<P>, String> {
     // We mmap the file into memory first, as this is *a lot* faster than using
     // `serde_json::from_reader`. See https://github.com/serde-rs/json/issues/160
     let file = std::fs::File::open(&json_file_path)
@@ -1294,7 +1293,7 @@ fn get_genesis_config<P: Default + DeserializeOwned>(
         memmap2::Mmap::map(&file)
             .map_err(|e| format!("Error mmaping gen conf file `{}`: {}", json_file_path, e))?
     };
-    serde_json::from_slice::<GenesisConfig<P>>(&bytes)
+    serde_json::from_slice::<GenesisInput<P>>(&bytes)
         .map_err(|e| format!("Error parsing gen conf file: {}", e))
 }
 
