@@ -259,6 +259,7 @@ pub fn new_test_ext(
                     removable_on: 0,
                     status: pallet_identity::IdtyStatus::Validated,
                 },
+                active: true,
             })
             .collect(),
     }

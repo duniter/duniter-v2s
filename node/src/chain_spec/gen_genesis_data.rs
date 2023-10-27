@@ -68,7 +68,7 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
     pub first_ud: Option<u64>,
     pub first_ud_reeval: Option<u64>,
-    pub identities: Vec<(u32, String, AccountId, Option<AccountId>)>,
+    pub identities: Vec<GenesisIdentity>,
     pub initial_authorities: BTreeMap<u32, (AccountId, bool)>,
     pub initial_monetary_mass: u64,
     pub memberships: BTreeMap<u32, MembershipData>,
@@ -80,6 +80,15 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub sudo_key: Option<AccountId>,
     pub technical_committee_members: Vec<AccountId>,
     pub ud: u64,
+}
+
+#[derive(Clone)]
+pub struct GenesisIdentity {
+    pub idty_index: u32,
+    pub name: String,
+    pub owner_key: AccountId,
+    pub old_owner_key: Option<AccountId>,
+    pub active: bool,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -211,6 +220,7 @@ struct GenesisMemberIdentity {
     owned_key: AccountId,
     old_owned_key: Option<AccountId>,
     name: String,
+    active: bool,
 }
 
 /// generate genesis data from a json file
@@ -593,24 +603,26 @@ where
         }
         identity_index.insert(identity.index, name);
 
+        let expired = identity.membership_expire_on == 0;
         // only add the identity if not expired
-        if identity.membership_expire_on != 0 {
-            // N.B.: every identity on Genesis is considered to have:
+        if expired {
+            inactive_identities.insert(identity.index, name);
+        };
+        identities.push(GenesisMemberIdentity {
+            // N.B.: every **non-expired** identity on Genesis is considered to have:
             //  - removable_on: 0,
             //  - next_creatable_identity_on: 0,
             //  - status: IdtyStatus::Validated,
-            identities.push(GenesisMemberIdentity {
-                index: identity.index,
-                name: name.clone(),
-                owned_key: identity.owner_key.clone(),
-                old_owned_key: identity.old_owner_key.clone(),
-            });
-        } else {
-            inactive_identities.insert(identity.index, name);
-        };
+            index: identity.index,
+            name: name.clone(),
+            owned_key: identity.owner_key.clone(),
+            old_owned_key: identity.old_owner_key.clone(),
+            // but expired identities will just have their pseudonym reserved in the storage
+            active: !expired,
+        });
 
         // insert the membershup data (only if not expired)
-        if identity.membership_expire_on != 0 {
+        if !expired {
             memberships.insert(
                 identity.index,
                 MembershipData {
@@ -869,10 +881,10 @@ where
         - {} smith certifications
         - {} members in technical committee",
         accounts.len(),
-        identity_index.len(),
+        identities.len() - inactive_identities.len(),
         &genesis_data.wallets.len(),
         identity_index.len(),
-        identities.len(),
+        identities.len() - inactive_identities.len(),
         inactive_identities.len(),
         smith_memberships.len(),
         counter_online_authorities,
@@ -882,8 +894,6 @@ where
     );
 
     // give genesis info
-    // TODO: add all the known parameters (see https://forum.duniter.org/t/liste-des-parametres-protocolaires-de-duniter-v2s/9297)
-    // and add the new ones (first_ud (time), ...)
     log::info!(
         "currency parameters:
         - existential deposit: {} {}
@@ -1023,13 +1033,13 @@ where
     }
 
     // some more checks
-    assert_eq!(identities.len(), memberships.len());
+    assert_eq!(
+        identities.len() - inactive_identities.len(),
+        memberships.len()
+    );
     assert_eq!(smith_memberships.len(), initial_authorities.len());
     assert_eq!(smith_memberships.len(), session_keys_map.len());
-    assert_eq!(
-        identity_index.len(),
-        identities.len() + inactive_identities.len()
-    );
+    assert_eq!(identity_index.len(), identities.len());
     assert_eq!(
         accounts.len(),
         identity_index.len() + genesis_data.wallets.len().sub(invalid_wallets)
@@ -1136,7 +1146,13 @@ where
         first_ud_reeval,
         identities: identities
             .into_iter()
-            .map(|i| (i.index, i.name, i.owned_key, i.old_owned_key))
+            .map(|i| GenesisIdentity {
+                idty_index: i.index,
+                name: i.name,
+                owner_key: i.owned_key,
+                old_owner_key: i.old_owned_key,
+                active: i.active,
+            })
             .collect(),
         initial_authorities,
         initial_monetary_mass: genesis_data.initial_monetary_mass,
@@ -1197,13 +1213,12 @@ where
     let identities_ = initial_identities
         .iter()
         .enumerate()
-        .map(|(i, (name, owner_key))| {
-            (
-                i as u32,
-                String::from_utf8(name.0.clone()).unwrap(),
-                owner_key.clone(),
-                None,
-            )
+        .map(|(i, (name, owner_key))| GenesisIdentity {
+            idty_index: i as u32,
+            name: String::from_utf8(name.0.clone()).unwrap(),
+            owner_key: owner_key.clone(),
+            old_owner_key: None,
+            active: true,
         })
         .collect();
 

@@ -59,6 +59,7 @@ fn alice() -> GenesisIdty<Test> {
             removable_on: 0,
             status: crate::IdtyStatus::Validated,
         },
+        active: true,
     }
 }
 
@@ -74,6 +75,7 @@ fn bob() -> GenesisIdty<Test> {
             removable_on: 0,
             status: crate::IdtyStatus::Validated,
         },
+        active: true,
     }
 }
 

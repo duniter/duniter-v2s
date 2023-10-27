@@ -125,6 +125,7 @@ pub mod pallet {
         pub index: T::IdtyIndex,
         pub name: IdtyName,
         pub value: IdtyValue<T::BlockNumber, T::AccountId, T::IdtyData>,
+        pub active: bool,
     }
 
     #[pallet::genesis_config]
@@ -170,9 +171,12 @@ pub mod pallet {
                         (idty_index, idty.value.status),
                     )
                 }
-                <Identities<T>>::insert(idty_index, idty.value.clone());
+                if idty.active {
+                    <Identities<T>>::insert(idty_index, idty.value.clone());
+                    IdentityIndexOf::<T>::insert(idty.value.owner_key, idty_index);
+                }
+                // Anyway, the pseudonym is kept reserved so we can map it with a user ID (idty_index)
                 IdentitiesNames::<T>::insert(idty.name.clone(), idty_index);
-                IdentityIndexOf::<T>::insert(idty.value.owner_key, idty_index);
             }
         }
     }

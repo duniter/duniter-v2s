@@ -212,6 +212,7 @@ impl ExtBuilder {
                         removable_on: 0,
                         status: IdtyStatus::Validated,
                     },
+                    active: true,
                 })
                 .collect(),
         }

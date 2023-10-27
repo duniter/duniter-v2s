@@ -15,7 +15,9 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::chain_spec::gen_genesis_data::{AuthorityKeys, CommonParameters, SessionKeysProvider};
+use crate::chain_spec::gen_genesis_data::{
+    AuthorityKeys, CommonParameters, GenesisIdentity, SessionKeysProvider,
+};
 use common_runtime::constants::*;
 use common_runtime::entities::IdtyData;
 use common_runtime::*;
@@ -346,7 +348,16 @@ fn genesis_data_to_gdev_genesis_conf(
                 .into_iter()
                 .enumerate()
                 .map(
-                    |(_, (idty_index, name, owner_key, old_owner_key))| GenesisIdty {
+                    |(
+                        _,
+                        GenesisIdentity {
+                            idty_index,
+                            name,
+                            owner_key,
+                            old_owner_key,
+                            active,
+                        },
+                    )| GenesisIdty {
                         index: idty_index,
                         name: common_runtime::IdtyName::from(name.as_str()),
                         value: common_runtime::IdtyValue {
@@ -357,6 +368,7 @@ fn genesis_data_to_gdev_genesis_conf(
                             removable_on: 0,
                             status: IdtyStatus::Validated,
                         },
+                        active,
                     },
                 )
                 .collect(),
