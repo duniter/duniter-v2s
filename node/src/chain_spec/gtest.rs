@@ -311,10 +311,9 @@ fn genesis_data_to_gtest_genesis_conf(
                             next_creatable_identity_on: 0,
                             old_owner_key: old_owner_key.clone().map(|address| (address, 0)),
                             owner_key,
-                            removable_on: 0,
+                            removable_on: if active { 0 } else { 2 },
                             status: IdtyStatus::Validated,
                         },
-                        active,
                     },
                 )
                 .collect(),

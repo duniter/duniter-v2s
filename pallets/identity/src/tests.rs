@@ -16,8 +16,8 @@
 
 use crate::mock::*;
 use crate::{
-    Error, GenesisIdty, IdtyName, IdtyValue, NewOwnerKeyPayload, RevocationPayload,
-    NEW_OWNER_KEY_PAYLOAD_PREFIX, REVOCATION_PAYLOAD_PREFIX,
+    pallet, Error, GenesisIdty, IdtyName, IdtyRemovalReason, IdtyValue, NewOwnerKeyPayload,
+    RevocationPayload, NEW_OWNER_KEY_PAYLOAD_PREFIX, REVOCATION_PAYLOAD_PREFIX,
 };
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
@@ -59,7 +59,6 @@ fn alice() -> GenesisIdty<Test> {
             removable_on: 0,
             status: crate::IdtyStatus::Validated,
         },
-        active: true,
     }
 }
 
@@ -75,7 +74,21 @@ fn bob() -> GenesisIdty<Test> {
             removable_on: 0,
             status: crate::IdtyStatus::Validated,
         },
-        active: true,
+    }
+}
+
+fn inactive_bob() -> GenesisIdty<Test> {
+    GenesisIdty {
+        index: 2,
+        name: IdtyName::from("Bob"),
+        value: IdtyVal {
+            data: (),
+            next_creatable_identity_on: 0,
+            old_owner_key: None,
+            owner_key: account(2).id,
+            removable_on: 2,
+            status: crate::IdtyStatus::Validated,
+        },
     }
 }
 
@@ -530,5 +543,34 @@ fn test_idty_revocation() {
             ),
             Err(Error::<Test>::IdtyNotFound.into())
         );
+    });
+}
+
+#[test]
+fn test_inactive_genesis_members() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice(), inactive_bob()],
+    })
+    .execute_with(|| {
+        let alice = alice();
+        let bob = inactive_bob();
+        assert!(pallet::Identities::<Test>::get(alice.index).is_some());
+        assert!(pallet::Identities::<Test>::get(bob.index).is_some());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&alice.value.owner_key).is_some());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&bob.value.owner_key).is_some());
+
+        run_to_block(2);
+
+        // alice identity remains untouched
+        assert!(pallet::Identities::<Test>::get(alice.index).is_some());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&alice.value.owner_key).is_some());
+        // but bob identity has been removed
+        assert!(pallet::Identities::<Test>::get(bob.index).is_none());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&bob.value.owner_key).is_none());
+
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
+            idty_index: bob.index,
+            reason: IdtyRemovalReason::Expired,
+        }));
     });
 }

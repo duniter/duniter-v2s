@@ -125,7 +125,6 @@ pub mod pallet {
         pub index: T::IdtyIndex,
         pub name: IdtyName,
         pub value: IdtyValue<T::BlockNumber, T::AccountId, T::IdtyData>,
-        pub active: bool,
     }
 
     #[pallet::genesis_config]
@@ -152,7 +151,6 @@ pub mod pallet {
                     "Idty name {:?} is present twice",
                     &idty.name
                 );
-                assert!(idty.value.removable_on == T::BlockNumber::zero());
                 names.insert(idty.name.clone());
             }
 
@@ -171,12 +169,13 @@ pub mod pallet {
                         (idty_index, idty.value.status),
                     )
                 }
-                if idty.active {
-                    <Identities<T>>::insert(idty_index, idty.value.clone());
-                    IdentityIndexOf::<T>::insert(idty.value.owner_key, idty_index);
-                }
-                // Anyway, the pseudonym is kept reserved so we can map it with a user ID (idty_index)
+                <Identities<T>>::insert(idty_index, idty.value.clone());
                 IdentitiesNames::<T>::insert(idty.name.clone(), idty_index);
+                IdentityIndexOf::<T>::insert(&idty.value.owner_key, idty_index);
+                frame_system::Pallet::<T>::inc_sufficients(&idty.value.owner_key);
+                if let Some((old_owner_key, _last_change)) = idty.value.old_owner_key {
+                    frame_system::Pallet::<T>::inc_sufficients(&old_owner_key);
+                }
             }
         }
     }
