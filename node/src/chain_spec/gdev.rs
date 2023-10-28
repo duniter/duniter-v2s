@@ -365,10 +365,9 @@ fn genesis_data_to_gdev_genesis_conf(
                             next_creatable_identity_on: 0,
                             old_owner_key: old_owner_key.map(|address| (address, 0)),
                             owner_key,
-                            removable_on: 0,
+                            removable_on: u32::from(!active),
                             status: IdtyStatus::Validated,
                         },
-                        active,
                     },
                 )
                 .collect(),
