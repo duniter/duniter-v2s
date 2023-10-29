@@ -127,9 +127,6 @@ pub mod pallet {
                         account.data.free = *balance;
                         account.providers = 1;
                     }
-                    if *is_identity {
-                        account.sufficients = 1;
-                    }
                 });
             }
         }
