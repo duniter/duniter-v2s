@@ -17,10 +17,12 @@
 mod common;
 
 use common::*;
+use frame_support::instances::Instance1;
 use frame_support::traits::{Get, PalletInfo, StorageInfo, StorageInfoTrait};
 use frame_support::{assert_noop, assert_ok};
 use frame_support::{StorageHasher, Twox128};
 use gdev_runtime::*;
+use pallet_duniter_wot::IdtyRemovalWotReason;
 use sp_keyring::AccountKeyring;
 use sp_runtime::MultiAddress;
 
@@ -192,6 +194,31 @@ fn test_membership_expiry() {
                 idty_index: 1,
                 reason: pallet_identity::IdtyRemovalReason::Expired
             })));
+    });
+}
+
+#[test]
+fn test_membership_expiry_with_identity_removal() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        run_to_block(100);
+
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::MembershipExpired(4),
+        ));
+
+        // Trigger pending membership expiry
+        run_to_block(
+            100 + <Runtime as pallet_membership::Config<Instance1>>::PendingMembershipPeriod::get(),
+        );
+
+        System::assert_has_event(RuntimeEvent::Identity(
+            pallet_identity::Event::IdtyRemoved {
+                idty_index: 4,
+                reason: pallet_identity::IdtyRemovalReason::Other(
+                    IdtyRemovalWotReason::MembershipExpired,
+                ),
+            },
+        ));
     });
 }
 
