@@ -88,7 +88,7 @@ pub struct GenesisIdentity {
     pub name: String,
     pub owner_key: AccountId,
     pub old_owner_key: Option<AccountId>,
-    pub revoked: bool,
+    pub active: bool,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -175,8 +175,6 @@ struct IdentityV1 {
     next_cert_issuable_on: TimestampV1, // TODO: unused?
     /// balance of the account of this identity
     balance: u64,
-    /// has the identity been revoked (implicitely or explicitely)
-    revoked: bool,
     /// certs received with their expiration timestamp
     certs_received: HashMap<String, TimestampV1>,
 }
@@ -196,8 +194,6 @@ struct IdentityV2 {
     next_cert_issuable_on: u32,
     /// balance of the account of this identity
     balance: u64,
-    /// has the identity been revoked (implicitely or explicitely)
-    revoked: bool,
     /// certs received with their expiration block
     certs_received: HashMap<String, u32>,
 }
@@ -224,7 +220,7 @@ struct GenesisMemberIdentity {
     owned_key: AccountId,
     old_owned_key: Option<AccountId>,
     name: String,
-    revoked: bool,
+    active: bool,
 }
 
 /// generate genesis data from a json file
@@ -345,7 +341,6 @@ where
                         genesis_timestamp,
                     ),
                     balance: i.balance,
-                    revoked: i.revoked,
                     certs_received: i
                         .certs_received
                         .into_iter()
@@ -439,7 +434,6 @@ where
         if let Some(authority) = identities_v2.get_mut(authority_name) {
             // Force authority to be active
             authority.membership_expire_on = common_parameters.membership_period;
-            authority.revoked = false;
         } else {
             // Not found: we must create it
             identities_v2.insert(
@@ -452,7 +446,6 @@ where
                     membership_expire_on: common_parameters.membership_period,
                     old_owner_key: None,
                     next_cert_issuable_on: 0,
-                    revoked: false,
                 },
             );
         };
@@ -625,7 +618,7 @@ where
             owned_key: identity.owner_key.clone(),
             old_owned_key: identity.old_owner_key.clone(),
             // but expired identities will just have their pseudonym reserved in the storage
-            revoked: identity.revoked,
+            active: !expired,
         });
 
         // insert the membershup data (only if not expired)
@@ -881,7 +874,7 @@ where
     log::info!(
         "prepared genesis with:
         - {} accounts ({} identities, {} simple wallets)
-        - {} total identities ({} active, {} inactive ({} revoked))
+        - {} total identities ({} active, {} inactive)
         - {} smiths
         - {} initial online authorities
         - {} certifications
@@ -893,7 +886,6 @@ where
         identity_index.len(),
         identities.len() - inactive_identities.len(),
         inactive_identities.len(),
-        identities.iter().filter(|i| i.revoked).count(),
         smith_memberships.len(),
         counter_online_authorities,
         counter_cert,
@@ -1159,7 +1151,7 @@ where
                 name: i.name,
                 owner_key: i.owned_key,
                 old_owner_key: i.old_owned_key,
-                revoked: i.revoked,
+                active: i.active,
             })
             .collect(),
         initial_authorities,
@@ -1226,7 +1218,7 @@ where
             name: String::from_utf8(name.0.clone()).unwrap(),
             owner_key: owner_key.clone(),
             old_owner_key: None,
-            revoked: false,
+            active: true,
         })
         .collect();
 
