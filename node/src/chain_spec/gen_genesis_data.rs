@@ -25,10 +25,11 @@ use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
+use sp_core::crypto::AccountId32;
 use sp_core::{blake2_256, ed25519, sr25519, Decode, Encode, H256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::traits::IdentifyAccount;
-use sp_runtime::Perbill;
+use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{MultiSignature, Perbill};
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::{Display, Formatter};
 use std::fs;
@@ -251,162 +252,31 @@ where
     } = get_genesis_input::<P>(
         std::env::var("DUNITER_GENESIS_CONFIG").unwrap_or_else(|_| json_file_path.to_owned()),
     )?;
-
     let treasury_funder = v1_pubkey_to_account_id(treasury_funder)
         .expect("treasury founder must have a valid public key");
-
     let common_parameters = get_common_parameters(&parameters);
-
-    if smith_identities.is_some() && clique_smiths.is_some() {
-        return Err(
-            "'smiths' and 'clique_smiths' cannot be both defined at the same time".to_string(),
-        );
-    }
-
+    check_smiths_vs_clique_smiths(&smith_identities, &clique_smiths)?;
     let mut genesis_data = get_genesis_migration_data()?;
-
     check_parameters_consistency(&genesis_data.wallets, &first_ud, &first_ud_reeval, &ud)?;
-
-    // Remove expired certs since export
-    genesis_data
-        .identities
-        .iter_mut()
-        .for_each(|(receiver, i)| {
-            i.certs_received.retain(|issuer, v| {
-                let retain = (v.0 as u64) >= genesis_timestamp;
-                if !retain {
-                    log::warn!("{} -> {} cert expired since export", issuer, receiver);
-                }
-                retain
-            });
-        });
-
-    genesis_data.identities.iter_mut().for_each(|(name, i)| {
-        if (i.membership_expire_on.0 as u64) < genesis_timestamp {
-            i.membership_expire_on = TimestampV1(0);
-            log::warn!("{} membership expired since export", name);
-        }
-    });
-
-    genesis_data.identities.iter_mut().for_each(|(name, i)| {
-        if i.membership_expire_on.0 != 0
-            && i.certs_received.len() < common_parameters.min_cert as usize
-        {
-            i.membership_expire_on = TimestampV1(0);
-            log::warn!(
-                "{} lost membership because of lost certifications since export",
-                name
-            );
-        }
-    });
-
-    genesis_data.identities.iter().for_each(|(name, i)| {
-        if i.owner_pubkey.is_some() && i.owner_address.is_some() {
-            log::warn!(
-                "{} both has a pubkey and an address defined - address will be used",
-                name
-            );
-        }
-        if i.owner_pubkey.is_none() && i.owner_address.is_none() {
-            log::error!("{} neither has a pubkey and an address defined", name);
-        }
-    });
-
-    let mut identities_v2: HashMap<String, IdentityV2> = genesis_data
-        .identities
-        .into_iter()
-        .map(|(name, i)| {
-            (
-                name.clone(),
-                IdentityV2 {
-                    index: i.index,
-                    owner_key: i
-                        .owner_pubkey
-                        .map(|pubkey| {
-                            v1_pubkey_to_account_id(pubkey)
-                                .expect("a G1 identity necessarily has a valid pubkey")
-                        })
-                        .unwrap_or_else(|| {
-                            i.owner_address.unwrap_or_else(|| {
-                                panic!("neither pubkey nor address is defined for {}", name)
-                            })
-                        }),
-                    old_owner_key: None,
-                    membership_expire_on: timestamp_to_relative_blocs(
-                        i.membership_expire_on,
-                        genesis_timestamp,
-                    ),
-                    next_cert_issuable_on: timestamp_to_relative_blocs(
-                        i.next_cert_issuable_on,
-                        genesis_timestamp,
-                    ),
-                    balance: i.balance,
-                    certs_received: i
-                        .certs_received
-                        .into_iter()
-                        .map(|(issuer, timestamp)| {
-                            (
-                                issuer,
-                                timestamp_to_relative_blocs(timestamp, genesis_timestamp),
-                            )
-                        })
-                        .collect(),
-                },
-            )
-        })
-        .collect();
-
-    // // Identities whose membership was lost since export
-    // identities_v2.iter_mut()
-    //     .filter(|(name, i)| (i.membership_expire_on as u64) < genesis_timestamp)
-    //     .for_each(|(name, i)| {
-    //         log::warn!("{} membership expired since export", name);
-    //         i.membership_expire_on = 0;
-    //     });
-
-    // // Identities that are no more members because of a lack of certs
-    // identities_v2.iter_mut()
-    //     .filter(|(name, i)| i.membership_expire_on != 0 && (i.certs_received.len() as u32) < common_parameters.min_cert)
-    //     .for_each(|(name, i)| {
-    //         log::warn!("{} lost membership because of lost certifications since export", name);
-    //         i.membership_expire_on = 0;
-    //     });
-
-    // Check that members have enough certs
-    identities_v2
-        .iter()
-        .filter(|(_, i)| i.membership_expire_on != 0)
-        .for_each(|(name, i)| {
-            let nb_certs = i.certs_received.len() as u32;
-            if nb_certs < common_parameters.min_cert {
-                log::warn!("{} has only {} valid certifications", name, nb_certs);
-            }
-        });
+    check_genesis_data_filter_certs(&mut genesis_data, genesis_timestamp, &common_parameters);
+    let mut identities_v2: HashMap<String, IdentityV2> =
+        genesis_data_to_identities_v2(genesis_data.identities, genesis_timestamp);
+    check_identities_v2(&identities_v2, &common_parameters);
 
     // MONEY AND WOT //
     // declare variables for building genesis
     // -------------------------------------
     // track if fatal error occured, but let processing continue
     let mut fatal = false;
-    // monetary mass for double check
-    let mut monetary_mass = 0u64;
     // initial Treasury balance
     let mut treasury_balance = 0;
-    // counter for online authorities at genesis
-    let mut counter_online_authorities = 0;
     // track identity index
     let mut identity_index = HashMap::new();
-    // counter for certifications
-    let mut counter_cert = 0u32;
-    // counter for smith certifications
-    let mut counter_smith_cert = 0u32;
     // track inactive identities
-    let mut inactive_identities = HashMap::<u32, &str>::new();
+    let mut inactive_identities = HashMap::<u32, String>::new();
 
     // declare variables to fill in genesis
     // -------------------------------------
-    // account inserted in genesis
-    let mut accounts: BTreeMap<AccountId, GenesisAccountData<u64>> = BTreeMap::new();
     // members of technical committee
     let mut technical_committee_members: Vec<AccountId> = Vec::new();
     // memberships
@@ -419,118 +289,27 @@ where
     let mut initial_authorities = BTreeMap::new();
     // session keys
     let mut session_keys_map = BTreeMap::new();
-    // smith memberships
-    let mut smith_memberships = BTreeMap::new();
-    // smith certifications
-    let mut smith_certs_by_receiver = BTreeMap::new();
-    let mut invalid_wallets = 0;
     //let mut total_dust = 0;
 
     // FORCED AUTHORITY //
     // If this authority is defined (most likely Alice), then it must exist in both _identities_
     // and _smiths_. We create all this, for *development purposes* (used with `gdev_dev` or `gtest_dev` chains).
     if let Some(authority_name) = &maybe_force_authority {
-        // The identity might already exist, notably: G1 "Alice" already exists
-        if let Some(authority) = identities_v2.get_mut(authority_name) {
-            // Force authority to be active
-            authority.membership_expire_on = common_parameters.membership_period;
-        } else {
-            // Not found: we must create it
-            identities_v2.insert(
-                authority_name.clone(),
-                IdentityV2 {
-                    index: (identities_v2.len() as u32 + 1),
-                    owner_key: get_account_id_from_seed::<sr25519::Public>(authority_name),
-                    balance: common_parameters.existential_deposit,
-                    certs_received: HashMap::new(),
-                    membership_expire_on: common_parameters.membership_period,
-                    old_owner_key: None,
-                    next_cert_issuable_on: 0,
-                },
-            );
-        };
-        // Forced authority gets its required certs from first "minCert" WoT identities (fake certs)
-        let mut new_certs: HashMap<String, u32> = HashMap::new();
-        let certs_of_authority = &identities_v2.get(authority_name).unwrap().certs_received;
-        identities_v2
-            .keys()
-            // Identities which are not the authority and have not already certified her
-            .filter(|issuer| {
-                issuer != &authority_name
-                    && !certs_of_authority
-                        .iter()
-                        .any(|(authority_issuer, _)| issuer == &authority_issuer)
-            })
-            .take(common_parameters.min_cert as usize)
-            .map(String::clone)
-            .for_each(|issuer| {
-                new_certs.insert(issuer, common_parameters.cert_period);
-            });
-        let authority = identities_v2
-            .get_mut(authority_name)
-            .expect("authority must exist or be created");
-        new_certs.into_iter().for_each(|(issuer, c)| {
-            authority.certs_received.insert(issuer, c);
-        });
-        let sk: SessionKeys =
-            SKP::session_keys(&get_authority_keys_from_seed(authority_name.as_str()));
-        let forced_authority_session_keys = format!("0x{}", hex::encode(sk.encode()));
-        // Add forced authority to smiths (whether explicit smith WoT or clique)
-        if let Some(smith_identities) = &mut smith_identities {
-            smith_identities.insert(
-                authority_name.clone(),
-                SmithData {
-                    idty_index: authority.index,
-                    name: authority_name.clone(),
-                    account: authority.owner_key.clone(),
-                    session_keys: Some(forced_authority_session_keys.clone()),
-                    certs_received: vec![],
-                },
-            );
-        }
-        if let Some(clique_smiths) = &mut clique_smiths {
-            let existing = clique_smiths.iter_mut().find(|s| &s.name == authority_name);
-            if let Some(smith) = existing {
-                // Forced authority is already set in smiths: but we force its session keys
-                smith.session_keys = Some(forced_authority_session_keys);
-            } else {
-                // Forced authority is not known in smiths: we add it with its session keys
-                clique_smiths.push(CliqueSmith {
-                    name: authority_name.clone(),
-                    session_keys: Some(forced_authority_session_keys),
-                });
-            }
-        }
+        make_authority_exist::<SessionKeys, SKP>(
+            &mut identities_v2,
+            &mut smith_identities,
+            &mut clique_smiths,
+            &common_parameters,
+            authority_name,
+        );
     }
 
     // SIMPLE WALLETS //
-    for (pubkey, balance) in &genesis_data.wallets {
-        // check existential deposit
-        if balance < &common_parameters.existential_deposit {
-            log::error!(
-                "wallet {pubkey} has {balance} cǦT which is below {}",
-                common_parameters.existential_deposit
-            );
-            fatal = true;
-        }
-
-        // double check the monetary mass
-        monetary_mass += balance;
-
-        // json prevents duplicate wallets
-        if let Ok(owner_key) = v1_pubkey_to_account_id(pubkey.clone()) {
-            accounts.insert(
-                owner_key.clone(),
-                GenesisAccountData {
-                    random_id: H256(blake2_256(&(balance, &owner_key).encode())),
-                    balance: *balance,
-                    is_identity: false,
-                },
-            );
-        } else {
-            log::warn!("wallet {pubkey} has wrong format");
-            invalid_wallets = invalid_wallets.add(1);
-        }
+    let genesis_data_wallets_count = genesis_data.wallets.len();
+    let (was_fatal, mut monetary_mass, mut accounts, invalid_wallets) =
+        v1_wallets_to_v2_accounts(genesis_data.wallets, &common_parameters);
+    if was_fatal {
+        fatal = true;
     }
 
     // Technical Comittee //
@@ -545,239 +324,62 @@ where
     }
 
     // IDENTITIES //
-    for (name, identity) in &identities_v2 {
-        // identity name
-        if !validate_idty_name(name) {
-            return Err(format!("Identity name '{}' is invalid", &name));
-        }
-
-        // TODO: re-check this code origin and wether it should be included or not
-        // do not check existential deposit of identities
-        // // check existential deposit
-        // if identity.balance < common_parameters.existencial_deposit {
-        //     if identity.membership_expire_on == 0 {
-        //         log::warn!(
-        //             "expired identity {name} has {} cǦT which is below {}",
-        //             identity.balance, common_parameters.existencial_deposit
-        //         );
-        //         fatal = true;
-        //     } else {
-        //         member identities can still be below existential deposit thanks to sufficient
-        //         log::info!(
-        //             "identity {name} has {} cǦT which is below {}",
-        //             identity.balance, common_parameters.existencial_deposit
-        //         );
-        //     }
-        // }
-
-        // Money
-        // check that wallet with same owner_key does not exist
-        if accounts.get(&identity.owner_key).is_some() {
-            log::error!(
-                "{name} owner_key {} already exists as a simple wallet",
-                identity.owner_key
-            );
-            fatal = true;
-        }
-        // insert as an account
-        accounts.insert(
-            identity.owner_key.clone(),
-            GenesisAccountData {
-                random_id: H256(blake2_256(&(identity.index, &identity.owner_key).encode())),
-                balance: identity.balance,
-                is_identity: true,
-            },
-        );
-
-        // double check the monetary mass
-        monetary_mass += identity.balance;
-
-        // insert identity
-        // check that index does not already exist
-        if let Some(other_name) = identity_index.get(&identity.index) {
-            log::error!(
-                "{other_name} already has identity index {} of {name}",
-                identity.index
-            );
-            fatal = true;
-        }
-        identity_index.insert(identity.index, name);
-
-        let expired = identity.membership_expire_on == 0;
-        // only add the identity if not expired
-        if expired {
-            inactive_identities.insert(identity.index, name);
-        };
-        identities.push(GenesisMemberIdentity {
-            // N.B.: every **non-expired** identity on Genesis is considered to have:
-            //  - removable_on: 0,
-            //  - next_creatable_identity_on: 0,
-            //  - status: IdtyStatus::Validated,
-            index: identity.index,
-            name: name.clone(),
-            owned_key: identity.owner_key.clone(),
-            old_owned_key: identity.old_owner_key.clone(),
-            // but expired identities will just have their pseudonym reserved in the storage
-            active: !expired,
-        });
-
-        // insert the membershup data (only if not expired)
-        if !expired {
-            memberships.insert(
-                identity.index,
-                MembershipData {
-                    expire_on: identity.membership_expire_on,
-                },
-            );
-        }
+    let was_fatal = feed_identities(
+        &mut identities,
+        &mut accounts,
+        &mut identity_index,
+        &mut monetary_mass,
+        &mut inactive_identities,
+        &mut memberships,
+        &identities_v2,
+    )?;
+    if was_fatal {
+        fatal = true;
     }
-    // sort the identities by index for reproducibility (should have been a vec in json)
-    identities.sort_unstable_by(|a, b| a.index.cmp(&b.index));
 
     // CERTIFICATIONS //
-    for identity in identities_v2.values() {
-        let mut certs = BTreeMap::new();
-        for (issuer, expire_on) in &identity.certs_received {
-            if let Some(issuer) = &identities_v2.get(issuer) {
-                certs.insert(issuer.index, Some(*expire_on));
-                counter_cert += 1;
-            } else {
-                log::error!("Identity '{}' does not exist", issuer);
-                fatal = true;
-            };
-        }
-        certs_by_receiver.insert(identity.index, certs);
+    // counter for certifications
+    let (was_fatal, counter_cert) = feed_certs_by_receiver(&mut certs_by_receiver, &identities_v2);
+    if was_fatal {
+        fatal = true;
     }
 
     // SMITHS SUB-WOT //
 
     // Authorities
     if let Some(name) = &maybe_force_authority {
-        identities_v2
-            .get(name)
-            .ok_or(format!("Identity '{}' not exist", name))
-            .expect("Initial authority must have an identity");
-        if let Some(smiths) = &clique_smiths {
-            smiths
-                .iter()
-                .find(|s| s.name == *name)
-                .expect("Forced authority must be present in smiths clique");
-        }
-        if let Some(smiths) = &smith_identities {
-            smiths
-                .iter()
-                .find(|(other_name, _)| *other_name == name)
-                .expect("Forced authority must be present in smiths");
-        }
+        check_authority_exists_in_both_wots(
+            name,
+            &identities_v2,
+            &clique_smiths,
+            &smith_identities,
+        );
     }
 
-    let is_clique = clique_smiths.is_some();
-    // Create a single source of smiths
-    let smiths = if let Some(clique) = &clique_smiths {
-        // From a clique
-        clique
-            .iter()
-            .map(|smith| {
-                let idty_index = identity_index
-                    .iter()
-                    .find(|(_, v)| ***v == smith.name)
-                    .map(|(k, _)| *k)
-                    .expect("smith must have an identity");
-                SmithData {
-                    idty_index,
-                    name: smith.name.clone(),
-                    account: identities_v2
-                        .get(smith.name.as_str())
-                        .map(|i| i.owner_key.clone())
-                        .expect("identity must exist"),
-                    session_keys: smith.session_keys.clone(),
-                    certs_received: vec![],
-                }
-            })
-            .collect::<Vec<SmithData>>()
-    } else {
-        // From explicit smith WoT
-        smith_identities
-            .expect("existence has been tested earlier")
-            .into_values()
-            .collect::<Vec<SmithData>>()
-    };
-    // Then create the smith WoT
-    for smith in &smiths {
-        // check that smith exists
-        if let Some(identity) = &identities_v2.get(&smith.name.clone()) {
-            // Initial authorities and session keys
-            let session_keys_bytes = if let Some(declared_session_keys) = &smith.session_keys {
-                counter_online_authorities += 1;
-                // insert authority as online
-                initial_authorities.insert(identity.index, (identity.owner_key.clone(), true));
-                // decode session keys or force to given value
-                hex::decode(&declared_session_keys[2..])
-                    .map_err(|_| format!("invalid session keys for idty {}", smith.name))?
-            } else {
-                // still authority but offline
-                initial_authorities.insert(identity.index, (identity.owner_key.clone(), false));
-                // fake session keys
-                let mut fake_bytes = Vec::with_capacity(128);
-                for _ in 0..4 {
-                    fake_bytes.extend_from_slice(identity.owner_key.as_ref())
-                }
-                fake_bytes
-            };
+    let smiths = build_smiths_wot(
+        &clique_smiths,
+        &identity_index,
+        &identities_v2,
+        smith_identities,
+    );
 
-            // insert session keys to map
-            session_keys_map.insert(
-                identity.owner_key.clone(),
-                SK::decode(&mut &session_keys_bytes[..]).unwrap(),
-            );
-
-            // smith certifications
-            let mut certs = BTreeMap::new();
-            if is_clique {
-                // All initial smiths are considered to be certifying all each other
-                clique_smiths
-                    .as_ref()
-                    .unwrap()
-                    .iter()
-                    .filter(|other_smith| *other_smith.name.as_str() != *smith.name)
-                    .for_each(|other_smith| {
-                        let issuer_index = &identities_v2
-                            .get(other_smith.name.as_str())
-                            .unwrap_or_else(|| {
-                                panic!("Identity '{}' does not exist", other_smith.name.as_str())
-                            })
-                            .index;
-                        certs.insert(*issuer_index, None);
-                    });
-            } else {
-                for issuer in &smith.certs_received {
-                    let issuer_index = &identities_v2
-                        .get(issuer)
-                        .ok_or(format!("Identity '{}' does not exist", issuer))?
-                        .index;
-                    certs.insert(
-                        *issuer_index,
-                        Some(common_parameters.smith_certs_validity_period),
-                    );
-                    counter_smith_cert += 1;
-                }
-                smith_certs_by_receiver.insert(identity.index, certs);
-            }
-
-            // smith memberships
-            smith_memberships.insert(
-                identity.index,
-                MembershipData {
-                    expire_on: common_parameters.smith_membership_period,
-                },
-            );
-        } else {
-            log::error!(
-                "Smith '{}' does not correspond to exising identity",
-                &smith.name
-            );
-            fatal = true;
-        }
+    // counter for online authorities at genesis
+    let (
+        was_fatal,
+        counter_online_authorities,
+        counter_smith_cert,
+        smith_certs_by_receiver,
+        smith_memberships,
+    ) = create_smith_wot(
+        &mut initial_authorities,
+        &mut session_keys_map,
+        &identities_v2,
+        &smiths,
+        &common_parameters,
+        &clique_smiths,
+    )?;
+    if was_fatal {
+        fatal = true;
     }
 
     // Verify certifications coherence (can be ignored for old users)
@@ -847,6 +449,281 @@ where
         fatal = true;
     }
 
+    let was_fatal = dump_results(
+        &smiths,
+        &initial_authorities,
+        &parameters,
+        &common_parameters,
+        &identity_index,
+        &accounts,
+        &identities,
+        genesis_data_wallets_count,
+        &inactive_identities,
+        &smith_memberships,
+        counter_online_authorities,
+        counter_cert,
+        counter_smith_cert,
+        &technical_committee_members,
+    );
+    if was_fatal {
+        fatal = true;
+    }
+
+    some_more_checks(
+        &identities,
+        &inactive_identities,
+        &memberships,
+        &smith_memberships,
+        &initial_authorities,
+        &session_keys_map,
+        &identity_index,
+        &accounts,
+        genesis_data_wallets_count,
+        &invalid_wallets,
+        &technical_committee,
+        &smiths,
+    );
+
+    // check the logs to see all the fatal error preventing from starting gtest currency
+    if fatal {
+        log::error!("some previously logged error prevent from building a sane genesis");
+        panic!();
+    }
+
+    // Indexer output
+    if let Ok(path) = std::env::var("DUNITER_GENESIS_EXPORT") {
+        // genesis_certs_min_received => min_cert
+        // genesis_memberships_expire_on => membership_period
+        // genesis_smith_certs_min_received => smith_min_cert
+        // genesis_smith_memberships_expire_on => smith_membership_period
+        let export = GenesisIndexerExport {
+            first_ud,
+            first_ud_reeval,
+            genesis_parameters: common_parameters.clone(),
+            identities: identities_v2,
+            sudo_key: sudo_key.clone(),
+            technical_committee,
+            ud,
+            wallets: accounts
+                .iter()
+                .map(|(account_id, data)| (account_id.clone(), data.balance))
+                .collect(),
+            smiths: (smiths)
+                .iter()
+                .map(|smith| {
+                    (
+                        smith.name.clone(),
+                        SmithData {
+                            idty_index: smith.idty_index,
+                            name: smith.name.clone(),
+                            account: smith.account.clone(),
+                            session_keys: smith.session_keys.clone(),
+                            certs_received: smith.certs_received.clone(),
+                        },
+                    )
+                })
+                .collect::<BTreeMap<String, SmithData>>(),
+            transactions_history: genesis_data.transactions_history.map(|history| {
+                history
+                    .iter()
+                    // Avoid wrong pubkeys in tx history
+                    .filter(|(pubkey, _)| v1_pubkey_to_account_id((*pubkey).clone()).is_ok())
+                    .map(|(pubkey, txs)| {
+                        (
+                            v1_pubkey_to_account_id(pubkey.clone())
+                                .expect("already checked account"),
+                            txs.iter()
+                                // Avoid wrong pubkeys in tx history
+                                .filter(|tx| v1_pubkey_to_account_id(tx.issuer.clone()).is_ok())
+                                .map(|tx| TransactionV2 {
+                                    issuer: v1_pubkey_to_account_id(tx.issuer.clone())
+                                        .expect("already checked tx.issuer"),
+                                    amount: tx.amount.clone(),
+                                    written_time: tx.written_time,
+                                    comment: tx.comment.clone(),
+                                })
+                                .collect::<Vec<TransactionV2>>(),
+                        )
+                    })
+                    .collect::<BTreeMap<AccountId, Vec<TransactionV2>>>()
+            }),
+        };
+        fs::write(
+            &path,
+            serde_json::to_string_pretty(&export).expect("should be serializable"),
+        )
+        .unwrap_or_else(|_| panic!("Could not export genesis data to {}", &path));
+    }
+
+    let genesis_data = GenesisData {
+        accounts,
+        treasury_balance,
+        certs_by_receiver,
+        first_ud,
+        first_ud_reeval,
+        identities: identities
+            .into_iter()
+            .map(|i| GenesisIdentity {
+                idty_index: i.index,
+                name: i.name,
+                owner_key: i.owned_key,
+                old_owner_key: i.old_owned_key,
+                active: i.active,
+            })
+            .collect(),
+        initial_authorities,
+        initial_monetary_mass: genesis_data.initial_monetary_mass,
+        memberships,
+        parameters,
+        common_parameters: Some(common_parameters),
+        session_keys_map,
+        smith_certs_by_receiver,
+        smith_memberships,
+        sudo_key,
+        technical_committee_members,
+        ud,
+    };
+
+    Ok(genesis_data)
+}
+
+fn some_more_checks<SK: Decode>(
+    identities: &Vec<GenesisMemberIdentity>,
+    inactive_identities: &HashMap<u32, String>,
+    memberships: &BTreeMap<u32, MembershipData>,
+    smith_memberships: &BTreeMap<u32, MembershipData>,
+    initial_authorities: &BTreeMap<u32, (AccountId32, bool)>,
+    session_keys_map: &BTreeMap<AccountId32, SK>,
+    identity_index: &HashMap<u32, String>,
+    accounts: &BTreeMap<AccountId32, GenesisAccountData<u64>>,
+    genesis_data_wallets_count: usize,
+    invalid_wallets: &usize,
+    technical_committee: &Vec<String>,
+    smiths: &Vec<SmithData>,
+) {
+    // some more checks
+    assert_eq!(
+        identities.len() - inactive_identities.len(),
+        memberships.len()
+    );
+    assert_eq!(smith_memberships.len(), initial_authorities.len());
+    assert_eq!(smith_memberships.len(), session_keys_map.len());
+    assert_eq!(identity_index.len(), identities.len());
+    assert_eq!(
+        accounts.len(),
+        identity_index.len() + genesis_data_wallets_count.sub(invalid_wallets)
+    );
+    // no inactive tech comm
+    for tech_com_member in technical_committee {
+        let inactive_commitee_member = inactive_identities.values().any(|v| v == tech_com_member);
+        if inactive_commitee_member {
+            log::error!(
+                "{} is an inactive technical commitee member",
+                tech_com_member
+            );
+            assert!(!inactive_commitee_member);
+        }
+    }
+    // no inactive smith
+    for SmithData { name: smith, .. } in smiths {
+        let inactive_smiths: Vec<_> = inactive_identities
+            .values()
+            .filter(|v| *v == smith)
+            .collect();
+        inactive_smiths
+            .iter()
+            .for_each(|s| log::warn!("Smith {} is inactive", s));
+        assert_eq!(inactive_smiths.len(), 0);
+    }
+}
+
+fn create_smith_wot<SK: Decode>(
+    initial_authorities: &mut BTreeMap<u32, (AccountId32, bool)>,
+    session_keys_map: &mut BTreeMap<AccountId32, SK>,
+    identities_v2: &HashMap<String, IdentityV2>,
+    smiths: &Vec<SmithData>,
+    common_parameters: &CommonParameters,
+    clique_smiths: &Option<Vec<CliqueSmith>>,
+) -> Result<
+    (
+        bool,
+        u32,
+        u32,
+        BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
+        BTreeMap<u32, sp_membership::MembershipData<u32>>,
+    ),
+    String,
+> {
+    let mut fatal = false;
+    let mut counter_online_authorities = 0;
+    // counter for smith certifications
+    let mut counter_smith_cert = 0;
+    let mut smith_certs_by_receiver = BTreeMap::new();
+    // smith memberships
+    let mut smith_memberships = BTreeMap::new();
+    // Then create the smith WoT
+    for smith in smiths {
+        // check that smith exists
+        if let Some(identity) = &identities_v2.get(&smith.name.clone()) {
+            counter_online_authorities = set_session_keys_and_authority_status(
+                initial_authorities,
+                session_keys_map,
+                &smith,
+                &identity,
+            )?;
+
+            // smith certifications
+            counter_smith_cert = feed_smith_certs_by_receiver(
+                &mut smith_certs_by_receiver,
+                &clique_smiths,
+                &smith,
+                &identity,
+                &identities_v2,
+                &common_parameters,
+            )?;
+
+            // smith memberships
+            smith_memberships.insert(
+                identity.index,
+                MembershipData {
+                    expire_on: common_parameters.smith_membership_period,
+                },
+            );
+        } else {
+            log::error!(
+                "Smith '{}' does not correspond to exising identity",
+                &smith.name
+            );
+            fatal = true;
+        }
+    }
+    Ok((
+        fatal,
+        counter_online_authorities,
+        counter_smith_cert,
+        smith_certs_by_receiver,
+        smith_memberships,
+    ))
+}
+
+fn dump_results<P>(
+    smiths: &Vec<SmithData>,
+    initial_authorities: &BTreeMap<u32, (AccountId32, bool)>,
+    parameters: &Option<P>,
+    common_parameters: &CommonParameters,
+    identity_index: &HashMap<u32, String>,
+    accounts: &BTreeMap<AccountId32, GenesisAccountData<u64>>,
+    identities: &Vec<GenesisMemberIdentity>,
+    genesis_data_wallets_count: usize,
+    inactive_identities: &HashMap<u32, String>,
+    smith_memberships: &BTreeMap<u32, MembershipData>,
+    counter_online_authorities: u32,
+    counter_cert: u32,
+    counter_smith_cert: u32,
+    technical_committee_members: &Vec<AccountId32>,
+) -> bool {
+    let mut fatal = false;
+
     smiths.iter().for_each(|smith| {
         log::info!(
             "[Smith] {} ({} - {})",
@@ -882,7 +759,7 @@ where
         - {} members in technical committee",
         accounts.len(),
         identities.len() - inactive_identities.len(),
-        &genesis_data.wallets.len(),
+        genesis_data_wallets_count,
         identity_index.len(),
         identities.len() - inactive_identities.len(),
         inactive_identities.len(),
@@ -1031,143 +908,552 @@ where
             fatal = true;
         }
     }
+    fatal
+}
 
-    // some more checks
-    assert_eq!(
-        identities.len() - inactive_identities.len(),
-        memberships.len()
-    );
-    assert_eq!(smith_memberships.len(), initial_authorities.len());
-    assert_eq!(smith_memberships.len(), session_keys_map.len());
-    assert_eq!(identity_index.len(), identities.len());
-    assert_eq!(
-        accounts.len(),
-        identity_index.len() + genesis_data.wallets.len().sub(invalid_wallets)
-    );
-    // no inactive tech comm
-    for tech_com_member in &technical_committee {
-        let inactive_commitee_member = inactive_identities.values().any(|&v| v == tech_com_member);
-        if inactive_commitee_member {
+fn v1_wallets_to_v2_accounts(
+    wallets: BTreeMap<PubkeyV1, u64>,
+    common_parameters: &CommonParameters,
+) -> (
+    bool,
+    u64,
+    BTreeMap<AccountId32, GenesisAccountData<u64>>,
+    usize,
+) {
+    // monetary mass for double check
+    let mut monetary_mass = 0u64;
+    // account inserted in genesis
+    let mut accounts: BTreeMap<AccountId, GenesisAccountData<u64>> = BTreeMap::new();
+    let mut invalid_wallets = 0;
+    let mut fatal = false;
+    for (pubkey, balance) in wallets {
+        // check existential deposit
+        if balance < common_parameters.existential_deposit {
             log::error!(
-                "{} is an inactive technical commitee member",
-                tech_com_member
+                "wallet {pubkey} has {balance} cǦT which is below {}",
+                common_parameters.existential_deposit
             );
-            assert!(!inactive_commitee_member);
+            fatal = true;
+        }
+
+        // double check the monetary mass
+        monetary_mass += balance;
+
+        // json prevents duplicate wallets
+        if let Ok(owner_key) = v1_pubkey_to_account_id(pubkey.clone()) {
+            accounts.insert(
+                owner_key.clone(),
+                GenesisAccountData {
+                    random_id: H256(blake2_256(&(balance, &owner_key).encode())),
+                    balance,
+                    is_identity: false,
+                },
+            );
+        } else {
+            log::warn!("wallet {pubkey} has wrong format");
+            invalid_wallets = invalid_wallets.add(1);
         }
     }
-    // no inactive smith
-    for SmithData { name: smith, .. } in &smiths {
-        let inactive_smiths: Vec<_> = inactive_identities
-            .values()
-            .filter(|&v| *v == smith)
-            .collect();
-        inactive_smiths
-            .iter()
-            .for_each(|s| log::warn!("Smith {} is inactive", s));
-        assert_eq!(inactive_smiths.len(), 0);
-    }
+    (fatal, monetary_mass, accounts, invalid_wallets)
+}
 
-    // check the logs to see all the fatal error preventing from starting gtest currency
-    if fatal {
-        log::error!("some previously logged error prevent from building a sane genesis");
-        panic!();
+fn check_smiths_vs_clique_smiths(
+    smith_identities: &Option<BTreeMap<String, SmithData>>,
+    clique_smiths: &Option<Vec<CliqueSmith>>,
+) -> Result<(), String> {
+    if smith_identities.is_some() && clique_smiths.is_some() {
+        return Err(
+            "'smiths' and 'clique_smiths' cannot be both defined at the same time".to_string(),
+        );
     }
+    Ok(())
+}
 
-    // Indexer output
-    if let Ok(path) = std::env::var("DUNITER_GENESIS_EXPORT") {
-        // genesis_certs_min_received => min_cert
-        // genesis_memberships_expire_on => membership_period
-        // genesis_smith_certs_min_received => smith_min_cert
-        // genesis_smith_memberships_expire_on => smith_membership_period
-        let export = GenesisIndexerExport {
-            first_ud,
-            first_ud_reeval,
-            genesis_parameters: common_parameters.clone(),
-            identities: identities_v2,
-            sudo_key: sudo_key.clone(),
-            technical_committee,
-            ud,
-            wallets: accounts
-                .iter()
-                .map(|(account_id, data)| (account_id.clone(), data.balance))
-                .collect(),
-            smiths: (smiths)
-                .iter()
-                .map(|smith| {
-                    (
-                        smith.name.clone(),
-                        SmithData {
-                            idty_index: smith.idty_index,
-                            name: smith.name.clone(),
-                            account: smith.account.clone(),
-                            session_keys: smith.session_keys.clone(),
-                            certs_received: smith.certs_received.clone(),
-                        },
-                    )
-                })
-                .collect::<BTreeMap<String, SmithData>>(),
-            transactions_history: genesis_data.transactions_history.map(|history| {
-                history
+fn check_identities_v2(
+    identities_v2: &HashMap<String, IdentityV2>,
+    common_parameters: &CommonParameters,
+) {
+    // // Identities whose membership was lost since export
+    // identities_v2.iter_mut()
+    //     .filter(|(name, i)| (i.membership_expire_on as u64) < genesis_timestamp)
+    //     .for_each(|(name, i)| {
+    //         log::warn!("{} membership expired since export", name);
+    //         i.membership_expire_on = 0;
+    //     });
+
+    // // Identities that are no more members because of a lack of certs
+    // identities_v2.iter_mut()
+    //     .filter(|(name, i)| i.membership_expire_on != 0 && (i.certs_received.len() as u32) < common_parameters.min_cert)
+    //     .for_each(|(name, i)| {
+    //         log::warn!("{} lost membership because of lost certifications since export", name);
+    //         i.membership_expire_on = 0;
+    //     });
+
+    // Check that members have enough certs
+    identities_v2
+        .iter()
+        .filter(|(_, i)| i.membership_expire_on != 0)
+        .for_each(|(name, i)| {
+            let nb_certs = i.certs_received.len() as u32;
+            if nb_certs < common_parameters.min_cert {
+                log::warn!("{} has only {} valid certifications", name, nb_certs);
+            }
+        });
+}
+
+fn check_genesis_data_filter_certs(
+    genesis_data: &mut GenesisMigrationData,
+    genesis_timestamp: u64,
+    common_parameters: &CommonParameters,
+) {
+    // Remove expired certs since export
+    genesis_data
+        .identities
+        .iter_mut()
+        .for_each(|(receiver, i)| {
+            i.certs_received.retain(|issuer, v| {
+                let retain = (v.0 as u64) >= genesis_timestamp;
+                if !retain {
+                    log::warn!("{} -> {} cert expired since export", issuer, receiver);
+                }
+                retain
+            });
+        });
+
+    genesis_data.identities.iter_mut().for_each(|(name, i)| {
+        if (i.membership_expire_on.0 as u64) < genesis_timestamp {
+            i.membership_expire_on = TimestampV1(0);
+            log::warn!("{} membership expired since export", name);
+        }
+    });
+
+    genesis_data.identities.iter_mut().for_each(|(name, i)| {
+        if i.membership_expire_on.0 != 0
+            && i.certs_received.len() < common_parameters.min_cert as usize
+        {
+            i.membership_expire_on = TimestampV1(0);
+            log::warn!(
+                "{} lost membership because of lost certifications since export",
+                name
+            );
+        }
+    });
+
+    genesis_data.identities.iter().for_each(|(name, i)| {
+        if i.owner_pubkey.is_some() && i.owner_address.is_some() {
+            log::warn!(
+                "{} both has a pubkey and an address defined - address will be used",
+                name
+            );
+        }
+        if i.owner_pubkey.is_none() && i.owner_address.is_none() {
+            log::error!("{} neither has a pubkey and an address defined", name);
+        }
+    });
+}
+
+fn genesis_data_to_identities_v2(
+    genesis_identities: BTreeMap<String, IdentityV1>,
+    genesis_timestamp: u64,
+) -> HashMap<String, IdentityV2> {
+    genesis_identities
+        .into_iter()
+        .map(|(name, i)| {
+            (
+                name.clone(),
+                IdentityV2 {
+                    index: i.index,
+                    owner_key: i
+                        .owner_pubkey
+                        .map(|pubkey| {
+                            v1_pubkey_to_account_id(pubkey)
+                                .expect("a G1 identity necessarily has a valid pubkey")
+                        })
+                        .unwrap_or_else(|| {
+                            i.owner_address.unwrap_or_else(|| {
+                                panic!("neither pubkey nor address is defined for {}", name)
+                            })
+                        }),
+                    old_owner_key: None,
+                    membership_expire_on: timestamp_to_relative_blocs(
+                        i.membership_expire_on,
+                        genesis_timestamp,
+                    ),
+                    next_cert_issuable_on: timestamp_to_relative_blocs(
+                        i.next_cert_issuable_on,
+                        genesis_timestamp,
+                    ),
+                    balance: i.balance,
+                    certs_received: i
+                        .certs_received
+                        .into_iter()
+                        .map(|(issuer, timestamp)| {
+                            (
+                                issuer,
+                                timestamp_to_relative_blocs(timestamp, genesis_timestamp),
+                            )
+                        })
+                        .collect(),
+                },
+            )
+        })
+        .collect()
+}
+
+fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKeys>>(
+    identities_v2: &mut HashMap<String, IdentityV2>,
+    smith_identities: &mut Option<BTreeMap<String, SmithData>>,
+    clique_smiths: &mut Option<Vec<CliqueSmith>>,
+    common_parameters: &CommonParameters,
+    authority_name: &String,
+) {
+    // The identity might already exist, notably: G1 "Alice" already exists
+    if let Some(authority) = identities_v2.get_mut(authority_name) {
+        // Force authority to be active
+        authority.membership_expire_on = common_parameters.membership_period;
+    } else {
+        // Not found: we must create it
+        identities_v2.insert(
+            authority_name.clone(),
+            IdentityV2 {
+                index: (identities_v2.len() as u32 + 1),
+                owner_key: get_account_id_from_seed::<sr25519::Public>(authority_name),
+                balance: common_parameters.existential_deposit,
+                certs_received: HashMap::new(),
+                membership_expire_on: common_parameters.membership_period,
+                old_owner_key: None,
+                next_cert_issuable_on: 0,
+            },
+        );
+    };
+    // Forced authority gets its required certs from first "minCert" WoT identities (fake certs)
+    let mut new_certs: HashMap<String, u32> = HashMap::new();
+    let certs_of_authority = &identities_v2.get(authority_name).unwrap().certs_received;
+    identities_v2
+        .keys()
+        // Identities which are not the authority and have not already certified her
+        .filter(|issuer| {
+            issuer != &authority_name
+                && !certs_of_authority
                     .iter()
-                    // Avoid wrong pubkeys in tx history
-                    .filter(|(pubkey, _)| v1_pubkey_to_account_id((*pubkey).clone()).is_ok())
-                    .map(|(pubkey, txs)| {
-                        (
-                            v1_pubkey_to_account_id(pubkey.clone())
-                                .expect("already checked account"),
-                            txs.iter()
-                                // Avoid wrong pubkeys in tx history
-                                .filter(|tx| v1_pubkey_to_account_id(tx.issuer.clone()).is_ok())
-                                .map(|tx| TransactionV2 {
-                                    issuer: v1_pubkey_to_account_id(tx.issuer.clone())
-                                        .expect("already checked tx.issuer"),
-                                    amount: tx.amount.clone(),
-                                    written_time: tx.written_time,
-                                    comment: tx.comment.clone(),
-                                })
-                                .collect::<Vec<TransactionV2>>(),
-                        )
-                    })
-                    .collect::<BTreeMap<AccountId, Vec<TransactionV2>>>()
-            }),
-        };
-        fs::write(
-            &path,
-            serde_json::to_string_pretty(&export).expect("should be serializable"),
-        )
-        .unwrap_or_else(|_| panic!("Could not export genesis data to {}", &path));
+                    .any(|(authority_issuer, _)| issuer == &authority_issuer)
+        })
+        .take(common_parameters.min_cert as usize)
+        .map(String::clone)
+        .for_each(|issuer| {
+            new_certs.insert(issuer, common_parameters.cert_period);
+        });
+    let authority = identities_v2
+        .get_mut(authority_name)
+        .expect("authority must exist or be created");
+    new_certs.into_iter().for_each(|(issuer, c)| {
+        authority.certs_received.insert(issuer, c);
+    });
+    let sk: SessionKeys = SKP::session_keys(&get_authority_keys_from_seed(authority_name.as_str()));
+    let forced_authority_session_keys = format!("0x{}", hex::encode(sk.encode()));
+    // Add forced authority to smiths (whether explicit smith WoT or clique)
+    if let Some(smith_identities) = smith_identities {
+        smith_identities.insert(
+            authority_name.clone(),
+            SmithData {
+                idty_index: authority.index,
+                name: authority_name.clone(),
+                account: authority.owner_key.clone(),
+                session_keys: Some(forced_authority_session_keys.clone()),
+                certs_received: vec![],
+            },
+        );
     }
+    if let Some(clique_smiths) = clique_smiths {
+        let existing = clique_smiths.iter_mut().find(|s| &s.name == authority_name);
+        if let Some(smith) = existing {
+            // Forced authority is already set in smiths: but we force its session keys
+            smith.session_keys = Some(forced_authority_session_keys);
+        } else {
+            // Forced authority is not known in smiths: we add it with its session keys
+            clique_smiths.push(CliqueSmith {
+                name: authority_name.clone(),
+                session_keys: Some(forced_authority_session_keys),
+            });
+        }
+    }
+}
 
-    let genesis_data = GenesisData {
-        accounts,
-        treasury_balance,
-        certs_by_receiver,
-        first_ud,
-        first_ud_reeval,
-        identities: identities
-            .into_iter()
-            .map(|i| GenesisIdentity {
-                idty_index: i.index,
-                name: i.name,
-                owner_key: i.owned_key,
-                old_owner_key: i.old_owned_key,
-                active: i.active,
-            })
-            .collect(),
-        initial_authorities,
-        initial_monetary_mass: genesis_data.initial_monetary_mass,
-        memberships,
-        parameters,
-        common_parameters: Some(common_parameters),
-        session_keys_map,
-        smith_certs_by_receiver,
-        smith_memberships,
-        sudo_key,
-        technical_committee_members,
-        ud,
+fn feed_identities(
+    identities: &mut Vec<GenesisMemberIdentity>,
+    accounts: &mut BTreeMap<AccountId32, GenesisAccountData<u64>>,
+    identity_index: &mut HashMap<u32, String>,
+    monetary_mass: &mut u64,
+    inactive_identities: &mut HashMap<u32, String>,
+    memberships: &mut BTreeMap<u32, MembershipData>,
+    identities_v2: &HashMap<String, IdentityV2>,
+) -> Result<bool, String> {
+    let mut fatal = false;
+    for (name, identity) in identities_v2 {
+        // identity name
+        if !validate_idty_name(name) {
+            return Err(format!("Identity name '{}' is invalid", &name));
+        }
+
+        // TODO: re-check this code origin and wether it should be included or not
+        // do not check existential deposit of identities
+        // // check existential deposit
+        // if identity.balance < common_parameters.existencial_deposit {
+        //     if identity.membership_expire_on == 0 {
+        //         log::warn!(
+        //             "expired identity {name} has {} cǦT which is below {}",
+        //             identity.balance, common_parameters.existencial_deposit
+        //         );
+        //         fatal = true;
+        //     } else {
+        //         member identities can still be below existential deposit thanks to sufficient
+        //         log::info!(
+        //             "identity {name} has {} cǦT which is below {}",
+        //             identity.balance, common_parameters.existencial_deposit
+        //         );
+        //     }
+        // }
+
+        // Money
+        // check that wallet with same owner_key does not exist
+        if accounts.get(&identity.owner_key).is_some() {
+            log::error!(
+                "{name} owner_key {} already exists as a simple wallet",
+                identity.owner_key
+            );
+            fatal = true;
+        }
+        // insert as an account
+        accounts.insert(
+            identity.owner_key.clone(),
+            GenesisAccountData {
+                random_id: H256(blake2_256(&(identity.index, &identity.owner_key).encode())),
+                balance: identity.balance,
+                is_identity: true,
+            },
+        );
+
+        // double check the monetary mass
+        *monetary_mass += identity.balance;
+
+        // insert identity
+        // check that index does not already exist
+        if let Some(other_name) = identity_index.get(&identity.index) {
+            log::error!(
+                "{other_name} already has identity index {} of {name}",
+                identity.index
+            );
+            fatal = true;
+        }
+        identity_index.insert(identity.index, name.to_owned());
+
+        let expired = identity.membership_expire_on == 0;
+        // only add the identity if not expired
+        if expired {
+            inactive_identities.insert(identity.index, name.clone());
+        };
+        identities.push(GenesisMemberIdentity {
+            // N.B.: every **non-expired** identity on Genesis is considered to have:
+            //  - removable_on: 0,
+            //  - next_creatable_identity_on: 0,
+            //  - status: IdtyStatus::Validated,
+            index: identity.index,
+            name: name.to_owned().clone(),
+            owned_key: identity.owner_key.clone(),
+            old_owned_key: identity.old_owner_key.clone(),
+            // but expired identities will just have their pseudonym reserved in the storage
+            active: !expired,
+        });
+
+        // insert the membershup data (only if not expired)
+        if !expired {
+            memberships.insert(
+                identity.index,
+                MembershipData {
+                    expire_on: identity.membership_expire_on,
+                },
+            );
+        }
+    }
+    // sort the identities by index for reproducibility (should have been a vec in json)
+    identities.sort_unstable_by(|a, b| a.index.cmp(&b.index));
+
+    Ok(fatal)
+}
+
+fn set_session_keys_and_authority_status<SK>(
+    initial_authorities: &mut BTreeMap<
+        u32,
+        (
+            <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId,
+            bool,
+        ),
+    >,
+    session_keys_map: &mut BTreeMap<
+        <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId,
+        SK,
+    >,
+    smith: &&SmithData,
+    identity: &&&IdentityV2,
+) -> Result<u32, String>
+where
+    SK: Decode,
+{
+    let mut counter_online_authorities = 0;
+    // Initial authorities and session keys
+    let session_keys_bytes = if let Some(declared_session_keys) = &smith.session_keys {
+        counter_online_authorities += 1;
+        // insert authority as online
+        initial_authorities.insert(identity.index, (identity.owner_key.clone(), true));
+        // decode session keys or force to given value
+        hex::decode(&declared_session_keys[2..])
+            .map_err(|_| format!("invalid session keys for idty {}", smith.name))?
+    } else {
+        // still authority but offline
+        initial_authorities.insert(identity.index, (identity.owner_key.clone(), false));
+        // fake session keys
+        let mut fake_bytes = Vec::with_capacity(128);
+        for _ in 0..4 {
+            fake_bytes.extend_from_slice(identity.owner_key.as_ref())
+        }
+        fake_bytes
     };
 
-    Ok(genesis_data)
+    // insert session keys to map
+    session_keys_map.insert(
+        identity.owner_key.clone(),
+        SK::decode(&mut &session_keys_bytes[..]).unwrap(),
+    );
+
+    Ok(counter_online_authorities)
+}
+
+fn feed_smith_certs_by_receiver(
+    smith_certs_by_receiver: &mut BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
+    clique_smiths: &Option<Vec<CliqueSmith>>,
+    smith: &&SmithData,
+    identity: &&&IdentityV2,
+    identities_v2: &HashMap<String, IdentityV2>,
+    common_parameters: &CommonParameters,
+) -> Result<u32, String> {
+    let mut counter_smith_cert = 0;
+    let mut certs = BTreeMap::new();
+    if clique_smiths.is_some() {
+        // All initial smiths are considered to be certifying all each other
+        clique_smiths
+            .as_ref()
+            .unwrap()
+            .iter()
+            .filter(|other_smith| *other_smith.name.as_str() != *smith.name)
+            .for_each(|other_smith| {
+                let issuer_index = &identities_v2
+                    .get(other_smith.name.as_str())
+                    .unwrap_or_else(|| {
+                        panic!("Identity '{}' does not exist", other_smith.name.as_str())
+                    })
+                    .index;
+                certs.insert(*issuer_index, None);
+            });
+    } else {
+        for issuer in &smith.certs_received {
+            let issuer_index = &identities_v2
+                .get(issuer)
+                .ok_or(format!("Identity '{}' does not exist", issuer))?
+                .index;
+            certs.insert(
+                *issuer_index,
+                Some(common_parameters.smith_certs_validity_period),
+            );
+            counter_smith_cert += 1;
+        }
+        smith_certs_by_receiver.insert(identity.index, certs);
+    }
+    Ok(counter_smith_cert)
+}
+
+fn feed_certs_by_receiver(
+    certs_by_receiver: &mut BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
+    identities_v2: &HashMap<String, IdentityV2>,
+) -> (bool, u32) {
+    let mut fatal = false;
+    let mut counter_cert = 0;
+    for identity in identities_v2.values() {
+        let mut certs = BTreeMap::new();
+        for (issuer, expire_on) in &identity.certs_received {
+            if let Some(issuer) = &identities_v2.get(issuer) {
+                certs.insert(issuer.index, Some(*expire_on));
+                counter_cert += 1;
+            } else {
+                log::error!("Identity '{}' does not exist", issuer);
+                fatal = true;
+            };
+        }
+        certs_by_receiver.insert(identity.index, certs);
+    }
+    (fatal, counter_cert)
+}
+
+fn check_authority_exists_in_both_wots(
+    name: &String,
+    identities_v2: &HashMap<String, IdentityV2>,
+    clique_smiths: &Option<Vec<CliqueSmith>>,
+    smith_identities: &Option<BTreeMap<String, SmithData>>,
+) {
+    identities_v2
+        .get(name)
+        .ok_or(format!("Identity '{}' not exist", name))
+        .expect("Initial authority must have an identity");
+    if let Some(smiths) = &clique_smiths {
+        smiths
+            .iter()
+            .find(|s| s.name == *name)
+            .expect("Forced authority must be present in smiths clique");
+    }
+    if let Some(smiths) = &smith_identities {
+        smiths
+            .iter()
+            .find(|(other_name, _)| *other_name == name)
+            .expect("Forced authority must be present in smiths");
+    }
+}
+
+fn build_smiths_wot(
+    clique_smiths: &Option<Vec<CliqueSmith>>,
+    identity_index: &HashMap<u32, String>,
+    identities_v2: &HashMap<String, IdentityV2>,
+    smith_identities: Option<BTreeMap<String, SmithData>>,
+) -> Vec<SmithData> {
+    // Create a single source of smiths
+    let smiths = if let Some(clique) = &clique_smiths {
+        // From a clique
+        clique
+            .iter()
+            .map(|smith| {
+                let idty_index = identity_index
+                    .iter()
+                    .find(|(_, v)| ***v == smith.name)
+                    .map(|(k, _)| *k)
+                    .expect("smith must have an identity");
+                SmithData {
+                    idty_index,
+                    name: smith.name.clone(),
+                    account: identities_v2
+                        .get(smith.name.as_str())
+                        .map(|i| i.owner_key.clone())
+                        .expect("identity must exist"),
+                    session_keys: smith.session_keys.clone(),
+                    certs_received: vec![],
+                }
+            })
+            .collect::<Vec<SmithData>>()
+    } else {
+        // From explicit smith WoT
+        smith_identities
+            .expect("existence has been tested earlier")
+            .into_values()
+            .collect::<Vec<SmithData>>()
+    };
+    smiths
 }
 
 pub fn generate_genesis_data_for_local_chain<P, SK, SessionKeys: Encode, SKP>(
