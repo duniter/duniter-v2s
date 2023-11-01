@@ -237,6 +237,13 @@ struct GenesisMemberIdentity {
     active: bool,
 }
 
+struct SmithWoT<SK: Decode> {
+    smith_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
+    smith_memberships: BTreeMap<u32, sp_membership::MembershipData<u32>>,
+    session_keys_map:
+        BTreeMap<<<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId, SK>,
+}
+
 /// generate genesis data from a json file
 /// takes DUNITER_GENESIS_CONFIG env var if present or duniter-gen-conf.json by default
 // this function is targeting dev chainspecs, do not use in production network
@@ -375,9 +382,11 @@ where
         was_fatal,
         counter_online_authorities,
         counter_smith_cert,
-        smith_certs_by_receiver,
-        smith_memberships,
-        session_keys_map,
+        SmithWoT {
+            smith_certs_by_receiver,
+            smith_memberships,
+            session_keys_map,
+        },
     ) = create_smith_wot(
         &mut initial_authorities,
         &identities_v2,
@@ -462,284 +471,6 @@ where
         );
         fatal = true;
     }
-
-    let was_fatal = dump_results(
-        &smiths,
-        &initial_authorities,
-        &parameters,
-        &common_parameters,
-        &identity_index,
-        &accounts,
-        &identities,
-        genesis_data_wallets_count,
-        &inactive_identities,
-        &smith_memberships,
-        counter_online_authorities,
-        counter_cert,
-        counter_smith_cert,
-        &technical_committee_members,
-    );
-    if was_fatal {
-        fatal = true;
-    }
-
-    some_more_checks(
-        &identities,
-        &inactive_identities,
-        &memberships,
-        &smith_memberships,
-        &initial_authorities,
-        &session_keys_map,
-        &identity_index,
-        &accounts,
-        genesis_data_wallets_count,
-        &invalid_wallets,
-        &technical_committee,
-        &smiths,
-    );
-
-    // check the logs to see all the fatal error preventing from starting gtest currency
-    if fatal {
-        log::error!("some previously logged error prevent from building a sane genesis");
-        panic!();
-    }
-
-    // Indexer output
-    if let Ok(path) = std::env::var("DUNITER_GENESIS_EXPORT") {
-        // genesis_certs_min_received => min_cert
-        // genesis_memberships_expire_on => membership_period
-        // genesis_smith_certs_min_received => smith_min_cert
-        // genesis_smith_memberships_expire_on => smith_membership_period
-        let export = GenesisIndexerExport {
-            first_ud,
-            first_ud_reeval,
-            genesis_parameters: common_parameters.clone(),
-            identities: identities_v2,
-            sudo_key: sudo_key.clone(),
-            technical_committee,
-            ud,
-            wallets: accounts
-                .iter()
-                .map(|(account_id, data)| (account_id.clone(), data.balance))
-                .collect(),
-            smiths: (smiths)
-                .iter()
-                .map(|smith| {
-                    (
-                        smith.name.clone(),
-                        SmithData {
-                            idty_index: smith.idty_index,
-                            name: smith.name.clone(),
-                            account: smith.account.clone(),
-                            session_keys: smith.session_keys.clone(),
-                            certs_received: smith.certs_received.clone(),
-                        },
-                    )
-                })
-                .collect::<BTreeMap<String, SmithData>>(),
-            transactions_history: genesis_data.transactions_history.map(|history| {
-                history
-                    .iter()
-                    // Avoid wrong pubkeys in tx history
-                    .filter(|(pubkey, _)| v1_pubkey_to_account_id((*pubkey).clone()).is_ok())
-                    .map(|(pubkey, txs)| {
-                        (
-                            v1_pubkey_to_account_id(pubkey.clone())
-                                .expect("already checked account"),
-                            txs.iter()
-                                // Avoid wrong pubkeys in tx history
-                                .filter(|tx| v1_pubkey_to_account_id(tx.issuer.clone()).is_ok())
-                                .map(|tx| TransactionV2 {
-                                    issuer: v1_pubkey_to_account_id(tx.issuer.clone())
-                                        .expect("already checked tx.issuer"),
-                                    amount: tx.amount.clone(),
-                                    written_time: tx.written_time,
-                                    comment: tx.comment.clone(),
-                                })
-                                .collect::<Vec<TransactionV2>>(),
-                        )
-                    })
-                    .collect::<BTreeMap<AccountId, Vec<TransactionV2>>>()
-            }),
-        };
-        fs::write(
-            &path,
-            serde_json::to_string_pretty(&export).expect("should be serializable"),
-        )
-        .unwrap_or_else(|_| panic!("Could not export genesis data to {}", &path));
-    }
-
-    let genesis_data = GenesisData {
-        accounts,
-        treasury_balance,
-        certs_by_receiver,
-        first_ud,
-        first_ud_reeval,
-        identities: identities
-            .into_iter()
-            .map(|i| GenesisIdentity {
-                idty_index: i.index,
-                name: i.name,
-                owner_key: i.owned_key,
-                old_owner_key: i.old_owned_key,
-                active: i.active,
-            })
-            .collect(),
-        initial_authorities,
-        initial_monetary_mass: genesis_data.initial_monetary_mass,
-        memberships,
-        parameters,
-        common_parameters: Some(common_parameters),
-        session_keys_map,
-        smith_certs_by_receiver,
-        smith_memberships,
-        sudo_key,
-        technical_committee_members,
-        ud,
-    };
-
-    Ok(genesis_data)
-}
-
-fn some_more_checks<SK: Decode>(
-    identities: &Vec<GenesisMemberIdentity>,
-    inactive_identities: &HashMap<u32, String>,
-    memberships: &BTreeMap<u32, MembershipData>,
-    smith_memberships: &BTreeMap<u32, MembershipData>,
-    initial_authorities: &BTreeMap<u32, (AccountId32, bool)>,
-    session_keys_map: &BTreeMap<AccountId32, SK>,
-    identity_index: &HashMap<u32, String>,
-    accounts: &BTreeMap<AccountId32, GenesisAccountData<u64>>,
-    genesis_data_wallets_count: usize,
-    invalid_wallets: &usize,
-    technical_committee: &Vec<String>,
-    smiths: &Vec<SmithData>,
-) {
-    // some more checks
-    assert_eq!(
-        identities.len() - inactive_identities.len(),
-        memberships.len()
-    );
-    assert_eq!(smith_memberships.len(), initial_authorities.len());
-    assert_eq!(smith_memberships.len(), session_keys_map.len());
-    assert_eq!(identity_index.len(), identities.len());
-    assert_eq!(
-        accounts.len(),
-        identity_index.len() + genesis_data_wallets_count.sub(invalid_wallets)
-    );
-    // no inactive tech comm
-    for tech_com_member in technical_committee {
-        let inactive_commitee_member = inactive_identities.values().any(|v| v == tech_com_member);
-        if inactive_commitee_member {
-            log::error!(
-                "{} is an inactive technical commitee member",
-                tech_com_member
-            );
-            assert!(!inactive_commitee_member);
-        }
-    }
-    // no inactive smith
-    for SmithData { name: smith, .. } in smiths {
-        let inactive_smiths: Vec<_> = inactive_identities
-            .values()
-            .filter(|v| *v == smith)
-            .collect();
-        inactive_smiths
-            .iter()
-            .for_each(|s| log::warn!("Smith {} is inactive", s));
-        assert_eq!(inactive_smiths.len(), 0);
-    }
-}
-
-fn create_smith_wot<SK: Decode>(
-    initial_authorities: &mut BTreeMap<u32, (AccountId32, bool)>,
-    identities_v2: &HashMap<String, IdentityV2>,
-    smiths: &Vec<SmithData>,
-    common_parameters: &CommonParameters,
-    clique_smiths: &Option<Vec<CliqueSmith>>,
-) -> Result<
-    (
-        bool,
-        u32,
-        u32,
-        BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
-        BTreeMap<u32, sp_membership::MembershipData<u32>>,
-        BTreeMap<<<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId, SK>,
-    ),
-    String,
-> {
-    let mut fatal = false;
-    let mut counter_online_authorities = 0;
-    // counter for smith certifications
-    let mut counter_smith_cert = 0;
-    let mut smith_certs_by_receiver = BTreeMap::new();
-    // smith memberships
-    let mut smith_memberships = BTreeMap::new();
-    let mut session_keys_map = BTreeMap::new();
-    // Then create the smith WoT
-    for smith in smiths {
-        // check that smith exists
-        let identities_v2_clone = identities_v2.clone();
-        if let Some(identity) = identities_v2.get(&smith.name.clone()) {
-            counter_online_authorities = set_smith_session_keys_and_authority_status(
-                initial_authorities,
-                &mut session_keys_map,
-                &smith,
-                identity,
-            )?;
-
-            // smith certifications
-            counter_smith_cert += feed_smith_certs_by_receiver(
-                &mut smith_certs_by_receiver,
-                &clique_smiths,
-                &smith,
-                identity,
-                &identities_v2_clone,
-                &common_parameters,
-            )?;
-
-            // smith memberships
-            smith_memberships.insert(
-                identity.index,
-                MembershipData {
-                    expire_on: common_parameters.smith_membership_period,
-                },
-            );
-        } else {
-            log::error!(
-                "Smith '{}' does not correspond to exising identity",
-                &smith.name
-            );
-            fatal = true;
-        }
-    }
-    Ok((
-        fatal,
-        counter_online_authorities,
-        counter_smith_cert,
-        smith_certs_by_receiver,
-        smith_memberships,
-        session_keys_map,
-    ))
-}
-
-fn dump_results<P>(
-    smiths: &Vec<SmithData>,
-    initial_authorities: &BTreeMap<u32, (AccountId32, bool)>,
-    parameters: &Option<P>,
-    common_parameters: &CommonParameters,
-    identity_index: &HashMap<u32, String>,
-    accounts: &BTreeMap<AccountId32, GenesisAccountData<u64>>,
-    identities: &Vec<GenesisMemberIdentity>,
-    genesis_data_wallets_count: usize,
-    inactive_identities: &HashMap<u32, String>,
-    smith_memberships: &BTreeMap<u32, MembershipData>,
-    counter_online_authorities: u32,
-    counter_cert: u32,
-    counter_smith_cert: u32,
-    technical_committee_members: &Vec<AccountId32>,
-) -> bool {
-    let mut fatal = false;
 
     smiths.iter().for_each(|smith| {
         log::info!(
@@ -925,7 +656,215 @@ fn dump_results<P>(
             fatal = true;
         }
     }
-    fatal
+
+    // some more checks
+    assert_eq!(
+        identities.len() - inactive_identities.len(),
+        memberships.len()
+    );
+    assert_eq!(smith_memberships.len(), initial_authorities.len());
+    assert_eq!(smith_memberships.len(), session_keys_map.len());
+    assert_eq!(identity_index.len(), identities.len());
+    assert_eq!(
+        accounts.len(),
+        identity_index.len() + genesis_data_wallets_count.sub(invalid_wallets)
+    );
+    smiths_and_technical_committee_checks(&inactive_identities, &technical_committee, &smiths);
+
+    // check the logs to see all the fatal error preventing from starting gtest currency
+    if fatal {
+        log::error!("some previously logged error prevent from building a sane genesis");
+        panic!();
+    }
+
+    // Indexer output
+    if let Ok(path) = std::env::var("DUNITER_GENESIS_EXPORT") {
+        // genesis_certs_min_received => min_cert
+        // genesis_memberships_expire_on => membership_period
+        // genesis_smith_certs_min_received => smith_min_cert
+        // genesis_smith_memberships_expire_on => smith_membership_period
+        let export = GenesisIndexerExport {
+            first_ud,
+            first_ud_reeval,
+            genesis_parameters: common_parameters.clone(),
+            identities: identities_v2,
+            sudo_key: sudo_key.clone(),
+            technical_committee,
+            ud,
+            wallets: accounts
+                .iter()
+                .map(|(account_id, data)| (account_id.clone(), data.balance))
+                .collect(),
+            smiths: (smiths)
+                .iter()
+                .map(|smith| {
+                    (
+                        smith.name.clone(),
+                        SmithData {
+                            idty_index: smith.idty_index,
+                            name: smith.name.clone(),
+                            account: smith.account.clone(),
+                            session_keys: smith.session_keys.clone(),
+                            certs_received: smith.certs_received.clone(),
+                        },
+                    )
+                })
+                .collect::<BTreeMap<String, SmithData>>(),
+            transactions_history: genesis_data.transactions_history.map(|history| {
+                history
+                    .iter()
+                    // Avoid wrong pubkeys in tx history
+                    .filter(|(pubkey, _)| v1_pubkey_to_account_id((*pubkey).clone()).is_ok())
+                    .map(|(pubkey, txs)| {
+                        (
+                            v1_pubkey_to_account_id(pubkey.clone())
+                                .expect("already checked account"),
+                            txs.iter()
+                                // Avoid wrong pubkeys in tx history
+                                .filter(|tx| v1_pubkey_to_account_id(tx.issuer.clone()).is_ok())
+                                .map(|tx| TransactionV2 {
+                                    issuer: v1_pubkey_to_account_id(tx.issuer.clone())
+                                        .expect("already checked tx.issuer"),
+                                    amount: tx.amount.clone(),
+                                    written_time: tx.written_time,
+                                    comment: tx.comment.clone(),
+                                })
+                                .collect::<Vec<TransactionV2>>(),
+                        )
+                    })
+                    .collect::<BTreeMap<AccountId, Vec<TransactionV2>>>()
+            }),
+        };
+        fs::write(
+            &path,
+            serde_json::to_string_pretty(&export).expect("should be serializable"),
+        )
+        .unwrap_or_else(|_| panic!("Could not export genesis data to {}", &path));
+    }
+
+    let genesis_data = GenesisData {
+        accounts,
+        treasury_balance,
+        certs_by_receiver,
+        first_ud,
+        first_ud_reeval,
+        identities: identities
+            .into_iter()
+            .map(|i| GenesisIdentity {
+                idty_index: i.index,
+                name: i.name,
+                owner_key: i.owned_key,
+                old_owner_key: i.old_owned_key,
+                active: i.active,
+            })
+            .collect(),
+        initial_authorities,
+        initial_monetary_mass: genesis_data.initial_monetary_mass,
+        memberships,
+        parameters,
+        common_parameters: Some(common_parameters),
+        session_keys_map,
+        smith_certs_by_receiver,
+        smith_memberships,
+        sudo_key,
+        technical_committee_members,
+        ud,
+    };
+
+    Ok(genesis_data)
+}
+
+fn smiths_and_technical_committee_checks(
+    inactive_identities: &HashMap<u32, String>,
+    technical_committee: &Vec<String>,
+    smiths: &Vec<SmithData>,
+) {
+    // no inactive tech comm
+    for tech_com_member in technical_committee {
+        let inactive_commitee_member = inactive_identities.values().any(|v| v == tech_com_member);
+        if inactive_commitee_member {
+            log::error!(
+                "{} is an inactive technical commitee member",
+                tech_com_member
+            );
+            assert!(!inactive_commitee_member);
+        }
+    }
+    // no inactive smith
+    for SmithData { name: smith, .. } in smiths {
+        let inactive_smiths: Vec<_> = inactive_identities
+            .values()
+            .filter(|v| *v == smith)
+            .collect();
+        inactive_smiths
+            .iter()
+            .for_each(|s| log::warn!("Smith {} is inactive", s));
+        assert_eq!(inactive_smiths.len(), 0);
+    }
+}
+
+fn create_smith_wot<SK: Decode>(
+    initial_authorities: &mut BTreeMap<u32, (AccountId32, bool)>,
+    identities_v2: &HashMap<String, IdentityV2>,
+    smiths: &Vec<SmithData>,
+    common_parameters: &CommonParameters,
+    clique_smiths: &Option<Vec<CliqueSmith>>,
+) -> Result<(bool, u32, u32, SmithWoT<SK>), String> {
+    let mut fatal = false;
+    let mut counter_online_authorities = 0;
+    // counter for smith certifications
+    let mut counter_smith_cert = 0;
+    let mut smith_certs_by_receiver = BTreeMap::new();
+    // smith memberships
+    let mut smith_memberships = BTreeMap::new();
+    let mut session_keys_map = BTreeMap::new();
+    // Then create the smith WoT
+    for smith in smiths {
+        // check that smith exists
+        let identities_v2_clone = identities_v2.clone();
+        if let Some(identity) = identities_v2.get(&smith.name.clone()) {
+            counter_online_authorities = set_smith_session_keys_and_authority_status(
+                initial_authorities,
+                &mut session_keys_map,
+                &smith,
+                identity,
+            )?;
+
+            // smith certifications
+            counter_smith_cert += feed_smith_certs_by_receiver(
+                &mut smith_certs_by_receiver,
+                clique_smiths,
+                &smith,
+                identity,
+                &identities_v2_clone,
+                common_parameters,
+            )?;
+
+            // smith memberships
+            smith_memberships.insert(
+                identity.index,
+                MembershipData {
+                    expire_on: common_parameters.smith_membership_period,
+                },
+            );
+        } else {
+            log::error!(
+                "Smith '{}' does not correspond to exising identity",
+                &smith.name
+            );
+            fatal = true;
+        }
+    }
+    Ok((
+        fatal,
+        counter_online_authorities,
+        counter_smith_cert,
+        SmithWoT {
+            smith_certs_by_receiver,
+            smith_memberships,
+            session_keys_map,
+        },
+    ))
 }
 
 fn v1_wallets_to_v2_accounts(
@@ -1060,7 +999,7 @@ fn check_genesis_data_and_filter_expired_certs_since_export(
 fn genesis_data_to_identities_v2(
     genesis_identities: BTreeMap<String, IdentityV1>,
     genesis_timestamp: u64,
-    smiths: &Vec<RawSmith>,
+    smiths: &[RawSmith],
 ) -> HashMap<String, IdentityV2> {
     let key_migrations: HashMap<String, AccountId> = smiths
         .iter()
@@ -1086,7 +1025,7 @@ fn genesis_data_to_identities_v2(
                         panic!("neither pubkey nor address is defined for {}", name)
                     })
                 });
-            let migration = key_migrations.get(name.clone().as_str());
+            let migration = key_migrations.get(name.as_str());
             let owner_key = if let Some(migrated_account) = migration {
                 migrated_account.clone()
             } else {
@@ -1098,10 +1037,10 @@ fn genesis_data_to_identities_v2(
                 Some(legacy_account)
             };
             (
-                name.clone(),
+                name,
                 IdentityV2 {
                     index: i.index,
-                    owner_key: owner_key.clone(),
+                    owner_key,
                     old_owner_key,
                     membership_expire_on: timestamp_to_relative_blocs(
                         i.membership_expire_on,
@@ -1180,7 +1119,7 @@ fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKey
     let forced_authority_session_keys = format!("0x{}", hex::encode(sk.encode()));
     // Add forced authority to smiths (whether explicit smith WoT or clique)
     if let Some(smith) = smiths.iter_mut().find(|s| &s.name == authority_name) {
-        smith.session_keys = Some(forced_authority_session_keys.clone());
+        smith.session_keys = Some(forced_authority_session_keys);
         smith.migration_address = None;
     } else {
         smiths.push(RawSmith {
@@ -1410,7 +1349,7 @@ fn feed_certs_by_receiver(
 fn check_authority_exists_in_both_wots(
     name: &String,
     identities_v2: &HashMap<String, IdentityV2>,
-    smiths: &Vec<RawSmith>,
+    smiths: &[RawSmith],
 ) {
     identities_v2
         .get(name)
