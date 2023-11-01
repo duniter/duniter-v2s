@@ -99,10 +99,11 @@ struct GenesisInput<Parameters> {
     #[serde(default)]
     parameters: Option<Parameters>,
     #[serde(rename = "smiths")]
-    smith_identities: Option<BTreeMap<String, SmithData>>,
+    smith_identities: Option<BTreeMap<String, RawSmith>>,
     clique_smiths: Option<Vec<CliqueSmith>>,
     sudo_key: Option<AccountId>,
-    treasury_funder: PubkeyV1,
+    treasury_funder_pubkey: Option<PubkeyV1>,
+    treasury_funder_address: Option<AccountId>,
     technical_committee: Vec<String>,
     ud: u64,
 }
@@ -200,6 +201,17 @@ struct IdentityV2 {
 }
 
 #[derive(Clone, Deserialize, Serialize)]
+struct RawSmith {
+    name: String,
+    /// optional pre-set session keys (at least for the smith bootstraping the blockchain)
+    session_keys: Option<String>,
+    /// optional pre-set account migration
+    migration_address: Option<AccountId>,
+    #[serde(default)]
+    certs_received: Vec<String>,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
 struct SmithData {
     idty_index: u32,
     name: String,
@@ -213,6 +225,7 @@ struct SmithData {
 #[derive(Clone, Deserialize, Serialize)]
 struct CliqueSmith {
     name: String,
+    migration_address: Option<AccountId>,
     session_keys: Option<String>,
 }
 
@@ -239,28 +252,38 @@ where
 {
     let genesis_timestamp: u64 = get_genesis_timestamp()?;
 
+    // Per network input
     let GenesisInput {
         sudo_key,
-        treasury_funder,
+        treasury_funder_pubkey,
+        treasury_funder_address,
         first_ud,
         first_ud_reeval,
         parameters,
-        mut smith_identities,
-        mut clique_smiths,
+        smith_identities,
+        clique_smiths,
         technical_committee,
         ud,
     } = get_genesis_input::<P>(
         std::env::var("DUNITER_GENESIS_CONFIG").unwrap_or_else(|_| json_file_path.to_owned()),
     )?;
-    let treasury_funder = v1_pubkey_to_account_id(treasury_funder)
-        .expect("treasury founder must have a valid public key");
+
+    // Per network parameters
     let common_parameters = get_common_parameters(&parameters);
-    check_smiths_vs_clique_smiths(&smith_identities, &clique_smiths)?;
+
+    // Per network smiths (without link to an account yet — identified by their pseudonym)
+    let mut smiths = build_smiths_wot(&clique_smiths, smith_identities)?;
+
+    // G1 data migration (common to all networks)
     let mut genesis_data = get_genesis_migration_data()?;
     check_parameters_consistency(&genesis_data.wallets, &first_ud, &first_ud_reeval, &ud)?;
-    check_genesis_data_filter_certs(&mut genesis_data, genesis_timestamp, &common_parameters);
+    check_genesis_data_and_filter_expired_certs_since_export(
+        &mut genesis_data,
+        genesis_timestamp,
+        &common_parameters,
+    );
     let mut identities_v2: HashMap<String, IdentityV2> =
-        genesis_data_to_identities_v2(genesis_data.identities, genesis_timestamp);
+        genesis_data_to_identities_v2(genesis_data.identities, genesis_timestamp, &smiths);
     check_identities_v2(&identities_v2, &common_parameters);
 
     // MONEY AND WOT //
@@ -281,14 +304,10 @@ where
     let mut technical_committee_members: Vec<AccountId> = Vec::new();
     // memberships
     let mut memberships = BTreeMap::new();
-    // identities
-    let mut identities: Vec<GenesisMemberIdentity> = Vec::new();
     // certifications
     let mut certs_by_receiver = BTreeMap::new();
     // initial authorities
     let mut initial_authorities = BTreeMap::new();
-    // session keys
-    let mut session_keys_map = BTreeMap::new();
     //let mut total_dust = 0;
 
     // FORCED AUTHORITY //
@@ -297,8 +316,7 @@ where
     if let Some(authority_name) = &maybe_force_authority {
         make_authority_exist::<SessionKeys, SKP>(
             &mut identities_v2,
-            &mut smith_identities,
-            &mut clique_smiths,
+            &mut smiths,
             &common_parameters,
             authority_name,
         );
@@ -324,8 +342,7 @@ where
     }
 
     // IDENTITIES //
-    let was_fatal = feed_identities(
-        &mut identities,
+    let (was_fatal, identities) = feed_identities(
         &mut accounts,
         &mut identity_index,
         &mut monetary_mass,
@@ -348,20 +365,10 @@ where
 
     // Authorities
     if let Some(name) = &maybe_force_authority {
-        check_authority_exists_in_both_wots(
-            name,
-            &identities_v2,
-            &clique_smiths,
-            &smith_identities,
-        );
+        check_authority_exists_in_both_wots(name, &identities_v2, &smiths);
     }
 
-    let smiths = build_smiths_wot(
-        &clique_smiths,
-        &identity_index,
-        &identities_v2,
-        smith_identities,
-    );
+    let smiths = decorate_smiths_with_identity(smiths, &identity_index, &identities_v2);
 
     // counter for online authorities at genesis
     let (
@@ -370,9 +377,9 @@ where
         counter_smith_cert,
         smith_certs_by_receiver,
         smith_memberships,
+        session_keys_map,
     ) = create_smith_wot(
         &mut initial_authorities,
-        &mut session_keys_map,
         &identities_v2,
         &smiths,
         &common_parameters,
@@ -433,6 +440,13 @@ where
     }
 
     // treasury balance must come from existing money
+    let treasury_funder: AccountId = match (treasury_funder_address, treasury_funder_pubkey) {
+        (Some(address), None) => address,
+        (None, Some(pubkey)) => {
+            v1_pubkey_to_account_id(pubkey).expect("treasury founder must have a valid public key")
+        }
+        _ => panic!("One of treasury_funder_address or treasury_funder_pubkey must be set"),
+    };
     if let Some(existing_account) = accounts.get_mut(&treasury_funder) {
         existing_account.balance = existing_account
             .balance
@@ -639,7 +653,6 @@ fn some_more_checks<SK: Decode>(
 
 fn create_smith_wot<SK: Decode>(
     initial_authorities: &mut BTreeMap<u32, (AccountId32, bool)>,
-    session_keys_map: &mut BTreeMap<AccountId32, SK>,
     identities_v2: &HashMap<String, IdentityV2>,
     smiths: &Vec<SmithData>,
     common_parameters: &CommonParameters,
@@ -651,6 +664,7 @@ fn create_smith_wot<SK: Decode>(
         u32,
         BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
         BTreeMap<u32, sp_membership::MembershipData<u32>>,
+        BTreeMap<<<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId, SK>,
     ),
     String,
 > {
@@ -661,15 +675,17 @@ fn create_smith_wot<SK: Decode>(
     let mut smith_certs_by_receiver = BTreeMap::new();
     // smith memberships
     let mut smith_memberships = BTreeMap::new();
+    let mut session_keys_map = BTreeMap::new();
     // Then create the smith WoT
     for smith in smiths {
         // check that smith exists
-        if let Some(identity) = &identities_v2.get(&smith.name.clone()) {
-            counter_online_authorities = set_session_keys_and_authority_status(
+        let identities_v2_clone = identities_v2.clone();
+        if let Some(identity) = identities_v2.get(&smith.name.clone()) {
+            counter_online_authorities = set_smith_session_keys_and_authority_status(
                 initial_authorities,
-                session_keys_map,
+                &mut session_keys_map,
                 &smith,
-                &identity,
+                identity,
             )?;
 
             // smith certifications
@@ -677,8 +693,8 @@ fn create_smith_wot<SK: Decode>(
                 &mut smith_certs_by_receiver,
                 &clique_smiths,
                 &smith,
-                &identity,
-                &identities_v2,
+                identity,
+                &identities_v2_clone,
                 &common_parameters,
             )?;
 
@@ -703,6 +719,7 @@ fn create_smith_wot<SK: Decode>(
         counter_smith_cert,
         smith_certs_by_receiver,
         smith_memberships,
+        session_keys_map,
     ))
 }
 
@@ -957,18 +974,6 @@ fn v1_wallets_to_v2_accounts(
     (fatal, monetary_mass, accounts, invalid_wallets)
 }
 
-fn check_smiths_vs_clique_smiths(
-    smith_identities: &Option<BTreeMap<String, SmithData>>,
-    clique_smiths: &Option<Vec<CliqueSmith>>,
-) -> Result<(), String> {
-    if smith_identities.is_some() && clique_smiths.is_some() {
-        return Err(
-            "'smiths' and 'clique_smiths' cannot be both defined at the same time".to_string(),
-        );
-    }
-    Ok(())
-}
-
 fn check_identities_v2(
     identities_v2: &HashMap<String, IdentityV2>,
     common_parameters: &CommonParameters,
@@ -1001,7 +1006,7 @@ fn check_identities_v2(
         });
 }
 
-fn check_genesis_data_filter_certs(
+fn check_genesis_data_and_filter_expired_certs_since_export(
     genesis_data: &mut GenesisMigrationData,
     genesis_timestamp: u64,
     common_parameters: &CommonParameters,
@@ -1055,26 +1060,49 @@ fn check_genesis_data_filter_certs(
 fn genesis_data_to_identities_v2(
     genesis_identities: BTreeMap<String, IdentityV1>,
     genesis_timestamp: u64,
+    smiths: &Vec<RawSmith>,
 ) -> HashMap<String, IdentityV2> {
+    let key_migrations: HashMap<String, AccountId> = smiths
+        .iter()
+        .filter(|s| s.migration_address.is_some())
+        .map(|s| {
+            (
+                s.name.clone(),
+                s.migration_address.clone().expect("already filtered"),
+            )
+        })
+        .collect();
     genesis_identities
         .into_iter()
         .map(|(name, i)| {
+            let legacy_account = i
+                .owner_pubkey
+                .map(|pubkey| {
+                    v1_pubkey_to_account_id(pubkey)
+                        .expect("a G1 identity necessarily has a valid pubkey")
+                })
+                .unwrap_or_else(|| {
+                    i.owner_address.unwrap_or_else(|| {
+                        panic!("neither pubkey nor address is defined for {}", name)
+                    })
+                });
+            let migration = key_migrations.get(name.clone().as_str());
+            let owner_key = if let Some(migrated_account) = migration {
+                migrated_account.clone()
+            } else {
+                legacy_account.clone()
+            };
+            let old_owner_key = if migration.is_none() {
+                None
+            } else {
+                Some(legacy_account)
+            };
             (
                 name.clone(),
                 IdentityV2 {
                     index: i.index,
-                    owner_key: i
-                        .owner_pubkey
-                        .map(|pubkey| {
-                            v1_pubkey_to_account_id(pubkey)
-                                .expect("a G1 identity necessarily has a valid pubkey")
-                        })
-                        .unwrap_or_else(|| {
-                            i.owner_address.unwrap_or_else(|| {
-                                panic!("neither pubkey nor address is defined for {}", name)
-                            })
-                        }),
-                    old_owner_key: None,
+                    owner_key: owner_key.clone(),
+                    old_owner_key,
                     membership_expire_on: timestamp_to_relative_blocs(
                         i.membership_expire_on,
                         genesis_timestamp,
@@ -1102,8 +1130,7 @@ fn genesis_data_to_identities_v2(
 
 fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKeys>>(
     identities_v2: &mut HashMap<String, IdentityV2>,
-    smith_identities: &mut Option<BTreeMap<String, SmithData>>,
-    clique_smiths: &mut Option<Vec<CliqueSmith>>,
+    smiths: &mut Vec<RawSmith>,
     common_parameters: &CommonParameters,
     authority_name: &String,
 ) {
@@ -1152,43 +1179,29 @@ fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKey
     let sk: SessionKeys = SKP::session_keys(&get_authority_keys_from_seed(authority_name.as_str()));
     let forced_authority_session_keys = format!("0x{}", hex::encode(sk.encode()));
     // Add forced authority to smiths (whether explicit smith WoT or clique)
-    if let Some(smith_identities) = smith_identities {
-        smith_identities.insert(
-            authority_name.clone(),
-            SmithData {
-                idty_index: authority.index,
-                name: authority_name.clone(),
-                account: authority.owner_key.clone(),
-                session_keys: Some(forced_authority_session_keys.clone()),
-                certs_received: vec![],
-            },
-        );
-    }
-    if let Some(clique_smiths) = clique_smiths {
-        let existing = clique_smiths.iter_mut().find(|s| &s.name == authority_name);
-        if let Some(smith) = existing {
-            // Forced authority is already set in smiths: but we force its session keys
-            smith.session_keys = Some(forced_authority_session_keys);
-        } else {
-            // Forced authority is not known in smiths: we add it with its session keys
-            clique_smiths.push(CliqueSmith {
-                name: authority_name.clone(),
-                session_keys: Some(forced_authority_session_keys),
-            });
-        }
+    if let Some(smith) = smiths.iter_mut().find(|s| &s.name == authority_name) {
+        smith.session_keys = Some(forced_authority_session_keys.clone());
+        smith.migration_address = None;
+    } else {
+        smiths.push(RawSmith {
+            name: authority_name.clone(),
+            session_keys: Some(forced_authority_session_keys),
+            migration_address: None,
+            certs_received: vec![],
+        })
     }
 }
 
 fn feed_identities(
-    identities: &mut Vec<GenesisMemberIdentity>,
     accounts: &mut BTreeMap<AccountId32, GenesisAccountData<u64>>,
     identity_index: &mut HashMap<u32, String>,
     monetary_mass: &mut u64,
     inactive_identities: &mut HashMap<u32, String>,
     memberships: &mut BTreeMap<u32, MembershipData>,
     identities_v2: &HashMap<String, IdentityV2>,
-) -> Result<bool, String> {
+) -> Result<(bool, Vec<GenesisMemberIdentity>), String> {
     let mut fatal = false;
+    let mut identities: Vec<GenesisMemberIdentity> = Vec::new();
     for (name, identity) in identities_v2 {
         // identity name
         if !validate_idty_name(name) {
@@ -1278,10 +1291,10 @@ fn feed_identities(
     // sort the identities by index for reproducibility (should have been a vec in json)
     identities.sort_unstable_by(|a, b| a.index.cmp(&b.index));
 
-    Ok(fatal)
+    Ok((fatal, identities))
 }
 
-fn set_session_keys_and_authority_status<SK>(
+fn set_smith_session_keys_and_authority_status<SK>(
     initial_authorities: &mut BTreeMap<
         u32,
         (
@@ -1294,7 +1307,7 @@ fn set_session_keys_and_authority_status<SK>(
         SK,
     >,
     smith: &&SmithData,
-    identity: &&&IdentityV2,
+    identity: &IdentityV2,
 ) -> Result<u32, String>
 where
     SK: Decode,
@@ -1332,7 +1345,7 @@ fn feed_smith_certs_by_receiver(
     smith_certs_by_receiver: &mut BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
     clique_smiths: &Option<Vec<CliqueSmith>>,
     smith: &&SmithData,
-    identity: &&&IdentityV2,
+    identity: &IdentityV2,
     identities_v2: &HashMap<String, IdentityV2>,
     common_parameters: &CommonParameters,
 ) -> Result<u32, String> {
@@ -1396,64 +1409,71 @@ fn feed_certs_by_receiver(
 fn check_authority_exists_in_both_wots(
     name: &String,
     identities_v2: &HashMap<String, IdentityV2>,
-    clique_smiths: &Option<Vec<CliqueSmith>>,
-    smith_identities: &Option<BTreeMap<String, SmithData>>,
+    smiths: &Vec<RawSmith>,
 ) {
     identities_v2
         .get(name)
         .ok_or(format!("Identity '{}' not exist", name))
         .expect("Initial authority must have an identity");
-    if let Some(smiths) = &clique_smiths {
-        smiths
-            .iter()
-            .find(|s| s.name == *name)
-            .expect("Forced authority must be present in smiths clique");
-    }
-    if let Some(smiths) = &smith_identities {
-        smiths
-            .iter()
-            .find(|(other_name, _)| *other_name == name)
-            .expect("Forced authority must be present in smiths");
-    }
+    smiths
+        .iter()
+        .find(|smith| &smith.name == name)
+        .expect("Forced authority must be present in smiths");
 }
 
 fn build_smiths_wot(
     clique_smiths: &Option<Vec<CliqueSmith>>,
-    identity_index: &HashMap<u32, String>,
-    identities_v2: &HashMap<String, IdentityV2>,
-    smith_identities: Option<BTreeMap<String, SmithData>>,
-) -> Vec<SmithData> {
+    smith_identities: Option<BTreeMap<String, RawSmith>>,
+) -> Result<Vec<RawSmith>, String> {
+    if smith_identities.is_some() && clique_smiths.is_some() {
+        return Err(
+            "'smiths' and 'clique_smiths' cannot be both defined at the same time".to_string(),
+        );
+    }
     // Create a single source of smiths
     let smiths = if let Some(clique) = &clique_smiths {
         // From a clique
         clique
             .iter()
-            .map(|smith| {
-                let idty_index = identity_index
-                    .iter()
-                    .find(|(_, v)| ***v == smith.name)
-                    .map(|(k, _)| *k)
-                    .expect("smith must have an identity");
-                SmithData {
-                    idty_index,
-                    name: smith.name.clone(),
-                    account: identities_v2
-                        .get(smith.name.as_str())
-                        .map(|i| i.owner_key.clone())
-                        .expect("identity must exist"),
-                    session_keys: smith.session_keys.clone(),
-                    certs_received: vec![],
-                }
+            .map(|smith| RawSmith {
+                name: smith.name.clone(),
+                session_keys: smith.session_keys.clone(),
+                certs_received: vec![],
+                migration_address: smith.migration_address.clone(),
             })
-            .collect::<Vec<SmithData>>()
+            .collect::<Vec<RawSmith>>()
     } else {
         // From explicit smith WoT
         smith_identities
             .expect("existence has been tested earlier")
             .into_values()
-            .collect::<Vec<SmithData>>()
+            .collect::<Vec<RawSmith>>()
     };
+    Ok(smiths)
+}
+
+fn decorate_smiths_with_identity(
+    smiths: Vec<RawSmith>,
+    identity_index: &HashMap<u32, String>,
+    identities_v2: &HashMap<String, IdentityV2>,
+) -> Vec<SmithData> {
     smiths
+        .into_iter()
+        .map(|smith| SmithData {
+            idty_index: identity_index
+                .iter()
+                .find(|(_, v)| ***v == smith.name)
+                .map(|(k, _)| *k)
+                .expect("smith must have an identity"),
+            account: identities_v2
+                .get(smith.name.as_str())
+                .map(|i| i.owner_key.clone())
+                .expect("identity must exist"),
+            name: smith.name,
+            session_keys: smith.session_keys,
+            certs_received: smith.certs_received,
+        })
+        .collect()
 }
 
 pub fn generate_genesis_data_for_local_chain<P, SK, SessionKeys: Encode, SKP>(

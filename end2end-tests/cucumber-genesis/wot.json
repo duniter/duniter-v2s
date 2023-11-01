@@ -88,7 +88,7 @@
     "Bob",
     "Charlie"
   ],
-  "treasury_funder": "FHNpKmJrUtusuvKPGomAygQqeiks98bdV6yD61Stb6vg",
+  "treasury_funder_pubkey": "FHNpKmJrUtusuvKPGomAygQqeiks98bdV6yD61Stb6vg",
   "ud": 1000,
   "initial_monetary_mass": 4000
 }
