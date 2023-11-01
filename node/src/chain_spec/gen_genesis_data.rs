@@ -689,7 +689,7 @@ fn create_smith_wot<SK: Decode>(
             )?;
 
             // smith certifications
-            counter_smith_cert = feed_smith_certs_by_receiver(
+            counter_smith_cert += feed_smith_certs_by_receiver(
                 &mut smith_certs_by_receiver,
                 &clique_smiths,
                 &smith,
@@ -1366,6 +1366,7 @@ fn feed_smith_certs_by_receiver(
                     })
                     .index;
                 certs.insert(*issuer_index, None);
+                counter_smith_cert += 1;
             });
     } else {
         for issuer in &smith.certs_received {
@@ -1379,8 +1380,8 @@ fn feed_smith_certs_by_receiver(
             );
             counter_smith_cert += 1;
         }
-        smith_certs_by_receiver.insert(identity.index, certs);
     }
+    smith_certs_by_receiver.insert(identity.index, certs);
     Ok(counter_smith_cert)
 }
 
