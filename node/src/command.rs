@@ -44,20 +44,6 @@ lazy_static! {
     };
 }*/
 
-//Currently, only `gdev-benchmark` supports the benchmark of all the extrinsics. Storage and overhead are equivalent with `gdev-benchmark` and `gdev`, so we enforce `gdev-benchmark` for all benchmark-related commands.
-#[cfg(feature = "runtime-benchmarks")]
-fn ensure_dev(spec: &Box<dyn sc_service::ChainSpec>) -> std::result::Result<(), String> {
-    if spec.id() == "gdev-benchmark" {
-        Ok(())
-    } else {
-        Err(format!(
-            "{}{}",
-            "can only use subcommand with --chain [gdev-benchmark], got ",
-            spec.id()
-        ))
-    }
-}
-
 /// Unwraps a [`crate::client::Client`] into the concrete runtime client.
 #[cfg(feature = "runtime-benchmarks")]
 macro_rules! unwrap_client {
@@ -123,9 +109,6 @@ impl SubstrateCli for Cli {
             "gdev" => Box::new(chain_spec::gdev::ChainSpec::from_json_bytes(
                 &include_bytes!("../specs/gdev-raw.json")[..],
             )?),
-            // config used for benckmarks
-            #[cfg(feature = "gdev")]
-            "gdev-benchmark" => Box::new(chain_spec::gdev::benchmark_chain_spec()?),
             // === GTEST ===
             // generate dev chainspecs with Alice validator
             // provide DUNITER_GTEST_GENESIS env var if you want to build genesis from json
@@ -314,7 +297,6 @@ pub fn run() -> sc_cli::Result<()> {
         Some(Subcommand::Benchmark(cmd)) => {
             let runner = cli.create_runner(&**cmd)?;
             let chain_spec = &runner.config().chain_spec;
-            ensure_dev(chain_spec)?;
 
             match &**cmd {
                 BenchmarkCmd::Storage(cmd) => runner.sync_run(|mut config| {

@@ -84,11 +84,11 @@ benchmarks! {
     impl_benchmark_test_suite!(
         Pallet,
         crate::mock::new_test_ext(crate::mock::UniversalDividendConfig {
-            first_reeval: 48_000,
-            first_ud: 6_000,
+            first_reeval: Some(48_000),
+            first_ud: Some(6_000),
             initial_monetary_mass: 0,
             initial_members: vec![1],
-            ud,
+            ud: 10,
         }),
         crate::mock::Test
     );

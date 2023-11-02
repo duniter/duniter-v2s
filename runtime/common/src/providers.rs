@@ -132,9 +132,11 @@ macro_rules! impl_benchmark_setup_handler {
         impl<T> $t for BenchmarkSetupHandler<T>
         where
             T: pallet_distance::Config,
+            T: pallet_certification::Config<frame_support::instances::Instance1>,
+            <T as pallet_certification::Config<frame_support::instances::Instance1>>::IdtyIndex: From<u32>,
         {
             fn force_status_ok(
-                idty_id: &<T as pallet_identity::Config>::IdtyIndex,
+                idty_id: &IdtyIndex,
                 account: &<T as frame_system::Config>::AccountId,
             ) -> () {
                 let _ = pallet_distance::Pallet::<T>::set_distance_status(
@@ -142,13 +144,14 @@ macro_rules! impl_benchmark_setup_handler {
                     Some((account.clone(), pallet_distance::DistanceStatus::Valid)),
                 );
             }
-            // TODO: All the required preparation for the benchmarks, depending on the coupling
-            // between pallets, would be implemented here when moving away from prepared identities from the gdev-benchmark.
+            fn add_cert(issuer: &IdtyIndex, receiver: &IdtyIndex) {
+                let _ = pallet_certification::Pallet::<T, frame_support::instances::Instance1>::do_add_cert_checked((*issuer).into(), (*receiver).into(), false);
+            }
         }
     };
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-impl_benchmark_setup_handler!(pallet_membership::SetDistance<<T as pallet_identity::Config>::IdtyIndex, T::AccountId>);
+impl_benchmark_setup_handler!(pallet_membership::SetupBenchmark<<T as pallet_identity::Config>::IdtyIndex, T::AccountId>);
 #[cfg(feature = "runtime-benchmarks")]
-impl_benchmark_setup_handler!(pallet_identity::traits::SetDistance<<T as pallet_identity::Config>::IdtyIndex, T::AccountId>);
+impl_benchmark_setup_handler!(pallet_identity::traits::SetupBenchmark<<T as pallet_identity::Config>::IdtyIndex, T::AccountId>);

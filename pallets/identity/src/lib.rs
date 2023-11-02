@@ -116,7 +116,7 @@ pub mod pallet {
         type WeightInfo: WeightInfo;
         /// Type representing the a distance handler to prepare identity for benchmarking
         #[cfg(feature = "runtime-benchmarks")]
-        type BenchmarkSetupHandler: SetDistance<Self::IdtyIndex, Self::AccountId>;
+        type BenchmarkSetupHandler: SetupBenchmark<Self::IdtyIndex, Self::AccountId>;
     }
 
     // GENESIS STUFF //

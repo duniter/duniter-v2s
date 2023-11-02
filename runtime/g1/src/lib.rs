@@ -132,7 +132,6 @@ pub type TechnicalCommitteeInstance = Instance2;
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
     define_benchmarks!(
-        // For completion, benchmarks only running on `gdev-benchmark`.
         [pallet_certification, Cert]
         [pallet_certification, SmithCert]
         [pallet_oneshot_account, OneshotAccount]

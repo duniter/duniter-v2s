@@ -136,6 +136,8 @@ impl pallet_identity::Config for Test {
     type RevocationSignature = TestSignature;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkSetupHandler = ();
 }
 
 // Membership
@@ -155,6 +157,8 @@ impl pallet_membership::Config<Instance1> for Test {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     type PendingMembershipPeriod = PendingMembershipPeriod;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkSetupHandler = ();
 }
 
 // Cert
@@ -211,6 +215,8 @@ impl pallet_membership::Config<Instance2> for Test {
     type PendingMembershipPeriod = SmithPendingMembershipPeriod;
     type WeightInfo = ();
     type RuntimeEvent = RuntimeEvent;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkSetupHandler = ();
 }
 
 // SmithCert

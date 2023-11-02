@@ -78,11 +78,13 @@ impl<IndtyIndex> RemoveIdentityConsumers<IndtyIndex> for () {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-pub trait SetDistance<IndtyIndex, AccountId> {
+pub trait SetupBenchmark<IndtyIndex, AccountId> {
     fn force_status_ok(idty_index: &IndtyIndex, account: &AccountId) -> ();
+    fn add_cert(issuer: &IndtyIndex, receiver: &IndtyIndex) -> ();
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-impl<IdtyIndex, AccountId> SetDistance<IdtyIndex, AccountId> for () {
+impl<IdtyIndex, AccountId> SetupBenchmark<IdtyIndex, AccountId> for () {
     fn force_status_ok(_idty_id: &IdtyIndex, _account: &AccountId) -> () {}
+    fn add_cert(_issuer: &IdtyIndex, _receiver: &IdtyIndex) -> () {}
 }

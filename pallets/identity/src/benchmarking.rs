@@ -136,21 +136,23 @@ benchmarks! {
     }
 
     validate_identity {
-        // The validation needs to be done on the prepared identity (last genesis identity) in the benchmark genesis.
-        // This identity is created but not confirmed and have received enough certificates to get a membership.
-        // The identity needs first to be validated with a call instead of added confirmed at genesis
-        // to get added to avoid a MembershipRequestNotFound error.
-        let caller: T::AccountId = Identities::<T>::get(T::IdtyIndex::one()).unwrap().owner_key;
+        let index = NextIdtyIndex::<T>::get();
+        let caller: T::AccountId  = Identities::<T>::get(T::IdtyIndex::one()).unwrap().owner_key;
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-        let index: T::IdtyIndex = NextIdtyIndex::<T>::get() - T::IdtyIndex::one();
-        let name = IdtyName("new_identity".into());
-        let owner_key: T::AccountId = Identities::<T>::get(index).unwrap().owner_key;
+        let owner_key: T::AccountId = account("new_identity", 2, SEED);
         let owner_key_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(owner_key.clone()).into();
+        let name = IdtyName("new_identity".into());
+        Pallet::<T>::create_identity(caller_origin.clone(), owner_key.clone())?;
         Pallet::<T>::confirm_identity(owner_key_origin.clone(), name.clone())?;
+        // Should be superior to the minimal number of certificates to gain membership.
+        for j in 0..100 {
+            let issuer: T::IdtyIndex = j.into();
+            T::BenchmarkSetupHandler::add_cert(&issuer, &index);
+        }
         T::BenchmarkSetupHandler::force_status_ok(&index, &owner_key);
-    }: _<T::RuntimeOrigin>(caller_origin, index)
+    }: _<T::RuntimeOrigin>(caller_origin, index.into())
     verify {
-        assert_has_event::<T>(Event::<T>::IdtyValidated { idty_index: index }.into());
+        assert_has_event::<T>(Event::<T>::IdtyValidated { idty_index: index.into() }.into());
     }
 
     change_owner_key {

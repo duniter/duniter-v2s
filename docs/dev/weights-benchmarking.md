@@ -42,7 +42,7 @@ duniter benchmark pallet --chain=CHAINSPEC --steps=50 --repeat=20 --pallet=<pall
 
 7. Use the `runtime/common/src/weights/pallet_<pallet>.rs` generated on the reference machine in the runtimes configuration. See  af62a3b9cfc42d6653b3a957836f58540c18e65a for a complete real example.
 
-Note 1: Use relevant chainspec for the benchmarks in place of `CHAINSPEC`. For example `--chain=gdev-benchmark` has already created identities that can be confirmed by pallet identity
+Note 1: Use relevant chainspec for the benchmarks in place of `CHAINSPEC`, for example `--chain=dev`.
 
 Note 2: If the reference machine does not support wasmtime, you should replace `--wasm-execution=compiled`
 by `--wasm-execution=interpreted-i-know-what-i-do`.
@@ -53,7 +53,7 @@ by `--wasm-execution=interpreted-i-know-what-i-do`.
 2. Run base block benchmarks command:
 
 ```
-duniter benchmark overhead --chain=gdev-benchmark --execution=wasm --wasm-execution=compiled --weight-path=./runtime/common/src/weights/ --warmup=10 --repeat=100
+duniter benchmark overhead --chain=dev --execution=wasm --wasm-execution=compiled --weight-path=./runtime/common/src/weights/ --warmup=10 --repeat=100
 ```
 
 3. Commit changes and open an MR.
