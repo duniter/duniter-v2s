@@ -1434,6 +1434,7 @@ where
     assert!(initial_smiths_len <= initial_identities_len);
     assert!(initial_authorities_len <= initial_smiths_len);
     let ud = 1_000;
+    let idty_index_start: u32 = 1;
 
     let initial_smiths = (0..initial_smiths_len)
         .map(|i| get_authority_keys_from_seed(NAMES[i]))
@@ -1460,7 +1461,7 @@ where
         .iter()
         .enumerate()
         .map(|(i, (name, owner_key))| GenesisIdentity {
-            idty_index: i as u32,
+            idty_index: i as u32 + idty_index_start,
             name: String::from_utf8(name.0.clone()).unwrap(),
             owner_key: owner_key.clone(),
             old_owner_key: None,
@@ -1476,7 +1477,9 @@ where
                 (
                     owner_key.clone(),
                     GenesisAccountData {
-                        random_id: H256(blake2_256(&(i as u32, owner_key).encode())),
+                        random_id: H256(blake2_256(
+                            &(i as u32 + idty_index_start, owner_key).encode(),
+                        )),
                         balance: ud,
                         is_identity: true,
                     },
@@ -1492,7 +1495,12 @@ where
         initial_authorities: initial_smiths
             .iter()
             .enumerate()
-            .map(|(i, keys)| (i as u32 + 1, (keys.0.clone(), i < initial_authorities_len)))
+            .map(|(i, keys)| {
+                (
+                    i as u32 + idty_index_start,
+                    (keys.0.clone(), i < initial_authorities_len),
+                )
+            })
             .collect(),
         initial_monetary_mass: initial_identities_len as u64 * ud,
         memberships: (1..=initial_identities.len())
