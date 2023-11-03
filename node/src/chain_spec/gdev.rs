@@ -346,18 +346,14 @@ fn genesis_data_to_gdev_genesis_conf(
         identity: IdentityConfig {
             identities: identities
                 .into_iter()
-                .enumerate()
                 .map(
-                    |(
-                        _,
-                        GenesisIdentity {
-                            idty_index,
-                            name,
-                            owner_key,
-                            old_owner_key,
-                            active,
-                        },
-                    )| GenesisIdty {
+                    |GenesisIdentity {
+                         idty_index,
+                         name,
+                         owner_key,
+                         old_owner_key,
+                         active,
+                     }| GenesisIdty {
                         index: idty_index,
                         name: common_runtime::IdtyName::from(name.as_str()),
                         value: common_runtime::IdtyValue {
