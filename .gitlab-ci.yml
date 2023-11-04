@@ -6,7 +6,7 @@ stages:
 build_gdev_runtime:
   stage: build
   rules:
-    - when: always
+    - when: manualî
   image: python:3.9.18
   script:
     - echo "Build gdev runtime using srtool"
