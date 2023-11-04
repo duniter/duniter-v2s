@@ -294,7 +294,7 @@ create_g1_data:
     DEBIAN_FRONTEND: noninteractive
     LEVELDB_PATH: /dump/duniter_default/data/leveldb
   script:
-    # Duniter 1.8.6 dump
+    # Duniter 1.8.7 dump
     - mkdir /dump
     - cd /dump
     # Export file constructed using Duniter 1.8.7:
@@ -308,7 +308,7 @@ create_g1_data:
     - curl https://dl.cgeek.fr/public/backup-g1-duniter-1.8.7.tgz -o g1-dump.tgz
     - tar xvzf g1-dump.tgz
     - rm g1-dump.tgz
-    - mv backup-g1-duniter-1.8.6 duniter_default
+    - mv backup-g1-duniter-1.8.7 duniter_default
     # py-g1-migrator conversion
     - git clone https://git.duniter.org/tools/py-g1-migrator.git -b import_identities_from_leveldb /py-g1-migrator
     - cd /py-g1-migrator
