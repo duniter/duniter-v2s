@@ -316,28 +316,28 @@ deploy_docker_debug_sha:
     IMAGE_NAME: "duniter/duniter-v2s"
     IMAGE_TAG: "debug-sha-$CI_COMMIT_SHORT_SHA"
 
-deploy_docker_release_sha:
-  stage: deploy
-  extends: .docker_deploy_native
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - when: manual
-  variables:
-    IMAGE_NAME: "duniter/duniter-v2s"
-    IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
+#deploy_docker_release_sha:
+#  stage: deploy
+#  extends: .docker_deploy_native
+#  rules:
+#    - if: $CI_COMMIT_TAG
+#      when: never
+#    - when: manual
+#  variables:
+#    IMAGE_NAME: "duniter/duniter-v2s"
+#    IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
 
-deploy_docker_release_sha_multiplatform:
-  stage: deploy
-  needs: ["deploy_docker_release_sha"]
-  extends: .docker_deploy_multiplatform
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - when: manual
-  variables:
-    IMAGE_NAME: "duniter/duniter-v2s"
-    IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
+#deploy_docker_release_sha_multiplatform:
+#  stage: deploy
+#  needs: ["deploy_docker_release_sha"]
+#  extends: .docker_deploy_multiplatform
+#  rules:
+#    - if: $CI_COMMIT_TAG
+#      when: never
+#    - when: manual
+#  variables:
+#    IMAGE_NAME: "duniter/duniter-v2s"
+#    IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
 
 deploy_docker_release_tag:
   stage: deploy
