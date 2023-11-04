@@ -1,5 +1,6 @@
 stages:
   - gx_build
+  - gx_package
   - gx_release
 
 build_gdev_runtime:
@@ -23,6 +24,18 @@ build_gtest_runtime:
     - echo "Sleep..."
     - sleep 60
     - echo "Fin"
+  tags:
+    - kepler
+
+gdev_reboot:
+  stage: gx_package
+  rules:
+    - when: always
+  needs:
+    - build_gdev_runtime
+  image: python:3.9.18
+  script:
+    - echo "Create release page"
   tags:
     - kepler
 
