@@ -232,6 +232,7 @@ readme_docker_release_tag:
     RUNTIME_DIR: runtime/$RUNTIME
     SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
   script:
+    - echo "Building runtime for $RUNTIME"
     # Copy sources to the expected directory of srtool
     - cp -R * /build/
     # Build the runtime
@@ -254,32 +255,14 @@ gdev_srtool:
     RUNTIME: gdev
 
 gtest_srtool:
-  stage: gx_build
-  rules:
-    - when: manual
-      allow_failure: true
-  image: python:3.9.18
-  script:
-    - echo "Build gtest runtime using srtool"
-    - echo "Sleep..."
-    - sleep 60
-    - echo "Fin"
-  tags:
-    - kepler
+  extends: .srtool
+  variables:
+    RUNTIME: gtest
 
 g1_srtool:
-  stage: gx_build
-  rules:
-    - when: manual
-      allow_failure: true
-  image: python:3.9.18
-  script:
-    - echo "Build g1 runtime using srtool"
-    - echo "Sleep..."
-    - sleep 60
-    - echo "Fin"
-  tags:
-    - kepler
+  extends: .srtool
+  variables:
+    RUNTIME: g1
 
 ############## REBOOT ##############
 
