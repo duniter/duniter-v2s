@@ -2,9 +2,9 @@
 # - podman: use 'podman' to build multiplatform images
 
 stages:
-#  - prepare_spec
-#  - build_spec
-#  - create_release
+  - gx_build
+  - gx_package
+  - gx_release
   - schedule
   - labels
   - quality
@@ -327,3 +327,179 @@ readme_docker_release_tag:
     PUSHRM_FILE: "$CI_PROJECT_DIR/docker/README.md"
   script: "/bin/true"
 
+############## SRTOOL ##############
+
+gdev_srtool:
+  stage: gx_build
+  rules:
+    - when: always
+  image: python:3.9.18
+  script:
+    - echo "Build gdev runtime using srtool"
+  tags:
+    - kepler
+
+gtest_srtool:
+  stage: gx_build
+  rules:
+    - when: manual
+      allow_failure: true
+  image: python:3.9.18
+  script:
+    - echo "Build gtest runtime using srtool"
+    - echo "Sleep..."
+    - sleep 60
+    - echo "Fin"
+  tags:
+    - kepler
+
+g1_srtool:
+  stage: gx_build
+  rules:
+    - when: manual
+      allow_failure: true
+  image: python:3.9.18
+  script:
+    - echo "Build g1 runtime using srtool"
+    - echo "Sleep..."
+    - sleep 60
+    - echo "Fin"
+  tags:
+    - kepler
+
+############## REBOOT ##############
+
+gdev_reboot:
+  stage: gx_package
+  rules:
+    - when: manual
+  needs:
+    - gdev_srtool
+  image: python:3.9.18
+  script:
+    - echo "Create release page"
+  tags:
+    - kepler
+
+gtest_reboot:
+  stage: gx_package
+  rules:
+    - when: manual
+  needs:
+    - gtest_srtool
+  image: python:3.9.18
+  script:
+    - echo "Not implemented"
+    - exit 1
+  tags:
+    - kepler
+
+g1_reboot:
+  stage: gx_package
+  rules:
+    - when: manual
+      allow_failure: true
+  needs:
+    - g1_srtool
+  image: python:3.9.18
+  script:
+    - echo "Not implemented"
+    - exit 1
+  tags:
+    - kepler
+
+############## RELEASE ##############
+
+create_release:
+  stage: gx_release
+  rules:
+    - when: always
+  image: python:3.9.18
+  script:
+    - echo "Create release page"
+  tags:
+    - kepler
+
+# ----- GDEV -----
+
+release_gdev_runtime:
+  stage: gx_release
+  needs:
+    - gdev_srtool
+    - create_release
+  rules:
+    - when: manual
+  image: python:3.9.18
+  script:
+    - echo "Push runtime to release page"
+  tags:
+    - kepler
+
+release_gdev_6_docker:
+  stage: gx_release
+  needs:
+    - create_release
+    - gdev_reboot
+  rules:
+    - when: manual
+  image: python:3.9.18
+  script:
+    - echo "Create Docker image based on gdev_reboot raw specs"
+  tags:
+    - kepler
+
+# ----- GTEST -----
+
+release_gtest_runtime:
+  stage: gx_release
+  needs:
+    - gtest_srtool
+    - create_release
+  rules:
+    - when: manual
+  image: python:3.9.18
+  script:
+    - echo "Push runtime to release page"
+  tags:
+    - kepler
+
+release_gtest_docker:
+  stage: gx_release
+  needs:
+    - create_release
+    - gtest_reboot
+  rules:
+    - when: manual
+  image: python:3.9.18
+  script:
+    - echo "Create Docker image based on gtest_reboot raw specs"
+  tags:
+    - kepler
+
+# ----- G1 -----
+
+release_g1_runtime:
+  stage: gx_release
+  needs:
+    - g1_srtool
+    - create_release
+  rules:
+    - when: manual
+  image: python:3.9.18
+  script:
+    - echo "Push runtime to release page"
+  tags:
+    - kepler
+
+release_g1_docker:
+  stage: gx_release
+  needs:
+    - create_release
+    - g1_reboot
+  rules:
+    - when: manual
+  image: python:3.9.18
+  script:
+    - echo "Create Docker image based on g1_reboot raw specs"
+  tags:
+    - kepler
