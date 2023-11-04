@@ -1,10 +1,10 @@
 stages:
-  - build
+  - gx_build
   - gx_package
   - deploy
 
 build_gdev_runtime:
-  stage: build
+  stage: gx_build
   rules:
     - when: manual
   image: python:3.9.18
@@ -14,7 +14,7 @@ build_gdev_runtime:
     - kepler
 
 build_gtest_runtime:
-  stage: build
+  stage: gx_build
   rules:
     - when: manual
       allow_failure: true
