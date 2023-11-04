@@ -27,6 +27,20 @@ build_gtest_runtime:
   tags:
     - kepler
 
+build_g1_runtime:
+  stage: gx_build
+  rules:
+    - when: manual
+      allow_failure: true
+  image: python:3.9.18
+  script:
+    - echo "Build gtest runtime using srtool"
+    - echo "Sleep..."
+    - sleep 20
+    - echo "Fin"
+  tags:
+    - kepler
+
 gdev_reboot:
   stage: gx_package
   rules:
@@ -66,6 +80,19 @@ release_gtest_runtime:
   stage: gx_release
   needs:
     - build_gtest_runtime
+    - create_release
+  rules:
+    - when: manual
+  image: python:3.9.18
+  script:
+    - echo "Push runtime to release page"
+  tags:
+    - kepler
+
+release_g1_runtime:
+  stage: gx_release
+  needs:
+    - build_g1_runtime
     - create_release
   rules:
     - when: manual
