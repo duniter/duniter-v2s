@@ -1,6 +1,5 @@
 stages:
   - gx_build
-  - gx_package
   - gx_release
 
 build_gdev_runtime:
