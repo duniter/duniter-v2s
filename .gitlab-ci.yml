@@ -1,10 +1,10 @@
 stages:
-  - gx_build
-  - gx_package
-  - gx_release
+  - build
+  - package
+  - deploy
 
 build_gdev_runtime:
-  stage: gx_build
+  stage: build
   rules:
     - when: always
   image: python:3.9.18
@@ -14,7 +14,7 @@ build_gdev_runtime:
     - kepler
 
 build_gtest_runtime:
-  stage: gx_build
+  stage: build
   rules:
     - when: always
       allow_failure: true
@@ -28,7 +28,7 @@ build_gtest_runtime:
     - kepler
 
 create_release:
-  stage: gx_package
+  stage: package
   rules:
     - when: always
   image: python:3.9.18
@@ -38,7 +38,7 @@ create_release:
     - kepler
 
 release_gdev_runtime:
-  stage: gx_release
+  stage: deploy
   needs:
     - build_gdev_runtime
     - create_release
@@ -51,7 +51,7 @@ release_gdev_runtime:
     - kepler
 
 release_gtest_runtime:
-  stage: gx_release
+  stage: deploy
   needs:
     - build_gtest_runtime
   rules:
