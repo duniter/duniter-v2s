@@ -161,6 +161,9 @@ build_gtest_runtime:
   image: python:3.9.18
   script:
     - echo "Build gtest runtime using srtool"
+    - echo "Sleep..."
+    - sleep 60
+    - echo "Fin"
   tags:
     - kepler
 
