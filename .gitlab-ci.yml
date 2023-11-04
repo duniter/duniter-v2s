@@ -31,7 +31,6 @@ build_g1_runtime:
   stage: gx_build
   rules:
     - when: manual
-      allow_failure: true
   image: python:3.9.18
   script:
     - echo "Build gtest runtime using srtool"
