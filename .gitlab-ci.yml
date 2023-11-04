@@ -228,21 +228,21 @@ readme_docker_release_tag:
     - when: manual
   image: paritytech/srtool:1.62.0
   variables:
-    PACKAGE: "gdev-runtime"
-    RUNTIME_DIR: "runtime/gdev"
+    PACKAGE: $RUNTIME-runtime
+    RUNTIME_DIR: runtime/$RUNTIME
     SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
   script:
     # Copy sources to the expected directory of srtool
     - cp -R * /build/
     # Build the runtime
     - /srtool/build --app --json -cM > $SRTOOL_OUTPUT
-    - mv /build/runtime/gdev/target $CI_PROJECT_DIR/runtime/gdev/target/
+    - mv /build/runtime/$RUNTIME/target $CI_PROJECT_DIR/runtime/$RUNTIME/target/
     - . $CARGO_HOME/env
   artifacts:
     name: "runtime"
     paths:
       - $CI_PROJECT_DIR/resources
-      - $CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/
+      - $CI_PROJECT_DIR/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/
       - $CI_PROJECT_DIR/srtool_output.json
     expire_in: 1 day
   tags:
@@ -250,6 +250,8 @@ readme_docker_release_tag:
 
 gdev_srtool:
   extends: .srtool
+  variables:
+    RUNTIME: gdev
 
 gtest_srtool:
   stage: gx_build
