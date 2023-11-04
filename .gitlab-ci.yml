@@ -289,7 +289,6 @@ create_g1_data:
   stage: gx_package
   rules:
     - when: always
-      allow_failure: true
   image: python:3.9.18
   variables:
     DEBIAN_FRONTEND: noninteractive
@@ -309,7 +308,7 @@ create_g1_data:
     - curl https://dl.cgeek.fr/public/backup-g1-duniter-1.8.7.tgz -o g1-dump.tgz
     - tar xvzf g1-dump.tgz
     - rm g1-dump.tgz
-    - mv backup-g1-duniter-1.8.7 duniter_default
+    - mv tmp/backup-g1-duniter-1.8.7 duniter_default
     # py-g1-migrator conversion
     - git clone https://git.duniter.org/tools/py-g1-migrator.git -b import_identities_from_leveldb /py-g1-migrator
     - cd /py-g1-migrator
