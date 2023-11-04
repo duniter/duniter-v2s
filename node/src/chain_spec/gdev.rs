@@ -149,7 +149,7 @@ pub fn benchmark_chain_spec() -> Result<ChainSpec, String> {
                 get_local_chain_parameters(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-                true,
+                get_parameters,
             )
             .expect("Genesis Data must be buildable");
             genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary)
@@ -256,7 +256,7 @@ pub fn local_testnet_config(
                 get_local_chain_parameters(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-                true,
+                get_parameters,
             )
             .expect("Genesis Data must be buildable");
             genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary)
@@ -390,7 +390,7 @@ fn genesis_data_to_gdev_genesis_conf(
     }
 }
 
-fn get_local_chain_parameters() -> GenesisParameters {
+fn get_local_chain_parameters() -> Option<GenesisParameters> {
     let babe_epoch_duration = get_env("DUNITER_BABE_EPOCH_DURATION", 30) as u64;
     let cert_validity_period = get_env("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
     let membership_period = get_env("DUNITER_MEMBERSHIP_PERIOD", 1_000);
@@ -398,7 +398,7 @@ fn get_local_chain_parameters() -> GenesisParameters {
     let smith_membership_period = get_env("DUNITER_SMITH_MEMBERSHIP_PERIOD", 1_000);
     let ud_creation_period = get_env("DUNITER_UD_CREATION_PERIOD", 60_000);
     let ud_reeval_period = get_env("DUNITER_UD_REEEVAL_PERIOD", 1_200_000);
-    GenesisParameters {
+    Some(GenesisParameters {
         babe_epoch_duration,
         cert_period: 15,
         cert_max_by_issuer: 10,
@@ -421,7 +421,7 @@ fn get_local_chain_parameters() -> GenesisParameters {
         wot_first_cert_issuable_on: 20,
         wot_min_cert_for_create_idty_right: 2,
         wot_min_cert_for_membership: 2,
-    }
+    })
 }
 
 /// get environment variable

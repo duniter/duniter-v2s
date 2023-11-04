@@ -229,19 +229,25 @@ struct CliqueSmith {
     session_keys: Option<String>,
 }
 
-struct GenesisMemberIdentity {
-    index: u32,
-    owned_key: AccountId,
-    old_owned_key: Option<AccountId>,
-    name: String,
-    active: bool,
-}
-
 struct SmithWoT<SK: Decode> {
     smith_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
     smith_memberships: BTreeMap<u32, sp_membership::MembershipData<u32>>,
     session_keys_map:
         BTreeMap<<<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId, SK>,
+}
+
+struct GenesisInfo<'a> {
+    accounts: &'a BTreeMap<AccountId32, GenesisAccountData<u64>>,
+    genesis_data_wallets_count: &'a usize,
+    inactive_identities: &'a HashMap<u32, String>,
+    identities: &'a Vec<GenesisIdentity>,
+    identity_index: &'a HashMap<u32, String>,
+    smith_memberships: &'a BTreeMap<u32, MembershipData>,
+    counter_online_authorities: &'a u32,
+    counter_cert: &'a u32,
+    counter_smith_cert: &'a u32,
+    technical_committee_members: &'a Vec<AccountId32>,
+    common_parameters: &'a CommonParameters,
 }
 
 /// generate genesis data from a json file
@@ -495,67 +501,21 @@ where
             );
         });
 
-    // give genesis info
-    log::info!(
-        "prepared genesis with:
-        - {} accounts ({} identities, {} simple wallets)
-        - {} total identities ({} active, {} inactive)
-        - {} smiths
-        - {} initial online authorities
-        - {} certifications
-        - {} smith certifications
-        - {} members in technical committee",
-        accounts.len(),
-        identities.len() - inactive_identities.len(),
-        genesis_data_wallets_count,
-        identity_index.len(),
-        identities.len() - inactive_identities.len(),
-        inactive_identities.len(),
-        smith_memberships.len(),
-        counter_online_authorities,
-        counter_cert,
-        counter_smith_cert,
-        technical_committee_members.len(),
-    );
+    let genesis_info = GenesisInfo {
+        accounts: &accounts,
+        genesis_data_wallets_count: &genesis_data_wallets_count,
+        identities: &identities,
+        inactive_identities: &inactive_identities,
+        identity_index: &identity_index,
+        smith_memberships: &smith_memberships,
+        counter_online_authorities: &counter_online_authorities,
+        counter_cert: &counter_cert,
+        counter_smith_cert: &counter_smith_cert,
+        technical_committee_members: &technical_committee_members,
+        common_parameters: &common_parameters,
+    };
 
-    // give genesis info
-    log::info!(
-        "currency parameters:
-        - existential deposit: {} {}
-        - currency decimals: {}
-        - membership validity: {} days
-        - certification period: {} days
-        - certification validity duration: {} days
-        - smith membership validity: {} days
-        - smith certification validity: {} days
-        - required certifications: {}
-        - smith required certifications: {}
-        - max certifications by issuer: {}
-        - money growth rate: {}% every {} days
-        - UD creation period: {} days
-        - distance percent of required referees: {}%
-        - distance max depth: {}",
-        common_parameters.existential_deposit,
-        common_parameters.currency_name,
-        common_parameters.decimals,
-        common_parameters.membership_period as f32 / DAYS as f32,
-        common_parameters.cert_period as f32 / DAYS as f32,
-        common_parameters.cert_validity_period as f32 / DAYS as f32,
-        common_parameters.smith_membership_period as f32 / DAYS as f32,
-        common_parameters.smith_certs_validity_period as f32 / DAYS as f32,
-        common_parameters.min_cert,
-        common_parameters.smith_min_cert,
-        common_parameters.cert_max_by_issuer,
-        f32::sqrt(common_parameters.c2.deconstruct() as f32 / 1_000_000_000f32) * 100f32,
-        common_parameters.ud_reeval_period as f32 / DAYS as f32,
-        common_parameters.ud_creation_period as f32 / DAYS as f32,
-        common_parameters
-            .distance_min_accessible_referees
-            .deconstruct() as f32
-            / 1_000_000_000f32
-            * 100f32,
-        common_parameters.max_depth,
-    );
+    dump_genesis_info(genesis_info);
 
     if parameters.is_some() {
         let g1_duniter_v1_c = 0.0488;
@@ -748,16 +708,7 @@ where
         certs_by_receiver,
         first_ud,
         first_ud_reeval,
-        identities: identities
-            .into_iter()
-            .map(|i| GenesisIdentity {
-                idty_index: i.index,
-                name: i.name,
-                owner_key: i.owned_key,
-                old_owner_key: i.old_owned_key,
-                active: i.active,
-            })
-            .collect(),
+        identities,
         initial_authorities,
         initial_monetary_mass: genesis_data.initial_monetary_mass,
         memberships,
@@ -772,6 +723,70 @@ where
     };
 
     Ok(genesis_data)
+}
+
+fn dump_genesis_info(info: GenesisInfo) {
+    // give genesis info
+    log::info!(
+        "prepared genesis with:
+        - {} accounts ({} identities, {} simple wallets)
+        - {} total identities ({} active, {} inactive)
+        - {} smiths
+        - {} initial online authorities
+        - {} certifications
+        - {} smith certifications
+        - {} members in technical committee",
+        info.accounts.len(),
+        info.identities.len() - info.inactive_identities.len(),
+        info.genesis_data_wallets_count,
+        info.identity_index.len(),
+        info.identities.len() - info.inactive_identities.len(),
+        info.inactive_identities.len(),
+        info.smith_memberships.len(),
+        info.counter_online_authorities,
+        info.counter_cert,
+        info.counter_smith_cert,
+        info.technical_committee_members.len(),
+    );
+
+    // give genesis info
+    log::info!(
+        "currency parameters:
+        - existential deposit: {} {}
+        - currency decimals: {}
+        - membership validity: {} days
+        - certification period: {} days
+        - certification validity duration: {} days
+        - smith membership validity: {} days
+        - smith certification validity: {} days
+        - required certifications: {}
+        - smith required certifications: {}
+        - max certifications by issuer: {}
+        - money growth rate: {}% every {} days
+        - UD creation period: {} days
+        - distance percent of required referees: {}%
+        - distance max depth: {}",
+        info.common_parameters.existential_deposit,
+        info.common_parameters.currency_name,
+        info.common_parameters.decimals,
+        info.common_parameters.membership_period as f32 / DAYS as f32,
+        info.common_parameters.cert_period as f32 / DAYS as f32,
+        info.common_parameters.cert_validity_period as f32 / DAYS as f32,
+        info.common_parameters.smith_membership_period as f32 / DAYS as f32,
+        info.common_parameters.smith_certs_validity_period as f32 / DAYS as f32,
+        info.common_parameters.min_cert,
+        info.common_parameters.smith_min_cert,
+        info.common_parameters.cert_max_by_issuer,
+        f32::sqrt(info.common_parameters.c2.deconstruct() as f32 / 1_000_000_000f32) * 100f32,
+        info.common_parameters.ud_reeval_period as f32 / DAYS as f32,
+        info.common_parameters.ud_creation_period as f32 / DAYS as f32,
+        info.common_parameters
+            .distance_min_accessible_referees
+            .deconstruct() as f32
+            / 1_000_000_000f32
+            * 100f32,
+        info.common_parameters.max_depth,
+    );
 }
 
 fn smiths_and_technical_committee_checks(
@@ -1138,9 +1153,9 @@ fn feed_identities(
     inactive_identities: &mut HashMap<u32, String>,
     memberships: &mut BTreeMap<u32, MembershipData>,
     identities_v2: &HashMap<String, IdentityV2>,
-) -> Result<(bool, Vec<GenesisMemberIdentity>), String> {
+) -> Result<(bool, Vec<GenesisIdentity>), String> {
     let mut fatal = false;
-    let mut identities: Vec<GenesisMemberIdentity> = Vec::new();
+    let mut identities: Vec<GenesisIdentity> = Vec::new();
     for (name, identity) in identities_v2 {
         // identity name
         if !validate_idty_name(name) {
@@ -1204,15 +1219,15 @@ fn feed_identities(
         if expired {
             inactive_identities.insert(identity.index, name.clone());
         };
-        identities.push(GenesisMemberIdentity {
+        identities.push(GenesisIdentity {
             // N.B.: every **non-expired** identity on Genesis is considered to have:
             //  - removable_on: 0,
             //  - next_creatable_identity_on: 0,
             //  - status: IdtyStatus::Validated,
-            index: identity.index,
+            idty_index: identity.index,
             name: name.to_owned().clone(),
-            owned_key: identity.owner_key.clone(),
-            old_owned_key: identity.old_owner_key.clone(),
+            owner_key: identity.owner_key.clone(),
+            old_owner_key: identity.old_owner_key.clone(),
             // but expired identities will just have their pseudonym reserved in the storage
             active: !expired,
         });
@@ -1228,7 +1243,7 @@ fn feed_identities(
         }
     }
     // sort the identities by index for reproducibility (should have been a vec in json)
-    identities.sort_unstable_by(|a, b| a.index.cmp(&b.index));
+    identities.sort_unstable_by(|a, b| a.idty_index.cmp(&b.idty_index));
 
     Ok((fatal, identities))
 }
@@ -1421,9 +1436,9 @@ pub fn generate_genesis_data_for_local_chain<P, SK, SessionKeys: Encode, SKP>(
     initial_smiths_len: usize,
     initial_identities_len: usize,
     treasury_balance: u64,
-    parameters: P,
+    parameters: Option<P>,
     root_key: AccountId,
-    _enable_println: bool,
+    get_common_parameters: fn(&Option<P>) -> CommonParameters,
 ) -> Result<GenesisData<P, SK>, String>
 where
     P: Default + DeserializeOwned,
@@ -1435,6 +1450,7 @@ where
     assert!(initial_authorities_len <= initial_smiths_len);
     let ud = 1_000;
     let idty_index_start: u32 = 1;
+    let common_parameters = get_common_parameters(&parameters);
 
     let initial_smiths = (0..initial_smiths_len)
         .map(|i| get_authority_keys_from_seed(NAMES[i]))
@@ -1457,7 +1473,7 @@ where
         session_keys_map.insert(x.0.clone(), sk);
     });
 
-    let identities_ = initial_identities
+    let identities: Vec<GenesisIdentity> = initial_identities
         .iter()
         .enumerate()
         .map(|(i, (name, owner_key))| GenesisIdentity {
@@ -1469,55 +1485,102 @@ where
         })
         .collect();
 
+    let (certs_by_receiver, counter_cert) = clique_wot(initial_identities.len());
+
+    let accounts = initial_identities
+        .iter()
+        .enumerate()
+        .map(|(i, (_, owner_key))| {
+            (
+                owner_key.clone(),
+                GenesisAccountData {
+                    random_id: H256(blake2_256(
+                        &(i as u32 + idty_index_start, owner_key).encode(),
+                    )),
+                    balance: ud,
+                    is_identity: true,
+                },
+            )
+        })
+        .collect();
+
+    let identity_index = identities
+        .iter()
+        .map(|i| (i.idty_index, i.name.clone()))
+        .collect();
+
+    let genesis_data_wallets_count = 0;
+    let inactive_identities = HashMap::new();
+
+    let smith_memberships = (1..=initial_smiths_len)
+        .map(|i| (i as u32, MembershipData { expire_on: 0 }))
+        .collect();
+
+    let (smith_certs_by_receiver, counter_smith_cert) = clique_wot(initial_smiths_len);
+
+    let initial_authorities: BTreeMap<
+        u32,
+        (
+            <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId,
+            bool,
+        ),
+    > = initial_smiths
+        .iter()
+        .enumerate()
+        .map(|(i, keys)| {
+            (
+                i as u32 + idty_index_start,
+                (keys.0.clone(), i < initial_authorities_len),
+            )
+        })
+        .collect();
+
+    let counter_online_authorities = initial_authorities
+        .iter()
+        .filter(|(_, authority)| authority.1)
+        .count() as u32;
+
+    let technical_committee_members = initial_smiths
+        .iter()
+        .map(|x| x.0.clone())
+        .collect::<Vec<_>>();
+
+    let genesis_info = GenesisInfo {
+        accounts: &accounts,
+        genesis_data_wallets_count: &genesis_data_wallets_count,
+        identities: &identities,
+        inactive_identities: &inactive_identities,
+        identity_index: &identity_index,
+        smith_memberships: &smith_memberships,
+        counter_online_authorities: &counter_online_authorities,
+        counter_cert: &counter_cert,
+        counter_smith_cert: &counter_smith_cert,
+        technical_committee_members: &technical_committee_members,
+        common_parameters: &common_parameters,
+    };
+
+    dump_genesis_info(genesis_info);
+
     let genesis_data = GenesisData {
-        accounts: initial_identities
-            .iter()
-            .enumerate()
-            .map(|(i, (_, owner_key))| {
-                (
-                    owner_key.clone(),
-                    GenesisAccountData {
-                        random_id: H256(blake2_256(
-                            &(i as u32 + idty_index_start, owner_key).encode(),
-                        )),
-                        balance: ud,
-                        is_identity: true,
-                    },
-                )
-            })
-            .collect(),
+        accounts,
         // Treasury balance is created out of nothing for local blockchain
         treasury_balance,
-        certs_by_receiver: clique_wot(initial_identities.len()),
+        certs_by_receiver,
         first_ud: None,
         first_ud_reeval: None,
-        identities: identities_,
-        initial_authorities: initial_smiths
-            .iter()
-            .enumerate()
-            .map(|(i, keys)| {
-                (
-                    i as u32 + idty_index_start,
-                    (keys.0.clone(), i < initial_authorities_len),
-                )
-            })
-            .collect(),
+        identities,
+        initial_authorities,
         initial_monetary_mass: initial_identities_len as u64 * ud,
         memberships: (1..=initial_identities.len())
             .map(|i| (i as u32, MembershipData { expire_on: 0 }))
             .collect(),
-        parameters: Some(parameters),
+        parameters,
         common_parameters: None,
         session_keys_map,
-        smith_certs_by_receiver: clique_wot(initial_smiths_len),
-        smith_memberships: (1..=initial_smiths_len)
-            .map(|i| (i as u32, MembershipData { expire_on: 0 }))
-            .collect(),
+        smith_certs_by_receiver,
+        smith_memberships,
         sudo_key: Some(root_key),
-        technical_committee_members: initial_smiths
-            .iter()
-            .map(|x| x.0.clone())
-            .collect::<Vec<_>>(),
+        technical_committee_members,
         ud,
     };
 

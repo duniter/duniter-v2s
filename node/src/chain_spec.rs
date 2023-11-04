@@ -50,9 +50,14 @@ where
 
 fn clique_wot(
     initial_identities_len: usize,
-) -> BTreeMap<IdtyIndex, BTreeMap<IdtyIndex, Option<common_runtime::BlockNumber>>> {
+) -> (
+    BTreeMap<IdtyIndex, BTreeMap<IdtyIndex, Option<common_runtime::BlockNumber>>>,
+    u32,
+) {
     let mut certs_by_issuer = BTreeMap::new();
+    let mut count: u32 = 0;
     for i in 1..=initial_identities_len {
+        count += initial_identities_len as u32;
         certs_by_issuer.insert(
             i as IdtyIndex,
             (1..=initial_identities_len)
@@ -66,5 +71,5 @@ fn clique_wot(
                 .collect(),
         );
     }
-    certs_by_issuer
+    (certs_by_issuer, count)
 }
