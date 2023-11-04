@@ -144,6 +144,28 @@ test_release:
     IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
     PODMAN_BUILD_OPTIONS: "--target build --build-arg cucumber=1"
 
+build_gdev_runtime:
+  stage: gx_build
+  rules:
+    - when: manual
+  image: python:3.9.18
+  script:
+    - echo "Build gdev runtime using srtool"
+  tags:
+    - kepler
+
+release_gdev_runtime:
+  stage: gx_release
+  needs:
+    - build_gdev_runtime
+  rules:
+    - when: manual
+  image: python:3.9.18
+  script:
+    - echo "Push runtime to release page"
+  tags:
+    - kepler
+
 create_g1_data:
   stage: gx_build
   rules:
