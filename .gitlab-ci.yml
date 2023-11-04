@@ -252,6 +252,7 @@ readme_docker_release_tag:
   stage: gx_build
   rules:
     - when: manual
+      allow_failure: true
   image: paritytech/srtool:1.62.0
   script:
     - echo "Building runtime for $RUNTIME"
