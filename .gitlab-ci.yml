@@ -1,7 +1,7 @@
 stages:
   - gx_build
   - gx_package
-  - deploy
+  - gx_deploy
 
 build_gdev_runtime:
   stage: gx_build
@@ -38,7 +38,7 @@ create_release:
     - kepler
 
 release_gdev_runtime:
-  stage: deploy
+  stage: gx_deploy
   needs:
     - build_gdev_runtime
     - create_release
@@ -51,7 +51,7 @@ release_gdev_runtime:
     - kepler
 
 release_gtest_runtime:
-  stage: deploy
+  stage: gx_deploy
   needs:
     - build_gtest_runtime
   rules:
