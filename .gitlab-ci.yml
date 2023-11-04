@@ -16,7 +16,7 @@ build_gdev_runtime:
 build_gtest_runtime:
   stage: build
   rules:
-    - when: always
+    - when: manual
       allow_failure: true
   image: python:3.9.18
   script:
