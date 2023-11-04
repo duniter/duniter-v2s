@@ -368,6 +368,7 @@ gtest_reboot:
   stage: gx_package
   rules:
     - when: manual
+      allow_failure: true
   needs:
     - gtest_srtool
     - create_g1_data
