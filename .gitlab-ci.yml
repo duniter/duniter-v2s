@@ -147,7 +147,7 @@ test_release:
 build_gdev_runtime:
   stage: gx_build
   rules:
-    - when: manual
+    - when: always
   image: python:3.9.18
   script:
     - echo "Build gdev runtime using srtool"
@@ -166,6 +166,8 @@ build_gtest_runtime:
 
 create_release:
   stage: gx_release
+  rules:
+    - when: always
   image: python:3.9.18
   script:
     - echo "Create release page"
