@@ -54,6 +54,7 @@ release_gtest_runtime:
   stage: gx_deploy
   needs:
     - build_gtest_runtime
+    - create_release
   rules:
     - when: manual
   image: python:3.9.18
