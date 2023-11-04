@@ -187,6 +187,19 @@ release_gdev_runtime:
   tags:
     - kepler
 
+release_gtest_runtime:
+  stage: gx_release
+  needs:
+    - build_gtest_runtime
+    - create_release
+  rules:
+    - when: manual
+  image: python:3.9.18
+  script:
+    - echo "Push runtime to release page"
+  tags:
+    - kepler
+
 #create_g1_data:
 #  stage: gx_build
 #  rules:
