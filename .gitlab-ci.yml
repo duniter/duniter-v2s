@@ -154,6 +154,16 @@ build_gdev_runtime:
   tags:
     - kepler
 
+build_gtest_runtime:
+  stage: gx_build
+  rules:
+    - when: manual
+  image: python:3.9.18
+  script:
+    - echo "Build gtest runtime using srtool"
+  tags:
+    - kepler
+
 create_release:
   stage: gx_release
   rules:
@@ -269,20 +279,20 @@ create_gdev_raw_spec:
   tags:
     - kepler
 
-gx_release:
-  stage: gx_release
-  rules:
-    - when: manual
-  image: rust:1-bullseye
-  script:
-    # Release creation + link to artifacts
-    - export G1_DATA_URL="$CI_JOB_URL/artifacts/file/resources/g1-data.json"
-    - export GDEV_WASM_URL="$CI_JOB_URL/artifacts/file/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm"
-    - export SRTOOL_OUTPUT_URL="$CI_JOB_URL/artifacts/file/srtool_output.json"
-    - export GDEV_RAW_SPEC_URL="$CI_JOB_URL/artifacts/file/resources/gdev-raw.json"
-    - cargo xtask release-runtime 600
-  tags:
-    - kepler
+#create_release:
+#  stage: gx_release
+#  rules:
+#    - when: manual
+#  image: rust:1-bullseye
+#  script:
+#    # Release creation + link to artifacts
+#    - export G1_DATA_URL="$CI_JOB_URL/artifacts/file/resources/g1-data.json"
+#    - export GDEV_WASM_URL="$CI_JOB_URL/artifacts/file/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm"
+#    - export SRTOOL_OUTPUT_URL="$CI_JOB_URL/artifacts/file/srtool_output.json"
+#    - export GDEV_RAW_SPEC_URL="$CI_JOB_URL/artifacts/file/resources/gdev-raw.json"
+#    - cargo xtask release-runtime 600
+#  tags:
+#    - kepler
 
 deploy_docker_debug_sha:
   stage: deploy
