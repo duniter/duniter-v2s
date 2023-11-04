@@ -2,9 +2,9 @@
 # - podman: use 'podman' to build multiplatform images
 
 stages:
-#  - prepare_spec
-#  - build_spec
-#  - create_release
+  - gx_build
+  - gx_package
+  - gx_release
   - schedule
   - labels
   - quality
@@ -144,112 +144,112 @@ test_release:
     IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
     PODMAN_BUILD_OPTIONS: "--target build --build-arg cucumber=1"
 
-#create_g1_data_job:
-#  stage: prepare_spec
-#  rules:
-#    - when: always
-#  image: python:3.9.18
-#  variables:
-#    DEBIAN_FRONTEND: noninteractive
-#    LEVELDB_PATH: /dump/duniter_default/data/leveldb
-#  script:
-#    # Duniter 1.8.6 dump
-#    - mkdir /dump
-#    - cd /dump
-#    # Export file constructed using Duniter 1.8.7:
-#    #  - bin/duniter sync g1.cgeek.fr --store-txs --nointeractive --mdb 1.8.7
-#    #  - mkdir -p /tmp/backup-g1-duniter-1.8.7
-#    #  - cp -R $HOME/.config/duniter/1.8.7/data /tmp/backup-g1-duniter-1.8.7
-#    #  - cp -R $HOME/.config/duniter/1.8.7/g1 /tmp/backup-g1-duniter-1.8.7
-#    #  - cp -R $HOME/.config/duniter/1.8.7/txs.db /tmp/backup-g1-duniter-1.8.7
-#    #  - tar -cvzf /tmp/backup-g1-duniter-1.8.7.tgz /tmp/backup-g1-duniter-1.8.7
-#    # Then the file is uploaded to dl.cgeek.fr manually
-#    - curl https://dl.cgeek.fr/public/backup-g1-duniter-1.8.7.tgz -o g1-dump.tgz
-#    - tar xvzf g1-dump.tgz
-#    - rm g1-dump.tgz
-#    - mv backup-g1-duniter-1.8.6 duniter_default
-#    # py-g1-migrator conversion
-#    - git clone https://git.duniter.org/tools/py-g1-migrator.git -b import_identities_from_leveldb /py-g1-migrator
-#    - cd /py-g1-migrator
-#    - rm -rf inputs/*
-#    - apt-get update
-#    - apt-get install -y sqlite3 libleveldb-dev jq
-#    - pip install -r requirements.txt
-#    # Export identities and wallets
-#    - ./main.py
-#    # Export transaction history
-#    - sqlite3 /dump/duniter_default/txs.db --json "select time,comment,issuers,outputs from txs;" > inputs/transactions_history.json 2>> inputs/txs.err
-#    - ./generate_transactions_history.py
-#    # Merge in one file
-#    - 'jq -s "{ identities: .[0].identities, wallets: .[0].wallets, initial_monetary_mass: .[0].initial_monetary_mass, transactions_history: .[1] }" output/gtest_genesis.json output/history.json > output/g1-data.json'
-#    # Make the exported file available for next jobs
-#    - cp output/g1-data.json $CI_PROJECT_DIR/resources
-#  artifacts:
-#    paths:
-#      - $CI_PROJECT_DIR/resources
-#    expire_in: 1 day
-#  tags:
-#    - kepler
-#
-#create_runtime:
-#  stage: prepare_spec
-#  rules:
-#    - when: never
-#  image: paritytech/srtool:1.62.0
-#  variables:
-#    PACKAGE: "gdev-runtime"
-#    RUNTIME_DIR: "runtime/gdev"
-#    SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
-#  script:
-#    # Copy sources to the expected directory of srtool
-#    - cp -R * /build/
-#    # Build the runtime
-#    - /srtool/build --app --json -cM > $SRTOOL_OUTPUT
-#    - mv /build/runtime/gdev/target $CI_PROJECT_DIR/runtime/gdev/target/
-#    - . $CARGO_HOME/env
-#  artifacts:
-#    name: "runtime"
-#    paths:
-#      - $CI_PROJECT_DIR/resources
-#      - $CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/
-#      - $CI_PROJECT_DIR/srtool_output.json
-#    expire_in: 1 day
-#  tags:
-#    - kepler
-#
-#create_gdev_raw_spec:
-#  stage: build_spec
-#  rules:
-#    - when: never
-#  image: rust:1-bullseye
-#  variables:
-#    DEBIAN_FRONTEND: noninteractive
-#  script:
-#    - apt-get update
-#    - apt-get install -y clang cmake protobuf-compiler
-#    - cargo run -- build-spec -lerror --chain=gdev_live --raw > resources/gdev-raw.json
-#  artifacts:
-#    name: "runtime"
-#    paths:
-#      - $CI_PROJECT_DIR/resources
-#    expire_in: 1 day
-#  tags:
-#    - kepler
-#
-#create_release:
-#  stage: create_release
-#  rules:
-#    - when: never
-#  image: rust:1-bullseye
-#  script:
-#    # Release creation + link to artifacts
-#    - export G1_DATA_URL="$CI_JOB_URL/artifacts/file/resources/g1-data.json"
-#    - export GDEV_WASM_URL="$CI_JOB_URL/artifacts/file/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm"
-#    - export SRTOOL_OUTPUT_URL="$CI_JOB_URL/artifacts/file/srtool_output.json"
-#    - export GDEV_RAW_SPEC_URL="$CI_JOB_URL/artifacts/file/resources/gdev-raw.json"
-#    - cargo xtask release-runtime 600
-#  tags:
-#    - kepler
+create_g1_data:
+  stage: gx_build
+  rules:
+    - when: manual
+  image: python:3.9.18
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+    LEVELDB_PATH: /dump/duniter_default/data/leveldb
+  script:
+    # Duniter 1.8.6 dump
+    - mkdir /dump
+    - cd /dump
+    # Export file constructed using Duniter 1.8.7:
+    #  - bin/duniter sync g1.cgeek.fr --store-txs --nointeractive --mdb 1.8.7
+    #  - mkdir -p /tmp/backup-g1-duniter-1.8.7
+    #  - cp -R $HOME/.config/duniter/1.8.7/data /tmp/backup-g1-duniter-1.8.7
+    #  - cp -R $HOME/.config/duniter/1.8.7/g1 /tmp/backup-g1-duniter-1.8.7
+    #  - cp -R $HOME/.config/duniter/1.8.7/txs.db /tmp/backup-g1-duniter-1.8.7
+    #  - tar -cvzf /tmp/backup-g1-duniter-1.8.7.tgz /tmp/backup-g1-duniter-1.8.7
+    # Then the file is uploaded to dl.cgeek.fr manually
+    - curl https://dl.cgeek.fr/public/backup-g1-duniter-1.8.7.tgz -o g1-dump.tgz
+    - tar xvzf g1-dump.tgz
+    - rm g1-dump.tgz
+    - mv backup-g1-duniter-1.8.6 duniter_default
+    # py-g1-migrator conversion
+    - git clone https://git.duniter.org/tools/py-g1-migrator.git -b import_identities_from_leveldb /py-g1-migrator
+    - cd /py-g1-migrator
+    - rm -rf inputs/*
+    - apt-get update
+    - apt-get install -y sqlite3 libleveldb-dev jq
+    - pip install -r requirements.txt
+    # Export identities and wallets
+    - ./main.py
+    # Export transaction history
+    - sqlite3 /dump/duniter_default/txs.db --json "select time,comment,issuers,outputs from txs;" > inputs/transactions_history.json 2>> inputs/txs.err
+    - ./generate_transactions_history.py
+    # Merge in one file
+    - 'jq -s "{ identities: .[0].identities, wallets: .[0].wallets, initial_monetary_mass: .[0].initial_monetary_mass, transactions_history: .[1] }" output/gtest_genesis.json output/history.json > output/g1-data.json'
+    # Make the exported file available for next jobs
+    - cp output/g1-data.json $CI_PROJECT_DIR/resources
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/resources
+    expire_in: 1 day
+  tags:
+    - kepler
+
+gdev_runtime:
+  stage: gx_build
+  rules:
+    - when: manual
+  image: paritytech/srtool:1.62.0
+  variables:
+    PACKAGE: "gdev-runtime"
+    RUNTIME_DIR: "runtime/gdev"
+    SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
+  script:
+    # Copy sources to the expected directory of srtool
+    - cp -R * /build/
+    # Build the runtime
+    - /srtool/build --app --json -cM > $SRTOOL_OUTPUT
+    - mv /build/runtime/gdev/target $CI_PROJECT_DIR/runtime/gdev/target/
+    - . $CARGO_HOME/env
+  artifacts:
+    name: "runtime"
+    paths:
+      - $CI_PROJECT_DIR/resources
+      - $CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/
+      - $CI_PROJECT_DIR/srtool_output.json
+    expire_in: 1 day
+  tags:
+    - kepler
+
+create_gdev_raw_spec:
+  stage: gx_package
+  rules:
+    - when: never
+  image: rust:1-bullseye
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+  script:
+    - apt-get update
+    - apt-get install -y clang cmake protobuf-compiler
+    - cargo run -- build-spec -lerror --chain=gdev_live --raw > resources/gdev-raw.json
+  artifacts:
+    name: "runtime"
+    paths:
+      - $CI_PROJECT_DIR/resources
+    expire_in: 1 day
+  tags:
+    - kepler
+
+gx_release:
+  stage: gx_release
+  rules:
+    - when: manual
+  image: rust:1-bullseye
+  script:
+    # Release creation + link to artifacts
+    - export G1_DATA_URL="$CI_JOB_URL/artifacts/file/resources/g1-data.json"
+    - export GDEV_WASM_URL="$CI_JOB_URL/artifacts/file/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm"
+    - export SRTOOL_OUTPUT_URL="$CI_JOB_URL/artifacts/file/srtool_output.json"
+    - export GDEV_RAW_SPEC_URL="$CI_JOB_URL/artifacts/file/resources/gdev-raw.json"
+    - cargo xtask release-runtime 600
+  tags:
+    - kepler
 
 deploy_docker_debug_sha:
   stage: deploy
