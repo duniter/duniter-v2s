@@ -288,6 +288,7 @@ create_g1_data:
   stage: gx_package
   rules:
     - when: always
+      allow_failure: true
   image: python:3.9.18
   variables:
     DEBIAN_FRONTEND: noninteractive
