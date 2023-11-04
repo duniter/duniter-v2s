@@ -266,61 +266,61 @@ g1_srtool:
 
 ############## REBOOT ##############
 
-create_g1_data:
-  stage: gx_package
-  rules:
-    - when: always
-  image: python:3.9.18
-  script:
-    - echo "Création de g1-data.json"
-  tags:
-    - kepler
 #create_g1_data:
 #  stage: gx_package
 #  rules:
 #    - when: always
 #  image: python:3.9.18
-#  variables:
-#    DEBIAN_FRONTEND: noninteractive
-#    LEVELDB_PATH: /dump/duniter_default/data/leveldb
 #  script:
-#    # Duniter 1.8.6 dump
-#    - mkdir /dump
-#    - cd /dump
-#    # Export file constructed using Duniter 1.8.7:
-#    #  - bin/duniter sync g1.cgeek.fr --store-txs --nointeractive --mdb 1.8.7
-#    #  - mkdir -p /tmp/backup-g1-duniter-1.8.7
-#    #  - cp -R $HOME/.config/duniter/1.8.7/data /tmp/backup-g1-duniter-1.8.7
-#    #  - cp -R $HOME/.config/duniter/1.8.7/g1 /tmp/backup-g1-duniter-1.8.7
-#    #  - cp -R $HOME/.config/duniter/1.8.7/txs.db /tmp/backup-g1-duniter-1.8.7
-#    #  - tar -cvzf /tmp/backup-g1-duniter-1.8.7.tgz /tmp/backup-g1-duniter-1.8.7
-#    # Then the file is uploaded to dl.cgeek.fr manually
-#    - curl https://dl.cgeek.fr/public/backup-g1-duniter-1.8.7.tgz -o g1-dump.tgz
-#    - tar xvzf g1-dump.tgz
-#    - rm g1-dump.tgz
-#    - mv backup-g1-duniter-1.8.6 duniter_default
-#    # py-g1-migrator conversion
-#    - git clone https://git.duniter.org/tools/py-g1-migrator.git -b import_identities_from_leveldb /py-g1-migrator
-#    - cd /py-g1-migrator
-#    - rm -rf inputs/*
-#    - apt-get update
-#    - apt-get install -y sqlite3 libleveldb-dev jq
-#    - pip install -r requirements.txt
-#    # Export identities and wallets
-#    - ./main.py
-#    # Export transaction history
-#    - sqlite3 /dump/duniter_default/txs.db --json "select time,comment,issuers,outputs from txs;" > inputs/transactions_history.json 2>> inputs/txs.err
-#    - ./generate_transactions_history.py
-#    # Merge in one file
-#    - 'jq -s "{ identities: .[0].identities, wallets: .[0].wallets, initial_monetary_mass: .[0].initial_monetary_mass, transactions_history: .[1] }" output/gtest_genesis.json output/history.json > output/g1-data.json'
-#    # Make the exported file available for next jobs
-#    - cp output/g1-data.json $CI_PROJECT_DIR/resources
-#  artifacts:
-#    paths:
-#      - $CI_PROJECT_DIR/resources
-#    expire_in: 1 day
+#    - echo "Création de g1-data.json"
 #  tags:
 #    - kepler
+create_g1_data:
+  stage: gx_package
+  rules:
+    - when: always
+  image: python:3.9.18
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+    LEVELDB_PATH: /dump/duniter_default/data/leveldb
+  script:
+    # Duniter 1.8.6 dump
+    - mkdir /dump
+    - cd /dump
+    # Export file constructed using Duniter 1.8.7:
+    #  - bin/duniter sync g1.cgeek.fr --store-txs --nointeractive --mdb 1.8.7
+    #  - mkdir -p /tmp/backup-g1-duniter-1.8.7
+    #  - cp -R $HOME/.config/duniter/1.8.7/data /tmp/backup-g1-duniter-1.8.7
+    #  - cp -R $HOME/.config/duniter/1.8.7/g1 /tmp/backup-g1-duniter-1.8.7
+    #  - cp -R $HOME/.config/duniter/1.8.7/txs.db /tmp/backup-g1-duniter-1.8.7
+    #  - tar -cvzf /tmp/backup-g1-duniter-1.8.7.tgz /tmp/backup-g1-duniter-1.8.7
+    # Then the file is uploaded to dl.cgeek.fr manually
+    - curl https://dl.cgeek.fr/public/backup-g1-duniter-1.8.7.tgz -o g1-dump.tgz
+    - tar xvzf g1-dump.tgz
+    - rm g1-dump.tgz
+    - mv backup-g1-duniter-1.8.6 duniter_default
+    # py-g1-migrator conversion
+    - git clone https://git.duniter.org/tools/py-g1-migrator.git -b import_identities_from_leveldb /py-g1-migrator
+    - cd /py-g1-migrator
+    - rm -rf inputs/*
+    - apt-get update
+    - apt-get install -y sqlite3 libleveldb-dev jq
+    - pip install -r requirements.txt
+    # Export identities and wallets
+    - ./main.py
+    # Export transaction history
+    - sqlite3 /dump/duniter_default/txs.db --json "select time,comment,issuers,outputs from txs;" > inputs/transactions_history.json 2>> inputs/txs.err
+    - ./generate_transactions_history.py
+    # Merge in one file
+    - 'jq -s "{ identities: .[0].identities, wallets: .[0].wallets, initial_monetary_mass: .[0].initial_monetary_mass, transactions_history: .[1] }" output/gtest_genesis.json output/history.json > output/g1-data.json'
+    # Make the exported file available for next jobs
+    - cp output/g1-data.json $CI_PROJECT_DIR/resources
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/resources
+    expire_in: 1 day
+  tags:
+    - kepler
 
 gdev_reboot:
   stage: gx_package
