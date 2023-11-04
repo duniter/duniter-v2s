@@ -222,41 +222,34 @@ readme_docker_release_tag:
 
 ############## SRTOOL ##############
 
-gdev_srtool:
+.srtool:
   stage: gx_build
   rules:
-    - when: always
-  image: python:3.9.18
+    - when: manual
+  image: paritytech/srtool:1.62.0
+  variables:
+    PACKAGE: "gdev-runtime"
+    RUNTIME_DIR: "runtime/gdev"
+    SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
   script:
-    - echo "Build gdev runtime using srtool"
+    # Copy sources to the expected directory of srtool
+    - cp -R * /build/
+    # Build the runtime
+    - /srtool/build --app --json -cM > $SRTOOL_OUTPUT
+    - mv /build/runtime/gdev/target $CI_PROJECT_DIR/runtime/gdev/target/
+    - . $CARGO_HOME/env
+  artifacts:
+    name: "runtime"
+    paths:
+      - $CI_PROJECT_DIR/resources
+      - $CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/
+      - $CI_PROJECT_DIR/srtool_output.json
+    expire_in: 1 day
   tags:
     - kepler
-#create_runtime:
-#  stage: prepare_spec
-#  rules:
-#    - when: never
-#  image: paritytech/srtool:1.62.0
-#  variables:
-#    PACKAGE: "gdev-runtime"
-#    RUNTIME_DIR: "runtime/gdev"
-#    SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
-#  script:
-#    # Copy sources to the expected directory of srtool
-#    - cp -R * /build/
-#    # Build the runtime
-#    - /srtool/build --app --json -cM > $SRTOOL_OUTPUT
-#    - mv /build/runtime/gdev/target $CI_PROJECT_DIR/runtime/gdev/target/
-#    - . $CARGO_HOME/env
-#  artifacts:
-#    name: "runtime"
-#    paths:
-#      - $CI_PROJECT_DIR/resources
-#      - $CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/
-#      - $CI_PROJECT_DIR/srtool_output.json
-#    expire_in: 1 day
-#  tags:
-#    - kepler
-#
+
+gdev_srtool:
+  extends: .srtool
 
 gtest_srtool:
   stage: gx_build
