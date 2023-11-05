@@ -1632,14 +1632,22 @@ fn get_genesis_input<P: Default + DeserializeOwned>(
 fn get_genesis_migration_data() -> Result<GenesisMigrationData, String> {
     let json_file_path = std::env::var("DUNITER_GENESIS_DATA")
         .unwrap_or_else(|_| "./resources/g1-data.json".to_owned());
-    let file = std::fs::File::open(&json_file_path)
-        .map_err(|e| format!("Error opening gen conf file `{}`: {}", json_file_path, e))?;
+    let file = std::fs::File::open(&json_file_path).map_err(|e| {
+        format!(
+            "Error opening gen migration file `{}`: {}",
+            json_file_path, e
+        )
+    })?;
     let bytes = unsafe {
-        memmap2::Mmap::map(&file)
-            .map_err(|e| format!("Error mmaping gen conf file `{}`: {}", json_file_path, e))?
+        memmap2::Mmap::map(&file).map_err(|e| {
+            format!(
+                "Error mmaping gen migration file `{}`: {}",
+                json_file_path, e
+            )
+        })?
     };
     serde_json::from_slice::<GenesisMigrationData>(&bytes)
-        .map_err(|e| format!("Error parsing gen data file: {}", e))
+        .map_err(|e| format!("Error parsing gen migration file: {}", e))
 }
 
 fn get_genesis_timestamp() -> Result<u64, String> {

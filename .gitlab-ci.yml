@@ -228,27 +228,37 @@ readme_docker_release_tag:
     - when: manual
       allow_failure: true
   image: paritytech/srtool:1.62.0
-  variables:
-    PACKAGE: $RUNTIME-runtime
-    RUNTIME_DIR: runtime/$RUNTIME
-    SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
   script:
     - echo "Building runtime for $RUNTIME"
-    # Copy sources to the expected directory of srtool
-    - cp -R * /build/
-    # Build the runtime
-    - /srtool/build --app --json -cM > $SRTOOL_OUTPUT
-    - mv /build/runtime/$RUNTIME/target $CI_PROJECT_DIR/runtime/$RUNTIME/target/
-    - . $CARGO_HOME/env
-  artifacts:
-    name: "runtime"
-    paths:
-      - $CI_PROJECT_DIR/resources
-      - $CI_PROJECT_DIR/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/
-      - $CI_PROJECT_DIR/srtool_output.json
-    expire_in: 1 day
   tags:
     - kepler
+#.srtool:
+#  stage: gx_build
+#  rules:
+#    - when: manual
+#      allow_failure: true
+#  image: paritytech/srtool:1.62.0
+#  variables:
+#    PACKAGE: $RUNTIME-runtime
+#    RUNTIME_DIR: runtime/$RUNTIME
+#    SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
+#  script:
+#    - echo "Building runtime for $RUNTIME"
+#    # Copy sources to the expected directory of srtool
+#    - cp -R * /build/
+#    # Build the runtime
+#    - /srtool/build --app --json -cM > $SRTOOL_OUTPUT
+#    - mv /build/runtime/$RUNTIME/target $CI_PROJECT_DIR/runtime/$RUNTIME/target/
+#    - . $CARGO_HOME/env
+#  artifacts:
+#    name: "runtime"
+#    paths:
+#      - $CI_PROJECT_DIR/resources
+#      - $CI_PROJECT_DIR/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/
+#      - $CI_PROJECT_DIR/srtool_output.json
+#    expire_in: 1 day
+#  tags:
+#    - kepler
 
 gdev_srtool:
   extends: .srtool
@@ -334,6 +344,7 @@ gdev_reboot:
   script:
     - ls -alh "$WASM_FILE"
     - ls -alh "$DUNITER_GENESIS_DATA"
+    - head -n100 "$DUNITER_GENESIS_DATA"
 #    - export WASM_FILE=$CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm
 #    - ls -alh "$WASM_FILE"
     - apt-get update
