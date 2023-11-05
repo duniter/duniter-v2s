@@ -1,0 +1,44 @@
+{
+  "ud": 1000,
+  "first_ud": 6000,
+  "first_ud_reeval": 600000,
+  "parameters": {
+    "babe_epoch_duration": 600,
+    "cert_period": 14400,
+    "cert_max_by_issuer": 100,
+    "cert_min_received_cert_to_issue_cert": 3,
+    "cert_validity_period": 2102400,
+    "idty_confirm_period": 14400,
+    "idty_creation_period": 14400,
+    "membership_period": 1051200,
+    "pending_membership_period": 172800,
+    "ud_creation_period": 14400,
+    "ud_reeval_period": 100800,
+    "smith_cert_period": 14400,
+    "smith_cert_max_by_issuer": 15,
+    "smith_cert_min_received_cert_to_issue_cert": 3,
+    "smith_cert_validity_period": 2102400,
+    "smith_membership_period": 1051200,
+    "smith_pending_membership_period": 172800,
+    "smith_wot_first_cert_issuable_on": 14400,
+    "smith_wot_min_cert_for_membership": 3,
+    "wot_first_cert_issuable_on": 0,
+    "wot_min_cert_for_create_idty_right": 3,
+    "wot_min_cert_for_membership": 3
+  },
+  "clique_smiths": [
+    { "name": "Pini" },
+    { "name": "moul" },
+    { "name": "HugoTrentesaux" },
+    { "name": "tuxmain" },
+    { "name": "1000i100" },
+    { "name": "vit" },
+    { "name": "cgeek",
+      "migration_address": "5E6q47RRGZU15LjUiBTm2DZjpqFKAjRNafYS8YV8AzTQZtLG",
+      "session_keys": "0x3090c9a6974f1a4749038ee75eb47da7c72ba4972e4809f2f71e8730567c1c5a7acfdc6e9b470e8d2d334edc662d755aeec93d2bb140e1c9f7db724b046dd54b7acfdc6e9b470e8d2d334edc662d755aeec93d2bb140e1c9f7db724b046dd54b7acfdc6e9b470e8d2d334edc662d755aeec93d2bb140e1c9f7db724b046dd54b"
+    }
+  ],
+  "sudo_key": "5Hm8sBbwuLAU99dBezvgtnRmZCrUy9mhqmbQMFyGTaeATYg7",
+  "treasury_funder_address": "5E6q47RRGZU15LjUiBTm2DZjpqFKAjRNafYS8YV8AzTQZtLG",
+  "technical_committee": ["Pini", "moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek"]
+}
