@@ -98,7 +98,7 @@ pub fn gdev_development_chain_spec(json_file_path: String) -> Result<ChainSpec, 
                     Some("Alice".to_owned()),
                 )
                 .expect("Genesis Data must be buildable");
-            genesis_data_to_gdev_genesis_conf(genesis_data, &wasm_binary)
+            genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary.to_vec())
         },
         // Bootnodes
         vec![],
@@ -155,7 +155,7 @@ pub fn benchmark_chain_spec() -> Result<ChainSpec, String> {
                 get_parameters,
             )
             .expect("Genesis Data must be buildable");
-            genesis_data_to_gdev_genesis_conf(genesis_data, &wasm_binary)
+            genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary.to_vec())
         },
         // Bootnodes
         vec![],
@@ -197,7 +197,7 @@ pub fn gen_live_conf(json_file_path: String) -> Result<ChainSpec, String> {
                     None,
                 )
                 .expect("Genesis Data must be buildable");
-            genesis_data_to_gdev_genesis_conf(genesis_data, &wasm_binary)
+            genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary.to_vec())
         },
         // Bootnodes
         vec![],
@@ -262,7 +262,7 @@ pub fn local_testnet_config(
                 get_parameters,
             )
             .expect("Genesis Data must be buildable");
-            genesis_data_to_gdev_genesis_conf(genesis_data, &wasm_binary)
+            genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary.to_vec())
         },
         // Bootnodes
         vec![],
@@ -290,7 +290,7 @@ pub fn local_testnet_config(
 /// custom genesis
 fn genesis_data_to_gdev_genesis_conf(
     genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
-    wasm_binary: &Vec<u8>,
+    wasm_binary: Vec<u8>,
 ) -> gdev_runtime::GenesisConfig {
     let super::gen_genesis_data::GenesisData {
         accounts,
@@ -315,7 +315,7 @@ fn genesis_data_to_gdev_genesis_conf(
     gdev_runtime::GenesisConfig {
         system: SystemConfig {
             // Add Wasm runtime to storage.
-            code: wasm_binary.to_vec(),
+            code: wasm_binary,
         },
         account: AccountConfig {
             accounts,
@@ -443,5 +443,5 @@ fn get_wasm_binary() -> Option<Vec<u8>> {
     } else {
         None
     };
-    wasm_bytes_from_file.or(WASM_BINARY.map(|bytes| bytes.to_vec()))
+    wasm_bytes_from_file.or_else(|| WASM_BINARY.map(|bytes| bytes.to_vec()))
 }

@@ -167,7 +167,7 @@ pub fn development_chainspecs(json_file_path: String) -> Result<ChainSpec, Strin
                     Some("Alice".to_owned()),
                 )
                 .expect("Genesis Data must be buildable");
-            genesis_data_to_gtest_genesis_conf(genesis_data, &wasm_binary)
+            genesis_data_to_gtest_genesis_conf(genesis_data, wasm_binary.to_vec())
         },
         // Bootnodes
         vec![],
@@ -217,7 +217,7 @@ pub fn live_chainspecs(
                     None,
                 )
                 .expect("Genesis Data must be buildable");
-            genesis_data_to_gtest_genesis_conf(genesis_data, &wasm_binary)
+            genesis_data_to_gtest_genesis_conf(genesis_data, wasm_binary.to_vec())
         },
         // Bootnodes
         client_spec.boot_nodes,
@@ -237,7 +237,7 @@ pub fn live_chainspecs(
 /// custom genesis
 fn genesis_data_to_gtest_genesis_conf(
     genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
-    wasm_binary: &Vec<u8>,
+    wasm_binary: Vec<u8>,
 ) -> gtest_runtime::GenesisConfig {
     let super::gen_genesis_data::GenesisData {
         accounts,
@@ -262,7 +262,7 @@ fn genesis_data_to_gtest_genesis_conf(
     gtest_runtime::GenesisConfig {
         system: SystemConfig {
             // Add Wasm runtime to storage.
-            code: wasm_binary.to_vec(),
+            code: wasm_binary,
         },
         account: AccountConfig {
             accounts,
@@ -352,5 +352,5 @@ fn get_wasm_binary() -> Option<Vec<u8>> {
     } else {
         None
     };
-    wasm_bytes_from_file.or(WASM_BINARY.map(|bytes| bytes.to_vec()))
+    wasm_bytes_from_file.or_else(|| WASM_BINARY.map(|bytes| bytes.to_vec()))
 }
