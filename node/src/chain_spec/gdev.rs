@@ -30,6 +30,7 @@ use gdev_runtime::{
 use sc_service::ChainType;
 use sp_core::sr25519;
 use sp_runtime::Perbill;
+use std::{env, fs};
 
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
 
@@ -79,7 +80,8 @@ fn get_parameters(parameters_from_file: &Option<GenesisParameters>) -> CommonPar
 
 /// generate development chainspec with Alice validator
 pub fn gdev_development_chain_spec(json_file_path: String) -> Result<ChainSpec, String> {
-    let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+    let wasm_binary =
+        get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?;
     Ok(ChainSpec::from_genesis(
         // Name
         "Development",
@@ -96,7 +98,7 @@ pub fn gdev_development_chain_spec(json_file_path: String) -> Result<ChainSpec, 
                     Some("Alice".to_owned()),
                 )
                 .expect("Genesis Data must be buildable");
-            genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary)
+            genesis_data_to_gdev_genesis_conf(genesis_data, &wasm_binary)
         },
         // Bootnodes
         vec![],
@@ -123,7 +125,8 @@ pub fn gdev_development_chain_spec(json_file_path: String) -> Result<ChainSpec, 
 
 /// generate chainspecs used for benchmarks
 pub fn benchmark_chain_spec() -> Result<ChainSpec, String> {
-    let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+    let wasm_binary =
+        get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?;
     // Same as local chain
     Ok(ChainSpec::from_genesis(
         // Name
@@ -152,7 +155,7 @@ pub fn benchmark_chain_spec() -> Result<ChainSpec, String> {
                 get_parameters,
             )
             .expect("Genesis Data must be buildable");
-            genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary)
+            genesis_data_to_gdev_genesis_conf(genesis_data, &wasm_binary)
         },
         // Bootnodes
         vec![],
@@ -179,7 +182,7 @@ pub fn benchmark_chain_spec() -> Result<ChainSpec, String> {
 
 /// generate live network chainspecs
 pub fn gen_live_conf(json_file_path: String) -> Result<ChainSpec, String> {
-    let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
+    let wasm_binary = get_wasm_binary().ok_or_else(|| "wasm not available".to_string())?;
     Ok(ChainSpec::from_genesis(
         // Name
         "Ğdev",
@@ -194,7 +197,7 @@ pub fn gen_live_conf(json_file_path: String) -> Result<ChainSpec, String> {
                     None,
                 )
                 .expect("Genesis Data must be buildable");
-            genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary)
+            genesis_data_to_gdev_genesis_conf(genesis_data, &wasm_binary)
         },
         // Bootnodes
         vec![],
@@ -231,7 +234,7 @@ pub fn local_testnet_config(
     initial_smiths_len: usize,
     initial_identities_len: usize,
 ) -> Result<ChainSpec, String> {
-    let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
+    let wasm_binary = get_wasm_binary().ok_or_else(|| "wasm not available".to_string())?;
     Ok(ChainSpec::from_genesis(
         // Name
         "Ğdev Local Testnet",
@@ -259,7 +262,7 @@ pub fn local_testnet_config(
                 get_parameters,
             )
             .expect("Genesis Data must be buildable");
-            genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary)
+            genesis_data_to_gdev_genesis_conf(genesis_data, &wasm_binary)
         },
         // Bootnodes
         vec![],
@@ -287,7 +290,7 @@ pub fn local_testnet_config(
 /// custom genesis
 fn genesis_data_to_gdev_genesis_conf(
     genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
-    wasm_binary: &[u8],
+    wasm_binary: &Vec<u8>,
 ) -> gdev_runtime::GenesisConfig {
     let super::gen_genesis_data::GenesisData {
         accounts,
@@ -429,4 +432,16 @@ fn get_env<T: std::str::FromStr>(env_var_name: &'static str, default_value: T) -
     std::env::var(env_var_name)
         .map_or(Ok(default_value), |s| s.parse())
         .unwrap_or_else(|_| panic!("{} must be a {}", env_var_name, std::any::type_name::<T>()))
+}
+
+/// Get the WASM bytes either from filesytem (`WASM_FILE` env variable giving the path to the wasm blob)
+/// or else get the one compiled from source code.
+/// Goal: allow to provide the WASM built with srtool, which is reproductible.
+fn get_wasm_binary() -> Option<Vec<u8>> {
+    let wasm_bytes_from_file = if let Ok(file_path) = env::var("WASM_FILE") {
+        Some(fs::read(file_path).unwrap_or_else(|e| panic!("Could not read wasm file: {}", e)))
+    } else {
+        None
+    };
+    wasm_bytes_from_file.or(WASM_BINARY.map(|bytes| bytes.to_vec()))
 }

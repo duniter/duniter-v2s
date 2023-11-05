@@ -38,6 +38,7 @@ use sp_core::{blake2_256, sr25519, Encode, H256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_membership::MembershipData;
 use std::collections::BTreeMap;
+use std::{env, fs};
 
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
 pub type AuthorityKeys = (
@@ -149,7 +150,7 @@ pub struct ClientSpec {
 /// generate development chainspec with Alice validator
 // there is some code duplication because we can not use ClientSpec
 pub fn development_chainspecs(json_file_path: String) -> Result<ChainSpec, String> {
-    let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
+    let wasm_binary = get_wasm_binary().ok_or_else(|| "wasm not available".to_string())?;
     Ok(ChainSpec::from_genesis(
         // Name
         "ĞTest Development",
@@ -166,7 +167,7 @@ pub fn development_chainspecs(json_file_path: String) -> Result<ChainSpec, Strin
                     Some("Alice".to_owned()),
                 )
                 .expect("Genesis Data must be buildable");
-            genesis_data_to_gtest_genesis_conf(genesis_data, wasm_binary)
+            genesis_data_to_gtest_genesis_conf(genesis_data, &wasm_binary)
         },
         // Bootnodes
         vec![],
@@ -199,7 +200,7 @@ pub fn live_chainspecs(
     client_spec: ClientSpec,
     json_file_path: String,
 ) -> Result<ChainSpec, String> {
-    let wasm_binary = WASM_BINARY.ok_or_else(|| "wasm not available".to_string())?;
+    let wasm_binary = get_wasm_binary().ok_or_else(|| "wasm not available".to_string())?;
     Ok(ChainSpec::from_genesis(
         // Name
         client_spec.name.as_str(),
@@ -216,7 +217,7 @@ pub fn live_chainspecs(
                     None,
                 )
                 .expect("Genesis Data must be buildable");
-            genesis_data_to_gtest_genesis_conf(genesis_data, wasm_binary)
+            genesis_data_to_gtest_genesis_conf(genesis_data, &wasm_binary)
         },
         // Bootnodes
         client_spec.boot_nodes,
@@ -236,7 +237,7 @@ pub fn live_chainspecs(
 /// custom genesis
 fn genesis_data_to_gtest_genesis_conf(
     genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
-    wasm_binary: &[u8],
+    wasm_binary: &Vec<u8>,
 ) -> gtest_runtime::GenesisConfig {
     let super::gen_genesis_data::GenesisData {
         accounts,
@@ -340,4 +341,16 @@ fn genesis_data_to_gtest_genesis_conf(
         },
         treasury: Default::default(),
     }
+}
+
+/// Get the WASM bytes either from filesytem (`WASM_FILE` env variable giving the path to the wasm blob)
+/// or else get the one compiled from source code.
+/// Goal: allow to provide the WASM built with srtool, which is reproductible.
+fn get_wasm_binary() -> Option<Vec<u8>> {
+    let wasm_bytes_from_file = if let Ok(file_path) = env::var("WASM_FILE") {
+        Some(fs::read(file_path).unwrap_or_else(|e| panic!("Could not read wasm file: {}", e)))
+    } else {
+        None
+    };
+    wasm_bytes_from_file.or(WASM_BINARY.map(|bytes| bytes.to_vec()))
 }
