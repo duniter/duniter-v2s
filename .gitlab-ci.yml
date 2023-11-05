@@ -226,6 +226,7 @@ readme_docker_release_tag:
   stage: gx_build
   rules:
     - when: manual
+      allow_failure: true
   image: paritytech/srtool:1.62.0
   variables:
     PACKAGE: $RUNTIME-runtime
@@ -328,25 +329,6 @@ create_g1_data:
 #    expire_in: 1 day
 #  tags:
 #    - kepler
-
-gdev_reboot_test:
-  stage: gx_package
-  rules:
-    - when: always
-      allow_failure: true
-  needs:
-    - gdev_srtool
-  image: rust:1-bullseye
-  variables:
-    WASM_FILE: $CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm
-    DEBIAN_FRONTEND: noninteractive
-  script:
-    - echo "WASM_FILE = $WASM_FILE"
-    - export WASM_FILE=$CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm
-    - echo "WASM_FILE = $WASM_FILE"
-    - ls -alh "$WASM_FILE"
-  tags:
-    - kepler
 
 gdev_reboot:
   stage: gx_package
