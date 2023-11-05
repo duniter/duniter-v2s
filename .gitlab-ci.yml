@@ -336,6 +336,24 @@ create_g1_data:
 #  tags:
 #    - kepler
 
+gdev_reboot_test:
+  stage: gx_package
+  rules:
+    - when: manual
+      allow_failure: true
+  needs:
+    - gdev_srtool
+  image: rust:1-bullseye
+  variables:
+    WASM_FILE: $CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm
+    DEBIAN_FRONTEND: noninteractive
+  script:
+    - echo "WASM_FILE = $WASM_FILE"
+    - export WASM_FILE=$CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm
+    - echo "WASM_FILE = $WASM_FILE"
+  tags:
+    - kepler
+
 gdev_reboot:
   stage: gx_package
   rules:
