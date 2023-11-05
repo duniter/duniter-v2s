@@ -340,6 +340,7 @@ gdev_reboot:
   variables:
     WASM_FILE: $CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm
     DUNITER_GENESIS_DATA: $CI_PROJECT_DIR/release/g1-data.json
+    DUNITER_GENESIS_EXPORT: $CI_PROJECT_DIR/release/gdev-indexer.json
     DEBIAN_FRONTEND: noninteractive
   script:
     - apt-get update
@@ -353,25 +354,6 @@ gdev_reboot:
     expire_in: 1 day
   tags:
     - kepler
-#create_gdev_raw_spec:
-#  stage: gx_package
-#  rules:
-#    - when: never
-#  image: rust:1-bullseye
-#  variables:
-#    DEBIAN_FRONTEND: noninteractive
-#  script:
-#    - apt-get update
-#    - apt-get install -y clang cmake protobuf-compiler
-#    - cargo run -- build-spec -lerror --chain=gdev_live --raw > resources/gdev-raw.json
-#  artifacts:
-#    name: "runtime"
-#    paths:
-#      - $CI_PROJECT_DIR/resources
-#    expire_in: 1 day
-#  tags:
-#    - kepler
-#
 
 gtest_reboot:
   stage: gx_package
