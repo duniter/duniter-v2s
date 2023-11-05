@@ -222,43 +222,43 @@ readme_docker_release_tag:
 
 ############## SRTOOL ##############
 
-.srtool:
-  stage: gx_build
-  rules:
-    - when: manual
-      allow_failure: true
-  image: paritytech/srtool:1.62.0
-  script:
-    - echo "Building runtime for $RUNTIME"
-  tags:
-    - kepler
 #.srtool:
 #  stage: gx_build
 #  rules:
 #    - when: manual
 #      allow_failure: true
 #  image: paritytech/srtool:1.62.0
-#  variables:
-#    PACKAGE: $RUNTIME-runtime
-#    RUNTIME_DIR: runtime/$RUNTIME
-#    SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
 #  script:
 #    - echo "Building runtime for $RUNTIME"
-#    # Copy sources to the expected directory of srtool
-#    - cp -R * /build/
-#    # Build the runtime
-#    - /srtool/build --app --json -cM > $SRTOOL_OUTPUT
-#    - mv /build/runtime/$RUNTIME/target $CI_PROJECT_DIR/runtime/$RUNTIME/target/
-#    - . $CARGO_HOME/env
-#  artifacts:
-#    name: "runtime"
-#    paths:
-#      - $CI_PROJECT_DIR/resources
-#      - $CI_PROJECT_DIR/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/
-#      - $CI_PROJECT_DIR/srtool_output.json
-#    expire_in: 1 day
 #  tags:
 #    - kepler
+.srtool:
+  stage: gx_build
+  rules:
+    - when: manual
+      allow_failure: true
+  image: paritytech/srtool:1.62.0
+  variables:
+    PACKAGE: $RUNTIME-runtime
+    RUNTIME_DIR: runtime/$RUNTIME
+    SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
+  script:
+    - echo "Building runtime for $RUNTIME"
+    # Copy sources to the expected directory of srtool
+    - cp -R * /build/
+    # Build the runtime
+    - /srtool/build --app --json -cM > $SRTOOL_OUTPUT
+    - mv /build/runtime/$RUNTIME/target $CI_PROJECT_DIR/runtime/$RUNTIME/target/
+    - . $CARGO_HOME/env
+  artifacts:
+    name: "runtime"
+    paths:
+      - $CI_PROJECT_DIR/resources
+      - $CI_PROJECT_DIR/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/
+      - $CI_PROJECT_DIR/srtool_output.json
+    expire_in: 1 day
+  tags:
+    - kepler
 
 gdev_srtool:
   extends: .srtool
@@ -319,11 +319,11 @@ create_g1_data:
     # Merge in one file
     - 'jq -s "{ identities: .[0].identities, wallets: .[0].wallets, initial_monetary_mass: .[0].initial_monetary_mass, transactions_history: .[1] }" output/gtest_genesis.json output/history.json > output/g1-data.json'
     # Make the exported file available for next jobs
-    - mkdir -p $CI_PROJECT_DIR/g1-data/
-    - cp output/g1-data.json $CI_PROJECT_DIR/g1-data/
+    - mkdir -p $CI_PROJECT_DIR/release/
+    - cp output/g1-data.json $CI_PROJECT_DIR/release/
   artifacts:
     paths:
-      - $CI_PROJECT_DIR/g1-data/
+      - $CI_PROJECT_DIR/release/
     expire_in: 1 day
   tags:
     - kepler
@@ -339,7 +339,7 @@ gdev_reboot:
   image: rust:1-bullseye
   variables:
     WASM_FILE: $CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm
-    DUNITER_GENESIS_DATA: $CI_PROJECT_DIR/g1-data/g1-data.json
+    DUNITER_GENESIS_DATA: $CI_PROJECT_DIR/release/g1-data.json
     DEBIAN_FRONTEND: noninteractive
   script:
 #    - ls -alh "$WASM_FILE"
@@ -349,13 +349,12 @@ gdev_reboot:
 #    - ls -alh "$WASM_FILE"
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
-    - cargo run -- build-spec --chain=gdev_live > resources/gdev.json
-    - cargo run -- build-spec --chain=resources/gdev.json --disable-default-bootnode --raw > specs/gdev-raw.json
+    - cargo run -- build-spec --chain=gdev_live > release/gdev.json
+    - cargo run -- build-spec --chain=resources/gdev.json --disable-default-bootnode --raw > release/gdev-raw.json
   artifacts:
     name: "runtime"
     paths:
-      - $CI_PROJECT_DIR/resources
-      - $CI_PROJECT_DIR/specs
+      - $CI_PROJECT_DIR/release
     expire_in: 1 day
   tags:
     - kepler
