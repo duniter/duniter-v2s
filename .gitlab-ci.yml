@@ -342,7 +342,7 @@ gdev_reboot:
     DUNITER_GENESIS_DATA: $CI_PROJECT_DIR/g1-data/g1-data.json
     DEBIAN_FRONTEND: noninteractive
   script:
-    - ls -alh "$WASM_FILE"
+#    - ls -alh "$WASM_FILE"
     - ls -alh "$DUNITER_GENESIS_DATA"
     - head -n100 "$DUNITER_GENESIS_DATA"
 #    - export WASM_FILE=$CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm
