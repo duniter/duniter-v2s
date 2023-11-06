@@ -423,7 +423,7 @@ release_gdev_6_reboot:
     - gdev_reboot
   rules:
     - when: manual
-  image: python:3.9.18
+  image: rust:1-bullseye
   script:
     - cargo xtask create-asset-link 600 g1-data.json $CI_PROJECT_DIR/release/g1-data.json
     - echo "TODO create Docker image based on gdev_reboot raw specs"
