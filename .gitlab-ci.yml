@@ -394,7 +394,7 @@ create_release:
       allow_failure: true
   image: rust:1-bullseye
   variables:
-    SRTOOL_OUTPUT: $CI_JOB_URL/artifacts/file/srtool_output.json
+    SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
   script:
     # Release creation: TODO: generalize to any runtime version
     - cargo xtask release-runtime 600
