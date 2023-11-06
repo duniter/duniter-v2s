@@ -426,7 +426,7 @@ release_gdev_runtime:
   tags:
     - kepler
 
-release_gdev_6_docker:
+release_gdev_6_reboot:
   stage: gx_release
   needs:
     - create_release
@@ -435,7 +435,8 @@ release_gdev_6_docker:
     - when: manual
   image: python:3.9.18
   script:
-    - echo "Create Docker image based on gdev_reboot raw specs"
+    - cargo xtask create-asset-link 600 g1-data.json $CI_PROJECT_DIR/release/g1-data.json
+    - echo "TODO create Docker image based on gdev_reboot raw specs"
   tags:
     - kepler
 
@@ -454,7 +455,7 @@ release_gtest_runtime:
   tags:
     - kepler
 
-release_gtest_docker:
+release_gtest_reboot:
   stage: gx_release
   needs:
     - create_release
@@ -482,7 +483,7 @@ release_g1_runtime:
   tags:
     - kepler
 
-release_g1_docker:
+release_g1_reboot:
   stage: gx_release
   needs:
     - create_release

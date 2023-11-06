@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+mod create_asset_link;
 mod create_release;
 mod get_changes;
 
@@ -88,24 +89,8 @@ pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
     println!("{}", release_notes);
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
-    let g1_data_url =
-        std::env::var("G1_DATA_URL").with_context(|| "missing env var G1_DATA_URL")?;
-    let srtool_output_url =
-        std::env::var("SRTOOL_OUTPUT_URL").with_context(|| "missing env var SRTOOL_OUTPUT_URL")?;
-    let gdev_wasm_url =
-        std::env::var("GDEV_WASM_URL").with_context(|| "missing env var GDEV_WASM_URL")?;
-    let gdev_raw_spec_url =
-        std::env::var("GDEV_RAW_SPEC_URL").with_context(|| "missing env var GDEV_RAW_SPEC_URL")?;
-    create_release::create_release(
-        gitlab_token,
-        spec_version,
-        release_notes,
-        g1_data_url,
-        srtool_output_url,
-        gdev_wasm_url,
-        gdev_raw_spec_url,
-    )
-    .await?;
+    create_release::create_release(gitlab_token, spec_version, "release_notes !".to_string())
+        .await?;
 
     Ok(())
 }
@@ -155,4 +140,16 @@ async fn gen_release_notes(spec_version: u32, srtool: Srtool) -> Result<String> 
 
     // Render template
     placeholder::render(&template, &values).map_err(|e| anyhow!("Fail to render template: {}", e))
+}
+
+pub(crate) async fn create_asset_link(
+    spec_version: u32,
+    asset_name: String,
+    asset_url: String,
+) -> Result<()> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    create_asset_link::create_asset_link(gitlab_token, spec_version, asset_name, asset_url).await?;
+
+    Ok(())
 }

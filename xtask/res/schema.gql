@@ -10,6 +10,7 @@ type Query {
 
 type Mutation {
   releaseCreate(input: ReleaseCreateInput!): ReleaseCreatePayload
+  releaseAssetLinkCreate(input: ReleaseAssetLinkInput!): ReleaseAssetLinkCreatePayload
 }
 
 type Project {
@@ -69,8 +70,10 @@ input ReleaseAssetsInput {
 input ReleaseAssetLinkInput {
   name: String!
   url: String!
+  tagName: String!
+  projectPath: String!
   directAssetPath: String
-  linkType: ReleaseAssetLinkType = OTHER
+  linkType: ReleaseAssetLinkType = PACKAGE
 }
 
 enum ReleaseAssetLinkType {
@@ -81,5 +84,9 @@ enum ReleaseAssetLinkType {
 }
 
 type ReleaseCreatePayload {
+  errors: [String!]!
+}
+
+type ReleaseAssetLinkCreatePayload {
   errors: [String!]!
 }

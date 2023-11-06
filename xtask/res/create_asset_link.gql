@@ -1,0 +1,10 @@
+mutation CreateReleaseAssetLinkMutation($tag: String!, $name: String!, $url: String!) {
+  releaseAssetLinkCreate(input: {
+    name: $name
+    url: $url,
+    tagName: $tag,
+    projectPath: "nodes/rust/duniter-v2s"
+  }) {
+    errors
+  }
+}

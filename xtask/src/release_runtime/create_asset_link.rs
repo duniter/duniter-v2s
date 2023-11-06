@@ -20,23 +20,25 @@ use graphql_client::{GraphQLQuery, Response};
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "res/schema.gql",
-    query_path = "res/create_release.gql",
+    query_path = "res/create_asset_link.gql",
     response_derives = "Debug"
 )]
-pub struct CreateReleaseMutation;
+pub struct CreateReleaseAssetLinkMutation;
 
-pub(super) async fn create_release(
+pub(super) async fn create_asset_link(
     gitlab_token: String,
     spec_version: u32,
-    release_notes: String,
+    asset_name: String,
+    asset_url: String,
 ) -> Result<()> {
     // this is the important line
-    let request_body = CreateReleaseMutation::build_query(create_release_mutation::Variables {
-        branch: format!("release/runtime-{}", spec_version - (spec_version % 100)),
-        description: release_notes,
-        milestone: format!("runtime-{}", spec_version),
-        links: vec![],
-    });
+    let request_body = CreateReleaseAssetLinkMutation::build_query(
+        create_release_asset_link_mutation::Variables {
+            name: asset_name,
+            url: asset_url,
+            tag: format!("runtime-{}", spec_version),
+        },
+    );
 
     let client = reqwest::Client::new();
     let res = client
@@ -45,15 +47,16 @@ pub(super) async fn create_release(
         .json(&request_body)
         .send()
         .await?;
-    let response_body: Response<create_release_mutation::ResponseData> = res.json().await?;
+    let response_body: Response<create_release_asset_link_mutation::ResponseData> =
+        res.json().await?;
 
     if let Some(data) = response_body.data {
-        if let Some(release_create) = data.release_create {
-            if release_create.errors.is_empty() {
+        if let Some(body) = data.release_asset_link_create {
+            if body.errors.is_empty() {
                 Ok(())
             } else {
-                println!("{} errors:", release_create.errors.len());
-                for error in release_create.errors {
+                println!("{} errors:", body.errors.len());
+                for error in body.errors {
                     println!("{}", error);
                 }
                 Err(anyhow!("Logic errors"))
@@ -61,7 +64,7 @@ pub(super) async fn create_release(
         } else if let Some(errors) = response_body.errors {
             Err(anyhow!("Errors: {:?}", errors))
         } else {
-            Err(anyhow!("Invalid response: no release_create"))
+            Err(anyhow!("Invalid response: no release_asset_link_create"))
         }
     } else if let Some(errors) = response_body.errors {
         println!("{} errors:", errors.len());

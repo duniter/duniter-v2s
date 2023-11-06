@@ -51,6 +51,12 @@ enum DuniterXTaskCommand {
     },
     /// Release a new runtime
     ReleaseRuntime { spec_version: u32 },
+    /// Create asset in a release
+    CreateAssetLink {
+        spec_version: u32,
+        asset_name: String,
+        asset_url: String,
+    },
     /// Execute unit tests and integration tests
     /// End2tests are skipped
     Test,
@@ -81,6 +87,11 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::ReleaseRuntime { spec_version } => {
             release_runtime::release_runtime(spec_version).await
         }
+        DuniterXTaskCommand::CreateAssetLink {
+            spec_version,
+            asset_name,
+            asset_url,
+        } => release_runtime::create_asset_link(spec_version, asset_name, asset_url).await,
         DuniterXTaskCommand::Test => test(),
     }
 }
