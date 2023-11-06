@@ -88,8 +88,7 @@ pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
     println!("{}", release_notes);
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
-    create_release::create_release(gitlab_token, spec_version, "release_notes !".to_string())
-        .await?;
+    create_release::create_release(gitlab_token, spec_version, release_notes.to_string()).await?;
 
     Ok(())
 }
