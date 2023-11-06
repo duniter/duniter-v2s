@@ -85,7 +85,6 @@ pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
     let release_notes = gen_release_notes(spec_version, srtool)
         .await
         .with_context(|| "Fail to generate release notes")?;
-    // TODO: Call gitlab API to publish the release notes (and upload the wasm)
     println!("{}", release_notes);
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;

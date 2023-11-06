@@ -391,25 +391,15 @@ create_release:
   stage: gx_release
   rules:
     - when: always
-  image: python:3.9.18
+      allow_failure: true
+  image: rust:1-bullseye
+  variables:
+    SRTOOL_OUTPUT: $CI_JOB_URL/artifacts/file/srtool_output.json
   script:
-    - echo "Create release page"
+    # Release creation: TODO: generalize to any runtime version
+    - cargo xtask release-runtime 600
   tags:
     - kepler
-#create_release:
-#  stage: gx_release
-#  rules:
-#    - when: never
-#  image: rust:1-bullseye
-#  script:
-#    # Release creation + link to artifacts
-#    - export G1_DATA_URL="$CI_JOB_URL/artifacts/file/resources/g1-data.json"
-#    - export GDEV_WASM_URL="$CI_JOB_URL/artifacts/file/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm"
-#    - export SRTOOL_OUTPUT_URL="$CI_JOB_URL/artifacts/file/srtool_output.json"
-#    - export GDEV_RAW_SPEC_URL="$CI_JOB_URL/artifacts/file/resources/gdev-raw.json"
-#    - cargo xtask release-runtime 600
-#  tags:
-#    - kepler
 
 # ----- GDEV -----
 
