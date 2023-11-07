@@ -328,8 +328,8 @@ create_g1_data:
   script:
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
-    - cargo run -- build-spec --chain=${RUNTIME}_live > release/${RUNTIME}.json
-    - cargo run -- build-spec --chain=release/${RUNTIME}.json --disable-default-bootnode --raw > release/${RUNTIME}-raw.json
+    - cargo run ${FEATURES} -- build-spec --chain=${RUNTIME}_live > release/${RUNTIME}.json
+    - cargo run ${FEATURES} -- build-spec --chain=release/${RUNTIME}.json --disable-default-bootnode --raw > release/${RUNTIME}-raw.json
   artifacts:
     name: "runtime"
     paths:
@@ -354,6 +354,7 @@ gtest_reboot:
     - create_g1_data
   variables:
     RUNTIME: gtest
+    FEATURES: --features gtest --no-default-features
 
 g1_reboot:
   extends: .gx_reboot
@@ -383,8 +384,9 @@ create_release:
     # Release creation: TODO: generalize to any runtime version
     - cargo xtask release-runtime 600
     # We always ship runtimes: this is both a proof and a convenience
-    - cargo xtask create-asset-link 600 gdev_runtime.compact.compressed.wasm https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$JOB_ID/artifacts/external_file/release/gdev_runtime.compact.compressed.wasm
-    - cargo xtask create-asset-link 600 gtest_runtime.compact.compressed.wasm https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$JOB_ID/artifacts/external_file/release/gtest_runtime.compact.compressed.wasm
+    - cargo xtask create-asset-link 600 g1-data.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/g1-data.json
+    - cargo xtask create-asset-link 600 gdev_runtime.compact.compressed.wasm https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/gdev_runtime.compact.compressed.wasm
+    - cargo xtask create-asset-link 600 gtest_runtime.compact.compressed.wasm https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/gtest_runtime.compact.compressed.wasm
   tags:
     - kepler
 
@@ -399,8 +401,8 @@ create_release:
     - when: always
   image: rust:1-bullseye
   script:
-    - cargo xtask create-asset-link 600 ${RUNTIME}.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$JOB_ID/artifacts/external_file/release/${RUNTIME}.json
-    - cargo xtask create-asset-link 600 ${RUNTIME}-raw.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$JOB_ID/artifacts/external_file/release/${RUNTIME}-raw.json
+    - cargo xtask create-asset-link 600 ${RUNTIME}.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/${RUNTIME}.json
+    - cargo xtask create-asset-link 600 ${RUNTIME}-raw.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/${RUNTIME}-raw.json
     - echo "Release Docker file..."
   artifacts:
     paths:
