@@ -257,11 +257,13 @@ gtest_srtool:
   variables:
     RUNTIME: gtest
 
-# TODO: enable when G1 will be handled
-#g1_srtool:
-#  extends: .srtool
-#  variables:
-#    RUNTIME: g1
+g1_srtool:
+  extends: .srtool
+  rules:
+    # TODO: enable when G1 will be handled
+    - when: never
+  variables:
+    RUNTIME: g1
 
 ############## REBOOT ##############
 
@@ -313,25 +315,21 @@ create_g1_data:
   tags:
     - kepler
 
-gdev_reboot:
+.gx_reboot:
   stage: gx_package
   rules:
     - when: always
-      allow_failure: true
-  needs:
-    - gdev_srtool
-    - create_g1_data
   image: rust:1-bullseye
   variables:
-    WASM_FILE: $CI_PROJECT_DIR/runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm
+    WASM_FILE: $CI_PROJECT_DIR/release/${RUNTIME}_runtime.compact.compressed.wasm
     DUNITER_GENESIS_DATA: $CI_PROJECT_DIR/release/g1-data.json
-    DUNITER_GENESIS_EXPORT: $CI_PROJECT_DIR/release/gdev-indexer.json
+    DUNITER_GENESIS_EXPORT: $CI_PROJECT_DIR/release/${RUNTIME}-indexer.json
     DEBIAN_FRONTEND: noninteractive
   script:
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
-    - cargo run -- build-spec --chain=gdev_live > release/gdev.json
-    - cargo run -- build-spec --chain=release/gdev.json --disable-default-bootnode --raw > release/gdev-raw.json
+    - cargo run -- build-spec --chain=${RUNTIME}_live > release/${RUNTIME}.json
+    - cargo run -- build-spec --chain=release/${RUNTIME}.json --disable-default-bootnode --raw > release/${RUNTIME}-raw.json
   artifacts:
     name: "runtime"
     paths:
@@ -341,35 +339,32 @@ gdev_reboot:
   tags:
     - kepler
 
+gdev_reboot:
+  extends: .gx_reboot
+  needs:
+    - gdev_srtool
+    - create_g1_data
+  variables:
+    RUNTIME: gdev
+
 gtest_reboot:
-  stage: gx_package
-  rules:
-    - when: manual
-      allow_failure: true
+  extends: .gx_reboot
   needs:
     - gtest_srtool
     - create_g1_data
-  image: python:3.9.18
-  script:
-    - echo "Not implemented"
-    - exit 1
-  tags:
-    - kepler
+  variables:
+    RUNTIME: gtest
 
 g1_reboot:
-  stage: gx_package
+  extends: .gx_reboot
   rules:
-    - when: manual
-      allow_failure: true
+#TODO: change when g1 runtime is available
+    - when: never
   needs:
-# TODO: enable when availble    - g1_srtool
+#TODO: enable when available   - g1_srtool
     - create_g1_data
-  image: python:3.9.18
-  script:
-    - echo "Not implemented"
-    - exit 1
-  tags:
-    - kepler
+  variables:
+    RUNTIME: g1
 
 ############## RELEASE ##############
 
@@ -377,6 +372,7 @@ create_release:
   stage: gx_release
   rules:
     - when: always
+      #TODO: add g1_srtool when available
       needs: ['gdev_srtool', 'gtest_srtool']
   image: rust:1-bullseye
   variables:
@@ -394,45 +390,44 @@ create_release:
 
 ############## RELEASE REBOOTS ##############
 
-release_gdev_6_reboot:
+.release_reboot:
   stage: gx_release
   needs:
     - create_release
     - gdev_reboot
   rules:
-    - when: manual
+    - when: always
   image: rust:1-bullseye
   script:
-    - cargo xtask create-asset-link 600 g1-data.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$JOB_ID/artifacts/external_file/release/g1-data.json
-    - echo "TODO create Docker image based on gdev_reboot raw specs"
+    - cargo xtask create-asset-link 600 ${RUNTIME}.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$JOB_ID/artifacts/external_file/release/${RUNTIME}.json
+    - cargo xtask create-asset-link 600 ${RUNTIME}-raw.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$JOB_ID/artifacts/external_file/release/${RUNTIME}-raw.json
+    - echo "Release Docker file..."
   artifacts:
     paths:
       - $CI_PROJECT_DIR/release/
   tags:
     - kepler
 
+release_gdev_6_reboot:
+  extends: .release_reboot
+  needs:
+    - create_release
+    - gdev_reboot
+  variables:
+    RUNTIME: gdev
+
 release_gtest_reboot:
-  stage: gx_release
+  extends: .release_reboot
   needs:
     - create_release
     - gtest_reboot
-  rules:
-    - when: manual
-  image: python:3.9.18
-  script:
-    - echo "Create Docker image based on gtest_reboot raw specs"
-  tags:
-    - kepler
+  variables:
+    RUNTIME: gtest
 
 release_g1_reboot:
-  stage: gx_release
+  extends: .release_reboot
   needs:
     - create_release
     - g1_reboot
-  rules:
-    - when: manual
-  image: python:3.9.18
-  script:
-    - echo "Create Docker image based on g1_reboot raw specs"
-  tags:
-    - kepler
+  variables:
+    RUNTIME: g1
