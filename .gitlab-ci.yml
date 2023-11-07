@@ -444,18 +444,14 @@ release_g1_reboot:
 .gx_docker_build:
   stage: gx_package
   script:
-    - export IMAGE_NAME="duniter/duniter-v2s"
-    - export IMAGE_TAG="sha-$CI_COMMIT_SHORT_SHA"
-    - export PODMAN_BUILD_OPTIONS="--platform linux/amd64 --build-arg --chain=$CHAIN"
-    - echo podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
-    - podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
+    - podman build --layers --tag "duniter/duniter-v2s:sha-$CI_COMMIT_SHORT_SHA" -f docker/Dockerfile --platform linux/amd64 --build-arg --chain=$CHAIN .
   tags:
     - podman
 
 gdev_docker_build:
   extends: .docker_build
   rules:
-    - when: manual
+    - when: always
   needs:
     - gdev_reboot
   variables:
@@ -464,7 +460,7 @@ gdev_docker_build:
 gtest_docker_build:
   extends: .docker_build
   rules:
-    - when: manual
+    - when: always
   needs:
     - gtest_reboot
   variables:
