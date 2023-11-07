@@ -225,7 +225,7 @@ readme_docker_release_tag:
 .srtool:
   stage: gx_build
   rules:
-    - when: manual
+    - when: always
       allow_failure: true
   image: paritytech/srtool:1.62.0
   variables:
@@ -255,9 +255,6 @@ readme_docker_release_tag:
 
 gdev_srtool:
   extends: .srtool
-  rules:
-    - when: always
-      allow_failure: true
   variables:
     RUNTIME: gdev
 
@@ -387,7 +384,6 @@ create_release:
   rules:
     - when: always
       needs: ['gdev_srtool', 'gtest_srtool']
-      allow_failure: true
   image: rust:1-bullseye
   variables:
     SRTOOL_OUTPUT_GDEV: $CI_PROJECT_DIR/release/srtool_output_gdev.json
