@@ -226,28 +226,22 @@ readme_docker_release_tag:
   stage: gx_build
   rules:
     - when: always
-      allow_failure: true
   image: paritytech/srtool:1.62.0
   variables:
     PACKAGE: $RUNTIME-runtime
     RUNTIME_DIR: runtime/$RUNTIME
-    SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
+    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/srtool_output_$RUNTIME.json
   script:
     - echo "Building runtime for $RUNTIME"
+    - mkdir -p $CI_PROJECT_DIR/release
     # Copy sources to the expected directory of srtool
     - cp -R * /build/
     # Build the runtime
     - /srtool/build --app --json -cM > $SRTOOL_OUTPUT
-    - mv /build/runtime/$RUNTIME/target $CI_PROJECT_DIR/runtime/$RUNTIME/target/
-    - . $CARGO_HOME/env
-    - mkdir -p $CI_PROJECT_DIR/release
-    # Move the resuling WASM and srtool_output.json to release/ folder.
-    - mv srtool_output.json $CI_PROJECT_DIR/release/srtool_output_$RUNTIME.json
-    - mv $CI_PROJECT_DIR/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/$RUNTIME_runtime.compact.compressed.wasm $CI_PROJECT_DIR/release/
+    - mv /build/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/${RUNTIME}_runtime.compact.compressed.wasm $CI_PROJECT_DIR/release/
   artifacts:
     name: "runtime"
     paths:
-      - $CI_PROJECT_DIR/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/
       - $CI_PROJECT_DIR/release
     expire_in: 1 day
   tags:
