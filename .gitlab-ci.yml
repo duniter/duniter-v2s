@@ -382,11 +382,11 @@ create_release:
     SRTOOL_OUTPUT_G1: $CI_PROJECT_DIR/release/srtool_output_g1.json
   script:
     # Release creation: TODO: generalize to any runtime version
-    - cargo xtask release-runtime 600
+    - cargo xtask release-runtime 700
     # We always ship runtimes: this is both a proof and a convenience
-    - cargo xtask create-asset-link 600 g1-data.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/g1-data.json
-    - cargo xtask create-asset-link 600 gdev_runtime.compact.compressed.wasm https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/gdev_runtime.compact.compressed.wasm
-    - cargo xtask create-asset-link 600 gtest_runtime.compact.compressed.wasm https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/gtest_runtime.compact.compressed.wasm
+    - cargo xtask create-asset-link 700 g1-data.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/g1-data.json
+    - cargo xtask create-asset-link 700 gdev_runtime.compact.compressed.wasm https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/gdev_runtime.compact.compressed.wasm
+    - cargo xtask create-asset-link 700 gtest_runtime.compact.compressed.wasm https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/gtest_runtime.compact.compressed.wasm
   artifacts:
     paths:
       - $CI_PROJECT_DIR/release/
@@ -405,8 +405,8 @@ create_release:
     - when: always
   image: rust:1-bullseye
   script:
-    - cargo xtask create-asset-link 600 ${RUNTIME}.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/${RUNTIME}.json
-    - cargo xtask create-asset-link 600 ${RUNTIME}-raw.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/${RUNTIME}-raw.json
+    - cargo xtask create-asset-link 700 ${RUNTIME}.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/${RUNTIME}.json
+    - cargo xtask create-asset-link 700 ${RUNTIME}-raw.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/${RUNTIME}-raw.json
     - echo "Release Docker file..."
   artifacts:
     paths:
