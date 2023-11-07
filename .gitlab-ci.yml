@@ -371,7 +371,7 @@ g1_reboot:
     - when: manual
       allow_failure: true
   needs:
-    - g1_srtool
+# TODO: enable when availble    - g1_srtool
     - create_g1_data
   image: python:3.9.18
   script:
