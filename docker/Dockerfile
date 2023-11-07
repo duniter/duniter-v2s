@@ -26,8 +26,9 @@ RUN apt-get update && \
 
 # build duniter
 ARG debug=0
+ARG chain="gdev"
 RUN if [ "$debug" = 0 ]; then \
-        echo "CARGO_OPTIONS=--release" >>/root/dynenv && \
+        echo "CARGO_OPTIONS=--release --no-default-features --feature=$chain" >>/root/dynenv && \
         echo "TARGET_FOLDER=release" >>/root/dynenv; \
     else \
         echo "TARGET_FOLDER=debug" >>/root/dynenv; \
@@ -47,7 +48,7 @@ RUN set -x && \
 RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
-    cargo build --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" && \
+    cargo build --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" -- --chain=$chain && \
     mkdir -p build && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/
 
