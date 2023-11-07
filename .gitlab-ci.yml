@@ -222,16 +222,6 @@ readme_docker_release_tag:
 
 ############## SRTOOL ##############
 
-#.srtool:
-#  stage: gx_build
-#  rules:
-#    - when: manual
-#      allow_failure: true
-#  image: paritytech/srtool:1.62.0
-#  script:
-#    - echo "Building runtime for $RUNTIME"
-#  tags:
-#    - kepler
 .srtool:
   stage: gx_build
   rules:
@@ -250,12 +240,15 @@ readme_docker_release_tag:
     - /srtool/build --app --json -cM > $SRTOOL_OUTPUT
     - mv /build/runtime/$RUNTIME/target $CI_PROJECT_DIR/runtime/$RUNTIME/target/
     - . $CARGO_HOME/env
+    - mkdir -p $CI_PROJECT_DIR/release
+    # Move the resuling WASM and srtool_output.json to release/ folder.
+    - mv srtool_output.json $CI_PROJECT_DIR/release/srtool_output_$RUNTIME.json
+    - mv $CI_PROJECT_DIR/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/$RUNTIME_runtime.compact.compressed.wasm $CI_PROJECT_DIR/release/
   artifacts:
     name: "runtime"
     paths:
-      - $CI_PROJECT_DIR/resources
       - $CI_PROJECT_DIR/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/
-      - $CI_PROJECT_DIR/srtool_output.json
+      - $CI_PROJECT_DIR/release
     expire_in: 1 day
   tags:
     - kepler
@@ -273,10 +266,11 @@ gtest_srtool:
   variables:
     RUNTIME: gtest
 
-g1_srtool:
-  extends: .srtool
-  variables:
-    RUNTIME: g1
+# TODO: enable when G1 will be handled
+#g1_srtool:
+#  extends: .srtool
+#  variables:
+#    RUNTIME: g1
 
 ############## REBOOT ##############
 
@@ -351,7 +345,7 @@ gdev_reboot:
     name: "runtime"
     paths:
       - $CI_PROJECT_DIR/release
-    # TODO: expiry
+    # TODO: expiry (everywhere)
     expire_in: 1 day
   tags:
     - kepler
@@ -392,30 +386,23 @@ create_release:
   stage: gx_release
   rules:
     - when: always
+      needs: ['gdev_srtool', 'gtest_srtool']
       allow_failure: true
   image: rust:1-bullseye
   variables:
-    SRTOOL_OUTPUT: $CI_PROJECT_DIR/srtool_output.json
+    SRTOOL_OUTPUT_GDEV: $CI_PROJECT_DIR/release/srtool_output_gdev.json
+    SRTOOL_OUTPUT_GTEST: $CI_PROJECT_DIR/release/srtool_output_gtest.json
+    SRTOOL_OUTPUT_G1: $CI_PROJECT_DIR/release/srtool_output_g1.json
   script:
     # Release creation: TODO: generalize to any runtime version
     - cargo xtask release-runtime 600
+    # We always ship runtimes: this is both a proof and a convenience
+    - cargo xtask create-asset-link 600 gdev_runtime.compact.compressed.wasm https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$JOB_ID/artifacts/external_file/release/gdev_runtime.compact.compressed.wasm
+    - cargo xtask create-asset-link 600 gtest_runtime.compact.compressed.wasm https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$JOB_ID/artifacts/external_file/release/gtest_runtime.compact.compressed.wasm
   tags:
     - kepler
 
-# ----- GDEV -----
-
-release_gdev_runtime:
-  stage: gx_release
-  needs:
-    - gdev_srtool
-    - create_release
-  rules:
-    - when: manual
-  image: python:3.9.18
-  script:
-    - echo "Push runtime to release page"
-  tags:
-    - kepler
+############## RELEASE REBOOTS ##############
 
 release_gdev_6_reboot:
   stage: gx_release
@@ -434,21 +421,6 @@ release_gdev_6_reboot:
   tags:
     - kepler
 
-# ----- GTEST -----
-
-release_gtest_runtime:
-  stage: gx_release
-  needs:
-    - gtest_srtool
-    - create_release
-  rules:
-    - when: manual
-  image: python:3.9.18
-  script:
-    - echo "Push runtime to release page"
-  tags:
-    - kepler
-
 release_gtest_reboot:
   stage: gx_release
   needs:
@@ -459,21 +431,6 @@ release_gtest_reboot:
   image: python:3.9.18
   script:
     - echo "Create Docker image based on gtest_reboot raw specs"
-  tags:
-    - kepler
-
-# ----- G1 -----
-
-release_g1_runtime:
-  stage: gx_release
-  needs:
-    - g1_srtool
-    - create_release
-  rules:
-    - when: manual
-  image: python:3.9.18
-  script:
-    - echo "Push runtime to release page"
   tags:
     - kepler
 

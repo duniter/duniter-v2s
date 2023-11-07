@@ -21,7 +21,6 @@ mod get_changes;
 use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
 use std::fs;
-use std::io::Read;
 
 #[derive(Default, Deserialize)]
 struct Srtool {
@@ -64,27 +63,52 @@ pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
     // TODO: check spec_version in the code and bump if necessary (with a commit)
     // TODO: create and push a git tag runtime-{spec_version}
 
-    // Create target folder for runtime build
-    // Build the new runtime
-    println!("Read srtool output… ");
-    let output = fs::read_to_string(
-        std::env::var("SRTOOL_OUTPUT").unwrap_or_else(|_| "srtool_output.json".to_string()),
-    )
-    .expect("srtool JSON output could not be read");
+    let mut release_notes = String::from("# Runtimes
 
-    // Read the srtool json output
-    let srtool: Srtool = serde_json::from_str(
-        output
-            .lines()
-            .last()
-            .ok_or_else(|| anyhow!("empty srtool output"))?,
-    )
-    .with_context(|| "Fail to parse srtool json output")?;
+The runtimes have been built using [{srtool_version}](https://github.com/paritytech/srtool) and `{rustc_version}`.
+
+");
 
     // Generate release notes
-    let release_notes = gen_release_notes(spec_version, srtool)
-        .await
-        .with_context(|| "Fail to generate release notes")?;
+    let runtimes = vec![
+        ("ĞDev", "SRTOOL_OUTPUT_GDEV"),
+        ("ĞTest", "SRTOOL_OUTPUT_GTEST"),
+        ("Ğ1", "SRTOOL_OUTPUT_G1"),
+    ];
+    for (currency, env_var) in runtimes {
+        if let Ok(sr_tool_output_file) = std::env::var(env_var) {
+            let read = fs::read_to_string(sr_tool_output_file);
+            match read {
+                Ok(sr_tool_output) => {
+                    release_notes.push_str(
+                        gen_release_notes(currency.to_string(), sr_tool_output)
+                            .with_context(|| {
+                                format!("Fail to generate release notes for {}", currency)
+                            })?
+                            .as_str(),
+                    );
+                }
+                Err(e) => {
+                    eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
+                }
+            }
+        }
+    }
+
+    // Get changes (list of MRs) from gitlab API
+    let changes = get_changes::get_changes(spec_version).await?;
+
+    release_notes.push_str(
+        format!(
+            "
+
+# Changes
+
+{changes}
+"
+        )
+        .as_str(),
+    );
     println!("{}", release_notes);
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
@@ -93,23 +117,42 @@ pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
     Ok(())
 }
 
-async fn gen_release_notes(spec_version: u32, srtool: Srtool) -> Result<String> {
+fn gen_release_notes(currency: String, srtool_output: String) -> Result<String> {
+    println!("Read srtool output… ");
+
+    // Read the srtool json output
+    let srtool: Srtool = serde_json::from_str(
+        srtool_output
+            .lines()
+            .last()
+            .ok_or_else(|| anyhow!("empty srtool output"))?,
+    )
+    .with_context(|| "Fail to parse srtool json output")?;
+
     // Read template file
-    const RELEASE_NOTES_TEMPLATE_FILEPATH: &str = "xtask/res/runtime_release_notes.template";
-    let mut file = std::fs::File::open(RELEASE_NOTES_TEMPLATE_FILEPATH)?;
-    let mut template = String::new();
-    file.read_to_string(&mut template)?;
+    let template = String::from(
+        "
+## {currency}
+
+```
+🏋️ Runtime Size: {runtime_human_size} ({runtime_size} bytes)
+🔥 Core Version: {core_version}
+🗜 Compressed: Yes: {compression_percent} %
+🎁 Metadata version: {metadata_version}
+🗳️ system.setCode hash: {proposal_hash}
+#️⃣ Blake2-256 hash:  {blake2_256}
+```
+",
+    );
 
     // Prepare srtool values
     let uncompressed_size = srtool.runtimes.compact.subwasm.size;
     let wasm = srtool.runtimes.compressed.subwasm;
     let compression_percent = (1.0 - (wasm.size as f64 / uncompressed_size as f64)) * 100.0;
 
-    // Get changes (list of MRs) from gitlab API
-    let changes = get_changes::get_changes(spec_version).await?;
-
     // Fill template values
     let mut values = std::collections::HashMap::new();
+    values.insert("currency".to_owned(), currency);
     values.insert("srtool_version".to_owned(), srtool.gen);
     values.insert("rustc_version".to_owned(), srtool.rustc);
     values.insert(
@@ -134,7 +177,6 @@ async fn gen_release_notes(spec_version: u32, srtool: Srtool) -> Result<String> 
     );
     values.insert("proposal_hash".to_owned(), wasm.proposal_hash);
     values.insert("blake2_256".to_owned(), wasm.blake2_256);
-    values.insert("changes".to_owned(), changes);
 
     // Render template
     placeholder::render(&template, &values).map_err(|e| anyhow!("Fail to render template: {}", e))
