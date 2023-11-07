@@ -48,7 +48,7 @@ RUN set -x && \
 RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
-    cargo build --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" -- --chain=$chain && \
+    cargo build --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" && \
     mkdir -p build && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/
 
