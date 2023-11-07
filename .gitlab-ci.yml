@@ -359,7 +359,7 @@ g1_reboot:
   extends: .gx_reboot
   rules:
 #TODO: change when g1 runtime is available
-    - when: never
+    - when: manual
   needs:
 #TODO: enable when available   - g1_srtool
     - create_g1_data
