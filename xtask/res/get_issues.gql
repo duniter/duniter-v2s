@@ -1,0 +1,11 @@
+query GetIssuesQuery($milestone: String!) {
+  project(fullPath: "nodes/rust/duniter-v2s") {
+    issues(milestoneTitle: [$milestone], state: all) {
+      nodes {
+        iid
+        state
+        title
+      }
+    }
+  }
+}

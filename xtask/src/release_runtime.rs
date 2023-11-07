@@ -17,6 +17,7 @@
 mod create_asset_link;
 mod create_release;
 mod get_changes;
+mod get_issues;
 
 use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
@@ -101,10 +102,23 @@ The runtimes have been built using [{srtool_version}](https://github.com/parityt
     release_notes.push_str(
         format!(
             "
-
 # Changes
 
 {changes}
+"
+        )
+        .as_str(),
+    );
+
+    // Get changes (list of MRs) from gitlab API
+    let issues = get_issues::get_issues(spec_version).await?;
+
+    release_notes.push_str(
+        format!(
+            "
+# Issues
+
+{issues}
 "
         )
         .as_str(),
