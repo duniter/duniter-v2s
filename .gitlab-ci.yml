@@ -387,6 +387,10 @@ create_release:
     - cargo xtask create-asset-link 600 g1-data.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/g1-data.json
     - cargo xtask create-asset-link 600 gdev_runtime.compact.compressed.wasm https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/gdev_runtime.compact.compressed.wasm
     - cargo xtask create-asset-link 600 gtest_runtime.compact.compressed.wasm https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/gtest_runtime.compact.compressed.wasm
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/release/
+    expire_in: 1 day
   tags:
     - kepler
 
@@ -407,6 +411,7 @@ create_release:
   artifacts:
     paths:
       - $CI_PROJECT_DIR/release/
+    expire_in: 1 day
   tags:
     - kepler
 
