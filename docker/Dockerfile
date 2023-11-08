@@ -50,6 +50,7 @@ RUN set -x && \
     . /root/dynenv && \
     cargo build --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" && \
     mkdir -p build && \
+    ls target/ && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/
 
 # Run tests if requested, expted when cross-building
