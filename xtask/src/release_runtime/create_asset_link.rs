@@ -27,7 +27,7 @@ pub struct CreateReleaseAssetLinkMutation;
 
 pub(super) async fn create_asset_link(
     gitlab_token: String,
-    spec_version: u32,
+    tag: String,
     asset_name: String,
     asset_url: String,
 ) -> Result<()> {
@@ -36,7 +36,7 @@ pub(super) async fn create_asset_link(
         create_release_asset_link_mutation::Variables {
             name: asset_name,
             url: asset_url,
-            tag: format!("runtime-{}", spec_version),
+            tag,
         },
     );
 

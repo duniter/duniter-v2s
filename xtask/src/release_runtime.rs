@@ -60,15 +60,11 @@ struct CoreVersion {
     //transaction_version: u32,
 }
 
-pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
+pub(super) async fn release_runtime(milestone: String, branch: String) -> Result<()> {
     // TODO: check spec_version in the code and bump if necessary (with a commit)
     // TODO: create and push a git tag runtime-{spec_version}
 
-    let mut release_notes = String::from("# Runtimes
-
-The runtimes have been built using [{srtool_version}](https://github.com/paritytech/srtool) and `{rustc_version}`.
-
-");
+    let mut release_notes = String::new();
 
     // Generate release notes
     let runtimes = vec![
@@ -97,7 +93,7 @@ The runtimes have been built using [{srtool_version}](https://github.com/parityt
     }
 
     // Get changes (list of MRs) from gitlab API
-    let changes = get_changes::get_changes(spec_version).await?;
+    let changes = get_changes::get_changes(milestone.clone()).await?;
 
     release_notes.push_str(
         format!(
@@ -111,7 +107,7 @@ The runtimes have been built using [{srtool_version}](https://github.com/parityt
     );
 
     // Get changes (list of MRs) from gitlab API
-    let issues = get_issues::get_issues(spec_version).await?;
+    let issues = get_issues::get_issues(milestone.clone()).await?;
 
     release_notes.push_str(
         format!(
@@ -126,7 +122,8 @@ The runtimes have been built using [{srtool_version}](https://github.com/parityt
     println!("{}", release_notes);
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
-    create_release::create_release(gitlab_token, spec_version, release_notes.to_string()).await?;
+    create_release::create_release(gitlab_token, branch, milestone, release_notes.to_string())
+        .await?;
 
     Ok(())
 }
@@ -149,6 +146,8 @@ fn gen_release_notes(currency: String, srtool_output: String) -> Result<String> 
 ## {currency}
 
 ```
+🔨 Srtool version: {srtool_version}
+🦀 Rustc version: {rustc_version}
 🏋️ Runtime Size: {runtime_human_size} ({runtime_size} bytes)
 🔥 Core Version: {core_version}
 🗜 Compressed: Yes: {compression_percent} %
@@ -197,13 +196,13 @@ fn gen_release_notes(currency: String, srtool_output: String) -> Result<String> 
 }
 
 pub(crate) async fn create_asset_link(
-    spec_version: u32,
+    tag: String,
     asset_name: String,
     asset_url: String,
 ) -> Result<()> {
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
-    create_asset_link::create_asset_link(gitlab_token, spec_version, asset_name, asset_url).await?;
+    create_asset_link::create_asset_link(gitlab_token, tag, asset_name, asset_url).await?;
 
     Ok(())
 }

@@ -25,11 +25,9 @@ use graphql_client::{GraphQLQuery, Response};
 )]
 pub struct GetIssuesQuery;
 
-pub(super) async fn get_issues(spec_version: u32) -> Result<String> {
+pub(super) async fn get_issues(milestone: String) -> Result<String> {
     // this is the important line
-    let request_body = GetIssuesQuery::build_query(get_issues_query::Variables {
-        milestone: format!("runtime-{}", spec_version),
-    });
+    let request_body = GetIssuesQuery::build_query(get_issues_query::Variables { milestone });
 
     let client = reqwest::Client::new();
     let res = client

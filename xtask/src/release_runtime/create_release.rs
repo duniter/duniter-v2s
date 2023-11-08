@@ -27,14 +27,15 @@ pub struct CreateReleaseMutation;
 
 pub(super) async fn create_release(
     gitlab_token: String,
-    spec_version: u32,
+    branch: String,
+    milestone: String,
     release_notes: String,
 ) -> Result<()> {
     // this is the important line
     let request_body = CreateReleaseMutation::build_query(create_release_mutation::Variables {
-        branch: format!("release/runtime-{}", spec_version - (spec_version % 100)),
+        branch,
         description: release_notes,
-        milestone: format!("runtime-{}", spec_version),
+        milestone,
         links: vec![],
     });
 

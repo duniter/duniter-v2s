@@ -50,10 +50,10 @@ enum DuniterXTaskCommand {
         raw_spec: PathBuf,
     },
     /// Release a new runtime
-    ReleaseRuntime { spec_version: u32 },
+    ReleaseRuntime { milestone: String, branch: String },
     /// Create asset in a release
     CreateAssetLink {
-        spec_version: u32,
+        tag: String,
         asset_name: String,
         asset_url: String,
     },
@@ -84,14 +84,14 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::InjectRuntimeCode { runtime, raw_spec } => {
             inject_runtime_code(&raw_spec, &runtime)
         }
-        DuniterXTaskCommand::ReleaseRuntime { spec_version } => {
-            release_runtime::release_runtime(spec_version).await
+        DuniterXTaskCommand::ReleaseRuntime { milestone, branch } => {
+            release_runtime::release_runtime(milestone, branch).await
         }
         DuniterXTaskCommand::CreateAssetLink {
-            spec_version,
+            tag,
             asset_name,
             asset_url,
-        } => release_runtime::create_asset_link(spec_version, asset_name, asset_url).await,
+        } => release_runtime::create_asset_link(tag, asset_name, asset_url).await,
         DuniterXTaskCommand::Test => test(),
     }
 }
