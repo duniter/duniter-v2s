@@ -32,9 +32,7 @@ pub(super) async fn create_release(
 ) -> Result<()> {
     // this is the important line
     let request_body = CreateReleaseMutation::build_query(create_release_mutation::Variables {
-        // branch: format!("release/runtime-{}", spec_version - (spec_version % 100)),
-        // TODO: remettre la branche release/
-        branch: "125-industrialize-releases-production".to_string(),
+        branch: format!("release/runtime-{}", spec_version - (spec_version % 100)),
         description: release_notes,
         milestone: format!("runtime-{}", spec_version),
         links: vec![],
