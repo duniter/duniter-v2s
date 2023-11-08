@@ -225,7 +225,7 @@ readme_docker_release_tag:
 .srtool:
   stage: gx_build
   rules:
-    - when: always
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   image: paritytech/srtool:1.62.0
   variables:
     PACKAGE: $RUNTIME-runtime
@@ -270,7 +270,7 @@ g1_srtool:
 create_g1_data:
   stage: gx_package
   rules:
-    - when: always
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   image: python:3.9.18
   variables:
     DEBIAN_FRONTEND: noninteractive
@@ -318,7 +318,7 @@ create_g1_data:
 .gx_reboot:
   stage: gx_package
   rules:
-    - when: always
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   image: rust:1-bullseye
   variables:
     WASM_FILE: $CI_PROJECT_DIR/release/${RUNTIME}_runtime.compact.compressed.wasm
@@ -359,8 +359,9 @@ gtest_reboot:
 g1_reboot:
   extends: .gx_reboot
   rules:
-#TODO: change when g1 runtime is available
-    - when: manual
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      #TODO: change when g1 runtime is available
+      when: manual
   needs:
 #TODO: enable when available   - g1_srtool
     - create_g1_data
@@ -372,7 +373,7 @@ g1_reboot:
 create_release:
   stage: gx_release
   rules:
-    - when: always
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       #TODO: add g1_srtool when available
       needs: ['gdev_srtool', 'gtest_srtool']
   image: rust:1-bullseye
@@ -404,7 +405,7 @@ create_release:
     - create_release
     - gdev_reboot
   rules:
-    - when: always
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   image: rust:1-bullseye
   variables:
     MILESTONE: runtime-700
@@ -447,6 +448,8 @@ release_g1_reboot:
 
 .gx_docker_build:
   stage: gx_package
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   variables:
     IMAGE_NAME: "duniter/duniter-v2s"
     IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
@@ -459,8 +462,6 @@ release_g1_reboot:
 
 gdev_docker_build:
   extends: .gx_docker_build
-  rules:
-    - when: always
   needs:
     - gdev_reboot
   variables:
@@ -468,8 +469,6 @@ gdev_docker_build:
 
 gtest_docker_build:
   extends: .gx_docker_build
-  rules:
-    - when: always
   needs:
     - gtest_reboot
   variables:
