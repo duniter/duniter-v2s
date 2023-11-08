@@ -48,7 +48,7 @@ ARG chain="gdev"
 RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
-    cargo build --locked $CARGO_OPTIONS --no-default-features --feature=$chain --target "$RUST_ARCH_TRIPLET" && \
+    cargo build --locked $CARGO_OPTIONS --no-default-features --features $chain --target "$RUST_ARCH_TRIPLET" && \
     mkdir -p build && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/
 
