@@ -68,6 +68,8 @@ fmt_and_clippy:
       when: manual
     - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH == "master"'
       when: never
+    - if: '$CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/'
+      when: always
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - when: manual
   stage: quality
