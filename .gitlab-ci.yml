@@ -380,9 +380,9 @@ create_release:
     SRTOOL_OUTPUT_GDEV: $CI_PROJECT_DIR/release/srtool_output_gdev.json
     SRTOOL_OUTPUT_GTEST: $CI_PROJECT_DIR/release/srtool_output_gtest.json
     SRTOOL_OUTPUT_G1: $CI_PROJECT_DIR/release/srtool_output_g1.json
-    MILESTONE: $CI_COMMIT_BRANCH
   script:
     # Release creation
+    - export MILESTONE=$(echo release/runtime-700 | sed -e "s/release\///g")
     - cargo xtask release-runtime $MILESTONE $CI_COMMIT_BRANCH
     # We always ship runtimes: this is both a proof and a convenience
     - cargo xtask create-asset-link $MILESTONE g1-data.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/g1-data.json
@@ -401,9 +401,8 @@ create_release:
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
   image: rust:1-bullseye
-  variables:
-    MILESTONE: runtime-700
   script:
+    - export MILESTONE=$(echo release/runtime-700 | sed -e "s/release\///g")
     - cargo xtask create-asset-link $MILESTONE ${RUNTIME}.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/${RUNTIME}.json
     - cargo xtask create-asset-link $MILESTONE ${RUNTIME}-raw.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/${RUNTIME}-raw.json
     - echo "Release Docker file..."
