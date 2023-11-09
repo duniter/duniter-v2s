@@ -73,8 +73,8 @@ fmt_and_clippy:
 .docker_release_build:
   stage: build
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
-    - changes:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+      changes:
         - node/specs/$CHAIN-raw.json
   variables:
     IMAGE_NAME: "duniter/duniter-v2s-$CHAIN"
