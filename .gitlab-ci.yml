@@ -23,9 +23,6 @@ workflow:
       - Cargo.toml
       - Cargo.lock
 
-cache: &global_cache
-  key: $CI_COMMIT_SHA
-
 sanity_tests:
   extends: .env
   rules:
@@ -382,7 +379,7 @@ create_release:
   stage: release
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
-      needs: ['gdev_srtool', 'gtest_srtool']
+      needs: ['create_g1_data', 'gdev_srtool', 'gtest_srtool']
   image: rust:1-bullseye
   variables:
     SRTOOL_OUTPUT_GDEV: $CI_PROJECT_DIR/release/srtool_output_gdev.json
