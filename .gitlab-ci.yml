@@ -261,6 +261,7 @@ readme_docker_release_tag:
     SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/srtool_output_$RUNTIME.json
   script:
     - echo "Building runtime for $RUNTIME"
+    - echo release/runtime-700 | sed -e "s/release\///g"
     - mkdir -p $CI_PROJECT_DIR/release
     # Copy sources to the expected directory of srtool
     - cp -R * /build/
