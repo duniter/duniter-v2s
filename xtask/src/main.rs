@@ -51,6 +51,8 @@ enum DuniterXTaskCommand {
     },
     /// Release a new runtime
     ReleaseRuntime { milestone: String, branch: String },
+    /// Update raw specs locally with the files published on a Release
+    UpdateRawSpecs { milestone: String },
     /// Create asset in a release
     CreateAssetLink {
         tag: String,
@@ -86,6 +88,9 @@ async fn main() -> Result<()> {
         }
         DuniterXTaskCommand::ReleaseRuntime { milestone, branch } => {
             release_runtime::release_runtime(milestone, branch).await
+        }
+        DuniterXTaskCommand::UpdateRawSpecs { milestone } => {
+            release_runtime::update_raw_specs(milestone).await
         }
         DuniterXTaskCommand::CreateAssetLink {
             tag,

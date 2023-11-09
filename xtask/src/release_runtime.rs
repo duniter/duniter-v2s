@@ -18,6 +18,7 @@ mod create_asset_link;
 mod create_release;
 mod get_changes;
 mod get_issues;
+mod get_release;
 
 use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
@@ -130,6 +131,23 @@ pub(super) async fn release_runtime(milestone: String, branch: String) -> Result
     create_release::create_release(gitlab_token, branch, milestone, release_notes.to_string())
         .await?;
 
+    Ok(())
+}
+
+pub(super) async fn update_raw_specs(milestone: String) -> Result<()> {
+    let specs = vec!["gdev-raw.json", "gtest-raw.json", "g1-raw.json"];
+    println!("Fetching release info…");
+    let assets = get_release::get_release(milestone).await?;
+    for spec in specs {
+        if let Some(gdev_raw_specs) = assets.iter().find(|asset| asset.ends_with(spec)) {
+            println!("Downloading {}…", spec);
+            let client = reqwest::Client::new();
+            let res = client.get(gdev_raw_specs).send().await?;
+            let write_to = format!("./node/specs/{}", spec);
+            fs::write(write_to, res.bytes().await?)?;
+        }
+    }
+    println!("Done.");
     Ok(())
 }
 

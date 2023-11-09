@@ -22,6 +22,7 @@ type Project {
     state: IssueState
     milestoneTitle: [String]
   ): IssueConnection
+  release(tagName: String!): Release
 }
 
 scalar MergeRequestID
@@ -112,4 +113,26 @@ type ReleaseCreatePayload {
 
 type ReleaseAssetLinkCreatePayload {
   errors: [String!]!
+}
+
+type Release {
+  id: String!
+  tagName: String!
+  assets: ReleaseAssets
+}
+
+type ReleaseAssets {
+  links: ReleaseAssetLinkConnection
+}
+
+type ReleaseAssetLinkConnection {
+  edges: [ReleaseAssetLinkEdge]
+}
+
+type ReleaseAssetLinkEdge {
+  node: ReleaseAssetLink
+}
+
+type ReleaseAssetLink {
+  directAssetUrl: String
 }

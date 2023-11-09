@@ -23,6 +23,9 @@ workflow:
       - Cargo.toml
       - Cargo.lock
 
+cache: &global_cache
+  key: $CI_COMMIT_SHA
+
 sanity_tests:
   extends: .env
   rules:
