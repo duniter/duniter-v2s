@@ -267,7 +267,6 @@ readme_docker_release_tag:
     name: "runtime"
     paths:
       - $CI_PROJECT_DIR/release
-    expire_in: 1 day
   tags:
     - kepler
 
@@ -327,7 +326,6 @@ create_g1_data:
   artifacts:
     paths:
       - $CI_PROJECT_DIR/release/
-    expire_in: 1 day
   tags:
     - kepler
 
@@ -350,8 +348,6 @@ create_g1_data:
     name: "runtime"
     paths:
       - $CI_PROJECT_DIR/release
-    # TODO: expiry (everywhere)
-    expire_in: 1 day
   tags:
     - kepler
 
@@ -395,7 +391,6 @@ create_release:
   artifacts:
     paths:
       - $CI_PROJECT_DIR/release/
-    expire_in: 1 day
   tags:
     - kepler
 
@@ -415,7 +410,6 @@ create_release:
   artifacts:
     paths:
       - $CI_PROJECT_DIR/release/
-    expire_in: 1 day
   tags:
     - kepler
 
