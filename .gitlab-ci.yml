@@ -388,7 +388,7 @@ gtest_specs:
 g1_specs:
   extends: .build_specs
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(runtime-)[0-9].*/
       #TODO: change when g1 runtime is available
       when: manual
   needs:
