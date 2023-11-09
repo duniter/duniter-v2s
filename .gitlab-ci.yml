@@ -25,6 +25,15 @@ workflow:
 
 cache: &global_cache
   key: $CI_COMMIT_SHA
+  paths:
+    - .cargo/bin
+    - .cargo/registry/index
+    - .cargo/registry/cache
+    - target/
+  policy: pull
+
+variables:
+  CARGO_HOME: ${CI_PROJECT_DIR}/.cargo # Move cargo data into the project directory so it can be cached
 
 sanity_tests:
   extends: .env
@@ -51,16 +60,18 @@ check_labels:
 
 fmt_and_clippy:
   extends: .env
+  cache:
+    <<: *global_cache
+    policy: push
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
     - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH == "master"'
       when: never
-    - if: '$CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/'
-      when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - when: manual
   stage: quality
+
   script:
     - cargo fmt -- --version
     - cargo fmt -- --check
@@ -339,6 +350,9 @@ create_g1_data:
 
 .build_specs:
   stage: build
+  cache:
+    <<: *global_cache
+    policy: pull
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
   image: rust:1-bullseye
@@ -380,6 +394,9 @@ gtest_specs:
 
 create_release:
   stage: release
+  cache:
+    <<: *global_cache
+    policy: pull
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
       needs: ['gdev_srtool', 'gtest_srtool']
@@ -406,6 +423,9 @@ create_release:
 
 .release_specs:
   stage: release
+  cache:
+    <<: *global_cache
+    policy: pull
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
   image: rust:1-bullseye
