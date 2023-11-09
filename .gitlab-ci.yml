@@ -390,9 +390,9 @@ create_release:
     - export MILESTONE=$(echo release/runtime-700 | sed -e "s/release\///g")
     - cargo xtask release-runtime $MILESTONE $CI_COMMIT_BRANCH
     # We always ship runtimes: this is both a proof and a convenience
-    - cargo xtask create-asset-link $MILESTONE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/g1-data.json
-    - cargo xtask create-asset-link $MILESTONE gdev_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/gdev_runtime.compact.compressed.wasm
-    - cargo xtask create-asset-link $MILESTONE gtest_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/gtest_runtime.compact.compressed.wasm
+    - cargo xtask create-asset-link $MILESTONE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/g1-data.json
+    - cargo xtask create-asset-link $MILESTONE gdev_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gdev_runtime.compact.compressed.wasm
+    - cargo xtask create-asset-link $MILESTONE gtest_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gtest_runtime.compact.compressed.wasm
   artifacts:
     paths:
       - $CI_PROJECT_DIR/release/
@@ -408,8 +408,8 @@ create_release:
   image: rust:1-bullseye
   script:
     - export MILESTONE=$(echo release/runtime-700 | sed -e "s/release\///g")
-    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/${RUNTIME}.json
-    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/${RUNTIME}-raw.json
+    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/${RUNTIME}.json
+    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/${RUNTIME}-raw.json
     - echo "Release Docker file..."
   artifacts:
     paths:
