@@ -64,7 +64,12 @@ pub(super) async fn release_runtime(milestone: String, branch: String) -> Result
     // TODO: check spec_version in the code and bump if necessary (with a commit)
     // TODO: create and push a git tag runtime-{spec_version}
 
-    let mut release_notes = String::new();
+    let mut release_notes = String::from(
+        "
+# Runtimes
+
+",
+    );
 
     // Generate release notes
     let runtimes = vec![

@@ -2,14 +2,12 @@
 # - podman: use 'podman' to build multiplatform images
 
 stages:
-  - gx_build
-  - gx_package
-  - gx_release
   - schedule
   - labels
   - quality
   - build
   - tests
+  - release
   - deploy
   - deploy_readme
 
@@ -71,6 +69,37 @@ fmt_and_clippy:
     - podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
   tags:
     - podman
+
+.docker_release_build:
+  stage: build
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - changes:
+        - node/specs/$CHAIN-raw.json
+  variables:
+    IMAGE_NAME: "duniter/duniter-v2s-$CHAIN"
+    IMAGE_TAG: "latest"
+    PODMAN_BUILD_OPTIONS: "--platform linux/amd64 --build-arg chain=$CHAIN"
+  script:
+    - echo podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
+    - podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
+  tags:
+    - podman
+
+gdev_docker_release_build:
+  extends: .docker_release_build
+  variables:
+    CHAIN: gdev
+
+gtest_docker_release_build:
+  extends: .docker_release_build
+  variables:
+    CHAIN: gtest
+
+g1_docker_release_build:
+  extends: .docker_release_build
+  variables:
+    CHAIN: g1
 
 .docker_deploy:
   stage: deploy
@@ -223,7 +252,7 @@ readme_docker_release_tag:
 ############## SRTOOL ##############
 
 .srtool:
-  stage: gx_build
+  stage: build
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
   image: paritytech/srtool:1.62.0
@@ -265,10 +294,10 @@ g1_srtool:
   variables:
     RUNTIME: g1
 
-############## REBOOT ##############
+############## SPECS ##############
 
 create_g1_data:
-  stage: gx_package
+  stage: build
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
   image: python:3.9.18
@@ -315,8 +344,8 @@ create_g1_data:
   tags:
     - kepler
 
-.gx_reboot:
-  stage: gx_package
+.build_specs:
+  stage: build
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
   image: rust:1-bullseye
@@ -339,16 +368,16 @@ create_g1_data:
   tags:
     - kepler
 
-gdev_reboot:
-  extends: .gx_reboot
+gdev_specs:
+  extends: .build_specs
   needs:
     - gdev_srtool
     - create_g1_data
   variables:
     RUNTIME: gdev
 
-gtest_reboot:
-  extends: .gx_reboot
+gtest_specs:
+  extends: .build_specs
   needs:
     - gtest_srtool
     - create_g1_data
@@ -356,8 +385,8 @@ gtest_reboot:
     RUNTIME: gtest
     FEATURES: --features gtest --no-default-features
 
-g1_reboot:
-  extends: .gx_reboot
+g1_specs:
+  extends: .build_specs
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
       #TODO: change when g1 runtime is available
@@ -371,9 +400,9 @@ g1_reboot:
 ############## RELEASE ##############
 
 create_release:
-  stage: gx_release
+  stage: release
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(runtime-)[0-9].*/"
       #TODO: add g1_srtool when available
       needs: ['gdev_srtool', 'gtest_srtool']
   image: rust:1-bullseye
@@ -381,10 +410,9 @@ create_release:
     SRTOOL_OUTPUT_GDEV: $CI_PROJECT_DIR/release/srtool_output_gdev.json
     SRTOOL_OUTPUT_GTEST: $CI_PROJECT_DIR/release/srtool_output_gtest.json
     SRTOOL_OUTPUT_G1: $CI_PROJECT_DIR/release/srtool_output_g1.json
-    #TODO: make milesone = $CI_COMMIT_TAG
-    MILESTONE: runtime-700
+    MILESTONE: $CI_COMMIT_BRANCH
   script:
-    # Release creation: TODO: generalize to any runtime version
+    # Release creation
     - cargo xtask release-runtime $MILESTONE $CI_COMMIT_BRANCH
     # We always ship runtimes: this is both a proof and a convenience
     - cargo xtask create-asset-link $MILESTONE g1-data.json https://git.duniter.org/nodes/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/external_file/release/g1-data.json
@@ -397,15 +425,12 @@ create_release:
   tags:
     - kepler
 
-############## RELEASE REBOOTS ##############
+# ------ RELEASE: ADD SPECS ------
 
-.release_reboot:
-  stage: gx_release
-  needs:
-    - create_release
-    - gdev_reboot
+.release_specs:
+  stage: release
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(runtime-)[0-9].*/"
   image: rust:1-bullseye
   variables:
     MILESTONE: runtime-700
@@ -420,56 +445,26 @@ create_release:
   tags:
     - kepler
 
-release_gdev_6_reboot:
-  extends: .release_reboot
+release_gdev_6_specs:
+  extends: .release_specs
   needs:
     - create_release
-    - gdev_reboot
+    - gdev_specs
   variables:
     RUNTIME: gdev
 
-release_gtest_reboot:
-  extends: .release_reboot
+release_gtest_specs:
+  extends: .release_specs
   needs:
     - create_release
-    - gtest_reboot
+    - gtest_specs
   variables:
     RUNTIME: gtest
 
-release_g1_reboot:
-  extends: .release_reboot
+release_g1_specs:
+  extends: .release_specs
   needs:
     - create_release
-    - g1_reboot
+    - g1_specs
   variables:
     RUNTIME: g1
-
-############## DOCKER BUILD ##############
-
-.gx_docker_build:
-  stage: gx_package
-  rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
-  variables:
-    IMAGE_NAME: "duniter/duniter-v2s"
-    IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
-    PODMAN_BUILD_OPTIONS: "--platform linux/amd64 --build-arg chain=$CHAIN"
-  script:
-    - echo podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
-    - podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
-  tags:
-    - podman
-
-gdev_docker_build:
-  extends: .gx_docker_build
-  needs:
-    - gdev_reboot
-  variables:
-    CHAIN: gdev
-
-gtest_docker_build:
-  extends: .gx_docker_build
-  needs:
-    - gtest_reboot
-  variables:
-    CHAIN: gtest
