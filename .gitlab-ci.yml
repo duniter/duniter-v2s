@@ -254,7 +254,7 @@ readme_docker_release_tag:
 .srtool:
   stage: build
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(runtime-)[0-9].*/
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
   image: paritytech/srtool:1.62.0
   variables:
     PACKAGE: $RUNTIME-runtime
@@ -299,7 +299,7 @@ g1_srtool:
 create_g1_data:
   stage: build
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(runtime-)[0-9].*/
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
   image: python:3.9.18
   variables:
     DEBIAN_FRONTEND: noninteractive
@@ -347,7 +347,7 @@ create_g1_data:
 .build_specs:
   stage: build
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(runtime-)[0-9].*/
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
   image: rust:1-bullseye
   variables:
     WASM_FILE: $CI_PROJECT_DIR/release/${RUNTIME}_runtime.compact.compressed.wasm
@@ -402,7 +402,7 @@ g1_specs:
 create_release:
   stage: release
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(runtime-)[0-9].*/
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
       #TODO: add g1_srtool when available
       needs: ['gdev_srtool', 'gtest_srtool']
   image: rust:1-bullseye
@@ -430,7 +430,7 @@ create_release:
 .release_specs:
   stage: release
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(runtime-)[0-9].*/
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/π
   image: rust:1-bullseye
   variables:
     MILESTONE: runtime-700
