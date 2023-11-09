@@ -96,11 +96,6 @@ gtest_docker_release_build:
   variables:
     CHAIN: gtest
 
-g1_docker_release_build:
-  extends: .docker_release_build
-  variables:
-    CHAIN: g1
-
 .docker_deploy:
   stage: deploy
   before_script:
@@ -286,14 +281,6 @@ gtest_srtool:
   variables:
     RUNTIME: gtest
 
-g1_srtool:
-  extends: .srtool
-  rules:
-    # TODO: enable when G1 will be handled
-    - when: never
-  variables:
-    RUNTIME: g1
-
 ############## SPECS ##############
 
 create_g1_data:
@@ -385,25 +372,12 @@ gtest_specs:
     RUNTIME: gtest
     FEATURES: --features gtest --no-default-features
 
-g1_specs:
-  extends: .build_specs
-  rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
-      #TODO: change when g1 runtime is available
-      when: manual
-  needs:
-#TODO: enable when available   - g1_srtool
-    - create_g1_data
-  variables:
-    RUNTIME: g1
-
 ############## RELEASE ##############
 
 create_release:
   stage: release
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
-      #TODO: add g1_srtool when available
       needs: ['gdev_srtool', 'gtest_srtool']
   image: rust:1-bullseye
   variables:
@@ -460,11 +434,3 @@ release_gtest_specs:
     - gtest_specs
   variables:
     RUNTIME: gtest
-
-release_g1_specs:
-  extends: .release_specs
-  needs:
-    - create_release
-    - g1_specs
-  variables:
-    RUNTIME: g1
