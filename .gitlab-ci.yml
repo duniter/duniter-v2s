@@ -430,7 +430,7 @@ create_release:
 .release_specs:
   stage: release
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/π
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
   image: rust:1-bullseye
   variables:
     MILESTONE: runtime-700
