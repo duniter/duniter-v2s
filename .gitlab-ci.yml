@@ -108,12 +108,23 @@ build_debug:
 build_release:
   extends: .docker_build
   rules:
-    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v*/"
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "master"'
+    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^(v|runtime-)[0-9].*/"
+      when: never
     - when: manual
   variables:
     IMAGE_NAME: "duniter/duniter-v2s"
     IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
+    PODMAN_BUILD_OPTIONS: "--platform linux/amd64"
+
+build_release_tag:
+  extends: .docker_build
+  rules:
+    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^(v|runtime-)[0-9].*/"
+    - when: never
+  variables:
+    IMAGE_NAME: "duniter/duniter-v2s"
+    IMAGE_TAG: "$CI_COMMIT_TAG"
     PODMAN_BUILD_OPTIONS: "--platform linux/amd64"
 
 test_debug:
@@ -135,7 +146,7 @@ test_release:
   stage: tests
   extends: .docker_build
   rules:
-    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v*/"
+    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^(v|runtime-)[0-9].*/"
     - when: never
   variables:
     IMAGE_NAME: "duniter/duniter-v2s-test"
@@ -180,7 +191,7 @@ deploy_docker_release_tag:
   stage: deploy
   extends: .docker_deploy_native
   rules:
-    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v*/"
+    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^(v|runtime-)[0-9].*/"
     - when: never
   variables:
     IMAGE_NAME: "duniter/duniter-v2s"
@@ -191,7 +202,7 @@ deploy_docker_release_tag_multiplatform:
   needs: ["deploy_docker_release_tag"]
   extends: .docker_deploy_multiplatform
   rules:
-    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v*/"
+    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^(v|runtime-)[0-9].*/"
     - when: never
   script:
     - !reference [.docker_deploy_multiplatform, script]
@@ -204,7 +215,7 @@ readme_docker_release_tag:
   stage: deploy_readme
   needs: ["deploy_docker_release_tag"]
   rules:
-    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v*/"
+    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^(v|runtime-)[0-9].*/"
     - when: never
   image:
     name: chko/docker-pushrm
