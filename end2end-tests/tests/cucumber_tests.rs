@@ -18,7 +18,7 @@ mod common;
 
 use async_trait::async_trait;
 use common::*;
-use cucumber::{given, then, when, World, WorldInit};
+use cucumber::{given, then, when, FailureWriter, World, WorldInit};
 use sp_keyring::AccountKeyring;
 use std::convert::Infallible;
 use std::path::PathBuf;
@@ -636,7 +636,7 @@ async fn main() {
     })
     .expect("Error setting Ctrl-C handler");
 
-    DuniterWorld::cucumber()
+    let summarize = DuniterWorld::cucumber()
         //.fail_on_skipped()
         .max_concurrent_scenarios(4)
         .before(|feature, _rule, scenario, world| {
@@ -660,8 +660,12 @@ async fn main() {
             Box::pin(std::future::ready(()))
         })
         .with_cli(opts)
-        .run_and_exit(features_path)
+        .run(features_path)
         .await;
+
+    if summarize.hook_errors() > 0 {
+        panic!("Could not run tests correctly (hook errors)");
+    }
 }
 
 fn genesis_conf_name(feature_tags: &[String], scenario_tags: &[String]) -> String {
