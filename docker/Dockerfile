@@ -44,23 +44,18 @@ RUN set -x && \
     fi
 
 # Build
+ARG chain="gdev"
 RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
-    cargo build --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" && \
+    cargo build --locked $CARGO_OPTIONS --no-default-features --features $chain --target "$RUST_ARCH_TRIPLET" && \
     mkdir -p build && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/
 
 # Run tests if requested, expted when cross-building
 ARG cucumber=0
 RUN if [ "$cucumber" != 0 ] && [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then \
-        cargo test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests && \
-        cargo cucumber -i account_creation* && \
-        cargo cucumber -i certification* && \
-        cargo cucumber -i identity_creation* && \
-        cargo cucumber -i monetary_mass* && \
-        cargo cucumber -i oneshot_account* && \
-        cargo cucumber -i transfer_all* && \
+        cargo ta && \
         cd target/debug/deps/ && \
         rm cucumber_tests-*.d && \
         mv cucumber_tests* ../../../build/duniter-cucumber; \

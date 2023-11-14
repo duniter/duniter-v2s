@@ -16,10 +16,11 @@
 
 use crate::mock::*;
 use crate::{
-    Error, GenesisIdty, IdtyName, IdtyValue, NewOwnerKeyPayload, RevocationPayload,
-    NEW_OWNER_KEY_PAYLOAD_PREFIX, REVOCATION_PAYLOAD_PREFIX,
+    pallet, Error, GenesisIdty, IdtyName, IdtyRemovalReason, IdtyValue, NewOwnerKeyPayload,
+    RevocationPayload, NEW_OWNER_KEY_PAYLOAD_PREFIX, REVOCATION_PAYLOAD_PREFIX,
 };
 use codec::Encode;
+use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_support::{assert_noop, assert_ok};
 use sp_core::sr25519::Pair as KeyPair;
 use sp_core::Pair;
@@ -72,6 +73,21 @@ fn bob() -> GenesisIdty<Test> {
             old_owner_key: None,
             owner_key: account(2).id,
             removable_on: 0,
+            status: crate::IdtyStatus::Validated,
+        },
+    }
+}
+
+fn inactive_bob() -> GenesisIdty<Test> {
+    GenesisIdty {
+        index: 2,
+        name: IdtyName::from("Bob"),
+        value: IdtyVal {
+            data: (),
+            next_creatable_identity_on: 0,
+            old_owner_key: None,
+            owner_key: account(2).id,
+            removable_on: 2,
             status: crate::IdtyStatus::Validated,
         },
     }
@@ -529,4 +545,82 @@ fn test_idty_revocation() {
             Err(Error::<Test>::IdtyNotFound.into())
         );
     });
+}
+#[test]
+fn test_inactive_genesis_members() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice(), inactive_bob()],
+    })
+    .execute_with(|| {
+        let alice = alice();
+        let bob = inactive_bob();
+        assert!(pallet::Identities::<Test>::get(alice.index).is_some());
+        assert!(pallet::Identities::<Test>::get(bob.index).is_some());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&alice.value.owner_key).is_some());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&bob.value.owner_key).is_some());
+
+        run_to_block(2);
+
+        // alice identity remains untouched
+        assert!(pallet::Identities::<Test>::get(alice.index).is_some());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&alice.value.owner_key).is_some());
+        // but bob identity has been removed
+        assert!(pallet::Identities::<Test>::get(bob.index).is_none());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&bob.value.owner_key).is_none());
+
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
+            idty_index: bob.index,
+            reason: IdtyRemovalReason::Expired,
+        }));
+    });
+}
+#[test]
+fn test_revocation_of_genesis_member() {
+    let alice = alice();
+    let bob = inactive_bob();
+    new_test_ext(IdentityConfig {
+        identities: vec![alice.clone(), bob.clone()],
+    })
+    .execute_with(|| {
+        assert!(pallet::Identities::<Test>::get(alice.index).is_some());
+        assert!(pallet::Identities::<Test>::get(bob.index).is_some());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&alice.value.owner_key).is_some());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&bob.value.owner_key).is_some());
+
+        // Necessary to go to block#1 to allow extrinsics consumption
+        run_to_block(1);
+
+        assert_ok!(revoke_self_identity(bob.clone()));
+
+        // alice identity remains untouched
+        assert!(pallet::Identities::<Test>::get(alice.index).is_some());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&alice.value.owner_key).is_some());
+        // but bob identity has been removed
+        assert!(pallet::Identities::<Test>::get(bob.index).is_none());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&bob.value.owner_key).is_none());
+
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
+            idty_index: bob.index,
+            reason: IdtyRemovalReason::Revoked,
+        }));
+    });
+}
+
+fn revoke_self_identity(idty: GenesisIdty<Test>) -> DispatchResultWithPostInfo {
+    Identity::revoke_identity(
+        RuntimeOrigin::signed(account(idty.index as u8).id),
+        idty.index,
+        account(idty.index as u8).id,
+        test_signature(
+            account(idty.index as u8).signer,
+            (
+                REVOCATION_PAYLOAD_PREFIX,
+                RevocationPayload {
+                    idty_index: idty.index,
+                    genesis_hash: System::block_hash(0),
+                },
+            )
+                .encode(),
+        ),
+    )
 }

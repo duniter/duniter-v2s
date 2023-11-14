@@ -25,11 +25,9 @@ use graphql_client::{GraphQLQuery, Response};
 )]
 pub struct GetChangesQuery;
 
-pub(super) async fn get_changes(spec_version: u32) -> Result<String> {
+pub(super) async fn get_changes(milestone: String) -> Result<String> {
     // this is the important line
-    let request_body = GetChangesQuery::build_query(get_changes_query::Variables {
-        milestone: format!("runtime-{}", spec_version),
-    });
+    let request_body = GetChangesQuery::build_query(get_changes_query::Variables { milestone });
 
     let client = reqwest::Client::new();
     let res = client

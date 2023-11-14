@@ -14,13 +14,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+mod create_asset_link;
 mod create_release;
 mod get_changes;
+mod get_issues;
+mod get_release;
 
 use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
-use std::io::Read;
-use std::process::Command;
+use std::fs;
 
 #[derive(Default, Deserialize)]
 struct Srtool {
@@ -59,86 +61,134 @@ struct CoreVersion {
     //transaction_version: u32,
 }
 
-pub(super) async fn release_runtime(spec_version: u32) -> Result<()> {
-    // Get current dir
-    let pwd = std::env::current_dir()?
-        .into_os_string()
-        .into_string()
-        .map_err(|_| anyhow!("Fail to read current dir path: invalid utf8 string!"))?;
-
+pub(super) async fn release_runtime(milestone: String, branch: String) -> Result<()> {
     // TODO: check spec_version in the code and bump if necessary (with a commit)
-
     // TODO: create and push a git tag runtime-{spec_version}
 
-    // Create target folder for runtime build
-    Command::new("mkdir")
-        .args(["-p", "runtime/gdev/target"])
-        .status()?;
-    Command::new("chmod")
-        .args(["777", "runtime/gdev/target"])
-        .status()?;
+    let mut release_notes = String::from(
+        "
+# Runtimes
 
-    // Build the new runtime
-    println!("Build gdev-runtime… (take a while)");
-    let output = Command::new("docker")
-        .args([
-            "run",
-            "-i",
-            "--rm",
-            "-e",
-            "PACKAGE=gdev-runtime",
-            "-e",
-            "RUNTIME_DIR=runtime/gdev",
-            "-v",
-            &format!("{}:/build", pwd),
-            "paritytech/srtool:1.66.1-0.9.25",
-            "build",
-            "--app",
-            "--json",
-            "-cM",
-        ])
-        .output()?;
+",
+    );
+
+    // Generate release notes
+    let runtimes = vec![
+        ("ĞDev", "SRTOOL_OUTPUT_GDEV"),
+        ("ĞTest", "SRTOOL_OUTPUT_GTEST"),
+        ("Ğ1", "SRTOOL_OUTPUT_G1"),
+    ];
+    for (currency, env_var) in runtimes {
+        if let Ok(sr_tool_output_file) = std::env::var(env_var) {
+            let read = fs::read_to_string(sr_tool_output_file);
+            match read {
+                Ok(sr_tool_output) => {
+                    release_notes.push_str(
+                        gen_release_notes(currency.to_string(), sr_tool_output)
+                            .with_context(|| {
+                                format!("Fail to generate release notes for {}", currency)
+                            })?
+                            .as_str(),
+                    );
+                }
+                Err(e) => {
+                    eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
+                }
+            }
+        }
+    }
+
+    // Get changes (list of MRs) from gitlab API
+    let changes = get_changes::get_changes(milestone.clone()).await?;
+
+    release_notes.push_str(
+        format!(
+            "
+# Changes
+
+{changes}
+"
+        )
+        .as_str(),
+    );
+
+    // Get changes (list of MRs) from gitlab API
+    let issues = get_issues::get_issues(milestone.clone()).await?;
+
+    release_notes.push_str(
+        format!(
+            "
+# Issues
+
+{issues}
+"
+        )
+        .as_str(),
+    );
+    println!("{}", release_notes);
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    create_release::create_release(gitlab_token, branch, milestone, release_notes.to_string())
+        .await?;
+
+    Ok(())
+}
+
+pub(super) async fn update_raw_specs(milestone: String) -> Result<()> {
+    let specs = vec!["gdev-raw.json", "gtest-raw.json", "g1-raw.json"];
+    println!("Fetching release info…");
+    let assets = get_release::get_release(milestone).await?;
+    for spec in specs {
+        if let Some(gdev_raw_specs) = assets.iter().find(|asset| asset.ends_with(spec)) {
+            println!("Downloading {}…", spec);
+            let client = reqwest::Client::new();
+            let res = client.get(gdev_raw_specs).send().await?;
+            let write_to = format!("./node/specs/{}", spec);
+            fs::write(write_to, res.bytes().await?)?;
+        }
+    }
+    println!("Done.");
+    Ok(())
+}
+
+fn gen_release_notes(currency: String, srtool_output: String) -> Result<String> {
+    println!("Read srtool output… ");
 
     // Read the srtool json output
     let srtool: Srtool = serde_json::from_str(
-        std::str::from_utf8(&output.stdout)?
+        srtool_output
             .lines()
             .last()
             .ok_or_else(|| anyhow!("empty srtool output"))?,
     )
     .with_context(|| "Fail to parse srtool json output")?;
 
-    // Generate release notes
-    let release_notes = gen_release_notes(spec_version, srtool)
-        .await
-        .with_context(|| "Fail to generate release notes")?;
-
-    // TODO: Call gitlab API to publish the release notes (and upload the wasm)
-    println!("{}", release_notes);
-    let gitlab_token =
-        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
-    create_release::create_release(gitlab_token, spec_version, release_notes).await?;
-
-    Ok(())
-}
-
-async fn gen_release_notes(spec_version: u32, srtool: Srtool) -> Result<String> {
     // Read template file
-    const RELEASE_NOTES_TEMPLATE_FILEPATH: &str = "xtask/res/runtime_release_notes.template";
-    let mut file = std::fs::File::open(RELEASE_NOTES_TEMPLATE_FILEPATH)?;
-    let mut template = String::new();
-    file.read_to_string(&mut template)?;
+    let template = String::from(
+        "
+## {currency}
+
+```
+🔨 Srtool version: {srtool_version}
+🦀 Rustc version: {rustc_version}
+🏋️ Runtime Size: {runtime_human_size} ({runtime_size} bytes)
+🔥 Core Version: {core_version}
+🗜 Compressed: Yes: {compression_percent} %
+🎁 Metadata version: {metadata_version}
+🗳️ system.setCode hash: {proposal_hash}
+#️⃣ Blake2-256 hash:  {blake2_256}
+```
+",
+    );
 
     // Prepare srtool values
     let uncompressed_size = srtool.runtimes.compact.subwasm.size;
     let wasm = srtool.runtimes.compressed.subwasm;
     let compression_percent = (1.0 - (wasm.size as f64 / uncompressed_size as f64)) * 100.0;
 
-    // Get changes (list of MRs) from gitlab API
-    let changes = get_changes::get_changes(spec_version).await?;
-
     // Fill template values
     let mut values = std::collections::HashMap::new();
+    values.insert("currency".to_owned(), currency);
     values.insert("srtool_version".to_owned(), srtool.gen);
     values.insert("rustc_version".to_owned(), srtool.rustc);
     values.insert(
@@ -163,8 +213,19 @@ async fn gen_release_notes(spec_version: u32, srtool: Srtool) -> Result<String> 
     );
     values.insert("proposal_hash".to_owned(), wasm.proposal_hash);
     values.insert("blake2_256".to_owned(), wasm.blake2_256);
-    values.insert("changes".to_owned(), changes);
 
     // Render template
     placeholder::render(&template, &values).map_err(|e| anyhow!("Fail to render template: {}", e))
+}
+
+pub(crate) async fn create_asset_link(
+    tag: String,
+    asset_name: String,
+    asset_url: String,
+) -> Result<()> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    create_asset_link::create_asset_link(gitlab_token, tag, asset_name, asset_url).await?;
+
+    Ok(())
 }

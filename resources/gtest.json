@@ -1,0 +1,20 @@
+{
+  "ud": 1000,
+  "first_ud": 6000,
+  "first_ud_reeval": 600000,
+  "clique_smiths": [
+    { "name": "Pini" },
+    { "name": "moul" },
+    { "name": "HugoTrentesaux" },
+    { "name": "tuxmain" },
+    { "name": "1000i100" },
+    { "name": "vit" },
+    { "name": "cgeek",
+      "migration_address": "5E6q47RRGZU15LjUiBTm2DZjpqFKAjRNafYS8YV8AzTQZtLG",
+      "session_keys": "0x3090c9a6974f1a4749038ee75eb47da7c72ba4972e4809f2f71e8730567c1c5a7acfdc6e9b470e8d2d334edc662d755aeec93d2bb140e1c9f7db724b046dd54b7acfdc6e9b470e8d2d334edc662d755aeec93d2bb140e1c9f7db724b046dd54b7acfdc6e9b470e8d2d334edc662d755aeec93d2bb140e1c9f7db724b046dd54b"
+    }
+  ],
+  "sudo_key": "5Hm8sBbwuLAU99dBezvgtnRmZCrUy9mhqmbQMFyGTaeATYg7",
+  "treasury_funder_address": "5E6q47RRGZU15LjUiBTm2DZjpqFKAjRNafYS8YV8AzTQZtLG",
+  "technical_committee": ["Pini", "moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek"]
+}

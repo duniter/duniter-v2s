@@ -79,6 +79,7 @@ pub mod pallet {
         type MaxByIssuer: Get<u32>;
         /// Minimum number of certifications that must be received to be able to issue
         /// certifications.
+        #[pallet::constant]
         type MinReceivedCertToBeAbleToIssueCert: Get<u32>;
         /// Handler for NewCert event
         type OnNewcert: OnNewcert<Self::IdtyIndex>;

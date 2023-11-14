@@ -19,7 +19,7 @@ pub mod key;
 pub mod utils;
 
 #[cfg(feature = "gtest")]
-use crate::chain_spec::{gtest, gtest_genesis};
+use crate::chain_spec::gtest;
 use crate::cli::{Cli, Subcommand};
 #[cfg(feature = "g1")]
 use crate::service::G1Executor;
@@ -92,20 +92,38 @@ impl SubstrateCli for Cli {
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         Ok(match id {
             // === GDEV ===
-            // developement chainspec with Alice validator
-            // optionally from DUNITER_GENESIS_CONFIG file otherwise generated
+            // developement chainspec with generated genesis and Alice validator
             #[cfg(feature = "gdev")]
-            "dev" => Box::new(chain_spec::gdev::development_chain_spec()?),
-            // local testnet with generated genesis and Alice validator
+            "dev" => Box::new(chain_spec::gdev::local_testnet_config(1, 3, 4)?),
+            // local testnet with g1 data, gdev configuration (parameters & smiths) and Alice validator
+            // > optionally from DUNITER_GENESIS_CONFIG file to override default gdev configuration
             #[cfg(feature = "gdev")]
-            "gdev_local" => Box::new(chain_spec::gdev::local_testnet_config(1, 3, 4)?),
-            // chainspecs for live network (generated or DUNITER_GENESIS_CONFIG)
+            "gdev_dev" => Box::new(chain_spec::gdev::gdev_development_chain_spec(
+                "resources/gdev.json".to_string(),
+            )?),
+            // chainspecs for live network with g1 data, gdev configuration (parameters & smiths)
             // but must have a smith with declared session keys
+            // > optionally from DUNITER_GENESIS_CONFIG file to override default gdev configuration
             #[cfg(feature = "gdev")]
-            "gdev_live" => Box::new(chain_spec::gdev::gen_live_conf()?),
+            "gdev_live" => {
+                const JSON_CLIENT_SPEC: &str = "./node/specs/gdev_client-specs.json";
+                let client_spec: chain_spec::gdev::ClientSpec = serde_json::from_slice(
+                    &std::fs::read(
+                        std::env::var("DUNITER_GTEST_CLIENT_SPEC")
+                            .unwrap_or_else(|_| JSON_CLIENT_SPEC.to_string()),
+                    )
+                    .map_err(|e| format!("failed to read {JSON_CLIENT_SPEC} {e}"))?[..],
+                )
+                .map_err(|e| format!("failed to parse {e}"))?;
+                // rebuild chainspecs from these files
+                Box::new(chain_spec::gdev::gen_live_conf(
+                    client_spec,
+                    "resources/gdev.json".to_string(),
+                )?)
+            }
             // hardcoded previously generated raw chainspecs
             // yields a pointlessly heavy binary because of hexadecimal-text-encoded values
-            #[cfg(feature = "gdev")]
+            #[cfg(all(feature = "gdev", feature = "embed"))]
             "gdev" => Box::new(chain_spec::gdev::ChainSpec::from_json_bytes(
                 &include_bytes!("../specs/gdev-raw.json")[..],
             )?),
@@ -114,7 +132,9 @@ impl SubstrateCli for Cli {
             // provide DUNITER_GTEST_GENESIS env var if you want to build genesis from json
             // otherwise you get a local testnet with generated genesis
             #[cfg(feature = "gtest")]
-            "gtest_dev" => Box::new(chain_spec::gtest::development_chainspecs()?),
+            "gtest_dev" => Box::new(chain_spec::gtest::development_chainspecs(
+                "resources/gtest.json".to_string(),
+            )?),
             // chainspecs for live network
             // must have following files in ./node/specs folder or overwrite with env var:
             // - gtest.json / DUNITER_GTEST_GENESIS
@@ -122,7 +142,6 @@ impl SubstrateCli for Cli {
             #[cfg(feature = "gtest")]
             "gtest_live" => {
                 const JSON_CLIENT_SPEC: &str = "./node/specs/gtest_client-specs.json";
-                const JSON_GENESIS: &str = "./node/specs/gtest_genesis.json";
                 let client_spec: gtest::ClientSpec = serde_json::from_slice(
                     &std::fs::read(
                         std::env::var("DUNITER_GTEST_CLIENT_SPEC")
@@ -131,18 +150,10 @@ impl SubstrateCli for Cli {
                     .map_err(|e| format!("failed to read {JSON_CLIENT_SPEC} {e}"))?[..],
                 )
                 .map_err(|e| format!("failed to parse {e}"))?;
-                let genesis_data: gtest_genesis::GenesisJson = serde_json::from_slice(
-                    &std::fs::read(
-                        std::env::var("DUNITER_GTEST_GENESIS")
-                            .unwrap_or_else(|_| JSON_GENESIS.to_string()),
-                    )
-                    .map_err(|e| format!("failed to read {JSON_GENESIS} {e}"))?[..],
-                )
-                .map_err(|e| format!("failed to parse {e}"))?;
                 // rebuild chainspecs from these files
                 Box::new(chain_spec::gtest::live_chainspecs(
                     client_spec,
-                    genesis_data,
+                    "resources/gtest.json".to_string(),
                 )?)
             }
             // return hardcoded live chainspecs, only with embed feature

@@ -153,7 +153,6 @@ pub mod pallet {
                     "Idty name {:?} is present twice",
                     &idty.name
                 );
-                assert!(idty.value.removable_on == T::BlockNumber::zero());
                 names.insert(idty.name.clone());
             }
 
@@ -173,8 +172,12 @@ pub mod pallet {
                     )
                 }
                 <Identities<T>>::insert(idty_index, idty.value.clone());
-                IdentitiesNames::<T>::insert(idty.name.clone(), ());
-                IdentityIndexOf::<T>::insert(idty.value.owner_key, idty_index);
+                IdentitiesNames::<T>::insert(idty.name.clone(), idty_index);
+                IdentityIndexOf::<T>::insert(&idty.value.owner_key, idty_index);
+                frame_system::Pallet::<T>::inc_sufficients(&idty.value.owner_key);
+                if let Some((old_owner_key, _last_change)) = idty.value.old_owner_key {
+                    frame_system::Pallet::<T>::inc_sufficients(&old_owner_key);
+                }
             }
         }
     }
@@ -198,11 +201,11 @@ pub mod pallet {
     pub type IdentityIndexOf<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, T::IdtyIndex, OptionQuery>;
 
-    /// maps identity name to null type (simply a set)
+    /// maps identity name to identity index (simply a set)
     #[pallet::storage]
     #[pallet::getter(fn identity_by_did)]
     pub type IdentitiesNames<T: Config> =
-        StorageMap<_, Blake2_128Concat, IdtyName, (), OptionQuery>;
+        StorageMap<_, Blake2_128Concat, IdtyName, T::IdtyIndex, OptionQuery>;
 
     /// counter of the identity index to give to the next identity
     #[pallet::storage]
@@ -369,7 +372,7 @@ pub mod pallet {
             idty_value.status = IdtyStatus::ConfirmedByOwner;
 
             <Identities<T>>::insert(idty_index, idty_value);
-            <IdentitiesNames<T>>::insert(idty_name.clone(), ());
+            <IdentitiesNames<T>>::insert(idty_name.clone(), idty_index);
             Self::deposit_event(Event::IdtyConfirmed {
                 idty_index,
                 owner_key: who,

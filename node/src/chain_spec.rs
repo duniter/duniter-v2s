@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-#[cfg(feature = "gdev")]
+// Common to all Duniter blockchains
 pub mod gen_genesis_data;
 
 #[cfg(feature = "g1")]
@@ -23,8 +23,6 @@ pub mod g1;
 pub mod gdev;
 #[cfg(feature = "gtest")]
 pub mod gtest;
-#[cfg(feature = "gtest")]
-pub mod gtest_genesis;
 
 use common_runtime::{AccountId, IdtyIndex, Signature};
 use sp_core::{Pair, Public};
@@ -42,14 +40,6 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
         .public()
 }
 
-/*/// Generate an account ID from pair.
-pub fn get_account_id_from_pair<TPublic: Public>(pair: TPublic::Pair) -> AccountId
-where
-    AccountPublic: From<<TPublic::Pair as Pair>::Public>,
-{
-    AccountPublic::from(pair.public()).into_account()
-}*/
-
 /// Generate an account ID from seed.
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where
@@ -60,9 +50,14 @@ where
 
 fn clique_wot(
     initial_identities_len: usize,
-) -> BTreeMap<IdtyIndex, BTreeMap<IdtyIndex, Option<common_runtime::BlockNumber>>> {
+) -> (
+    BTreeMap<IdtyIndex, BTreeMap<IdtyIndex, Option<common_runtime::BlockNumber>>>,
+    u32,
+) {
     let mut certs_by_issuer = BTreeMap::new();
+    let mut count: u32 = 0;
     for i in 1..=initial_identities_len {
+        count += initial_identities_len as u32;
         certs_by_issuer.insert(
             i as IdtyIndex,
             (1..=initial_identities_len)
@@ -76,5 +71,5 @@ fn clique_wot(
                 .collect(),
         );
     }
-    certs_by_issuer
+    (certs_by_issuer, count)
 }

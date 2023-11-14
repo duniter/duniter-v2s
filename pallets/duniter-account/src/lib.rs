@@ -84,6 +84,7 @@ pub mod pallet {
     pub struct GenesisConfig<T: Config> {
         pub accounts:
             sp_std::collections::btree_map::BTreeMap<T::AccountId, GenesisAccountData<T::Balance>>,
+        pub treasury_balance: T::Balance,
     }
 
     #[cfg(feature = "std")]
@@ -91,6 +92,7 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 accounts: Default::default(),
+                treasury_balance: T::ExistentialDeposit::get(),
             }
         }
     }
@@ -103,7 +105,8 @@ pub mod pallet {
                 pallet_treasury::Pallet::<T>::account_id(),
                 |account| {
                     account.data.random_id = None;
-                    account.data.free = T::ExistentialDeposit::get();
+                    account.data.free = self.treasury_balance;
+                    account.providers = 1;
                     account.sufficients = 1; // the treasury will always be self-sufficient
                 },
             );
@@ -136,10 +139,6 @@ pub mod pallet {
                 frame_system::Account::<T>::mutate(account_id, |account| {
                     account.data.random_id = Some(*random_id);
                     account.data.free = *balance;
-                    if *is_identity {
-                        // if the account is an identity, his identity is sufficient for the account existance
-                        account.sufficients = 1;
-                    }
                     if balance >= &T::ExistentialDeposit::get() {
                         // accounts above existential deposit self-provide
                         account.providers = 1;

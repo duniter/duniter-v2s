@@ -179,6 +179,7 @@ impl ExtBuilder {
 
         pallet_duniter_account::GenesisConfig::<Runtime> {
             accounts: initial_accounts.clone(),
+            treasury_balance: <Runtime as pallet_balances::Config>::ExistentialDeposit::get(),
         }
         .assimilate_storage(&mut t)
         .unwrap();

@@ -17,10 +17,12 @@
 mod common;
 
 use common::*;
+use frame_support::instances::Instance1;
 use frame_support::traits::{Get, PalletInfo, StorageInfo, StorageInfoTrait};
 use frame_support::{assert_noop, assert_ok};
 use frame_support::{StorageHasher, Twox128};
 use gdev_runtime::*;
+use pallet_duniter_wot::IdtyRemovalWotReason;
 use sp_keyring::AccountKeyring;
 use sp_runtime::MultiAddress;
 
@@ -194,7 +196,7 @@ fn test_identity_below_ed() {
                 Balances::transfer(
                     frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                     MultiAddress::Id(AccountKeyring::Bob.to_account_id()),
-                    800
+                    850
                 ),
                 sp_runtime::TokenError::Frozen
             );
@@ -390,6 +392,31 @@ fn test_membership_expiry() {
                 idty_index: 1,
                 reason: pallet_identity::IdtyRemovalReason::Expired
             })));
+    });
+}
+
+#[test]
+fn test_membership_expiry_with_identity_removal() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        run_to_block(100);
+
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::MembershipExpired(4),
+        ));
+
+        // Trigger pending membership expiry
+        run_to_block(
+            100 + <Runtime as pallet_membership::Config<Instance1>>::PendingMembershipPeriod::get(),
+        );
+
+        System::assert_has_event(RuntimeEvent::Identity(
+            pallet_identity::Event::IdtyRemoved {
+                idty_index: 4,
+                reason: pallet_identity::IdtyRemovalReason::Other(
+                    IdtyRemovalWotReason::MembershipExpired,
+                ),
+            },
+        ));
     });
 }
 
@@ -682,7 +709,7 @@ fn test_create_new_account_with_insufficient_balance() {
             assert_ok!(Balances::transfer(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
-                400
+                300
             ));
 
             System::assert_has_event(RuntimeEvent::System(frame_system::Event::NewAccount {
@@ -690,12 +717,12 @@ fn test_create_new_account_with_insufficient_balance() {
             }));
             System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Endowed {
                 account: AccountKeyring::Eve.to_account_id(),
-                free_balance: 400,
+                free_balance: 300,
             }));
             System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Transfer {
                 from: AccountKeyring::Alice.to_account_id(),
                 to: AccountKeyring::Eve.to_account_id(),
-                amount: 400,
+                amount: 300,
             }));
 
             // At next block, the new account must be reaped because its balance is not sufficient
@@ -705,22 +732,23 @@ fn test_create_new_account_with_insufficient_balance() {
             System::assert_has_event(RuntimeEvent::Account(
                 pallet_duniter_account::Event::ForceDestroy {
                     who: AccountKeyring::Eve.to_account_id(),
-                    balance: 400,
+                    balance: 300,
                 },
             ));
             System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Deposit {
                 who: Treasury::account_id(),
-                amount: 400,
+                amount: 300,
             }));
             System::assert_has_event(RuntimeEvent::Treasury(pallet_treasury::Event::Deposit {
-                value: 400,
+                value: 300,
             }));
 
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 0
             );
-            assert_eq!(Balances::free_balance(Treasury::account_id()), 600);
+            // 100 initial + 300 recycled from Eve account's destructuion
+            assert_eq!(Balances::free_balance(Treasury::account_id()), 400);
         });
 }
 
@@ -773,7 +801,8 @@ fn test_create_new_account() {
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 200
             );
-            assert_eq!(Balances::free_balance(Treasury::account_id()), 500);
+            // 100 initial + 300 deposit
+            assert_eq!(Balances::free_balance(Treasury::account_id()), 400);
 
             // A random id request should be registered
             assert_eq!(
@@ -805,6 +834,7 @@ fn test_create_new_account() {
                 ),
                 sp_runtime::DispatchError::ConsumerRemaining,
             );
+            // Transfer failed, so free_balance remains the same
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 200

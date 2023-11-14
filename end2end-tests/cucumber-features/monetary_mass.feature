@@ -1,4 +1,4 @@
-Feature: Balance transfer
+Feature: Monetary mass
 
   Scenario: After 10 blocks, the monetary mass should be 60 ĞD
     Then Monetary mass should be 30.00 ĞD

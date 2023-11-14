@@ -130,8 +130,6 @@ pub fn new_test_ext(gen_conf: pallet_identity::GenesisConfig<Test>) -> sp_io::Te
     gen_conf.assimilate_storage(&mut t).unwrap();
 
     frame_support::BasicExternalities::execute_with_storage(&mut t, || {
-        // Some dedicated test account
-        frame_system::Pallet::<Test>::inc_sufficients(&account(1));
         frame_system::Pallet::<Test>::inc_providers(&account(2));
         frame_system::Pallet::<Test>::inc_providers(&account(3));
     });

@@ -87,6 +87,13 @@ impl Process {
     }
 }
 
+// Do not let the process keep running after the tests ended
+impl Drop for Process {
+    fn drop(&mut self) {
+        self.kill()
+    }
+}
+
 pub const DISTANCE_ORACLE_LOCAL_PATH: &str = "../target/debug/distance-oracle";
 const DUNITER_DOCKER_PATH: &str = "/usr/local/bin/duniter";
 const DUNITER_LOCAL_PATH: &str = "../target/debug/duniter";
@@ -97,7 +104,10 @@ struct FullNode {
     ws_port: u16,
 }
 
-pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Client, Process, u16) {
+pub async fn spawn_node(
+    maybe_genesis_conf_file: Option<PathBuf>,
+    no_spawn: bool,
+) -> (Client, Option<Process>, u16) {
     println!("maybe_genesis_conf_file={:?}", maybe_genesis_conf_file);
     let duniter_binary_path = std::env::var("DUNITER_BINARY_PATH").unwrap_or_else(|_| {
         if std::path::Path::new(DUNITER_DOCKER_PATH).exists() {
@@ -107,20 +117,38 @@ pub async fn spawn_node(maybe_genesis_conf_file: Option<PathBuf>) -> (Client, Pr
         }
     });
 
-    let FullNode {
-        process,
-        p2p_port: _,
-        ws_port,
-    } = spawn_full_node(
-        &["--dev", "--execution=Native", "--sealing=manual"],
-        &duniter_binary_path,
-        maybe_genesis_conf_file,
-    );
-    let client = Client::from_url(format!("ws://127.0.0.1:{}", ws_port))
+    let mut the_ws_port = 9944;
+    let mut opt_process = None;
+    // Eventually spawn a node (we most likely will - unless --no-spawn option is used)
+    if !no_spawn {
+        let FullNode {
+            process,
+            p2p_port: _,
+            ws_port,
+        } = spawn_full_node(
+            &[
+                "--chain=gdev_dev",
+                "--execution=Native",
+                "--sealing=manual",
+                // Necessary options which were previously set by --dev option:
+                "--force-authoring",
+                "--rpc-cors=all",
+                "--alice",
+                "--tmp",
+                // Fix: End2End test may fail due to network discovery. This option disables automatic peer discovery.π
+                "--reserved-only",
+            ],
+            &duniter_binary_path,
+            maybe_genesis_conf_file,
+        );
+        opt_process = Some(process);
+        the_ws_port = ws_port;
+    }
+    let client = Client::from_url(format!("ws://127.0.0.1:{}", the_ws_port))
         .await
         .expect("fail to connect to node");
 
-    (client, process, ws_port)
+    (client, opt_process, the_ws_port)
 }
 
 pub async fn create_empty_block(client: &Client) -> Result<()> {
@@ -169,15 +197,13 @@ fn spawn_full_node(
     // Env vars
     let mut envs = Vec::new();
     if let Some(genesis_conf_file) = maybe_genesis_conf_file {
-        envs.push(("DUNITER_GENESIS_CONFIG", genesis_conf_file));
+        envs.push(("DUNITER_GENESIS_CONFIG", genesis_conf_file.clone()));
+        envs.push(("DUNITER_GENESIS_DATA", genesis_conf_file));
     }
 
     // Logs
     let log_file_path = format!("duniter-v2s-{}.log", ws_port);
     let log_file = std::fs::File::create(&log_file_path).expect("fail to create log file");
-
-    // Clean previous data
-    std::fs::remove_dir_all("/tmp/duniter-cucumber").ok();
 
     // Command
     let process = Process(
@@ -192,8 +218,6 @@ fn spawn_full_node(
                     &rpc_port.to_string(),
                     "--ws-port",
                     &ws_port.to_string(),
-                    "--base-path",
-                    "/tmp/duniter-cucumber",
                 ]
                 .iter()
                 .chain(args),

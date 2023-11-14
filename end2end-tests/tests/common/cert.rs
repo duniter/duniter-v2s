@@ -30,9 +30,13 @@ pub async fn certify(client: &Client, from: AccountKeyring, to: AccountKeyring) 
         .at_latest()
         .await
         .unwrap()
-        .fetch(&gdev::storage().identity().identity_index_of(&from.into()))
+        .fetch(
+            &gdev::storage()
+                .identity()
+                .identity_index_of(&from.clone().into()),
+        )
         .await?
-        .unwrap();
+        .unwrap_or_else(|| panic!("{} issuer must exist", from));
     let receiver_index = client
         .storage()
         .at_latest()
@@ -40,7 +44,7 @@ pub async fn certify(client: &Client, from: AccountKeyring, to: AccountKeyring) 
         .unwrap()
         .fetch(&gdev::storage().identity().identity_index_of(&to.into()))
         .await?
-        .unwrap();
+        .unwrap_or_else(|| panic!("{} issuer must exist", from));
 
     let _events = create_block_with_extrinsic(
         client,

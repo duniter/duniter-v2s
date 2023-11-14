@@ -9,13 +9,13 @@ You can use `try-runtime` subcommand to replay a block against a real state from
 5. Replay the block a first time to get the state:
 
 ```
-duniter try-runtime --exectuion=Native execute-block --block-at 0x2633026e3e428b010cfe08d215b6253843a9fe54db28748ca56de37e6a83c644 live -s tmp/snapshot1 -u ws://localhost:9944
+duniter try-runtime --execution=Native execute-block --block-at 0x2633026e3e428b010cfe08d215b6253843a9fe54db28748ca56de37e6a83c644 live -s tmp/snapshot1 -u ws://localhost:9944
 ```
 
 6. Then, replay the block as many times as you need against your local snapshot:
 
 ```
-duniter try-runtime --exectuion=Native execute-block --block-at 0x2633026e3e428b010cfe08d215b6253843a9fe54db28748ca56de37e6a83c644 --block-ws-uri ws://localhost:9944 snap -s tmp/snapshot1
+duniter try-runtime --execution=Native execute-block --block-at 0x2633026e3e428b010cfe08d215b6253843a9fe54db28748ca56de37e6a83c644 --block-ws-uri ws://localhost:9944 snap -s tmp/snapshot1
 ```
 
 try-runtime does not allow (for now) to store the block locally, only the storage can be stored.

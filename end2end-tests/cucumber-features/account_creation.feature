@@ -1,4 +1,4 @@
-Feature: Balance transfer
+Feature: Account creation
 
   Scenario: Create a new account with enough funds
     When alice sends 5 ĞD to dave
@@ -29,8 +29,10 @@ Feature: Balance transfer
   @ignoreErrors
   Scenario: Create a new account without any funds
     Then eve should have 0 ĞD
+    # Alice is treasury funder for 1 ĞD
+    Then alice should have 9 ĞD
     When eve send 0 ĞD to alice
-    Then alice should have 10 ĞD
+    Then alice should have 9 ĞD
     When alice send 5 ĞD to eve
     Then eve should have 5 ĞD
     When 1 block later

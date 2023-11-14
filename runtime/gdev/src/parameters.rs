@@ -71,7 +71,7 @@ parameter_types! {
 
 // Balances
 frame_support::parameter_types! {
-    pub const ExistentialDeposit: Balance = 200;
+    pub const ExistentialDeposit: Balance = 100;
     pub const MaxLocks: u32 = 50;
 }
 

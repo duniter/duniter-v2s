@@ -10,6 +10,7 @@ type Query {
 
 type Mutation {
   releaseCreate(input: ReleaseCreateInput!): ReleaseCreatePayload
+  releaseAssetLinkCreate(input: ReleaseAssetLinkInput!): ReleaseAssetLinkCreatePayload
 }
 
 type Project {
@@ -17,6 +18,11 @@ type Project {
     state: MergeRequestState
     milestoneTitle: String
   ): MergeRequestConnection
+  issues(
+    state: IssueState
+    milestoneTitle: [String]
+  ): IssueConnection
+  release(tagName: String!): Release
 }
 
 scalar MergeRequestID
@@ -45,6 +51,25 @@ enum MergeRequestState {
   merged
 }
 
+type IssueConnection {
+  count: Int!
+  nodes: [Issue]
+}
+
+type Issue {
+  id: ID!
+  iid: String
+  state: IssueState!
+  title: String!
+}
+
+enum IssueState {
+  opened
+  closed
+  locked
+  all
+}
+
 type Pipeline {
   active: Boolean!
   cancelable: Boolean!
@@ -69,8 +94,10 @@ input ReleaseAssetsInput {
 input ReleaseAssetLinkInput {
   name: String!
   url: String!
+  tagName: String!
+  projectPath: String!
   directAssetPath: String
-  linkType: ReleaseAssetLinkType = OTHER
+  linkType: ReleaseAssetLinkType = PACKAGE
 }
 
 enum ReleaseAssetLinkType {
@@ -82,4 +109,30 @@ enum ReleaseAssetLinkType {
 
 type ReleaseCreatePayload {
   errors: [String!]!
+}
+
+type ReleaseAssetLinkCreatePayload {
+  errors: [String!]!
+}
+
+type Release {
+  id: String!
+  tagName: String!
+  assets: ReleaseAssets
+}
+
+type ReleaseAssets {
+  links: ReleaseAssetLinkConnection
+}
+
+type ReleaseAssetLinkConnection {
+  edges: [ReleaseAssetLinkEdge]
+}
+
+type ReleaseAssetLinkEdge {
+  node: ReleaseAssetLink
+}
+
+type ReleaseAssetLink {
+  directAssetUrl: String
 }

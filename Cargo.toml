@@ -69,6 +69,7 @@ sp-membership = { path = 'primitives/membership' }
 
 # crates.io dependencies
 async-io = { version = "1.6.0", default-features = false }
+bs58 = "0.5.0"
 clap = { version = "4.0.9", default-features = false, features = ["derive"] }
 clap_complete = { version = "4", default-features = false }
 futures = { version = "0.3.28", default-features = false, features = ["compat"] }
@@ -89,6 +90,7 @@ frame-benchmarking = { git = "https://github.com/duniter/substrate", branch = "d
 frame-benchmarking-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
 frame-system = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
 pallet-grandpa = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
+pallet-im-online = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
 pallet-transaction-payment-rpc = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
