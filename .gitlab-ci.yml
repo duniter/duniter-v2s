@@ -64,14 +64,6 @@ fmt_and_clippy:
     - cargo clippy -- -V
     - cargo clippy --all --tests -- -D warnings
 
-.docker_build:
-  stage: build
-  script:
-    - echo podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
-    - podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
-  tags:
-    - podman
-
 .docker_release_build:
   stage: build
   rules:
@@ -135,11 +127,6 @@ gtest_docker_release_deploy:
   tags:
     - podman
 
-.docker_deploy_native:
-  extends: .docker_deploy
-  script:
-    - podman push "localhost/$IMAGE_NAME:$IMAGE_TAG" "docker://docker.io/$IMAGE_NAME:$IMAGE_TAG"
-
 .docker_deploy_multiplatform:
   extends: .docker_deploy
   script:
@@ -150,16 +137,6 @@ gtest_docker_release_deploy:
     - podman manifest rm "$MANIFEST"
   variables:
     MANIFEST: "localhost/manifest-$IMAGE_NAME:$IMAGE_TAG"
-
-build_release_tag:
-  extends: .docker_build
-  rules:
-    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^(v|runtime-)[0-9].*/"
-    - when: never
-  variables:
-    IMAGE_NAME: "duniter/duniter-v2s"
-    IMAGE_TAG: "$CI_COMMIT_TAG"
-    PODMAN_BUILD_OPTIONS: "--platform linux/amd64"
 
 tests:
   stage: tests
@@ -183,16 +160,6 @@ tests:
     - cargo build
     - cargo tu
     - cargo cucumber
-
-deploy_docker_release_tag:
-  stage: deploy
-  extends: .docker_deploy_native
-  rules:
-    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^(v|runtime-)[0-9].*/"
-    - when: never
-  variables:
-    IMAGE_NAME: "duniter/duniter-v2s"
-    IMAGE_TAG: "$CI_COMMIT_TAG"
 
 deploy_docker_release_tag_multiplatform:
   stage: deploy
