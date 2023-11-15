@@ -11,7 +11,7 @@ version: "3.5"
 
 services:
   duniter-mirror:
-    image: duniter/duniter-v2s:latest
+    image: duniter/duniter-v2s-gdev:latest
     restart: unless-stopped
     ports:
       # Prometheus endpoint
@@ -39,7 +39,7 @@ version: "3.5"
 
 services:
   duniter-validator:
-    image: duniter/duniter-v2s:latest
+    image: duniter/duniter-v2s-gdev:latest
     restart: unless-stopped
     ports:
       # Prometheus endpoint
@@ -59,17 +59,17 @@ volumes:
 
 ## Environment variables
 
-| Name | Description | Default |
-| ---- | ----------- | ------- |
-| `DUNITER_NODE_NAME` | The node name. This name will appear on the Substrate telemetry server when telemetry is enabled. | Random name |
-| `DUNITER_CHAIN_NAME` | The currency to process. "gdev" uses the embeded chainspec. A path allows to use a local json raw chainspec. | `dev` (development mode) |
-| `DUNITER_PUBLIC_ADDR` | The libp2p public address base. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when the node is behind a reverse proxy with its ports not directly exposed.<br>Note: the `p2p/<peer_id>` part of the address shouldn't be set in this variable. It is automatically added by Duniter. | duniter-v2s guesses one from the node's IPv4 address. |
-| `DUNITER_LISTEN_ADDR` | The libp2p listen address. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when running a validator node behind a reverse proxy, to force the P2P end point in websocket mode with:<br>  `DUNITER_LISTEN_ADDR=/ip4/0.0.0.0/tcp/30333/ws` | Non validator node: `/ip4/0.0.0.0/tcp/30333/ws`<br>Validator node: `/ip4/0.0.0.0/tcp/30333` |
-| `DUNITER_RPC_CORS` | Value of the polkadot `--rpc-cors` option. | `all` |
-| `DUNITER_VALIDATOR` | Boolean (`true` / `false`) to run the node in validator mode. Configure the polkadot options `--validator --rpc-methods Unsafe`. | `false` |
-| `DUNITER_DISABLE_PROMETHEUS` | Boolean to disable the Prometheus endpoint on port 9615. | `false` |
-| `DUNITER_DISABLE_TELEMETRY` | Boolean to disable connecting to the Substrate telemetry server. | `false` |
-| `DUNITER_PRUNING_PROFILE` | * `default`<br> * `archive`: keep all blocks and state blocks<br> * `light`: keep only last 256 state blocks and last 14400 blocks (one day duration) | `default` |
+| Name                         | Description                                                                                                                                                                                                                                                                                                                                          | Default                                                                                     |
+|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| `DUNITER_NODE_NAME`          | The node name. This name will appear on the Substrate telemetry server when telemetry is enabled.                                                                                                                                                                                                                                                    | Random name                                                                                 |
+| `DUNITER_CHAIN_NAME`         | The currency to process. "gdev" uses the embeded chainspec. A path allows to use a local json raw chainspec.                                                                                                                                                                                                                                         | `dev` (development mode)                                                                    |
+| `DUNITER_PUBLIC_ADDR`        | The libp2p public address base. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when the node is behind a reverse proxy with its ports not directly exposed.<br>Note: the `p2p/<peer_id>` part of the address shouldn't be set in this variable. It is automatically added by Duniter. | duniter-v2s guesses one from the node's IPv4 address.                                       |
+| `DUNITER_LISTEN_ADDR`        | The libp2p listen address. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when running a validator node behind a reverse proxy, to force the P2P end point in websocket mode with:<br>  `DUNITER_LISTEN_ADDR=/ip4/0.0.0.0/tcp/30333/ws`                                               | Non validator node: `/ip4/0.0.0.0/tcp/30333/ws`<br>Validator node: `/ip4/0.0.0.0/tcp/30333` |
+| `DUNITER_RPC_CORS`           | Value of the polkadot `--rpc-cors` option.                                                                                                                                                                                                                                                                                                           | `all`                                                                                       |
+| `DUNITER_VALIDATOR`          | Boolean (`true` / `false`) to run the node in validator mode. Configure the polkadot options `--validator --rpc-methods Unsafe`.                                                                                                                                                                                                                     | `false`                                                                                     |
+| `DUNITER_DISABLE_PROMETHEUS` | Boolean to disable the Prometheus endpoint on port 9615.                                                                                                                                                                                                                                                                                             | `false`                                                                                     |
+| `DUNITER_DISABLE_TELEMETRY`  | Boolean to disable connecting to the Substrate telemetry server.                                                                                                                                                                                                                                                                                     | `false`                                                                                     |
+| `DUNITER_PRUNING_PROFILE`    | * `default`<br> * `archive`: keep all blocks and state blocks<br> * `light`: keep only last 256 state blocks and last 14400 blocks (one day duration)                                                                                                                                                                                                | `default`                                                                                   |
 
 ## Other Duniter options
 
@@ -93,6 +93,6 @@ docker compose up -d
 
 To run duniter from the command line without the default configuration detailed in the "Environment variables" section use `--` as the first argument. For example:
 ```
-$ docker run --rm duniter/duniter-v2s:latest -- key generate
-$ docker run --rm duniter/duniter-v2s:latest -- --chain gdev ...
+$ docker run --rm duniter/duniter-v2s-gdev:latest -- key generate
+$ docker run --rm duniter/duniter-v2s-gdev:latest -- --chain gdev ...
 ```

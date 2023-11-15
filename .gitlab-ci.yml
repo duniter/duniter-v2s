@@ -64,80 +64,6 @@ fmt_and_clippy:
     - cargo clippy -- -V
     - cargo clippy --all --tests -- -D warnings
 
-.docker_release_build:
-  stage: build
-  rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
-      when: manual
-      changes:
-        - node/specs/$CHAIN-raw.json
-  variables:
-    IMAGE_NAME: "duniter/duniter-v2s-$CHAIN"
-    IMAGE_TAG: "latest"
-    PODMAN_BUILD_OPTIONS: "--platform linux/amd64 --build-arg chain=$CHAIN"
-  script:
-    - echo podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
-    - podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
-  tags:
-    - podman
-
-.docker_release_deploy:
-  stage: deploy
-  rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
-      when: manual
-      changes:
-        - node/specs/$CHAIN-raw.json
-  variables:
-    IMAGE_NAME: "duniter/duniter-v2s-$CHAIN"
-    IMAGE_TAG: "latest"
-  script:
-    - echo podman push "localhost/$IMAGE_NAME:$IMAGE_TAG" "docker://docker.io/$IMAGE_NAME:$IMAGE_TAG"
-    - podman podman push "localhost/$IMAGE_NAME:$IMAGE_TAG" "docker://docker.io/$IMAGE_NAME:$IMAGE_TAG"
-  tags:
-    - podman
-
-gdev_docker_release_build:
-  extends: .docker_release_build
-  variables:
-    CHAIN: gdev
-
-gtest_docker_release_build:
-  extends: .docker_release_build
-  variables:
-    CHAIN: gtest
-
-gdev_docker_release_deploy:
-  extends: .docker_release_deploy
-  needs: ['gdev_docker_release_build']
-  variables:
-    CHAIN: gdev
-
-gtest_docker_release_deploy:
-  extends: .docker_release_deploy
-  needs: ['gtest_docker_release_build']
-  variables:
-    CHAIN: gtest
-
-.docker_deploy:
-  stage: deploy
-  before_script:
-    - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
-    - podman login -u "duniterteam" -p "$DUNITERTEAM_PASSWD" docker.io
-  tags:
-    - podman
-
-.docker_deploy_multiplatform:
-  extends: .docker_deploy
-  script:
-    - podman manifest rm "$MANIFEST" 2>/dev/null || true
-    - podman build --layers --platform linux/amd64,linux/arm64 --manifest "$MANIFEST" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
-    - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$IMAGE_TAG"
-  after_script:
-    - podman manifest rm "$MANIFEST"
-  variables:
-    MANIFEST: "localhost/manifest-$IMAGE_NAME:$IMAGE_TAG"
-
 tests:
   stage: tests
   image: rust:1-bullseye
@@ -161,23 +87,41 @@ tests:
     - cargo tu
     - cargo cucumber
 
-deploy_docker_release_tag_multiplatform:
+.deploy_docker_multiplatform:
   stage: deploy
-  needs: ["deploy_docker_release_tag"]
-  extends: .docker_deploy_multiplatform
   rules:
-    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^(v|runtime-)[0-9].*/"
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+      when: manual
+      changes:
+        - node/specs/$CHAIN-raw.json
     - when: never
+  before_script:
+    - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
+    - podman login -u "duniterteam" -p "$DUNITERTEAM_PASSWD" docker.io
   script:
-    - !reference [.docker_deploy_multiplatform, script]
+    - export MILESTONE=$(echo release/runtime-700 | sed -e "s/release\///g")
+    - export MANIFEST=localhost/manifest-$IMAGE_NAME:$MILESTONE
+    - podman manifest rm "$MANIFEST" 2>/dev/null || true
+    - podman build --layers --platform linux/amd64,linux/arm64 --manifest "$MANIFEST" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
+    - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$MILESTONE"
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:latest"
+  after_script:
+    - podman manifest rm "$MANIFEST"
   variables:
-    IMAGE_NAME: "duniter/duniter-v2s"
-    IMAGE_TAG: "$CI_COMMIT_TAG"
+    IMAGE_NAME: "duniter/duniter-v2s-$CHAIN"
+
+gdev_docker_deploy:
+  extends: .deploy_docker_multiplatform
+  variables:
+    CHAIN: gdev
+
+gtest_docker_deploy:
+  extends: .deploy_docker_multiplatform
+  variables:
+    CHAIN: gtest
 
 readme_docker_release_tag:
   stage: deploy_readme
-  needs: ["deploy_docker_release_tag"]
   rules:
     - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^(v|runtime-)[0-9].*/"
     - when: never
