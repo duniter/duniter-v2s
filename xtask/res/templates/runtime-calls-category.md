@@ -20,7 +20,7 @@ There are **{{ calls_counter }}** {{ category_name }} calls from **{{ pallets | 
 </details>
 
 {# replace markdown sytax in documentation breaking the final result #}
-{{ call.documentation | replace(from="# WARNING:", to="WARNING:") }}
+{{ call.documentation | replace(from="# WARNING:", to="WARNING:") | replace(from="## Complexity", to="**Complexity**") }}
 
 {% endfor -%}
 {% endfor -%}

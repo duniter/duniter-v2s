@@ -21,8 +21,8 @@ use sp_core::H256;
 use sp_runtime::traits::Zero;
 
 // see `struct AccountData` for details in substrate code
-#[derive(Clone, Decode, Default, Encode, Eq, MaxEncodedLen, PartialEq, RuntimeDebug, TypeInfo)]
-pub struct AccountData<Balance> {
+#[derive(Clone, Decode, Encode, Eq, MaxEncodedLen, PartialEq, RuntimeDebug, TypeInfo)] // Default,
+pub struct AccountData<Balance, IdtyId> {
     /// A random identifier that can not be chosen by the user
     // this intends to be used as a robust identification system
     pub(super) random_id: Option<H256>,
@@ -32,9 +32,26 @@ pub struct AccountData<Balance> {
     pub(super) reserved: Balance,
     // see Substrate AccountData
     fee_frozen: Balance,
+    /// an optional pointer to an identity
+    // used to know if this account is linked to a member
+    // used in quota system to refund fees
+    pub linked_idty: Option<IdtyId>,
 }
 
-impl<Balance: Zero> AccountData<Balance> {
+// explicit implementation of default trait (can not be derived)
+impl<Balance: Zero, IdtyId> Default for AccountData<Balance, IdtyId> {
+    fn default() -> Self {
+        Self {
+            linked_idty: None,
+            random_id: None,
+            free: Balance::zero(),
+            reserved: Balance::zero(),
+            fee_frozen: Balance::zero(),
+        }
+    }
+}
+
+impl<Balance: Zero, IdtyId> AccountData<Balance, IdtyId> {
     pub fn set_balances(&mut self, new_balances: pallet_balances::AccountData<Balance>) {
         self.free = new_balances.free;
         self.reserved = new_balances.reserved;
@@ -44,8 +61,10 @@ impl<Balance: Zero> AccountData<Balance> {
 
 // convert Duniter AccountData to Balances AccountData
 // needed for trait implementation
-impl<Balance: Zero> From<AccountData<Balance>> for pallet_balances::AccountData<Balance> {
-    fn from(account_data: AccountData<Balance>) -> Self {
+impl<Balance: Zero, IdtyId> From<AccountData<Balance, IdtyId>>
+    for pallet_balances::AccountData<Balance>
+{
+    fn from(account_data: AccountData<Balance, IdtyId>) -> Self {
         Self {
             free: account_data.free,
             reserved: account_data.reserved,
@@ -57,8 +76,8 @@ impl<Balance: Zero> From<AccountData<Balance>> for pallet_balances::AccountData<
 
 #[derive(Clone, Decode, Default, Encode, Eq, MaxEncodedLen, PartialEq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub struct GenesisAccountData<Balance> {
+pub struct GenesisAccountData<Balance, IdtyId> {
     pub random_id: H256,
     pub balance: Balance,
-    pub is_identity: bool,
+    pub idty_id: Option<IdtyId>,
 }

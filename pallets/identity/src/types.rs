@@ -26,7 +26,10 @@ use sp_std::vec::Vec;
 /// events related to identity
 pub enum IdtyEvent<T: crate::Config> {
     /// creation of a new identity by an other
-    Created { creator: T::IdtyIndex },
+    Created {
+        creator: T::IdtyIndex,
+        owner_key: T::AccountId,
+    },
     /// confirmation of an identity (with a given name)
     Confirmed,
     /// validation of an identity
@@ -121,9 +124,9 @@ pub struct IdtyValue<BlockNumber, AccountId, IdtyData> {
 
 /// payload to define a new owner key
 #[derive(Clone, Copy, Encode, RuntimeDebug)]
-pub struct NewOwnerKeyPayload<'a, AccountId, IdtyIndex, Hash> {
+pub struct IdtyIndexAccountIdPayload<'a, AccountId, IdtyIndex, Hash> {
     /// hash of the genesis block
-    // Avoid replay attack between networks
+    // Avoid replay attack across networks
     pub genesis_hash: &'a Hash,
     /// identity index
     pub idty_index: IdtyIndex,
@@ -134,7 +137,7 @@ pub struct NewOwnerKeyPayload<'a, AccountId, IdtyIndex, Hash> {
 #[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, TypeInfo, RuntimeDebug)]
 pub struct RevocationPayload<IdtyIndex, Hash> {
     /// hash of the genesis block
-    // Avoid replay attack between networks
+    // Avoid replay attack across networks
     pub genesis_hash: Hash,
     /// identity index
     pub idty_index: IdtyIndex,

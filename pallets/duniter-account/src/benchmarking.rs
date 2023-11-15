@@ -18,7 +18,7 @@
 
 use super::*;
 
-use frame_benchmarking::{benchmarks, whitelisted_caller};
+use frame_benchmarking::{account, benchmarks, whitelisted_caller};
 use frame_support::sp_runtime::{traits::One, Saturating};
 use frame_support::traits::{Currency, Get};
 use pallet_provide_randomness::OnFilledRandomness;
@@ -60,6 +60,10 @@ fn create_pending_accounts<T: Config>(
 }
 
 benchmarks! {
+    unlink_identity {
+        let account = account("Alice", 1, 1);
+        let origin = frame_system::RawOrigin::Signed(account);
+    }: _<T::RuntimeOrigin>(origin.into())
     on_initialize_sufficient  {
         let i in 0 .. T::MaxNewAccountsPerBlock::get() => create_pending_accounts::<T>(i, false, true)?;
     }: { Pallet::<T>::on_initialize(T::BlockNumber::one()); }

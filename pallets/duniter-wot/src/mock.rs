@@ -127,13 +127,12 @@ impl pallet_identity::Config for Test {
     type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = IdtyIndex;
+    type AccountLinker = ();
     type IdtyRemovalOtherReason = IdtyRemovalWotReason;
-    type NewOwnerKeySigner = UintAuthorityId;
-    type NewOwnerKeySignature = TestSignature;
+    type Signer = UintAuthorityId;
+    type Signature = TestSignature;
     type OnIdtyChange = DuniterWot;
     type RemoveIdentityConsumers = ();
-    type RevocationSigner = UintAuthorityId;
-    type RevocationSignature = TestSignature;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     #[cfg(feature = "runtime-benchmarks")]

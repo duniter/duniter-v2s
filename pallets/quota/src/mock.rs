@@ -14,29 +14,34 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+// Note: most of this file is copy pasted from common pallet_config and other mocks
+
 use super::*;
-use crate::{self as pallet_identity};
+pub use crate::pallet as pallet_quota;
 use frame_support::{
     parameter_types,
-    traits::{Everything, GenesisBuild, OnFinalize, OnInitialize},
+    traits::{Everything, OnFinalize, OnInitialize},
 };
 use frame_system as system;
 use sp_core::{Pair, H256};
-use sp_keystore::{testing::MemoryKeystore, KeystoreExt};
+use sp_runtime::traits::IdentifyAccount;
+use sp_runtime::traits::Verify;
+use sp_runtime::BuildStorage;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     MultiSignature, MultiSigner,
 };
-use std::sync::Arc;
 
+type BlockNumber = u64;
+type Balance = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Signature = MultiSignature;
 pub type AccountPublic = <Signature as Verify>::Signer;
 pub type AccountId = <AccountPublic as IdentifyAccount>::AccountId;
 
-fn account(id: u8) -> AccountId {
+pub fn account(id: u8) -> AccountId {
     let pair = sp_core::sr25519::Pair::from_seed(&[id; 32]);
     MultiSigner::Sr25519(pair.public()).into_account()
 }
@@ -49,15 +54,36 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        Quota: pallet_quota::{Pallet, Storage, Config<T>, Event<T>},
+        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Identity: pallet_identity::{Pallet, Call, Storage, Config<T>, Event<T>},
     }
 );
 
+// QUOTA //
+pub struct TreasuryAccountId;
+impl frame_support::pallet_prelude::Get<AccountId> for TreasuryAccountId {
+    fn get() -> AccountId {
+        account(99)
+    }
+}
+parameter_types! {
+    pub const ReloadRate: u64 = 10;
+    pub const MaxQuota: u64 = 1000;
+}
+impl Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type ReloadRate = ReloadRate;
+    type MaxQuota = MaxQuota;
+    type RefundAccount = TreasuryAccountId;
+    type WeightInfo = ();
+}
+
+// SYSTEM //
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub const SS58Prefix: u8 = 42;
 }
-
 impl system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
@@ -66,7 +92,7 @@ impl system::Config for Test {
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
     type Index = u64;
-    type BlockNumber = u64;
+    type BlockNumber = BlockNumber;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
@@ -76,7 +102,7 @@ impl system::Config for Test {
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
-    type AccountData = ();
+    type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
@@ -85,6 +111,28 @@ impl system::Config for Test {
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+// BALANCES //
+parameter_types! {
+    pub const ExistentialDeposit: Balance = 1000;
+    pub const MaxLocks: u32 = 50;
+}
+impl pallet_balances::Config for Test {
+    type Balance = Balance;
+    type DustRemoval = ();
+    type ExistentialDeposit = ExistentialDeposit;
+    type AccountStore = System;
+    type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
+    type MaxLocks = MaxLocks;
+    type MaxReserves = ();
+    type ReserveIdentifier = [u8; 8];
+    type RuntimeEvent = RuntimeEvent;
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
+}
+
+// IDENTITY //
 parameter_types! {
     pub const ChangeOwnerKeyPeriod: u64 = 10;
     pub const ConfirmPeriod: u64 = 2;
@@ -92,14 +140,12 @@ parameter_types! {
     pub const MaxInactivityPeriod: u64 = 5;
     pub const ValidationPeriod: u64 = 2;
 }
-
 pub struct IdtyNameValidatorTestImpl;
 impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
     fn validate(idty_name: &pallet_identity::IdtyName) -> bool {
         idty_name.0.len() < 16
     }
 }
-
 impl pallet_identity::Config for Test {
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
@@ -116,37 +162,28 @@ impl pallet_identity::Config for Test {
     type RemoveIdentityConsumers = ();
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkSetupHandler = ();
 }
 
 // Build genesis storage according to the mock runtime.
-pub fn new_test_ext(gen_conf: pallet_identity::GenesisConfig<Test>) -> sp_io::TestExternalities {
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
-        .unwrap();
-
-    gen_conf.assimilate_storage(&mut t).unwrap();
-
-    frame_support::BasicExternalities::execute_with_storage(&mut t, || {
-        frame_system::Pallet::<Test>::inc_providers(&account(2));
-        frame_system::Pallet::<Test>::inc_providers(&account(3));
-    });
-
-    let keystore = MemoryKeystore::new();
-    let mut ext = sp_io::TestExternalities::new(t);
-    ext.register_extension(KeystoreExt(Arc::new(keystore)));
-    ext.execute_with(|| System::set_block_number(1));
-    ext
+pub fn new_test_ext(gen_conf: pallet_quota::GenesisConfig<Test>) -> sp_io::TestExternalities {
+    GenesisConfig {
+        system: SystemConfig::default(),
+        balances: BalancesConfig::default(),
+        quota: gen_conf,
+        identity: IdentityConfig::default(),
+    }
+    .build_storage()
+    .unwrap()
+    .into()
 }
 
-pub fn run_to_block(n: u64) {
+pub fn run_to_block(n: BlockNumber) {
     while System::block_number() < n {
-        Identity::on_finalize(System::block_number());
-        System::on_finalize(System::block_number());
+        <frame_system::Pallet<Test> as OnFinalize<BlockNumber>>::on_finalize(System::block_number());
         System::reset_events();
         System::set_block_number(System::block_number() + 1);
-        System::on_initialize(System::block_number());
-        Identity::on_initialize(System::block_number());
+        <frame_system::Pallet<Test> as OnInitialize<BlockNumber>>::on_initialize(
+            System::block_number(),
+        );
     }
 }

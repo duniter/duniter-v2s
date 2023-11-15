@@ -3,11 +3,11 @@ Feature: Identity creation
   Scenario: alice invites a new member to join the web of trust
     # 6 ĞD covers:
     # - account creation fees (3 ĞD) 
-    # - existential deposit (2 ĞD)
+    # - existential deposit (1 ĞD)
     # - transaction fees (below 1 ĞD)
     When alice sends 7 ĞD to dave
-    # Alice is treasury funder for 1 ĞD => 10-1-7 = 2
-    Then alice should have 2 ĞD
+    # Alice is treasury funder for 1 ĞD => 10-1-7 = 2 (minus fees)
+    Then alice should have 199 cĞD
     When bob sends 750 cĞD to dave
     When charlie sends 6 ĞD to eve
     # alice last certification is counted from block zero

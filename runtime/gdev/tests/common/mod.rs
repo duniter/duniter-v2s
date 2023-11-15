@@ -50,7 +50,7 @@ pub const NAMES: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"
 
 pub struct ExtBuilder {
     // endowed accounts with balances
-    initial_accounts: BTreeMap<AccountId, GenesisAccountData<Balance>>,
+    initial_accounts: BTreeMap<AccountId, GenesisAccountData<Balance, u32>>,
     initial_authorities_len: usize,
     initial_identities: BTreeMap<IdtyName, AccountId>,
     initial_smiths: Vec<AuthorityKeys>,
@@ -73,8 +73,8 @@ impl ExtBuilder {
                     get_account_id_from_seed::<sr25519::Public>(NAMES[i]),
                     GenesisAccountData {
                         balance: 0,
-                        is_identity: true,
                         random_id: H256([i as u8; 32]),
+                        idty_id: Some(i as u32 + 1),
                     },
                 )
             })
@@ -226,6 +226,16 @@ impl ExtBuilder {
                         status: IdtyStatus::Validated,
                     },
                 })
+                .collect(),
+        }
+        .assimilate_storage(&mut t)
+        .unwrap();
+
+        pallet_quota::GenesisConfig::<Runtime> {
+            identities: initial_identities
+                .iter()
+                .enumerate()
+                .map(|(i, _)| i as u32 + 1)
                 .collect(),
         }
         .assimilate_storage(&mut t)

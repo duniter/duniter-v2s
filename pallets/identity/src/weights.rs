@@ -28,6 +28,7 @@ pub trait WeightInfo {
     fn remove_identity() -> Weight;
     fn prune_item_identities_names(i: u32) -> Weight;
     fn fix_sufficients() -> Weight;
+    fn link_account() -> Weight;
 }
 
 // Insecure weights implementation, use it for tests only!
@@ -134,5 +135,21 @@ impl WeightInfo for () {
         Weight::from_parts(122_192_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
+    }
+    /// Storage: Identity IdentityIndexOf (r:1 w:0)
+    /// Proof Skipped: Identity IdentityIndexOf (max_values: None, max_size: None, mode: Measured)
+    /// Storage: System BlockHash (r:1 w:0)
+    /// Proof: System BlockHash (max_values: None, max_size: Some(44), added: 2519, mode: MaxEncodedLen)
+    /// Storage: System Account (r:1 w:1)
+    /// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+    fn link_account() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `359`
+        //  Estimated: `3824`
+        // Minimum execution time: 543_046_000 picoseconds.
+        Weight::from_parts(544_513_000, 0)
+            .saturating_add(Weight::from_parts(0, 3824))
+            .saturating_add(RocksDbWeight::get().reads(3))
+            .saturating_add(RocksDbWeight::get().writes(1))
     }
 }

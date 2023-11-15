@@ -41,8 +41,12 @@ use sp_runtime::traits::{AtLeast32BitUnsigned, IdentifyAccount, One, Saturating,
 use sp_std::fmt::Debug;
 use sp_std::prelude::*;
 
+// icok = identity change owner key
 pub const NEW_OWNER_KEY_PAYLOAD_PREFIX: [u8; 4] = [b'i', b'c', b'o', b'k'];
+// revo = revocation
 pub const REVOCATION_PAYLOAD_PREFIX: [u8; 4] = [b'r', b'e', b'v', b'o'];
+// link = link (identity with account)
+pub const LINK_IDTY_PAYLOAD_PREFIX: [u8; 4] = [b'l', b'i', b'n', b'k'];
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -93,23 +97,21 @@ pub mod pallet {
             + MaybeSerializeDeserialize
             + Debug
             + MaxEncodedLen;
+        /// custom type for account data
+        type AccountLinker: LinkIdty<Self::AccountId, Self::IdtyIndex>;
         /// Handle logic to validate an identity name
         type IdtyNameValidator: IdtyNameValidator;
         /// Additional reasons for identity removal
         type IdtyRemovalOtherReason: Clone + Codec + Debug + Eq + TypeInfo;
         /// On identity confirmed by its owner
         type OnIdtyChange: OnIdtyChange<Self>;
-        /// Signing key of new owner key payload
-        type NewOwnerKeySigner: IdentifyAccount<AccountId = Self::AccountId>;
-        /// Signature of new owner key payload
-        type NewOwnerKeySignature: Parameter + Verify<Signer = Self::NewOwnerKeySigner>;
+        /// Signing key of a payload
+        type Signer: IdentifyAccount<AccountId = Self::AccountId>;
+        /// Signature of a payload
+        type Signature: Parameter + Verify<Signer = Self::Signer>;
         /// Handle the logic that removes all identity consumers.
         /// "identity consumers" meaning all things that rely on the existence of the identity.
         type RemoveIdentityConsumers: RemoveIdentityConsumers<Self::IdtyIndex>;
-        /// Signing key of revocation payload
-        type RevocationSigner: IdentifyAccount<AccountId = Self::AccountId>;
-        /// Signature of revocation payload
-        type RevocationSignature: Parameter + Verify<Signer = Self::RevocationSigner>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Type representing the weight of this pallet
@@ -331,9 +333,9 @@ pub mod pallet {
             IdentityIndexOf::<T>::insert(owner_key.clone(), idty_index);
             Self::deposit_event(Event::IdtyCreated {
                 idty_index,
-                owner_key,
+                owner_key: owner_key.clone(),
             });
-            T::OnIdtyChange::on_idty_change(idty_index, &IdtyEvent::Created { creator });
+            T::OnIdtyChange::on_idty_change(idty_index, &IdtyEvent::Created { creator, owner_key });
             Ok(().into())
         }
 
@@ -418,7 +420,7 @@ pub mod pallet {
         /// Change identity owner key.
         ///
         /// - `new_key`: the new owner key.
-        /// - `new_key_sig`: the signature of the encoded form of `NewOwnerKeyPayload`.
+        /// - `new_key_sig`: the signature of the encoded form of `IdtyIndexAccountIdPayload`.
         ///                  Must be signed by `new_key`.
         ///
         /// The origin should be the old identity owner key.
@@ -427,7 +429,7 @@ pub mod pallet {
         pub fn change_owner_key(
             origin: OriginFor<T>,
             new_key: T::AccountId,
-            new_key_sig: T::NewOwnerKeySignature,
+            new_key_sig: T::Signature,
         ) -> DispatchResultWithPostInfo {
             // verification phase
             let who = ensure_signed(origin)?;
@@ -461,7 +463,7 @@ pub mod pallet {
                 };
 
             let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
-            let new_key_payload = NewOwnerKeyPayload {
+            let new_key_payload = IdtyIndexAccountIdPayload {
                 genesis_hash: &genesis_hash,
                 idty_index,
                 old_owner_key: &idty_value.owner_key,
@@ -470,7 +472,7 @@ pub mod pallet {
             ensure!(
                 (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload)
                     .using_encoded(|bytes| new_key_sig.verify(bytes, &new_key)),
-                Error::<T>::InvalidNewOwnerKeySig
+                Error::<T>::InvalidSignature
             );
 
             // Apply phase
@@ -512,7 +514,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
             revocation_key: T::AccountId,
-            revocation_sig: T::RevocationSignature,
+            revocation_sig: T::Signature,
         ) -> DispatchResultWithPostInfo {
             let _ = ensure_signed(origin)?;
 
@@ -544,7 +546,7 @@ pub mod pallet {
             ensure!(
                 (REVOCATION_PAYLOAD_PREFIX, revocation_payload)
                     .using_encoded(|bytes| revocation_sig.verify(bytes, &revocation_key)),
-                Error::<T>::InvalidRevocationSig
+                Error::<T>::InvalidSignature
             );
 
             // finally if all checks pass, remove identity
@@ -605,6 +607,39 @@ pub mod pallet {
 
             Ok(().into())
         }
+
+        /// Link an account to an identity
+        // both must sign (target account and identity)
+        // can be used for quota system
+        // re-uses new owner key payload for simplicity
+        // with other custom prefix
+        #[pallet::call_index(8)]
+        #[pallet::weight(T::WeightInfo::link_account())]
+        pub fn link_account(
+            origin: OriginFor<T>,      // origin must have an identity index
+            account_id: T::AccountId,  // id of account to link (must sign the payload)
+            payload_sig: T::Signature, // signature with linked identity
+        ) -> DispatchResultWithPostInfo {
+            // verif
+            let who = ensure_signed(origin)?;
+            let idty_index =
+                IdentityIndexOf::<T>::get(&who).ok_or(Error::<T>::IdtyIndexNotFound)?;
+            let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
+            let payload = IdtyIndexAccountIdPayload {
+                genesis_hash: &genesis_hash,
+                idty_index,
+                old_owner_key: &account_id,
+            };
+            ensure!(
+                (LINK_IDTY_PAYLOAD_PREFIX, payload)
+                    .using_encoded(|bytes| payload_sig.verify(bytes, &account_id)),
+                Error::<T>::InvalidSignature
+            );
+            // apply
+            Self::do_link_account(account_id, idty_index);
+
+            Ok(().into())
+        }
     }
 
     // ERRORS //
@@ -635,12 +670,10 @@ pub mod pallet {
         IdtyNotValidated,
         /// Identity not yet renewable
         IdtyNotYetRenewable,
-        /// New owner key payload signature is invalid
-        InvalidNewOwnerKeySig,
+        /// payload signature is invalid
+        InvalidSignature,
         /// Revocation key is invalid
         InvalidRevocationKey,
-        /// Revocation payload signature is invalid
-        InvalidRevocationSig,
         /// Identity creation period is not respected
         NotRespectIdtyCreationPeriod,
         /// Not the same identity name
@@ -733,6 +766,12 @@ pub mod pallet {
 
             total_weight
         }
+
+        /// link account
+        fn do_link_account(account_id: T::AccountId, idty_index: T::IdtyIndex) {
+            // call account linker
+            T::AccountLinker::link_identity(account_id, idty_index);
+        }
     }
 }
 
@@ -762,7 +801,7 @@ where
             Default::default()
         }
     }
-    /// mutate an account fiven a function of its data
+    /// mutate an account given a function of its data
     fn try_mutate_exists<R, E: From<sp_runtime::DispatchError>>(
         key: &T::AccountId,
         f: impl FnOnce(&mut Option<T::IdtyData>) -> Result<R, E>,

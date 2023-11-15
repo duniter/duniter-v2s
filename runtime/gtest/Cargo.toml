@@ -65,6 +65,7 @@ std = [
     'pallet-collective/std',
     'pallet-distance/std',
     'pallet-duniter-account/std',
+    'pallet-quota/std',
     'pallet-duniter-wot/std',
     'pallet-grandpa/std',
     'pallet-identity/std',
@@ -94,6 +95,7 @@ std = [
     'sp-block-builder/std',
     'sp-consensus-babe/std',
     'sp-core/std',
+    'sp-distance/std',
     'sp-inherents/std',
     'sp-offchain/std',
     'sp-membership/std',
@@ -137,16 +139,18 @@ pallet-authority-members = { path = '../../pallets/authority-members', default-f
 pallet-certification = { path = '../../pallets/certification', default-features = false }
 pallet-distance = { path = "../../pallets/distance", default-features = false }
 pallet-duniter-account = { path = '../../pallets/duniter-account', default-features = false }
+pallet-quota = { path = '../../pallets/quota', default-features = false }
 pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-membership = { path = '../../pallets/membership', default-features = false }
+pallet-offences = { path = '../../pallets/offences', default-features = false }
 pallet-oneshot-account = { path = '../../pallets/oneshot-account', default-features = false }
 pallet-provide-randomness = { path = '../../pallets/provide-randomness', default-features = false }
 pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
 pallet-session-benchmarking = { path = '../../pallets/session-benchmarking', default-features = false }
 pallet-upgrade-origin = { path = '../../pallets/upgrade-origin', default-features = false }
+sp-distance = { path = '../../primitives/distance', default-features = false }
 sp-membership = { path = '../../primitives/membership', default-features = false }
-pallet-offences = { path = '../../pallets/offences', default-features = false }
 
 # crates.io
 codec = { package = "parity-scale-codec", version = "3.4.0", features = ["derive"], default-features = false }

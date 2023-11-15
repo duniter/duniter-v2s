@@ -145,6 +145,7 @@ members = [
     'end2end-tests',
     'live-tests',
     'pallets/certification',
+    'pallets/quota',
     'pallets/distance',
     'pallets/duniter-test-parameters',
     'pallets/duniter-test-parameters/macro',

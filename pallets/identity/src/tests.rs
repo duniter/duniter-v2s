@@ -16,8 +16,9 @@
 
 use crate::mock::*;
 use crate::{
-    pallet, Error, GenesisIdty, IdtyName, IdtyRemovalReason, IdtyValue, NewOwnerKeyPayload,
-    RevocationPayload, NEW_OWNER_KEY_PAYLOAD_PREFIX, REVOCATION_PAYLOAD_PREFIX,
+    pallet, Error, GenesisIdty, IdtyIndexAccountIdPayload, IdtyName, IdtyRemovalReason, IdtyValue,
+    RevocationPayload, LINK_IDTY_PAYLOAD_PREFIX, NEW_OWNER_KEY_PAYLOAD_PREFIX,
+    REVOCATION_PAYLOAD_PREFIX,
 };
 use codec::Encode;
 use frame_support::dispatch::DispatchResultWithPostInfo;
@@ -158,7 +159,7 @@ fn test_create_identity_but_not_confirm_it() {
 
         System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
             idty_index: 2,
-            reason: crate::IdtyRemovalReason::<()>::Expired,
+            reason: IdtyRemovalReason::<()>::Expired,
         }));
 
         // We shoud be able to recreate the identity
@@ -227,7 +228,7 @@ fn test_change_owner_key() {
     .execute_with(|| {
         let genesis_hash = System::block_hash(0);
         let old_owner_key = account(1).id;
-        let mut new_key_payload = NewOwnerKeyPayload {
+        let mut new_key_payload = IdtyIndexAccountIdPayload {
             genesis_hash: &genesis_hash,
             idty_index: 1u64,
             old_owner_key: &old_owner_key,
@@ -261,7 +262,7 @@ fn test_change_owner_key() {
                     (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload.clone()).encode()
                 )
             ),
-            Error::<Test>::InvalidNewOwnerKeySig
+            Error::<Test>::InvalidSignature
         );
 
         // Payload must be prefixed
@@ -271,7 +272,7 @@ fn test_change_owner_key() {
                 account(10).id,
                 test_signature(account(10).signer, new_key_payload.clone().encode())
             ),
-            Error::<Test>::InvalidNewOwnerKeySig
+            Error::<Test>::InvalidSignature
         );
 
         // New owner key should not be used by another identity
@@ -370,6 +371,70 @@ fn test_change_owner_key() {
     });
 }
 
+// test link identity (does nothing because of AccountLinker type)
+#[test]
+fn test_link_account() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice(), bob()],
+    })
+    .execute_with(|| {
+        let genesis_hash = System::block_hash(0);
+        let account_id = account(10).id;
+        let payload = IdtyIndexAccountIdPayload {
+            genesis_hash: &genesis_hash,
+            idty_index: 1u64,
+            old_owner_key: &account_id,
+        };
+
+        run_to_block(1);
+
+        // Caller should have an associated identity
+        assert_noop!(
+            Identity::link_account(
+                RuntimeOrigin::signed(account(42).id),
+                account(10).id,
+                test_signature(
+                    account(10).signer,
+                    (LINK_IDTY_PAYLOAD_PREFIX, payload.clone()).encode()
+                )
+            ),
+            Error::<Test>::IdtyIndexNotFound
+        );
+        // Payload must be signed by the new key
+        assert_noop!(
+            Identity::link_account(
+                RuntimeOrigin::signed(account(1).id),
+                account(10).id,
+                test_signature(
+                    account(42).signer,
+                    (LINK_IDTY_PAYLOAD_PREFIX, payload.clone()).encode()
+                )
+            ),
+            Error::<Test>::InvalidSignature
+        );
+
+        // Payload must be prefixed
+        assert_noop!(
+            Identity::link_account(
+                RuntimeOrigin::signed(account(1).id),
+                account(10).id,
+                test_signature(account(10).signer, payload.clone().encode())
+            ),
+            Error::<Test>::InvalidSignature
+        );
+
+        // Alice can call link_account successfully
+        assert_ok!(Identity::link_account(
+            RuntimeOrigin::signed(account(1).id),
+            account(10).id,
+            test_signature(
+                account(10).signer,
+                (LINK_IDTY_PAYLOAD_PREFIX, payload.clone()).encode()
+            )
+        ));
+    });
+}
+
 #[test]
 fn test_idty_revocation_with_old_key() {
     new_test_ext(IdentityConfig {
@@ -377,7 +442,7 @@ fn test_idty_revocation_with_old_key() {
     })
     .execute_with(|| {
         let genesis_hash = System::block_hash(0);
-        let new_key_payload = NewOwnerKeyPayload {
+        let new_key_payload = IdtyIndexAccountIdPayload {
             genesis_hash: &genesis_hash,
             idty_index: 1u64,
             old_owner_key: &account(1).id,
@@ -427,7 +492,7 @@ fn test_idty_revocation_with_old_key_after_old_key_expiration() {
     })
     .execute_with(|| {
         let genesis_hash = System::block_hash(0);
-        let new_key_payload = NewOwnerKeyPayload {
+        let new_key_payload = IdtyIndexAccountIdPayload {
             genesis_hash: &genesis_hash,
             idty_index: 1u64,
             old_owner_key: &account(1).id,
@@ -507,7 +572,7 @@ fn test_idty_revocation() {
                 account(1).id,
                 test_signature(account(1).signer, revocation_payload.encode())
             ),
-            Err(Error::<Test>::InvalidRevocationSig.into())
+            Err(Error::<Test>::InvalidSignature.into())
         );
 
         // Anyone can submit a revocation payload
@@ -526,7 +591,7 @@ fn test_idty_revocation() {
         }));
         System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
             idty_index: 1,
-            reason: crate::IdtyRemovalReason::<()>::Revoked,
+            reason: IdtyRemovalReason::<()>::Revoked,
         }));
 
         run_to_block(2);

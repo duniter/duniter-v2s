@@ -24,7 +24,7 @@ use common_runtime::*;
 use gdev_runtime::{
     opaque::SessionKeys, parameters, AccountConfig, AuthorityMembersConfig, BabeConfig,
     BalancesConfig, CertConfig, GenesisConfig, IdentityConfig, MembershipConfig, ParametersConfig,
-    SessionConfig, SmithCertConfig, SmithMembershipConfig, SudoConfig, SystemConfig,
+    QuotaConfig, SessionConfig, SmithCertConfig, SmithMembershipConfig, SudoConfig, SystemConfig,
     TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
@@ -301,6 +301,13 @@ fn genesis_data_to_gdev_genesis_conf(
         technical_committee: TechnicalCommitteeConfig {
             members: technical_committee_members,
             ..Default::default()
+        },
+        quota: QuotaConfig {
+            identities: identities
+                .iter()
+                .enumerate()
+                .map(|(i, _)| i as u32 + 1)
+                .collect(),
         },
         identity: IdentityConfig {
             identities: identities

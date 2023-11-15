@@ -75,6 +75,7 @@ macro_rules! declare_session_keys {
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Clone, Encode, Decode, Default, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct IdtyData {
+    /// number of the first claimable UD
     pub first_eligible_ud: pallet_universal_dividend::FirstEligibleUd,
 }
 
@@ -90,35 +91,6 @@ impl IdtyData {
 impl From<IdtyData> for pallet_universal_dividend::FirstEligibleUd {
     fn from(idty_data: IdtyData) -> Self {
         idty_data.first_eligible_ud
-    }
-}
-
-pub struct NewOwnerKeySigner(sp_core::sr25519::Public);
-
-impl sp_runtime::traits::IdentifyAccount for NewOwnerKeySigner {
-    type AccountId = crate::AccountId;
-    fn into_account(self) -> crate::AccountId {
-        <[u8; 32]>::from(self.0).into()
-    }
-}
-
-#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-pub struct NewOwnerKeySignature(sp_core::sr25519::Signature);
-
-impl sp_runtime::traits::Verify for NewOwnerKeySignature {
-    type Signer = NewOwnerKeySigner;
-    fn verify<L: sp_runtime::traits::Lazy<[u8]>>(&self, msg: L, signer: &crate::AccountId) -> bool {
-        use sp_core::crypto::ByteArray as _;
-        match sp_core::sr25519::Public::from_slice(signer.as_ref()) {
-            Ok(signer) => self.0.verify(msg, &signer),
-            Err(()) => false,
-        }
-    }
-}
-
-impl From<sp_core::sr25519::Signature> for NewOwnerKeySignature {
-    fn from(a: sp_core::sr25519::Signature) -> Self {
-        NewOwnerKeySignature(a)
     }
 }
 

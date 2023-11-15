@@ -21,8 +21,8 @@ use codec::Encode;
 use frame_support::instances::{Instance1, Instance2};
 use frame_support::{assert_noop, assert_ok};
 use pallet_identity::{
-    IdtyName, IdtyStatus, NewOwnerKeyPayload, RevocationPayload, NEW_OWNER_KEY_PAYLOAD_PREFIX,
-    REVOCATION_PAYLOAD_PREFIX,
+    IdtyIndexAccountIdPayload, IdtyName, IdtyStatus, RevocationPayload,
+    NEW_OWNER_KEY_PAYLOAD_PREFIX, REVOCATION_PAYLOAD_PREFIX,
 };
 use sp_runtime::testing::TestSignature;
 
@@ -123,7 +123,7 @@ fn test_smith_member_cant_change_its_idty_address() {
         run_to_block(2);
 
         let genesis_hash = System::block_hash(0);
-        let new_key_payload = NewOwnerKeyPayload {
+        let new_key_payload = IdtyIndexAccountIdPayload {
             genesis_hash: &genesis_hash,
             idty_index: 3u32,
             old_owner_key: &3u64,
@@ -495,7 +495,7 @@ fn test_certification_expire() {
         // Alice can not claim her membership because she does not have enough certifications
         assert_noop!(
             Membership::claim_membership(RuntimeOrigin::signed(1)),
-            pallet_duniter_wot::Error::<Test, Instance1>::IdtyNotAllowedToClaimMembership
+            pallet_duniter_wot::Error::<Test, Instance1>::NotEnoughCertsToClaimMembership
         );
 
         // --- BLOCK 23 ---

@@ -107,8 +107,8 @@ fn create_identities<T: Config>(i: u32) -> Result<(), &'static str> {
 benchmarks! {
     where_clause {
         where
-            T::NewOwnerKeySignature: From<sp_core::sr25519::Signature>,
-            T::RevocationSignature: From<sp_core::sr25519::Signature>,
+            T::Signature: From<sp_core::sr25519::Signature>,
+            T::Signature: From<sp_core::sr25519::Signature>,
             T::AccountId: From<AccountId32>,
             T::IdtyIndex: From<u32>,
     }
@@ -161,7 +161,7 @@ benchmarks! {
 
         // Change key a first time to add an old-old key
         let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
-        let new_key_payload = NewOwnerKeyPayload {
+        let new_key_payload = IdtyIndexAccountIdPayload {
             genesis_hash: &genesis_hash,
             idty_index: account.index,
             old_owner_key: &account.key,
@@ -176,7 +176,7 @@ benchmarks! {
         //  The sufficients for the old_old key will drop to 0 during benchmark
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
-        let new_key_payload = NewOwnerKeyPayload {
+        let new_key_payload = IdtyIndexAccountIdPayload {
             genesis_hash: &genesis_hash,
             idty_index: account.index,
             old_owner_key: &caller_public,
@@ -199,7 +199,7 @@ benchmarks! {
         // Change key
         //  The sufficients for the old key will drop to 0 during benchmark
         let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
-        let new_key_payload = NewOwnerKeyPayload {
+        let new_key_payload = IdtyIndexAccountIdPayload {
             genesis_hash: &genesis_hash,
             idty_index: account.index,
             old_owner_key: &account.key,
@@ -264,6 +264,17 @@ benchmarks! {
     verify {
         assert!(sufficient < frame_system::Pallet::<T>::sufficients(&account.key), "Sufficient not incremented");
     }
+
+    link_account {
+        let alice_origin = RawOrigin::Signed(Identities::<T>::get(T::IdtyIndex::one()).unwrap().owner_key);
+        let bob_public = sr25519_generate(0.into(), None);
+        let bob: T::AccountId = MultiSigner::Sr25519(bob_public).into_account().into();
+        let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
+        let payload = (
+            LINK_IDTY_PAYLOAD_PREFIX, genesis_hash, T::IdtyIndex::one(), bob.clone(),
+        ).encode();
+        let signature = sr25519_sign(0.into(), &bob_public, &payload).unwrap().into();
+    }: _<T::RuntimeOrigin>(alice_origin.into(), bob, signature)
 
     impl_benchmark_test_suite!(
         Pallet,

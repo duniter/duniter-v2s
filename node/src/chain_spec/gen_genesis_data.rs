@@ -64,7 +64,7 @@ type MembershipData = sp_membership::MembershipData<u32>;
 
 #[derive(Clone)]
 pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
-    pub accounts: BTreeMap<AccountId, GenesisAccountData<u64>>,
+    pub accounts: BTreeMap<AccountId, GenesisAccountData<u64, u32>>,
     pub treasury_balance: u64,
     pub certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
     pub first_ud: Option<u64>,
@@ -237,7 +237,7 @@ struct SmithWoT<SK: Decode> {
 }
 
 struct GenesisInfo<'a> {
-    accounts: &'a BTreeMap<AccountId32, GenesisAccountData<u64>>,
+    accounts: &'a BTreeMap<AccountId32, GenesisAccountData<u64, u32>>,
     genesis_data_wallets_count: &'a usize,
     inactive_identities: &'a HashMap<u32, String>,
     identities: &'a Vec<GenesisIdentity>,
@@ -888,13 +888,13 @@ fn v1_wallets_to_v2_accounts(
 ) -> (
     bool,
     u64,
-    BTreeMap<AccountId32, GenesisAccountData<u64>>,
+    BTreeMap<AccountId32, GenesisAccountData<u64, u32>>,
     usize,
 ) {
     // monetary mass for double check
     let mut monetary_mass = 0u64;
     // account inserted in genesis
-    let mut accounts: BTreeMap<AccountId, GenesisAccountData<u64>> = BTreeMap::new();
+    let mut accounts: BTreeMap<AccountId, GenesisAccountData<u64, u32>> = BTreeMap::new();
     let mut invalid_wallets = 0;
     let mut fatal = false;
     for (pubkey, balance) in wallets {
@@ -917,7 +917,7 @@ fn v1_wallets_to_v2_accounts(
                 GenesisAccountData {
                     random_id: H256(blake2_256(&(balance, &owner_key).encode())),
                     balance,
-                    is_identity: false,
+                    idty_id: None,
                 },
             );
         } else {
@@ -1147,7 +1147,7 @@ fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKey
 }
 
 fn feed_identities(
-    accounts: &mut BTreeMap<AccountId32, GenesisAccountData<u64>>,
+    accounts: &mut BTreeMap<AccountId32, GenesisAccountData<u64, u32>>,
     identity_index: &mut HashMap<u32, String>,
     monetary_mass: &mut u64,
     inactive_identities: &mut HashMap<u32, String>,
@@ -1196,7 +1196,7 @@ fn feed_identities(
             GenesisAccountData {
                 random_id: H256(blake2_256(&(identity.index, &identity.owner_key).encode())),
                 balance: identity.balance,
-                is_identity: true,
+                idty_id: Some(identity.index),
             },
         );
 
@@ -1499,7 +1499,7 @@ where
                         &(i as u32 + idty_index_start, owner_key).encode(),
                     )),
                     balance: ud,
-                    is_identity: true,
+                    idty_id: Some(i as u32 + idty_index_start),
                 },
             )
         })

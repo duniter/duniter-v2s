@@ -32,6 +32,8 @@ try-runtime = ['frame-support/try-runtime']
 
 [dependencies]
 # local
+pallet-quota = { path = "../quota", default-features = false }
+pallet-identity = { path = "../identity", default-features = false }
 pallet-provide-randomness = { path = "../provide-randomness", default-features = false }
 
 # crates.io
@@ -57,6 +59,11 @@ git = 'https://github.com/duniter/substrate'
 branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.pallet-balances]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.42'
+
+[dependencies.pallet-transaction-payment]
 default-features = false
 git = 'https://github.com/duniter/substrate'
 branch = 'duniter-substrate-v0.9.42'

@@ -18,11 +18,13 @@ mod common;
 
 use common::*;
 use frame_support::instances::Instance1;
+use frame_support::traits::StoredMap;
 use frame_support::traits::{Get, PalletInfo, StorageInfo, StorageInfoTrait};
 use frame_support::{assert_noop, assert_ok};
 use frame_support::{StorageHasher, Twox128};
 use gdev_runtime::*;
 use pallet_duniter_wot::IdtyRemovalWotReason;
+use sp_core::Encode;
 use sp_keyring::AccountKeyring;
 use sp_runtime::MultiAddress;
 
@@ -704,6 +706,9 @@ fn test_create_new_account_with_insufficient_balance() {
         .build()
         .execute_with(|| {
             run_to_block(2);
+            // Treasury should start empty
+            // FIXME it actually starts with ED
+            assert_eq!(Balances::free_balance(Treasury::account_id()), 100);
 
             // Should be able to transfer 4 units to a new account
             assert_ok!(Balances::transfer(
@@ -747,7 +752,7 @@ fn test_create_new_account_with_insufficient_balance() {
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 0
             );
-            // 100 initial + 300 recycled from Eve account's destructuion
+            // 100 initial + 300 recycled from Eve account's destruction
             assert_eq!(Balances::free_balance(Treasury::account_id()), 400);
         });
 }
@@ -760,6 +765,7 @@ fn test_create_new_account() {
         .build()
         .execute_with(|| {
             run_to_block(2);
+            assert_eq!(Balances::free_balance(Treasury::account_id()), 100);
 
             // Should be able to transfer 5 units to a new account
             assert_ok!(Balances::transfer(
@@ -1117,4 +1123,136 @@ fn test_oneshot_accounts() {
                 pallet_oneshot_account::Error::<Runtime>::OneshotAccountNotExist
             );
         });
+}
+
+/// test currency transfer
+/// (does not take fees into account because it's only calls, not extrinsics)
+#[test]
+fn test_transfer() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (AccountKeyring::Alice.to_account_id(), 10_000),
+            (AccountKeyring::Eve.to_account_id(), 10_000),
+        ])
+        .build()
+        .execute_with(|| {
+            // Alice gives 500 to Eve
+            assert_ok!(Balances::transfer_allow_death(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                AccountKeyring::Eve.to_account_id().into(),
+                500
+            ));
+            // check amounts
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                10_000 - 500
+            );
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
+                10_000 + 500
+            );
+        })
+}
+
+/// test linking account to identity
+#[test]
+fn test_link_account() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        let genesis_hash = System::block_hash(0);
+        let alice = AccountKeyring::Alice.to_account_id();
+        let ferdie = AccountKeyring::Ferdie.to_account_id();
+        let payload = (b"link", genesis_hash, 1u32, ferdie.clone()).encode();
+        let signature = AccountKeyring::Ferdie.sign(&payload);
+        // Ferdie's account can be linked to Alice identity
+        assert_ok!(Identity::link_account(
+            frame_system::RawOrigin::Signed(alice).into(),
+            ferdie,
+            signature.into()
+        ));
+    })
+}
+
+/// test change owner key
+#[test]
+fn test_change_owner_key() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        let genesis_hash = System::block_hash(0);
+        let dave = AccountKeyring::Dave.to_account_id();
+        let ferdie = AccountKeyring::Ferdie.to_account_id();
+        let payload = (b"icok", genesis_hash, 4u32, dave.clone()).encode();
+        let signature = AccountKeyring::Ferdie.sign(&payload);
+        // Dave can change his owner key to Ferdie's
+        assert_ok!(Identity::change_owner_key(
+            frame_system::RawOrigin::Signed(dave).into(),
+            ferdie,
+            signature.into()
+        ));
+    })
+}
+
+/// test genesis account of identity is linked to identity
+// (and account without identity is not linked)
+#[test]
+fn test_genesis_account_of_identity_linked() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(AccountKeyring::Eve.to_account_id(), 8888)])
+        .build()
+        .execute_with(|| {
+            // Alice account
+            let account_id = AccountKeyring::Alice.to_account_id();
+            // Alice identity index is 1
+            assert_eq!(Identity::identity_index_of(&account_id), Some(1));
+            // get account data
+            let account_data = frame_system::Pallet::<Runtime>::get(&account_id);
+            assert_eq!(account_data.linked_idty, Some(1));
+            // Eve is not member, her account has no linked identity
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&AccountKeyring::Eve.to_account_id())
+                    .linked_idty,
+                None
+            );
+        })
+}
+
+/// test unlink identity from account
+#[test]
+fn test_unlink_identity() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        let alice_account = AccountKeyring::Alice.to_account_id();
+        // check that Alice is 1
+        assert_eq!(Identity::identity_index_of(&alice_account), Some(1));
+
+        // Alice can unlink her identity from her account
+        assert_ok!(Account::unlink_identity(
+            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+        ));
+
+        // Alice account has been unlinked
+        assert_eq!(
+            frame_system::Pallet::<Runtime>::get(&alice_account).linked_idty,
+            None
+        );
+    })
+}
+
+/// test that the account of a newly created identity is linked to the identity
+#[test]
+fn test_new_account_linked() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        let eve_account = AccountKeyring::Eve.to_account_id();
+        assert_eq!(
+            frame_system::Pallet::<Runtime>::get(&eve_account).linked_idty,
+            None
+        );
+        // Alice creates identity for Eve
+        assert_ok!(Identity::create_identity(
+            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+            eve_account.clone(),
+        ));
+        // then eve account should be linked to her identity
+        assert_eq!(
+            frame_system::Pallet::<Runtime>::get(&eve_account).linked_idty,
+            Some(5)
+        );
+    })
 }

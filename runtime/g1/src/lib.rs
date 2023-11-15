@@ -48,7 +48,9 @@ use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
-use sp_runtime::traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys};
+use sp_runtime::traits::{
+    AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, One, OpaqueKeys,
+};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     transaction_validity::{TransactionSource, TransactionValidity},
@@ -253,6 +255,7 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 6,
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 32,
         OneshotAccount: pallet_oneshot_account::{Pallet, Call, Storage, Event<T>} = 7,
+        Quota: pallet_quota::{Pallet, Storage, Config<T>, Event<T>} = 66,
 
         // Consensus support.
         AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,

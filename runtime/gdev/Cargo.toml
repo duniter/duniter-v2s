@@ -29,6 +29,7 @@ runtime-benchmarks = [
     'pallet-collective/runtime-benchmarks',
     'pallet-duniter-test-parameters/runtime-benchmarks',
     'pallet-duniter-account/runtime-benchmarks',
+    'pallet-quota/runtime-benchmarks',
     'pallet-duniter-wot/runtime-benchmarks',
     'pallet-grandpa/runtime-benchmarks',
     'pallet-identity/runtime-benchmarks',
@@ -67,6 +68,7 @@ std = [
     'pallet-distance/std',
     'pallet-duniter-test-parameters/std',
     'pallet-duniter-account/std',
+    'pallet-quota/std',
     'pallet-duniter-wot/std',
     'pallet-grandpa/std',
     'pallet-identity/std',
@@ -141,6 +143,7 @@ pallet-certification = { path = '../../pallets/certification', default-features 
 pallet-distance = { path = "../../pallets/distance", default-features = false }
 pallet-duniter-test-parameters = { path = '../../pallets/duniter-test-parameters', default-features = false }
 pallet-duniter-account = { path = '../../pallets/duniter-account', default-features = false }
+pallet-quota = { path = '../../pallets/quota', default-features = false }
 pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
 pallet-identity = { path = '../../pallets/identity', default-features = false }
 pallet-membership = { path = '../../pallets/membership', default-features = false }

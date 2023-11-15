@@ -38,7 +38,7 @@ type Index = u32;
 // Define gdev types
 type AccountInfo = gdev::runtime_types::frame_system::AccountInfo<
     Index,
-    gdev::runtime_types::pallet_duniter_account::types::AccountData<Balance>,
+    gdev::runtime_types::pallet_duniter_account::types::AccountData<Balance, IdtyIndex>,
 >;
 type IdtyData = gdev::runtime_types::common_runtime::entities::IdtyData;
 type IdtyIndex = u32;

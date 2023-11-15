@@ -13,7 +13,20 @@ through on-chain governance mechanisms.
 
 ## User calls
 
-There are **69** user calls from **21** pallets.
+There are **80** user calls from **23** pallets.
+
+### Account - 1
+
+#### unlink_identity - 0
+
+<details><summary><code>unlink_identity()</code></summary>
+
+```rust
+```
+</details>
+
+
+unlink the identity associated with the account
 
 ### Scheduler - 2
 
@@ -88,7 +101,6 @@ call: Box<<T as Config>::RuntimeCall>
 
 Anonymously schedule a task after a delay.
 
-
 #### schedule_named_after - 5
 
 <details><summary><code>schedule_named_after(id, after, maybe_periodic, priority, call)</code></summary>
@@ -104,7 +116,6 @@ call: Box<<T as Config>::RuntimeCall>
 
 
 Schedule a named task after a delay.
-
 
 ### Babe - 3
 
@@ -126,9 +137,9 @@ be reported.
 
 ### Balances - 6
 
-#### transfer - 0
+#### transfer_allow_death - 0
 
-<details><summary><code>transfer(dest, value)</code></summary>
+<details><summary><code>transfer_allow_death(dest, value)</code></summary>
 
 ```rust
 dest: AccountIdLookupOf<T>
@@ -139,12 +150,30 @@ value: T::Balance
 
 Transfer some liquid free balance to another account.
 
-`transfer` will set the `FreeBalance` of the sender and receiver.
+`transfer_allow_death` will set the `FreeBalance` of the sender and receiver.
 If the sender's account is below the existential deposit as a result
 of the transfer, the account will be reaped.
 
 The dispatch origin for this call must be `Signed` by the transactor.
 
+#### set_balance_deprecated - 1
+
+<details><summary><code>set_balance_deprecated(who, new_free, old_reserved)</code></summary>
+
+```rust
+who: AccountIdLookupOf<T>
+new_free: T::Balance
+old_reserved: T::Balance
+```
+</details>
+
+
+Set the regular balance of a given account; it also takes a reserved balance but this
+must be the same as the account's current reserved balance.
+
+The dispatch origin for this call is `root`.
+
+WARNING: This call is DEPRECATED! Use `force_set_balance` instead.
 
 #### transfer_keep_alive - 3
 
@@ -157,12 +186,12 @@ value: T::Balance
 </details>
 
 
-Same as the [`transfer`] call, but with a check that the transfer will not kill the
-origin account.
+Same as the [`transfer_allow_death`] call, but with a check that the transfer will not
+kill the origin account.
 
-99% of the time you want [`transfer`] instead.
+99% of the time you want [`transfer_allow_death`] instead.
 
-[`transfer`]: struct.Pallet.html#method.transfer
+[`transfer_allow_death`]: struct.Pallet.html#method.transfer
 
 #### transfer_all - 4
 
@@ -189,9 +218,56 @@ The dispatch origin of this call must be Signed.
 - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
   of the funds the account has, causing the sender account to be killed (false), or
   transfer everything except at least the existential deposit, which will guarantee to
-  keep the sender account alive (true). # <weight>
-- O(1). Just like transfer, but reading the user's transferable balance first.
-  #</weight>
+  keep the sender account alive (true).
+
+#### upgrade_accounts - 6
+
+<details><summary><code>upgrade_accounts(who)</code></summary>
+
+```rust
+who: Vec<T::AccountId>
+```
+</details>
+
+
+Upgrade a specified account.
+
+- `origin`: Must be `Signed`.
+- `who`: The account to be upgraded.
+
+This will waive the transaction fee if at least all but 10% of the accounts needed to
+be upgraded. (We let some not have to be upgraded just in order to allow for the
+possibililty of churn).
+
+#### transfer - 7
+
+<details><summary><code>transfer(dest, value)</code></summary>
+
+```rust
+dest: AccountIdLookupOf<T>
+value: T::Balance
+```
+</details>
+
+
+Alias for `transfer_allow_death`, provided only for name-wise compatibility.
+
+WARNING: DEPRECATED! Will be released in approximately 3 months.
+
+#### force_set_balance - 8
+
+<details><summary><code>force_set_balance(who, new_free)</code></summary>
+
+```rust
+who: AccountIdLookupOf<T>
+new_free: T::Balance
+```
+</details>
+
+
+Set the regular balance of a given account.
+
+The dispatch origin for this call is `root`.
 
 ### OneshotAccount - 7
 
@@ -289,6 +365,18 @@ keys: T::KeysWrapper
 
 
 declare new session keys to replace current ones
+
+#### remove_member_from_blacklist - 4
+
+<details><summary><code>remove_member_from_blacklist(member_id)</code></summary>
+
+```rust
+member_id: T::MemberId
+```
+</details>
+
+
+remove an identity from the blacklist
 
 ### Grandpa - 15
 
@@ -407,6 +495,11 @@ Dispatch a proposal from a member using the `Member` origin.
 
 Origin must be a member of the collective.
 
+**Complexity**:
+- `O(B + M + P)` where:
+- `B` is `proposal` size in bytes (length-fee-bounded)
+- `M` members-count (code-bounded)
+- `P` complexity of dispatching `proposal`
 
 #### propose - 2
 
@@ -427,6 +520,13 @@ Requires the sender to be member.
 `threshold` determines whether `proposal` is executed directly (`threshold < 2`)
 or put up for voting.
 
+**Complexity**
+- `O(B + M + P1)` or `O(B + M + P2)` where:
+  - `B` is `proposal` size in bytes (length-fee-bounded)
+  - `M` is members-count (code- and governance-bounded)
+  - branching is influenced by `threshold` where:
+    - `P1` is proposal execution complexity (`threshold < 2`)
+    - `P2` is proposals-count (code-bounded) (`threshold >= 2`)
 
 #### vote - 3
 
@@ -447,38 +547,8 @@ Requires the sender to be a member.
 Transaction fees will be waived if the member is voting on any particular proposal
 for the first time and the call is successful. Subsequent vote changes will charge a
 fee.
-
-#### close_old_weight - 4
-
-<details><summary><code>close_old_weight(proposal_hash, index, proposal_weight_bound, length_bound)</code></summary>
-
-```rust
-proposal_hash: T::Hash
-index: ProposalIndex
-proposal_weight_bound: OldWeight
-length_bound: u32
-```
-</details>
-
-
-Close a vote that is either approved, disapproved or whose voting period has ended.
-
-May be called by any signed account in order to finish voting and close the proposal.
-
-If called before the end of the voting period it will only close the vote if it is
-has enough votes to be approved or disapproved.
-
-If called after the end of the voting period abstentions are counted as rejections
-unless there is a prime member set and the prime member cast an approval.
-
-If the close operation completes successfully with disapproval, the transaction fee will
-be waived. Otherwise execution of the approved operation will be charged to the caller.
-
-+ `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed
-proposal.
-+ `length_bound`: The upper bound for the length of the proposal in storage. Checked via
-`storage::read` so it is `size_of::<u32>() == 4` larger than the pure length.
-
+**Complexity**
+- `O(M)` where `M` is members-count (code- and governance-bounded)
 
 #### close - 6
 
@@ -511,6 +581,12 @@ proposal.
 + `length_bound`: The upper bound for the length of the proposal in storage. Checked via
 `storage::read` so it is `size_of::<u32>() == 4` larger than the pure length.
 
+**Complexity**
+- `O(B + M + P1 + P2)` where:
+  - `B` is `proposal` size in bytes (length-fee-bounded)
+  - `M` is members-count (code- and governance-bounded)
+  - `P1` is the complexity of `proposal` preimage.
+  - `P2` is proposal-count (code-bounded)
 
 ### UniversalDividend - 30
 
@@ -603,7 +679,7 @@ validate the owned identity (must meet the main wot requirements)
 
 ```rust
 new_key: T::AccountId
-new_key_sig: T::NewOwnerKeySignature
+new_key_sig: T::Signature
 ```
 </details>
 
@@ -611,7 +687,7 @@ new_key_sig: T::NewOwnerKeySignature
 Change identity owner key.
 
 - `new_key`: the new owner key.
-- `new_key_sig`: the signature of the encoded form of `NewOwnerKeyPayload`.
+- `new_key_sig`: the signature of the encoded form of `IdtyIndexAccountIdPayload`.
                  Must be signed by `new_key`.
 
 The origin should be the old identity owner key.
@@ -623,7 +699,7 @@ The origin should be the old identity owner key.
 ```rust
 idty_index: T::IdtyIndex
 revocation_key: T::AccountId
-revocation_sig: T::RevocationSignature
+revocation_sig: T::Signature
 ```
 </details>
 
@@ -649,6 +725,19 @@ inc: bool
 
 
 change sufficient ref count for given key
+
+#### link_account - 8
+
+<details><summary><code>link_account(account_id, payload_sig)</code></summary>
+
+```rust
+account_id: T::AccountId
+payload_sig: T::Signature
+```
+</details>
+
+
+Link an account to an identity
 
 ### Membership - 42
 
@@ -693,6 +782,63 @@ Add a new certification or renew an existing one
 - `receiver`: the account receiving the certification from the origin
 
 The origin must be allow to certify.
+
+### Distance - 44
+
+#### request_distance_evaluation - 0
+
+<details><summary><code>request_distance_evaluation()</code></summary>
+
+```rust
+```
+</details>
+
+
+Request an identity to be evaluated
+
+#### update_evaluation - 1
+
+<details><summary><code>update_evaluation(computation_result)</code></summary>
+
+```rust
+computation_result: ComputationResult
+```
+</details>
+
+
+(Inherent) Push an evaluation result to the pool
+
+#### force_update_evaluation - 2
+
+<details><summary><code>force_update_evaluation(evaluator, computation_result)</code></summary>
+
+```rust
+evaluator: <T as frame_system::Config>::AccountId
+computation_result: ComputationResult
+```
+</details>
+
+
+Push an evaluation result to the pool
+
+#### force_set_distance_status - 3
+
+<details><summary><code>force_set_distance_status(identity, status)</code></summary>
+
+```rust
+identity: <T as pallet_identity::Config>::IdtyIndex
+status: Option<(<T as frame_system::Config>::AccountId, DistanceStatus)>
+```
+</details>
+
+
+Set the distance evaluation status of an identity
+
+Removes the status if `status` is `None`.
+
+* `status.0` is the account for whom the price will be unreserved or slashed
+  when the evaluation completes.
+* `status.1` is the status of the evaluation.
 
 ### SmithMembership - 52
 
@@ -851,6 +997,8 @@ multi-signature, but do not participate in the approval process.
 
 Result is equivalent to the dispatched result.
 
+**Complexity**
+O(Z + C) where Z is the length of the call and C its execution weight.
 
 #### as_multi - 1
 
@@ -892,6 +1040,19 @@ Result is equivalent to the dispatched result if `threshold` is exactly `1`. Oth
 on success, result is `Ok` and the result from the interior call, if it was executed,
 may be found in the deposited `MultisigExecuted` event.
 
+**Complexity**
+- `O(S + Z + Call)`.
+- Up to one balance-reserve or unreserve operation.
+- One passthrough operation, one insert, both `O(S)` where `S` is the number of
+  signatories. `S` is capped by `MaxSignatories`, with weight being proportional.
+- One call encode & hash, both of complexity `O(Z)` where `Z` is tx-len.
+- One encode & hash, both of complexity `O(S)`.
+- Up to one binary search and insert (`O(logS + S)`).
+- I/O: 1 read `O(S)`, up to 1 mutate `O(S)`. Up to one remove.
+- One event.
+- The weight of the `call`.
+- Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit
+  taken for its lifetime of `DepositBase + threshold * DepositFactor`.
 
 #### approve_as_multi - 2
 
@@ -926,6 +1087,17 @@ transaction index) of the first approval transaction.
 
 NOTE: If this is the final approval, you will want to use `as_multi` instead.
 
+**Complexity**
+- `O(S)`.
+- Up to one balance-reserve or unreserve operation.
+- One passthrough operation, one insert, both `O(S)` where `S` is the number of
+  signatories. `S` is capped by `MaxSignatories`, with weight being proportional.
+- One encode & hash, both of complexity `O(S)`.
+- Up to one binary search and insert (`O(logS + S)`).
+- I/O: 1 read `O(S)`, up to 1 mutate `O(S)`. Up to one remove.
+- One event.
+- Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit
+  taken for its lifetime of `DepositBase + threshold * DepositFactor`.
 
 #### cancel_as_multi - 3
 
@@ -952,6 +1124,15 @@ dispatch. May not be empty.
 transaction for this dispatch.
 - `call_hash`: The hash of the call to be executed.
 
+**Complexity**
+- `O(S)`.
+- Up to one balance-reserve or unreserve operation.
+- One passthrough operation, one insert, both `O(S)` where `S` is the number of
+  signatories. `S` is capped by `MaxSignatories`, with weight being proportional.
+- One encode & hash, both of complexity `O(S)`.
+- One event.
+- I/O: 1 read `O(S)`, one remove.
+- Storage: removes one item.
 
 ### ProvideRandomness - 62
 
@@ -984,8 +1165,6 @@ call: Box<<T as Config>::RuntimeCall>
 
 Dispatch the given `call` from an account that the sender is authorised for through
 `add_proxy`.
-
-Removes any corresponding announcement(s).
 
 The dispatch origin for this call must be _Signed_.
 
@@ -1224,14 +1403,22 @@ calls: Vec<<T as Config>::RuntimeCall>
 
 Send a batch of dispatch calls.
 
-May be called from any origin.
+May be called from any origin except `None`.
 
 - `calls`: The calls to be dispatched from the same origin. The number of call must not
   exceed the constant: `batched_calls_limit` (available in constant metadata).
 
-If origin is root then call are dispatch without checking origin filter. (This includes
-bypassing `frame_system::Config::BaseCallFilter`).
+If origin is root then the calls are dispatched without checking origin filter. (This
+includes bypassing `frame_system::Config::BaseCallFilter`).
 
+**Complexity**
+- O(C) where C is the number of calls to be batched.
+
+This will return `Ok` in all circumstances. To determine the success of the batch, an
+event is deposited. If a call failed and the batch was interrupted, then the
+`BatchInterrupted` event is deposited, along with the number of successful calls made
+and the error of the failed call. If all were successful, then the `BatchCompleted`
+event is deposited.
 
 #### as_derivative - 1
 
@@ -1271,14 +1458,16 @@ calls: Vec<<T as Config>::RuntimeCall>
 Send a batch of dispatch calls and atomically execute them.
 The whole transaction will rollback and fail if any of the calls failed.
 
-May be called from any origin.
+May be called from any origin except `None`.
 
 - `calls`: The calls to be dispatched from the same origin. The number of call must not
   exceed the constant: `batched_calls_limit` (available in constant metadata).
 
-If origin is root then call are dispatch without checking origin filter. (This includes
-bypassing `frame_system::Config::BaseCallFilter`).
+If origin is root then the calls are dispatched without checking origin filter. (This
+includes bypassing `frame_system::Config::BaseCallFilter`).
 
+**Complexity**
+- O(C) where C is the number of calls to be batched.
 
 #### force_batch - 4
 
@@ -1293,14 +1482,34 @@ calls: Vec<<T as Config>::RuntimeCall>
 Send a batch of dispatch calls.
 Unlike `batch`, it allows errors and won't interrupt.
 
-May be called from any origin.
+May be called from any origin except `None`.
 
 - `calls`: The calls to be dispatched from the same origin. The number of call must not
   exceed the constant: `batched_calls_limit` (available in constant metadata).
 
-If origin is root then call are dispatch without checking origin filter. (This includes
-bypassing `frame_system::Config::BaseCallFilter`).
+If origin is root then the calls are dispatch without checking origin filter. (This
+includes bypassing `frame_system::Config::BaseCallFilter`).
 
+**Complexity**
+- O(C) where C is the number of calls to be batched.
+
+#### with_weight - 5
+
+<details><summary><code>with_weight(call, weight)</code></summary>
+
+```rust
+call: Box<<T as Config>::RuntimeCall>
+weight: Weight
+```
+</details>
+
+
+Dispatch a function call with a specified weight.
+
+This function does not check the weight of the call, and instead allows the
+Root origin to specify the weight of the call.
+
+The dispatch origin for this call must be _Root_.
 
 ### Treasury - 65
 
@@ -1319,6 +1528,8 @@ Put forward a suggestion for spending. A deposit proportional to the value
 is reserved and slashed if the proposal is rejected. It is returned once the
 proposal is awarded.
 
+**Complexity**
+- O(1)
 
 #### spend - 3
 
@@ -1356,28 +1567,23 @@ The original deposit will no longer be returned.
 May only be called from `T::RejectOrigin`.
 - `proposal_id`: The index of a proposal
 
+**Complexity**
+- O(A) where `A` is the number of approvals
+
+Errors:
+- `ProposalNotApproved`: The `proposal_id` supplied was not found in the approval queue,
+i.e., the proposal has not been approved. This could also mean the proposal does not
+exist altogether, thus there is no way it would have been approved in the first place.
 
 
 
 ## Root calls
 
-There are **22** root calls from **10** pallets.
+There are **20** root calls from **10** pallets.
 
 ### System - 0
 
-#### fill_block - 0
-
-<details><summary><code>fill_block(ratio)</code></summary>
-
-```rust
-ratio: Perbill
-```
-</details>
-
-
-A dispatch that will fill the block weight up to the given ratio.
-
-#### set_heap_pages - 2
+#### set_heap_pages - 1
 
 <details><summary><code>set_heap_pages(pages)</code></summary>
 
@@ -1389,7 +1595,7 @@ pages: u64
 
 Set the number of pages in the WebAssembly environment's heap.
 
-#### set_code - 3
+#### set_code - 2
 
 <details><summary><code>set_code(code)</code></summary>
 
@@ -1401,8 +1607,10 @@ code: Vec<u8>
 
 Set the new runtime code.
 
+**Complexity**
+- `O(C + S)` where `C` length of `code` and `S` complexity of `can_set_code`
 
-#### set_code_without_checks - 4
+#### set_code_without_checks - 3
 
 <details><summary><code>set_code_without_checks(code)</code></summary>
 
@@ -1414,8 +1622,10 @@ code: Vec<u8>
 
 Set the new runtime code without doing any checks of the given `code`.
 
+**Complexity**
+- `O(C)` where `C` length of `code`
 
-#### set_storage - 5
+#### set_storage - 4
 
 <details><summary><code>set_storage(items)</code></summary>
 
@@ -1427,7 +1637,7 @@ items: Vec<KeyValue>
 
 Set some items of storage.
 
-#### kill_storage - 6
+#### kill_storage - 5
 
 <details><summary><code>kill_storage(keys)</code></summary>
 
@@ -1439,7 +1649,7 @@ keys: Vec<Key>
 
 Kill some items from storage.
 
-#### kill_prefix - 7
+#### kill_prefix - 6
 
 <details><summary><code>kill_prefix(prefix, subkeys)</code></summary>
 
@@ -1474,27 +1684,6 @@ not been enacted yet.
 
 ### Balances - 6
 
-#### set_balance - 1
-
-<details><summary><code>set_balance(who, new_free, new_reserved)</code></summary>
-
-```rust
-who: AccountIdLookupOf<T>
-new_free: T::Balance
-new_reserved: T::Balance
-```
-</details>
-
-
-Set the balances of a given account.
-
-This will alter `FreeBalance` and `ReservedBalance` in storage. it will
-also alter the total issuance of the system (`TotalIssuance`) appropriately.
-If the new free or reserved balance is below the existential deposit,
-it will reset the account nonce (`frame_system::AccountNonce`).
-
-The dispatch origin for this call is `root`.
-
 #### force_transfer - 2
 
 <details><summary><code>force_transfer(source, dest, value)</code></summary>
@@ -1507,8 +1696,8 @@ value: T::Balance
 </details>
 
 
-Exactly as `transfer`, except the origin must be root and the source account may be
-specified.
+Exactly as `transfer_allow_death`, except the origin must be root and the source account
+may be specified.
 
 #### force_unreserve - 5
 
@@ -1586,7 +1775,7 @@ Set the collective's membership.
 - `old_count`: The upper bound for the previous number of members in storage. Used for
   weight estimation.
 
-Requires root origin.
+The dispatch of this call must be `SetMembersOrigin`.
 
 NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but
       the weight estimations rely on it to estimate dispatchable weight.
@@ -1598,6 +1787,11 @@ implementation of the trait [`ChangeMembers`].
 Any call to `set_members` must be careful that the member set doesn't get out of sync
 with other logic managing the member set.
 
+**Complexity**:
+- `O(MP + N)` where:
+  - `M` old-members-count (code- and governance-bounded)
+  - `N` new-members-count (code- and governance-bounded)
+  - `P` proposals-count (code-bounded)
 
 #### disapprove_proposal - 5
 
@@ -1617,16 +1811,19 @@ Must be called by the Root origin.
 Parameters:
 * `proposal_hash`: The hash of the proposal that should be disapproved.
 
+**Complexity**
+O(P) where P is the number of max proposals
 
 ### Identity - 41
 
 #### remove_identity - 5
 
-<details><summary><code>remove_identity(idty_index, idty_name)</code></summary>
+<details><summary><code>remove_identity(idty_index, idty_name, reason)</code></summary>
 
 ```rust
 idty_index: T::IdtyIndex
 idty_name: Option<IdtyName>
+reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>
 ```
 </details>
 
@@ -1716,6 +1913,8 @@ Dispatches a function call with a provided origin.
 
 The dispatch origin for this call must be _Root_.
 
+**Complexity**
+- O(1).
 
 
 
@@ -1728,7 +1927,7 @@ There are **6** disabled calls from **3** pallets.
 
 ### System - 0
 
-#### remark - 1
+#### remark - 0
 
 <details><summary><code>remark(remark)</code></summary>
 
@@ -1740,8 +1939,10 @@ remark: Vec<u8>
 
 Make some on-chain remark.
 
+**Complexity**
+- `O(1)`
 
-#### remark_with_event - 8
+#### remark_with_event - 7
 
 <details><summary><code>remark_with_event(remark)</code></summary>
 
@@ -1772,6 +1973,9 @@ This doesn't take effect until the next session.
 
 The dispatch origin of this function must be signed.
 
+**Complexity**
+- `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
+  fixed.
 
 #### purge_keys - 1
 
@@ -1791,6 +1995,9 @@ convertible to a validator ID using the chain's typical addressing system (this 
 means being a controller account) or directly convertible into a validator ID (which
 usually means being a stash account).
 
+**Complexity**
+- `O(1)` in number of key types. Actual cost depends on the number of length of
+  `T::Keys::key_ids()` which is fixed.
 
 ### Membership - 42
 

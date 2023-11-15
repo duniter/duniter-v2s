@@ -40,6 +40,7 @@ pub mod pallet_identity;
 pub mod pallet_preimage;
 pub mod pallet_utility;
 pub mod pallet_duniter_account;
+pub mod pallet_quota;
 pub mod pallet_oneshot_account;
 pub mod pallet_certification_cert;
 pub mod pallet_certification_smith_cert;

@@ -107,8 +107,10 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
-        /// Identity not allowed to claim membership
-        IdtyNotAllowedToClaimMembership,
+        /// Not enough certifications received to claim membership
+        NotEnoughCertsToClaimMembership,
+        /// Distance has not been evaluated positively
+        DistanceNotOK,
         /// Identity not allowed to request membership
         IdtyNotAllowedToRequestMembership,
         /// Identity not allowed to renew membership
@@ -268,9 +270,12 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::CheckMembershipCallAllowed
     fn check_idty_allowed_to_claim_membership(idty_index: &IdtyIndex) -> Result<(), DispatchError> {
         let idty_cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
         ensure!(
-            idty_cert_meta.received_count >= T::MinCertForMembership::get()
-                && T::IsDistanceOk::is_distance_ok(idty_index),
-            Error::<T, I>::IdtyNotAllowedToClaimMembership
+            idty_cert_meta.received_count >= T::MinCertForMembership::get(),
+            Error::<T, I>::NotEnoughCertsToClaimMembership
+        );
+        ensure!(
+            T::IsDistanceOk::is_distance_ok(idty_index),
+            Error::<T, I>::DistanceNotOK,
         );
         Ok(())
     }
@@ -279,9 +284,12 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::CheckMembershipCallAllowed
     fn check_idty_allowed_to_renew_membership(idty_index: &IdtyIndex) -> Result<(), DispatchError> {
         if let Some(idty_value) = pallet_identity::Pallet::<T>::identity(idty_index) {
             ensure!(
-                idty_value.status == IdtyStatus::Validated
-                    && T::IsDistanceOk::is_distance_ok(idty_index),
+                idty_value.status == IdtyStatus::Validated,
                 Error::<T, I>::IdtyNotAllowedToRenewMembership
+            );
+            ensure!(
+                T::IsDistanceOk::is_distance_ok(idty_index),
+                Error::<T, I>::DistanceNotOK,
             );
         } else {
             return Err(Error::<T, I>::IdtyNotFound.into());
@@ -333,7 +341,7 @@ where
 impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pallet<T, I> {
     fn on_idty_change(idty_index: IdtyIndex, idty_event: &IdtyEvent<T>) -> Weight {
         match idty_event {
-            IdtyEvent::Created { creator } => {
+            IdtyEvent::Created { creator, .. } => {
                 if let Err(e) = <pallet_certification::Pallet<T, I>>::do_add_cert_checked(
                     *creator, idty_index, true,
                 ) {

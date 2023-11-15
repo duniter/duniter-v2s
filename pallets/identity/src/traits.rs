@@ -77,6 +77,15 @@ impl<IndtyIndex> RemoveIdentityConsumers<IndtyIndex> for () {
     }
 }
 
+/// trait used to link an account to an identity
+pub trait LinkIdty<AccountId, IdtyIndex> {
+    fn link_identity(account_id: AccountId, idty_index: IdtyIndex);
+}
+impl<AccountId, IdtyIndex> LinkIdty<AccountId, IdtyIndex> for () {
+    fn link_identity(_: AccountId, _: IdtyIndex) {}
+}
+
+/// trait used only in benchmarks to prepare identity for benchmarking
 #[cfg(feature = "runtime-benchmarks")]
 pub trait SetupBenchmark<IndtyIndex, AccountId> {
     fn force_status_ok(idty_index: &IndtyIndex, account: &AccountId) -> ();

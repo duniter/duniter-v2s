@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+// Note: refund queue mechanism is inspired from frame contract
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -27,16 +29,24 @@ pub use types::*;
 pub use weights::WeightInfo;
 
 use frame_support::pallet_prelude::*;
+use frame_support::traits::{Currency, ExistenceRequirement, StorageVersion};
 use frame_support::traits::{OnUnbalanced, StoredMap};
 use frame_system::pallet_prelude::*;
+use pallet_identity::IdtyEvent;
 use pallet_provide_randomness::RequestId;
+use pallet_quota::traits::RefundFee;
+use pallet_transaction_payment::OnChargeTransaction;
 use sp_core::H256;
-use sp_runtime::traits::{Convert, Saturating};
+use sp_runtime::traits::{Convert, DispatchInfoOf, PostDispatchInfoOf, Saturating};
+use sp_std::fmt::Debug;
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::traits::{Currency, ExistenceRequirement, StorageVersion};
+    pub type IdtyIdOf<T> = <T as pallet_identity::Config>::IdtyIndex;
+    pub type CurrencyOf<T> = pallet_balances::Pallet<T>;
+    pub type BalanceOf<T> =
+        <CurrencyOf<T> as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -50,10 +60,12 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config:
-        frame_system::Config<AccountData = AccountData<Self::Balance>>
+        frame_system::Config<AccountData = AccountData<Self::Balance, IdtyIdOf<Self>>>
         + pallet_balances::Config
         + pallet_provide_randomness::Config<Currency = pallet_balances::Pallet<Self>>
+        + pallet_transaction_payment::Config
         + pallet_treasury::Config<Currency = pallet_balances::Pallet<Self>>
+        + pallet_quota::Config
     {
         type AccountIdToSalt: Convert<Self::AccountId, [u8; 32]>;
         #[pallet::constant]
@@ -64,6 +76,10 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
+        /// wrapped type
+        type InnerOnChargeTransaction: OnChargeTransaction<Self>;
+        /// type implementing refund behavior
+        type Refund: pallet_quota::traits::RefundFee<Self>;
     }
 
     // STORAGE //
@@ -82,8 +98,10 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub accounts:
-            sp_std::collections::btree_map::BTreeMap<T::AccountId, GenesisAccountData<T::Balance>>,
+        pub accounts: sp_std::collections::btree_map::BTreeMap<
+            T::AccountId,
+            GenesisAccountData<T::Balance, IdtyIdOf<T>>,
+        >,
         pub treasury_balance: T::Balance,
     }
 
@@ -107,7 +125,6 @@ pub mod pallet {
                     account.data.random_id = None;
                     account.data.free = self.treasury_balance;
                     account.providers = 1;
-                    account.sufficients = 1; // the treasury will always be self-sufficient
                 },
             );
 
@@ -129,16 +146,19 @@ pub mod pallet {
                 GenesisAccountData {
                     random_id,
                     balance,
-                    is_identity,
+                    idty_id,
                 },
             ) in &self.accounts
             {
                 // if the balance is below existential deposit, the account must be an identity
-                assert!(balance >= &T::ExistentialDeposit::get() || *is_identity);
+                assert!(balance >= &T::ExistentialDeposit::get() || idty_id.is_some());
                 // mutate account
                 frame_system::Account::<T>::mutate(account_id, |account| {
                     account.data.random_id = Some(*random_id);
                     account.data.free = *balance;
+                    if idty_id.is_some() {
+                        account.data.linked_idty = *idty_id;
+                    }
                     if balance >= &T::ExistentialDeposit::get() {
                         // accounts above existential deposit self-provide
                         account.providers = 1;
@@ -166,11 +186,64 @@ pub mod pallet {
         /// Random id assigned
         /// [account_id, random_id]
         RandomIdAssigned { who: T::AccountId, random_id: H256 },
+        /// account linked to identity
+        AccountLinked {
+            who: T::AccountId,
+            identity: IdtyIdOf<T>,
+        },
+        /// account unlinked from identity
+        AccountUnlinked(T::AccountId),
+    }
+
+    // CALLS //
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        /// unlink the identity associated with the account
+        #[pallet::call_index(0)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::unlink_identity())]
+        pub fn unlink_identity(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            Self::do_unlink_identity(who);
+            Ok(().into())
+        }
+    }
+
+    // INTERNAL FUNCTIONS //
+    impl<T: Config> Pallet<T> {
+        /// unlink account
+        pub fn do_unlink_identity(account_id: T::AccountId) {
+            // no-op if account already linked to nothing
+            frame_system::Account::<T>::mutate(&account_id, |account| {
+                if account.data.linked_idty.is_some() {
+                    Self::deposit_event(Event::AccountUnlinked(account_id.clone()));
+                }
+                account.data.linked_idty = None;
+            })
+        }
+
+        /// link account to identity
+        pub fn do_link_identity(account_id: T::AccountId, idty_id: IdtyIdOf<T>) {
+            // no-op if identity does not change
+            if frame_system::Account::<T>::get(&account_id)
+                .data
+                .linked_idty
+                != Some(idty_id)
+            {
+                frame_system::Account::<T>::mutate(&account_id, |account| {
+                    account.data.linked_idty = Some(idty_id);
+                    Self::deposit_event(Event::AccountLinked {
+                        who: account_id.clone(),
+                        identity: idty_id,
+                    });
+                })
+            }
+        }
     }
 
     // HOOKS //
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        // on initialize, withdraw account creation tax
         fn on_initialize(_: T::BlockNumber) -> Weight {
             let mut total_weight = Weight::zero();
             for account_id in PendingNewAccounts::<T>::iter_keys()
@@ -251,6 +324,17 @@ pub mod pallet {
     }
 }
 
+// implement account linker
+impl<T> pallet_identity::traits::LinkIdty<T::AccountId, IdtyIdOf<T>> for Pallet<T>
+where
+    T: Config,
+{
+    fn link_identity(account_id: T::AccountId, idty_id: IdtyIdOf<T>) {
+        Self::do_link_identity(account_id, idty_id);
+    }
+}
+
+// implement on filled randomness
 impl<T> pallet_provide_randomness::OnFilledRandomness for Pallet<T>
 where
     T: Config,
@@ -272,13 +356,14 @@ where
     }
 }
 
+// implement accountdata storedmap
 impl<T, AccountId, Balance>
     frame_support::traits::StoredMap<AccountId, pallet_balances::AccountData<Balance>> for Pallet<T>
 where
     AccountId: Parameter
         + Member
         + MaybeSerializeDeserialize
-        + core::fmt::Debug
+        + Debug
         + sp_runtime::traits::MaybeDisplay
         + Ord
         + Into<[u8; 32]>
@@ -290,11 +375,11 @@ where
         + Default
         + Copy
         + MaybeSerializeDeserialize
-        + core::fmt::Debug
+        + Debug
         + codec::MaxEncodedLen
         + scale_info::TypeInfo,
     T: Config
-        + frame_system::Config<AccountId = AccountId, AccountData = AccountData<Balance>>
+        + frame_system::Config<AccountId = AccountId, AccountData = AccountData<Balance, IdtyIdOf<T>>>
         + pallet_balances::Config<Balance = Balance>
         + pallet_provide_randomness::Config,
 {
@@ -307,7 +392,7 @@ where
         f: impl FnOnce(&mut Option<pallet_balances::AccountData<Balance>>) -> Result<R, E>,
     ) -> Result<R, E> {
         let account = frame_system::Account::<T>::get(account_id);
-        let was_providing = account.data != T::AccountData::default();
+        let was_providing = !account.data.free.is_zero() || !account.data.reserved.is_zero();
         let mut some_data = if was_providing {
             Some(account.data.into())
         } else {
@@ -344,5 +429,73 @@ where
             a.data.set_balances(some_data.unwrap_or_default())
         });
         Ok(result)
+    }
+}
+
+// ------
+// allows pay fees with quota instead of currency if available
+impl<T: Config> OnChargeTransaction<T> for Pallet<T>
+where
+    T::InnerOnChargeTransaction: OnChargeTransaction<
+        T,
+        Balance = <CurrencyOf<T> as Currency<T::AccountId>>::Balance,
+        LiquidityInfo = Option<<CurrencyOf<T> as Currency<T::AccountId>>::NegativeImbalance>,
+    >,
+{
+    type Balance = BalanceOf<T>;
+    type LiquidityInfo = Option<<CurrencyOf<T> as Currency<T::AccountId>>::NegativeImbalance>;
+
+    fn withdraw_fee(
+        who: &T::AccountId,
+        call: &T::RuntimeCall,
+        dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
+        fee: Self::Balance,
+        tip: Self::Balance,
+    ) -> Result<Self::LiquidityInfo, TransactionValidityError> {
+        // does not change the withdraw fee step (still fallback to currency adapter or oneshot account)
+        T::InnerOnChargeTransaction::withdraw_fee(who, call, dispatch_info, fee, tip)
+    }
+
+    fn correct_and_deposit_fee(
+        who: &T::AccountId,
+        dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
+        post_info: &PostDispatchInfoOf<T::RuntimeCall>,
+        corrected_fee: Self::Balance,
+        tip: Self::Balance,
+        already_withdrawn: Self::LiquidityInfo,
+    ) -> Result<(), TransactionValidityError> {
+        // in any case, the default behavior is applied
+        T::InnerOnChargeTransaction::correct_and_deposit_fee(
+            who,
+            dispatch_info,
+            post_info,
+            corrected_fee,
+            tip,
+            already_withdrawn,
+        )?;
+        // if account can be exonerated, add it to a refund queue
+        let account_data = frame_system::Pallet::<T>::get(who);
+        if let Some(idty_index) = account_data.linked_idty {
+            T::Refund::request_refund(who.clone(), idty_index, corrected_fee.saturating_sub(tip));
+        }
+        Ok(())
+    }
+}
+
+// implement identity event handler
+impl<T: Config> pallet_identity::traits::OnIdtyChange<T> for Pallet<T> {
+    fn on_idty_change(idty_id: IdtyIdOf<T>, idty_event: &IdtyEvent<T>) -> Weight {
+        match idty_event {
+            // link account to newly created identity
+            IdtyEvent::Created { owner_key, .. } => {
+                Self::do_link_identity(owner_key.clone(), idty_id);
+            }
+            IdtyEvent::Confirmed
+            | IdtyEvent::Validated
+            | IdtyEvent::ChangedOwnerKey { .. }
+            | IdtyEvent::Removed { .. } => {}
+        }
+        // TODO proper weight
+        Weight::zero()
     }
 }

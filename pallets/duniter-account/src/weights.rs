@@ -25,10 +25,22 @@ pub trait WeightInfo {
     fn on_initialize_no_balance(i: u32) -> Weight;
     fn on_filled_randomness_pending() -> Weight;
     fn on_filled_randomness_no_pending() -> Weight;
+    fn unlink_identity() -> Weight;
 }
 
 // Insecure weights implementation, use it for tests only!
 impl WeightInfo for () {
+    /// Storage: System Account (r:1 w:0)
+    /// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+    fn unlink_identity() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `0`
+        //  Estimated: `3591`
+        // Minimum execution time: 95_130_000 picoseconds.
+        Weight::from_parts(110_501_000, 0)
+            .saturating_add(Weight::from_parts(0, 3591))
+            .saturating_add(RocksDbWeight::get().reads(1))
+    }
     // Storage: Account PendingNewAccounts (r:1 w:0)
     // Storage: ProvideRandomness RequestIdProvider (r:1 w:1)
     // Storage: ProvideRandomness RequestsIds (r:1 w:1)

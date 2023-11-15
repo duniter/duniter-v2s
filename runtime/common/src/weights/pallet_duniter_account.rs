@@ -48,6 +48,17 @@ use core::marker::PhantomData;
 /// Weight functions for `pallet_duniter_account`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_duniter_account::WeightInfo for WeightInfo<T> {
+	/// Storage: System Account (r:1 w:0)
+	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	fn unlink_identity() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `3591`
+		// Minimum execution time: 95_130_000 picoseconds.
+		Weight::from_parts(110_501_000, 0)
+			.saturating_add(Weight::from_parts(0, 3591))
+			.saturating_add(T::DbWeight::get().reads(1))
+	}
 	/// Storage: Account PendingNewAccounts (r:1 w:1)
 	/// Proof Skipped: Account PendingNewAccounts (max_values: None, max_size: None, mode: Measured)
 	/// Storage: ProvideRandomness RequestIdProvider (r:1 w:1)

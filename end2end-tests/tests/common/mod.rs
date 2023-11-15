@@ -137,6 +137,8 @@ pub async fn spawn_node(
                 "--tmp",
                 // Fix: End2End test may fail due to network discovery. This option disables automatic peer discovery.π
                 "--reserved-only",
+                // prevent local network discovery (even it does not connect due to above flag)
+                "--no-mdns",
             ],
             &duniter_binary_path,
             maybe_genesis_conf_file,

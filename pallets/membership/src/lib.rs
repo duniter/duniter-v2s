@@ -233,9 +233,11 @@ pub mod pallet {
             Self::do_request_membership(idty_id, metadata)
         }
 
-        /// claim pending membership to become actual memberhip
-        /// the requested membership must fullfill requirements
-        // for main wot claim_membership is called automatically when validating identity
+        /// claim membership  
+        /// a pending membership should exist  
+        /// it must fullfill the requirements (certs, distance)  
+        /// for main wot claim_membership is called automatically when validating identity  
+        /// for smith wot, it means joining the authority members  
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::claim_membership())]
         pub fn claim_membership(origin: OriginFor<T>) -> DispatchResultWithPostInfo {

@@ -1,0 +1,77 @@
+[package]
+authors = ['HugoTrentesaux <hugo@trentesaux.fr>']
+description = 'duniter pallet quota'
+edition = "2021"
+homepage = 'https://duniter.org'
+license = 'AGPL-3.0'
+name = 'pallet-quota'
+readme = 'README.md'
+repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
+version = '3.0.0'
+
+[features]
+default = ['std']
+runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
+std = [
+    'codec/std',
+    'frame-support/std',
+    'frame-system/std',
+    'frame-benchmarking/std',
+    'sp-core/std',
+    'sp-runtime/std',
+    'sp-std/std',
+    'pallet-identity/std',
+    'pallet-balances/std',
+]
+try-runtime = ['frame-support/try-runtime']
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+pallet-identity = { path = "../identity", default-features = false }
+
+# crates.io
+codec = { package = 'parity-scale-codec', version = "3.1.5", features = ['derive'], default-features = false }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+
+# substrate
+
+[dependencies.pallet-balances]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.42'
+
+[dependencies.frame-benchmarking]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+optional = true
+branch = 'duniter-substrate-v0.9.42'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.42'
+
+[dependencies.frame-system]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.42'
+
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.42'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.42'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+branch = 'duniter-substrate-v0.9.42'
+
+[dev-dependencies]
+sp-io = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42' }
