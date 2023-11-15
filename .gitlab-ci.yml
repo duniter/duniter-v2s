@@ -151,18 +151,6 @@ gtest_docker_release_deploy:
   variables:
     MANIFEST: "localhost/manifest-$IMAGE_NAME:$IMAGE_TAG"
 
-build_debug:
-  extends: .docker_build
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH == "master"'
-    - when: never
-  variables:
-    IMAGE_NAME: "duniter/duniter-v2s"
-    IMAGE_TAG: "debug-sha-$CI_COMMIT_SHORT_SHA"
-    PODMAN_BUILD_OPTIONS: "--build-arg debug=1"
-
 build_release:
   extends: .docker_build
   rules:
@@ -218,17 +206,6 @@ test_release:
     IMAGE_NAME: "duniter/duniter-v2s-test"
     IMAGE_TAG: "sha-$CI_COMMIT_SHORT_SHA"
     PODMAN_BUILD_OPTIONS: "--target build --build-arg cucumber=1"
-
-deploy_docker_debug_sha:
-  stage: deploy
-  extends: .docker_deploy_native
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - if: $CI_COMMIT_BRANCH == "master"
-  variables:
-    IMAGE_NAME: "duniter/duniter-v2s"
-    IMAGE_TAG: "debug-sha-$CI_COMMIT_SHORT_SHA"
 
 deploy_docker_release_sha:
   stage: deploy
