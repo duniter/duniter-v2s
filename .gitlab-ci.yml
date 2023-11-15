@@ -113,7 +113,7 @@ tests:
     IMAGE_NAME: "duniter/duniter-v2s-$CHAIN"
     PODMAN_BUILD_OPTIONS: "--build-arg chain=$CHAIN"
   tags:
-    podman
+    - podman
 
 gdev_docker_deploy:
   extends: .deploy_docker_multiplatform
