@@ -95,9 +95,9 @@ tests:
       #changes:
       #  - node/specs/$CHAIN-raw.json
     - when: never
-  before_script:
-    - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
-    - podman login -u "duniterteam" -p "$DUNITERTEAM_PASSWD" docker.io
+#  before_script:
+#    - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
+#    - podman login -u "duniterteam" -p "$DUNITERTEAM_PASSWD" docker.io
   script:
     - export MILESTONE=$(echo $CI_COMMIT_BRANCH | sed -e "s/test\///g")
     - echo $MILESTONE
@@ -107,8 +107,8 @@ tests:
     - podman build --layers --platform linux/amd64,linux/arm64 --manifest "$MANIFEST" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
 #    - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$MILESTONE"
 #    - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:latest"
-  after_script:
-    - podman manifest rm "$MANIFEST"
+#  after_script:
+#    - podman manifest rm "$MANIFEST"
   variables:
     IMAGE_NAME: "duniter/duniter-v2s-$CHAIN"
     PODMAN_BUILD_OPTIONS: "--build-arg chain=$CHAIN"
