@@ -5770,18 +5770,24 @@ dependencies = [
 name = "pallet-distance"
 version = "1.0.0"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "getrandom 0.2.8",
  "pallet-authority-members",
  "pallet-authorship",
+ "pallet-balances",
  "pallet-identity",
  "pallet-membership",
  "pallet-session",
  "parity-scale-codec",
  "scale-info",
+ "sp-consensus-babe",
  "sp-core",
  "sp-distance",
  "sp-inherents",
+ "sp-io",
+ "sp-keystore",
  "sp-runtime",
  "sp-std 5.0.0",
 ]

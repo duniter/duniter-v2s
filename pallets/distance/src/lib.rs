@@ -21,10 +21,16 @@ mod traits;
 mod types;
 mod weights;
 
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarking;
+
+#[cfg(test)]
+mod mock;
+
 pub use pallet::*;
 pub use traits::*;
 pub use types::*;
-// pub use weights::WeightInfo;
+pub use weights::WeightInfo;
 
 use frame_support::traits::StorageVersion;
 use pallet_authority_members::SessionIndex;
@@ -39,7 +45,7 @@ pub const MAX_EVALUATIONS_PER_SESSION: u32 = 600;
 /// Maximum number of evaluators in a session
 pub const MAX_EVALUATORS_PER_SESSION: u32 = 100;
 
-#[frame_support::pallet(dev_mode)] // dev mode while waiting for benchmarks
+#[frame_support::pallet()]
 pub mod pallet {
     use super::*;
     use frame_support::{pallet_prelude::*, traits::ReservableCurrency};
@@ -50,7 +56,6 @@ pub mod pallet {
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::pallet]
-    // #[pallet::generate_store(pub(super) trait Store)] // deprecated
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<T>);
@@ -73,7 +78,7 @@ pub mod pallet {
         /// Number of session to keep a positive evaluation result
         type ResultExpiration: Get<u32>;
         // /// Type representing the weight of this pallet
-        // type WeightInfo: WeightInfo;
+        type WeightInfo: WeightInfo;
     }
 
     // STORAGE //
@@ -177,8 +182,7 @@ pub mod pallet {
         /// dummy `on_initialize` to return the weight used in `on_finalize`.
         fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
             // weight of `on_finalize`
-            //T::WeightInfo::on_finalize()// TODO uncomment when benchmarking
-            Weight::zero()
+            <T as pallet::Config>::WeightInfo::on_finalize()
         }
 
         /// # <weight>
@@ -196,8 +200,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Request an identity to be evaluated
         #[pallet::call_index(0)]
-        #[pallet::weight(0)]
-        // #[pallet::weight(T::WeightInfo::request_distance_evaluation())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::request_distance_evaluation())]
         pub fn request_distance_evaluation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
@@ -215,8 +218,7 @@ pub mod pallet {
 
         /// (Inherent) Push an evaluation result to the pool
         #[pallet::call_index(1)]
-        #[pallet::weight(0)]
-        // #[pallet::weight(T::WeightInfo::update_evaluation())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::update_evaluation(MAX_EVALUATIONS_PER_SESSION))]
         pub fn update_evaluation(
             origin: OriginFor<T>,
             computation_result: ComputationResult,
@@ -236,8 +238,7 @@ pub mod pallet {
 
         /// Push an evaluation result to the pool
         #[pallet::call_index(2)]
-        #[pallet::weight(0)]
-        // #[pallet::weight(T::WeightInfo::force_update_evaluation())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::force_update_evaluation(MAX_EVALUATIONS_PER_SESSION))]
         pub fn force_update_evaluation(
             origin: OriginFor<T>,
             evaluator: <T as frame_system::Config>::AccountId,
@@ -256,8 +257,7 @@ pub mod pallet {
         ///   when the evaluation completes.
         /// * `status.1` is the status of the evaluation.
         #[pallet::call_index(3)]
-        #[pallet::weight(0)]
-        // #[pallet::weight(T::WeightInfo::force_set_distance_status())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::force_set_distance_status())]
         pub fn force_set_distance_status(
             origin: OriginFor<T>,
             identity: <T as pallet_identity::Config>::IdtyIndex,

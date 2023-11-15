@@ -11,15 +11,23 @@ version = '1.0.0'
 
 [features]
 default = ['std']
+runtime-benchmarks = [
+    'frame-benchmarking/runtime-benchmarks',
+    'pallet-balances',
+    'pallet-identity/runtime-benchmarks',
+    'sp-consensus-babe',
+]
 std = [
     'codec/std',
     'frame-support/std',
+    'frame-benchmarking/std',
     'pallet-authority-members/std',
     'pallet-authorship/std',
     'pallet-identity/std',
     'pallet-membership/std',
     'pallet-session/std',
     'sp-core/std',
+    'sp-consensus-babe/std',
     'sp-distance/std',
     'sp-runtime/std',
     'sp-std/std',
@@ -31,17 +39,27 @@ pallet-authority-members = { path = "../authority-members", default-features = f
 pallet-identity = { path = "../identity", default-features = false }
 pallet-membership = { path = "../membership", default-features = false }
 sp-distance = { path = "../../primitives/distance", default-features = false }
+sp-consensus-babe = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false, optional = true }
+getrandom = { version = "0.2", features = ["js"] }
 
 # substrate
 scale-info = { version = "2.1.1", default-features = false, features = [
     "derive",
 ] }
 
+pallet-balances = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', optional = true, default-features = false }
+
 [dependencies.codec]
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
 version = '3.1.5'
+
+[dependencies.frame-benchmarking]
+default-features = false
+git = 'https://github.com/duniter/substrate'
+optional = true
+branch = 'duniter-substrate-v0.9.42'
 
 [dependencies.frame-support]
 default-features = false
@@ -87,3 +105,8 @@ branch = 'duniter-substrate-v0.9.42'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
+
+[dev-dependencies]
+pallet-balances = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false }
+sp-io = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false }
+sp-keystore = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false }

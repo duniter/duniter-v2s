@@ -141,6 +141,7 @@ mod benches {
     define_benchmarks!(
         [pallet_certification, Cert]
         [pallet_certification, SmithCert]
+        [pallet_distance, Distance]
         [pallet_oneshot_account, OneshotAccount]
         [pallet_universal_dividend, UniversalDividend]
         [pallet_provide_randomness, ProvideRandomness]

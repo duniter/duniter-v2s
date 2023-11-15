@@ -247,8 +247,8 @@ macro_rules! pallets_config {
 			type WeightInfo = common_runtime::weights::pallet_authority_members::WeightInfo<Runtime>;
         }
         impl pallet_authorship::Config for Runtime {
-            type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
             type EventHandler = ImOnline;
+            type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
         }
         impl pallet_im_online::Config for Runtime {
             type RuntimeEvent = RuntimeEvent;
@@ -518,6 +518,7 @@ macro_rules! pallets_config {
             type EvaluationPrice = frame_support::traits::ConstU64<1000>;
             type MinAccessibleReferees = MinAccessibleReferees;
             type ResultExpiration = frame_support::traits::ConstU32<720>;
+            type WeightInfo = common_runtime::weights::pallet_distance::WeightInfo<Runtime>;
         }
 
         // SMITHS SUB-WOT //
