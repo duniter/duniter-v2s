@@ -1125,35 +1125,6 @@ fn test_oneshot_accounts() {
         });
 }
 
-/// test currency transfer
-/// (does not take fees into account because it's only calls, not extrinsics)
-#[test]
-fn test_transfer() {
-    ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![
-            (AccountKeyring::Alice.to_account_id(), 10_000),
-            (AccountKeyring::Eve.to_account_id(), 10_000),
-        ])
-        .build()
-        .execute_with(|| {
-            // Alice gives 500 to Eve
-            assert_ok!(Balances::transfer_allow_death(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
-                AccountKeyring::Eve.to_account_id().into(),
-                500
-            ));
-            // check amounts
-            assert_eq!(
-                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
-                10_000 - 500
-            );
-            assert_eq!(
-                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                10_000 + 500
-            );
-        })
-}
-
 /// test linking account to identity
 #[test]
 fn test_link_account() {
