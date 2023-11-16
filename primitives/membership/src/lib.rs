@@ -27,9 +27,9 @@ use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-pub enum Event<IdtyId, MetaData = ()> {
+pub enum Event<IdtyId> {
     /// A membership has acquired
-    MembershipAcquired(IdtyId, MetaData),
+    MembershipAcquired(IdtyId),
     /// A membership has expired
     MembershipExpired(IdtyId),
     /// A membership has renewed

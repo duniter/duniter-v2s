@@ -81,13 +81,11 @@ pub mod pallet {
         type IdtyIdOf: Convert<Self::AccountId, Option<Self::IdtyId>>;
         /// Something that gives the AccountId of an IdtyId
         type AccountIdOf: Convert<Self::IdtyId, Option<Self::AccountId>>;
-        /// Optional metadata
-        type MetaData: Default + Parameter + Validate<Self::AccountId>;
         #[pallet::constant]
         /// Maximum life span of a non-renewable membership (in number of blocks)
         type MembershipPeriod: Get<Self::BlockNumber>;
         /// On event handler
-        type OnEvent: OnEvent<Self::IdtyId, Self::MetaData>;
+        type OnEvent: OnEvent<Self::IdtyId>;
         #[pallet::constant]
         /// Maximum period (in number of blocks), where an identity can remain pending subscription.
         type PendingMembershipPeriod: Get<Self::BlockNumber>;
@@ -140,11 +138,11 @@ pub mod pallet {
     pub type MembershipsExpireOn<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::IdtyId>, ValueQuery>;
 
-    /// maps identity id to pending membership metadata
+    /// identities with pending membership request
     #[pallet::storage]
     #[pallet::getter(fn pending_membership)]
     pub type PendingMembership<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Twox64Concat, T::IdtyId, T::MetaData, OptionQuery>;
+        StorageMap<_, Twox64Concat, T::IdtyId, (), OptionQuery>;
 
     /// maps block number to the list of memberships set to expire at this block
     #[pallet::storage]
@@ -181,8 +179,6 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
-        /// Invalid meta data
-        InvalidMetaData,
         /// Identity id not found
         IdtyIdNotFound,
         /// Membership already acquired
@@ -218,19 +214,14 @@ pub mod pallet {
         /// (only available for sub wot, automatic for main wot)
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::request_membership())]
-        pub fn request_membership(
-            origin: OriginFor<T>,
-            metadata: T::MetaData,
-        ) -> DispatchResultWithPostInfo {
+        pub fn request_membership(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
             let idty_id = T::IdtyIdOf::convert(who.clone()).ok_or(Error::<T, I>::IdtyIdNotFound)?;
-            if !metadata.validate(&who) {
-                return Err(Error::<T, I>::InvalidMetaData.into());
-            }
+
             T::CheckMembershipCallAllowed::check_idty_allowed_to_request_membership(&idty_id)?;
 
-            Self::do_request_membership(idty_id, metadata)
+            Self::do_request_membership(idty_id)
         }
 
         /// claim membership  
@@ -288,11 +279,8 @@ pub mod pallet {
 
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
         /// force request membership
-        pub fn force_request_membership(
-            idty_id: T::IdtyId,
-            metadata: T::MetaData,
-        ) -> DispatchResultWithPostInfo {
-            Self::do_request_membership(idty_id, metadata)
+        pub fn force_request_membership(idty_id: T::IdtyId) -> DispatchResultWithPostInfo {
+            Self::do_request_membership(idty_id)
         }
 
         /// force expire membership
@@ -336,10 +324,7 @@ pub mod pallet {
         }
 
         /// perform the membership request
-        fn do_request_membership(
-            idty_id: T::IdtyId,
-            metadata: T::MetaData,
-        ) -> DispatchResultWithPostInfo {
+        fn do_request_membership(idty_id: T::IdtyId) -> DispatchResultWithPostInfo {
             // checks
             if PendingMembership::<T, I>::contains_key(idty_id) {
                 return Err(Error::<T, I>::MembershipAlreadyRequested.into());
@@ -352,7 +337,7 @@ pub mod pallet {
             let expire_on = block_number + T::PendingMembershipPeriod::get();
 
             // apply membership request
-            PendingMembership::<T, I>::insert(idty_id, metadata);
+            PendingMembership::<T, I>::insert(idty_id, ());
             PendingMembershipsExpireOn::<T, I>::append(expire_on, idty_id);
             Self::deposit_event(Event::MembershipRequested(idty_id));
             T::OnEvent::on_event(&sp_membership::Event::MembershipRequested(idty_id));
@@ -371,10 +356,10 @@ pub mod pallet {
 
         /// perform membership claim
         fn do_claim_membership(idty_id: T::IdtyId) {
-            if let Some(metadata) = PendingMembership::<T, I>::take(idty_id) {
+            if PendingMembership::<T, I>::take(idty_id).is_some() {
                 Self::insert_membership_and_schedule_expiry(idty_id);
                 Self::deposit_event(Event::MembershipAcquired(idty_id));
-                T::OnEvent::on_event(&sp_membership::Event::MembershipAcquired(idty_id, metadata));
+                T::OnEvent::on_event(&sp_membership::Event::MembershipAcquired(idty_id));
             }
             // else { unreachable if check_allowed_to_claim called before }
         }
@@ -388,11 +373,11 @@ pub mod pallet {
             }
         }
 
-        /// perform mebership expiration
+        /// perform membership expiration
         // add pending membership and schedule expiry of pending membership
         fn do_expire_membership(idty_id: T::IdtyId, expire_on: T::BlockNumber) -> Weight {
             if Membership::<T, I>::take(idty_id).is_some() {
-                PendingMembership::<T, I>::insert(idty_id, T::MetaData::default());
+                PendingMembership::<T, I>::insert(idty_id, ());
                 PendingMembershipsExpireOn::<T, I>::append(expire_on, idty_id);
             } // else should not happen
 

@@ -88,7 +88,6 @@ impl pallet_membership::Config for Test {
     type IdtyIdOf = ConvertInto;
     type AccountIdOf = ConvertInto;
     type MembershipPeriod = MembershipPeriod;
-    type MetaData = ();
     type OnEvent = ();
     type PendingMembershipPeriod = PendingMembershipPeriod;
     type RuntimeEvent = RuntimeEvent;

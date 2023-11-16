@@ -141,6 +141,16 @@ impl ExtBuilder {
         self
     }*/
 
+    pub fn change_parameters<
+        F: Fn(&mut pallet_duniter_test_parameters::Parameters<u32, u32, Balance>),
+    >(
+        mut self,
+        f: F,
+    ) -> Self {
+        f(&mut self.parameters);
+        self
+    }
+
     pub fn build(self) -> sp_io::TestExternalities {
         let Self {
             initial_accounts,

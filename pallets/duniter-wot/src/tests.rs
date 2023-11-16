@@ -79,10 +79,9 @@ fn test_join_smiths() {
         run_to_block(2);
 
         // Dave shoud be able to request smith membership
-        assert_ok!(SmithMembership::request_membership(
-            RuntimeOrigin::signed(4),
-            ()
-        ));
+        assert_ok!(SmithMembership::request_membership(RuntimeOrigin::signed(
+            4
+        ),));
         System::assert_has_event(RuntimeEvent::SmithMembership(
             pallet_membership::Event::MembershipRequested(4),
         ));

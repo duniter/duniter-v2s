@@ -71,14 +71,14 @@ where
 // membership event runtime handler
 pub struct OnMembershipEventHandler<Inner, Runtime>(core::marker::PhantomData<(Inner, Runtime)>);
 impl<
-        Inner: sp_membership::traits::OnEvent<IdtyIndex, ()>,
+        Inner: sp_membership::traits::OnEvent<IdtyIndex>,
         Runtime: frame_system::Config<AccountId = AccountId>
             + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
-            + pallet_membership::Config<Instance1, MetaData = ()>
+            + pallet_membership::Config<Instance1>
             + pallet_universal_dividend::Config,
-    > sp_membership::traits::OnEvent<IdtyIndex, ()> for OnMembershipEventHandler<Inner, Runtime>
+    > sp_membership::traits::OnEvent<IdtyIndex> for OnMembershipEventHandler<Inner, Runtime>
 {
-    fn on_event(membership_event: &sp_membership::Event<IdtyIndex, ()>) -> Weight {
+    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) -> Weight {
         (match membership_event {
             // when membership is removed, call on_removed_member handler which auto claims UD
             sp_membership::Event::MembershipRevoked(idty_index)
@@ -97,7 +97,7 @@ impl<
                 }
             }
             // when main membership is acquired, it starts getting right to UD
-            sp_membership::Event::MembershipAcquired(idty_index, _) => {
+            sp_membership::Event::MembershipAcquired(idty_index) => {
                 pallet_identity::Identities::<Runtime>::mutate_exists(idty_index, |idty_val_opt| {
                     if let Some(ref mut idty_val) = idty_val_opt {
                         idty_val.data = IdtyData {
@@ -123,43 +123,18 @@ pub struct OnSmithMembershipEventHandler<Inner, Runtime>(
 );
 impl<
         IdtyIndex: Copy + Parameter,
-        SessionKeysWrapper: Clone,
-        Inner: sp_membership::traits::OnEvent<IdtyIndex, SmithMembershipMetaData<SessionKeysWrapper>>,
+        Inner: sp_membership::traits::OnEvent<IdtyIndex>,
         Runtime: frame_system::Config<AccountId = AccountId>
             + pallet_identity::Config<IdtyIndex = IdtyIndex>
-            + pallet_authority_members::Config<KeysWrapper = SessionKeysWrapper, MemberId = IdtyIndex>
-            + pallet_membership::Config<
-                Instance2,
-                MetaData = SmithMembershipMetaData<SessionKeysWrapper>,
-            >,
-    > sp_membership::traits::OnEvent<IdtyIndex, SmithMembershipMetaData<SessionKeysWrapper>>
-    for OnSmithMembershipEventHandler<Inner, Runtime>
+            + pallet_authority_members::Config<MemberId = IdtyIndex>
+            + pallet_membership::Config<Instance2>,
+    > sp_membership::traits::OnEvent<IdtyIndex> for OnSmithMembershipEventHandler<Inner, Runtime>
 {
-    fn on_event(
-        membership_event: &sp_membership::Event<
-            IdtyIndex,
-            SmithMembershipMetaData<SessionKeysWrapper>,
-        >,
-    ) -> Weight {
+    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) -> Weight {
         (match membership_event {
-            sp_membership::Event::MembershipAcquired(
-                _idty_index,
-                SmithMembershipMetaData {
-                    owner_key,
-                    session_keys,
-                    ..
-                },
-            ) => {
-                let call = pallet_authority_members::Call::<Runtime>::set_session_keys {
-                    keys: session_keys.clone(),
-                };
-                if let Err(e) = call.dispatch_bypass_filter(
-                    frame_system::Origin::<Runtime>::Signed(owner_key.clone()).into(),
-                ) {
-                    sp_std::if_std! {
-                        println!("fail to set session keys: {:?}", e)
-                    }
-                }
+            sp_membership::Event::MembershipAcquired(_idty_index) => {
+                // nothing when smith membership acquired
+                // user will have to claim authority membership
                 Weight::zero()
             }
             sp_membership::Event::MembershipRevoked(idty_index) => {

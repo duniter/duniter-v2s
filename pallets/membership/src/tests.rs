@@ -148,7 +148,6 @@ fn test_membership_revocation() {
         run_to_block(5);
         assert_ok!(DefaultMembership::request_membership(
             RuntimeOrigin::signed(0),
-            ()
         ));
         System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipRequested(0)));
     });
@@ -162,7 +161,6 @@ fn test_pending_membership_expiration() {
         run_to_block(1);
         assert_ok!(DefaultMembership::request_membership(
             RuntimeOrigin::signed(0),
-            ()
         ));
         System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipRequested(0)));
 
@@ -191,7 +189,6 @@ fn test_membership_workflow() {
         run_to_block(1);
         assert_ok!(DefaultMembership::request_membership(
             RuntimeOrigin::signed(0),
-            ()
         ));
         System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipRequested(0)));
 

@@ -236,7 +236,6 @@ macro_rules! pallets_config {
         }
         impl pallet_authority_members::Config for Runtime {
             type RuntimeEvent = RuntimeEvent;
-            type KeysWrapper = opaque::SessionKeysWrapper;
             type IsMember = SmithMembership;
             type OnNewSession = OnNewSessionHandler<Runtime>;
             type OnRemovedMember = OnRemovedAuthorityMemberHandler<Runtime>;
@@ -488,7 +487,6 @@ macro_rules! pallets_config {
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type AccountIdOf = common_runtime::providers::IdentityAccountIdProvider<Self>;
             type MembershipPeriod = MembershipPeriod;
-            type MetaData = ();
             type OnEvent = OnMembershipEventHandler<Wot, Runtime>;
             type PendingMembershipPeriod = PendingMembershipPeriod;
             type RuntimeEvent = RuntimeEvent;
@@ -538,7 +536,6 @@ macro_rules! pallets_config {
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type AccountIdOf = common_runtime::providers::IdentityAccountIdProvider<Self>;
             type MembershipPeriod = SmithMembershipPeriod;
-            type MetaData = SmithMembershipMetaData<opaque::SessionKeysWrapper>;
             type OnEvent = OnSmithMembershipEventHandler<SmithSubWot, Runtime>;
             type PendingMembershipPeriod = SmithPendingMembershipPeriod;
             type RuntimeEvent = RuntimeEvent;

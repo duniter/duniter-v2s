@@ -46,7 +46,7 @@ benchmarks_instance_pallet! {
         let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         // Lazily prepare call as this extrinsic will always return an errror when in subwot
-        let call = Call::<T, I>::request_membership { metadata: T::MetaData ::default()};
+        let call = Call::<T, I>::request_membership { };
     }: {
         call.dispatch_bypass_filter(caller_origin).ok();
     }
@@ -58,7 +58,7 @@ benchmarks_instance_pallet! {
     claim_membership {
         let idty: T::IdtyId = 3.into();
         Membership::<T, I>::take(idty);
-        PendingMembership::<T, I>::insert(idty.clone(), T::MetaData::default());
+        PendingMembership::<T, I>::insert(idty.clone(), ());
         let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         T::BenchmarkSetupHandler::force_status_ok(&idty, &caller);

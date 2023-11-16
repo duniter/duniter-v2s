@@ -38,12 +38,12 @@ pub trait IsInPendingMemberships<IdtyId> {
     fn is_in_pending_memberships(idty_id: IdtyId) -> bool;
 }
 
-pub trait OnEvent<IdtyId, MetaData> {
-    fn on_event(event: &crate::Event<IdtyId, MetaData>) -> Weight;
+pub trait OnEvent<IdtyId> {
+    fn on_event(event: &crate::Event<IdtyId>) -> Weight;
 }
 
-impl<IdtyId, MetaData> OnEvent<IdtyId, MetaData> for () {
-    fn on_event(_: &crate::Event<IdtyId, MetaData>) -> Weight {
+impl<IdtyId> OnEvent<IdtyId> for () {
+    fn on_event(_: &crate::Event<IdtyId>) -> Weight {
         Weight::zero()
     }
 }

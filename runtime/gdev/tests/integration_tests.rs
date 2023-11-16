@@ -676,14 +676,6 @@ fn test_smith_certification() {
             2  // bob
         ));
 
-        // THIS IS STRANGE BEHAVIOR
-        // bob can add new smith cert to to dave even he did not requested smith membership
-        assert_ok!(SmithCert::add_cert(
-            frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
-            2, // bob
-            4  // dave
-        ));
-
         // charlie can not add new cert to eve (no identity)
         assert_noop!(
             SmithCert::add_cert(
@@ -695,6 +687,64 @@ fn test_smith_certification() {
             pallet_duniter_wot::Error::<gdev_runtime::Runtime, pallet_certification::Instance2>::IdtyNotFound,
         );
     });
+}
+
+/// test the full process to join smith from main wot member to authority member
+#[test]
+fn test_smith_process() {
+    ExtBuilder::new(1, 3, 4).with_initial_balances(vec![(AccountKeyring::Dave.to_account_id(), 1_000)])
+    .build().execute_with(|| {
+        run_to_block(1);
+
+        let alice = AccountKeyring::Alice.to_account_id();
+        let bob = AccountKeyring::Bob.to_account_id();
+        let charlie = AccountKeyring::Charlie.to_account_id();
+
+        // Eve can not request smith membership because not member of the smith wot
+        assert_noop!(SmithMembership::request_membership(
+            frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into()),
+            pallet_membership::Error::<gdev_runtime::Runtime, pallet_membership::Instance2>::IdtyIdNotFound,
+        );
+
+        // Dave can request smith membership (currently optional)
+        assert_ok!(SmithMembership::request_membership(
+            frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
+        ));
+
+        assert_eq!(SmithMembership::pending_membership(5), None); // none for Eve
+        assert_eq!(SmithMembership::pending_membership(4), Some(())); // Dave
+
+        // then Alice Bob and Charlie can certify Dave
+        assert_ok!(SmithCert::add_cert(frame_system::RawOrigin::Signed(alice).into(), 1, 4));
+        assert_ok!(SmithCert::add_cert(frame_system::RawOrigin::Signed(bob).into(), 2, 4));
+        assert_ok!(SmithCert::add_cert(frame_system::RawOrigin::Signed(charlie).into(), 3, 4));
+
+        // with these three smith certs, Dave can claim membership
+        assert_ok!(SmithMembership::claim_membership(
+            frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
+        ));
+
+        // Dave is then member of the smith wot
+        assert_eq!(SmithMembership::membership(4), Some(sp_membership::MembershipData {
+            expire_on: 1001, // 1 + 1000
+        }));
+
+        // Dave can set his (dummy) session keys
+        assert_ok!(AuthorityMembers::set_session_keys(
+            frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
+            gdev_runtime::opaque::SessionKeys{
+                grandpa: sp_core::ed25519::Public([0u8; 32]).into(),
+                babe: sp_core::sr25519::Public([0u8; 32]).into(),
+                im_online: sp_core::sr25519::Public([0u8; 32]).into(),
+                authority_discovery: sp_core::sr25519::Public([0u8; 32]).into(),
+            }
+        ));
+
+        // Dave can go online
+        assert_ok!(AuthorityMembers::go_online(
+            frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
+        ));
+    })
 }
 
 /// test create new account with balance lower than existential deposit
@@ -1226,4 +1276,15 @@ fn test_new_account_linked() {
             Some(5)
         );
     })
+}
+#[test]
+fn smith_data_problem() {
+    ExtBuilder::new(1, 3, 4)
+        .change_parameters(|parameters| {
+            parameters.smith_cert_validity_period = 3;
+        })
+        .build()
+        .execute_with(|| {
+            run_to_block(4);
+        });
 }

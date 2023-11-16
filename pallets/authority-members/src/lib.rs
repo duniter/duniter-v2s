@@ -66,7 +66,6 @@ pub mod pallet {
     pub trait Config:
         frame_system::Config + pallet_session::Config + pallet_session::historical::Config
     {
-        type KeysWrapper: Parameter + Into<Self::Keys> + From<Self::Keys>;
         type IsMember: IsMember<Self::MemberId>;
         type OnNewSession: OnNewSession;
         type OnRemovedMember: OnRemovedMember<Self::MemberId>;
@@ -295,15 +294,12 @@ pub mod pallet {
         /// declare new session keys to replace current ones
         #[pallet::call_index(2)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_session_keys())]
-        pub fn set_session_keys(
-            origin: OriginFor<T>,
-            keys: T::KeysWrapper,
-        ) -> DispatchResultWithPostInfo {
+        pub fn set_session_keys(origin: OriginFor<T>, keys: T::Keys) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin.clone())?;
             let member_id = Self::verify_ownership_and_membership(&who)?;
 
             let _post_info = pallet_session::Call::<T>::set_keys {
-                keys: keys.into(),
+                keys,
                 proof: vec![],
             }
             .dispatch_bypass_filter(origin)?;

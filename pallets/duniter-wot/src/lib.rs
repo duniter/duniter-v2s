@@ -127,8 +127,8 @@ pub mod pallet {
         NotAllowedToRemoveIdty,
         /// Issuer can not emit cert because it is not validated
         IssuerCanNotEmitCert,
-        /// Can not issue cert to unconfirmed identity
-        CertToUnconfirmedIdty,
+        /// Can not issue cert to identity without membership or pending membership
+        CertToUndefined,
         /// Issuer or receiver not found
         IdtyNotFound,
     }
@@ -164,11 +164,9 @@ where
     fn check_confirm_identity(idty_index: IdtyIndex) -> Result<(), DispatchError> {
         // main WoT automatic action
         if !T::IsSubWot::get() {
-            pallet_membership::Pallet::<T, I>::force_request_membership(
-                idty_index,
-                Default::default(),
-            )
-            .map_err(|e| e.error)?;
+            // force add a membership request to the main WoT
+            pallet_membership::Pallet::<T, I>::force_request_membership(idty_index)
+                .map_err(|e| e.error)?;
         }
         // no constraints for subwot
         Ok(())
@@ -209,12 +207,16 @@ where
 // implement cert call checks
 impl<T: Config<I>, I: 'static> pallet_certification::traits::CheckCertAllowed<IdtyIndex>
     for Pallet<T, I>
+// TODO add the following where clause once checks can be done on pallet instance
+// where
+//     T: pallet_membership::Config<I>,
 {
     // check the following:
     // - issuer has identity
     // - issuer identity is validated
     // - receiver has identity
     // - receiver identity is confirmed or validated
+    // - receiver has membership
     //
     // /!\ do not check the following:
     // - receiver has membership
@@ -224,7 +226,13 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::CheckCertAllowed<Id
     // - issuer can issue cert even if he lost his membership
     //   (not renewed or passed below cert threshold and above again without claiming membership)
     // this is counterintuitive behavior but not a big problem
+    //
+    // TODO to fix this strange behavior, we will have to make the tests
+    // (CheckCertAllowed and CheckMembershipCallAllowed) run on the relevant instance
+    // i.e. Cert for Wot, SmithCert for SmithWot...
+    // → see issue #136
     fn check_cert_allowed(issuer: IdtyIndex, receiver: IdtyIndex) -> Result<(), DispatchError> {
+        // issuer checks
         // ensure issuer has validated identity
         if let Some(issuer_data) = pallet_identity::Pallet::<T>::identity(issuer) {
             ensure!(
@@ -234,15 +242,30 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::CheckCertAllowed<Id
         } else {
             return Err(Error::<T, I>::IdtyNotFound.into());
         }
+        // issue #136 this has to be done on the correct instance of membership pallet
+        // // ensure issuer has membership
+        // if pallet_membership::Pallet::<T, I>::membership(issuer).is_none() {
+        //     // improvement: give reason why issuer can not emit cert (not member)
+        //     return Err(Error::<T, I>::IssuerCanNotEmitCert.into());
+        // }
+
+        // receiver checks
         // ensure receiver has confirmed or validated identity
         if let Some(receiver_data) = pallet_identity::Pallet::<T>::identity(receiver) {
             match receiver_data.status {
                 IdtyStatus::ConfirmedByOwner | IdtyStatus::Validated => {} // able to receive cert
-                IdtyStatus::Created => return Err(Error::<T, I>::CertToUnconfirmedIdty.into()),
+                IdtyStatus::Created => return Err(Error::<T, I>::CertToUndefined.into()),
             };
         } else {
             return Err(Error::<T, I>::IdtyNotFound.into());
         }
+        // issue #136 this has to be done on the correct instance of membership pallet
+        // // ensure receiver has a membership or a pending membership
+        // if pallet_membership::Pallet::<T, I>::pending_membership(issuer).is_none()
+        //     && pallet_membership::Pallet::<T, I>::membership(issuer).is_none()
+        // {
+        //     return Err(Error::<T, I>::CertToUndefined.into());
+        // }
         Ok(())
     }
 }
@@ -299,31 +322,30 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::CheckMembershipCallAllowed
 }
 
 // implement membership event handler
-impl<T: Config<I>, I: 'static, MetaData> sp_membership::traits::OnEvent<IdtyIndex, MetaData>
-    for Pallet<T, I>
+impl<T: Config<I>, I: 'static> sp_membership::traits::OnEvent<IdtyIndex> for Pallet<T, I>
 where
-    T: pallet_membership::Config<I, MetaData = MetaData>,
+    T: pallet_membership::Config<I>,
 {
-    fn on_event(membership_event: &sp_membership::Event<IdtyIndex, MetaData>) -> Weight {
+    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) -> Weight {
         match membership_event {
-            sp_membership::Event::<IdtyIndex, MetaData>::MembershipAcquired(idty_index, _) => {
+            sp_membership::Event::<IdtyIndex>::MembershipAcquired(idty_index) => {
                 if !T::IsSubWot::get() {
                     // when membership is acquired, validate identity
                     // (only used on first membership acquiry)
                     pallet_identity::Pallet::<T>::try_validate_identity(*idty_index);
                 }
             }
-            sp_membership::Event::<IdtyIndex, MetaData>::MembershipExpired(_) => {}
+            sp_membership::Event::<IdtyIndex>::MembershipExpired(_) => {}
             // Membership revocation cases:
             // - Triggered by main identity removal: the underlying identity will be removed by the
             // caller.
             // - Triggered by the membership pallet: it's only possible for a sub-wot, so we
             // should not remove the underlying identity
             // So, in any case, we must do nothing
-            sp_membership::Event::<IdtyIndex, MetaData>::MembershipRevoked(_) => {}
-            sp_membership::Event::<IdtyIndex, MetaData>::MembershipRenewed(_) => {}
-            sp_membership::Event::<IdtyIndex, MetaData>::MembershipRequested(_) => {}
-            sp_membership::Event::<IdtyIndex, MetaData>::PendingMembershipExpired(idty_index) => {
+            sp_membership::Event::<IdtyIndex>::MembershipRevoked(_) => {}
+            sp_membership::Event::<IdtyIndex>::MembershipRenewed(_) => {}
+            sp_membership::Event::<IdtyIndex>::MembershipRequested(_) => {}
+            sp_membership::Event::<IdtyIndex>::PendingMembershipExpired(idty_index) => {
                 Self::dispatch_idty_call(pallet_identity::Call::remove_identity {
                     idty_index: *idty_index,
                     idty_name: None,

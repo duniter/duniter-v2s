@@ -180,7 +180,6 @@ impl<T: pallet_identity::Config> sp_runtime::traits::Convert<T::AccountId, Optio
 }
 
 impl pallet_authority_members::Config for Test {
-    type KeysWrapper = MockSessionKeys;
     type IsMember = TestIsSmithMember;
     type MaxAuthorities = ConstU32<4>;
     type MemberId = u32;
