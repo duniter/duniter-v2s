@@ -303,11 +303,7 @@ fn genesis_data_to_gdev_genesis_conf(
             ..Default::default()
         },
         quota: QuotaConfig {
-            identities: identities
-                .iter()
-                .enumerate()
-                .map(|(i, _)| i as u32 + 1)
-                .collect(),
+            identities: identities.iter().map(|i| i.idty_index).collect(),
         },
         identity: IdentityConfig {
             identities: identities

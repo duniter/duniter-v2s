@@ -200,6 +200,25 @@ run_benchmarks:
     IMAGE_TAG: "debug-sha-$CI_COMMIT_SHORT_SHA"
     PODMAN_BUILD_OPTIONS: "--target build --build-arg benchmarks=1"
 
+gdev_build:
+  stage: build
+  image: rust:1-bullseye
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
+      when: manual
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+      when: never
+    - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
+    - when: manual
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+  script:
+    - apt-get update
+    - apt-get install -y clang cmake protobuf-compiler
+    - cargo build --no-default-features --features gtest
+
 tests:
   stage: tests
   image: rust:1-bullseye
@@ -211,8 +230,7 @@ tests:
     - if: $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
       when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
-      when: manual
-    - when: always
+    - when: manual
   variables:
     DEBIAN_FRONTEND: noninteractive
   script:

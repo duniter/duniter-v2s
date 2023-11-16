@@ -14,9 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::chain_spec::{
-    clique_wot, get_account_id_from_seed, get_from_seed, AccountPublic, NAMES,
-};
+use crate::chain_spec::{get_account_id_from_seed, get_from_seed, AccountPublic};
 use common_runtime::constants::DAYS;
 use common_runtime::*;
 use log::{error, warn};
@@ -1452,15 +1450,16 @@ where
     let ud = 1_000;
     let idty_index_start: u32 = 1;
     let common_parameters = get_common_parameters(&parameters);
+    let names: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"];
 
     let initial_smiths = (0..initial_smiths_len)
-        .map(|i| get_authority_keys_from_seed(NAMES[i]))
+        .map(|i| get_authority_keys_from_seed(names[i]))
         .collect::<Vec<AuthorityKeys>>();
     let initial_identities = (0..initial_identities_len)
         .map(|i| {
             (
-                IdtyName::from(NAMES[i]),
-                get_account_id_from_seed::<sr25519::Public>(NAMES[i]),
+                IdtyName::from(names[i]),
+                get_account_id_from_seed::<sr25519::Public>(names[i]),
             )
         })
         .collect::<BTreeMap<IdtyName, AccountId>>();
@@ -1586,6 +1585,33 @@ where
     };
 
     Ok(genesis_data)
+}
+
+#[cfg(feature = "gdev")]
+fn clique_wot(
+    initial_identities_len: usize,
+) -> (
+    BTreeMap<IdtyIndex, BTreeMap<IdtyIndex, Option<common_runtime::BlockNumber>>>,
+    u32,
+) {
+    let mut certs_by_issuer = BTreeMap::new();
+    let mut count: u32 = 0;
+    for i in 1..=initial_identities_len {
+        count += initial_identities_len as u32;
+        certs_by_issuer.insert(
+            i as IdtyIndex,
+            (1..=initial_identities_len)
+                .filter_map(|j| {
+                    if i != j {
+                        Some((j as IdtyIndex, None))
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+        );
+    }
+    (certs_by_issuer, count)
 }
 
 fn check_parameters_consistency(

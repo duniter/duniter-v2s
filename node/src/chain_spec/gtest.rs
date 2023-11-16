@@ -22,8 +22,8 @@ use common_runtime::*;
 use gtest_runtime::{
     opaque::SessionKeys, parameters, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
     BalancesConfig, CertConfig, GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig,
-    Perbill, SessionConfig, SmithCertConfig, SmithMembershipConfig, SudoConfig, SystemConfig,
-    TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
+    Perbill, QuotaConfig, SessionConfig, SmithCertConfig, SmithMembershipConfig, SudoConfig,
+    SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_consensus_grandpa::AuthorityId as GrandpaId;
@@ -209,8 +209,8 @@ fn genesis_data_to_gtest_genesis_conf(
         initial_authorities,
         initial_monetary_mass,
         memberships,
-        parameters,
-        common_parameters,
+        parameters: _,
+        common_parameters: _,
         session_keys_map,
         smith_certs_by_receiver,
         smith_memberships,
@@ -253,21 +253,20 @@ fn genesis_data_to_gtest_genesis_conf(
             members: technical_committee_members,
             ..Default::default()
         },
+        quota: QuotaConfig {
+            identities: identities.iter().map(|i| i.idty_index).collect(),
+        },
         identity: IdentityConfig {
             identities: identities
                 .into_iter()
-                .enumerate()
                 .map(
-                    |(
-                        i,
-                        GenesisIdentity {
-                            idty_index,
-                            name,
-                            owner_key,
-                            old_owner_key,
-                            active,
-                        },
-                    )| GenesisIdty {
+                    |GenesisIdentity {
+                         idty_index,
+                         name,
+                         owner_key,
+                         old_owner_key,
+                         active,
+                     }| GenesisIdty {
                         index: idty_index,
                         name: common_runtime::IdtyName::from(name.as_str()),
                         value: common_runtime::IdtyValue {

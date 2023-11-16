@@ -24,14 +24,11 @@ pub mod gdev;
 #[cfg(feature = "gtest")]
 pub mod gtest;
 
-use common_runtime::{AccountId, IdtyIndex, Signature};
+use common_runtime::{AccountId, Signature};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use std::collections::BTreeMap;
 
 pub type AccountPublic = <Signature as Verify>::Signer;
-
-pub const NAMES: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"];
 
 /// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -46,30 +43,4 @@ where
     AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
     AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
-}
-
-fn clique_wot(
-    initial_identities_len: usize,
-) -> (
-    BTreeMap<IdtyIndex, BTreeMap<IdtyIndex, Option<common_runtime::BlockNumber>>>,
-    u32,
-) {
-    let mut certs_by_issuer = BTreeMap::new();
-    let mut count: u32 = 0;
-    for i in 1..=initial_identities_len {
-        count += initial_identities_len as u32;
-        certs_by_issuer.insert(
-            i as IdtyIndex,
-            (1..=initial_identities_len)
-                .filter_map(|j| {
-                    if i != j {
-                        Some((j as IdtyIndex, None))
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-        );
-    }
-    (certs_by_issuer, count)
 }
