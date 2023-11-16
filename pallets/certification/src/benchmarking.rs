@@ -56,6 +56,7 @@ benchmarks_instance_pallet! {
         Pallet::<T, I>::del_cert(RawOrigin::Root.into(), issuer, receiver)?;
         let issuer_cert: u32 = StorageIdtyCertMeta::<T, I>::get(issuer).issued_count;
         let receiver_cert: u32 = StorageIdtyCertMeta::<T, I>::get(receiver).received_count;
+        frame_system::pallet::Pallet::<T>::set_block_number(T::CertPeriod::get());
     }: _<T::RuntimeOrigin>(caller_origin, issuer, receiver)
     verify {
         assert_has_event::<T, I>(Event::<T, I>::NewCert{ issuer: issuer, issuer_issued_count: issuer_cert + 1, receiver: receiver, receiver_received_count: receiver_cert + 1 }.into());

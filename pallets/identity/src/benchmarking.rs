@@ -87,7 +87,7 @@ fn create_dummy_identity<T: Config>(i: u32) -> Result<(), &'static str> {
     <Identities<T>>::insert(idty_index, value);
     IdentitiesRemovableOn::<T>::append(removable_on, (idty_index, IdtyStatus::Created));
     IdentityIndexOf::<T>::insert(owner_key.clone(), idty_index);
-    <IdentitiesNames<T>>::insert(idty_name.clone(), ());
+    <IdentitiesNames<T>>::insert(idty_name.clone(), idty_index);
     Ok(())
 }
 

@@ -33,6 +33,11 @@ RUN if [ "$debug" = 0 ]; then \
         echo "TARGET_FOLDER=debug" >>/root/dynenv; \
     fi
 
+ARG benchmarks=0
+RUN if [ "$benchmarks" != 0 ]; then \
+        echo "BENCH_OPTIONS=--features\ runtime-benchmarks" >>/root/dynenv; \
+    fi
+
 # Configure cross-build environment if need be
 RUN set -x && \
     if [ "$TARGETPLATFORM" != "$BUILDPLATFORM" ]; then \
@@ -48,7 +53,7 @@ ARG chain="gdev"
 RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
-    cargo build --locked $CARGO_OPTIONS --no-default-features --features $chain --target "$RUST_ARCH_TRIPLET" && \
+    cargo build --locked $CARGO_OPTIONS --no-default-features $BENCH_OPTIONS --features $chain --target "$RUST_ARCH_TRIPLET" && \
     mkdir -p build && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/
 
@@ -56,9 +61,15 @@ RUN set -x && \
 ARG cucumber=0
 RUN if [ "$cucumber" != 0 ] && [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then \
         cargo ta && \
+        cargo test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features runtime-benchmarks \
         cd target/debug/deps/ && \
         rm cucumber_tests-*.d && \
         mv cucumber_tests* ../../../build/duniter-cucumber; \
+    fi
+
+# Run runtime benchmarks
+RUN if [ "$benchmarks" != 0 ]; then \
+      build/duniter benchmark pallet --chain dev --execution=wasm --wasm-execution=compiled --pallet "*" --extrinsic "*" --steps 2 --repeat 1; \
     fi
 
 # ------------------------------------------------------------------------------

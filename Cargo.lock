@@ -3008,6 +3008,7 @@ dependencies = [
  "pallet-quota",
  "pallet-scheduler",
  "pallet-session",
+ "pallet-session-benchmarking",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
