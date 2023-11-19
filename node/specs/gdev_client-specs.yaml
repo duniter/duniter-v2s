@@ -1,7 +1,7 @@
 name: "ĞDev"
 id: "gdev"
 chainType: "Live"
-bootNodes: []
+bootNodes: ["/dns/gdev.cgeek.fr/tcp/30334/p2p/12D3KooWN7QhcPbTZgNMnS7AUZh3ZfnM43VdVKqy4JbAEp5AJh4f"]
 telemetryEndpoints:
   - ["/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]
 properties:
