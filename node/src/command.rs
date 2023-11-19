@@ -99,26 +99,26 @@ impl SubstrateCli for Cli {
             // > optionally from DUNITER_GENESIS_CONFIG file to override default gdev configuration
             #[cfg(feature = "gdev")]
             "gdev_dev" => Box::new(chain_spec::gdev::gdev_development_chain_spec(
-                "resources/gdev.json".to_string(),
+                "resources/gdev.yaml".to_string(),
             )?),
             // chainspecs for live network with g1 data, gdev configuration (parameters & smiths)
             // but must have a smith with declared session keys
             // > optionally from DUNITER_GENESIS_CONFIG file to override default gdev configuration
             #[cfg(feature = "gdev")]
             "gdev_live" => {
-                const JSON_CLIENT_SPEC: &str = "./node/specs/gdev_client-specs.json";
-                let client_spec: chain_spec::gdev::ClientSpec = serde_json::from_slice(
+                const CLIENT_SPEC: &str = "./node/specs/gdev_client-specs.yaml";
+                let client_spec: chain_spec::gdev::ClientSpec = serde_yaml::from_slice(
                     &std::fs::read(
-                        std::env::var("DUNITER_GTEST_CLIENT_SPEC")
-                            .unwrap_or_else(|_| JSON_CLIENT_SPEC.to_string()),
+                        std::env::var("DUNITER_CLIENT_SPEC")
+                            .unwrap_or_else(|_| CLIENT_SPEC.to_string()),
                     )
-                    .map_err(|e| format!("failed to read {JSON_CLIENT_SPEC} {e}"))?[..],
+                    .map_err(|e| format!("failed to read {CLIENT_SPEC} {e}"))?[..],
                 )
                 .map_err(|e| format!("failed to parse {e}"))?;
                 // rebuild chainspecs from these files
                 Box::new(chain_spec::gdev::gen_live_conf(
                     client_spec,
-                    "resources/gdev.json".to_string(),
+                    "resources/gdev.yaml".to_string(),
                 )?)
             }
             // hardcoded previously generated raw chainspecs
@@ -133,7 +133,7 @@ impl SubstrateCli for Cli {
             // otherwise you get a local testnet with generated genesis
             #[cfg(feature = "gtest")]
             "gtest_dev" => Box::new(chain_spec::gtest::development_chainspecs(
-                "resources/gtest.json".to_string(),
+                "resources/gtest.yaml".to_string(),
             )?),
             // chainspecs for live network
             // must have following files in ./node/specs folder or overwrite with env var:
@@ -141,10 +141,10 @@ impl SubstrateCli for Cli {
             // - gtest_client-specs.json / DUNITER_GTEST_CLIENT_SPEC
             #[cfg(feature = "gtest")]
             "gtest_live" => {
-                const JSON_CLIENT_SPEC: &str = "./node/specs/gtest_client-specs.json";
-                let client_spec: gtest::ClientSpec = serde_json::from_slice(
+                const JSON_CLIENT_SPEC: &str = "./node/specs/gtest_client-specs.yaml";
+                let client_spec: gtest::ClientSpec = serde_yaml::from_slice(
                     &std::fs::read(
-                        std::env::var("DUNITER_GTEST_CLIENT_SPEC")
+                        std::env::var("DUNITER_CLIENT_SPEC")
                             .unwrap_or_else(|_| JSON_CLIENT_SPEC.to_string()),
                     )
                     .map_err(|e| format!("failed to read {JSON_CLIENT_SPEC} {e}"))?[..],
@@ -153,7 +153,7 @@ impl SubstrateCli for Cli {
                 // rebuild chainspecs from these files
                 Box::new(chain_spec::gtest::live_chainspecs(
                     client_spec,
-                    "resources/gtest.json".to_string(),
+                    "resources/gtest.yaml".to_string(),
                 )?)
             }
             // return hardcoded live chainspecs, only with embed feature

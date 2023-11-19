@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::chain_spec::{get_account_id_from_seed, get_from_seed, AccountPublic};
-use common_runtime::constants::DAYS;
+use common_runtime::constants::{DAYS, MILLISECS_PER_BLOCK};
 use common_runtime::*;
 use log::{error, warn};
 use num_format::{Locale, ToFormattedString};
@@ -252,7 +252,7 @@ struct GenesisInfo<'a> {
 /// takes DUNITER_GENESIS_CONFIG env var if present or duniter-gen-conf.json by default
 // this function is targeting dev chainspecs, do not use in production network
 pub fn generate_genesis_data<P, SK, SessionKeys: Encode, SKP>(
-    json_file_path: String,
+    config_file_path: String,
     get_common_parameters: fn(&Option<P>) -> CommonParameters,
     maybe_force_authority: Option<String>,
 ) -> Result<GenesisData<P, SK>, String>
@@ -276,7 +276,7 @@ where
         technical_committee,
         ud,
     } = get_genesis_input::<P>(
-        std::env::var("DUNITER_GENESIS_CONFIG").unwrap_or_else(|_| json_file_path.to_owned()),
+        std::env::var("DUNITER_GENESIS_CONFIG").unwrap_or_else(|_| config_file_path.to_owned()),
     )?;
 
     // Per network parameters
@@ -747,37 +747,59 @@ fn dump_genesis_info(info: GenesisInfo) {
         info.technical_committee_members.len(),
     );
 
+    let (membership_period, membership_period_unit) =
+        get_best_unit_and_diviser_for_blocks(info.common_parameters.membership_period);
+    let (cert_period, cert_period_unit) =
+        get_best_unit_and_diviser_for_blocks(info.common_parameters.cert_period);
+    let (cert_validity_period, cert_validity_period_unit) =
+        get_best_unit_and_diviser_for_blocks(info.common_parameters.cert_validity_period);
+    let (smith_membership_period, smith_membership_period_unit) =
+        get_best_unit_and_diviser_for_blocks(info.common_parameters.smith_membership_period);
+    let (smith_certs_validity_period, smith_certs_validity_period_unit) =
+        get_best_unit_and_diviser_for_blocks(info.common_parameters.smith_certs_validity_period);
+    let (ud_reeval_period, ud_reeval_period_unit) =
+        get_best_unit_and_diviser_for_ms(info.common_parameters.ud_reeval_period as f32);
+    let (ud_creation_period, ud_creation_period_unit) =
+        get_best_unit_and_diviser_for_ms(info.common_parameters.ud_creation_period as f32);
+
     // give genesis info
     log::info!(
         "currency parameters:
         - existential deposit: {} {}
         - currency decimals: {}
-        - membership validity: {} days
-        - certification period: {} days
-        - certification validity duration: {} days
-        - smith membership validity: {} days
-        - smith certification validity: {} days
+        - membership validity: {} {}
+        - certification period: {} {}
+        - certification validity duration: {} {}
+        - smith membership validity: {} {}
+        - smith certification validity: {} {}
         - required certifications: {}
         - smith required certifications: {}
         - max certifications by issuer: {}
-        - money growth rate: {}% every {} days
-        - UD creation period: {} days
+        - money growth rate: {}% every {} {}
+        - UD creation period: {} {}
         - distance percent of required referees: {}%
         - distance max depth: {}",
-        info.common_parameters.existential_deposit,
+        info.common_parameters.existential_deposit as f64 / 100.0,
         info.common_parameters.currency_name,
         info.common_parameters.decimals,
-        info.common_parameters.membership_period as f32 / DAYS as f32,
-        info.common_parameters.cert_period as f32 / DAYS as f32,
-        info.common_parameters.cert_validity_period as f32 / DAYS as f32,
-        info.common_parameters.smith_membership_period as f32 / DAYS as f32,
-        info.common_parameters.smith_certs_validity_period as f32 / DAYS as f32,
+        membership_period,
+        membership_period_unit,
+        cert_period,
+        cert_period_unit,
+        cert_validity_period,
+        cert_validity_period_unit,
+        smith_membership_period,
+        smith_membership_period_unit,
+        smith_certs_validity_period,
+        smith_certs_validity_period_unit,
         info.common_parameters.min_cert,
         info.common_parameters.smith_min_cert,
         info.common_parameters.cert_max_by_issuer,
         f32::sqrt(info.common_parameters.c2.deconstruct() as f32 / 1_000_000_000f32) * 100f32,
-        info.common_parameters.ud_reeval_period as f32 / DAYS as f32,
-        info.common_parameters.ud_creation_period as f32 / DAYS as f32,
+        ud_reeval_period,
+        ud_reeval_period_unit,
+        ud_creation_period,
+        ud_creation_period_unit,
         info.common_parameters
             .distance_min_accessible_referees
             .deconstruct() as f32
@@ -785,6 +807,45 @@ fn dump_genesis_info(info: GenesisInfo) {
             * 100f32,
         info.common_parameters.max_depth,
     );
+}
+
+fn get_best_unit_and_diviser_for_ms(duration_in_ms: f32) -> (f32, String) {
+    let diviser = get_best_diviser(duration_in_ms);
+    let qty = duration_in_ms / diviser;
+    let unit = diviser_to_unit(diviser, qty);
+    (qty, unit)
+}
+
+fn get_best_unit_and_diviser_for_blocks(duration_in_blocks: u32) -> (f32, String) {
+    let duration_in_ms = duration_in_blocks as f32 * (MILLISECS_PER_BLOCK as u32) as f32;
+    get_best_unit_and_diviser_for_ms(duration_in_ms)
+}
+
+fn diviser_to_unit(value_in_ms: f32, qty: f32) -> String {
+    let unit = if value_in_ms >= 24.0 * 3600.0 * 1000.0 {
+        "day".to_string()
+    } else if value_in_ms >= 3600.0 * 1000.0 {
+        "hour".to_string()
+    } else if value_in_ms >= 60.0 * 1000.0 {
+        "minute".to_string()
+    } else {
+        "second".to_string()
+    };
+    let plural = if qty > 1f32 { "s" } else { "" };
+    format!("{}{}", unit, plural)
+}
+
+fn get_best_diviser(ms_value: f32) -> f32 {
+    let one_minute: f32 = 1000.0 * 60.0;
+    let one_hour: f32 = one_minute * 60.0;
+    let one_day: f32 = one_hour * 24.0;
+    if ms_value > one_day {
+        one_day
+    } else if ms_value > one_hour {
+        one_hour
+    } else {
+        one_minute
+    }
 }
 
 fn smiths_and_technical_committee_checks(
@@ -1640,19 +1701,19 @@ fn check_parameters_consistency(
 }
 
 fn get_genesis_input<P: Default + DeserializeOwned>(
-    json_file_path: String,
+    config_file_path: String,
 ) -> Result<GenesisInput<P>, String> {
     // We mmap the file into memory first, as this is *a lot* faster than using
     // `serde_json::from_reader`. See https://github.com/serde-rs/json/issues/160
-    let file = std::fs::File::open(&json_file_path)
-        .map_err(|e| format!("Error opening gen conf file `{}`: {}", json_file_path, e))?;
+    let file = std::fs::File::open(&config_file_path)
+        .map_err(|e| format!("Error opening gen conf file `{}`: {}", config_file_path, e))?;
     // SAFETY: `mmap` is fundamentally unsafe since technically the file can change
     //         underneath us while it is mapped; in practice it's unlikely to be a problem
     let bytes = unsafe {
         memmap2::Mmap::map(&file)
-            .map_err(|e| format!("Error mmaping gen conf file `{}`: {}", json_file_path, e))?
+            .map_err(|e| format!("Error mmaping gen conf file `{}`: {}", config_file_path, e))?
     };
-    serde_json::from_slice::<GenesisInput<P>>(&bytes)
+    serde_yaml::from_slice::<GenesisInput<P>>(&bytes)
         .map_err(|e| format!("Error parsing gen conf file: {}", e))
 }
 

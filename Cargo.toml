@@ -7,7 +7,7 @@ homepage = 'https://duniter.org'
 license = 'AGPL-3.0'
 name = 'duniter'
 repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
-version = '0.3.0'
+version = '0.7.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -81,6 +81,7 @@ maplit = { version = '1.0.2', default-features = false }
 memmap2 = { version = "0.5.10", default-features = false }
 serde = { version = "1.0", default-features = false }
 serde_json = { version = "1.0.64", default-features = false }
+serde_yaml = { version = "0.9.27", default-features = false }
 tracing-core = { version = "0.1.28", default-features = false }
 enum-as-inner = { version = "=0.5.1", default-features = false } #https://github.com/bluejekyll/trust-dns/issues/1946
 num-format = "0.4.4"

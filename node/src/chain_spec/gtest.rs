@@ -109,7 +109,7 @@ pub struct ClientSpec {
 
 /// generate development chainspec with Alice validator
 // there is some code duplication because we can not use ClientSpec
-pub fn development_chainspecs(json_file_path: String) -> Result<ChainSpec, String> {
+pub fn development_chainspecs(config_file_path: String) -> Result<ChainSpec, String> {
     let wasm_binary = get_wasm_binary().ok_or_else(|| "wasm not available".to_string())?;
     Ok(ChainSpec::from_genesis(
         // Name
@@ -122,7 +122,7 @@ pub fn development_chainspecs(json_file_path: String) -> Result<ChainSpec, Strin
         move || {
             let genesis_data =
                 gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
-                    json_file_path.clone(),
+                    config_file_path.clone(),
                     get_parameters,
                     Some("Alice".to_owned()),
                 )
@@ -158,7 +158,7 @@ pub fn development_chainspecs(json_file_path: String) -> Result<ChainSpec, Strin
 // one smith must have session keys
 pub fn live_chainspecs(
     client_spec: ClientSpec,
-    json_file_path: String,
+    config_file_path: String,
 ) -> Result<ChainSpec, String> {
     let wasm_binary = get_wasm_binary().ok_or_else(|| "wasm not available".to_string())?;
     Ok(ChainSpec::from_genesis(
@@ -172,7 +172,7 @@ pub fn live_chainspecs(
         move || {
             let genesis_data =
                 gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
-                    json_file_path.clone(),
+                    config_file_path.clone(),
                     get_parameters,
                     None,
                 )

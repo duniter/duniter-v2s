@@ -1,0 +1,80 @@
+# 10,00 ĞD per UD
+ud: 1000
+
+# null = block#0 + ud_creation_period waiting (ms)
+first_ud: null
+
+# null = block#0 + ud_reeval_period waiting (ms)
+first_ud_reeval: null
+
+parameters:
+  # Epoch (session) duration, in number of blocks. 1h.
+  babe_epoch_duration: 600
+  # Time between 2 UDs, in milliseconds. 4 hours.
+  ud_creation_period: 14400000
+  # Time between 2 UD reevaluations, in milliseconds
+  ud_reeval_period: 86400000
+
+  # ----- MAIN WOT -----
+  # Duration to wait between two emitted certifications, in blocks. 1 day.
+  cert_period: 14400
+  # Maximum quantity of currently valid certifications emitted by a same issuer. 100 certs.
+  cert_max_by_issuer: 100
+  # Minimum quantity of received certifications to be able to certify someone else. 3 certs.
+  cert_min_received_cert_to_issue_cert: 3
+  # Validity duration of a certification, in blocks. 146 days.
+  cert_validity_period: 2102400
+  # Validity duration of a membership. 73 days.
+  membership_period: 1051200
+  # Validity duration of a pending membership. 12 days.
+  pending_membership_period: 172800
+  # Delay (in blocks) a member must observe before being able to emit a certification
+  wot_first_cert_issuable_on: 0
+  # Number of required received certs to become a member
+  wot_min_cert_for_membership: 3
+  # Time to wait between two creation of an identity by a same issue, in blocks. 1 day.
+  idty_creation_period: 14400
+  # Window to confirm an identity, in blocks. 1 day.
+  idty_confirm_period: 14400
+  # Number of required received certs to be able to create identities
+  wot_min_cert_for_create_idty_right: 3
+
+  # ----- SMITH WOT -----
+  # Duration to wait between two emitted certifications, in blocks. 1 day.
+  smith_cert_period: 14400
+  # Maximum quantity of currently valid certifications emitted by a same issuer. 15 certs.
+  smith_cert_max_by_issuer: 15
+  # Minimum quantity of received certifications to be able to certify someone else.
+  smith_cert_min_received_cert_to_issue_cert: 3
+  # Validity duration of a certification, in blocks. 146 days.
+  smith_cert_validity_period: 2102400
+  # Validity duration of a membership. 73 days.
+  smith_membership_period: 1051200
+  # Validity duration of a pending membership. 12 days.
+  smith_pending_membership_period: 172800
+  # Delay (in blocks) a member must observe before being able to emit a certification
+  smith_wot_first_cert_issuable_on: 14400
+  # Number of required received certs to become a member
+  smith_wot_min_cert_for_membership: 3
+
+# Clique Smith WoT: each smith will certify by each other smith automatically on Genesis
+clique_smiths:
+  - name: "Pini"
+  - name: "moul"
+  - name: "HugoTrentesaux"
+  - name: "tuxmain"
+  - name: "1000i100"
+  - name: "vit"
+  - name: "cgeek"
+    # This smith will be the first author
+    session_keys: "0xec6d7141864ca265b1c31a164d258e907e044380ac110c57502135943904137f5a172f9a6759763f59a7e0a4d170b467b744eabb3adb454f38a2e7957fb9cd285a172f9a6759763f59a7e0a4d170b467b744eabb3adb454f38a2e7957fb9cd285a172f9a6759763f59a7e0a4d170b467b744eabb3adb454f38a2e7957fb9cd28"
+    # This smith changes its key to Sr25519 wallet on startup (to be able to use Polkadot.js app right on start)
+    migration_address: "5E6q47RRGZU15LjUiBTm2DZjpqFKAjRNafYS8YV8AzTQZtLG"
+
+sudo_key: "5CyfGVTxzVZ16AKTMygqBSuxELLrQC4SEY5bKZ4MiESxvTZ9"
+
+# The address which will automatically transfer 1,00 ĞD on Genesis to the Treasury
+treasury_funder_address: "5E6q47RRGZU15LjUiBTm2DZjpqFKAjRNafYS8YV8AzTQZtLG"
+
+# The technical committee members, to act as sudo
+technical_committee: ["Pini", "moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek"]

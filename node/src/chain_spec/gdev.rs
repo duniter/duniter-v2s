@@ -83,7 +83,7 @@ fn get_parameters(parameters_from_file: &Option<GenesisParameters>) -> CommonPar
 }
 
 /// generate development chainspec with Alice validator
-pub fn gdev_development_chain_spec(json_file_path: String) -> Result<ChainSpec, String> {
+pub fn gdev_development_chain_spec(config_file_path: String) -> Result<ChainSpec, String> {
     let wasm_binary =
         get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?;
     Ok(ChainSpec::from_genesis(
@@ -97,7 +97,7 @@ pub fn gdev_development_chain_spec(json_file_path: String) -> Result<ChainSpec, 
         move || {
             let genesis_data =
                 gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GDevSKP>(
-                    json_file_path.clone(),
+                    config_file_path.clone(),
                     get_parameters,
                     Some("Alice".to_owned()),
                 )
@@ -148,7 +148,10 @@ pub struct ClientSpec {
 }
 
 /// generate live network chainspecs
-pub fn gen_live_conf(client_spec: ClientSpec, json_file_path: String) -> Result<ChainSpec, String> {
+pub fn gen_live_conf(
+    client_spec: ClientSpec,
+    config_file_path: String,
+) -> Result<ChainSpec, String> {
     let wasm_binary = get_wasm_binary().ok_or_else(|| "wasm not available".to_string())?;
     Ok(ChainSpec::from_genesis(
         // Name
@@ -160,7 +163,7 @@ pub fn gen_live_conf(client_spec: ClientSpec, json_file_path: String) -> Result<
         move || {
             let genesis_data =
                 gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GDevSKP>(
-                    json_file_path.clone(),
+                    config_file_path.clone(),
                     get_parameters,
                     None,
                 )

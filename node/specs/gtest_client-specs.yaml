@@ -1,0 +1,9 @@
+name: "ĞTest"
+id: "gtest"
+chainType: "Live"
+bootNodes: []
+telemetryEndpoints:
+  - ["/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]
+properties:
+  tokenDecimals: 2
+  tokenSymbol: "ĞT"
