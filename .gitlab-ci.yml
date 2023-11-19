@@ -125,7 +125,7 @@ tests:
     - cargo cucumber
 
 .deploy_docker_multiplatform:
-  stage: deploy
+  stage: release
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
       when: manual
