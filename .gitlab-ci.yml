@@ -280,7 +280,7 @@ create_g1_data:
     - apt-get install -y clang cmake protobuf-compiler
     - cargo run ${FEATURES} -- build-spec --chain=${RUNTIME}_live > release/${RUNTIME}.json
     - cargo run ${FEATURES} -- build-spec --chain=release/${RUNTIME}.json --disable-default-bootnode --raw > release/${RUNTIME}-raw.json
-    - cp node/specs/${RUNTIME}_client-specs.json release/
+    - cp node/specs/${RUNTIME}_client-specs.yaml release/
   artifacts:
     name: "runtime"
     paths:
@@ -326,8 +326,8 @@ create_release:
     - cargo xtask create-asset-link $MILESTONE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/g1-data.json
     - cargo xtask create-asset-link $MILESTONE gdev_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gdev_runtime.compact.compressed.wasm
     - cargo xtask create-asset-link $MILESTONE gtest_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gtest_runtime.compact.compressed.wasm
-    - cargo xtask create-asset-link $MILESTONE gdev_client-specs.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gdev_client-specs.json
-    - cargo xtask create-asset-link $MILESTONE gtest_client-specs.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gtest_client-specs.json
+    - cargo xtask create-asset-link $MILESTONE gdev_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gdev_client-specs.yaml
+    - cargo xtask create-asset-link $MILESTONE gtest_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gtest_client-specs.yaml
   artifacts:
     paths:
       - $CI_PROJECT_DIR/release/
