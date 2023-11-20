@@ -281,7 +281,6 @@ create_g1_data:
     - cargo run ${FEATURES} -- build-spec --chain=${RUNTIME}_live > release/${RUNTIME}.json
     - cargo run ${FEATURES} -- build-spec --chain=release/${RUNTIME}.json --disable-default-bootnode --raw > release/${RUNTIME}-raw.json
     - cp node/specs/${RUNTIME}_client-specs.yaml release/
-    - cp $DUNITER_GENESIS_EXPORT release/
   artifacts:
     name: "runtime"
     paths:
