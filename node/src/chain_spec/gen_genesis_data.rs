@@ -81,6 +81,13 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub ud: u64,
 }
 
+#[derive(Deserialize, Serialize)]
+struct BlockV1 {
+    number: u32,
+    #[serde(rename = "medianTime")]
+    median_time: u64,
+}
+
 #[derive(Clone)]
 pub struct GenesisIdentity {
     pub idty_index: u32,
@@ -139,6 +146,7 @@ struct TransactionV2 {
 #[derive(Deserialize, Serialize)]
 struct GenesisMigrationData {
     initial_monetary_mass: u64,
+    current_block: BlockV1,
     identities: BTreeMap<String, IdentityV1>,
     #[serde(default)]
     wallets: BTreeMap<PubkeyV1, u64>,
@@ -1044,6 +1052,9 @@ fn check_genesis_data_and_filter_expired_certs_since_export(
 
     genesis_data.identities.iter_mut().for_each(|(name, i)| {
         if (i.membership_expire_on.0 as u64) < genesis_timestamp {
+            if (i.membership_expire_on.0 as u64) >= genesis_data.current_block.median_time {
+                log::warn!("{} membership expired since export", name);
+            }
             i.membership_expire_on = TimestampV1(0);
         }
     });
