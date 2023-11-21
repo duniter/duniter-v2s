@@ -235,6 +235,7 @@ struct SmithWoT<SK: Decode> {
 }
 
 struct GenesisInfo<'a> {
+    genesis_timestamp: u64,
     accounts: &'a BTreeMap<AccountId32, GenesisAccountData<u64, u32>>,
     genesis_data_wallets_count: &'a usize,
     inactive_identities: &'a HashMap<u32, String>,
@@ -500,6 +501,7 @@ where
         });
 
     let genesis_info = GenesisInfo {
+        genesis_timestamp,
         accounts: &accounts,
         genesis_data_wallets_count: &genesis_data_wallets_count,
         identities: &identities,
@@ -727,6 +729,7 @@ fn dump_genesis_info(info: GenesisInfo) {
     // give genesis info
     log::info!(
         "prepared genesis with:
+        - {} as genesis timestamp
         - {} accounts ({} identities, {} simple wallets)
         - {} total identities ({} active, {} inactive)
         - {} smiths
@@ -734,6 +737,7 @@ fn dump_genesis_info(info: GenesisInfo) {
         - {} certifications
         - {} smith certifications
         - {} members in technical committee",
+        info.genesis_timestamp,
         info.accounts.len(),
         info.identities.len() - info.inactive_identities.len(),
         info.genesis_data_wallets_count,
@@ -1041,7 +1045,6 @@ fn check_genesis_data_and_filter_expired_certs_since_export(
     genesis_data.identities.iter_mut().for_each(|(name, i)| {
         if (i.membership_expire_on.0 as u64) < genesis_timestamp {
             i.membership_expire_on = TimestampV1(0);
-            log::warn!("{} membership expired since export", name);
         }
     });
 
@@ -1606,7 +1609,9 @@ where
         .map(|x| x.0.clone())
         .collect::<Vec<_>>();
 
+    let genesis_timestamp: u64 = get_genesis_timestamp()?;
     let genesis_info = GenesisInfo {
+        genesis_timestamp,
         accounts: &accounts,
         genesis_data_wallets_count: &genesis_data_wallets_count,
         identities: &identities,
