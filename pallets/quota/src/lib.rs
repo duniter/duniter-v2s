@@ -210,19 +210,31 @@ pub mod pallet {
         /// perform as many refunds as possible within the supplied weight limit
         pub fn process_refund_queue(weight_limit: Weight) -> Weight {
             RefundQueue::<T>::mutate(|queue| {
-                if queue.is_empty() {
-                    return Weight::zero();
-                }
-                let mut total_weight = Weight::zero();
+                // The weight to process an empty queue
+                let mut total_weight = <T as pallet::Config>::WeightInfo::on_process_refund_queue();
+                // The weight to process one element without the actual try_refund weight
+                let overhead =
+                    <T as pallet::Config>::WeightInfo::on_process_refund_queue_elements(2)
+                        .saturating_sub(
+                            <T as pallet::Config>::WeightInfo::on_process_refund_queue_elements(1),
+                        )
+                        .saturating_sub(<T as pallet::Config>::WeightInfo::try_refund());
+
                 // make sure that we have at least the time to handle one try_refund call
-                while total_weight.any_lt(
-                    weight_limit.saturating_sub(<T as pallet::Config>::WeightInfo::try_refund()),
-                ) {
+                if queue.is_empty() {
+                    return total_weight;
+                }
+
+                while total_weight.any_lt(weight_limit.saturating_sub(
+                    <T as pallet::Config>::WeightInfo::try_refund().saturating_add(overhead),
+                )) {
                     let Some(queued_refund) = queue.pop() else {
                         break;
                     };
                     let consumed_weight = Self::try_refund(queued_refund);
-                    total_weight = total_weight.saturating_add(consumed_weight);
+                    total_weight = total_weight
+                        .saturating_add(consumed_weight)
+                        .saturating_add(overhead);
                 }
                 total_weight
             })
@@ -309,8 +321,6 @@ pub mod pallet {
         // process refund queue if space left on block
         fn on_idle(_block: T::BlockNumber, remaining_weight: Weight) -> Weight {
             Self::process_refund_queue(remaining_weight)
-            // opti: benchmark process_refund_queue overhead and substract this from weight limit
-            // .saturating_sub(T::WeightInfo::process_refund_queue())
         }
     }
 }

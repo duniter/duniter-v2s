@@ -238,4 +238,133 @@ fn test_not_enough_treasury() {
     })
 }
 
-// TODO implement a mock weight to test if refund queue processing actually stops when reached limit
+/// test complete scenario with queue and process refund queue weight with available quotas
+#[test]
+fn test_process_refund_queue_weight_with_quotas() {
+    new_test_ext(QuotaConfig {
+        identities: vec![1, 2, 3],
+    })
+    .execute_with(|| {
+        run_to_block(15);
+        // give enough currency to accounts and treasury and double check
+        Balances::make_free_balance_be(&account(1), 1000);
+        Balances::make_free_balance_be(&account(2), 1000);
+        Balances::make_free_balance_be(&account(3), 1000);
+        Balances::make_free_balance_be(
+            &<Test as pallet_quota::Config>::RefundAccount::get(),
+            10_000,
+        );
+        assert_eq!(
+            Balances::free_balance(<Test as pallet_quota::Config>::RefundAccount::get()),
+            10_000
+        );
+        // fill in the refund queue
+        Quota::queue_refund(pallet_quota::Refund {
+            account: account(1),
+            identity: 10,
+            amount: 10,
+        });
+        Quota::queue_refund(pallet_quota::Refund {
+            account: account(2),
+            identity: 2,
+            amount: 500,
+        });
+        Quota::queue_refund(pallet_quota::Refund {
+            account: account(3),
+            identity: 3,
+            amount: 666,
+        });
+        // process it with only no weight
+        Quota::process_refund_queue(Weight::from(0));
+        // after processing, it should be of the same size
+        assert_eq!(pallet_quota::RefundQueue::<Test>::get().len(), 3);
+        // process it with only 200 allowed weight
+        Quota::process_refund_queue(Weight::from_parts(200u64, 0));
+        // after processing, it should be of size 1 because total_weight += 25*2 by iteration and
+        // limit is total_weight < 200-100 so 2 elements can be processed
+        assert_eq!(pallet_quota::RefundQueue::<Test>::get().len(), 1);
+        // and we should observe the effects of refund
+        assert_eq!(Balances::free_balance(account(3)), 1666); // 1000 initial + 666 refunded
+        assert_eq!(Balances::free_balance(account(2)), 1500); // 1000 initial + 1500 refunded
+        assert_eq!(Balances::free_balance(account(1)), 1000); // only initial because no available weight to process
+        assert_eq!(
+            Balances::free_balance(<Test as pallet_quota::Config>::RefundAccount::get()),
+            // initial minus refunds
+            10_000 - 666 - 500
+        );
+        // events
+        System::assert_has_event(RuntimeEvent::Quota(pallet_quota::Event::Refunded {
+            who: account(3),
+            identity: 3,
+            amount: 666,
+        }));
+        System::assert_has_event(RuntimeEvent::Quota(pallet_quota::Event::Refunded {
+            who: account(2),
+            identity: 2,
+            amount: 500,
+        }));
+    })
+}
+
+/// test complete scenario with queue and process refund queue weight with limited quotas
+#[test]
+fn test_process_refund_queue_weight_no_quotas() {
+    new_test_ext(QuotaConfig {
+        identities: vec![1, 2],
+    })
+    .execute_with(|| {
+        run_to_block(15);
+        // give enough currency to accounts and treasury and double check
+        Balances::make_free_balance_be(&account(1), 1000);
+        Balances::make_free_balance_be(&account(2), 1000);
+        Balances::make_free_balance_be(&account(3), 1000);
+        Balances::make_free_balance_be(
+            &<Test as pallet_quota::Config>::RefundAccount::get(),
+            10_000,
+        );
+        assert_eq!(
+            Balances::free_balance(<Test as pallet_quota::Config>::RefundAccount::get()),
+            10_000
+        );
+        // fill in the refund queue
+        Quota::queue_refund(pallet_quota::Refund {
+            account: account(1),
+            identity: 10,
+            amount: 10,
+        });
+        Quota::queue_refund(pallet_quota::Refund {
+            account: account(2),
+            identity: 2,
+            amount: 500,
+        });
+        Quota::queue_refund(pallet_quota::Refund {
+            account: account(3),
+            identity: 3,
+            amount: 666,
+        });
+        // process it with only no weight
+        Quota::process_refund_queue(Weight::from(0));
+        // after processing, it should be of the same size
+        assert_eq!(pallet_quota::RefundQueue::<Test>::get().len(), 3);
+        // process it with only 150 allowed weight
+        Quota::process_refund_queue(Weight::from_parts(150u64, 0));
+        // after processing, it should be of size 2 because try_refund weight is 25 (first in the queue with no quota) then 25*2 for the 2 other elements
+        // limit is total_weight < 150-100 so 2 elements can be processed
+        assert_eq!(pallet_quota::RefundQueue::<Test>::get().len(), 1);
+        // and we should observe the effects of refund
+        assert_eq!(Balances::free_balance(account(3)), 1000); // 1000 initial only because no quota available
+        assert_eq!(Balances::free_balance(account(2)), 1500); // 1000 initial + 500 refunded
+        assert_eq!(Balances::free_balance(account(1)), 1000); // only initial because no available weight to process
+        assert_eq!(
+            Balances::free_balance(<Test as pallet_quota::Config>::RefundAccount::get()),
+            // initial minus refunds
+            10_000 - 500
+        );
+        // events
+        System::assert_has_event(RuntimeEvent::Quota(pallet_quota::Event::Refunded {
+            who: account(2),
+            identity: 2,
+            amount: 500,
+        }));
+    })
+}
