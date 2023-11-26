@@ -16,3 +16,4 @@ sp-core = { git = 'https://github.com/duniter/substrate', branch = 'duniter-subs
 subxt = { git = 'https://github.com/duniter/subxt', branch = 'duniter-substrate-v0.9.42', default-features = false, features = ["jsonrpsee-ws"] }
 tokio = { version = "1.28", features = ["macros", "time", "rt-multi-thread"], default-features = false }
 sp-runtime = {  git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false , features = ["std"] } # https://github.com/paritytech/subxt/issues/437
+countmap = "0.2.0"

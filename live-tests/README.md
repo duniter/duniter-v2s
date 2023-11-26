@@ -16,7 +16,7 @@ Test suite that verifies the consistency of the onchain storage.
 #### Custom RPC endpoint
 
 You can choose to use another RPC endpoint by setting the environment variable `WS_RPC_ENDPOINT`.
-This is also the only way to test against a different network that the default one.
+This is also the only way to test against a different network that the default one which is `ws://localhost:9944`.
 
 #### run against a specific block
 

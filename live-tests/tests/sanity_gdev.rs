@@ -17,14 +17,16 @@
 #[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
 pub mod gdev {}
 
+use countmap::CountMap;
 use hex_literal::hex;
 use sp_core::crypto::AccountId32;
 use sp_core::{blake2_128, ByteArray, H256};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use subxt::config::SubstrateConfig as GdevConfig;
 
-const DEFAULT_ENDPOINT: &str = "wss://gdev.librelois.fr:443/ws";
+const DEFAULT_ENDPOINT: &str = "ws://localhost:9944";
 
+const EXISTENTIAL_DEPOSIT: u64 = 100;
 const TREASURY_ACCOUNT_ID: [u8; 32] =
     hex!("6d6f646c70792f74727372790000000000000000000000000000000000000000");
 
@@ -89,7 +91,7 @@ async fn sanity_tests_at(client: Client, _maybe_block_hash: Option<H256>) -> any
         account_id_bytes.copy_from_slice(&key.0[48..]);
         accounts.insert(AccountId32::new(account_id_bytes), account_info);
     }
-    println!("accounts: {}.", accounts.len());
+    println!("accounts.len(): {}.", accounts.len());
 
     // Collect identities
     let mut identities: HashMap<IdtyIndex, IdtyValue> = HashMap::new();
@@ -113,7 +115,7 @@ async fn sanity_tests_at(client: Client, _maybe_block_hash: Option<H256>) -> any
         };
         identities.insert(IdtyIndex::from_le_bytes(idty_index_bytes), idty_val);
     }
-    println!("identities: {}.", identities.len());
+    println!("identities.len(): {}.", identities.len());
 
     // Collect identity_index_of
     let mut identity_index_of: HashMap<[u8; 16], IdtyIndex> = HashMap::new();
@@ -126,10 +128,10 @@ async fn sanity_tests_at(client: Client, _maybe_block_hash: Option<H256>) -> any
         .await?;
     while let Some((key, idty_index)) = idty_index_of_iter.next().await? {
         let mut blake2_128_bytes = [0u8; 16];
-        blake2_128_bytes.copy_from_slice(&key.0[32..]);
+        blake2_128_bytes.copy_from_slice(&key.0[32..48]);
         identity_index_of.insert(blake2_128_bytes, idty_index);
     }
-    println!("identity_index_of: {}.", identities.len());
+    println!("identity_index_of.len(): {}.", identity_index_of.len());
 
     let storage = Storage {
         accounts,
@@ -154,11 +156,16 @@ mod verifier {
             Self { errors: Vec::new() }
         }
 
+        // FIXME why async functions when called with await?
+
+        /// method to run all storage tests
         pub(super) async fn verify_storage(&mut self, storage: &Storage) -> anyhow::Result<()> {
             self.verify_accounts(&storage.accounts).await;
             self.verify_identities(&storage.accounts, &storage.identities)
                 .await;
             self.verify_identity_index_of(&storage.identities, &storage.identity_index_of)
+                .await;
+            self.verify_identity_coherence(&storage.identities, &storage.identity_index_of)
                 .await;
 
             if self.errors.is_empty() {
@@ -174,12 +181,19 @@ mod verifier {
             }
         }
 
+        /// assert method to collect errors
         fn assert(&mut self, assertion: bool, error: String) {
             if !assertion {
                 self.errors.push(error);
             }
         }
 
+        /// like assert but just push error
+        fn error(&mut self, error: String) {
+            self.errors.push(error);
+        }
+
+        /// check accounts sufficients and consumers (specific to duniter-account pallet)
         async fn verify_accounts(&mut self, accounts: &HashMap<AccountId32, AccountInfo>) {
             for (account_id, account_info) in accounts {
                 if account_info.sufficients == 0 {
@@ -190,7 +204,8 @@ mod verifier {
                     );
                     // Rule 2: If the account is not sufficient, it should comply to the existential deposit
                     self.assert(
-                        (account_info.data.free + account_info.data.reserved) >= 200,
+                        (account_info.data.free + account_info.data.reserved)
+                            >= EXISTENTIAL_DEPOSIT,
                         format!(
                             "Account {} not respect existential deposit rule.",
                             account_id
@@ -198,9 +213,9 @@ mod verifier {
                     );
                 }
 
-                // Rule 3: If the account have consumers, it shoul have at least one provider
+                // Rule 3: If the account have consumers, it should have at least one provider
                 if account_info.consumers > 0 {
-                    // Rule 1: If the account is not s
+                    // Rule 1: If the account is not sufficient [...]
                     self.assert(
                         account_info.providers > 0,
                         format!("Account {} has no providers nor sufficients.", account_id),
@@ -218,12 +233,31 @@ mod verifier {
             }
         }
 
+        /// check list of identities (account existence, sufficient)
         async fn verify_identities(
             &mut self,
             accounts: &HashMap<AccountId32, AccountInfo>,
             identities: &HashMap<IdtyIndex, IdtyValue>,
         ) {
+            // counts occurence of owner key
+            let mut countmap = CountMap::<AccountId32, u8>::new();
+            // list owner key with multiple occurences
+            let mut duplicates = HashSet::new();
+
             for (idty_index, idty_value) in identities {
+                countmap.insert_or_increment(idty_value.owner_key.clone());
+                if let Some(count) = countmap.get_count(&idty_value.owner_key) {
+                    if count > 1 {
+                        self.error(format!(
+                            "address {} is the owner_key of {count} identities",
+                            idty_value.owner_key
+                        ));
+                        if count == 2 {
+                            duplicates.insert(idty_value.owner_key.clone());
+                        }
+                    }
+                }
+
                 // Rule 1: each identity should have an account
                 let maybe_account = accounts.get(&idty_value.owner_key);
                 self.assert(
@@ -244,7 +278,7 @@ mod verifier {
 
                 match idty_value.status {
                     IdtyStatus::Validated => {
-                        // Rule 3: If the identity is validated, removable_on shoud be zero
+                        // Rule 3: If the identity is validated, removable_on should be zero
                         self.assert(
                             idty_value.removable_on == 0,
                             format!(
@@ -254,7 +288,7 @@ mod verifier {
                         );
                     }
                     _ => {
-                        // Rule 4: If the identity is not validated, next_creatable_identity_on shoud be zero
+                        // Rule 4: If the identity is not validated, next_creatable_identity_on should be zero
                         self.assert(
 							idty_value.next_creatable_identity_on == 0,
 							format!("Identity {} is corrupted: next_creatable_identity_on > 0 on non-validated idty",
@@ -263,8 +297,18 @@ mod verifier {
                     }
                 }
             }
+
+            for (idty_index, idty_value) in identities {
+                if duplicates.contains(&idty_value.owner_key) {
+                    self.error(format!(
+                        "duplicate key {} at position {idty_index}",
+                        idty_value.owner_key
+                    ));
+                }
+            }
         }
 
+        /// check the identity hashmap (length, identity existence, hash matches owner key)
         async fn verify_identity_index_of(
             &mut self,
             identities: &HashMap<IdtyIndex, IdtyValue>,
@@ -273,7 +317,11 @@ mod verifier {
             // Rule1: identity_index_of should have the same lenght as identities
             self.assert(
                 identities.len() == identity_index_of.len(),
-                "identities.len() != identity_index_of.len().".to_owned(),
+                format!(
+                    "identities.len({}) != identity_index_of.len({}).",
+                    identities.len(),
+                    identity_index_of.len()
+                ),
             );
 
             for (blake2_128_owner_key, idty_index) in identity_index_of {
@@ -298,6 +346,30 @@ mod verifier {
                             idty_index
                         ),
                     );
+                }
+            }
+        }
+
+        /// check coherence between identity list and identity index hashmap
+        async fn verify_identity_coherence(
+            &mut self,
+            identities: &HashMap<IdtyIndex, IdtyValue>,
+            identity_index_of: &HashMap<[u8; 16], IdtyIndex>,
+        ) {
+            // each identity should be correcly referenced in the hashmap
+            for (idty_index, idty_value) in identities {
+                // hash owner key to get key
+                let blake2_128_owner_key = &blake2_128(idty_value.owner_key.as_slice());
+
+                // get identity index from hashmap
+                if let Some(index_of) = identity_index_of.get(blake2_128_owner_key) {
+                    self.assert(idty_index == index_of,
+                        format!("identity number {idty_index} with owner key {0} is mapped to identity index {index_of}", idty_value.owner_key));
+                } else {
+                    self.error(format!(
+                        "identity with owner key {} is not present in hashmap",
+                        idty_value.owner_key
+                    ));
                 }
             }
         }
