@@ -54,8 +54,10 @@ RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
     cargo build --locked $CARGO_OPTIONS --no-default-features $BENCH_OPTIONS --features $chain --target "$RUST_ARCH_TRIPLET" && \
+    cargo build --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" --package distance-oracle && \
     mkdir -p build && \
-    mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/
+    mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/ && \
+    mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/distance-oracle build/
 
 # Run tests if requested, expted when cross-building
 ARG cucumber=0
