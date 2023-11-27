@@ -28,6 +28,7 @@ use tera::Tera;
 
 const CALLS_DOC_FILEPATH: &str = "docs/api/runtime-calls.md";
 const EVENTS_DOC_FILEPATH: &str = "docs/api/runtime-events.md";
+const ERRORS_DOC_FILEPATH: &str = "docs/api/runtime-errors.md";
 const TEMPLATES_GLOB: &str = "xtask/res/templates/*.md";
 
 // define structs and implementations
@@ -40,6 +41,7 @@ struct Pallet {
     name: String,
     calls: Vec<Call>,
     events: Vec<Event>,
+    errors: Vec<ErroR>,
 }
 #[derive(Clone, Serialize)]
 struct Call {
@@ -65,6 +67,12 @@ struct EventParam {
     name: String,
     type_name: String,
 }
+#[derive(Clone, Serialize)]
+struct ErroR {
+    documentation: String,
+    index: u8,
+    name: String,
+}
 
 impl Pallet {
     fn new(
@@ -72,6 +80,7 @@ impl Pallet {
         name: String,
         call_scale_type_def: &Option<scale_info::TypeDef<PortableForm>>,
         event_scale_type_def: &Option<scale_info::TypeDef<PortableForm>>,
+        error_scale_type_def: &Option<scale_info::TypeDef<PortableForm>>,
     ) -> Result<Self> {
         let calls = if let Some(call_scale_type_def) = call_scale_type_def {
             if let scale_info::TypeDef::Variant(calls_enum) = call_scale_type_def {
@@ -91,11 +100,21 @@ impl Pallet {
         } else {
             vec![]
         };
+        let errors = if let Some(error_scale_type_def) = error_scale_type_def {
+            if let scale_info::TypeDef::Variant(errors_enum) = error_scale_type_def {
+                errors_enum.variants.iter().map(Into::into).collect()
+            } else {
+                bail!("Invalid metadata")
+            }
+        } else {
+            vec![]
+        };
         Ok(Self {
             index,
             name,
             calls,
             events,
+            errors,
         })
     }
 }
@@ -116,7 +135,6 @@ impl From<&scale_info::Variant<PortableForm>> for Call {
         }
     }
 }
-
 impl From<&scale_info::Field<PortableForm>> for CallParam {
     fn from(field: &scale_info::Field<PortableForm>) -> Self {
         Self {
@@ -136,12 +154,21 @@ impl From<&scale_info::Variant<PortableForm>> for Event {
         }
     }
 }
-
 impl From<&scale_info::Field<PortableForm>> for EventParam {
     fn from(field: &scale_info::Field<PortableForm>) -> Self {
         Self {
             name: field.clone().name.unwrap_or_default(),
             type_name: field.clone().type_name.unwrap_or_default(),
+        }
+    }
+}
+
+impl From<&scale_info::Variant<PortableForm>> for ErroR {
+    fn from(variant: &scale_info::Variant<PortableForm>) -> Self {
+        Self {
+            documentation: variant.docs.iter().cloned().collect::<Vec<_>>().join("\n"),
+            index: variant.index,
+            name: variant.name.to_owned(),
         }
     }
 }
@@ -217,7 +244,7 @@ pub(super) fn gen_doc() -> Result<()> {
         bail!("unsuported metadata version")
     };
 
-    let (call_doc, event_doc) = print_runtime(runtime);
+    let (call_doc, event_doc, error_doc) = print_runtime(runtime);
 
     let mut file = File::create(CALLS_DOC_FILEPATH)
         .with_context(|| format!("Failed to create file '{}'", CALLS_DOC_FILEPATH))?;
@@ -227,6 +254,10 @@ pub(super) fn gen_doc() -> Result<()> {
         .with_context(|| format!("Failed to create file '{}'", EVENTS_DOC_FILEPATH))?;
     file.write_all(event_doc.as_bytes())
         .with_context(|| format!("Failed to write to file '{}'", EVENTS_DOC_FILEPATH))?;
+    let mut file = File::create(ERRORS_DOC_FILEPATH)
+        .with_context(|| format!("Failed to create file '{}'", ERRORS_DOC_FILEPATH))?;
+    file.write_all(error_doc.as_bytes())
+        .with_context(|| format!("Failed to write to file '{}'", ERRORS_DOC_FILEPATH))?;
 
     Ok(())
 }
@@ -255,12 +286,22 @@ fn get_from_metadata_v14(
             println!("{}: {} (0 events)", pallet.index, pallet.name);
             None
         };
+        let errors_type_def = if let Some(errors) = pallet.error {
+            let Some(errors_type) = metadata_v14.types.resolve(errors.ty.id) else {
+                bail!("Invalid metadata")
+            };
+            Some(errors_type.type_def.clone())
+        } else {
+            println!("{}: {} (0 errors)", pallet.index, pallet.name);
+            None
+        };
 
         let pallet = Pallet::new(
             pallet.index,
             pallet.name.clone(),
             &calls_type_def,
             &events_type_def,
+            &errors_type_def,
         )?;
 
         println!(
@@ -275,13 +316,19 @@ fn get_from_metadata_v14(
             pallet.name,
             pallet.events.len()
         );
+        println!(
+            "{}: {} ({} errors)",
+            pallet.index,
+            pallet.name,
+            pallet.errors.len()
+        );
         pallets.push(pallet);
     }
     Ok(pallets)
 }
 
 /// use template to render markdown file with runtime calls documentation
-fn print_runtime(pallets: RuntimePallets) -> (String, String) {
+fn print_runtime(pallets: RuntimePallets) -> (String, String, String) {
     // init variables
     let mut user_calls_counter = 0;
     let user_calls_pallets: RuntimePallets = pallets
@@ -340,6 +387,11 @@ fn print_runtime(pallets: RuntimePallets) -> (String, String) {
         .iter()
         .for_each(|pallet| event_counter += pallet.events.len());
 
+    let mut error_counter = 0;
+    pallets
+        .iter()
+        .for_each(|pallet| error_counter += pallet.errors.len());
+
     // compile template
     let tera = match Tera::new(TEMPLATES_GLOB) {
         Ok(t) => t,
@@ -363,12 +415,17 @@ fn print_runtime(pallets: RuntimePallets) -> (String, String) {
         .expect("template error");
 
     // render events
-
     context.insert("pallets", &pallets);
     context.insert("event_counter", &event_counter);
     let event_doc = tera
         .render("runtime-events.md", &context)
         .expect("template error");
 
-    (call_doc, event_doc)
+    // render errors
+    context.insert("error_counter", &error_counter);
+    let error_doc = tera
+        .render("runtime-errors.md", &context)
+        .expect("template error");
+
+    (call_doc, event_doc, error_doc)
 }
