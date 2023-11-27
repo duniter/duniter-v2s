@@ -81,6 +81,13 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub ud: u64,
 }
 
+#[derive(Deserialize, Serialize)]
+struct BlockV1 {
+    number: u32,
+    #[serde(rename = "medianTime")]
+    median_time: u64,
+}
+
 #[derive(Clone)]
 pub struct GenesisIdentity {
     pub idty_index: u32,
@@ -139,6 +146,7 @@ struct TransactionV2 {
 #[derive(Deserialize, Serialize)]
 struct GenesisMigrationData {
     initial_monetary_mass: u64,
+    current_block: BlockV1,
     identities: BTreeMap<String, IdentityV1>,
     #[serde(default)]
     wallets: BTreeMap<PubkeyV1, u64>,
@@ -235,6 +243,7 @@ struct SmithWoT<SK: Decode> {
 }
 
 struct GenesisInfo<'a> {
+    genesis_timestamp: u64,
     accounts: &'a BTreeMap<AccountId32, GenesisAccountData<u64, u32>>,
     genesis_data_wallets_count: &'a usize,
     inactive_identities: &'a HashMap<u32, String>,
@@ -500,6 +509,7 @@ where
         });
 
     let genesis_info = GenesisInfo {
+        genesis_timestamp,
         accounts: &accounts,
         genesis_data_wallets_count: &genesis_data_wallets_count,
         identities: &identities,
@@ -727,6 +737,7 @@ fn dump_genesis_info(info: GenesisInfo) {
     // give genesis info
     log::info!(
         "prepared genesis with:
+        - {} as genesis timestamp
         - {} accounts ({} identities, {} simple wallets)
         - {} total identities ({} active, {} inactive)
         - {} smiths
@@ -734,6 +745,7 @@ fn dump_genesis_info(info: GenesisInfo) {
         - {} certifications
         - {} smith certifications
         - {} members in technical committee",
+        info.genesis_timestamp,
         info.accounts.len(),
         info.identities.len() - info.inactive_identities.len(),
         info.genesis_data_wallets_count,
@@ -1040,8 +1052,10 @@ fn check_genesis_data_and_filter_expired_certs_since_export(
 
     genesis_data.identities.iter_mut().for_each(|(name, i)| {
         if (i.membership_expire_on.0 as u64) < genesis_timestamp {
+            if (i.membership_expire_on.0 as u64) >= genesis_data.current_block.median_time {
+                log::warn!("{} membership expired since export", name);
+            }
             i.membership_expire_on = TimestampV1(0);
-            log::warn!("{} membership expired since export", name);
         }
     });
 
@@ -1606,7 +1620,9 @@ where
         .map(|x| x.0.clone())
         .collect::<Vec<_>>();
 
+    let genesis_timestamp: u64 = get_genesis_timestamp()?;
     let genesis_info = GenesisInfo {
+        genesis_timestamp,
         accounts: &accounts,
         genesis_data_wallets_count: &genesis_data_wallets_count,
         identities: &identities,
@@ -1713,8 +1729,13 @@ fn get_genesis_input<P: Default + DeserializeOwned>(
         memmap2::Mmap::map(&file)
             .map_err(|e| format!("Error mmaping gen conf file `{}`: {}", config_file_path, e))?
     };
-    serde_yaml::from_slice::<GenesisInput<P>>(&bytes)
-        .map_err(|e| format!("Error parsing gen conf file: {}", e))
+    if config_file_path.ends_with(".json") {
+        serde_json::from_slice::<GenesisInput<P>>(&bytes)
+            .map_err(|e| format!("Error parsing JSON gen conf file: {}", e))
+    } else {
+        serde_yaml::from_slice::<GenesisInput<P>>(&bytes)
+            .map_err(|e| format!("Error parsing YAML gen conf file: {}", e))
+    }
 }
 
 fn get_genesis_migration_data() -> Result<GenesisMigrationData, String> {

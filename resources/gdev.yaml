@@ -7,54 +7,55 @@ first_ud: null
 # null = block#0 + ud_reeval_period waiting (ms)
 first_ud_reeval: null
 
+# Parameters used in pallet `duniter-test-parameters`
 parameters:
   # Epoch (session) duration, in number of blocks. 1h.
   babe_epoch_duration: 600
   # Time between 2 UDs, in milliseconds. 4 hours.
   ud_creation_period: 14400000
-  # Time between 2 UD reevaluations, in milliseconds
+  # Time between 2 UD reevaluations, in milliseconds. 24 hours.
   ud_reeval_period: 86400000
 
   # ----- MAIN WOT -----
-  # Duration to wait between two emitted certifications, in blocks. 1 day.
+  # Duration to wait between two emitted certifications 14400 blocks = 24h = 1 day.
   cert_period: 14400
   # Maximum quantity of currently valid certifications emitted by a same issuer. 100 certs.
   cert_max_by_issuer: 100
   # Minimum quantity of received certifications to be able to certify someone else. 3 certs.
   cert_min_received_cert_to_issue_cert: 3
-  # Validity duration of a certification, in blocks. 146 days.
+  # Validity duration of a certification, 2102400 blocks = 146 days.
   cert_validity_period: 2102400
-  # Validity duration of a membership. 73 days.
+  # Validity duration of a membership. 1051200 blocks = 73 days.
   membership_period: 1051200
-  # Validity duration of a pending membership. 12 days.
+  # Validity duration of a pending membership. 172800 blocks = 12 days.
   pending_membership_period: 172800
-  # Delay (in blocks) a member must observe before being able to emit a certification
+  # Delay a new member must observe before being able to emit a certification
   wot_first_cert_issuable_on: 0
   # Number of required received certs to become a member
   wot_min_cert_for_membership: 3
-  # Time to wait between two creation of an identity by a same issue, in blocks. 1 day.
+  # Duration to wait between two identity creations. 14400 blocks = 24h = 1 day. (equal to cert_period)
   idty_creation_period: 14400
-  # Window to confirm an identity, in blocks. 1 day.
+  # Window to confirm an identity, in blocks. 14400 blocks = 24h = 1 day.
   idty_confirm_period: 14400
   # Number of required received certs to be able to create identities
   wot_min_cert_for_create_idty_right: 3
 
   # ----- SMITH WOT -----
-  # Duration to wait between two emitted certifications, in blocks. 1 day.
+  # Duration to wait between two emitted certifications, in blocks. 14400 blocks = 24h = 1 day.
   smith_cert_period: 14400
   # Maximum quantity of currently valid certifications emitted by a same issuer. 15 certs.
   smith_cert_max_by_issuer: 15
-  # Minimum quantity of received certifications to be able to certify someone else.
+  # Minimum quantity of smith certifications received to be able to smith certify someone else.
   smith_cert_min_received_cert_to_issue_cert: 3
-  # Validity duration of a certification, in blocks. 146 days.
+  # Validity duration of a certification, in blocks. 2102400 blocks = 146 days.
   smith_cert_validity_period: 2102400
-  # Validity duration of a membership. 73 days.
+  # Validity duration of a membership. 1051200 blocks = 73 days.
   smith_membership_period: 1051200
-  # Validity duration of a pending membership. 12 days.
+  # Validity duration of a pending membership. 172800 blocks = 12 days.
   smith_pending_membership_period: 172800
-  # Delay (in blocks) a member must observe before being able to emit a certification
+  # Delay a new smith member must observe before being able to emit a smith certification. 14400 blocks = 24h = 1 day.
   smith_wot_first_cert_issuable_on: 14400
-  # Number of required received certs to become a member
+  # Number of required received smith certs to become a smith member
   smith_wot_min_cert_for_membership: 3
 
 # Clique Smith WoT: each smith will certify by each other smith automatically on Genesis
