@@ -1729,8 +1729,13 @@ fn get_genesis_input<P: Default + DeserializeOwned>(
         memmap2::Mmap::map(&file)
             .map_err(|e| format!("Error mmaping gen conf file `{}`: {}", config_file_path, e))?
     };
-    serde_yaml::from_slice::<GenesisInput<P>>(&bytes)
-        .map_err(|e| format!("Error parsing gen conf file: {}", e))
+    if config_file_path.ends_with(".json") {
+        serde_json::from_slice::<GenesisInput<P>>(&bytes)
+            .map_err(|e| format!("Error parsing JSON gen conf file: {}", e))
+    } else {
+        serde_yaml::from_slice::<GenesisInput<P>>(&bytes)
+            .map_err(|e| format!("Error parsing YAML gen conf file: {}", e))
+    }
 }
 
 fn get_genesis_migration_data() -> Result<GenesisMigrationData, String> {

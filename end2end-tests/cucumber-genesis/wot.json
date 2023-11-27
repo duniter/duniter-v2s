@@ -90,5 +90,9 @@
   ],
   "treasury_funder_pubkey": "FHNpKmJrUtusuvKPGomAygQqeiks98bdV6yD61Stb6vg",
   "ud": 1000,
-  "initial_monetary_mass": 4000
+  "initial_monetary_mass": 4000,
+  "current_block": {
+    "number": 0,
+    "medianTime": 1700000000
+  }
 }
