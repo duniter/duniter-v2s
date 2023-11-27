@@ -1,7 +1,9 @@
 name: "ĞDev"
 id: "gdev"
 chainType: "Live"
-bootNodes: ["/dns/gdev.cgeek.fr/tcp/30334/p2p/12D3KooWN7QhcPbTZgNMnS7AUZh3ZfnM43VdVKqy4JbAEp5AJh4f"]
+bootNodes:
+  - "/dns/gdev.cgeek.fr/tcp/30334/p2p/12D3KooWN7QhcPbTZgNMnS7AUZh3ZfnM43VdVKqy4JbAEp5AJh4f"
+  - "/dns/gdev.coinduf.eu/tcp/30333/p2p/12D3KooWFseA3B66eBzj4NY5ng3Lb2U3VPnKCi3iXYGYUSAahEw7"
 telemetryEndpoints:
   - ["/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]
 properties:
