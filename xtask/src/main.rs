@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-mod gen_calls_doc;
+mod gen_doc;
 mod release_runtime;
 
 use anyhow::{Context, Result};
@@ -38,8 +38,8 @@ enum DuniterXTaskCommand {
         #[clap(long)]
         production: bool,
     },
-    /// Generate calls documentation
-    GenCallsDoc,
+    /// Generate documentation (calls and events)
+    GenDoc,
     /// Inject runtime code in raw specs
     InjectRuntimeCode {
         #[clap(short, long)]
@@ -82,7 +82,7 @@ async fn main() -> Result<()> {
 
     match args.command {
         DuniterXTaskCommand::Build { production } => build(production),
-        DuniterXTaskCommand::GenCallsDoc => gen_calls_doc::gen_calls_doc(),
+        DuniterXTaskCommand::GenDoc => gen_doc::gen_doc(),
         DuniterXTaskCommand::InjectRuntimeCode { runtime, raw_spec } => {
             inject_runtime_code(&raw_spec, &runtime)
         }

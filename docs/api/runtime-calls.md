@@ -359,7 +359,7 @@ ask to join the set of validators two sessions after
 <details><summary><code>set_session_keys(keys)</code></summary>
 
 ```rust
-keys: T::KeysWrapper
+keys: T::Keys
 ```
 </details>
 
@@ -750,8 +750,11 @@ Link an account to an identity
 </details>
 
 
-claim pending membership to become actual memberhip
-the requested membership must fullfill requirements
+claim membership  
+a pending membership should exist  
+it must fullfill the requirements (certs, distance)  
+for main wot claim_membership is called automatically when validating identity  
+for smith wot, it means joining the authority members  
 
 #### renew_membership - 2
 
@@ -844,10 +847,9 @@ Removes the status if `status` is `None`.
 
 #### request_membership - 0
 
-<details><summary><code>request_membership(metadata)</code></summary>
+<details><summary><code>request_membership()</code></summary>
 
 ```rust
-metadata: T::MetaData
 ```
 </details>
 
@@ -864,8 +866,11 @@ submit a membership request (must have a declared identity)
 </details>
 
 
-claim pending membership to become actual memberhip
-the requested membership must fullfill requirements
+claim membership  
+a pending membership should exist  
+it must fullfill the requirements (certs, distance)  
+for main wot claim_membership is called automatically when validating identity  
+for smith wot, it means joining the authority members  
 
 #### renew_membership - 2
 
@@ -2003,10 +2008,9 @@ usually means being a stash account).
 
 #### request_membership - 0
 
-<details><summary><code>request_membership(metadata)</code></summary>
+<details><summary><code>request_membership()</code></summary>
 
 ```rust
-metadata: T::MetaData
 ```
 </details>
 
