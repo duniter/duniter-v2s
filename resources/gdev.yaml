@@ -72,7 +72,7 @@ clique_smiths:
     # This smith changes its key to Sr25519 wallet on startup (to be able to use Polkadot.js app right on start)
     migration_address: "5E6q47RRGZU15LjUiBTm2DZjpqFKAjRNafYS8YV8AzTQZtLG"
 
-sudo_key: "5CyfGVTxzVZ16AKTMygqBSuxELLrQC4SEY5bKZ4MiESxvTZ9"
+sudo_key: "5CfodrEFe64MJtWvfhTHYBuUySr4WXLv2B41mZFucTXSGMFA"
 
 # The address which will automatically transfer 1,00 ĞD on Genesis to the Treasury
 treasury_funder_address: "5E6q47RRGZU15LjUiBTm2DZjpqFKAjRNafYS8YV8AzTQZtLG"
