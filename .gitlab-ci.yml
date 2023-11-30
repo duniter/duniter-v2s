@@ -56,6 +56,7 @@ fmt_and_clippy:
     - if: '$CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/'
       when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
     - when: manual
   stage: quality
   script:
