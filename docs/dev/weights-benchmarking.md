@@ -70,3 +70,24 @@ duniter benchmark storage -d=/mnt/ssd1/duniter-v2s/t1 --chain=gdev --mul=2 --wei
 
 4. Copy the generated file `paritydb_weights.rs` in the codebase in folder `runtime/common/src/weights/`.
 5. Commit changes and open an MR.
+
+
+## How to Write Benchmarks
+
+### Calls
+
+Ensure that any extrinsic call is benchmarked using the most computationally intensive path, i.e., the worst-case scenario.
+
+### Hooks
+
+Benchmark each hook to determine the weight consumed by it; hence, it is essential to benchmark all possible paths.
+
+### Handlers and Internal Functions
+
+When designing handlers and internal functions, it is advisable to avoid having them return weight for the following reasons:
+
+1. **Simplified Benchmarking**: Writing benchmarks for hooks or calls where handlers and internal functions are utilized becomes more straightforward.
+2. **Reduced Benchmarking Complexity**: By directly measuring execution and overhead in a single pass, the number of benchmarks is minimized.
+3. **Enhanced Readability**: Understanding that weight accounting occurs at the outermost level improves the overall readability of the code.
+
+One notable exception is the internal functions called in hooks like `on_idle` or `on_initialize` that can be easier to benchmark separately when the hook contains numerous branching.

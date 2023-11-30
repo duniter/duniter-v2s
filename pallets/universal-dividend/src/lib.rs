@@ -90,6 +90,8 @@ pub mod pallet {
         type UnitsPerUd: Get<BalanceOf<Self>>;
         /// Pallet weights info
         type WeightInfo: WeightInfo;
+        #[cfg(feature = "runtime-benchmarks")]
+        type AccountIdOf: Convert<u32, Option<Self::AccountId>>;
     }
 
     // STORAGE //
@@ -445,9 +447,9 @@ pub mod pallet {
                     total: uds_total,
                     who: who.clone(),
                 });
-                T::DbWeight::get().reads_writes(2, 1)
+                <T as pallet::Config>::WeightInfo::on_removed_member(first_ud_index as u32)
             } else {
-                T::DbWeight::get().reads(1)
+                <T as pallet::Config>::WeightInfo::on_removed_member(0)
             }
         }
     }

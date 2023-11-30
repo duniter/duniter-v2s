@@ -326,7 +326,7 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::OnEvent<IdtyIndex> for Pal
 where
     T: pallet_membership::Config<I>,
 {
-    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) -> Weight {
+    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) {
         match membership_event {
             sp_membership::Event::<IdtyIndex>::MembershipAcquired(idty_index) => {
                 if !T::IsSubWot::get() {
@@ -355,13 +355,12 @@ where
                 });
             }
         }
-        Weight::zero()
     }
 }
 
 // implement identity event handler
 impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pallet<T, I> {
-    fn on_idty_change(idty_index: IdtyIndex, idty_event: &IdtyEvent<T>) -> Weight {
+    fn on_idty_change(idty_index: IdtyIndex, idty_event: &IdtyEvent<T>) {
         match idty_event {
             IdtyEvent::Created { creator, .. } => {
                 if let Err(e) = <pallet_certification::Pallet<T, I>>::do_add_cert_checked(
@@ -392,7 +391,6 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pall
             }
             IdtyEvent::Confirmed | IdtyEvent::ChangedOwnerKey { .. } => {}
         }
-        Weight::zero()
     }
 }
 
@@ -404,11 +402,10 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex
         _issuer_issued_count: u32,
         receiver: IdtyIndex,
         receiver_received_count: u32,
-    ) -> Weight {
+    ) {
         if receiver_received_count == T::MinReceivedCertToBeAbleToIssueCert::get() {
             Self::do_apply_first_issuable_on(receiver);
         }
-        Weight::zero()
     }
 }
 
@@ -422,7 +419,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
         receiver: IdtyIndex,
         receiver_received_count: u32,
         _expiration: bool,
-    ) -> Weight {
+    ) {
         if receiver_received_count < T::MinCertForMembership::get()
             && pallet_membership::Pallet::<T, I>::is_member(&receiver)
         {
@@ -434,6 +431,5 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
                 }
             }
         }
-        Weight::zero()
     }
 }

@@ -23,6 +23,9 @@ pub trait WeightInfo {
     fn add_cert() -> Weight;
     fn del_cert() -> Weight;
     fn remove_all_certs_received_by(i: u32) -> Weight;
+    fn on_initialize() -> Weight;
+    fn do_remove_cert_noop() -> Weight;
+    fn do_remove_cert() -> Weight;
 }
 
 // Insecure weights implementation, use it for tests only!
@@ -62,5 +65,23 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads((1 as u64).saturating_mul(i as u64)))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
             .saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
+    }
+    fn on_initialize() -> Weight {
+        // Minimum execution time: 259_247 nanoseconds.
+        Weight::from_parts(269_348_000 as u64, 0)
+            .saturating_add(RocksDbWeight::get().reads(7 as u64))
+            .saturating_add(RocksDbWeight::get().writes(4 as u64))
+    }
+    fn do_remove_cert_noop() -> Weight {
+        // Minimum execution time: 259_247 nanoseconds.
+        Weight::from_parts(269_348_000 as u64, 0)
+            .saturating_add(RocksDbWeight::get().reads(7 as u64))
+            .saturating_add(RocksDbWeight::get().writes(4 as u64))
+    }
+    fn do_remove_cert() -> Weight {
+        // Minimum execution time: 259_247 nanoseconds.
+        Weight::from_parts(269_348_000 as u64, 0)
+            .saturating_add(RocksDbWeight::get().reads(7 as u64))
+            .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
 }

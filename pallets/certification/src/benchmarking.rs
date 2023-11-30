@@ -19,6 +19,7 @@
 use super::*;
 
 use frame_benchmarking::benchmarks_instance_pallet;
+use frame_benchmarking::Zero;
 use frame_system::RawOrigin;
 use sp_runtime::traits::Convert;
 
@@ -77,6 +78,23 @@ benchmarks_instance_pallet! {
     }: _<T::RuntimeOrigin>(RawOrigin::Root.into(),  receiver)
     verify {
         assert!(CertsByReceiver::<T, I>::get(receiver).len() == 0 );
+    }
+    on_initialize {
+        assert!(StorageCertsRemovableOn::<T, I>::try_get(T::BlockNumber::zero()).is_err());
+    }: {Pallet::<T, I>::on_initialize(T::BlockNumber::zero());}
+    do_remove_cert_noop {
+    }: {Pallet::<T, I>::do_remove_cert(100.into(), 101.into(), Some(T::BlockNumber::zero()));}
+    do_remove_cert {
+        let issuer: T::IdtyIndex = 1.into();
+        let receiver: T::IdtyIndex = 0.into();
+        Pallet::<T, I>::do_add_cert_checked(issuer, receiver, false)?;
+        let issuer_cert: u32 = StorageIdtyCertMeta::<T, I>::get(issuer).issued_count;
+        let receiver_cert: u32 = StorageIdtyCertMeta::<T, I>::get(receiver).received_count;
+        let block_number = T::ValidityPeriod::get();
+        frame_system::pallet::Pallet::<T>::set_block_number(block_number);
+    }: {Pallet::<T, I>::do_remove_cert(issuer, receiver, Some(block_number));}
+    verify {
+        assert_has_event::<T, I>(Event::<T, I>::RemovedCert{ issuer: issuer, issuer_issued_count: issuer_cert - 1, receiver: receiver, receiver_received_count: receiver_cert - 1, expiration: true }.into());
     }
 
     impl_benchmark_test_suite!(

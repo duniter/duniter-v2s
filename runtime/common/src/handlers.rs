@@ -19,7 +19,6 @@ use super::{AccountId, IdtyIndex};
 use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::instances::{Instance1, Instance2};
 use frame_support::pallet_prelude::Weight;
-use frame_support::traits::Get;
 use frame_support::Parameter;
 use pallet_identity::IdtyEvent;
 use sp_runtime::traits::IsMember;
@@ -45,7 +44,7 @@ where
     T: pallet_identity::Config<IdtyIndex = IdtyIndex, IdtyData = IdtyData>,
     T: pallet_universal_dividend::Config,
 {
-    fn on_idty_change(idty_index: IdtyIndex, idty_event: &IdtyEvent<T>) -> Weight {
+    fn on_idty_change(idty_index: IdtyIndex, idty_event: &IdtyEvent<T>) {
         match idty_event {
             IdtyEvent::Validated => {
                 // when identity is validated, it starts getting right to UD
@@ -64,7 +63,6 @@ where
             }
             IdtyEvent::Created { .. } | IdtyEvent::Confirmed | IdtyEvent::Removed { .. } => {}
         }
-        Weight::zero()
     }
 }
 
@@ -78,7 +76,7 @@ impl<
             + pallet_universal_dividend::Config,
     > sp_membership::traits::OnEvent<IdtyIndex> for OnMembershipEventHandler<Inner, Runtime>
 {
-    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) -> Weight {
+    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) {
         (match membership_event {
             // when membership is removed, call on_removed_member handler which auto claims UD
             sp_membership::Event::MembershipRevoked(idty_index)
@@ -88,12 +86,8 @@ impl<
                         pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
                             first_ud_index,
                             &idty_value.owner_key,
-                        )
-                    } else {
-                        Runtime::DbWeight::get().reads(1)
+                        );
                     }
-                } else {
-                    Runtime::DbWeight::get().reads(1)
                 }
             }
             // when main membership is acquired, it starts getting right to UD
@@ -104,16 +98,16 @@ impl<
                             first_eligible_ud:
                                 pallet_universal_dividend::Pallet::<Runtime>::init_first_eligible_ud(
                                 ),
-                        }
+                        };
                     }
                 });
-                Weight::zero()
             }
             // in other case, ther is nothing to do
             sp_membership::Event::MembershipRenewed(_)
             | sp_membership::Event::MembershipRequested(_)
-            | sp_membership::Event::PendingMembershipExpired(_) => Weight::zero(),
-        }) + Inner::on_event(membership_event)
+            | sp_membership::Event::PendingMembershipExpired(_) => (),
+        });
+        Inner::on_event(membership_event)
     }
 }
 
@@ -130,12 +124,11 @@ impl<
             + pallet_membership::Config<Instance2>,
     > sp_membership::traits::OnEvent<IdtyIndex> for OnSmithMembershipEventHandler<Inner, Runtime>
 {
-    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) -> Weight {
+    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) {
         (match membership_event {
             sp_membership::Event::MembershipAcquired(_idty_index) => {
                 // nothing when smith membership acquired
                 // user will have to claim authority membership
-                Weight::zero()
             }
             sp_membership::Event::MembershipRevoked(idty_index) => {
                 let call = pallet_authority_members::Call::<Runtime>::remove_member {
@@ -148,10 +141,10 @@ impl<
                         println!("faid to remove member: {:?}", e)
                     }
                 }
-                Weight::zero()
             }
-            _ => Weight::zero(),
-        }) + Inner::on_event(membership_event)
+            _ => (),
+        });
+        Inner::on_event(membership_event)
     }
 }
 

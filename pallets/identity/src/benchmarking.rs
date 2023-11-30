@@ -21,6 +21,8 @@ use super::*;
 //use codec::Encode;
 use codec::Encode;
 use frame_benchmarking::{account, benchmarks};
+use frame_support::traits::OnInitialize;
+use frame_system::pallet_prelude::BlockNumberFor;
 use frame_system::RawOrigin;
 use sp_core::Get;
 use sp_io::crypto::{sr25519_generate, sr25519_sign};
@@ -275,6 +277,42 @@ benchmarks! {
         ).encode();
         let signature = sr25519_sign(0.into(), &bob_public, &payload).unwrap().into();
     }: _<T::RuntimeOrigin>(alice_origin.into(), bob, signature)
+    // Base weight of an empty initialize
+    on_initialize {
+    }: {Pallet::<T>::on_initialize(BlockNumberFor::<T>::zero());}
+    do_remove_identity_noop {
+        let idty_index: T::IdtyIndex = 0u32.into();
+        assert!(Identities::<T>::get(idty_index).is_none());
+    }: {Pallet::<T>::do_remove_identity(idty_index, IdtyRemovalReason::Revoked);}
+    do_remove_identity {
+        let idty_index: T::IdtyIndex = 1u32.into();
+        let new_identity: T::AccountId = account("Bob", 2, SEED);
+        assert!(Identities::<T>::get(idty_index).is_some());
+        Identities::<T>::mutate( idty_index, |id| {
+            if let Some(id) = id {
+                id.old_owner_key = Some((new_identity, BlockNumberFor::<T>::zero()));
+            }
+        });
+        assert!(Identities::<T>::get(idty_index).unwrap().old_owner_key.is_some());
+    }: {Pallet::<T>::do_remove_identity(idty_index, IdtyRemovalReason::Revoked);}
+    verify {
+        assert_has_event::<T>(Event::<T>::IdtyRemoved { idty_index, reason: IdtyRemovalReason::Revoked }.into());
+    }
+    prune_identities_noop {
+        assert!(IdentitiesRemovableOn::<T>::try_get(T::BlockNumber::zero()).is_err());
+    }: {Pallet::<T>::prune_identities(T::BlockNumber::zero());}
+    prune_identities_none {
+        let idty_index: T::IdtyIndex = 100u32.into();
+        IdentitiesRemovableOn::<T>::append(T::BlockNumber::zero(), (idty_index, IdtyStatus::Created));
+        assert!(IdentitiesRemovableOn::<T>::try_get(T::BlockNumber::zero()).is_ok());
+        assert!(<Identities<T>>::try_get(idty_index).is_err());
+    }: {Pallet::<T>::prune_identities(T::BlockNumber::zero());}
+    prune_identities_err {
+        let idty_index: T::IdtyIndex = 100u32.into();
+        create_dummy_identity::<T>(100u32)?;
+        IdentitiesRemovableOn::<T>::append(T::BlockNumber::zero(), (idty_index, IdtyStatus::Created));
+        assert!(<Identities<T>>::get(idty_index).unwrap().status != IdentitiesRemovableOn::<T>::get(T::BlockNumber::zero())[0].1);
+    }: {Pallet::<T>::prune_identities(T::BlockNumber::zero());}
 
     impl_benchmark_test_suite!(
         Pallet,

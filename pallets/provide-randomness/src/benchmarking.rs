@@ -44,11 +44,27 @@ fn add_requests_next_block<T: Config>(i: u32) -> Result<(), &'static str> {
     Ok(())
 }
 
+fn add_requests_next_epoch<T: Config>(i: u32) -> Result<(), &'static str> {
+    for _ in 0..i {
+        let salt: H256 = H256([0; 32]);
+        let request_id = RequestIdProvider::<T>::mutate(|next_request_id| {
+            core::mem::replace(next_request_id, next_request_id.saturating_add(1))
+        });
+        RequestsIds::<T>::insert(request_id, ());
+        RequestsReadyAtEpoch::<T>::append(
+            T::GetCurrentEpochIndex::get(),
+            Request { request_id, salt },
+        );
+    }
+    Ok(())
+}
+
 benchmarks! {
     where_clause { where
         T: pallet_balances::Config,
         T::Balance: From<u64>,
-        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>
+        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>,
+        T::BlockNumber: From<u32>,
     }
     request {
         // Get account
@@ -70,16 +86,30 @@ benchmarks! {
         assert_has_event::<T>(Event::RequestedRandomness {
               request_id: request_id, salt: salt, r#type: random }.into() );
     }
-
-    // Complexity depends on number of requests in RequestsReadyAtNextBlock and
-    // in the RequestsReadyAtEpoch(at current epoch) and the sum of the two are bounded by MaxRequests.
-    // The complexity is reduced to the number of elements in RequestsIds since the processing
-    // of the two lists is quasi-identical.
     on_initialize {
         let i in 1 .. T::MaxRequests::get() => add_requests_next_block::<T>(i)?;
         ensure!(RequestsIds::<T>::count() == i, "List not filled properly.");
+        ensure!(RequestsReadyAtNextBlock::<T>::get().len() == i as usize, "List not filled properly.");
+        let next_epoch_hook_in = NexEpochHookIn::<T>::mutate(|next_in| {
+            core::mem::replace(next_in, next_in.saturating_sub(1))
+        });
+        ensure!(next_epoch_hook_in != 1, "Will be next epoch.");
     }: { Pallet::<T>::on_initialize(T::BlockNumber::one()); }
     verify {
         ensure!(RequestsIds::<T>::count() == 0, "List not processed.");
+        ensure!(RequestsReadyAtNextBlock::<T>::get().len() == 0, "List not processed.");
+    }
+    on_initialize_epoch {
+        let i in 1 .. T::MaxRequests::get() => add_requests_next_epoch::<T>(i)?;
+        ensure!(RequestsReadyAtNextBlock::<T>::get().len() == 0, "List not filled properly.");
+        ensure!(RequestsIds::<T>::count() == i, "List not filled properly.");
+        ensure!(RequestsReadyAtEpoch::<T>::get(T::GetCurrentEpochIndex::get()).len() == i as usize, "List not filled properly.");
+        let next_epoch_hook_in = NexEpochHookIn::<T>::mutate(|next_in| {
+            core::mem::replace(next_in, 1)
+        });
+    }: { Pallet::<T>::on_initialize(1.into()); }
+    verify {
+        ensure!(RequestsIds::<T>::count() == 0, "List not processed.");
+        ensure!(RequestsReadyAtEpoch::<T>::get(T::GetCurrentEpochIndex::get()).len() == 0, "List not processed properly.");
     }
 }

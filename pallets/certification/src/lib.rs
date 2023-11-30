@@ -268,7 +268,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            Self::prune_certifications(n)
+            Self::prune_certifications(n).saturating_add(T::WeightInfo::on_initialize())
         }
     }
 
@@ -334,7 +334,7 @@ pub mod pallet {
             receiver: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            Self::remove_cert_inner(issuer, receiver, None);
+            Self::do_remove_cert(issuer, receiver, None);
             Ok(().into())
         }
 
@@ -347,7 +347,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             for (issuer, _) in CertsByReceiver::<T, I>::get(idty_index) {
-                Self::remove_cert_inner(issuer, idty_index, None);
+                Self::do_remove_cert(issuer, idty_index, None);
             }
             Ok(().into())
         }
@@ -464,11 +464,12 @@ pub mod pallet {
         /// remove the certifications due to expire on the given block
         // (run at on_initialize step)
         fn prune_certifications(block_number: T::BlockNumber) -> Weight {
+            // See on initialize for the overhead weight accounting
             let mut total_weight = Weight::zero();
 
             if let Some(certs) = StorageCertsRemovableOn::<T, I>::take(block_number) {
                 for (issuer, receiver) in certs {
-                    total_weight += Self::remove_cert_inner(issuer, receiver, Some(block_number));
+                    total_weight += Self::do_remove_cert(issuer, receiver, Some(block_number));
                 }
             }
 
@@ -476,7 +477,7 @@ pub mod pallet {
         }
         /// perform the certification removal
         /// if block number is given only remove cert if still set to expire at this block number
-        fn remove_cert_inner(
+        pub fn do_remove_cert(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
             block_number_opt: Option<T::BlockNumber>,
@@ -498,6 +499,8 @@ pub mod pallet {
                         issuers.remove(index);
                         removed = true;
                     }
+                } else {
+                    total_weight += T::WeightInfo::do_remove_cert_noop();
                 }
             });
             if removed {
@@ -520,13 +523,18 @@ pub mod pallet {
                     receiver_received_count,
                     expiration: block_number_opt.is_some(),
                 });
-                total_weight += T::OnRemovedCert::on_removed_cert(
+                // Should always return Weight::zero
+                T::OnRemovedCert::on_removed_cert(
                     issuer,
                     issuer_issued_count,
                     receiver,
                     receiver_received_count,
                     block_number_opt.is_some(),
                 );
+                // Pessimistic overhead estimation based on the worst path of a successfull
+                // certificate removal to avoid multiplying benchmarks for every branching,
+                // include the OnRemovedCert weight.
+                total_weight.saturating_add(T::WeightInfo::do_remove_cert());
             }
             total_weight
         }
@@ -535,11 +543,10 @@ pub mod pallet {
 
 // implement setting next_issuable_on for certification period
 impl<T: Config<I>, I: 'static> SetNextIssuableOn<T::BlockNumber, T::IdtyIndex> for Pallet<T, I> {
-    fn set_next_issuable_on(idty_index: T::IdtyIndex, next_issuable_on: T::BlockNumber) -> Weight {
+    fn set_next_issuable_on(idty_index: T::IdtyIndex, next_issuable_on: T::BlockNumber) {
         <StorageIdtyCertMeta<T, I>>::mutate_exists(idty_index, |cert_meta_opt| {
             let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());
             cert_meta.next_issuable_on = next_issuable_on;
         });
-        Weight::zero()
     }
 }

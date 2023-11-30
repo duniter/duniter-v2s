@@ -390,7 +390,7 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         /// perform authority member removal
-        fn do_remove_member(member_id: T::MemberId, owner_key: T::AccountId) -> Weight {
+        fn do_remove_member(member_id: T::MemberId, owner_key: T::AccountId) {
             if Self::is_online(member_id) {
                 // Trigger the member deletion for next session
                 Self::insert_out(member_id);
@@ -415,8 +415,6 @@ pub mod pallet {
             // Emit event
             Self::deposit_event(Event::MemberRemoved(member_id));
             let _ = T::OnRemovedMember::on_removed_member(member_id);
-
-            Weight::zero()
         }
         /// perform incoming authorities insertion
         fn insert_in(member_id: T::MemberId) -> bool {

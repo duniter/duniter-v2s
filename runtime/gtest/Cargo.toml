@@ -27,6 +27,7 @@ runtime-benchmarks = [
     'pallet-balances/runtime-benchmarks',
     'pallet-certification/runtime-benchmarks',
     'pallet-collective/runtime-benchmarks',
+    'pallet-distance/runtime-benchmarks',
     'pallet-duniter-account/runtime-benchmarks',
     'pallet-duniter-wot/runtime-benchmarks',
     'pallet-grandpa/runtime-benchmarks',

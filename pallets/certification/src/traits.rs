@@ -32,7 +32,7 @@ pub trait OnNewcert<IdtyIndex> {
         issuer_issued_count: u32,
         receiver: IdtyIndex,
         receiver_received_count: u32,
-    ) -> frame_support::dispatch::Weight;
+    );
 }
 impl<IdtyIndex> OnNewcert<IdtyIndex> for () {
     fn on_new_cert(
@@ -40,8 +40,7 @@ impl<IdtyIndex> OnNewcert<IdtyIndex> for () {
         _issuer_issued_count: u32,
         _receiver: IdtyIndex,
         _receiver_received_count: u32,
-    ) -> frame_support::dispatch::Weight {
-        Weight::zero()
+    ) {
     }
 }
 
@@ -52,7 +51,7 @@ pub trait OnRemovedCert<IdtyIndex> {
         receiver: IdtyIndex,
         receiver_received_count: u32,
         expiration: bool,
-    ) -> frame_support::dispatch::Weight;
+    );
 }
 impl<IdtyIndex> OnRemovedCert<IdtyIndex> for () {
     fn on_removed_cert(
@@ -61,14 +60,10 @@ impl<IdtyIndex> OnRemovedCert<IdtyIndex> for () {
         _receiver: IdtyIndex,
         _receiver_received_count: u32,
         _expiration: bool,
-    ) -> frame_support::dispatch::Weight {
-        Weight::zero()
+    ) {
     }
 }
 
 pub trait SetNextIssuableOn<BlockNumber, IdtyIndex> {
-    fn set_next_issuable_on(
-        idty_index: IdtyIndex,
-        next_issuable_on: BlockNumber,
-    ) -> frame_support::dispatch::Weight;
+    fn set_next_issuable_on(idty_index: IdtyIndex, next_issuable_on: BlockNumber);
 }

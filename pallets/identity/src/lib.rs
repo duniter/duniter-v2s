@@ -225,9 +225,9 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
             if n > T::BlockNumber::zero() {
-                Self::prune_identities(n)
+                Self::prune_identities(n).saturating_add(T::WeightInfo::on_initialize())
             } else {
-                Weight::zero()
+                T::WeightInfo::on_initialize()
             }
         }
     }
@@ -738,8 +738,9 @@ pub mod pallet {
                         status: idty_val.status,
                     },
                 );
+                return T::WeightInfo::do_remove_identity();
             }
-            Weight::zero()
+            T::WeightInfo::do_remove_identity_noop()
         }
         /// incremental counter for identity index
         fn get_next_idty_index() -> T::IdtyIndex {
@@ -752,7 +753,7 @@ pub mod pallet {
             }
         }
         /// remove identities planned for removal at the given block if their status did not change
-        fn prune_identities(block_number: T::BlockNumber) -> Weight {
+        pub fn prune_identities(block_number: T::BlockNumber) -> Weight {
             let mut total_weight = Weight::zero();
 
             for (idty_index, idty_status) in IdentitiesRemovableOn::<T>::take(block_number) {
@@ -760,11 +761,17 @@ pub mod pallet {
                     if idty_val.removable_on == block_number && idty_val.status == idty_status {
                         total_weight +=
                             Self::do_remove_identity(idty_index, IdtyRemovalReason::Expired)
+                    } else {
+                        total_weight += T::WeightInfo::prune_identities_err()
+                            .saturating_sub(T::WeightInfo::prune_identities_none())
                     }
+                } else {
+                    total_weight += T::WeightInfo::prune_identities_none()
+                        .saturating_sub(T::WeightInfo::prune_identities_noop())
                 }
             }
 
-            total_weight
+            total_weight.saturating_add(T::WeightInfo::prune_identities_noop())
         }
 
         /// link account

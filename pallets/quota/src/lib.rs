@@ -348,7 +348,7 @@ fn is_eligible_for_refund<T: pallet_identity::Config>(_identity: IdtyId<T>) -> b
 
 // implement identity event handler
 impl<T: Config> pallet_identity::traits::OnIdtyChange<T> for Pallet<T> {
-    fn on_idty_change(idty_id: IdtyId<T>, idty_event: &IdtyEvent<T>) -> Weight {
+    fn on_idty_change(idty_id: IdtyId<T>, idty_event: &IdtyEvent<T>) {
         match idty_event {
             // initialize quota on identity creation
             IdtyEvent::Created { .. } => {
@@ -365,7 +365,5 @@ impl<T: Config> pallet_identity::traits::OnIdtyChange<T> for Pallet<T> {
             }
             IdtyEvent::Confirmed | IdtyEvent::Validated | IdtyEvent::ChangedOwnerKey { .. } => {}
         }
-        // TODO proper weight
-        Weight::zero()
     }
 }

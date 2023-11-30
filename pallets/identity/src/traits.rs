@@ -55,16 +55,14 @@ pub trait IdtyNameValidator {
 }
 
 pub trait OnIdtyChange<T: Config> {
-    fn on_idty_change(idty_index: T::IdtyIndex, idty_event: &IdtyEvent<T>) -> Weight;
+    fn on_idty_change(idty_index: T::IdtyIndex, idty_event: &IdtyEvent<T>);
 }
 
 #[impl_for_tuples(5)]
 #[allow(clippy::let_and_return)]
 impl<T: Config> OnIdtyChange<T> for Tuple {
-    fn on_idty_change(idty_index: T::IdtyIndex, idty_event: &IdtyEvent<T>) -> Weight {
-        let mut weight = Weight::zero();
-        for_tuples!( #( weight = weight.saturating_add(Tuple::on_idty_change(idty_index, idty_event)); )* );
-        weight
+    fn on_idty_change(idty_index: T::IdtyIndex, idty_event: &IdtyEvent<T>) {
+        for_tuples!( #( Tuple::on_idty_change(idty_index, idty_event); )* );
     }
 }
 

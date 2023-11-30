@@ -20,49 +20,18 @@ use frame_support::weights::{constants::RocksDbWeight, Weight};
 
 /// Weight functions needed for pallet_universal_dividend.
 pub trait WeightInfo {
-    fn on_initialize() -> Weight;
-    fn on_initialize_ud_created() -> Weight;
-    fn on_initialize_ud_reevalued() -> Weight;
-    fn claim_uds(n: u32) -> Weight;
+    fn claim_uds(i: u32) -> Weight;
     fn transfer_ud() -> Weight;
     fn transfer_ud_keep_alive() -> Weight;
+    fn on_removed_member(i: u32) -> Weight;
 }
 
 // Insecure weights implementation, use it for tests only!
 impl WeightInfo for () {
-    // Storage: (r:0 w:0)
-    fn on_initialize() -> Weight {
-        Weight::from_parts(2_260_000, 0)
-    }
-    // Storage: Membership CounterForMembership (r:1 w:0)
-    // Storage: UniversalDividend NextReeval (r:1 w:0)
-    // Storage: UniversalDividend CurrentUd (r:1 w:0)
-    // Storage: UniversalDividend MonetaryMass (r:1 w:1)
-    // Storage: UniversalDividend CurrentUdIndex (r:1 w:1)
-    fn on_initialize_ud_created() -> Weight {
-        Weight::from_parts(20_160_000, 0)
-            .saturating_add(RocksDbWeight::get().reads(5))
-            .saturating_add(RocksDbWeight::get().writes(2))
-    }
-    // Storage: Membership CounterForMembership (r:1 w:0)
-    // Storage: UniversalDividend NextReeval (r:1 w:1)
-    // Storage: UniversalDividend CurrentUd (r:1 w:1)
-    // Storage: UniversalDividend MonetaryMass (r:1 w:1)
-    // Storage: UniversalDividend PastReevals (r:1 w:1)
-    // Storage: UniversalDividend CurrentUdIndex (r:1 w:1)
-    fn on_initialize_ud_reevalued() -> Weight {
-        Weight::from_parts(32_770_000, 0)
-            .saturating_add(RocksDbWeight::get().reads(6))
-            .saturating_add(RocksDbWeight::get().writes(5))
-    }
-    // Storage: Identity IdentityIndexOf (r:1 w:0)
-    // Storage: Identity Identities (r:1 w:1)
-    // Storage: UniversalDividend CurrentUdIndex (r:1 w:0)
-    // Storage: UniversalDividend PastReevals (r:1 w:0)
-    fn claim_uds(n: u32) -> Weight {
+    fn claim_uds(i: u32) -> Weight {
         Weight::from_parts(32_514_000, 0)
             // Standard Error: 32_000
-            .saturating_add(Weight::from_parts(8_000, 0).saturating_mul(n as u64))
+            .saturating_add(Weight::from_parts(8_000, 0).saturating_mul(i as u64))
             .saturating_add(RocksDbWeight::get().reads(4))
             .saturating_add(RocksDbWeight::get().writes(1))
     }
@@ -81,5 +50,12 @@ impl WeightInfo for () {
         Weight::from_parts(33_420_000, 0)
             .saturating_add(RocksDbWeight::get().reads(2))
             .saturating_add(RocksDbWeight::get().writes(2))
+    }
+    fn on_removed_member(i: u32) -> Weight {
+        Weight::from_parts(32_514_000, 0)
+            // Standard Error: 32_000
+            .saturating_add(Weight::from_parts(8_000, 0).saturating_mul(i as u64))
+            .saturating_add(RocksDbWeight::get().reads(4))
+            .saturating_add(RocksDbWeight::get().writes(1))
     }
 }

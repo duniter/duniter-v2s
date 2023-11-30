@@ -484,7 +484,7 @@ where
 
 // implement identity event handler
 impl<T: Config> pallet_identity::traits::OnIdtyChange<T> for Pallet<T> {
-    fn on_idty_change(idty_id: IdtyIdOf<T>, idty_event: &IdtyEvent<T>) -> Weight {
+    fn on_idty_change(idty_id: IdtyIdOf<T>, idty_event: &IdtyEvent<T>) {
         match idty_event {
             // link account to newly created identity
             IdtyEvent::Created { owner_key, .. } => {
@@ -495,7 +495,5 @@ impl<T: Config> pallet_identity::traits::OnIdtyChange<T> for Pallet<T> {
             | IdtyEvent::ChangedOwnerKey { .. }
             | IdtyEvent::Removed { .. } => {}
         }
-        // TODO proper weight
-        Weight::zero()
     }
 }

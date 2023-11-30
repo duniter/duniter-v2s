@@ -20,6 +20,7 @@ use super::*;
 
 use frame_benchmarking::benchmarks_instance_pallet;
 use frame_support::dispatch::UnfilteredDispatchable;
+use frame_system::pallet_prelude::BlockNumberFor;
 use frame_system::RawOrigin;
 use sp_runtime::traits::Convert;
 
@@ -82,6 +83,37 @@ benchmarks_instance_pallet! {
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
         assert_has_event::<T, I>(Event::<T, I>::MembershipRevoked(idty).into());
+    }
+    // Base weight of an empty initialize
+    on_initialize {
+    }: {Pallet::<T, I>::on_initialize(BlockNumberFor::<T>::zero());}
+    expire_pending_memberships {
+        let i in 0..1024;
+        let mut idties: Vec<T::IdtyId> = Vec::new();
+        for j in 0..i {
+            let j: T::IdtyId = j.into();
+            PendingMembership::<T, I>::insert(j, ());
+            idties.push(j);
+        }
+        PendingMembershipsExpireOn::<T, I>::insert(BlockNumberFor::<T>::zero(), idties);
+        assert_eq!(PendingMembershipsExpireOn::<T, I>::get(BlockNumberFor::<T>::zero()).len(), i as usize);
+    }: {Pallet::<T, I>::expire_pending_memberships(BlockNumberFor::<T>::zero());}
+    verify {
+        assert_eq!(PendingMembershipsExpireOn::<T, I>::get(BlockNumberFor::<T>::zero()).len(), 0 as usize);
+    }
+    expire_memberships {
+        let i in 0..1024;
+        let mut idties: Vec<T::IdtyId> = Vec::new();
+        for j in 0..i {
+            let j: T::IdtyId = j.into();
+            Membership::<T, I>::insert(j, MembershipData::<T::BlockNumber>::default());
+            idties.push(j);
+        }
+        MembershipsExpireOn::<T, I>::insert(BlockNumberFor::<T>::zero(), idties);
+        assert_eq!(MembershipsExpireOn::<T, I>::get(BlockNumberFor::<T>::zero()).len(), i as usize);
+    }: {Pallet::<T, I>::expire_memberships(BlockNumberFor::<T>::zero());}
+    verify {
+        assert_eq!(MembershipsExpireOn::<T, I>::get(BlockNumberFor::<T>::zero()).len(), 0 as usize);
     }
 
     impl_benchmark_test_suite!(

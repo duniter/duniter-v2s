@@ -172,11 +172,9 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_: T::BlockNumber) -> Weight {
-            let request_weight = T::WeightInfo::on_initialize(T::MaxRequests::get());
+            // Overhead to process an empty request
+            let mut total_weight = T::WeightInfo::on_initialize(0);
 
-            let mut total_weight = Weight::zero();
-
-            total_weight += request_weight;
             for Request { request_id, salt } in RequestsReadyAtNextBlock::<T>::take() {
                 let randomness = T::ParentBlockRandomness::random(salt.as_ref())
                     .0
@@ -187,14 +185,15 @@ pub mod pallet {
                     request_id,
                     randomness,
                 });
-                total_weight += request_weight;
+                // Weight to process on request
+                total_weight +=
+                    T::WeightInfo::on_initialize(2).saturating_sub(T::WeightInfo::on_initialize(1));
             }
 
             let next_epoch_hook_in = NexEpochHookIn::<T>::mutate(|next_in| {
                 core::mem::replace(next_in, next_in.saturating_sub(1))
             });
             if next_epoch_hook_in == 1 {
-                total_weight += request_weight;
                 for Request { request_id, salt } in
                     RequestsReadyAtEpoch::<T>::take(T::GetCurrentEpochIndex::get())
                 {
@@ -206,7 +205,9 @@ pub mod pallet {
                         request_id,
                         randomness,
                     });
-                    total_weight += request_weight;
+                    // Weight to process on request
+                    total_weight += T::WeightInfo::on_initialize_epoch(2)
+                        .saturating_sub(T::WeightInfo::on_initialize_epoch(1));
                 }
             }
 

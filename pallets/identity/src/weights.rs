@@ -29,6 +29,12 @@ pub trait WeightInfo {
     fn prune_item_identities_names(i: u32) -> Weight;
     fn fix_sufficients() -> Weight;
     fn link_account() -> Weight;
+    fn on_initialize() -> Weight;
+    fn do_remove_identity_noop() -> Weight;
+    fn do_remove_identity() -> Weight;
+    fn prune_identities_noop() -> Weight;
+    fn prune_identities_none() -> Weight;
+    fn prune_identities_err() -> Weight;
 }
 
 // Insecure weights implementation, use it for tests only!
@@ -143,6 +149,66 @@ impl WeightInfo for () {
     /// Storage: System Account (r:1 w:1)
     /// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
     fn link_account() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `359`
+        //  Estimated: `3824`
+        // Minimum execution time: 543_046_000 picoseconds.
+        Weight::from_parts(544_513_000, 0)
+            .saturating_add(Weight::from_parts(0, 3824))
+            .saturating_add(RocksDbWeight::get().reads(3))
+            .saturating_add(RocksDbWeight::get().writes(1))
+    }
+    fn on_initialize() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `359`
+        //  Estimated: `3824`
+        // Minimum execution time: 543_046_000 picoseconds.
+        Weight::from_parts(544_513_000, 0)
+            .saturating_add(Weight::from_parts(0, 3824))
+            .saturating_add(RocksDbWeight::get().reads(3))
+            .saturating_add(RocksDbWeight::get().writes(1))
+    }
+    fn do_remove_identity_noop() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `359`
+        //  Estimated: `3824`
+        // Minimum execution time: 543_046_000 picoseconds.
+        Weight::from_parts(544_513_000, 0)
+            .saturating_add(Weight::from_parts(0, 3824))
+            .saturating_add(RocksDbWeight::get().reads(3))
+            .saturating_add(RocksDbWeight::get().writes(1))
+    }
+    fn do_remove_identity() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `359`
+        //  Estimated: `3824`
+        // Minimum execution time: 543_046_000 picoseconds.
+        Weight::from_parts(544_513_000, 0)
+            .saturating_add(Weight::from_parts(0, 3824))
+            .saturating_add(RocksDbWeight::get().reads(3))
+            .saturating_add(RocksDbWeight::get().writes(1))
+    }
+    fn prune_identities_noop() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `359`
+        //  Estimated: `3824`
+        // Minimum execution time: 543_046_000 picoseconds.
+        Weight::from_parts(544_513_000, 0)
+            .saturating_add(Weight::from_parts(0, 3824))
+            .saturating_add(RocksDbWeight::get().reads(3))
+            .saturating_add(RocksDbWeight::get().writes(1))
+    }
+    fn prune_identities_none() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `359`
+        //  Estimated: `3824`
+        // Minimum execution time: 543_046_000 picoseconds.
+        Weight::from_parts(544_513_000, 0)
+            .saturating_add(Weight::from_parts(0, 3824))
+            .saturating_add(RocksDbWeight::get().reads(3))
+            .saturating_add(RocksDbWeight::get().writes(1))
+    }
+    fn prune_identities_err() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `359`
         //  Estimated: `3824`

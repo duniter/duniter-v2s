@@ -199,9 +199,11 @@ pub mod pallet {
     impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
             if n > T::BlockNumber::zero() {
-                Self::expire_pending_memberships(n) + Self::expire_memberships(n)
+                Self::expire_pending_memberships(n)
+                    .saturating_add(Self::expire_memberships(n))
+                    .saturating_add(T::WeightInfo::on_initialize())
             } else {
-                Weight::zero()
+                T::WeightInfo::on_initialize()
             }
         }
     }
@@ -224,11 +226,11 @@ pub mod pallet {
             Self::do_request_membership(idty_id)
         }
 
-        /// claim membership  
-        /// a pending membership should exist  
-        /// it must fullfill the requirements (certs, distance)  
-        /// for main wot claim_membership is called automatically when validating identity  
-        /// for smith wot, it means joining the authority members  
+        /// claim membership
+        /// a pending membership should exist
+        /// it must fullfill the requirements (certs, distance)
+        /// for main wot claim_membership is called automatically when validating identity
+        /// for smith wot, it means joining the authority members
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::claim_membership())]
         pub fn claim_membership(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -375,14 +377,14 @@ pub mod pallet {
 
         /// perform membership expiration
         // add pending membership and schedule expiry of pending membership
-        fn do_expire_membership(idty_id: T::IdtyId, expire_on: T::BlockNumber) -> Weight {
+        fn do_expire_membership(idty_id: T::IdtyId, expire_on: T::BlockNumber) {
             if Membership::<T, I>::take(idty_id).is_some() {
                 PendingMembership::<T, I>::insert(idty_id, ());
                 PendingMembershipsExpireOn::<T, I>::append(expire_on, idty_id);
             } // else should not happen
 
             Self::deposit_event(Event::MembershipExpired(idty_id));
-            T::OnEvent::on_event(&sp_membership::Event::MembershipExpired(idty_id))
+            T::OnEvent::on_event(&sp_membership::Event::MembershipExpired(idty_id));
         }
 
         /// check the origin and get identity id if valid
@@ -396,36 +398,33 @@ pub mod pallet {
         /// perform the membership expiry scheduled at given block
         // MembershipExpired events should be handeled by main wot and delete identity
         // expired membership get back to pending membership
-        fn expire_memberships(block_number: T::BlockNumber) -> Weight {
-            let mut total_weight: Weight = Weight::zero();
+        pub fn expire_memberships(block_number: T::BlockNumber) -> Weight {
+            let mut expired_idty_count = 0u32;
             let new_expire_on = block_number + T::PendingMembershipPeriod::get();
 
             for idty_id in MembershipsExpireOn::<T, I>::take(block_number) {
                 // remove membership (take)
-                total_weight += Self::do_expire_membership(idty_id, new_expire_on);
+                Self::do_expire_membership(idty_id, new_expire_on);
+                expired_idty_count = 0;
             }
-
-            total_weight
+            T::WeightInfo::expire_memberships(expired_idty_count)
         }
         /// perform the expiration of pending membership planned at given block
         // only expire pending membership if still pending
-        fn expire_pending_memberships(block_number: T::BlockNumber) -> Weight {
-            let mut total_weight: Weight = Weight::zero();
-
+        pub fn expire_pending_memberships(block_number: T::BlockNumber) -> Weight {
+            let mut expired_idty_count = 0u32;
             for idty_id in PendingMembershipsExpireOn::<T, I>::take(block_number) {
                 if PendingMembership::<T, I>::take(idty_id).is_some() {
                     Self::deposit_event(Event::PendingMembershipExpired(idty_id));
-                    total_weight += T::OnEvent::on_event(
-                        &sp_membership::Event::PendingMembershipExpired(idty_id),
-                    );
+                    T::OnEvent::on_event(&sp_membership::Event::PendingMembershipExpired(idty_id));
+                    expired_idty_count = 0;
                 }
             }
-
-            total_weight
+            T::WeightInfo::expire_pending_memberships(expired_idty_count)
         }
 
         /// check if identity is member
-        pub(super) fn is_member_inner(idty_id: &T::IdtyId) -> bool {
+        pub(super) fn do_is_member(idty_id: &T::IdtyId) -> bool {
             Membership::<T, I>::contains_key(idty_id)
         }
     }
@@ -441,7 +440,7 @@ impl<T: Config<I>, I: 'static> IsInPendingMemberships<T::IdtyId> for Pallet<T, I
 
 impl<T: Config<I>, I: 'static> sp_runtime::traits::IsMember<T::IdtyId> for Pallet<T, I> {
     fn is_member(idty_id: &T::IdtyId) -> bool {
-        Self::is_member_inner(idty_id)
+        Self::do_is_member(idty_id)
     }
 }
 

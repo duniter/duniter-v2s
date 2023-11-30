@@ -24,6 +24,9 @@ pub trait WeightInfo {
     fn claim_membership() -> Weight;
     fn renew_membership() -> Weight;
     fn revoke_membership() -> Weight;
+    fn on_initialize() -> Weight;
+    fn expire_pending_memberships(_i: u32) -> Weight;
+    fn expire_memberships(_i: u32) -> Weight;
 }
 
 // Insecure weights implementation, use it for tests only!
@@ -65,6 +68,24 @@ impl WeightInfo for () {
     // Storage: Identity Identities (r:1 w:0)
     // Storage: UniversalDividend CurrentUdIndex (r:1 w:0)
     fn revoke_membership() -> Weight {
+        // Minimum execution time: 109_486 nanoseconds.
+        Weight::from_parts(113_303_000 as u64, 0)
+            .saturating_add(RocksDbWeight::get().reads(5 as u64))
+            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+    }
+    fn on_initialize() -> Weight {
+        // Minimum execution time: 109_486 nanoseconds.
+        Weight::from_parts(113_303_000 as u64, 0)
+            .saturating_add(RocksDbWeight::get().reads(5 as u64))
+            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+    }
+    fn expire_pending_memberships(_i: u32) -> Weight {
+        // Minimum execution time: 109_486 nanoseconds.
+        Weight::from_parts(113_303_000 as u64, 0)
+            .saturating_add(RocksDbWeight::get().reads(5 as u64))
+            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+    }
+    fn expire_memberships(_i: u32) -> Weight {
         // Minimum execution time: 109_486 nanoseconds.
         Weight::from_parts(113_303_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(5 as u64))

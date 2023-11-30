@@ -39,13 +39,11 @@ pub trait IsInPendingMemberships<IdtyId> {
 }
 
 pub trait OnEvent<IdtyId> {
-    fn on_event(event: &crate::Event<IdtyId>) -> Weight;
+    fn on_event(event: &crate::Event<IdtyId>);
 }
 
 impl<IdtyId> OnEvent<IdtyId> for () {
-    fn on_event(_: &crate::Event<IdtyId>) -> Weight {
-        Weight::zero()
-    }
+    fn on_event(_: &crate::Event<IdtyId>) {}
 }
 
 pub trait MembersCount {

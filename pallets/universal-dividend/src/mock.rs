@@ -28,6 +28,9 @@ use sp_runtime::{
     BuildStorage,
 };
 
+#[cfg(feature = "runtime-benchmarks")]
+use sp_runtime::traits::ConvertInto;
+
 pub const BLOCK_TIME: u64 = 6_000;
 
 type Balance = u64;
@@ -64,7 +67,7 @@ impl system::Config for Test {
     type BlockNumber = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = u64;
+    type AccountId = u32;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
     type RuntimeEvent = RuntimeEvent;
@@ -120,12 +123,12 @@ parameter_types! {
 }
 
 pub struct TestMembersStorage;
-impl frame_support::traits::StoredMap<u64, FirstEligibleUd> for TestMembersStorage {
-    fn get(key: &u64) -> FirstEligibleUd {
+impl frame_support::traits::StoredMap<u32, FirstEligibleUd> for TestMembersStorage {
+    fn get(key: &u32) -> FirstEligibleUd {
         crate::TestMembers::<Test>::get(key)
     }
     fn try_mutate_exists<R, E: From<sp_runtime::DispatchError>>(
-        key: &u64,
+        key: &u32,
         f: impl FnOnce(&mut Option<FirstEligibleUd>) -> Result<R, E>,
     ) -> Result<R, E> {
         let mut value = Some(crate::TestMembers::<Test>::get(key));
@@ -136,7 +139,7 @@ impl frame_support::traits::StoredMap<u64, FirstEligibleUd> for TestMembersStora
         Ok(result)
     }
 }
-pub struct TestMembersStorageIter(frame_support::storage::PrefixIterator<(u64, FirstEligibleUd)>);
+pub struct TestMembersStorageIter(frame_support::storage::PrefixIterator<(u32, FirstEligibleUd)>);
 impl From<Option<Vec<u8>>> for TestMembersStorageIter {
     fn from(maybe_key: Option<Vec<u8>>) -> Self {
         let mut iter = crate::TestMembers::<Test>::iter();
@@ -147,7 +150,7 @@ impl From<Option<Vec<u8>>> for TestMembersStorageIter {
     }
 }
 impl Iterator for TestMembersStorageIter {
-    type Item = (u64, FirstEligibleUd);
+    type Item = (u32, FirstEligibleUd);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
@@ -167,6 +170,8 @@ impl pallet_universal_dividend::Config for Test {
     type UdReevalPeriod = UdReevalPeriod;
     type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
     type WeightInfo = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type AccountIdOf = ConvertInto;
 }
 
 // Build genesis storage according to the mock runtime.

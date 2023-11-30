@@ -21,6 +21,7 @@ use frame_support::weights::{constants::RocksDbWeight, Weight};
 /// Weight functions needed for pallet_universal_dividend.
 pub trait WeightInfo {
     fn on_initialize(i: u32) -> Weight;
+    fn on_initialize_epoch(i: u32) -> Weight;
     fn request() -> Weight;
 }
 
@@ -46,6 +47,16 @@ impl WeightInfo for () {
     // Storage: ProvideRandomness NexEpochHookIn (r:1 w:1)
     /// The range of component `i` is `[1, 100]`.
     fn on_initialize(i: u32) -> Weight {
+        // Minimum execution time: 175_645 nanoseconds.
+        Weight::from_parts(461_442_906 as u64, 0)
+            // Standard Error: 1_523_561
+            .saturating_add(Weight::from_parts(43_315_015 as u64, 0).saturating_mul(i as u64))
+            .saturating_add(RocksDbWeight::get().reads(4 as u64))
+            .saturating_add(RocksDbWeight::get().reads((2 as u64).saturating_mul(i as u64)))
+            .saturating_add(RocksDbWeight::get().writes(3 as u64))
+            .saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
+    }
+    fn on_initialize_epoch(i: u32) -> Weight {
         // Minimum execution time: 175_645 nanoseconds.
         Weight::from_parts(461_442_906 as u64, 0)
             // Standard Error: 1_523_561
