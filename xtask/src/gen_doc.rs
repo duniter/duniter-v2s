@@ -147,7 +147,7 @@ impl From<&scale_info::Field<PortableForm>> for CallParam {
 impl From<&scale_info::Variant<PortableForm>> for Event {
     fn from(variant: &scale_info::Variant<PortableForm>) -> Self {
         Self {
-            documentation: variant.docs.iter().cloned().collect::<Vec<_>>().join("\n"),
+            documentation: variant.docs.to_vec().join("\n"),
             index: variant.index,
             name: variant.name.to_owned(),
             params: variant.fields.iter().map(Into::into).collect(),
@@ -166,7 +166,7 @@ impl From<&scale_info::Field<PortableForm>> for EventParam {
 impl From<&scale_info::Variant<PortableForm>> for ErroR {
     fn from(variant: &scale_info::Variant<PortableForm>) -> Self {
         Self {
-            documentation: variant.docs.iter().cloned().collect::<Vec<_>>().join("\n"),
+            documentation: variant.docs.to_vec().join("\n"),
             index: variant.index,
             name: variant.name.to_owned(),
         }
