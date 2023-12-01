@@ -7,7 +7,7 @@ homepage = 'https://duniter.org'
 license = 'AGPL-3.0'
 name = 'duniter'
 repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
-version = '0.7.0'
+version = '0.7.1'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
