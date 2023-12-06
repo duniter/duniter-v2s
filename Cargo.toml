@@ -95,6 +95,7 @@ pallet-im-online = { git = "https://github.com/duniter/substrate", branch = "dun
 pallet-transaction-payment = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
 pallet-transaction-payment-rpc = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
+pallet-treasury = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
 sc-basic-authorship = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
 sc-chain-spec = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
 sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }

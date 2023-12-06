@@ -2026,6 +2026,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury",
  "rusty-hook",
  "sc-basic-authorship",
  "sc-chain-spec",

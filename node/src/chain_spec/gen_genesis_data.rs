@@ -413,7 +413,7 @@ where
 
     // Verify certifications coherence (can be ignored for old users)
     for (idty_index, receiver_certs) in &certs_by_receiver {
-        if receiver_certs.len() < common_parameters.min_cert as usize {
+        if receiver_certs.len() < common_parameters.wot_min_cert_for_membership as usize {
             let name = identity_index.get(idty_index).unwrap();
             let identity = identities_v2.get(&(*name).clone()).unwrap();
             if identity.membership_expire_on != 0 {
@@ -421,7 +421,7 @@ where
                     "[{}] has received only {}/{} certifications",
                     name,
                     receiver_certs.len(),
-                    common_parameters.min_cert
+                    common_parameters.wot_min_cert_for_membership
                 );
                 fatal = true;
             }
@@ -430,12 +430,12 @@ where
 
     // Verify smith certifications coherence
     for (idty_index, certs) in &smith_certs_by_receiver {
-        if certs.len() < common_parameters.smith_min_cert as usize {
+        if certs.len() < common_parameters.smith_sub_wot_min_cert_for_membership as usize {
             log::error!(
                 "[{}] has received only {}/{} smith certifications",
                 identity_index.get(idty_index).unwrap(),
                 certs.len(),
-                common_parameters.smith_min_cert
+                common_parameters.smith_sub_wot_min_cert_for_membership
             );
             fatal = true;
         }
@@ -472,15 +472,15 @@ where
     if let Some(existing_account) = accounts.get_mut(&treasury_funder) {
         existing_account.balance = existing_account
             .balance
-            .checked_sub(common_parameters.existential_deposit)
+            .checked_sub(common_parameters.balances_existential_deposit)
             .expect("should have enough money to fund Treasury");
-        treasury_balance = common_parameters.existential_deposit;
+        treasury_balance = common_parameters.balances_existential_deposit;
     }
-    if treasury_balance < common_parameters.existential_deposit {
+    if treasury_balance < common_parameters.balances_existential_deposit {
         log::error!(
             "Treasury balance {} is inferior to existential deposit {}",
             treasury_balance,
-            common_parameters.existential_deposit
+            common_parameters.balances_existential_deposit
         );
         fatal = true;
     }
@@ -528,7 +528,12 @@ where
     if parameters.is_some() {
         let g1_duniter_v1_c = 0.0488;
         let g1_duniter_v1_xpercent: Perbill = Perbill::from_float(0.8);
-        let c = f32::sqrt(common_parameters.c2.deconstruct() as f32 / 1_000_000_000f32);
+        let c = f32::sqrt(
+            common_parameters
+                .universal_dividend_square_money_growth_rate
+                .deconstruct() as f32
+                / 1_000_000_000f32,
+        );
 
         // static parameters (GTest or G1)
         if common_parameters.decimals != G1_DUNITER_V1_DECIMALS {
@@ -537,24 +542,25 @@ where
                 common_parameters.decimals, G1_DUNITER_V1_DECIMALS
             )
         }
-        if common_parameters.existential_deposit != G1_DUNITER_V1_EXISTENTIAL_DEPOSIT {
+        if common_parameters.balances_existential_deposit != G1_DUNITER_V1_EXISTENTIAL_DEPOSIT {
             warn!(
                 "parameter `existential_deposit` value ({}) is different from Ğ1 value ({})",
-                common_parameters.existential_deposit, G1_DUNITER_V1_EXISTENTIAL_DEPOSIT
+                common_parameters.balances_existential_deposit, G1_DUNITER_V1_EXISTENTIAL_DEPOSIT
             )
         }
-        if common_parameters.membership_period / DAYS != G1_DUNITER_V1_MSVALIDITY / DUNITER_V1_DAYS
+        if common_parameters.membership_membership_period / DAYS
+            != G1_DUNITER_V1_MSVALIDITY / DUNITER_V1_DAYS
         {
             warn!(
                 "parameter `membership_period` ({} days) is different from Ğ1's ({} days)",
-                common_parameters.membership_period as f32 / DAYS as f32,
+                common_parameters.membership_membership_period as f32 / DAYS as f32,
                 G1_DUNITER_V1_MSVALIDITY as f32 / DUNITER_V1_DAYS as f32
             )
         }
-        if common_parameters.cert_period / DAYS != G1_DUNITER_V1_SIGPERIOD / DUNITER_V1_DAYS {
+        if common_parameters.cert_cert_period / DAYS != G1_DUNITER_V1_SIGPERIOD / DUNITER_V1_DAYS {
             warn!(
                 "parameter `cert_period` ({} days) is different from Ğ1's ({} days)",
-                common_parameters.cert_period as f32 / DAYS as f32,
+                common_parameters.cert_cert_period as f32 / DAYS as f32,
                 G1_DUNITER_V1_SIGPERIOD as f32 / DUNITER_V1_DAYS as f32
             )
         }
@@ -567,10 +573,10 @@ where
                 G1_DUNITER_V1_SIGVALIDITY as f32 / DUNITER_V1_DAYS as f32
             )
         }
-        if common_parameters.min_cert != G1_DUNITER_V1_SIGQTY {
+        if common_parameters.wot_min_cert_for_membership != G1_DUNITER_V1_SIGQTY {
             warn!(
                 "parameter `min_cert` value ({}) is different from Ğ1 value ({})",
-                common_parameters.min_cert, G1_DUNITER_V1_SIGQTY
+                common_parameters.wot_min_cert_for_membership, G1_DUNITER_V1_SIGQTY
             )
         }
         if common_parameters.cert_max_by_issuer != G1_DUNITER_V1_SIGSTOCK {
@@ -585,20 +591,20 @@ where
                 c, g1_duniter_v1_c
             )
         }
-        if common_parameters.ud_creation_period as f32 / DAYS as f32
+        if common_parameters.universal_dividend_ud_creation_period as f32 / DAYS as f32
             != G1_DUNITER_V1_DT as f32 / DUNITER_V1_DAYS as f32
         {
             warn!(
                 "parameter `ud_creation_period` value ({} days) is different from Ğ1 value ({} days)",
-                common_parameters.ud_creation_period as f32 / DAYS as f32, G1_DUNITER_V1_DT as f32 / DUNITER_V1_DAYS as f32
+                common_parameters.universal_dividend_ud_creation_period as f32 / DAYS as f32, G1_DUNITER_V1_DT as f32 / DUNITER_V1_DAYS as f32
             )
         }
-        if common_parameters.ud_reeval_period as f32 / DAYS as f32
+        if common_parameters.universal_dividend_ud_reeval_period as f32 / DAYS as f32
             != G1_DUNITER_V1_DTREEVAL as f32 / DUNITER_V1_DAYS as f32
         {
             warn!(
                 "parameter `ud_reeval_period` value ({} days) is different from Ğ1 value ({} days)",
-                common_parameters.ud_reeval_period as f32 / DAYS as f32,
+                common_parameters.universal_dividend_ud_reeval_period as f32 / DAYS as f32,
                 G1_DUNITER_V1_DTREEVAL as f32 / DUNITER_V1_DAYS as f32
             )
         }
@@ -608,18 +614,19 @@ where
                 format!("{:?}", common_parameters.distance_min_accessible_referees), format!("{:?}", g1_duniter_v1_xpercent)
             )
         }
-        if common_parameters.max_depth != G1_DUNITER_V1_STEPMAX {
+        if common_parameters.distance_max_depth != G1_DUNITER_V1_STEPMAX {
             warn!(
                 "parameter `max_depth` value ({}) is different from Ğ1 value ({})",
-                common_parameters.max_depth, G1_DUNITER_V1_STEPMAX
+                common_parameters.distance_max_depth, G1_DUNITER_V1_STEPMAX
             )
         }
-        let count_uds = common_parameters.ud_reeval_period / common_parameters.ud_creation_period;
+        let count_uds = common_parameters.universal_dividend_ud_reeval_period
+            / common_parameters.universal_dividend_ud_creation_period;
         if count_uds == 0 {
             error!(
                 "the `ud_reeval_period / ud_creation_period` is zero ({} days/{} days)",
-                common_parameters.ud_reeval_period / DAYS as u64,
-                common_parameters.ud_creation_period / DAYS as u64
+                common_parameters.universal_dividend_ud_reeval_period / DAYS as u64,
+                common_parameters.universal_dividend_ud_creation_period / DAYS as u64
             );
             fatal = true;
         }
@@ -759,65 +766,204 @@ fn dump_genesis_info(info: GenesisInfo) {
         info.technical_committee_members.len(),
     );
 
-    let (membership_period, membership_period_unit) =
-        get_best_unit_and_diviser_for_blocks(info.common_parameters.membership_period);
-    let (cert_period, cert_period_unit) =
-        get_best_unit_and_diviser_for_blocks(info.common_parameters.cert_period);
+    let p = info.common_parameters.clone();
+    let (babe_epoch_duration, babe_epoch_duration_unit) =
+        get_best_unit_and_diviser_for_blocks(p.babe_epoch_duration as u32);
+    let (babe_expected_block_time, babe_expected_block_time_unit) =
+        get_best_unit_and_diviser_for_ms(p.babe_expected_block_time as f32);
+    let (babe_max_authorities, babe_max_authorities_unit) =
+        get_best_unit_and_diviser_for_participants(p.babe_max_authorities);
+    let (timestamp_minimum_period, timestamp_minimum_period_unit) =
+        get_best_unit_and_diviser_for_ms(p.timestamp_minimum_period as f32);
+    let (balances_existential_deposit, balances_existential_deposit_unit) =
+        get_best_unit_and_diviser_for_currency_units(
+            p.balances_existential_deposit,
+            p.currency_name.clone(),
+        );
+    let (authority_members_max_authorities, authority_members_max_authorities_unit) =
+        get_best_unit_and_diviser_for_participants(p.authority_members_max_authorities);
+    let (grandpa_max_authorities, grandpa_max_authorities_unit) =
+        get_best_unit_and_diviser_for_participants(p.grandpa_max_authorities);
+    let (universal_dividend_max_past_reevals, universal_dividend_max_past_reevals_unit) =
+        get_best_unit_and_diviser_for_equinoxes(p.universal_dividend_max_past_reevals);
+    let (
+        universal_dividend_square_money_growth_rate,
+        universal_dividend_square_money_growth_rate_unit,
+    ) = get_best_unit_and_diviser_for_perbill_square(p.universal_dividend_square_money_growth_rate);
+    let (universal_dividend_ud_creation_period, universal_dividend_ud_creation_period_unit) =
+        get_best_unit_and_diviser_for_ms(p.universal_dividend_ud_creation_period as f32);
+    let (universal_dividend_ud_reeval_period, universal_dividend_ud_reeval_period_unit) =
+        get_best_unit_and_diviser_for_ms(p.universal_dividend_ud_reeval_period as f32);
+    let (universal_dividend_units_per_ud, universal_dividend_units_per_ud_unit) =
+        get_best_unit_and_diviser_for_currency_units(
+            p.universal_dividend_units_per_ud,
+            p.currency_name.clone(),
+        );
+    let (wot_first_issuable_on, wot_first_issuable_on_unit) =
+        get_best_unit_and_diviser_for_blocks(p.wot_first_issuable_on);
+    let (wot_min_cert_for_membership, wot_min_cert_for_membership_unit) =
+        get_best_unit_and_diviser_for_certs(p.wot_min_cert_for_membership);
+    let (wot_min_cert_for_create_idty_right, wot_min_cert_for_create_idty_right_unit) =
+        get_best_unit_and_diviser_for_certs(p.wot_min_cert_for_create_idty_right);
+    let (identity_confirm_period, identity_confirm_period_unit) =
+        get_best_unit_and_diviser_for_blocks(p.identity_confirm_period);
+    let (identity_change_owner_key_period, identity_change_owner_key_period_unit) =
+        get_best_unit_and_diviser_for_blocks(p.identity_change_owner_key_period);
+    let (identity_idty_creation_period, identity_idty_creation_period_unit) =
+        get_best_unit_and_diviser_for_blocks(p.identity_idty_creation_period);
+    let (membership_membership_period, membership_membership_period_unit) =
+        get_best_unit_and_diviser_for_blocks(p.membership_membership_period);
+    let (membership_pending_membership_period, membership_pending_membership_period_unit) =
+        get_best_unit_and_diviser_for_blocks(p.membership_pending_membership_period);
+    let (cert_cert_period, cert_cert_period_unit) =
+        get_best_unit_and_diviser_for_blocks(p.cert_cert_period);
+    let (cert_max_by_issuer, cert_max_by_issuer_unit) =
+        get_best_unit_and_diviser_for_certs(p.cert_max_by_issuer);
+    let (
+        cert_min_received_cert_to_be_able_to_issue_cert,
+        cert_min_received_cert_to_be_able_to_issue_cert_unit,
+    ) = get_best_unit_and_diviser_for_certs(p.cert_min_received_cert_to_be_able_to_issue_cert);
     let (cert_validity_period, cert_validity_period_unit) =
-        get_best_unit_and_diviser_for_blocks(info.common_parameters.cert_validity_period);
-    let (smith_membership_period, smith_membership_period_unit) =
-        get_best_unit_and_diviser_for_blocks(info.common_parameters.smith_membership_period);
-    let (smith_certs_validity_period, smith_certs_validity_period_unit) =
-        get_best_unit_and_diviser_for_blocks(info.common_parameters.smith_certs_validity_period);
-    let (ud_reeval_period, ud_reeval_period_unit) =
-        get_best_unit_and_diviser_for_ms(info.common_parameters.ud_reeval_period as f32);
-    let (ud_creation_period, ud_creation_period_unit) =
-        get_best_unit_and_diviser_for_ms(info.common_parameters.ud_creation_period as f32);
+        get_best_unit_and_diviser_for_blocks(p.cert_validity_period);
+    let (distance_min_accessible_referees, distance_min_accessible_referees_unit) =
+        get_best_unit_and_diviser_for_perbill(p.distance_min_accessible_referees);
+    let (distance_max_depth, distance_max_depth_unit) =
+        get_best_unit_and_diviser_for_depth(p.distance_max_depth);
+    let (smith_sub_wot_first_issuable_on, smith_sub_wot_first_issuable_on_unit) =
+        get_best_unit_and_diviser_for_blocks(p.smith_sub_wot_first_issuable_on);
+    let (smith_sub_wot_min_cert_for_membership, smith_sub_wot_min_cert_for_membership_unit) =
+        get_best_unit_and_diviser_for_certs(p.smith_sub_wot_min_cert_for_membership);
+    let (smith_membership_membership_period, smith_membership_membership_period_unit) =
+        get_best_unit_and_diviser_for_blocks(p.smith_membership_membership_period);
+    let (
+        smith_membership_pending_membership_period,
+        smith_membership_pending_membership_period_unit,
+    ) = get_best_unit_and_diviser_for_blocks(p.smith_membership_pending_membership_period);
+    let (smith_cert_cert_period, smith_cert_cert_period_unit) =
+        get_best_unit_and_diviser_for_blocks(p.smith_cert_cert_period);
+    let (smith_cert_max_by_issuer, smith_cert_max_by_issuer_unit) =
+        get_best_unit_and_diviser_for_certs(p.smith_cert_max_by_issuer);
+    let (
+        smith_cert_min_received_cert_to_be_able_to_issue_cert,
+        smith_cert_min_received_cert_to_be_able_to_issue_cert_unit,
+    ) = get_best_unit_and_diviser_for_certs(
+        p.smith_cert_min_received_cert_to_be_able_to_issue_cert,
+    );
+    let (smith_cert_validity_period, smith_cert_validity_period_unit) =
+        get_best_unit_and_diviser_for_blocks(p.smith_cert_validity_period);
+    let (treasury_spend_period, treasury_spend_period_unit) =
+        get_best_unit_and_diviser_for_blocks(p.treasury_spend_period);
 
     // give genesis info
     log::info!(
         "currency parameters:
-        - existential deposit: {} {}
-        - currency decimals: {}
-        - membership validity: {} {}
-        - certification period: {} {}
-        - certification validity duration: {} {}
-        - smith membership validity: {} {}
-        - smith certification validity: {} {}
-        - required certifications: {}
-        - smith required certifications: {}
-        - max certifications by issuer: {}
-        - money growth rate: {}% every {} {}
-        - UD creation period: {} {}
-        - distance percent of required referees: {}%
-        - distance max depth: {}",
-        info.common_parameters.existential_deposit as f64 / 100.0,
-        info.common_parameters.currency_name,
-        info.common_parameters.decimals,
-        membership_period,
-        membership_period_unit,
-        cert_period,
-        cert_period_unit,
+        - babe.epoch_duration: {} {}
+        - babe.expected_block_time: {} {}
+        - babe.max_authorities: {} {}
+        - timestamp.minimum_period: {} {}
+        - balances.existential_deposit: {} {}
+        - authority_members.max_authorities: {} {}
+        - grandpa.max_authorities: {} {}
+        - universal_dividend.max_past_reevals: {} {}
+        - universal_dividend.square_money_growth_rate: {} {}/equinox
+        - universal_dividend.ud_creation_period: {} {}
+        - universal_dividend.ud_reeval_period: {} {}
+        - universal_dividend.units_per_ud: {} {}
+        - wot.first_issuable_on: {} {}
+        - wot.min_cert_for_membership: {} {}
+        - wot.min_cert_for_create_idty_right: {} {}
+        - identity.confirm_period: {} {}
+        - identity.change_owner_key_period: {} {}
+        - identity.idty_creation_period: {} {}
+        - membership.membership_period: {} {}
+        - membership.pending_membership_period: {} {}
+        - cert.cert_period: {} {}
+        - cert.max_by_issuer: {} {}
+        - cert.min_received_cert_to_be_able_to_issue_cert: {} {}
+        - cert.validity_period: {} {}
+        - distance.min_accessible_referees: {} {}
+        - distance.max_depth: {} {},
+        - smith_sub_wot.first_issuable_on: {} {}
+        - smith_sub_wot.min_cert_for_membership: {} {}
+        - smith_membership.membership_period: {} {}
+        - smith_membership.pending_membership_period: {} {}
+        - smith_cert.cert_period: {} {}
+        - smith_cert.max_by_issuer: {} {}
+        - smith_cert.min_received_cert_to_be_able_to_issue_cert: {} {}
+        - smith_cert.validity_period: {} {}
+        - treasury.spend_period: {} {}
+        - currency decimals: {}",
+        babe_epoch_duration,
+        babe_epoch_duration_unit,
+        babe_expected_block_time,
+        babe_expected_block_time_unit,
+        babe_max_authorities,
+        babe_max_authorities_unit,
+        timestamp_minimum_period,
+        timestamp_minimum_period_unit,
+        balances_existential_deposit,
+        balances_existential_deposit_unit,
+        authority_members_max_authorities,
+        authority_members_max_authorities_unit,
+        grandpa_max_authorities,
+        grandpa_max_authorities_unit,
+        universal_dividend_max_past_reevals,
+        universal_dividend_max_past_reevals_unit,
+        universal_dividend_square_money_growth_rate,
+        universal_dividend_square_money_growth_rate_unit,
+        universal_dividend_ud_creation_period,
+        universal_dividend_ud_creation_period_unit,
+        universal_dividend_ud_reeval_period,
+        universal_dividend_ud_reeval_period_unit,
+        universal_dividend_units_per_ud,
+        universal_dividend_units_per_ud_unit,
+        wot_first_issuable_on,
+        wot_first_issuable_on_unit,
+        wot_min_cert_for_membership,
+        wot_min_cert_for_membership_unit,
+        wot_min_cert_for_create_idty_right,
+        wot_min_cert_for_create_idty_right_unit,
+        identity_confirm_period,
+        identity_confirm_period_unit,
+        identity_change_owner_key_period,
+        identity_change_owner_key_period_unit,
+        identity_idty_creation_period,
+        identity_idty_creation_period_unit,
+        membership_membership_period,
+        membership_membership_period_unit,
+        membership_pending_membership_period,
+        membership_pending_membership_period_unit,
+        cert_cert_period,
+        cert_cert_period_unit,
+        cert_max_by_issuer,
+        cert_max_by_issuer_unit,
+        cert_min_received_cert_to_be_able_to_issue_cert,
+        cert_min_received_cert_to_be_able_to_issue_cert_unit,
         cert_validity_period,
         cert_validity_period_unit,
-        smith_membership_period,
-        smith_membership_period_unit,
-        smith_certs_validity_period,
-        smith_certs_validity_period_unit,
-        info.common_parameters.min_cert,
-        info.common_parameters.smith_min_cert,
-        info.common_parameters.cert_max_by_issuer,
-        f32::sqrt(info.common_parameters.c2.deconstruct() as f32 / 1_000_000_000f32) * 100f32,
-        ud_reeval_period,
-        ud_reeval_period_unit,
-        ud_creation_period,
-        ud_creation_period_unit,
-        info.common_parameters
-            .distance_min_accessible_referees
-            .deconstruct() as f32
-            / 1_000_000_000f32
-            * 100f32,
-        info.common_parameters.max_depth,
+        distance_min_accessible_referees,
+        distance_min_accessible_referees_unit,
+        distance_max_depth,
+        distance_max_depth_unit,
+        smith_sub_wot_first_issuable_on,
+        smith_sub_wot_first_issuable_on_unit,
+        smith_sub_wot_min_cert_for_membership,
+        smith_sub_wot_min_cert_for_membership_unit,
+        smith_membership_membership_period,
+        smith_membership_membership_period_unit,
+        smith_membership_pending_membership_period,
+        smith_membership_pending_membership_period_unit,
+        smith_cert_cert_period,
+        smith_cert_cert_period_unit,
+        smith_cert_max_by_issuer,
+        smith_cert_max_by_issuer_unit,
+        smith_cert_min_received_cert_to_be_able_to_issue_cert,
+        smith_cert_min_received_cert_to_be_able_to_issue_cert_unit,
+        smith_cert_validity_period,
+        smith_cert_validity_period_unit,
+        treasury_spend_period,
+        treasury_spend_period_unit,
+        info.common_parameters.decimals,
     );
 }
 
@@ -831,6 +977,37 @@ fn get_best_unit_and_diviser_for_ms(duration_in_ms: f32) -> (f32, String) {
 fn get_best_unit_and_diviser_for_blocks(duration_in_blocks: u32) -> (f32, String) {
     let duration_in_ms = duration_in_blocks as f32 * (MILLISECS_PER_BLOCK as u32) as f32;
     get_best_unit_and_diviser_for_ms(duration_in_ms)
+}
+
+fn get_best_unit_and_diviser_for_perbill_square(qty: Perbill) -> (f32, String) {
+    let qty = f32::sqrt(qty.deconstruct() as f32 / 1_000_000_000f32) * 100f32;
+    (qty, "%".to_string())
+}
+
+fn get_best_unit_and_diviser_for_perbill(qty: Perbill) -> (f32, String) {
+    let qty = qty.deconstruct() as f32 / 1_000_000_000f32 * 100f32;
+    (qty, "%".to_string())
+}
+
+fn get_best_unit_and_diviser_for_participants(qty: u32) -> (u32, String) {
+    (qty, "participants".to_string())
+}
+
+fn get_best_unit_and_diviser_for_equinoxes(qty: u32) -> (u32, String) {
+    (qty, "equinoxes".to_string())
+}
+
+fn get_best_unit_and_diviser_for_certs(qty: u32) -> (u32, String) {
+    (qty, "certs".to_string())
+}
+
+fn get_best_unit_and_diviser_for_currency_units(qty: u64, currency_name: String) -> (f64, String) {
+    let qty = qty as f64 / 100.0;
+    (qty, currency_name.clone())
+}
+
+fn get_best_unit_and_diviser_for_depth(qty: u32) -> (u32, String) {
+    (qty, "steps".to_string())
 }
 
 fn diviser_to_unit(value_in_ms: f32, qty: f32) -> String {
@@ -848,15 +1025,18 @@ fn diviser_to_unit(value_in_ms: f32, qty: f32) -> String {
 }
 
 fn get_best_diviser(ms_value: f32) -> f32 {
-    let one_minute: f32 = 1000.0 * 60.0;
+    let one_second: f32 = 1000.0;
+    let one_minute: f32 = one_second * 60.0;
     let one_hour: f32 = one_minute * 60.0;
     let one_day: f32 = one_hour * 24.0;
-    if ms_value > one_day {
+    if ms_value >= one_day {
         one_day
-    } else if ms_value > one_hour {
+    } else if ms_value >= one_hour {
         one_hour
-    } else {
+    } else if ms_value >= one_minute {
         one_minute
+    } else {
+        one_second
     }
 }
 
@@ -930,7 +1110,7 @@ fn create_smith_wot<SK: Decode>(
             smith_memberships.insert(
                 identity.index,
                 MembershipData {
-                    expire_on: common_parameters.smith_membership_period,
+                    expire_on: common_parameters.smith_membership_membership_period,
                 },
             );
         } else {
@@ -970,10 +1150,10 @@ fn v1_wallets_to_v2_accounts(
     let mut fatal = false;
     for (pubkey, balance) in wallets {
         // check existential deposit
-        if balance < common_parameters.existential_deposit {
+        if balance < common_parameters.balances_existential_deposit {
             log::error!(
                 "wallet {pubkey} has {balance} cǦT which is below {}",
-                common_parameters.existential_deposit
+                common_parameters.balances_existential_deposit
             );
             fatal = true;
         }
@@ -1025,7 +1205,7 @@ fn check_identities_v2(
         .filter(|(_, i)| i.membership_expire_on != 0)
         .for_each(|(name, i)| {
             let nb_certs = i.certs_received.len() as u32;
-            if nb_certs < common_parameters.min_cert {
+            if nb_certs < common_parameters.wot_min_cert_for_membership {
                 log::warn!("{} has only {} valid certifications", name, nb_certs);
             }
         });
@@ -1061,7 +1241,7 @@ fn check_genesis_data_and_filter_expired_certs_since_export(
 
     genesis_data.identities.iter_mut().for_each(|(name, i)| {
         if i.membership_expire_on.0 != 0
-            && i.certs_received.len() < common_parameters.min_cert as usize
+            && i.certs_received.len() < common_parameters.wot_min_cert_for_membership as usize
         {
             i.membership_expire_on = TimestampV1(0);
             log::warn!(
@@ -1164,7 +1344,7 @@ fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKey
     // The identity might already exist, notably: G1 "Alice" already exists
     if let Some(authority) = identities_v2.get_mut(authority_name) {
         // Force authority to be active
-        authority.membership_expire_on = common_parameters.membership_period;
+        authority.membership_expire_on = common_parameters.membership_membership_period;
     } else {
         // Not found: we must create it
         identities_v2.insert(
@@ -1172,9 +1352,9 @@ fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKey
             IdentityV2 {
                 index: (identities_v2.len() as u32 + 1),
                 owner_key: get_account_id_from_seed::<sr25519::Public>(authority_name),
-                balance: common_parameters.existential_deposit,
+                balance: common_parameters.balances_existential_deposit,
                 certs_received: HashMap::new(),
-                membership_expire_on: common_parameters.membership_period,
+                membership_expire_on: common_parameters.membership_membership_period,
                 old_owner_key: None,
                 next_cert_issuable_on: 0,
             },
@@ -1192,10 +1372,10 @@ fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKey
                     .iter()
                     .any(|(authority_issuer, _)| issuer == &authority_issuer)
         })
-        .take(common_parameters.min_cert as usize)
+        .take(common_parameters.wot_min_cert_for_membership as usize)
         .map(String::clone)
         .for_each(|issuer| {
-            new_certs.insert(issuer, common_parameters.cert_period);
+            new_certs.insert(issuer, common_parameters.cert_cert_period);
         });
     let authority = identities_v2
         .get_mut(authority_name)
@@ -1403,7 +1583,7 @@ fn feed_smith_certs_by_receiver(
                 .index;
             certs.insert(
                 *issuer_index,
-                Some(common_parameters.smith_certs_validity_period),
+                Some(common_parameters.smith_cert_validity_period),
             );
             counter_smith_cert += 1;
         }
@@ -1793,23 +1973,44 @@ pub trait SessionKeysProvider<SessionKeys: Encode> {
 
 #[derive(Default, Deserialize, Serialize, Clone)]
 pub struct CommonParameters {
+    pub babe_epoch_duration: u64,
+    pub babe_expected_block_time: u64,
+    pub babe_max_authorities: u32,
+    pub timestamp_minimum_period: u64,
+    pub balances_existential_deposit: u64,
+    pub authority_members_max_authorities: u32,
+    pub grandpa_max_authorities: u32,
+    pub universal_dividend_max_past_reevals: u32,
+    pub universal_dividend_square_money_growth_rate: Perbill,
+    pub universal_dividend_ud_creation_period: u64,
+    pub universal_dividend_ud_reeval_period: u64,
+    pub universal_dividend_units_per_ud: u64,
+    pub wot_first_issuable_on: u32,
+    pub wot_min_cert_for_membership: u32,
+    pub wot_min_cert_for_create_idty_right: u32,
+    pub identity_confirm_period: u32,
+    pub identity_change_owner_key_period: u32,
+    pub identity_idty_creation_period: u32,
+    pub membership_membership_period: u32,
+    pub membership_pending_membership_period: u32,
+    pub cert_cert_period: u32,
+    pub cert_max_by_issuer: u32,
+    pub cert_min_received_cert_to_be_able_to_issue_cert: u32,
+    pub cert_validity_period: u32,
+    pub distance_min_accessible_referees: Perbill,
+    pub distance_max_depth: u32,
+    pub smith_sub_wot_first_issuable_on: u32,
+    pub smith_sub_wot_min_cert_for_membership: u32,
+    pub smith_membership_membership_period: u32,
+    pub smith_membership_pending_membership_period: u32,
+    pub smith_cert_cert_period: u32,
+    pub smith_cert_max_by_issuer: u32,
+    pub smith_cert_min_received_cert_to_be_able_to_issue_cert: u32,
+    pub smith_cert_validity_period: u32,
+    pub treasury_spend_period: u32,
     // TODO: replace u32 by BlockNumber when appropriate
     pub currency_name: String,
     pub decimals: usize,
-    pub existential_deposit: u64,
-    pub membership_period: u32,
-    pub cert_period: u32,
-    pub smith_membership_period: u32,
-    pub smith_certs_validity_period: u32,
-    pub min_cert: u32,
-    pub smith_min_cert: u32,
-    pub cert_max_by_issuer: u32,
-    pub cert_validity_period: u32,
-    pub c2: Perbill,
-    pub ud_creation_period: u64,
-    pub distance_min_accessible_referees: Perbill,
-    pub max_depth: u32,
-    pub ud_reeval_period: u64,
 }
 
 /// Generate an authority keys.

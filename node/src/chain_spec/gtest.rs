@@ -19,11 +19,13 @@ use crate::chain_spec::gen_genesis_data::{CommonParameters, GenesisIdentity, Ses
 use common_runtime::constants::*;
 use common_runtime::entities::IdtyData;
 use common_runtime::*;
+use frame_benchmarking::frame_support::traits::Get;
 use gtest_runtime::{
-    opaque::SessionKeys, parameters, AccountConfig, AccountId, AuthorityMembersConfig, BabeConfig,
-    BalancesConfig, CertConfig, GenesisConfig, IdentityConfig, ImOnlineId, MembershipConfig,
-    Perbill, QuotaConfig, SessionConfig, SmithCertConfig, SmithMembershipConfig, SudoConfig,
-    SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
+    opaque::SessionKeys, pallet_universal_dividend, parameters, AccountConfig, AccountId,
+    AuthorityMembersConfig, BabeConfig, BalancesConfig, CertConfig, GenesisConfig, IdentityConfig,
+    ImOnlineId, MembershipConfig, Perbill, QuotaConfig, Runtime, SessionConfig, SmithCertConfig,
+    SmithMembershipConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
+    UniversalDividendConfig, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_consensus_grandpa::AuthorityId as GrandpaId;
@@ -68,20 +70,45 @@ fn get_parameters(_: &Option<GenesisParameters>) -> CommonParameters {
     CommonParameters {
         currency_name: TOKEN_SYMBOL.to_string(),
         decimals: TOKEN_DECIMALS,
-        existential_deposit: parameters::ExistentialDeposit::get(),
-        membership_period: parameters::MembershipPeriod::get(),
-        cert_period: parameters::CertPeriod::get(),
-        smith_membership_period: parameters::SmithMembershipPeriod::get(),
-        smith_certs_validity_period: parameters::SmithValidityPeriod::get(),
-        min_cert: parameters::WotMinCertForMembership::get(),
-        smith_min_cert: parameters::SmithWotMinCertForMembership::get(),
+        babe_epoch_duration: parameters::EpochDuration::get(),
+        babe_expected_block_time: parameters::ExpectedBlockTime::get(),
+        babe_max_authorities: parameters::MaxAuthorities::get(),
+        timestamp_minimum_period: parameters::MinimumPeriod::get(),
+        balances_existential_deposit: parameters::ExistentialDeposit::get(),
+        authority_members_max_authorities: parameters::MaxAuthorities::get(),
+        grandpa_max_authorities: parameters::MaxAuthorities::get(),
+        universal_dividend_max_past_reevals:
+            <Runtime as pallet_universal_dividend::Config>::MaxPastReeval::get(),
+        universal_dividend_square_money_growth_rate: parameters::SquareMoneyGrowthRate::get(),
+        universal_dividend_ud_creation_period: parameters::UdCreationPeriod::get() as u64,
+        universal_dividend_ud_reeval_period: parameters::UdReevalPeriod::get() as u64,
+        universal_dividend_units_per_ud:
+            <Runtime as pallet_universal_dividend::Config>::UnitsPerUd::get(),
+        wot_first_issuable_on: parameters::WotFirstCertIssuableOn::get(),
+        wot_min_cert_for_membership: parameters::WotMinCertForMembership::get(),
+        wot_min_cert_for_create_idty_right: parameters::WotMinCertForCreateIdtyRight::get(),
+        identity_confirm_period: parameters::ConfirmPeriod::get(),
+        identity_change_owner_key_period: parameters::ChangeOwnerKeyPeriod::get(),
+        identity_idty_creation_period: parameters::IdtyCreationPeriod::get(),
+        membership_membership_period: parameters::MembershipPeriod::get(),
+        membership_pending_membership_period: parameters::PendingMembershipPeriod::get(),
         cert_max_by_issuer: parameters::MaxByIssuer::get(),
+        cert_min_received_cert_to_be_able_to_issue_cert:
+            parameters::MinReceivedCertToBeAbleToIssueCert::get(),
         cert_validity_period: parameters::ValidityPeriod::get(),
-        c2: parameters::SquareMoneyGrowthRate::get(),
-        ud_creation_period: parameters::UdCreationPeriod::get() as u64, // TODO: cast?
-        distance_min_accessible_referees: Perbill::from_percent(80),    // TODO: generalize
-        max_depth: 5,                                                   // TODO: generalize value
-        ud_reeval_period: parameters::UdReevalPeriod::get() as u64,     // TODO: cast?
+        distance_min_accessible_referees: Perbill::from_percent(80), // TODO: generalize
+        distance_max_depth: 5,                                       // TODO: generalize
+        smith_sub_wot_first_issuable_on: parameters::SmithWotFirstCertIssuableOn::get(),
+        smith_sub_wot_min_cert_for_membership: parameters::SmithWotMinCertForMembership::get(),
+        smith_membership_membership_period: parameters::SmithMembershipPeriod::get(),
+        smith_membership_pending_membership_period: parameters::SmithPendingMembershipPeriod::get(),
+        smith_cert_cert_period: parameters::SmithCertPeriod::get(),
+        smith_cert_max_by_issuer: parameters::SmithMaxByIssuer::get(),
+        smith_cert_min_received_cert_to_be_able_to_issue_cert:
+            parameters::SmithMinReceivedCertToBeAbleToIssueCert::get(),
+        smith_cert_validity_period: parameters::SmithValidityPeriod::get(),
+        cert_cert_period: parameters::CertPeriod::get(),
+        treasury_spend_period: <Runtime as pallet_treasury::Config>::SpendPeriod::get(),
     }
 }
 
