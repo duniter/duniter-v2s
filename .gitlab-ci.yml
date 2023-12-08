@@ -14,14 +14,14 @@ stages:
 workflow:
   rules:
     - changes:
-      - docker/Dockerfile
-      - end2end-tests/**/*
-      - node/**/*
-      - pallets/**/*
-      - runtime/**/*
-      - .gitlab-ci.yml
-      - Cargo.toml
-      - Cargo.lock
+        - docker/Dockerfile
+        - end2end-tests/**/*
+        - node/**/*
+        - pallets/**/*
+        - runtime/**/*
+        - .gitlab-ci.yml
+        - Cargo.toml
+        - Cargo.lock
 
 sanity_tests:
   extends: .env
@@ -65,24 +65,24 @@ fmt_and_clippy:
     - cargo clippy -- -V
     - cargo clippy --all --tests -- -D warnings
 
-#run_benchmarks:
-#  stage: tests
-#  script:
-#    - echo podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
-#    - podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
-#  rules:
-#    - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
-#      when: manual
-#    - if: $CI_COMMIT_TAG
-#      when: never
-#    - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
-#    - when: manual
-#  variables:
-#    IMAGE_NAME: "duniter/duniter-v2s-test"
-#    IMAGE_TAG: "debug-sha-$CI_COMMIT_SHORT_SHA"
-#    PODMAN_BUILD_OPTIONS: "--target build --build-arg benchmarks=1"
-#  tags:
-#    - podman
+run_benchmarks:
+  stage: tests
+  script:
+    - echo podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
+    - podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
+      when: manual
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
+    - when: manual
+  variables:
+    IMAGE_NAME: "duniter/duniter-v2s-test"
+    IMAGE_TAG: "debug-sha-$CI_COMMIT_SHORT_SHA"
+    PODMAN_BUILD_OPTIONS: "--target build --build-arg benchmarks=1"
+  tags:
+    - podman
 
 gdev_build:
   stage: build
@@ -130,8 +130,8 @@ tests:
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
       when: manual
-#      changes:
-#        - node/specs/$CHAIN-raw.json
+    #      changes:
+    #        - node/specs/$CHAIN-raw.json
     - when: never
   before_script:
     - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
@@ -312,7 +312,7 @@ create_release:
   stage: release
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
-      needs: ['create_g1_data', 'gdev_srtool', 'gtest_srtool']
+      needs: ["create_g1_data", "gdev_srtool", "gtest_srtool"]
       when: manual
   image: rust:1-bullseye
   variables:
