@@ -28,17 +28,15 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 
 pub enum Event<IdtyId> {
-    /// A membership has acquired
-    MembershipAcquired(IdtyId),
-    /// A membership has expired
-    MembershipExpired(IdtyId),
-    /// A membership has renewed
+    /// A membership was acquired.
+    MembershipAdded(IdtyId),
+    /// A membership was terminated.
+    MembershipRemoved(IdtyId),
+    /// A membership was renewed.
     MembershipRenewed(IdtyId),
-    /// An identity requested membership
-    MembershipRequested(IdtyId),
-    /// A membership has revoked
-    MembershipRevoked(IdtyId),
-    /// A pending membership request has expired
+    /// A pending membership request was added.
+    PendingMembershipAdded(IdtyId),
+    /// A pending membership request has expired.
     PendingMembershipExpired(IdtyId),
 }
 

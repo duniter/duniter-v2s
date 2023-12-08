@@ -25,7 +25,7 @@ pub trait WeightInfo {
     fn validate_identity() -> Weight;
     fn change_owner_key() -> Weight;
     fn revoke_identity() -> Weight;
-    fn remove_identity() -> Weight;
+    fn force_remove_identity() -> Weight;
     fn prune_item_identities_names(i: u32) -> Weight;
     fn fix_sufficients() -> Weight;
     fn link_account() -> Weight;
@@ -120,7 +120,7 @@ impl WeightInfo for () {
     // Storage: Parameters ParametersStorage (r:1 w:0)
     // Storage: Identity IdentityIndexOf (r:0 w:1)
     // Storage: Identity IdentitiesNames (r:0 w:1)
-    fn remove_identity() -> Weight {
+    fn force_remove_identity() -> Weight {
         // Minimum execution time: 302_574 nanoseconds.
         Weight::from_parts(504_132_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(9 as u64))

@@ -17,6 +17,7 @@
 use crate::{entities::IdtyData, AccountId, IdtyIndex};
 use core::marker::PhantomData;
 use pallet_universal_dividend::FirstEligibleUd;
+use sp_runtime::DispatchError;
 use sp_std::boxed::Box;
 use sp_std::vec::Vec;
 
@@ -112,13 +113,16 @@ pub struct MainWotIsDistanceOk<T>(PhantomData<T>);
 impl<T> pallet_duniter_wot::traits::IsDistanceOk<<T as pallet_identity::Config>::IdtyIndex>
     for MainWotIsDistanceOk<T>
 where
-    T: pallet_distance::Config,
+    T: pallet_distance::Config + pallet_duniter_wot::Config<frame_support::instances::Instance1>,
 {
-    fn is_distance_ok(idty_id: &<T as pallet_identity::Config>::IdtyIndex) -> bool {
-        matches!(
-            pallet_distance::Pallet::<T>::identity_distance_status(idty_id),
-            Some((_, pallet_distance::DistanceStatus::Valid))
-        )
+    fn is_distance_ok(
+        idty_id: &<T as pallet_identity::Config>::IdtyIndex,
+    ) -> Result<(), DispatchError> {
+        match pallet_distance::Pallet::<T>::identity_distance_status(idty_id) {
+			Some((_, pallet_distance::DistanceStatus::Valid)) => Ok(()),
+			Some((_, pallet_distance::DistanceStatus::Invalid)) => Err(pallet_duniter_wot::Error::<T, frame_support::instances::Instance1>::DistanceIsInvalid.into()),
+			_ => Err(pallet_duniter_wot::Error::<T, frame_support::instances::Instance1>::DistanceNotEvaluated.into()),
+		}
     }
 }
 

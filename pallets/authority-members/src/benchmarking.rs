@@ -38,7 +38,7 @@ benchmarks! {
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
-        assert_has_event::<T>(Event::<T>::MemberGoOffline(id).into());
+        assert_has_event::<T>(Event::<T>::MemberGoOffline{member: id}.into());
     }
      go_online {
         let id: T::MemberId = OnlineAuthorities::<T>::get()[0];
@@ -52,7 +52,7 @@ benchmarks! {
         });
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
-        assert_has_event::<T>(Event::<T>::MemberGoOnline(id).into());
+        assert_has_event::<T>(Event::<T>::MemberGoOnline{member: id}.into());
     }
      set_session_keys {
         let id: T::MemberId = OnlineAuthorities::<T>::get()[0];
@@ -66,16 +66,16 @@ benchmarks! {
         let caller_origin = RawOrigin::Root.into();
         }: _<T::RuntimeOrigin>(caller_origin, id.clone())
     verify {
-        assert_has_event::<T>(Event::<T>::MemberRemoved(id).into());
+        assert_has_event::<T>(Event::<T>::MemberRemoved{member: id}.into());
     }
      remove_member_from_blacklist {
         let id: T::MemberId = OnlineAuthorities::<T>::get()[0];
-        BlackList::<T>::mutate(|blacklist| {
+        Blacklist::<T>::mutate(|blacklist| {
             blacklist.push(id);
         });
     }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), id)
     verify {
-        assert_has_event::<T>(Event::<T>::MemberRemovedFromBlackList(id).into());
+        assert_has_event::<T>(Event::<T>::MemberRemovedFromBlacklist{member: id}.into());
     }
 
      impl_benchmark_test_suite!(

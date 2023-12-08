@@ -107,29 +107,31 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
-        /// Not enough certifications received to claim membership
+        /// Insufficient certifications received to claim membership.
         NotEnoughCertsToClaimMembership,
-        /// Distance has not been evaluated positively
-        DistanceNotOK,
-        /// Identity not allowed to request membership
+        /// Distance is invalid.
+        DistanceIsInvalid,
+        /// Distance is not evaluated.
+        DistanceNotEvaluated,
+        /// Identity is not allowed to request membership.
         IdtyNotAllowedToRequestMembership,
-        /// Identity not allowed to renew membership
+        /// Identity not allowed to renew membership.
         IdtyNotAllowedToRenewMembership,
-        /// Identity creation period not respected
+        /// Identity creation period not respected.
         IdtyCreationPeriodNotRespected,
-        /// Not enough received certifications to create identity
+        /// Insufficient received certifications to create identity.
         NotEnoughReceivedCertsToCreateIdty,
-        /// Max number of emitted certs reached
+        /// Maximum number of emitted certifications reached.
         MaxEmittedCertsReached,
-        /// Not allowed to change identity address
+        /// Not allowed to change identity address.
         NotAllowedToChangeIdtyAddress,
-        /// Not allowed to remove identity
+        /// Not allowed to remove identity.
         NotAllowedToRemoveIdty,
-        /// Issuer can not emit cert because it is not validated
+        /// Issuer cannot emit a certification because it is not validated.
         IssuerCanNotEmitCert,
-        /// Can not issue cert to identity without membership or pending membership
+        /// Cannot issue a certification to an identity without membership or pending membership.
         CertToUndefined,
-        /// Issuer or receiver not found
+        /// Issuer or receiver not found.
         IdtyNotFound,
     }
 }
@@ -296,10 +298,7 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::CheckMembershipCallAllowed
             idty_cert_meta.received_count >= T::MinCertForMembership::get(),
             Error::<T, I>::NotEnoughCertsToClaimMembership
         );
-        ensure!(
-            T::IsDistanceOk::is_distance_ok(idty_index),
-            Error::<T, I>::DistanceNotOK,
-        );
+        T::IsDistanceOk::is_distance_ok(idty_index)?;
         Ok(())
     }
 
@@ -310,10 +309,7 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::CheckMembershipCallAllowed
                 idty_value.status == IdtyStatus::Validated,
                 Error::<T, I>::IdtyNotAllowedToRenewMembership
             );
-            ensure!(
-                T::IsDistanceOk::is_distance_ok(idty_index),
-                Error::<T, I>::DistanceNotOK,
-            );
+            T::IsDistanceOk::is_distance_ok(idty_index)?;
         } else {
             return Err(Error::<T, I>::IdtyNotFound.into());
         }
@@ -328,25 +324,18 @@ where
 {
     fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) {
         match membership_event {
-            sp_membership::Event::<IdtyIndex>::MembershipAcquired(idty_index) => {
+            sp_membership::Event::<IdtyIndex>::MembershipAdded(idty_index) => {
                 if !T::IsSubWot::get() {
                     // when membership is acquired, validate identity
                     // (only used on first membership acquiry)
                     pallet_identity::Pallet::<T>::try_validate_identity(*idty_index);
                 }
             }
-            sp_membership::Event::<IdtyIndex>::MembershipExpired(_) => {}
-            // Membership revocation cases:
-            // - Triggered by main identity removal: the underlying identity will be removed by the
-            // caller.
-            // - Triggered by the membership pallet: it's only possible for a sub-wot, so we
-            // should not remove the underlying identity
-            // So, in any case, we must do nothing
-            sp_membership::Event::<IdtyIndex>::MembershipRevoked(_) => {}
+            sp_membership::Event::<IdtyIndex>::MembershipRemoved(_) => {}
             sp_membership::Event::<IdtyIndex>::MembershipRenewed(_) => {}
-            sp_membership::Event::<IdtyIndex>::MembershipRequested(_) => {}
+            sp_membership::Event::<IdtyIndex>::PendingMembershipAdded(_) => {}
             sp_membership::Event::<IdtyIndex>::PendingMembershipExpired(idty_index) => {
-                Self::dispatch_idty_call(pallet_identity::Call::remove_identity {
+                Self::dispatch_idty_call(pallet_identity::Call::force_remove_identity {
                     idty_index: *idty_index,
                     idty_name: None,
                     reason: pallet_identity::IdtyRemovalReason::Other(

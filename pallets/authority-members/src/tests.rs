@@ -325,7 +325,7 @@ fn test_offence_black_list() {
                 offender: (9, ()),
                 reporters: vec![],
             }],
-            pallet_offences::SlashStrategy::BlackList,
+            pallet_offences::SlashStrategy::Blacklist,
         );
 
         // Verify state
@@ -359,7 +359,7 @@ fn test_offence_black_list_prevent_from_going_online() {
                 offender: (9, ()),
                 reporters: vec![],
             }],
-            pallet_offences::SlashStrategy::BlackList,
+            pallet_offences::SlashStrategy::Blacklist,
         );
 
         // Verify state
@@ -385,7 +385,7 @@ fn test_offence_black_list_prevent_from_going_online() {
         ));
         assert_err!(
             AuthorityMembers::go_online(RuntimeOrigin::signed(9)),
-            Error::<Test>::MemberIdBlackListed
+            Error::<Test>::MemberBlacklisted
         );
 
         // Should not be able to auto remove from blacklist
@@ -401,12 +401,12 @@ fn test_offence_black_list_prevent_from_going_online() {
             9
         ));
         assert_eq!(AuthorityMembers::blacklist(), EMPTY);
-        System::assert_last_event(Event::MemberRemovedFromBlackList(9).into());
+        System::assert_last_event(Event::MemberRemovedFromBlacklist { member: 9 }.into());
 
         // Authorized should not be able to remove a non-existing member from blacklist
         assert_err!(
             AuthorityMembers::remove_member_from_blacklist(RawOrigin::Root.into(), 9),
-            Error::<Test>::MemberNotBlackListed
+            Error::<Test>::MemberNotBlacklisted
         );
     });
 }

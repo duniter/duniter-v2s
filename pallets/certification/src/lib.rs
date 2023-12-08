@@ -224,26 +224,19 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config<I>, I: 'static = ()> {
-        /// New certification
-        /// [issuer, issuer_issued_count, receiver, receiver_received_count]
-        NewCert {
+        /// A new certification was added.
+        CertAdded {
             issuer: T::IdtyIndex,
-            issuer_issued_count: u32,
             receiver: T::IdtyIndex,
-            receiver_received_count: u32,
         },
-        /// Removed certification
-        /// [issuer, issuer_issued_count, receiver, receiver_received_count, expiration]
-        RemovedCert {
+        /// A certification was removed.
+        CertRemoved {
             issuer: T::IdtyIndex,
-            issuer_issued_count: u32,
             receiver: T::IdtyIndex,
-            receiver_received_count: u32,
             expiration: bool,
         },
-        /// Renewed certification
-        /// [issuer, receiver]
-        RenewedCert {
+        /// A certification was renewed.
+        CertRenewed {
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
         },
@@ -253,15 +246,15 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
-        /// An identity cannot certify itself
+        /// Identity cannot certify itself
         CannotCertifySelf,
-        /// This identity has already issued the maximum number of certifications
+        /// Identity has already issued the maximum number of certifications
         IssuedTooManyCert,
         /// Issuer not found
         IssuerNotFound,
-        /// Not enough certifications received
+        /// Insufficient certifications received.
         NotEnoughCertReceived,
-        /// This identity has already issued a certification too recently
+        /// Identity has issued a certification too recently.
         NotRespectCertPeriod,
     }
 
@@ -437,13 +430,8 @@ pub mod pallet {
                         cert_meta.received_count
                     });
 
-                // emit NewCert event
-                Self::deposit_event(Event::NewCert {
-                    issuer,
-                    issuer_issued_count,
-                    receiver,
-                    receiver_received_count,
-                });
+                // emit CertAdded event
+                Self::deposit_event(Event::CertAdded { issuer, receiver });
                 T::OnNewcert::on_new_cert(
                     issuer,
                     issuer_issued_count,
@@ -455,8 +443,8 @@ pub mod pallet {
                 StorageIdtyCertMeta::<T, I>::mutate(issuer, |issuer_idty_cert_meta| {
                     issuer_idty_cert_meta.next_issuable_on = block_number + T::CertPeriod::get();
                 });
-                // emit RenewedCert event
-                Self::deposit_event(Event::RenewedCert { issuer, receiver });
+                // emit CertRenewed event
+                Self::deposit_event(Event::CertRenewed { issuer, receiver });
             }
 
             Ok(().into())
@@ -516,11 +504,9 @@ pub mod pallet {
                         cert_meta.received_count = cert_meta.received_count.saturating_sub(1);
                         cert_meta.received_count
                     });
-                Self::deposit_event(Event::RemovedCert {
+                Self::deposit_event(Event::CertRemoved {
                     issuer,
-                    issuer_issued_count,
                     receiver,
-                    receiver_received_count,
                     expiration: block_number_opt.is_some(),
                 });
                 // Should always return Weight::zero

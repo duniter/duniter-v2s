@@ -28,6 +28,10 @@ use sp_runtime::Perbill;
 
 use crate::Pallet;
 
+fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+    frame_system::Pallet::<T>::assert_has_event(generic_event.into());
+}
+
 fn populate_pool<T: Config>(i: u32) -> Result<(), &'static str> {
     EvaluationPool0::<T>::mutate(|current_pool| -> Result<(), &'static str> {
         for j in 0..i {
@@ -53,7 +57,8 @@ benchmarks! {
             let _ = <Balances<T> as Currency<_>>::make_free_balance_be(&caller, T::Balance::max_value());
     }: _<T::RuntimeOrigin>(caller_origin.clone())
     verify {
-        assert!(IdentityDistanceStatus::<T>::get(&idty) == Some((caller, DistanceStatus::Pending)), "Request not added");
+        assert!(IdentityDistanceStatus::<T>::get(&idty) == Some((caller.clone(), DistanceStatus::Pending)), "Request not added");
+        assert_has_event::<T>(Event::<T>::EvaluationRequested { idty_index: idty, who: caller }.into());
     }
     update_evaluation {
         let digest_data = sp_consensus_babe::digests::PreDigest::SecondaryPlain(
@@ -66,19 +71,26 @@ benchmarks! {
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         let i in 1 .. MAX_EVALUATIONS_PER_SESSION => populate_pool::<T>(i)?;
     }: _<T::RuntimeOrigin>(RawOrigin::None.into(), ComputationResult{distances: vec![Perbill::one(); i as usize]})
+    verify {
+        assert_has_event::<T>(Event::<T>::EvaluationUpdated { evaluator: caller }.into());
+    }
     force_update_evaluation {
             let idty = T::IdtyIndex::one();
             let caller: T::AccountId  = pallet_identity::Identities::<T>::get(idty).unwrap().owner_key;
             let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
             let i in 1 .. MAX_EVALUATIONS_PER_SESSION => populate_pool::<T>(i)?;
-    }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), caller, ComputationResult{distances: vec![Perbill::one(); i as usize]})
+    }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), caller.clone(), ComputationResult{distances: vec![Perbill::one(); i as usize]})
+    verify {
+        assert_has_event::<T>(Event::<T>::EvaluationUpdated { evaluator: caller }.into());
+    }
     force_set_distance_status {
             let idty = T::IdtyIndex::one();
             let caller: T::AccountId  = pallet_identity::Identities::<T>::get(idty).unwrap().owner_key;
             let status = Some((caller.clone(), DistanceStatus::Valid));
-    }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), idty, status)
+    }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), idty, status.clone())
     verify {
         assert!(IdentityDistanceStatus::<T>::get(&idty) == Some((caller, DistanceStatus::Valid)), "Status not set");
+        assert_has_event::<T>(Event::<T>::EvaluationStatusForced { idty_index: idty, status }.into());
     }
     on_finalize {
         DidUpdate::<T>::set(true);

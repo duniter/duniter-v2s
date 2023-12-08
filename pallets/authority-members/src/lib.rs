@@ -158,7 +158,7 @@ pub mod pallet {
     // Blacklist.
     #[pallet::storage]
     #[pallet::getter(fn blacklist)]
-    pub type BlackList<T: Config> = StorageValue<_, Vec<T::MemberId>, ValueQuery>;
+    pub type Blacklist<T: Config> = StorageValue<_, Vec<T::MemberId>, ValueQuery>;
 
     // HOOKS //
 
@@ -167,54 +167,45 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// List of members who will enter the set of authorities at the next session.
-        /// [Vec<member_id>]
-        IncomingAuthorities(Vec<T::MemberId>),
-        /// List of members who will leave the set of authorities at the next session.
-        /// [Vec<member_id>]
-        OutgoingAuthorities(Vec<T::MemberId>),
+        /// List of members scheduled to join the set of authorities in the next session.
+        IncomingAuthorities { members: Vec<T::MemberId> },
+        /// List of members leaving the set of authorities in the next session.
+        OutgoingAuthorities { members: Vec<T::MemberId> },
         /// A member will leave the set of authorities in 2 sessions.
-        /// [member_id]
-        MemberGoOffline(T::MemberId),
-        /// A member will enter the set of authorities in 2 sessions.
-        /// [member_id]
-        MemberGoOnline(T::MemberId),
-        /// A member has lost the right to be part of the authorities,
-        /// this member will be removed from the authority set in 2 sessions.
-        /// [member_id]
-        MemberRemoved(T::MemberId),
+        MemberGoOffline { member: T::MemberId },
+        /// A member will join the set of authorities in 2 sessions.
+        MemberGoOnline { member: T::MemberId },
+        /// A member, who no longer has authority rights, will be removed from the authority set in 2 sessions.
+        MemberRemoved { member: T::MemberId },
         /// A member has been removed from the blacklist.
-        /// [member_id]
-        MemberRemovedFromBlackList(T::MemberId),
+        MemberRemovedFromBlacklist { member: T::MemberId },
     }
 
     // ERRORS //
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Already incoming
+        /// Member already incoming
         AlreadyIncoming,
-        /// Already online
+        /// Member already online
         AlreadyOnline,
-        /// Already outgoing
+        /// Member already outgoing
         AlreadyOutgoing,
-        /// Not found owner key
+        /// Owner key is invalid as a member.
         MemberIdNotFound,
         /// Member is blacklisted
-        MemberIdBlackListed,
+        MemberBlacklisted,
         /// Member is not blacklisted
-        MemberNotBlackListed,
+        MemberNotBlacklisted,
         /// Member not found
         MemberNotFound,
         /// Neither online nor scheduled
         NotOnlineNorIncoming,
-        /// Not owner
-        NotOwner,
         /// Not member
         NotMember,
         /// Session keys not provided
         SessionKeysNotProvided,
-        /// Too man aAuthorities
+        /// Too many authorities.
         TooManyAuthorities,
     }
 
@@ -259,7 +250,7 @@ pub mod pallet {
             let member_id = Self::verify_ownership_and_membership(&who)?;
 
             if Self::is_blacklisted(member_id) {
-                return Err(Error::<T>::MemberIdBlackListed.into());
+                return Err(Error::<T>::MemberBlacklisted.into());
             }
             if !Members::<T>::contains_key(member_id) {
                 return Err(Error::<T>::MemberNotFound.into());
@@ -317,7 +308,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             T::RemoveMemberOrigin::ensure_origin(origin)?;
 
-            let member_data = Members::<T>::get(member_id).ok_or(Error::<T>::NotMember)?;
+            let member_data = Members::<T>::get(member_id).ok_or(Error::<T>::MemberNotFound)?;
             Self::do_remove_member(member_id, member_data.owner_key);
 
             Ok(().into())
@@ -330,13 +321,13 @@ pub mod pallet {
             member_id: T::MemberId,
         ) -> DispatchResultWithPostInfo {
             T::RemoveMemberOrigin::ensure_origin(origin)?;
-            BlackList::<T>::mutate(|members_ids| {
+            Blacklist::<T>::mutate(|members_ids| {
                 if let Ok(index) = members_ids.binary_search(&member_id) {
                     members_ids.remove(index);
-                    Self::deposit_event(Event::MemberRemovedFromBlackList(member_id));
+                    Self::deposit_event(Event::MemberRemovedFromBlacklist { member: member_id });
                     Ok(().into())
                 } else {
-                    Err(Error::<T>::MemberNotBlackListed.into())
+                    Err(Error::<T>::MemberNotBlacklisted.into())
                 }
             })
         }
@@ -367,7 +358,7 @@ pub mod pallet {
             })?;
 
             let validator_id = T::ValidatorIdOf::convert(old_owner_key.clone())
-                .ok_or(Error::<T>::MemberNotFound)?;
+                .ok_or(pallet_session::Error::<T>::NoAssociatedValidatorId)?;
             let session_keys = pallet_session::NextKeys::<T>::get(validator_id)
                 .ok_or(Error::<T>::SessionKeysNotProvided)?;
 
@@ -413,7 +404,7 @@ pub mod pallet {
             }
 
             // Emit event
-            Self::deposit_event(Event::MemberRemoved(member_id));
+            Self::deposit_event(Event::MemberRemoved { member: member_id });
             let _ = T::OnRemovedMember::on_removed_member(member_id);
         }
         /// perform incoming authorities insertion
@@ -428,7 +419,7 @@ pub mod pallet {
             });
             if not_already_inserted {
                 AuthoritiesCounter::<T>::mutate(|counter| *counter += 1);
-                Self::deposit_event(Event::MemberGoOnline(member_id));
+                Self::deposit_event(Event::MemberGoOnline { member: member_id });
             }
             not_already_inserted
         }
@@ -448,7 +439,7 @@ pub mod pallet {
                         *counter -= 1
                     }
                 });
-                Self::deposit_event(Event::MemberGoOffline(member_id));
+                Self::deposit_event(Event::MemberGoOffline { member: member_id });
             }
             not_already_inserted
         }
@@ -472,7 +463,7 @@ pub mod pallet {
         }
         /// check if member is blacklisted
         fn is_blacklisted(member_id: T::MemberId) -> bool {
-            BlackList::<T>::get().contains(&member_id)
+            Blacklist::<T>::get().contains(&member_id)
         }
         /// perform removal from incoming authorities
         fn remove_in(member_id: T::MemberId) {
@@ -539,10 +530,14 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
                 // when no change to the set of autorities, return None
                 return None;
             } else {
-                Self::deposit_event(Event::OutgoingAuthorities(members_ids_to_del.clone()));
+                Self::deposit_event(Event::OutgoingAuthorities {
+                    members: members_ids_to_del.clone(),
+                });
             }
         } else {
-            Self::deposit_event(Event::IncomingAuthorities(members_ids_to_add.clone()));
+            Self::deposit_event(Event::IncomingAuthorities {
+                members: members_ids_to_add.clone(),
+            });
         }
 
         // updates the list of OnlineAuthorities and returns the list of their key

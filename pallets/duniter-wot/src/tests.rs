@@ -24,6 +24,7 @@ use pallet_identity::{
     IdtyIndexAccountIdPayload, IdtyName, IdtyStatus, RevocationPayload,
     NEW_OWNER_KEY_PAYLOAD_PREFIX, REVOCATION_PAYLOAD_PREFIX,
 };
+use pallet_membership::MembershipRemovalReason;
 use sp_runtime::testing::TestSignature;
 
 /// test that genesis builder creates the good number of identities
@@ -83,7 +84,12 @@ fn test_join_smiths() {
             4
         ),));
         System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipRequested(4),
+            pallet_membership::Event::PendingMembershipAdded {
+                member: 4,
+                expire_on: 2
+                    + <Test as pallet_membership::Config<Instance2>>::PendingMembershipPeriod::get(
+                    ),
+            },
         ));
 
         // Then, Alice should be able to send a smith cert to Dave
@@ -98,7 +104,11 @@ fn test_join_smiths() {
         run_to_block(4);
         assert_ok!(SmithMembership::claim_membership(RuntimeOrigin::signed(4),));
         System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipAcquired(4),
+            pallet_membership::Event::MembershipAdded {
+                member: 4,
+                expire_on: 4
+                    + <Test as pallet_membership::Config<Instance2>>::MembershipPeriod::get(),
+            },
         ));
     });
 }
@@ -110,7 +120,10 @@ fn test_smith_certs_expirations_should_expire_smith_membership() {
         // After block #10, alice membership should be revoked due to smith certs expiration
         run_to_block(10);
         System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipExpired(1),
+            pallet_membership::Event::MembershipRemoved {
+                member: 1,
+                reason: MembershipRemovalReason::Expired,
+            },
         ));
     });
 }
@@ -172,18 +185,16 @@ fn test_create_idty_ok() {
 
         // Alice should be able to create an identity at block #2
         assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 6));
-        // 2 events should have occurred: IdtyCreated and NewCert
+        // 2 events should have occurred: IdtyCreated and CertAdded
         System::assert_has_event(RuntimeEvent::Identity(
             pallet_identity::Event::IdtyCreated {
                 idty_index: 6,
                 owner_key: 6,
             },
         ));
-        System::assert_has_event(RuntimeEvent::Cert(pallet_certification::Event::NewCert {
+        System::assert_has_event(RuntimeEvent::Cert(pallet_certification::Event::CertAdded {
             issuer: 1,
-            issuer_issued_count: 5,
             receiver: 6,
-            receiver_received_count: 1,
         }));
 
         assert_eq!(Identity::identity(6).unwrap().status, IdtyStatus::Created);
@@ -209,11 +220,9 @@ fn test_new_idty_validation() {
         // Bob should be able to certify Ferdie
         run_to_block(4);
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 2, 6));
-        System::assert_has_event(RuntimeEvent::Cert(pallet_certification::Event::NewCert {
+        System::assert_has_event(RuntimeEvent::Cert(pallet_certification::Event::CertAdded {
             issuer: 2,
-            issuer_issued_count: 5,
             receiver: 6,
-            receiver_received_count: 2,
         }));
 
         // Ferdie should not be able to claim membership
@@ -226,7 +235,11 @@ fn test_new_idty_validation() {
         run_to_block(5);
         assert_ok!(Identity::validate_identity(RuntimeOrigin::signed(42), 6));
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipAcquired(6),
+            pallet_membership::Event::MembershipAdded {
+                member: 6,
+                expire_on: 5
+                    + <Test as pallet_membership::Config<Instance1>>::MembershipPeriod::get(),
+            },
         ));
         System::assert_has_event(RuntimeEvent::Identity(
             pallet_identity::Event::IdtyValidated { idty_index: 6 },
@@ -265,7 +278,12 @@ fn test_confirm_idty_ok() {
             IdtyName::from("Ferdie"),
         ));
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipRequested(6),
+            pallet_membership::Event::PendingMembershipAdded {
+                member: 6,
+                expire_on: 3
+                    + <Test as pallet_membership::Config<Instance1>>::PendingMembershipPeriod::get(
+                    ),
+            },
         ));
         System::assert_has_event(RuntimeEvent::Identity(
             pallet_identity::Event::IdtyConfirmed {
@@ -349,7 +367,10 @@ fn test_idty_membership_expire() {
         assert!(Membership::membership(3).is_none());
 
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipExpired(3),
+            pallet_membership::Event::MembershipRemoved {
+                member: 3,
+                reason: MembershipRemovalReason::Expired,
+            },
         ));
         // membership expiry should not trigger identity removal
         assert!(!System::events().iter().any(|record| record.event
@@ -365,7 +386,7 @@ fn test_idty_membership_expire() {
         // then pending membership should expire and identity should finally be removed
         run_to_block(11);
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::PendingMembershipExpired(3),
+            pallet_membership::Event::PendingMembershipExpired { member: 3 },
         ));
         System::assert_has_event(RuntimeEvent::Identity(
             pallet_identity::Event::IdtyRemoved {
@@ -443,17 +464,18 @@ fn test_certification_expire() {
         run_to_block(10);
         // println!("{:?}", System::events());
         System::assert_has_event(RuntimeEvent::SmithCert(
-            pallet_certification::Event::RemovedCert {
-                issuer: 2,                  // Bob
-                issuer_issued_count: 1,     // Bob → Charlie only
-                receiver: 1,                // Alice
-                receiver_received_count: 1, // Charlie → Alice only
+            pallet_certification::Event::CertRemoved {
+                issuer: 2,   // Bob
+                receiver: 1, // Alice
                 expiration: true,
             },
         ));
         // in consequence, since Alice has only 1/2 smith certification remaining, she looses smith membership
         System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipExpired(1),
+            pallet_membership::Event::MembershipRemoved {
+                member: 1,
+                reason: MembershipRemovalReason::Expired,
+            },
         ));
 
         // --- BLOCK 14 ---
@@ -466,17 +488,18 @@ fn test_certification_expire() {
         run_to_block(20);
         // println!("{:?}", System::events());
         System::assert_has_event(RuntimeEvent::Cert(
-            pallet_certification::Event::RemovedCert {
-                issuer: 2,                  // Bob
-                issuer_issued_count: 1,     // Bob → Charlie
-                receiver: 1,                // Alice
-                receiver_received_count: 1, // Charlie → Alice
+            pallet_certification::Event::CertRemoved {
+                issuer: 2,   // Bob
+                receiver: 1, // Alice
                 expiration: true,
             },
         ));
         // in consequence, since Alice has only 1/2 normal certification remaining, she looses normal membership
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipExpired(1),
+            pallet_membership::Event::MembershipRemoved {
+                member: 1,
+                reason: MembershipRemovalReason::Expired,
+            },
         ));
 
         // --- BLOCK 21 ---
@@ -502,7 +525,7 @@ fn test_certification_expire() {
         // println!("{:?}", System::events());
         // after a delay (3 blocks), the pending membership finally expires
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::PendingMembershipExpired(1),
+            pallet_membership::Event::PendingMembershipExpired { member: 1 },
         ));
         // and the identity is removed
         System::assert_has_event(RuntimeEvent::Identity(
@@ -555,17 +578,18 @@ fn test_cert_can_not_be_issued() {
         run_to_block(10);
         // println!("{:?}", System::events());
         System::assert_has_event(RuntimeEvent::SmithCert(
-            pallet_certification::Event::RemovedCert {
-                issuer: 2,                  // Bob
-                issuer_issued_count: 1,     // Bob → Charlie only
-                receiver: 1,                // Alice
-                receiver_received_count: 1, // Charlie → Alice only
+            pallet_certification::Event::CertRemoved {
+                issuer: 2,   // Bob
+                receiver: 1, // Alice
                 expiration: true,
             },
         ));
         // in consequence, since Alice has only 1/2 smith certification remaining, she looses smith membership
         System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipExpired(1),
+            pallet_membership::Event::MembershipRemoved {
+                member: 1,
+                reason: MembershipRemovalReason::Expired,
+            },
         ));
 
         run_to_block(11);
@@ -602,18 +626,19 @@ fn test_cert_can_not_be_issued() {
         run_to_block(20);
         // println!("{:?}", System::events());
         System::assert_has_event(RuntimeEvent::Cert(
-            pallet_certification::Event::RemovedCert {
-                issuer: 2,                  // Bob
-                issuer_issued_count: 2,     // depends of the order of cert expiration
-                receiver: 1,                // Alice
-                receiver_received_count: 2, // depends of the order of cert expiration
+            pallet_certification::Event::CertRemoved {
+                issuer: 2,   // Bob
+                receiver: 1, // Alice
                 expiration: true,
             },
         ));
         // other certifications expire, but not Dave → Alice
         // in consequence, since Alice has only 1/2 certification remaining, she looses membership
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipExpired(1), // pending membership expires at 23
+            pallet_membership::Event::MembershipRemoved {
+                member: 1,
+                reason: MembershipRemovalReason::Expired,
+            }, // pending membership expires at 23
         ));
 
         run_to_block(21);

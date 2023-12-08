@@ -22,6 +22,7 @@ mod common;
 use common::*;
 use frame_support::assert_ok;
 use gdev_runtime::*;
+use pallet_membership::MembershipRemovalReason;
 use sp_keyring::AccountKeyring;
 
 /// issue #136
@@ -56,7 +57,10 @@ fn can_still_issue_cert_when_membership_lost() {
             2, // Bob
         ));
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipExpired(2),
+            pallet_membership::Event::MembershipRemoved {
+                member: 2,
+                reason: MembershipRemovalReason::Expired,
+            },
         ));
 
         // FIXME this should not be possible
@@ -66,7 +70,7 @@ fn can_still_issue_cert_when_membership_lost() {
             3, // Charlie
         ));
         System::assert_has_event(RuntimeEvent::Cert(
-            pallet_certification::Event::RenewedCert {
+            pallet_certification::Event::CertRenewed {
                 issuer: 2,
                 receiver: 3,
             },

@@ -74,11 +74,13 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
+        /// A oneshot account was created.
         OneshotAccountCreated {
             account: T::AccountId,
             balance: <T::Currency as Currency<T::AccountId>>::Balance,
             creator: T::AccountId,
         },
+        /// A oneshot account was consumed.
         OneshotAccountConsumed {
             account: T::AccountId,
             dest1: (
@@ -90,6 +92,7 @@ pub mod pallet {
                 <T::Currency as Currency<T::AccountId>>::Balance,
             )>,
         },
+        /// A withdrawal was executed on a oneshot account.
         Withdraw {
             account: T::AccountId,
             balance: <T::Currency as Currency<T::AccountId>>::Balance,
@@ -100,19 +103,19 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Block height is in the future
+        /// Block height is in the future.
         BlockHeightInFuture,
-        /// Block height is too old
+        /// Block height is too old.
         BlockHeightTooOld,
-        /// Destination account does not exist
+        /// Destination account does not exist.
         DestAccountNotExist,
-        /// Destination account has balance less than existential deposit
+        /// Destination account has a balance less than the existential deposit.
         ExistentialDeposit,
-        /// Source account has insufficient balance
+        /// Source account has insufficient balance.
         InsufficientBalance,
-        /// Destination oneshot account already exists
+        /// Destination oneshot account already exists.
         OneshotAccountAlreadyCreated,
-        /// Source oneshot account does not exist
+        /// Source oneshot account does not exist.
         OneshotAccountNotExist,
     }
 

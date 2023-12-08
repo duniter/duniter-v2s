@@ -54,6 +54,12 @@ impl<IdtyId, AccountId> SetupBenchmark<IdtyId, AccountId> for () {
     fn add_cert(_issuer: &IdtyId, _receiver: &IdtyId) -> () {}
 }
 
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum MembershipRemovalReason {
+    Expired,
+    Revoked,
+}
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -155,41 +161,38 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config<I>, I: 'static = ()> {
-        /// A membership was acquired
-        /// [idty_id]
-        MembershipAcquired(T::IdtyId),
-        /// A membership expired
-        /// [idty_id]
-        MembershipExpired(T::IdtyId),
-        /// A membership was renewed
-        /// [idty_id]
-        MembershipRenewed(T::IdtyId),
-        /// An membership was requested
-        /// [idty_id]
-        MembershipRequested(T::IdtyId),
-        /// A membership was revoked
-        /// [idty_id]
-        MembershipRevoked(T::IdtyId),
-        /// A pending membership request has expired
-        /// [idty_id]
-        PendingMembershipExpired(T::IdtyId),
+        /// A membership was added.
+        MembershipAdded {
+            member: T::IdtyId,
+            expire_on: BlockNumberFor<T>,
+        },
+        /// A membership was removed.
+        MembershipRemoved {
+            member: T::IdtyId,
+            reason: MembershipRemovalReason,
+        },
+        /// A pending membership was added.
+        PendingMembershipAdded {
+            member: T::IdtyId,
+            expire_on: BlockNumberFor<T>,
+        },
+        /// A pending membership has expired.
+        PendingMembershipExpired { member: T::IdtyId },
     }
 
     // ERRORS//
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
-        /// Identity id not found
+        /// Identity ID not found.
         IdtyIdNotFound,
-        /// Membership already acquired
+        /// Membership already acquired.
         MembershipAlreadyAcquired,
-        /// Membership already requested
+        /// Membership already requested.
         MembershipAlreadyRequested,
-        /// Membership not found
+        /// Membership not found.
         MembershipNotFound,
-        /// Origin not allowed to use this identity
-        OriginNotAllowedToUseIdty,
-        /// Membership request not found
+        /// Membership request not found.
         MembershipRequestNotFound,
     }
 
@@ -256,7 +259,6 @@ pub mod pallet {
             // apply phase
             Self::unschedule_membership_expiry(idty_id, membership_data.expire_on);
             Self::insert_membership_and_schedule_expiry(idty_id);
-            Self::deposit_event(Event::MembershipRenewed(idty_id));
             T::OnEvent::on_event(&sp_membership::Event::MembershipRenewed(idty_id));
 
             Ok(().into())
@@ -323,6 +325,10 @@ pub mod pallet {
 
             Membership::<T, I>::insert(idty_id, MembershipData { expire_on });
             MembershipsExpireOn::<T, I>::append(expire_on, idty_id);
+            Self::deposit_event(Event::MembershipAdded {
+                member: idty_id,
+                expire_on,
+            });
         }
 
         /// perform the membership request
@@ -341,8 +347,11 @@ pub mod pallet {
             // apply membership request
             PendingMembership::<T, I>::insert(idty_id, ());
             PendingMembershipsExpireOn::<T, I>::append(expire_on, idty_id);
-            Self::deposit_event(Event::MembershipRequested(idty_id));
-            T::OnEvent::on_event(&sp_membership::Event::MembershipRequested(idty_id));
+            Self::deposit_event(Event::PendingMembershipAdded {
+                member: idty_id,
+                expire_on,
+            });
+            T::OnEvent::on_event(&sp_membership::Event::PendingMembershipAdded(idty_id));
 
             Ok(().into())
         }
@@ -360,8 +369,7 @@ pub mod pallet {
         fn do_claim_membership(idty_id: T::IdtyId) {
             if PendingMembership::<T, I>::take(idty_id).is_some() {
                 Self::insert_membership_and_schedule_expiry(idty_id);
-                Self::deposit_event(Event::MembershipAcquired(idty_id));
-                T::OnEvent::on_event(&sp_membership::Event::MembershipAcquired(idty_id));
+                T::OnEvent::on_event(&sp_membership::Event::MembershipAdded(idty_id));
             }
             // else { unreachable if check_allowed_to_claim called before }
         }
@@ -370,8 +378,11 @@ pub mod pallet {
         fn do_revoke_membership(idty_id: T::IdtyId) {
             if let Some(membership_data) = Membership::<T, I>::take(idty_id) {
                 Self::unschedule_membership_expiry(idty_id, membership_data.expire_on);
-                Self::deposit_event(Event::MembershipRevoked(idty_id));
-                T::OnEvent::on_event(&sp_membership::Event::MembershipRevoked(idty_id));
+                Self::deposit_event(Event::MembershipRemoved {
+                    member: idty_id,
+                    reason: MembershipRemovalReason::Revoked,
+                });
+                T::OnEvent::on_event(&sp_membership::Event::MembershipRemoved(idty_id));
             }
         }
 
@@ -383,8 +394,11 @@ pub mod pallet {
                 PendingMembershipsExpireOn::<T, I>::append(expire_on, idty_id);
             } // else should not happen
 
-            Self::deposit_event(Event::MembershipExpired(idty_id));
-            T::OnEvent::on_event(&sp_membership::Event::MembershipExpired(idty_id));
+            Self::deposit_event(Event::MembershipRemoved {
+                member: idty_id,
+                reason: MembershipRemovalReason::Expired,
+            });
+            T::OnEvent::on_event(&sp_membership::Event::MembershipRemoved(idty_id));
         }
 
         /// check the origin and get identity id if valid
@@ -415,7 +429,7 @@ pub mod pallet {
             let mut expired_idty_count = 0u32;
             for idty_id in PendingMembershipsExpireOn::<T, I>::take(block_number) {
                 if PendingMembership::<T, I>::take(idty_id).is_some() {
-                    Self::deposit_event(Event::PendingMembershipExpired(idty_id));
+                    Self::deposit_event(Event::PendingMembershipExpired { member: idty_id });
                     T::OnEvent::on_event(&sp_membership::Event::PendingMembershipExpired(idty_id));
                     expired_idty_count = 0;
                 }

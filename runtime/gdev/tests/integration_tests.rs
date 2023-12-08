@@ -24,6 +24,7 @@ use frame_support::{assert_noop, assert_ok};
 use frame_support::{StorageHasher, Twox128};
 use gdev_runtime::*;
 use pallet_duniter_wot::IdtyRemovalWotReason;
+use pallet_membership::MembershipRemovalReason;
 use sp_core::Encode;
 use sp_keyring::AccountKeyring;
 use sp_runtime::MultiAddress;
@@ -283,20 +284,23 @@ fn test_session_change() {
     })
 }
 
-/// test calling remove_identity
+/// test calling force_remove_identity
 #[test]
-fn test_remove_identity() {
+fn test_force_remove_identity() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         run_to_block(2);
         // remove the identity
-        assert_ok!(Identity::remove_identity(
+        assert_ok!(Identity::force_remove_identity(
             frame_system::RawOrigin::Root.into(),
             4,
             None,
             pallet_identity::IdtyRemovalReason::Manual
         ));
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipRevoked(4),
+            pallet_membership::Event::MembershipRemoved {
+                member: 4,
+                reason: MembershipRemovalReason::Revoked,
+            },
         ));
         System::assert_has_event(RuntimeEvent::Identity(
             pallet_identity::Event::IdtyRemoved {
@@ -366,7 +370,12 @@ fn test_validate_identity_when_claim() {
             ));
 
             System::assert_has_event(RuntimeEvent::Membership(
-                pallet_membership::Event::MembershipAcquired(5),
+                pallet_membership::Event::MembershipAdded {
+                    member: 5,
+                    expire_on: 76
+                        + <Runtime as pallet_membership::Config<Instance1>>::MembershipPeriod::get(
+                        ),
+                },
             ));
 
             // ferdie can not validate eve identity because already validated
@@ -386,7 +395,10 @@ fn test_membership_expiry() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         run_to_block(100);
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipExpired(1),
+            pallet_membership::Event::MembershipRemoved {
+                member: 1,
+                reason: MembershipRemovalReason::Expired,
+            },
         ));
         // membership expiry should not trigger identity removal
         assert!(!System::events().iter().any(|record| record.event
@@ -403,7 +415,10 @@ fn test_membership_expiry_with_identity_removal() {
         run_to_block(100);
 
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipExpired(4),
+            pallet_membership::Event::MembershipRemoved {
+                member: 4,
+                reason: MembershipRemovalReason::Expired,
+            },
         ));
 
         // Trigger pending membership expiry
@@ -448,7 +463,12 @@ fn test_membership_renewal() {
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
             ));
             System::assert_has_event(RuntimeEvent::Membership(
-                pallet_membership::Event::MembershipRenewed(1),
+                pallet_membership::Event::MembershipAdded {
+                    member: 1,
+                    expire_on: 76
+                        + <Runtime as pallet_membership::Config<Instance1>>::MembershipPeriod::get(
+                        ),
+                },
             ));
 
             // renew at block 77
@@ -457,13 +477,21 @@ fn test_membership_renewal() {
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
             ));
             System::assert_has_event(RuntimeEvent::Membership(
-                pallet_membership::Event::MembershipRenewed(1),
+                pallet_membership::Event::MembershipAdded {
+                    member: 1,
+                    expire_on: 77
+                        + <Runtime as pallet_membership::Config<Instance1>>::MembershipPeriod::get(
+                        ),
+                },
             ));
 
             // should expire at block 177 = 77+100
             run_to_block(177);
             System::assert_has_event(RuntimeEvent::Membership(
-                pallet_membership::Event::MembershipExpired(1),
+                pallet_membership::Event::MembershipRemoved {
+                    member: 1,
+                    reason: MembershipRemovalReason::Expired,
+                },
             ));
         });
 }
@@ -493,7 +521,7 @@ fn test_remove_identity_after_one_ud() {
                 + 1) as u32,
         );
         // remove identity
-        assert_ok!(Identity::remove_identity(
+        assert_ok!(Identity::force_remove_identity(
             frame_system::RawOrigin::Root.into(),
             4,
             None,
@@ -516,7 +544,10 @@ fn test_remove_identity_after_one_ud() {
         }));
         // membership and identity were actually removed
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipRevoked(4),
+            pallet_membership::Event::MembershipRemoved {
+                member: 4,
+                reason: MembershipRemovalReason::Revoked,
+            },
         ));
         System::assert_has_event(RuntimeEvent::Identity(
             pallet_identity::Event::IdtyRemoved {
@@ -595,7 +626,11 @@ fn test_ud_claimed_membership_on_and_off() {
             frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into()
         ));
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipAcquired(1),
+            pallet_membership::Event::MembershipAdded {
+                member: 1,
+                expire_on: 14
+                    + <Runtime as pallet_membership::Config<Instance1>>::MembershipPeriod::get(),
+            },
         ));
 
         // UD number 3
@@ -636,7 +671,7 @@ fn test_remove_smith_identity() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         run_to_block(2);
 
-        assert_ok!(Identity::remove_identity(
+        assert_ok!(Identity::force_remove_identity(
             frame_system::RawOrigin::Root.into(),
             3,
             None,
@@ -644,13 +679,19 @@ fn test_remove_smith_identity() {
         ));
         // Verify events
         System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipRevoked(3),
+            pallet_membership::Event::MembershipRemoved {
+                member: 3,
+                reason: MembershipRemovalReason::Revoked,
+            },
         ));
         System::assert_has_event(RuntimeEvent::AuthorityMembers(
-            pallet_authority_members::Event::MemberRemoved(3),
+            pallet_authority_members::Event::MemberRemoved { member: 3 },
         ));
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipRevoked(3),
+            pallet_membership::Event::MembershipRemoved {
+                member: 3,
+                reason: MembershipRemovalReason::Revoked,
+            },
         ));
         System::assert_has_event(RuntimeEvent::Identity(
             pallet_identity::Event::IdtyRemoved {

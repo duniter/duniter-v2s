@@ -225,7 +225,7 @@ benchmarks! {
         assert!(IdentityIndexOf::<T>::get(&account.key).is_none(), "Identity not revoked");
     }
 
-    remove_identity {
+    force_remove_identity {
         let new_identity: T::AccountId = account("new_identity", 2, SEED);
         let account: Account<T> = create_one_identity(new_identity)?;
         let identities = Pallet::<T>::identities_count();

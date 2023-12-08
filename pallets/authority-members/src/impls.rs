@@ -52,9 +52,9 @@ where
         };
 
         match strategy {
-            SlashStrategy::BlackList => {
+            SlashStrategy::Blacklist => {
                 for offender in offenders {
-                    BlackList::<T>::mutate(|blacklist| {
+                    Blacklist::<T>::mutate(|blacklist| {
                         if let Some(member_id) = T::MemberIdOf::convert(offender.offender.0.clone())
                         {
                             if !blacklist.contains(&member_id) {

@@ -43,7 +43,7 @@ type ReportIdOf<T> = <T as frame_system::Config>::Hash;
 
 pub enum SlashStrategy {
     Disconnect,
-    BlackList,
+    Blacklist,
 }
 
 #[frame_support::pallet]
@@ -95,9 +95,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event {
-        /// There is an offence reported of the given `kind` happened at the `session_index` and
-        /// (kind-specific) time slot. This event is not deposited for duplicate slashes.
-        /// \[kind, timeslot\].
+        /// An offense was reported during the specified time slot. This event is not deposited for duplicate slashes.
         Offence {
             kind: Kind,
             timeslot: OpaqueTimeSlot,
@@ -127,7 +125,7 @@ where
         let slash_strategy = if O::ID == *b"im-online:offlin" {
             SlashStrategy::Disconnect
         } else {
-            SlashStrategy::BlackList
+            SlashStrategy::Blacklist
         };
 
         T::OnOffenceHandler::on_offence(

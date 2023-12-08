@@ -239,28 +239,24 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// A new identity has been created
-        /// [idty_index, owner_key]
+        /// A new identity has been created.
         IdtyCreated {
             idty_index: T::IdtyIndex,
             owner_key: T::AccountId,
         },
-        /// An identity has been confirmed by its owner
-        /// [idty_index, owner_key, name]
+        /// An identity has been confirmed by its owner.
         IdtyConfirmed {
             idty_index: T::IdtyIndex,
             owner_key: T::AccountId,
             name: IdtyName,
         },
-        /// An identity has been validated
-        /// [idty_index]
+        /// An identity has been validated.
         IdtyValidated { idty_index: T::IdtyIndex },
         IdtyChangedOwnerKey {
             idty_index: T::IdtyIndex,
             new_owner_key: T::AccountId,
         },
-        /// An identity has been removed
-        /// [idty_index]
+        /// An identity has been removed.
         IdtyRemoved {
             idty_index: T::IdtyIndex,
             reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>,
@@ -555,9 +551,9 @@ pub mod pallet {
         }
 
         #[pallet::call_index(5)]
-        #[pallet::weight(T::WeightInfo::remove_identity())]
+        #[pallet::weight(T::WeightInfo::force_remove_identity())]
         /// remove an identity from storage
-        pub fn remove_identity(
+        pub fn force_remove_identity(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
             idty_name: Option<IdtyName>,
@@ -646,48 +642,34 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Identity already confirmed
+        /// Identity already confirmed.
         IdtyAlreadyConfirmed,
-        /// Identity already created
+        /// Identity already created.
         IdtyAlreadyCreated,
-        /// Identity already validated
+        /// Identity already validated.
         IdtyAlreadyValidated,
-        /// You are not allowed to create a new identity now
-        IdtyCreationNotAllowed,
-        /// Identity index not found
+        /// Identity index not found.
         IdtyIndexNotFound,
-        /// Identity name already exists
+        /// Identity name already exists.
         IdtyNameAlreadyExist,
-        /// Invalid identity name
+        /// Invalid identity name.
         IdtyNameInvalid,
-        /// Identity not confirmed by its owner
+        /// Identity not confirmed by its owner.
         IdtyNotConfirmedByOwner,
-        /// Identity not found
+        /// Identity not found.
         IdtyNotFound,
-        /// Identity not member
-        IdtyNotMember,
-        /// Identity not validated
-        IdtyNotValidated,
-        /// Identity not yet renewable
-        IdtyNotYetRenewable,
-        /// payload signature is invalid
+        /// Invalid payload signature.
         InvalidSignature,
-        /// Revocation key is invalid
+        /// Invalid revocation key.
         InvalidRevocationKey,
-        /// Identity creation period is not respected
+        /// Identity creation period is not respected.
         NotRespectIdtyCreationPeriod,
-        /// Not the same identity name
-        NotSameIdtyName,
-        /// Owner key already recently changed
+        /// Owner key already changed recently.
         OwnerKeyAlreadyRecentlyChanged,
-        /// Owner key already used
+        /// Owner key already used.
         OwnerKeyAlreadyUsed,
-        /// Prohibited to revert to an old key
+        /// Reverting to an old key is prohibited.
         ProhibitedToRevertToAnOldKey,
-        /// Right already added
-        RightAlreadyAdded,
-        /// Right does not exist
-        RightNotExist,
     }
 
     // PUBLIC FUNCTIONS //

@@ -14,14 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+use crate::DispatchError;
+
 pub trait IsDistanceOk<IdtyId> {
-    fn is_distance_ok(idty_id: &IdtyId) -> bool;
+    fn is_distance_ok(idty_id: &IdtyId) -> Result<(), DispatchError>;
 }
 
 pub struct DistanceAlwaysOk;
 
 impl<IdtyId> IsDistanceOk<IdtyId> for DistanceAlwaysOk {
-    fn is_distance_ok(_idty_id: &IdtyId) -> bool {
-        true
+    fn is_distance_ok(_idty_id: &IdtyId) -> Result<(), DispatchError> {
+        Ok(())
     }
 }

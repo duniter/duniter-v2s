@@ -220,25 +220,6 @@ The dispatch origin of this call must be Signed.
   transfer everything except at least the existential deposit, which will guarantee to
   keep the sender account alive (true).
 
-#### upgrade_accounts - 6
-
-<details><summary><code>upgrade_accounts(who)</code></summary>
-
-```rust
-who: Vec<T::AccountId>
-```
-</details>
-
-
-Upgrade a specified account.
-
-- `origin`: Must be `Signed`.
-- `who`: The account to be upgraded.
-
-This will waive the transaction fee if at least all but 10% of the accounts needed to
-be upgraded. (We let some not have to be upgraded just in order to allow for the
-possibililty of churn).
-
 #### transfer - 7
 
 <details><summary><code>transfer(dest, value)</code></summary>
@@ -713,6 +694,20 @@ Revoke an identity using a revocation signature
 
 Any signed origin can execute this call.
 
+#### force_remove_identity - 5
+
+<details><summary><code>force_remove_identity(idty_index, idty_name, reason)</code></summary>
+
+```rust
+idty_index: T::IdtyIndex
+idty_name: Option<IdtyName>
+reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>
+```
+</details>
+
+
+remove an identity from storage
+
 #### fix_sufficients - 7
 
 <details><summary><code>fix_sufficients(owner_key, inc)</code></summary>
@@ -750,11 +745,11 @@ Link an account to an identity
 </details>
 
 
-claim membership  
-a pending membership should exist  
-it must fullfill the requirements (certs, distance)  
-for main wot claim_membership is called automatically when validating identity  
-for smith wot, it means joining the authority members  
+claim membership
+a pending membership should exist
+it must fullfill the requirements (certs, distance)
+for main wot claim_membership is called automatically when validating identity
+for smith wot, it means joining the authority members
 
 #### renew_membership - 2
 
@@ -866,11 +861,11 @@ submit a membership request (must have a declared identity)
 </details>
 
 
-claim membership  
-a pending membership should exist  
-it must fullfill the requirements (certs, distance)  
-for main wot claim_membership is called automatically when validating identity  
-for smith wot, it means joining the authority members  
+claim membership
+a pending membership should exist
+it must fullfill the requirements (certs, distance)
+for main wot claim_membership is called automatically when validating identity
+for smith wot, it means joining the authority members
 
 #### renew_membership - 2
 
@@ -1584,7 +1579,7 @@ exist altogether, thus there is no way it would have been approved in the first 
 
 ## Root calls
 
-There are **20** root calls from **10** pallets.
+There are **19** root calls from **10** pallets.
 
 ### System - 0
 
@@ -1820,20 +1815,6 @@ Parameters:
 O(P) where P is the number of max proposals
 
 ### Identity - 41
-
-#### remove_identity - 5
-
-<details><summary><code>remove_identity(idty_index, idty_name, reason)</code></summary>
-
-```rust
-idty_index: T::IdtyIndex
-idty_name: Option<IdtyName>
-reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>
-```
-</details>
-
-
-remove an identity from storage
 
 #### prune_item_identities_names - 6
 

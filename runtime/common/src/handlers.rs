@@ -48,7 +48,7 @@ where
         match idty_event {
             IdtyEvent::Validated => {
                 // when identity is validated, it starts getting right to UD
-                // but this is handeled by membership event handler (MembershipAcquired)
+                // but this is handeled by membership event handler (MembershipAdded)
             }
             IdtyEvent::ChangedOwnerKey { new_owner_key } => {
                 if let Err(e) = pallet_authority_members::Pallet::<T>::change_owner_key(
@@ -79,8 +79,7 @@ impl<
     fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) {
         (match membership_event {
             // when membership is removed, call on_removed_member handler which auto claims UD
-            sp_membership::Event::MembershipRevoked(idty_index)
-            | sp_membership::Event::MembershipExpired(idty_index) => {
+            sp_membership::Event::MembershipRemoved(idty_index) => {
                 if let Some(idty_value) = pallet_identity::Identities::<Runtime>::get(idty_index) {
                     if let Some(first_ud_index) = idty_value.data.first_eligible_ud.into() {
                         pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
@@ -91,7 +90,7 @@ impl<
                 }
             }
             // when main membership is acquired, it starts getting right to UD
-            sp_membership::Event::MembershipAcquired(idty_index) => {
+            sp_membership::Event::MembershipAdded(idty_index) => {
                 pallet_identity::Identities::<Runtime>::mutate_exists(idty_index, |idty_val_opt| {
                     if let Some(ref mut idty_val) = idty_val_opt {
                         idty_val.data = IdtyData {
@@ -104,7 +103,7 @@ impl<
             }
             // in other case, ther is nothing to do
             sp_membership::Event::MembershipRenewed(_)
-            | sp_membership::Event::MembershipRequested(_)
+            | sp_membership::Event::PendingMembershipAdded(_)
             | sp_membership::Event::PendingMembershipExpired(_) => (),
         });
         Inner::on_event(membership_event)
@@ -126,11 +125,11 @@ impl<
 {
     fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) {
         (match membership_event {
-            sp_membership::Event::MembershipAcquired(_idty_index) => {
+            sp_membership::Event::MembershipAdded(_idty_index) => {
                 // nothing when smith membership acquired
                 // user will have to claim authority membership
             }
-            sp_membership::Event::MembershipRevoked(idty_index) => {
+            sp_membership::Event::MembershipRemoved(idty_index) => {
                 let call = pallet_authority_members::Call::<Runtime>::remove_member {
                     member_id: *idty_index,
                 };

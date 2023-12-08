@@ -11,7 +11,10 @@ version = '3.0.0'
 
 [features]
 default = ['std']
-runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
+runtime-benchmarks = [
+    'frame-benchmarking/runtime-benchmarks',
+    'pallet-identity/runtime-benchmarks',
+]
 std = [
     'codec/std',
     'frame-support/std',

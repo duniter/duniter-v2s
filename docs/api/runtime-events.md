@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **130** events from **37** pallets.
+There are **129** events from **37** pallets.
 
 <ul>
 <li>System - 0
@@ -87,9 +87,7 @@ hash: T::Hash
 <details>
 <summary>
 <code>ForceDestroy(who, balance)</code> - 0</summary>
-Force the destruction of an account because its free balance is insufficient to pay
-the account creation price.
-[who, balance]
+Forced destruction of an account due to insufficient free balance to cover the account creation price.
 
 ```rust
 who: T::AccountId
@@ -102,8 +100,7 @@ balance: T::Balance
 <details>
 <summary>
 <code>RandomIdAssigned(who, random_id)</code> - 1</summary>
-Random id assigned
-[account_id, random_id]
+A random ID has been assigned to the account.
 
 ```rust
 who: T::AccountId
@@ -129,7 +126,7 @@ identity: IdtyIdOf<T>
 <details>
 <summary>
 <code>AccountUnlinked()</code> - 3</summary>
-account unlinked from identity
+The account was unlinked from its identity.
 
 ```rust
 : T::AccountId
@@ -538,7 +535,7 @@ tip: BalanceOf<T>
 <details>
 <summary>
 <code>OneshotAccountCreated(account, balance, creator)</code> - 0</summary>
-
+A oneshot account was created.
 
 ```rust
 account: T::AccountId
@@ -552,7 +549,7 @@ creator: T::AccountId
 <details>
 <summary>
 <code>OneshotAccountConsumed(account, dest1, dest2)</code> - 1</summary>
-
+A oneshot account was consumed.
 
 ```rust
 account: T::AccountId
@@ -568,7 +565,7 @@ dest2: Option<
 <details>
 <summary>
 <code>Withdraw(account, balance)</code> - 2</summary>
-
+A withdrawal was executed on a oneshot account.
 
 ```rust
 account: T::AccountId
@@ -585,7 +582,7 @@ balance: <T::Currency as Currency<T::AccountId>>::Balance
 <details>
 <summary>
 <code>Refunded(who, identity, amount)</code> - 0</summary>
-Refunded fees to an account
+Transaction fees were refunded.
 
 ```rust
 who: T::AccountId
@@ -599,7 +596,7 @@ amount: BalanceOf<T>
 <details>
 <summary>
 <code>NoQuotaForIdty()</code> - 1</summary>
-No quota for identity
+No more quota available for refund.
 
 ```rust
 : IdtyId<T>
@@ -611,7 +608,8 @@ No quota for identity
 <details>
 <summary>
 <code>NoMoreCurrencyForRefund()</code> - 2</summary>
-No more currency available for refund
+No more currency available for refund.
+This scenario should never occur if the fees are intended for the refund account.
 
 ```rust
 no args
@@ -623,7 +621,8 @@ no args
 <details>
 <summary>
 <code>RefundFailed()</code> - 3</summary>
-Refund failed
+The refund has failed.
+This scenario should rarely occur, except when the account was destroyed in the interim between the request and the refund.
 
 ```rust
 : T::AccountId
@@ -635,7 +634,7 @@ Refund failed
 <details>
 <summary>
 <code>RefundQueueFull()</code> - 4</summary>
-Refund queue full
+Refund queue was full.
 
 ```rust
 no args
@@ -650,12 +649,11 @@ no args
 <li>
 <details>
 <summary>
-<code>IncomingAuthorities()</code> - 0</summary>
-List of members who will enter the set of authorities at the next session.
-[Vec<member_id>]
+<code>IncomingAuthorities(members)</code> - 0</summary>
+List of members scheduled to join the set of authorities in the next session.
 
 ```rust
-: Vec<T::MemberId>
+members: Vec<T::MemberId>
 ```
 
 </details>
@@ -663,12 +661,11 @@ List of members who will enter the set of authorities at the next session.
 <li>
 <details>
 <summary>
-<code>OutgoingAuthorities()</code> - 1</summary>
-List of members who will leave the set of authorities at the next session.
-[Vec<member_id>]
+<code>OutgoingAuthorities(members)</code> - 1</summary>
+List of members leaving the set of authorities in the next session.
 
 ```rust
-: Vec<T::MemberId>
+members: Vec<T::MemberId>
 ```
 
 </details>
@@ -676,12 +673,11 @@ List of members who will leave the set of authorities at the next session.
 <li>
 <details>
 <summary>
-<code>MemberGoOffline()</code> - 2</summary>
+<code>MemberGoOffline(member)</code> - 2</summary>
 A member will leave the set of authorities in 2 sessions.
-[member_id]
 
 ```rust
-: T::MemberId
+member: T::MemberId
 ```
 
 </details>
@@ -689,12 +685,11 @@ A member will leave the set of authorities in 2 sessions.
 <li>
 <details>
 <summary>
-<code>MemberGoOnline()</code> - 3</summary>
-A member will enter the set of authorities in 2 sessions.
-[member_id]
+<code>MemberGoOnline(member)</code> - 3</summary>
+A member will join the set of authorities in 2 sessions.
 
 ```rust
-: T::MemberId
+member: T::MemberId
 ```
 
 </details>
@@ -702,13 +697,11 @@ A member will enter the set of authorities in 2 sessions.
 <li>
 <details>
 <summary>
-<code>MemberRemoved()</code> - 4</summary>
-A member has lost the right to be part of the authorities,
-this member will be removed from the authority set in 2 sessions.
-[member_id]
+<code>MemberRemoved(member)</code> - 4</summary>
+A member, who no longer has authority rights, will be removed from the authority set in 2 sessions.
 
 ```rust
-: T::MemberId
+member: T::MemberId
 ```
 
 </details>
@@ -716,12 +709,11 @@ this member will be removed from the authority set in 2 sessions.
 <li>
 <details>
 <summary>
-<code>MemberRemovedFromBlackList()</code> - 5</summary>
+<code>MemberRemovedFromBlacklist(member)</code> - 5</summary>
 A member has been removed from the blacklist.
-[member_id]
 
 ```rust
-: T::MemberId
+member: T::MemberId
 ```
 
 </details>
@@ -738,9 +730,7 @@ A member has been removed from the blacklist.
 <details>
 <summary>
 <code>Offence(kind, timeslot)</code> - 0</summary>
-There is an offence reported of the given `kind` happened at the `session_index` and
-(kind-specific) time slot. This event is not deposited for duplicate slashes.
-\[kind, timeslot\].
+An offense was reported during the specified time slot. This event is not deposited for duplicate slashes.
 
 ```rust
 kind: Kind
@@ -1124,8 +1114,7 @@ who: T::AccountId
 <details>
 <summary>
 <code>IdtyCreated(idty_index, owner_key)</code> - 0</summary>
-A new identity has been created
-[idty_index, owner_key]
+A new identity has been created.
 
 ```rust
 idty_index: T::IdtyIndex
@@ -1138,8 +1127,7 @@ owner_key: T::AccountId
 <details>
 <summary>
 <code>IdtyConfirmed(idty_index, owner_key, name)</code> - 1</summary>
-An identity has been confirmed by its owner
-[idty_index, owner_key, name]
+An identity has been confirmed by its owner.
 
 ```rust
 idty_index: T::IdtyIndex
@@ -1153,8 +1141,7 @@ name: IdtyName
 <details>
 <summary>
 <code>IdtyValidated(idty_index)</code> - 2</summary>
-An identity has been validated
-[idty_index]
+An identity has been validated.
 
 ```rust
 idty_index: T::IdtyIndex
@@ -1179,8 +1166,7 @@ new_owner_key: T::AccountId
 <details>
 <summary>
 <code>IdtyRemoved(idty_index, reason)</code> - 4</summary>
-An identity has been removed
-[idty_index]
+An identity has been removed.
 
 ```rust
 idty_index: T::IdtyIndex
@@ -1196,12 +1182,12 @@ reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>
 <li>
 <details>
 <summary>
-<code>MembershipAcquired()</code> - 0</summary>
-A membership was acquired
-[idty_id]
+<code>MembershipAcquired(member, expire_on)</code> - 0</summary>
+A membership was acquired.
 
 ```rust
-: T::IdtyId
+member: T::IdtyId
+expire_on: BlockNumberFor<T>
 ```
 
 </details>
@@ -1209,12 +1195,12 @@ A membership was acquired
 <li>
 <details>
 <summary>
-<code>MembershipExpired()</code> - 1</summary>
-A membership expired
-[idty_id]
+<code>MembershipTerminated(member, reason)</code> - 1</summary>
+A membership was terminated.
 
 ```rust
-: T::IdtyId
+member: T::IdtyId
+reason: MembershipTerminationReason
 ```
 
 </details>
@@ -1222,12 +1208,12 @@ A membership expired
 <li>
 <details>
 <summary>
-<code>MembershipRenewed()</code> - 2</summary>
-A membership was renewed
-[idty_id]
+<code>PendingMembershipAdded(member, expire_on)</code> - 2</summary>
+A pending membership was added.
 
 ```rust
-: T::IdtyId
+member: T::IdtyId
+expire_on: BlockNumberFor<T>
 ```
 
 </details>
@@ -1235,38 +1221,11 @@ A membership was renewed
 <li>
 <details>
 <summary>
-<code>MembershipRequested()</code> - 3</summary>
-An membership was requested
-[idty_id]
+<code>PendingMembershipExpired(member)</code> - 3</summary>
+A pending membership has expired.
 
 ```rust
-: T::IdtyId
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MembershipRevoked()</code> - 4</summary>
-A membership was revoked
-[idty_id]
-
-```rust
-: T::IdtyId
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>PendingMembershipExpired()</code> - 5</summary>
-A pending membership request has expired
-[idty_id]
-
-```rust
-: T::IdtyId
+member: T::IdtyId
 ```
 
 </details>
@@ -1279,8 +1238,7 @@ A pending membership request has expired
 <details>
 <summary>
 <code>NewCert(issuer, issuer_issued_count, receiver, receiver_received_count)</code> - 0</summary>
-New certification
-[issuer, issuer_issued_count, receiver, receiver_received_count]
+A new certification was added.
 
 ```rust
 issuer: T::IdtyIndex
@@ -1295,8 +1253,7 @@ receiver_received_count: u32
 <details>
 <summary>
 <code>RemovedCert(issuer, issuer_issued_count, receiver, receiver_received_count, expiration)</code> - 1</summary>
-Removed certification
-[issuer, issuer_issued_count, receiver, receiver_received_count, expiration]
+A certification was removed.
 
 ```rust
 issuer: T::IdtyIndex
@@ -1312,8 +1269,7 @@ expiration: bool
 <details>
 <summary>
 <code>RenewedCert(issuer, receiver)</code> - 2</summary>
-Renewed certification
-[issuer, receiver]
+A certification was renewed.
 
 ```rust
 issuer: T::IdtyIndex
@@ -1326,6 +1282,44 @@ receiver: T::IdtyIndex
 </li>
 <li>Distance - 44
 <ul>
+<li>
+<details>
+<summary>
+<code>EvaluationRequested(idty_index, who)</code> - 0</summary>
+A distance evaluation was requested.
+
+```rust
+idty_index: T::IdtyIndex
+who: T::AccountId
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>EvaluationUpdated(evaluator)</code> - 1</summary>
+A distance evaluation was updated.
+
+```rust
+evaluator: T::AccountId
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>EvaluationStatusForced(idty_index, status)</code> - 2</summary>
+A distance status was forced.
+
+```rust
+idty_index: T::IdtyIndex
+status: Option<(<T as frame_system::Config>::AccountId, DistanceStatus)>
+```
+
+</details>
+</li>
 </ul>
 </li>
 <li>SmithSubWot - 50
@@ -1337,12 +1331,12 @@ receiver: T::IdtyIndex
 <li>
 <details>
 <summary>
-<code>MembershipAcquired()</code> - 0</summary>
-A membership was acquired
-[idty_id]
+<code>MembershipAcquired(member, expire_on)</code> - 0</summary>
+A membership was acquired.
 
 ```rust
-: T::IdtyId
+member: T::IdtyId
+expire_on: BlockNumberFor<T>
 ```
 
 </details>
@@ -1350,12 +1344,12 @@ A membership was acquired
 <li>
 <details>
 <summary>
-<code>MembershipExpired()</code> - 1</summary>
-A membership expired
-[idty_id]
+<code>MembershipTerminated(member, reason)</code> - 1</summary>
+A membership was terminated.
 
 ```rust
-: T::IdtyId
+member: T::IdtyId
+reason: MembershipTerminationReason
 ```
 
 </details>
@@ -1363,12 +1357,12 @@ A membership expired
 <li>
 <details>
 <summary>
-<code>MembershipRenewed()</code> - 2</summary>
-A membership was renewed
-[idty_id]
+<code>PendingMembershipAdded(member, expire_on)</code> - 2</summary>
+A pending membership was added.
 
 ```rust
-: T::IdtyId
+member: T::IdtyId
+expire_on: BlockNumberFor<T>
 ```
 
 </details>
@@ -1376,38 +1370,11 @@ A membership was renewed
 <li>
 <details>
 <summary>
-<code>MembershipRequested()</code> - 3</summary>
-An membership was requested
-[idty_id]
+<code>PendingMembershipExpired(member)</code> - 3</summary>
+A pending membership has expired.
 
 ```rust
-: T::IdtyId
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MembershipRevoked()</code> - 4</summary>
-A membership was revoked
-[idty_id]
-
-```rust
-: T::IdtyId
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>PendingMembershipExpired()</code> - 5</summary>
-A pending membership request has expired
-[idty_id]
-
-```rust
-: T::IdtyId
+member: T::IdtyId
 ```
 
 </details>
@@ -1420,8 +1387,7 @@ A pending membership request has expired
 <details>
 <summary>
 <code>NewCert(issuer, issuer_issued_count, receiver, receiver_received_count)</code> - 0</summary>
-New certification
-[issuer, issuer_issued_count, receiver, receiver_received_count]
+A new certification was added.
 
 ```rust
 issuer: T::IdtyIndex
@@ -1436,8 +1402,7 @@ receiver_received_count: u32
 <details>
 <summary>
 <code>RemovedCert(issuer, issuer_issued_count, receiver, receiver_received_count, expiration)</code> - 1</summary>
-Removed certification
-[issuer, issuer_issued_count, receiver, receiver_received_count, expiration]
+A certification was removed.
 
 ```rust
 issuer: T::IdtyIndex
@@ -1453,8 +1418,7 @@ expiration: bool
 <details>
 <summary>
 <code>RenewedCert(issuer, receiver)</code> - 2</summary>
-Renewed certification
-[issuer, receiver]
+A certification was renewed.
 
 ```rust
 issuer: T::IdtyIndex
@@ -1580,7 +1544,7 @@ call_hash: CallHash
 <details>
 <summary>
 <code>FilledRandomness(request_id, randomness)</code> - 0</summary>
-Filled randomness
+A request for randomness was fulfilled.
 
 ```rust
 request_id: RequestId
@@ -1593,7 +1557,7 @@ randomness: H256
 <details>
 <summary>
 <code>RequestedRandomness(request_id, salt, r#type)</code> - 1</summary>
-Requested randomness
+A request for randomness was made.
 
 ```rust
 request_id: RequestId

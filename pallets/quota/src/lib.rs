@@ -111,37 +111,28 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Refunded fees to an account
+        /// Transaction fees were refunded.
         Refunded {
             who: T::AccountId,
             identity: IdtyId<T>,
             amount: BalanceOf<T>,
         },
-        // --- the following events let know that an error occured ---
-        /// No quota for identity
+        /// No more quota available for refund.
         NoQuotaForIdty(IdtyId<T>),
-        /// No more currency available for refund
-        // should never happen if the fees are going to the refund account
+        /// No more currency available for refund.
+        /// This scenario should never occur if the fees are intended for the refund account.
         NoMoreCurrencyForRefund,
-        /// Refund failed
-        // for example when account is destroyed
+        /// The refund has failed.
+        /// This scenario should rarely occur, except when the account was destroyed in the interim between the request and the refund.
         RefundFailed(T::AccountId),
-        /// Refund queue full
+        /// Refund queue was full.
         RefundQueueFull,
     }
 
-    // // ERRORS //
-    // #[pallet::error]
-    // pub enum Error<T> {
-    //     // no errors in on_idle
-    //     // instead events are emitted
-    // }
-
-    // // CALLS //
-    // #[pallet::call]
-    // impl<T: Config> Pallet<T> {
-    //     // no calls for this pallet, only automatic processing when idle
-    // }
+    // This pallet only contains the `on_idle` hook and no call.
+    // Hooks are infallible by definition, so there are no error. To monitor no-ops
+    // from inside the quota pallet, we use events as mentioned in
+    // https://substrate.stackexchange.com/questions/9854/emitting-errors-from-hooks-like-on-initialize
 
     // INTERNAL FUNCTIONS //
     impl<T: Config> Pallet<T> {

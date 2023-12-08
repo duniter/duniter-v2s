@@ -176,22 +176,19 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Force the destruction of an account because its free balance is insufficient to pay
-        /// the account creation price.
-        /// [who, balance]
+        /// Forced destruction of an account due to insufficient free balance to cover the account creation price.
         ForceDestroy {
             who: T::AccountId,
             balance: T::Balance,
         },
-        /// Random id assigned
-        /// [account_id, random_id]
+        /// A random ID has been assigned to the account.
         RandomIdAssigned { who: T::AccountId, random_id: H256 },
         /// account linked to identity
         AccountLinked {
             who: T::AccountId,
             identity: IdtyIdOf<T>,
         },
-        /// account unlinked from identity
+        /// The account was unlinked from its identity.
         AccountUnlinked(T::AccountId),
     }
 

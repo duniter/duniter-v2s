@@ -195,7 +195,7 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 	/// Proof Skipped: Identity IdentitiesNames (max_values: None, max_size: None, mode: Measured)
 	/// Storage: Quota IdtyQuota (r:0 w:1)
 	/// Proof: Quota IdtyQuota (max_values: None, max_size: Some(24), added: 2499, mode: MaxEncodedLen)
-	fn remove_identity() -> Weight {
+	fn force_remove_identity() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `1343`
 		//  Estimated: `7283`

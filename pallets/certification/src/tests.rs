@@ -113,11 +113,9 @@ fn test_genesis_build() {
         // Cert 2->1 must have expired
         assert_eq!(
             System::events()[0].event,
-            RuntimeEvent::DefaultCertification(Event::RemovedCert {
+            RuntimeEvent::DefaultCertification(Event::CertRemoved {
                 issuer: 2,
-                issuer_issued_count: 1,
                 receiver: 1,
-                receiver_received_count: 1,
                 expiration: true,
             },)
         );
@@ -199,19 +197,15 @@ fn test_cert_expiry() {
     .execute_with(|| {
         run_to_block(5);
         // Expiry of cert by issuer 1
-        System::assert_has_event(RuntimeEvent::DefaultCertification(Event::RemovedCert {
+        System::assert_has_event(RuntimeEvent::DefaultCertification(Event::CertRemoved {
             issuer: 1,
-            issuer_issued_count: 1,
             receiver: 0,
-            receiver_received_count: 1,
             expiration: true,
         }));
         // Expiry of cert by issuer 2
-        System::assert_has_event(RuntimeEvent::DefaultCertification(Event::RemovedCert {
+        System::assert_has_event(RuntimeEvent::DefaultCertification(Event::CertRemoved {
             receiver: 0,
             issuer: 2,
-            issuer_issued_count: 1,
-            receiver_received_count: 0, // <-- No more cert received
             expiration: true,
         }));
     });
@@ -245,18 +239,16 @@ fn test_cert_renewal() {
             DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
             Ok(().into())
         );
-        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RenewedCert {
+        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRenewed {
             issuer: 1,
             receiver: 0,
         }));
 
         run_to_block(12);
         // expiry of previously renewed cert
-        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RemovedCert {
+        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRemoved {
             issuer: 1,
-            issuer_issued_count: 1,
             receiver: 0,
-            receiver_received_count: 1,
             expiration: true,
         }));
     });
@@ -289,7 +281,7 @@ fn test_cert_renewal_cert_delay() {
             DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
             Ok(().into())
         );
-        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RenewedCert {
+        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRenewed {
             issuer: 1,
             receiver: 0,
         }));
@@ -333,7 +325,7 @@ fn test_cert_renewal_expiration() {
             DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
             Ok(().into())
         );
-        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RenewedCert {
+        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRenewed {
             issuer: 1,
             receiver: 0,
         }));
@@ -345,7 +337,7 @@ fn test_cert_renewal_expiration() {
             DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
             Ok(().into())
         );
-        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RenewedCert {
+        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRenewed {
             issuer: 1,
             receiver: 0,
         }));
@@ -357,11 +349,9 @@ fn test_cert_renewal_expiration() {
 
         run_to_block(14);
         // expiry of previously renewed cert
-        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::RemovedCert {
+        System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRemoved {
             issuer: 1,
-            issuer_issued_count: 1,
             receiver: 0,
-            receiver_received_count: 1,
             expiration: true,
         }));
     });

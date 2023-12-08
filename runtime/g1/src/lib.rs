@@ -286,7 +286,7 @@ construct_runtime!(
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
         Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
         Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
-        Distance: pallet_distance::{Pallet, Call, Storage, Inherent} = 44,
+        Distance: pallet_distance::{Pallet, Call, Storage, Inherent, Event<T>} = 44,
 
         // Smith Sub-Wot
         SmithSubWot: pallet_duniter_wot::<Instance2>::{Pallet} = 50,

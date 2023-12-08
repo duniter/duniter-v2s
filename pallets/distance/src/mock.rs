@@ -63,7 +63,7 @@ frame_support::construct_runtime!(
         AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Identity: pallet_identity::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Distance: pallet_distance::{Pallet, Call, Storage},
+        Distance: pallet_distance::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -255,6 +255,7 @@ impl pallet_distance::Config for Test {
     type EvaluationPrice = frame_support::traits::ConstU64<1000>;
     type MinAccessibleReferees = MinAccessibleReferees;
     type ResultExpiration = frame_support::traits::ConstU32<720>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 

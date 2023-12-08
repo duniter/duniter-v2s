@@ -28,6 +28,8 @@ pub enum DistanceStatus {
     Pending,
     /// Identity respects the distance
     Valid,
+    /// Identity doesn't respect the distance
+    Invalid,
 }
 
 /// Pool where distance evaluation requests and results are stored

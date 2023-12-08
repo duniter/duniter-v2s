@@ -77,7 +77,9 @@ pub mod pallet {
         type MinAccessibleReferees: Get<Perbill>;
         /// Number of session to keep a positive evaluation result
         type ResultExpiration: Get<u32>;
-        // /// Type representing the weight of this pallet
+        /// The overarching event type.
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
     }
 
@@ -160,20 +162,44 @@ pub mod pallet {
     //   storage_id + 1 => receives results
     //   storage_id + 2 => receives new identities
     // (this avoids problems for session_index < 3)
+    //
+
+    #[pallet::event]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    pub enum Event<T: Config> {
+        /// A distance evaluation was requested.
+        EvaluationRequested {
+            idty_index: T::IdtyIndex,
+            who: T::AccountId,
+        },
+        /// A distance evaluation was updated.
+        EvaluationUpdated { evaluator: T::AccountId },
+        /// A distance status was forced.
+        EvaluationStatusForced {
+            idty_index: T::IdtyIndex,
+            status: Option<(<T as frame_system::Config>::AccountId, DistanceStatus)>,
+        },
+    }
 
     // ERRORS //
 
     #[pallet::error]
     pub enum Error<T> {
+        /// Distance is already under evaluation.
         AlreadyInEvaluation,
-        CannotReserve,
-        ManyEvaluationsByAuthor,
-        ManyEvaluationsInBlock,
+        /// Too many evaluations requested by author.
+        TooManyEvaluationsByAuthor,
+        /// Too many evaluations for this block.
+        TooManyEvaluationsInBlock,
+        /// No author for this block.
         NoAuthor,
+        /// Caller has no identity.
         NoIdentity,
-        NonEligibleForEvaluation,
+        /// Evaluation queue is full.
         QueueFull,
+        /// Too many evaluators in the current evaluation pool.
         TooManyEvaluators,
+        /// Evaluation result has a wrong length.
         WrongResultLength,
     }
 
@@ -208,7 +234,8 @@ pub mod pallet {
                 pallet_identity::IdentityIndexOf::<T>::get(&who).ok_or(Error::<T>::NoIdentity)?;
 
             ensure!(
-                IdentityDistanceStatus::<T>::get(idty).is_none(),
+                IdentityDistanceStatus::<T>::get(idty)
+                    != Some((who.clone(), DistanceStatus::Pending)),
                 Error::<T>::AlreadyInEvaluation
             );
 
@@ -226,7 +253,7 @@ pub mod pallet {
             ensure_none(origin)?;
             ensure!(
                 !DidUpdate::<T>::exists(),
-                Error::<T>::ManyEvaluationsInBlock,
+                Error::<T>::TooManyEvaluationsInBlock,
             );
             let author = pallet_authorship::Pallet::<T>::author().ok_or(Error::<T>::NoAuthor)?;
 
@@ -265,15 +292,20 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            IdentityDistanceStatus::<T>::set(identity, status);
+            IdentityDistanceStatus::<T>::set(identity, status.clone());
             DistanceStatusExpireOn::<T>::mutate(
                 pallet_session::CurrentIndex::<T>::get() + T::ResultExpiration::get(),
                 move |identities| {
                     identities
                         .try_push(identity)
-                        .map_err(|_| Error::<T>::ManyEvaluationsInBlock.into())
+                        .map_err(|_| Error::<T>::TooManyEvaluationsInBlock)
                 },
-            )
+            )?;
+            Self::deposit_event(Event::EvaluationStatusForced {
+                idty_index: identity,
+                status,
+            });
+            Ok(())
         }
     }
 
@@ -292,7 +324,7 @@ pub mod pallet {
                 move |identities| {
                     identities
                         .try_push(identity)
-                        .map_err(|_| Error::<T>::ManyEvaluationsInBlock.into())
+                        .map_err(|_| Error::<T>::TooManyEvaluationsInBlock.into())
                 },
             )
         }
@@ -381,13 +413,16 @@ pub mod pallet {
                         .try_push((idty_index, median::MedianAcc::new()))
                         .map_err(|_| Error::<T>::QueueFull)?;
 
-                    IdentityDistanceStatus::<T>::insert(idty_index, (who, DistanceStatus::Pending));
+                    IdentityDistanceStatus::<T>::insert(
+                        idty_index,
+                        (&who, DistanceStatus::Pending),
+                    );
 
                     DistanceStatusExpireOn::<T>::mutate(
                         pallet_session::CurrentIndex::<T>::get() + T::ResultExpiration::get(),
                         move |identities| identities.try_push(idty_index).ok(),
                     );
-
+                    Self::deposit_event(Event::EvaluationRequested { idty_index, who });
                     Ok(())
                 },
             )
@@ -405,7 +440,7 @@ pub mod pallet {
 
                 if result_pool
                     .evaluators
-                    .try_insert(evaluator)
+                    .try_insert(evaluator.clone())
                     .map_err(|_| Error::<T>::TooManyEvaluators)?
                 {
                     for (distance_value, (_identity, median_acc)) in computation_result
@@ -416,9 +451,10 @@ pub mod pallet {
                         median_acc.push(distance_value);
                     }
 
+                    Self::deposit_event(Event::EvaluationUpdated { evaluator });
                     Ok(())
                 } else {
-                    Err(Error::<T>::ManyEvaluationsByAuthor.into())
+                    Err(Error::<T>::TooManyEvaluationsByAuthor.into())
                 }
             })
         }
@@ -444,24 +480,23 @@ pub mod pallet {
                         MedianResult::One(m) => m,
                         MedianResult::Two(m1, m2) => m1 + (m2 - m1) / 2, // Avoid overflow (since max is 1)
                     };
-                    if median >= T::MinAccessibleReferees::get() {
-                        IdentityDistanceStatus::<T>::mutate(idty, |entry| {
-                            entry.as_mut().map(|(account_id, status)| {
+                    IdentityDistanceStatus::<T>::mutate(idty, |entry| {
+                        if let Some((account_id, status)) = entry.as_mut() {
+                            if median >= T::MinAccessibleReferees::get() {
                                 T::Currency::unreserve(
                                     account_id,
                                     <T as Config>::EvaluationPrice::get(),
                                 );
                                 *status = DistanceStatus::Valid;
-                            })
-                        });
-                    } else if let Some((account_id, _status)) =
-                        IdentityDistanceStatus::<T>::take(idty)
-                    {
-                        <T as Config>::Currency::slash_reserved(
-                            &account_id,
-                            <T as Config>::EvaluationPrice::get(),
-                        );
-                    }
+                            } else {
+                                T::Currency::slash_reserved(
+                                    account_id,
+                                    <T as Config>::EvaluationPrice::get(),
+                                );
+                                *status = DistanceStatus::Invalid;
+                            }
+                        }
+                    });
                 } else if let Some((account_id, _status)) = IdentityDistanceStatus::<T>::take(idty)
                 {
                     <T as Config>::Currency::unreserve(

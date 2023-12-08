@@ -22,7 +22,7 @@ use frame_benchmarking::benchmarks_instance_pallet;
 use frame_support::dispatch::UnfilteredDispatchable;
 use frame_system::pallet_prelude::BlockNumberFor;
 use frame_system::RawOrigin;
-use sp_runtime::traits::Convert;
+use sp_runtime::traits::{Convert, One};
 
 #[cfg(test)]
 use maplit::btreemap;
@@ -53,7 +53,7 @@ benchmarks_instance_pallet! {
     }
     verify {
         if T::CheckMembershipCallAllowed::check_idty_allowed_to_request_membership(&idty).is_ok() {
-            assert_has_event::<T, I>(Event::<T, I>::MembershipRequested(idty).into());
+            assert_has_event::<T, I>(Event::<T, I>::PendingMembershipAdded{member: idty, expire_on: BlockNumberFor::<T>::one() + T::PendingMembershipPeriod::get()}.into());
         }
     }
     claim_membership {
@@ -65,7 +65,7 @@ benchmarks_instance_pallet! {
         T::BenchmarkSetupHandler::force_status_ok(&idty, &caller);
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
-        assert_has_event::<T, I>(Event::<T, I>::MembershipAcquired(idty).into());
+        assert_has_event::<T, I>(Event::<T, I>::MembershipAdded{member: idty, expire_on: BlockNumberFor::<T>::one() + T::MembershipPeriod::get()}.into());
     }
     renew_membership {
         let idty: T::IdtyId = 3.into();
@@ -74,7 +74,7 @@ benchmarks_instance_pallet! {
         T::BenchmarkSetupHandler::force_status_ok(&idty, &caller);
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
-        assert_has_event::<T, I>(Event::<T, I>::MembershipRenewed(idty).into());
+        assert_has_event::<T, I>(Event::<T, I>::MembershipAdded{member: idty, expire_on: BlockNumberFor::<T>::one() + T::MembershipPeriod::get()}.into());
     }
     revoke_membership {
         let idty: T::IdtyId = 3.into();
@@ -82,7 +82,7 @@ benchmarks_instance_pallet! {
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
-        assert_has_event::<T, I>(Event::<T, I>::MembershipRevoked(idty).into());
+        assert_has_event::<T, I>(Event::<T, I>::MembershipRemoved{member: idty, reason: MembershipRemovalReason::Revoked}.into());
     }
     // Base weight of an empty initialize
     on_initialize {

@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **190** errors from **37** pallets.
+There are **178** errors from **37** pallets.
 
 <ul>
 <li>System - 0
@@ -220,49 +220,49 @@ Number of freezes exceed `MaxFreezes`.
 <details>
 <summary>
 <code>BlockHeightInFuture</code> - 0</summary>
-Block height is in the future
+Block height is in the future.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>BlockHeightTooOld</code> - 1</summary>
-Block height is too old
+Block height is too old.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>DestAccountNotExist</code> - 2</summary>
-Destination account does not exist
+Destination account does not exist.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>ExistentialDeposit</code> - 3</summary>
-Destination account has balance less than existential deposit
+Destination account has a balance less than the existential deposit.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>InsufficientBalance</code> - 4</summary>
-Source account has insufficient balance
+Source account has insufficient balance.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>OneshotAccountAlreadyCreated</code> - 5</summary>
-Destination oneshot account already exists
+Destination oneshot account already exists.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>OneshotAccountNotExist</code> - 6</summary>
-Source oneshot account does not exist
+Source oneshot account does not exist.
 </details>
 </li>
 </ul>
@@ -277,41 +277,41 @@ Source oneshot account does not exist
 <details>
 <summary>
 <code>AlreadyIncoming</code> - 0</summary>
-Already incoming
+Member already incoming
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>AlreadyOnline</code> - 1</summary>
-Already online
+Member already online
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>AlreadyOutgoing</code> - 2</summary>
-Already outgoing
+Member already outgoing
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>MemberIdNotFound</code> - 3</summary>
-Not found owner key
+Owner key is invalid as a member.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>MemberIdBlackListed</code> - 4</summary>
+<code>MemberBlacklisted</code> - 4</summary>
 Member is blacklisted
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>MemberNotBlackListed</code> - 5</summary>
+<code>MemberNotBlacklisted</code> - 5</summary>
 Member is not blacklisted
 </details>
 </li>
@@ -332,29 +332,22 @@ Neither online nor scheduled
 <li>
 <details>
 <summary>
-<code>NotOwner</code> - 8</summary>
-Not owner
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>NotMember</code> - 9</summary>
+<code>NotMember</code> - 8</summary>
 Not member
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>SessionKeysNotProvided</code> - 10</summary>
+<code>SessionKeysNotProvided</code> - 9</summary>
 Session keys not provided
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>TooManyAuthorities</code> - 11</summary>
-Too man aAuthorities
+<code>TooManyAuthorities</code> - 10</summary>
+Too many authorities.
 </details>
 </li>
 </ul>
@@ -639,84 +632,84 @@ This account is not allowed to claim UDs.
 <details>
 <summary>
 <code>NotEnoughCertsToClaimMembership</code> - 0</summary>
-Not enough certifications received to claim membership
+Insufficient certifications received to claim membership.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>DistanceNotOK</code> - 1</summary>
-Distance has not been evaluated positively
+<code>DistanceNotOk</code> - 1</summary>
+Distance has not received a positive evaluation.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IdtyNotAllowedToRequestMembership</code> - 2</summary>
-Identity not allowed to request membership
+Identity is not allowed to request membership.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IdtyNotAllowedToRenewMembership</code> - 3</summary>
-Identity not allowed to renew membership
+Identity not allowed to renew membership.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IdtyCreationPeriodNotRespected</code> - 4</summary>
-Identity creation period not respected
+Identity creation period not respected.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>NotEnoughReceivedCertsToCreateIdty</code> - 5</summary>
-Not enough received certifications to create identity
+Insufficient received certifications to create identity.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>MaxEmittedCertsReached</code> - 6</summary>
-Max number of emitted certs reached
+Maximum number of emitted certifications reached.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>NotAllowedToChangeIdtyAddress</code> - 7</summary>
-Not allowed to change identity address
+Not allowed to change identity address.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>NotAllowedToRemoveIdty</code> - 8</summary>
-Not allowed to remove identity
+Not allowed to remove identity.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IssuerCanNotEmitCert</code> - 9</summary>
-Issuer can not emit cert because it is not validated
+Issuer cannot emit a certification because it is not validated.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>CertToUndefined</code> - 10</summary>
-Can not issue cert to identity without membership or pending membership
+Cannot issue a certification to an identity without membership or pending membership.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IdtyNotFound</code> - 11</summary>
-Issuer or receiver not found
+Issuer or receiver not found.
 </details>
 </li>
 </ul>
@@ -727,147 +720,98 @@ Issuer or receiver not found
 <details>
 <summary>
 <code>IdtyAlreadyConfirmed</code> - 0</summary>
-Identity already confirmed
+Identity already confirmed.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IdtyAlreadyCreated</code> - 1</summary>
-Identity already created
+Identity already created.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IdtyAlreadyValidated</code> - 2</summary>
-Identity already validated
+Identity already validated.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyCreationNotAllowed</code> - 3</summary>
-You are not allowed to create a new identity now
+<code>IdtyIndexNotFound</code> - 3</summary>
+Identity index not found.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyIndexNotFound</code> - 4</summary>
-Identity index not found
+<code>IdtyNameAlreadyExist</code> - 4</summary>
+Identity name already exists.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNameAlreadyExist</code> - 5</summary>
-Identity name already exists
+<code>IdtyNameInvalid</code> - 5</summary>
+Invalid identity name.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNameInvalid</code> - 6</summary>
-Invalid identity name
+<code>IdtyNotConfirmedByOwner</code> - 6</summary>
+Identity not confirmed by its owner.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNotConfirmedByOwner</code> - 7</summary>
-Identity not confirmed by its owner
+<code>IdtyNotFound</code> - 7</summary>
+Identity not found.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNotFound</code> - 8</summary>
-Identity not found
+<code>InvalidSignature</code> - 8</summary>
+Invalid payload signature.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNotMember</code> - 9</summary>
-Identity not member
+<code>InvalidRevocationKey</code> - 9</summary>
+Invalid revocation key.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNotValidated</code> - 10</summary>
-Identity not validated
+<code>NotRespectIdtyCreationPeriod</code> - 10</summary>
+Identity creation period is not respected.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNotYetRenewable</code> - 11</summary>
-Identity not yet renewable
+<code>OwnerKeyAlreadyRecentlyChanged</code> - 11</summary>
+Owner key already changed recently.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>InvalidSignature</code> - 12</summary>
-payload signature is invalid
+<code>OwnerKeyAlreadyUsed</code> - 12</summary>
+Owner key already used.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>InvalidRevocationKey</code> - 13</summary>
-Revocation key is invalid
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>NotRespectIdtyCreationPeriod</code> - 14</summary>
-Identity creation period is not respected
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>NotSameIdtyName</code> - 15</summary>
-Not the same identity name
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>OwnerKeyAlreadyRecentlyChanged</code> - 16</summary>
-Owner key already recently changed
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>OwnerKeyAlreadyUsed</code> - 17</summary>
-Owner key already used
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>ProhibitedToRevertToAnOldKey</code> - 18</summary>
-Prohibited to revert to an old key
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>RightAlreadyAdded</code> - 19</summary>
-Right already added
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>RightNotExist</code> - 20</summary>
-Right does not exist
+<code>ProhibitedToRevertToAnOldKey</code> - 13</summary>
+Reverting to an old key is prohibited.
 </details>
 </li>
 </ul>
@@ -878,42 +822,35 @@ Right does not exist
 <details>
 <summary>
 <code>IdtyIdNotFound</code> - 0</summary>
-Identity id not found
+Identity ID not found.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>MembershipAlreadyAcquired</code> - 1</summary>
-Membership already acquired
+Membership already acquired.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>MembershipAlreadyRequested</code> - 2</summary>
-Membership already requested
+Membership already requested.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>MembershipNotFound</code> - 3</summary>
-Membership not found
+Membership not found.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>OriginNotAllowedToUseIdty</code> - 4</summary>
-Origin not allowed to use this identity
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MembershipRequestNotFound</code> - 5</summary>
-Membership request not found
+<code>MembershipRequestNotFound</code> - 4</summary>
+Membership request not found.
 </details>
 </li>
 </ul>
@@ -924,14 +861,14 @@ Membership request not found
 <details>
 <summary>
 <code>CannotCertifySelf</code> - 0</summary>
-An identity cannot certify itself
+Identity cannot certify itself
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IssuedTooManyCert</code> - 1</summary>
-This identity has already issued the maximum number of certifications
+Identity has already issued the maximum number of certifications
 </details>
 </li>
 <li>
@@ -945,14 +882,14 @@ Issuer not found
 <details>
 <summary>
 <code>NotEnoughCertReceived</code> - 3</summary>
-Not enough certifications received
+Insufficient certifications received.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>NotRespectCertPeriod</code> - 4</summary>
-This identity has already issued a certification too recently
+Identity has issued a certification too recently.
 </details>
 </li>
 </ul>
@@ -963,70 +900,56 @@ This identity has already issued a certification too recently
 <details>
 <summary>
 <code>AlreadyInEvaluation</code> - 0</summary>
-
+Distance is already under evaluation.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>CannotReserve</code> - 1</summary>
-
+<code>TooManyEvaluationsByAuthor</code> - 1</summary>
+Too many evaluations requested by author.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>ManyEvaluationsByAuthor</code> - 2</summary>
-
+<code>TooManyEvaluationsInBlock</code> - 2</summary>
+Too many evaluations for this block.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>ManyEvaluationsInBlock</code> - 3</summary>
-
+<code>NoAuthor</code> - 3</summary>
+No author for this block.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NoAuthor</code> - 4</summary>
-
+<code>NoIdentity</code> - 4</summary>
+Caller has no identity.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NoIdentity</code> - 5</summary>
-
+<code>QueueFull</code> - 5</summary>
+Evaluation queue is full.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NonEligibleForEvaluation</code> - 6</summary>
-
+<code>TooManyEvaluators</code> - 6</summary>
+Too many evaluators in the current evaluation pool.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>QueueFull</code> - 7</summary>
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>TooManyEvaluators</code> - 8</summary>
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>WrongResultLength</code> - 9</summary>
-
+<code>WrongResultLength</code> - 7</summary>
+Evaluation result has a wrong length.
 </details>
 </li>
 </ul>
@@ -1037,84 +960,84 @@ This identity has already issued a certification too recently
 <details>
 <summary>
 <code>NotEnoughCertsToClaimMembership</code> - 0</summary>
-Not enough certifications received to claim membership
+Insufficient certifications received to claim membership.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>DistanceNotOK</code> - 1</summary>
-Distance has not been evaluated positively
+<code>DistanceNotOk</code> - 1</summary>
+Distance has not received a positive evaluation.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IdtyNotAllowedToRequestMembership</code> - 2</summary>
-Identity not allowed to request membership
+Identity is not allowed to request membership.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IdtyNotAllowedToRenewMembership</code> - 3</summary>
-Identity not allowed to renew membership
+Identity not allowed to renew membership.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IdtyCreationPeriodNotRespected</code> - 4</summary>
-Identity creation period not respected
+Identity creation period not respected.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>NotEnoughReceivedCertsToCreateIdty</code> - 5</summary>
-Not enough received certifications to create identity
+Insufficient received certifications to create identity.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>MaxEmittedCertsReached</code> - 6</summary>
-Max number of emitted certs reached
+Maximum number of emitted certifications reached.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>NotAllowedToChangeIdtyAddress</code> - 7</summary>
-Not allowed to change identity address
+Not allowed to change identity address.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>NotAllowedToRemoveIdty</code> - 8</summary>
-Not allowed to remove identity
+Not allowed to remove identity.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IssuerCanNotEmitCert</code> - 9</summary>
-Issuer can not emit cert because it is not validated
+Issuer cannot emit a certification because it is not validated.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>CertToUndefined</code> - 10</summary>
-Can not issue cert to identity without membership or pending membership
+Cannot issue a certification to an identity without membership or pending membership.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IdtyNotFound</code> - 11</summary>
-Issuer or receiver not found
+Issuer or receiver not found.
 </details>
 </li>
 </ul>
@@ -1125,42 +1048,35 @@ Issuer or receiver not found
 <details>
 <summary>
 <code>IdtyIdNotFound</code> - 0</summary>
-Identity id not found
+Identity ID not found.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>MembershipAlreadyAcquired</code> - 1</summary>
-Membership already acquired
+Membership already acquired.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>MembershipAlreadyRequested</code> - 2</summary>
-Membership already requested
+Membership already requested.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>MembershipNotFound</code> - 3</summary>
-Membership not found
+Membership not found.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>OriginNotAllowedToUseIdty</code> - 4</summary>
-Origin not allowed to use this identity
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MembershipRequestNotFound</code> - 5</summary>
-Membership request not found
+<code>MembershipRequestNotFound</code> - 4</summary>
+Membership request not found.
 </details>
 </li>
 </ul>
@@ -1171,14 +1087,14 @@ Membership request not found
 <details>
 <summary>
 <code>CannotCertifySelf</code> - 0</summary>
-An identity cannot certify itself
+Identity cannot certify itself
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IssuedTooManyCert</code> - 1</summary>
-This identity has already issued the maximum number of certifications
+Identity has already issued the maximum number of certifications
 </details>
 </li>
 <li>
@@ -1192,14 +1108,14 @@ Issuer not found
 <details>
 <summary>
 <code>NotEnoughCertReceived</code> - 3</summary>
-Not enough certifications received
+Insufficient certifications received.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>NotRespectCertPeriod</code> - 4</summary>
-This identity has already issued a certification too recently
+Identity has issued a certification too recently.
 </details>
 </li>
 </ul>
@@ -1371,8 +1287,8 @@ The data to be stored is already stored.
 <li>
 <details>
 <summary>
-<code>FullQueue</code> - 0</summary>
-The queue is full, pleasy retry later
+<code>QueueFull</code> - 0</summary>
+Request randomness queue is full.
 </details>
 </li>
 </ul>

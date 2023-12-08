@@ -120,12 +120,12 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event {
-        /// Filled randomness
+        /// A request for randomness was fulfilled.
         FilledRandomness {
             request_id: RequestId,
             randomness: H256,
         },
-        /// Requested randomness
+        /// A request for randomness was made.
         RequestedRandomness {
             request_id: RequestId,
             salt: H256,
@@ -137,8 +137,8 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// The queue is full, pleasy retry later
-        FullQueue,
+        /// Request randomness queue is full.
+        QueueFull,
     }
 
     // CALLS //
@@ -226,7 +226,7 @@ pub mod pallet {
             // Verify phase
             ensure!(
                 RequestsIds::<T>::count() < T::MaxRequests::get(),
-                Error::<T>::FullQueue
+                Error::<T>::QueueFull
             );
 
             Self::pay_request(requestor)?;
