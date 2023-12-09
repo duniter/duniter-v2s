@@ -558,6 +558,9 @@ async fn should_have_distance_ok(world: &mut DuniterWorld, who: String) -> Resul
         .await?
     {
         Some((_, gdev::runtime_types::pallet_distance::types::DistanceStatus::Valid)) => Ok(()),
+        Some((_, gdev::runtime_types::pallet_distance::types::DistanceStatus::Invalid)) => {
+            Err(anyhow::anyhow!("invalid distance status").into())
+        }
         Some((_, gdev::runtime_types::pallet_distance::types::DistanceStatus::Pending)) => {
             Err(anyhow::anyhow!("pending distance status").into())
         }
@@ -669,8 +672,17 @@ async fn main() {
         .run(features_path)
         .await;
 
+    if summarize.failed_steps() > 0 {
+        panic!("Could not run tests correctly (failed steps)");
+    }
     if summarize.hook_errors() > 0 {
         panic!("Could not run tests correctly (hook errors)");
+    }
+    if summarize.parsing_errors() > 0 {
+        panic!("Could not run tests correctly (parsing errors)");
+    }
+    if summarize.execution_has_failed() {
+        panic!("Could not run tests correctly (execution has failed)");
     }
 }
 
