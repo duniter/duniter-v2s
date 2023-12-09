@@ -461,7 +461,7 @@ pub mod pallet {
     }
 
     impl<T: Config> pallet_authority_members::OnNewSession for Pallet<T> {
-        fn on_new_session(index: SessionIndex) -> Weight {
+        fn on_new_session(index: SessionIndex) {
             EvaluationBlock::<T>::set(frame_system::Pallet::<T>::parent_hash());
 
             // Make results expire
@@ -505,7 +505,6 @@ pub mod pallet {
                     );
                 }
             }
-            Weight::zero()
         }
     }
 

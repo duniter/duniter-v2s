@@ -15,24 +15,19 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use super::SessionIndex;
-use frame_support::pallet_prelude::Weight;
 
 pub trait OnNewSession {
-    fn on_new_session(index: SessionIndex) -> Weight;
+    fn on_new_session(index: SessionIndex);
 }
 
 impl OnNewSession for () {
-    fn on_new_session(_: SessionIndex) -> Weight {
-        Weight::zero()
-    }
+    fn on_new_session(_: SessionIndex) {}
 }
 
 pub trait OnRemovedMember<MemberId> {
-    fn on_removed_member(member_id: MemberId) -> Weight;
+    fn on_removed_member(member_id: MemberId);
 }
 
 impl<MemberId> OnRemovedMember<MemberId> for () {
-    fn on_removed_member(_: MemberId) -> Weight {
-        Weight::zero()
-    }
+    fn on_removed_member(_: MemberId) {}
 }

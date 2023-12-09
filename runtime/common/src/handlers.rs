@@ -29,9 +29,9 @@ impl<Runtime> pallet_authority_members::traits::OnNewSession for OnNewSessionHan
 where
     Runtime: pallet_provide_randomness::Config + pallet_distance::Config,
 {
-    fn on_new_session(index: sp_staking::SessionIndex) -> Weight {
+    fn on_new_session(index: sp_staking::SessionIndex) {
         pallet_provide_randomness::Pallet::<Runtime>::on_new_epoch();
-        pallet_distance::Pallet::<Runtime>::on_new_session(index)
+        pallet_distance::Pallet::<Runtime>::on_new_session(index);
     }
 }
 
@@ -154,11 +154,9 @@ impl<Runtime> pallet_authority_members::traits::OnRemovedMember<IdtyIndex>
 where
     Runtime: frame_system::Config + pallet_membership::Config<Instance2, IdtyId = IdtyIndex>,
 {
-    fn on_removed_member(idty_index: IdtyIndex) -> Weight {
+    fn on_removed_member(idty_index: IdtyIndex) {
         // TODO investigate why we should remove smith membership when removing authority member
         pallet_membership::Pallet::<Runtime, Instance2>::force_revoke_membership(idty_index);
-        // TODO investigate why weight zero
-        Weight::zero()
     }
 }
 

@@ -405,7 +405,7 @@ pub mod pallet {
 
             // Emit event
             Self::deposit_event(Event::MemberRemoved { member: member_id });
-            let _ = T::OnRemovedMember::on_removed_member(member_id);
+            T::OnRemovedMember::on_removed_member(member_id);
         }
         /// perform incoming authorities insertion
         fn insert_in(member_id: T::MemberId) -> bool {
