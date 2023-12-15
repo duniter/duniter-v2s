@@ -236,7 +236,7 @@ pub mod pallet {
             members_count: BalanceOf<T>,
         },
         /// DUs were automatically transferred as part of a member removal.
-        UdsAutoPaidAtRemoval {
+        UdsAutoPaid {
             count: UdIndex,
             total: BalanceOf<T>,
             who: T::AccountId,
@@ -442,7 +442,7 @@ pub mod pallet {
                     PastReevals::<T>::get().into_iter(),
                 );
                 T::Currency::deposit_creating(who, uds_total);
-                Self::deposit_event(Event::UdsAutoPaidAtRemoval {
+                Self::deposit_event(Event::UdsAutoPaid {
                     count: uds_count,
                     total: uds_total,
                     who: who.clone(),

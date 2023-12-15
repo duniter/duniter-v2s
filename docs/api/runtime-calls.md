@@ -13,7 +13,7 @@ through on-chain governance mechanisms.
 
 ## User calls
 
-There are **80** user calls from **23** pallets.
+There are **78** user calls from **23** pallets.
 
 ### Account - 1
 
@@ -642,18 +642,6 @@ Confirm the creation of an identity and give it a name
 
 The identity must have been created using `create_identity` before it can be confirmed.
 
-#### validate_identity - 2
-
-<details><summary><code>validate_identity(idty_index)</code></summary>
-
-```rust
-idty_index: T::IdtyIndex
-```
-</details>
-
-
-validate the owned identity (must meet the main wot requirements)
-
 #### change_owner_key - 3
 
 <details><summary><code>change_owner_key(new_key, new_key_sig)</code></summary>
@@ -694,20 +682,6 @@ Revoke an identity using a revocation signature
 
 Any signed origin can execute this call.
 
-#### force_remove_identity - 5
-
-<details><summary><code>force_remove_identity(idty_index, idty_name, reason)</code></summary>
-
-```rust
-idty_index: T::IdtyIndex
-idty_name: Option<IdtyName>
-reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>
-```
-</details>
-
-
-remove an identity from storage
-
 #### fix_sufficients - 7
 
 <details><summary><code>fix_sufficients(owner_key, inc)</code></summary>
@@ -746,7 +720,6 @@ Link an account to an identity
 
 
 claim membership
-a pending membership should exist
 it must fullfill the requirements (certs, distance)
 for main wot claim_membership is called automatically when validating identity
 for smith wot, it means joining the authority members
@@ -761,6 +734,18 @@ for smith wot, it means joining the authority members
 
 
 extend the validity period of an active membership
+
+#### revoke_membership - 3
+
+<details><summary><code>revoke_membership()</code></summary>
+
+```rust
+```
+</details>
+
+
+revoke an active membership
+(only available for sub wot, automatic for main wot)
 
 ### Cert - 43
 
@@ -840,18 +825,6 @@ Removes the status if `status` is `None`.
 
 ### SmithMembership - 52
 
-#### request_membership - 0
-
-<details><summary><code>request_membership()</code></summary>
-
-```rust
-```
-</details>
-
-
-submit a membership request (must have a declared identity)
-(only available for sub wot, automatic for main wot)
-
 #### claim_membership - 1
 
 <details><summary><code>claim_membership()</code></summary>
@@ -862,7 +835,6 @@ submit a membership request (must have a declared identity)
 
 
 claim membership
-a pending membership should exist
 it must fullfill the requirements (certs, distance)
 for main wot claim_membership is called automatically when validating identity
 for smith wot, it means joining the authority members
@@ -1909,7 +1881,7 @@ The dispatch origin for this call must be _Root_.
 
 ## Disabled calls
 
-There are **6** disabled calls from **3** pallets.
+There are **4** disabled calls from **2** pallets.
 
 ### System - 0
 
@@ -1984,30 +1956,4 @@ usually means being a stash account).
 **Complexity**
 - `O(1)` in number of key types. Actual cost depends on the number of length of
   `T::Keys::key_ids()` which is fixed.
-
-### Membership - 42
-
-#### request_membership - 0
-
-<details><summary><code>request_membership()</code></summary>
-
-```rust
-```
-</details>
-
-
-submit a membership request (must have a declared identity)
-(only available for sub wot, automatic for main wot)
-
-#### revoke_membership - 3
-
-<details><summary><code>revoke_membership()</code></summary>
-
-```rust
-```
-</details>
-
-
-revoke an active membership
-(only available for sub wot, automatic for main wot)
 

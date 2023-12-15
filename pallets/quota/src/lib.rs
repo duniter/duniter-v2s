@@ -354,7 +354,6 @@ impl<T: Config> pallet_identity::traits::OnIdtyChange<T> for Pallet<T> {
             IdtyEvent::Removed { .. } => {
                 IdtyQuota::<T>::remove(idty_id);
             }
-            IdtyEvent::Confirmed | IdtyEvent::Validated | IdtyEvent::ChangedOwnerKey { .. } => {}
         }
     }
 }

@@ -28,8 +28,6 @@ extern crate frame_benchmarking;
 
 pub mod parameters;
 
-mod migrations_v400;
-
 pub use self::parameters::*;
 pub use common_runtime::{
     constants::*, entities::*, handlers::*, AccountId, Address, Balance, BlockNumber,
@@ -135,7 +133,6 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    migrations_v400::MigrationsV400,
 >;
 
 pub type TechnicalCommitteeInstance = Instance2;
@@ -182,10 +179,8 @@ impl Contains<RuntimeCall> for BaseCallFilter {
             call,
             // in main web of trust, membership request and revoke are handeled through identity pallet
             // the user can not call them directly
-            RuntimeCall::Membership(
-                pallet_membership::Call::request_membership { .. }
-                    | pallet_membership::Call::revoke_membership { .. }
-            ) | RuntimeCall::Session(_)
+            RuntimeCall::Membership(pallet_membership::Call::revoke_membership { .. })
+                | RuntimeCall::Session(_)
         )
     }
 }
@@ -260,7 +255,6 @@ common_runtime::pallets_config! {
     pub type ConfirmPeriod = pallet_duniter_test_parameters::IdtyConfirmPeriod<Runtime>;
     pub type IdtyCreationPeriod = pallet_duniter_test_parameters::IdtyCreationPeriod<Runtime>;
     pub type MembershipPeriod = pallet_duniter_test_parameters::MembershipPeriod<Runtime>;
-    pub type PendingMembershipPeriod = pallet_duniter_test_parameters::PendingMembershipPeriod<Runtime>;
     pub type UdCreationPeriod = pallet_duniter_test_parameters::UdCreationPeriod<Runtime>;
     pub type UdReevalPeriod = pallet_duniter_test_parameters::UdReevalPeriod<Runtime>;
     pub type WotFirstCertIssuableOn = pallet_duniter_test_parameters::WotFirstCertIssuableOn<Runtime>;
@@ -273,8 +267,6 @@ common_runtime::pallets_config! {
         pallet_duniter_test_parameters::SmithCertMinReceivedCertToIssueCert<Runtime>;
     pub type SmithValidityPeriod = pallet_duniter_test_parameters::SmithCertValidityPeriod<Runtime>;
     pub type SmithMembershipPeriod = pallet_duniter_test_parameters::SmithMembershipPeriod<Runtime>;
-    pub type SmithPendingMembershipPeriod =
-        pallet_duniter_test_parameters::SmithPendingMembershipPeriod<Runtime>;
     pub type SmithWotFirstCertIssuableOn =
         pallet_duniter_test_parameters::SmithWotFirstCertIssuableOn<Runtime>;
     pub type SmithWotMinCertForMembership =

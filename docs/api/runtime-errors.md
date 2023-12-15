@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **178** errors from **37** pallets.
+There are **186** errors from **37** pallets.
 
 <ul>
 <li>System - 0
@@ -638,77 +638,105 @@ Insufficient certifications received to claim membership.
 <li>
 <details>
 <summary>
-<code>DistanceNotOk</code> - 1</summary>
-Distance has not received a positive evaluation.
+<code>DistanceIsInvalid</code> - 1</summary>
+Distance is invalid.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNotAllowedToRequestMembership</code> - 2</summary>
+<code>DistanceNotEvaluated</code> - 2</summary>
+Distance is not evaluated.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>DistanceEvaluationPending</code> - 3</summary>
+Distance evaluation has been requested but is still pending
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>DistanceEvaluationNotRequested</code> - 4</summary>
+Distance evaluation has not been requested
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>IdtyNotAllowedToRequestMembership</code> - 5</summary>
 Identity is not allowed to request membership.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNotAllowedToRenewMembership</code> - 3</summary>
+<code>IdtyNotAllowedToRenewMembership</code> - 6</summary>
 Identity not allowed to renew membership.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyCreationPeriodNotRespected</code> - 4</summary>
+<code>IdtyCreationPeriodNotRespected</code> - 7</summary>
 Identity creation period not respected.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NotEnoughReceivedCertsToCreateIdty</code> - 5</summary>
+<code>NotEnoughReceivedCertsToCreateIdty</code> - 8</summary>
 Insufficient received certifications to create identity.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>MaxEmittedCertsReached</code> - 6</summary>
+<code>MaxEmittedCertsReached</code> - 9</summary>
 Maximum number of emitted certifications reached.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NotAllowedToChangeIdtyAddress</code> - 7</summary>
+<code>NotAllowedToChangeIdtyAddress</code> - 10</summary>
 Not allowed to change identity address.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NotAllowedToRemoveIdty</code> - 8</summary>
+<code>NotAllowedToRemoveIdty</code> - 11</summary>
 Not allowed to remove identity.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IssuerCanNotEmitCert</code> - 9</summary>
-Issuer cannot emit a certification because it is not validated.
+<code>IssuerNotMember</code> - 12</summary>
+Issuer cannot emit a certification because it is not member.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>CertToUndefined</code> - 10</summary>
-Cannot issue a certification to an identity without membership or pending membership.
+<code>CertToUnconfirmed</code> - 13</summary>
+Cannot issue a certification to an unconfirmed identity
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNotFound</code> - 11</summary>
+<code>CertToRevoked</code> - 14</summary>
+Cannot issue a certification to a revoked identity
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>IdtyNotFound</code> - 15</summary>
 Issuer or receiver not found.
 </details>
 </li>
@@ -761,7 +789,7 @@ Invalid identity name.
 <li>
 <details>
 <summary>
-<code>IdtyNotConfirmedByOwner</code> - 6</summary>
+<code>IdtyNotConfirmed</code> - 6</summary>
 Identity not confirmed by its owner.
 </details>
 </li>
@@ -789,29 +817,57 @@ Invalid revocation key.
 <li>
 <details>
 <summary>
-<code>NotRespectIdtyCreationPeriod</code> - 10</summary>
+<code>IssuerNotMember</code> - 10</summary>
+Issuer is not member and can not perform this action
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>NotRespectIdtyCreationPeriod</code> - 11</summary>
 Identity creation period is not respected.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>OwnerKeyAlreadyRecentlyChanged</code> - 11</summary>
+<code>OwnerKeyAlreadyRecentlyChanged</code> - 12</summary>
 Owner key already changed recently.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>OwnerKeyAlreadyUsed</code> - 12</summary>
+<code>OwnerKeyAlreadyUsed</code> - 13</summary>
 Owner key already used.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>ProhibitedToRevertToAnOldKey</code> - 13</summary>
+<code>ProhibitedToRevertToAnOldKey</code> - 14</summary>
 Reverting to an old key is prohibited.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>AlreadyRevoked</code> - 15</summary>
+Already revoked
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CanNotRevokeUnconfirmed</code> - 16</summary>
+Can not revoke identity that never was member
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CanNotRevokeUnvalidated</code> - 17</summary>
+Can not revoke identity that never was member
 </details>
 </li>
 </ul>
@@ -835,22 +891,8 @@ Membership already acquired.
 <li>
 <details>
 <summary>
-<code>MembershipAlreadyRequested</code> - 2</summary>
-Membership already requested.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MembershipNotFound</code> - 3</summary>
+<code>MembershipNotFound</code> - 2</summary>
 Membership not found.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MembershipRequestNotFound</code> - 4</summary>
-Membership request not found.
 </details>
 </li>
 </ul>
@@ -966,77 +1008,105 @@ Insufficient certifications received to claim membership.
 <li>
 <details>
 <summary>
-<code>DistanceNotOk</code> - 1</summary>
-Distance has not received a positive evaluation.
+<code>DistanceIsInvalid</code> - 1</summary>
+Distance is invalid.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNotAllowedToRequestMembership</code> - 2</summary>
+<code>DistanceNotEvaluated</code> - 2</summary>
+Distance is not evaluated.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>DistanceEvaluationPending</code> - 3</summary>
+Distance evaluation has been requested but is still pending
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>DistanceEvaluationNotRequested</code> - 4</summary>
+Distance evaluation has not been requested
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>IdtyNotAllowedToRequestMembership</code> - 5</summary>
 Identity is not allowed to request membership.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNotAllowedToRenewMembership</code> - 3</summary>
+<code>IdtyNotAllowedToRenewMembership</code> - 6</summary>
 Identity not allowed to renew membership.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyCreationPeriodNotRespected</code> - 4</summary>
+<code>IdtyCreationPeriodNotRespected</code> - 7</summary>
 Identity creation period not respected.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NotEnoughReceivedCertsToCreateIdty</code> - 5</summary>
+<code>NotEnoughReceivedCertsToCreateIdty</code> - 8</summary>
 Insufficient received certifications to create identity.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>MaxEmittedCertsReached</code> - 6</summary>
+<code>MaxEmittedCertsReached</code> - 9</summary>
 Maximum number of emitted certifications reached.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NotAllowedToChangeIdtyAddress</code> - 7</summary>
+<code>NotAllowedToChangeIdtyAddress</code> - 10</summary>
 Not allowed to change identity address.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NotAllowedToRemoveIdty</code> - 8</summary>
+<code>NotAllowedToRemoveIdty</code> - 11</summary>
 Not allowed to remove identity.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IssuerCanNotEmitCert</code> - 9</summary>
-Issuer cannot emit a certification because it is not validated.
+<code>IssuerNotMember</code> - 12</summary>
+Issuer cannot emit a certification because it is not member.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>CertToUndefined</code> - 10</summary>
-Cannot issue a certification to an identity without membership or pending membership.
+<code>CertToUnconfirmed</code> - 13</summary>
+Cannot issue a certification to an unconfirmed identity
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNotFound</code> - 11</summary>
+<code>CertToRevoked</code> - 14</summary>
+Cannot issue a certification to a revoked identity
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>IdtyNotFound</code> - 15</summary>
 Issuer or receiver not found.
 </details>
 </li>
@@ -1061,22 +1131,8 @@ Membership already acquired.
 <li>
 <details>
 <summary>
-<code>MembershipAlreadyRequested</code> - 2</summary>
-Membership already requested.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MembershipNotFound</code> - 3</summary>
+<code>MembershipNotFound</code> - 2</summary>
 Membership not found.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MembershipRequestNotFound</code> - 4</summary>
-Membership request not found.
 </details>
 </li>
 </ul>

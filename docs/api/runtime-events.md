@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **129** events from **37** pallets.
+There are **126** events from **37** pallets.
 
 <ul>
 <li>System - 0
@@ -1077,7 +1077,7 @@ members_count: BalanceOf<T>
 <li>
 <details>
 <summary>
-<code>UdsAutoPaidAtRemoval(count, total, who)</code> - 2</summary>
+<code>UdsAutoPaid(count, total, who)</code> - 2</summary>
 DUs were automatically transferred as part of a member removal.
 
 ```rust
@@ -1165,12 +1165,25 @@ new_owner_key: T::AccountId
 <li>
 <details>
 <summary>
-<code>IdtyRemoved(idty_index, reason)</code> - 4</summary>
+<code>IdtyRevoked(idty_index, reason)</code> - 4</summary>
+An identity has been revoked.
+
+```rust
+idty_index: T::IdtyIndex
+reason: RevocationReason
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>IdtyRemoved(idty_index, reason)</code> - 5</summary>
 An identity has been removed.
 
 ```rust
 idty_index: T::IdtyIndex
-reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>
+reason: RemovalReason
 ```
 
 </details>
@@ -1182,8 +1195,8 @@ reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>
 <li>
 <details>
 <summary>
-<code>MembershipAcquired(member, expire_on)</code> - 0</summary>
-A membership was acquired.
+<code>MembershipAdded(member, expire_on)</code> - 0</summary>
+A membership was added.
 
 ```rust
 member: T::IdtyId
@@ -1195,37 +1208,12 @@ expire_on: BlockNumberFor<T>
 <li>
 <details>
 <summary>
-<code>MembershipTerminated(member, reason)</code> - 1</summary>
-A membership was terminated.
+<code>MembershipRemoved(member, reason)</code> - 1</summary>
+A membership was removed.
 
 ```rust
 member: T::IdtyId
-reason: MembershipTerminationReason
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>PendingMembershipAdded(member, expire_on)</code> - 2</summary>
-A pending membership was added.
-
-```rust
-member: T::IdtyId
-expire_on: BlockNumberFor<T>
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>PendingMembershipExpired(member)</code> - 3</summary>
-A pending membership has expired.
-
-```rust
-member: T::IdtyId
+reason: MembershipRemovalReason
 ```
 
 </details>
@@ -1237,14 +1225,12 @@ member: T::IdtyId
 <li>
 <details>
 <summary>
-<code>NewCert(issuer, issuer_issued_count, receiver, receiver_received_count)</code> - 0</summary>
+<code>CertAdded(issuer, receiver)</code> - 0</summary>
 A new certification was added.
 
 ```rust
 issuer: T::IdtyIndex
-issuer_issued_count: u32
 receiver: T::IdtyIndex
-receiver_received_count: u32
 ```
 
 </details>
@@ -1252,14 +1238,12 @@ receiver_received_count: u32
 <li>
 <details>
 <summary>
-<code>RemovedCert(issuer, issuer_issued_count, receiver, receiver_received_count, expiration)</code> - 1</summary>
+<code>CertRemoved(issuer, receiver, expiration)</code> - 1</summary>
 A certification was removed.
 
 ```rust
 issuer: T::IdtyIndex
-issuer_issued_count: u32
 receiver: T::IdtyIndex
-receiver_received_count: u32
 expiration: bool
 ```
 
@@ -1268,7 +1252,7 @@ expiration: bool
 <li>
 <details>
 <summary>
-<code>RenewedCert(issuer, receiver)</code> - 2</summary>
+<code>CertRenewed(issuer, receiver)</code> - 2</summary>
 A certification was renewed.
 
 ```rust
@@ -1331,8 +1315,8 @@ status: Option<(<T as frame_system::Config>::AccountId, DistanceStatus)>
 <li>
 <details>
 <summary>
-<code>MembershipAcquired(member, expire_on)</code> - 0</summary>
-A membership was acquired.
+<code>MembershipAdded(member, expire_on)</code> - 0</summary>
+A membership was added.
 
 ```rust
 member: T::IdtyId
@@ -1344,37 +1328,12 @@ expire_on: BlockNumberFor<T>
 <li>
 <details>
 <summary>
-<code>MembershipTerminated(member, reason)</code> - 1</summary>
-A membership was terminated.
+<code>MembershipRemoved(member, reason)</code> - 1</summary>
+A membership was removed.
 
 ```rust
 member: T::IdtyId
-reason: MembershipTerminationReason
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>PendingMembershipAdded(member, expire_on)</code> - 2</summary>
-A pending membership was added.
-
-```rust
-member: T::IdtyId
-expire_on: BlockNumberFor<T>
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>PendingMembershipExpired(member)</code> - 3</summary>
-A pending membership has expired.
-
-```rust
-member: T::IdtyId
+reason: MembershipRemovalReason
 ```
 
 </details>
@@ -1386,14 +1345,12 @@ member: T::IdtyId
 <li>
 <details>
 <summary>
-<code>NewCert(issuer, issuer_issued_count, receiver, receiver_received_count)</code> - 0</summary>
+<code>CertAdded(issuer, receiver)</code> - 0</summary>
 A new certification was added.
 
 ```rust
 issuer: T::IdtyIndex
-issuer_issued_count: u32
 receiver: T::IdtyIndex
-receiver_received_count: u32
 ```
 
 </details>
@@ -1401,14 +1358,12 @@ receiver_received_count: u32
 <li>
 <details>
 <summary>
-<code>RemovedCert(issuer, issuer_issued_count, receiver, receiver_received_count, expiration)</code> - 1</summary>
+<code>CertRemoved(issuer, receiver, expiration)</code> - 1</summary>
 A certification was removed.
 
 ```rust
 issuer: T::IdtyIndex
-issuer_issued_count: u32
 receiver: T::IdtyIndex
-receiver_received_count: u32
 expiration: bool
 ```
 
@@ -1417,7 +1372,7 @@ expiration: bool
 <li>
 <details>
 <summary>
-<code>RenewedCert(issuer, receiver)</code> - 2</summary>
+<code>CertRenewed(issuer, receiver)</code> - 2</summary>
 A certification was renewed.
 
 ```rust

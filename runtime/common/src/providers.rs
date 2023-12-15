@@ -119,9 +119,12 @@ where
         idty_id: &<T as pallet_identity::Config>::IdtyIndex,
     ) -> Result<(), DispatchError> {
         match pallet_distance::Pallet::<T>::identity_distance_status(idty_id) {
-			Some((_, pallet_distance::DistanceStatus::Valid)) => Ok(()),
-			Some((_, pallet_distance::DistanceStatus::Invalid)) => Err(pallet_duniter_wot::Error::<T, frame_support::instances::Instance1>::DistanceIsInvalid.into()),
-			_ => Err(pallet_duniter_wot::Error::<T, frame_support::instances::Instance1>::DistanceNotEvaluated.into()),
+            Some((_, status)) => match status {
+                pallet_distance::DistanceStatus::Valid => Ok(()),
+                pallet_distance::DistanceStatus::Invalid => Err(pallet_duniter_wot::Error::<T, frame_support::instances::Instance1>::DistanceIsInvalid.into()),
+                pallet_distance::DistanceStatus::Pending => Err(pallet_duniter_wot::Error::<T, frame_support::instances::Instance1>::DistanceEvaluationPending.into()),
+            },
+			None => Err(pallet_duniter_wot::Error::<T, frame_support::instances::Instance1>::DistanceEvaluationNotRequested.into()),
 		}
     }
 }

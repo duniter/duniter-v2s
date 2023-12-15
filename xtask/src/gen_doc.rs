@@ -203,7 +203,6 @@ impl CallCategory {
                 "Identity",
                 "remove_identity" | "prune_item_identities_names" | "prune_item_identity_index_of",
             ) => Self::Root,
-            ("Membership", "request_membership" | "revoke_membership") => Self::Disabled,
             ("Cert", "del_cert" | "remove_all_certs_received_by") => Self::Root,
             ("SmithCert", "del_cert" | "remove_all_certs_received_by") => Self::Root,
             ("TechnicalCommittee", "set_members" | "disapprove_proposal") => Self::Root,

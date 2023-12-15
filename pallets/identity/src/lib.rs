@@ -67,18 +67,32 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        #[pallet::constant]
         /// Period during which the owner can confirm the new identity.
-        type ConfirmPeriod: Get<Self::BlockNumber>;
+        // something like 2 days but this should be done quickly as the first certifier is helping
         #[pallet::constant]
+        type ConfirmPeriod: Get<Self::BlockNumber>;
+        /// Period before which the identity has to be validated (become member).
+        // this is the 2 month period in v1
+        #[pallet::constant]
+        type ValidationPeriod: Get<Self::BlockNumber>;
+        /// Period before which an identity who lost membership is automatically revoked.
+        // this is the 1 year period in v1
+        #[pallet::constant]
+        type AutorevocationPeriod: Get<Self::BlockNumber>;
+        /// Period after which a revoked identity is removed and the keys are freed.
+        #[pallet::constant]
+        type DeletionPeriod: Get<Self::BlockNumber>;
         /// Minimum duration between two owner key changes
+        // to avoid stealing the identity without means to revoke
+        #[pallet::constant]
         type ChangeOwnerKeyPeriod: Get<Self::BlockNumber>;
+        /// Minimum duration between the creation of 2 identities by the same creator
+        // it should be greater or equal than the certification period in certification pallet
+        #[pallet::constant]
+        type IdtyCreationPeriod: Get<Self::BlockNumber>;
         /// Management of the authorizations of the different calls.
         /// The default implementation allows everything.
         type CheckIdtyCallAllowed: CheckIdtyCallAllowed<Self>;
-        #[pallet::constant]
-        /// Minimum duration between the creation of 2 identities by the same creator
-        type IdtyCreationPeriod: Get<Self::BlockNumber>;
         /// Custom data to store in each identity
         type IdtyData: Clone
             + Codec
@@ -101,17 +115,12 @@ pub mod pallet {
         type AccountLinker: LinkIdty<Self::AccountId, Self::IdtyIndex>;
         /// Handle logic to validate an identity name
         type IdtyNameValidator: IdtyNameValidator;
-        /// Additional reasons for identity removal
-        type IdtyRemovalOtherReason: Clone + Codec + Debug + Eq + TypeInfo;
         /// On identity confirmed by its owner
         type OnIdtyChange: OnIdtyChange<Self>;
         /// Signing key of a payload
         type Signer: IdentifyAccount<AccountId = Self::AccountId>;
         /// Signature of a payload
         type Signature: Parameter + Verify<Signer = Self::Signer>;
-        /// Handle the logic that removes all identity consumers.
-        /// "identity consumers" meaning all things that rely on the existence of the identity.
-        type RemoveIdentityConsumers: RemoveIdentityConsumers<Self::IdtyIndex>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Type representing the weight of this pallet
@@ -167,11 +176,8 @@ pub mod pallet {
                 let _ = Pallet::<T>::get_next_idty_index();
                 // use instead custom provided index
                 let idty_index = idty.index;
-                if idty.value.removable_on > T::BlockNumber::zero() {
-                    <IdentitiesRemovableOn<T>>::append(
-                        idty.value.removable_on,
-                        (idty_index, idty.value.status),
-                    )
+                if idty.value.next_scheduled > T::BlockNumber::zero() {
+                    <IdentityChangeSchedule<T>>::append(idty.value.next_scheduled, idty_index)
                 }
                 <Identities<T>>::insert(idty_index, idty.value.clone());
                 IdentitiesNames::<T>::insert(idty.name.clone(), idty_index);
@@ -215,9 +221,9 @@ pub mod pallet {
 
     /// maps block number to the list of identities set to be removed at this bloc
     #[pallet::storage]
-    #[pallet::getter(fn removable_on)]
-    pub type IdentitiesRemovableOn<T: Config> =
-        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(T::IdtyIndex, IdtyStatus)>, ValueQuery>;
+    #[pallet::getter(fn next_scheduled)]
+    pub type IdentityChangeSchedule<T: Config> =
+        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::IdtyIndex>, ValueQuery>;
 
     // HOOKS //
 
@@ -256,10 +262,15 @@ pub mod pallet {
             idty_index: T::IdtyIndex,
             new_owner_key: T::AccountId,
         },
+        /// An identity has been revoked.
+        IdtyRevoked {
+            idty_index: T::IdtyIndex,
+            reason: RevocationReason,
+        },
         /// An identity has been removed.
         IdtyRemoved {
             idty_index: T::IdtyIndex,
-            reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>,
+            reason: RemovalReason,
         },
     }
 
@@ -284,34 +295,17 @@ pub mod pallet {
             // Verification phase //
             let who = ensure_signed(origin)?;
 
-            let creator =
-                IdentityIndexOf::<T>::try_get(&who).map_err(|_| Error::<T>::IdtyIndexNotFound)?;
-            let creator_idty_val =
-                Identities::<T>::try_get(creator).map_err(|_| Error::<T>::IdtyNotFound)?;
-
-            if IdentityIndexOf::<T>::contains_key(&owner_key) {
-                return Err(Error::<T>::IdtyAlreadyCreated.into());
-            }
-
-            // run checks for identity creation
-            T::CheckIdtyCallAllowed::check_create_identity(creator)?;
-
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
-
-            if creator_idty_val.next_creatable_identity_on > block_number {
-                return Err(Error::<T>::NotRespectIdtyCreationPeriod.into());
-            }
+            let creator_index = Self::check_create_identity(&who, &owner_key, block_number)?;
 
             // Apply phase //
             frame_system::Pallet::<T>::inc_sufficients(&owner_key);
-            <Identities<T>>::mutate_exists(creator, |idty_val_opt| {
+            <Identities<T>>::mutate_exists(creator_index, |idty_val_opt| {
                 if let Some(ref mut idty_val) = idty_val_opt {
                     idty_val.next_creatable_identity_on =
                         block_number + T::IdtyCreationPeriod::get();
                 }
             });
-
-            let removable_on = block_number + T::ConfirmPeriod::get();
 
             let idty_index = Self::get_next_idty_index();
             <Identities<T>>::insert(
@@ -321,17 +315,26 @@ pub mod pallet {
                     next_creatable_identity_on: T::BlockNumber::zero(),
                     old_owner_key: None,
                     owner_key: owner_key.clone(),
-                    removable_on,
-                    status: IdtyStatus::Created,
+                    next_scheduled: Self::schedule_identity_change(
+                        idty_index,
+                        T::ConfirmPeriod::get(),
+                    ),
+                    status: IdtyStatus::Unconfirmed,
                 },
             );
-            IdentitiesRemovableOn::<T>::append(removable_on, (idty_index, IdtyStatus::Created));
+
             IdentityIndexOf::<T>::insert(owner_key.clone(), idty_index);
             Self::deposit_event(Event::IdtyCreated {
                 idty_index,
                 owner_key: owner_key.clone(),
             });
-            T::OnIdtyChange::on_idty_change(idty_index, &IdtyEvent::Created { creator, owner_key });
+            T::OnIdtyChange::on_idty_change(
+                idty_index,
+                &IdtyEvent::Created {
+                    creator: creator_index,
+                    owner_key,
+                },
+            );
             Ok(().into())
         }
 
@@ -352,10 +355,10 @@ pub mod pallet {
             let idty_index =
                 IdentityIndexOf::<T>::try_get(&who).map_err(|_| Error::<T>::IdtyIndexNotFound)?;
 
-            let mut idty_value =
+            let idty_value =
                 Identities::<T>::try_get(idty_index).map_err(|_| Error::<T>::IdtyNotFound)?;
 
-            if idty_value.status != IdtyStatus::Created {
+            if idty_value.status != IdtyStatus::Unconfirmed {
                 return Err(Error::<T>::IdtyAlreadyConfirmed.into());
             }
             if !T::IdtyNameValidator::validate(&idty_name) {
@@ -364,52 +367,21 @@ pub mod pallet {
             if <IdentitiesNames<T>>::contains_key(&idty_name) {
                 return Err(Error::<T>::IdtyNameAlreadyExist.into());
             }
-            T::CheckIdtyCallAllowed::check_confirm_identity(idty_index)?;
 
             // Apply phase //
-            idty_value.status = IdtyStatus::ConfirmedByOwner;
+            Self::update_identity_status(
+                idty_index,
+                idty_value,
+                IdtyStatus::Unvalidated,
+                T::ValidationPeriod::get(),
+            );
 
-            <Identities<T>>::insert(idty_index, idty_value);
             <IdentitiesNames<T>>::insert(idty_name.clone(), idty_index);
             Self::deposit_event(Event::IdtyConfirmed {
                 idty_index,
                 owner_key: who,
                 name: idty_name,
             });
-            T::OnIdtyChange::on_idty_change(idty_index, &IdtyEvent::Confirmed);
-            Ok(().into())
-        }
-
-        #[pallet::call_index(2)]
-        #[pallet::weight(T::WeightInfo::validate_identity())]
-        /// validate the owned identity (must meet the main wot requirements)
-        // automatically claim membership if not done
-        pub fn validate_identity(
-            origin: OriginFor<T>,
-            idty_index: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
-            // Verification phase //
-            let _ = ensure_signed(origin)?;
-
-            let mut idty_value =
-                Identities::<T>::try_get(idty_index).map_err(|_| Error::<T>::IdtyNotFound)?;
-
-            match idty_value.status {
-                IdtyStatus::Created => return Err(Error::<T>::IdtyNotConfirmedByOwner.into()),
-                IdtyStatus::ConfirmedByOwner => {
-                    T::CheckIdtyCallAllowed::check_validate_identity(idty_index)?;
-                }
-                IdtyStatus::Validated => return Err(Error::<T>::IdtyAlreadyValidated.into()),
-            }
-
-            // Apply phase //
-            idty_value.removable_on = T::BlockNumber::zero();
-            idty_value.status = IdtyStatus::Validated;
-
-            <Identities<T>>::insert(idty_index, idty_value);
-            Self::deposit_event(Event::IdtyValidated { idty_index });
-            T::OnIdtyChange::on_idty_change(idty_index, &IdtyEvent::Validated);
-
             Ok(().into())
         }
 
@@ -440,7 +412,7 @@ pub mod pallet {
                 Error::<T>::OwnerKeyAlreadyUsed
             );
 
-            T::CheckIdtyCallAllowed::check_change_identity_address(idty_index)?;
+            T::CheckIdtyCallAllowed::change_owner_key(idty_index)?;
 
             let block_number = frame_system::Pallet::<T>::block_number();
             let maybe_old_old_owner_key =
@@ -486,12 +458,6 @@ pub mod pallet {
                 idty_index,
                 new_owner_key: new_key.clone(),
             });
-            T::OnIdtyChange::on_idty_change(
-                idty_index,
-                &IdtyEvent::ChangedOwnerKey {
-                    new_owner_key: new_key,
-                },
-            );
 
             Ok(().into())
         }
@@ -516,6 +482,14 @@ pub mod pallet {
 
             let idty_value = Identities::<T>::get(idty_index).ok_or(Error::<T>::IdtyNotFound)?;
 
+            match idty_value.status {
+                IdtyStatus::Unconfirmed => return Err(Error::<T>::CanNotRevokeUnconfirmed.into()),
+                IdtyStatus::Unvalidated => return Err(Error::<T>::CanNotRevokeUnvalidated.into()),
+                IdtyStatus::Member => (),
+                IdtyStatus::NotMember => (),
+                IdtyStatus::Revoked => return Err(Error::<T>::AlreadyRevoked.into()),
+            };
+
             ensure!(
                 if let Some((ref old_owner_key, last_change)) = idty_value.old_owner_key {
                     // old owner key can also revoke the identity until the period expired
@@ -528,9 +502,6 @@ pub mod pallet {
                 },
                 Error::<T>::InvalidRevocationKey
             );
-
-            // make sure that no wot prevents identity removal
-            T::CheckIdtyCallAllowed::check_remove_identity(idty_index)?;
 
             // then check payload signature
             let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
@@ -546,26 +517,7 @@ pub mod pallet {
             );
 
             // finally if all checks pass, remove identity
-            Self::do_remove_identity(idty_index, IdtyRemovalReason::Revoked);
-            Ok(().into())
-        }
-
-        #[pallet::call_index(5)]
-        #[pallet::weight(T::WeightInfo::force_remove_identity())]
-        /// remove an identity from storage
-        pub fn force_remove_identity(
-            origin: OriginFor<T>,
-            idty_index: T::IdtyIndex,
-            idty_name: Option<IdtyName>,
-            reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>,
-        ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
-
-            Self::do_remove_identity(idty_index, reason);
-            if let Some(idty_name) = idty_name {
-                <IdentitiesNames<T>>::remove(idty_name);
-            }
-
+            Self::do_revoke_identity(idty_index, RevocationReason::User);
             Ok(().into())
         }
 
@@ -655,13 +607,15 @@ pub mod pallet {
         /// Invalid identity name.
         IdtyNameInvalid,
         /// Identity not confirmed by its owner.
-        IdtyNotConfirmedByOwner,
+        IdtyNotConfirmed,
         /// Identity not found.
         IdtyNotFound,
         /// Invalid payload signature.
         InvalidSignature,
         /// Invalid revocation key.
         InvalidRevocationKey,
+        /// Issuer is not member and can not perform this action
+        IssuerNotMember,
         /// Identity creation period is not respected.
         NotRespectIdtyCreationPeriod,
         /// Owner key already changed recently.
@@ -670,60 +624,103 @@ pub mod pallet {
         OwnerKeyAlreadyUsed,
         /// Reverting to an old key is prohibited.
         ProhibitedToRevertToAnOldKey,
-    }
-
-    // PUBLIC FUNCTIONS //
-
-    impl<T: Config> Pallet<T> {
-        pub fn identities_count() -> u32 {
-            Identities::<T>::count()
-        }
+        /// Already revoked
+        AlreadyRevoked,
+        /// Can not revoke identity that never was member
+        CanNotRevokeUnconfirmed,
+        /// Can not revoke identity that never was member
+        CanNotRevokeUnvalidated,
     }
 
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
-        /// try to validate identity
-        // (used when membership is claimed first)
-        pub fn try_validate_identity(idty_index: T::IdtyIndex) {
-            if let Some(mut idty_value) = Identities::<T>::get(idty_index) {
-                // only does something if identity is not yet validated
-                if idty_value.status != IdtyStatus::Validated {
-                    idty_value.removable_on = T::BlockNumber::zero();
-                    idty_value.status = IdtyStatus::Validated;
+        /// get identity count
+        pub fn identities_count() -> u32 {
+            Identities::<T>::count()
+        }
 
-                    <Identities<T>>::insert(idty_index, idty_value);
-                    Self::deposit_event(Event::IdtyValidated { idty_index });
-                }
-                // already validated, no need to re-validate
+        /// membership added
+        // when an identity becomes member, update its status
+        // unschedule identity action, this falls back to membership scheduling
+        // no identity schedule while membership is active
+        pub fn membership_added(idty_index: T::IdtyIndex) {
+            if let Some(mut idty_value) = Identities::<T>::get(idty_index) {
+                Self::unschedule_identity_change(idty_index, idty_value.next_scheduled);
+                idty_value.next_scheduled = T::BlockNumber::zero();
+                idty_value.status = IdtyStatus::Member;
+                <Identities<T>>::insert(idty_index, idty_value);
+                Self::deposit_event(Event::IdtyValidated { idty_index });
             }
+            // else should not happen
+        }
+
+        /// membership removed
+        // only does something if identity is actually member
+        // a membership can be removed when the identity is revoked
+        // in this case, this does nothing
+        pub fn membership_removed(idty_index: T::IdtyIndex) {
+            if let Some(idty_value) = Identities::<T>::get(idty_index) {
+                if idty_value.status == IdtyStatus::Member {
+                    Self::update_identity_status(
+                        idty_index,
+                        idty_value,
+                        IdtyStatus::NotMember,
+                        T::AutorevocationPeriod::get(),
+                    );
+                }
+            }
+            // else should not happen
         }
 
         /// perform identity removal
-        pub(super) fn do_remove_identity(
-            idty_index: T::IdtyIndex,
-            reason: IdtyRemovalReason<T::IdtyRemovalOtherReason>,
-        ) -> Weight {
-            if let Some(idty_val) = Identities::<T>::get(idty_index) {
-                let _ = T::RemoveIdentityConsumers::remove_idty_consumers(idty_index);
-                IdentityIndexOf::<T>::remove(&idty_val.owner_key);
+        // (kind of garbage collector)
+        // this should not be called while the identity is still member
+        // otherwise there will still be a membership in storage, but no more identity
+        pub fn do_remove_identity(idty_index: T::IdtyIndex, reason: RemovalReason) -> Weight {
+            if let Some(idty_value) = Identities::<T>::get(idty_index) {
+                // this line allows the owner key to be used after that
+                IdentityIndexOf::<T>::remove(&idty_value.owner_key);
                 // Identity should be removed after the consumers of the identity
                 Identities::<T>::remove(idty_index);
-                frame_system::Pallet::<T>::dec_sufficients(&idty_val.owner_key);
-                if let Some((old_owner_key, _last_change)) = idty_val.old_owner_key {
+                frame_system::Pallet::<T>::dec_sufficients(&idty_value.owner_key);
+                if let Some((old_owner_key, _last_change)) = idty_value.old_owner_key {
                     frame_system::Pallet::<T>::dec_sufficients(&old_owner_key);
                 }
                 Self::deposit_event(Event::IdtyRemoved { idty_index, reason });
                 T::OnIdtyChange::on_idty_change(
                     idty_index,
                     &IdtyEvent::Removed {
-                        status: idty_val.status,
+                        status: idty_value.status,
                     },
                 );
                 return T::WeightInfo::do_remove_identity();
             }
             T::WeightInfo::do_remove_identity_noop()
         }
+
+        /// revoke identity
+        pub fn do_revoke_identity(idty_index: T::IdtyIndex, reason: RevocationReason) -> Weight {
+            if let Some(idty_value) = Identities::<T>::get(idty_index) {
+                Self::update_identity_status(
+                    idty_index,
+                    idty_value,
+                    IdtyStatus::Revoked,
+                    T::DeletionPeriod::get(),
+                );
+
+                Self::deposit_event(Event::IdtyRevoked { idty_index, reason });
+                T::OnIdtyChange::on_idty_change(
+                    idty_index,
+                    &IdtyEvent::Removed {
+                        status: IdtyStatus::Revoked,
+                    },
+                );
+                return T::WeightInfo::do_revoke_identity();
+            }
+            T::WeightInfo::do_revoke_identity_noop()
+        }
+
         /// incremental counter for identity index
         fn get_next_idty_index() -> T::IdtyIndex {
             if let Ok(next_index) = <NextIdtyIndex<T>>::try_get() {
@@ -734,15 +731,35 @@ pub mod pallet {
                 T::IdtyIndex::one()
             }
         }
-        /// remove identities planned for removal at the given block if their status did not change
+
+        /// remove identities planned for removal at the given block
         pub fn prune_identities(block_number: T::BlockNumber) -> Weight {
             let mut total_weight = Weight::zero();
 
-            for (idty_index, idty_status) in IdentitiesRemovableOn::<T>::take(block_number) {
+            for idty_index in IdentityChangeSchedule::<T>::take(block_number) {
                 if let Ok(idty_val) = <Identities<T>>::try_get(idty_index) {
-                    if idty_val.removable_on == block_number && idty_val.status == idty_status {
-                        total_weight +=
-                            Self::do_remove_identity(idty_index, IdtyRemovalReason::Expired)
+                    if idty_val.next_scheduled == block_number {
+                        match idty_val.status {
+                            IdtyStatus::Unconfirmed => {
+                                total_weight +=
+                                    Self::do_remove_identity(idty_index, RemovalReason::Unconfirmed)
+                            }
+                            IdtyStatus::Unvalidated => {
+                                total_weight +=
+                                    Self::do_remove_identity(idty_index, RemovalReason::Unvalidated)
+                            }
+                            IdtyStatus::Revoked => {
+                                total_weight +=
+                                    Self::do_remove_identity(idty_index, RemovalReason::Revoked)
+                            }
+                            IdtyStatus::NotMember => {
+                                total_weight +=
+                                    Self::do_revoke_identity(idty_index, RevocationReason::Expired)
+                            }
+                            IdtyStatus::Member => { // do not touch identities of member accounts
+                                 // this should not happen
+                            }
+                        }
                     } else {
                         total_weight += T::WeightInfo::prune_identities_err()
                             .saturating_sub(T::WeightInfo::prune_identities_none())
@@ -761,11 +778,82 @@ pub mod pallet {
             // call account linker
             T::AccountLinker::link_identity(account_id, idty_index);
         }
+
+        /// change identity status and reschedule next action
+        fn update_identity_status(
+            idty_index: T::IdtyIndex,
+            mut idty_value: IdtyValue<T::BlockNumber, T::AccountId, T::IdtyData>,
+            new_status: IdtyStatus,
+            period: T::BlockNumber,
+        ) {
+            Self::unschedule_identity_change(idty_index, idty_value.next_scheduled);
+            idty_value.next_scheduled = Self::schedule_identity_change(idty_index, period);
+            idty_value.status = new_status;
+            <Identities<T>>::insert(idty_index, idty_value);
+        }
+
+        /// unschedule identity change
+        fn unschedule_identity_change(idty_id: T::IdtyIndex, block_number: T::BlockNumber) {
+            let mut scheduled = IdentityChangeSchedule::<T>::get(block_number);
+            if let Some(pos) = scheduled.iter().position(|x| *x == idty_id) {
+                scheduled.swap_remove(pos);
+                IdentityChangeSchedule::<T>::set(block_number, scheduled);
+            }
+        }
+        /// schedule identity change after given period
+        fn schedule_identity_change(
+            idty_id: T::IdtyIndex,
+            period: T::BlockNumber,
+        ) -> T::BlockNumber {
+            let block_number = frame_system::pallet::Pallet::<T>::block_number();
+            let next_scheduled = block_number + period;
+            IdentityChangeSchedule::<T>::append(next_scheduled, idty_id);
+            next_scheduled
+        }
+
+        /// check create identity
+        // first internal checks
+        // then other pallet checks trough trait
+        fn check_create_identity(
+            issuer_key: &T::AccountId,
+            receiver_key: &T::AccountId,
+            block_number: T::BlockNumber,
+        ) -> Result<T::IdtyIndex, DispatchError> {
+            // first get issuer details
+            let creator_index = IdentityIndexOf::<T>::try_get(issuer_key)
+                .map_err(|_| Error::<T>::IdtyIndexNotFound)?;
+            let creator_idty_val =
+                Identities::<T>::try_get(creator_index).map_err(|_| Error::<T>::IdtyNotFound)?;
+
+            // --- some checks can be done internally
+            // 1. issuer is member
+            ensure!(
+                creator_idty_val.status == IdtyStatus::Member,
+                Error::<T>::IssuerNotMember
+            );
+
+            // 2. issuer respects identity creation period
+            ensure!(
+                creator_idty_val.next_creatable_identity_on <= block_number,
+                Error::<T>::NotRespectIdtyCreationPeriod
+            );
+
+            // 3. receiver key is not already used by another identity
+            ensure!(
+                !IdentityIndexOf::<T>::contains_key(receiver_key),
+                Error::<T>::IdtyAlreadyCreated
+            );
+
+            // --- other checks depend on other pallets
+            // run checks for identity creation
+            T::CheckIdtyCallAllowed::check_create_identity(creator_index)?;
+
+            Ok(creator_index)
+        }
     }
 }
 
 // implement getting owner key of identity index
-
 impl<T: Config> sp_runtime::traits::Convert<T::IdtyIndex, Option<T::AccountId>> for Pallet<T> {
     fn convert(idty_index: T::IdtyIndex) -> Option<T::AccountId> {
         Identities::<T>::get(idty_index).map(|idty_val| idty_val.owner_key)
@@ -773,7 +861,6 @@ impl<T: Config> sp_runtime::traits::Convert<T::IdtyIndex, Option<T::AccountId>> 
 }
 
 // implement StoredMap trait for this pallet
-
 impl<T> frame_support::traits::StoredMap<T::AccountId, T::IdtyData> for Pallet<T>
 where
     T: Config,

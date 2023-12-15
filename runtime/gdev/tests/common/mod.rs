@@ -232,8 +232,8 @@ impl ExtBuilder {
                         next_creatable_identity_on: Default::default(),
                         owner_key: owner_key.clone(),
                         old_owner_key: None,
-                        removable_on: 0,
-                        status: IdtyStatus::Validated,
+                        next_scheduled: 0,
+                        status: IdtyStatus::Member,
                     },
                 })
                 .collect(),

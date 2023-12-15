@@ -20,10 +20,7 @@ use impl_trait_for_tuples::impl_for_tuples;
 
 pub trait CheckIdtyCallAllowed<T: Config> {
     fn check_create_identity(creator: T::IdtyIndex) -> Result<(), DispatchError>;
-    fn check_confirm_identity(idty_index: T::IdtyIndex) -> Result<(), DispatchError>;
-    fn check_validate_identity(idty_index: T::IdtyIndex) -> Result<(), DispatchError>;
-    fn check_change_identity_address(idty_index: T::IdtyIndex) -> Result<(), DispatchError>;
-    fn check_remove_identity(idty_index: T::IdtyIndex) -> Result<(), DispatchError>;
+    fn change_owner_key(idty_index: T::IdtyIndex) -> Result<(), DispatchError>;
 }
 
 #[impl_for_tuples(5)]
@@ -32,20 +29,8 @@ impl<T: Config> CheckIdtyCallAllowed<T> for Tuple {
         for_tuples!( #( Tuple::check_create_identity(creator)?; )* );
         Ok(())
     }
-    fn check_confirm_identity(idty_index: T::IdtyIndex) -> Result<(), DispatchError> {
-        for_tuples!( #( Tuple::check_confirm_identity(idty_index)?; )* );
-        Ok(())
-    }
-    fn check_validate_identity(idty_index: T::IdtyIndex) -> Result<(), DispatchError> {
-        for_tuples!( #( Tuple::check_validate_identity(idty_index)?; )* );
-        Ok(())
-    }
-    fn check_change_identity_address(idty_index: T::IdtyIndex) -> Result<(), DispatchError> {
-        for_tuples!( #( Tuple::check_change_identity_address(idty_index)?; )* );
-        Ok(())
-    }
-    fn check_remove_identity(idty_index: T::IdtyIndex) -> Result<(), DispatchError> {
-        for_tuples!( #( Tuple::check_remove_identity(idty_index)?; )* );
+    fn change_owner_key(idty_index: T::IdtyIndex) -> Result<(), DispatchError> {
+        for_tuples!( #( Tuple::change_owner_key(idty_index)?; )* );
         Ok(())
     }
 }
@@ -63,15 +48,6 @@ pub trait OnIdtyChange<T: Config> {
 impl<T: Config> OnIdtyChange<T> for Tuple {
     fn on_idty_change(idty_index: T::IdtyIndex, idty_event: &IdtyEvent<T>) {
         for_tuples!( #( Tuple::on_idty_change(idty_index, idty_event); )* );
-    }
-}
-
-pub trait RemoveIdentityConsumers<IndtyIndex> {
-    fn remove_idty_consumers(idty_index: IndtyIndex) -> Weight;
-}
-impl<IndtyIndex> RemoveIdentityConsumers<IndtyIndex> for () {
-    fn remove_idty_consumers(_: IndtyIndex) -> Weight {
-        Weight::zero()
     }
 }
 

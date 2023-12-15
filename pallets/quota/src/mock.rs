@@ -136,9 +136,10 @@ impl pallet_balances::Config for Test {
 parameter_types! {
     pub const ChangeOwnerKeyPeriod: u64 = 10;
     pub const ConfirmPeriod: u64 = 2;
+    pub const ValidationPeriod: u64 = 3;
+    pub const AutorevocationPeriod: u64 = 5;
+    pub const DeletionPeriod: u64 = 7;
     pub const IdtyCreationPeriod: u64 = 3;
-    pub const MaxInactivityPeriod: u64 = 5;
-    pub const ValidationPeriod: u64 = 2;
 }
 pub struct IdtyNameValidatorTestImpl;
 impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
@@ -149,17 +150,18 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
 impl pallet_identity::Config for Test {
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
+    type ValidationPeriod = ValidationPeriod;
+    type AutorevocationPeriod = AutorevocationPeriod;
+    type DeletionPeriod = DeletionPeriod;
     type CheckIdtyCallAllowed = ();
     type IdtyCreationPeriod = IdtyCreationPeriod;
     type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = u64;
     type AccountLinker = ();
-    type IdtyRemovalOtherReason = ();
     type Signer = AccountPublic;
     type Signature = Signature;
     type OnIdtyChange = ();
-    type RemoveIdentityConsumers = ();
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     #[cfg(feature = "runtime-benchmarks")]

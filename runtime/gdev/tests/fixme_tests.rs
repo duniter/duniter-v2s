@@ -20,7 +20,8 @@
 mod common;
 
 use common::*;
-use frame_support::assert_ok;
+// use frame_support::assert_ok;
+use frame_support::assert_noop;
 use gdev_runtime::*;
 use pallet_membership::MembershipRemovalReason;
 use sp_keyring::AccountKeyring;
@@ -30,18 +31,7 @@ use sp_keyring::AccountKeyring;
 /// identity who has no smith membership or pending membership
 #[test]
 fn can_add_smith_cert_without_pending_membership_or_membership() {
-    // 3 smith (1. Alice, 2. Bob, 3. Charlie)
-    // 4 identities (4. Dave)
-    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
-        run_to_block(1);
-
-        // FIXME Bob can add new smith cert to to dave even he did not requested smith membership
-        assert_ok!(SmithCert::add_cert(
-            frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
-            2, // bob
-            4  // dave
-        ));
-    });
+    // this is fixed because membership request has been removed
 }
 
 /// issue #136
@@ -52,28 +42,32 @@ fn can_still_issue_cert_when_membership_lost() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         run_to_block(1);
 
-        // expire Bob membership (could happen for negative distance evaluation for example)
-        assert_ok!(Membership::force_expire_membership(
-            2, // Bob
-        ));
+        // expire Bob membership
+        Membership::do_remove_membership(
+            2,
+            MembershipRemovalReason::System
+        );
         System::assert_has_event(RuntimeEvent::Membership(
             pallet_membership::Event::MembershipRemoved {
                 member: 2,
-                reason: MembershipRemovalReason::Expired,
+                reason: MembershipRemovalReason::System,
             },
         ));
 
-        // FIXME this should not be possible
-        assert_ok!(Cert::add_cert(
+        // fixed :)
+        assert_noop!(Cert::add_cert(
             frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
-            2, // Bob
-            3, // Charlie
-        ));
-        System::assert_has_event(RuntimeEvent::Cert(
-            pallet_certification::Event::CertRenewed {
-                issuer: 2,
-                receiver: 3,
-            },
-        ));
+                2, // Bob
+                3, // Charlie
+            ),
+            pallet_duniter_wot::Error::<gdev_runtime::Runtime, pallet_certification::Instance1>::IssuerNotMember
+        );
+        // // not anymore
+        // System::assert_has_event(RuntimeEvent::Cert(
+        //     pallet_certification::Event::CertRenewed {
+        //         issuer: 2,
+        //         receiver: 3,
+        //     },
+        // ));
     });
 }

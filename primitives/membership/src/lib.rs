@@ -27,6 +27,7 @@ use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
+/// membership events
 pub enum Event<IdtyId> {
     /// A membership was acquired.
     MembershipAdded(IdtyId),
@@ -34,14 +35,22 @@ pub enum Event<IdtyId> {
     MembershipRemoved(IdtyId),
     /// A membership was renewed.
     MembershipRenewed(IdtyId),
-    /// A pending membership request was added.
-    PendingMembershipAdded(IdtyId),
-    /// A pending membership request has expired.
-    PendingMembershipExpired(IdtyId),
 }
 
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct MembershipData<BlockNumber: Decode + Encode + TypeInfo> {
     pub expire_on: BlockNumber,
+}
+
+use impl_trait_for_tuples::impl_for_tuples;
+// use sp_std::prelude::*;
+// use frame_support::pallet_prelude::*;
+// use frame_system::pallet_prelude::*;
+
+#[impl_for_tuples(5)]
+impl<IdtyId> traits::OnEvent<IdtyId> for Tuple {
+    fn on_event(event: &Event<IdtyId>) {
+        for_tuples!( #( Tuple::on_event(event); )* );
+    }
 }

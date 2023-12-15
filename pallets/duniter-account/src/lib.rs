@@ -487,10 +487,7 @@ impl<T: Config> pallet_identity::traits::OnIdtyChange<T> for Pallet<T> {
             IdtyEvent::Created { owner_key, .. } => {
                 Self::do_link_identity(owner_key.clone(), idty_id);
             }
-            IdtyEvent::Confirmed
-            | IdtyEvent::Validated
-            | IdtyEvent::ChangedOwnerKey { .. }
-            | IdtyEvent::Removed { .. } => {}
+            IdtyEvent::Removed { .. } => {}
         }
     }
 }

@@ -19,7 +19,6 @@
 use super::*;
 
 use frame_benchmarking::benchmarks_instance_pallet;
-use frame_support::dispatch::UnfilteredDispatchable;
 use frame_system::pallet_prelude::BlockNumberFor;
 use frame_system::RawOrigin;
 use sp_runtime::traits::{Convert, One};
@@ -38,28 +37,11 @@ benchmarks_instance_pallet! {
         where
             T::IdtyId: From<u32>,
     }
-    request_membership {
-        // Dave identity (4)
-        // for main wot, no constraints
-        // for smith subwot, his pubkey is hardcoded in default metadata
-        let idty: T::IdtyId = 4.into();
-        Membership::<T, I>::take(idty);
-        let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-        // Lazily prepare call as this extrinsic will always return an errror when in subwot
-        let call = Call::<T, I>::request_membership { };
-    }: {
-        call.dispatch_bypass_filter(caller_origin).ok();
-    }
-    verify {
-        if T::CheckMembershipCallAllowed::check_idty_allowed_to_request_membership(&idty).is_ok() {
-            assert_has_event::<T, I>(Event::<T, I>::PendingMembershipAdded{member: idty, expire_on: BlockNumberFor::<T>::one() + T::PendingMembershipPeriod::get()}.into());
-        }
-    }
+
+    // claim membership
     claim_membership {
         let idty: T::IdtyId = 3.into();
         Membership::<T, I>::take(idty);
-        PendingMembership::<T, I>::insert(idty.clone(), ());
         let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         T::BenchmarkSetupHandler::force_status_ok(&idty, &caller);
@@ -67,6 +49,8 @@ benchmarks_instance_pallet! {
     verify {
         assert_has_event::<T, I>(Event::<T, I>::MembershipAdded{member: idty, expire_on: BlockNumberFor::<T>::one() + T::MembershipPeriod::get()}.into());
     }
+
+    // renew membership
     renew_membership {
         let idty: T::IdtyId = 3.into();
         let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
@@ -76,6 +60,8 @@ benchmarks_instance_pallet! {
     verify {
         assert_has_event::<T, I>(Event::<T, I>::MembershipAdded{member: idty, expire_on: BlockNumberFor::<T>::one() + T::MembershipPeriod::get()}.into());
     }
+
+    // revoke membership
     revoke_membership {
         let idty: T::IdtyId = 3.into();
         let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
@@ -84,23 +70,11 @@ benchmarks_instance_pallet! {
     verify {
         assert_has_event::<T, I>(Event::<T, I>::MembershipRemoved{member: idty, reason: MembershipRemovalReason::Revoked}.into());
     }
+
     // Base weight of an empty initialize
     on_initialize {
     }: {Pallet::<T, I>::on_initialize(BlockNumberFor::<T>::zero());}
-    expire_pending_memberships {
-        let i in 0..1024;
-        let mut idties: Vec<T::IdtyId> = Vec::new();
-        for j in 0..i {
-            let j: T::IdtyId = j.into();
-            PendingMembership::<T, I>::insert(j, ());
-            idties.push(j);
-        }
-        PendingMembershipsExpireOn::<T, I>::insert(BlockNumberFor::<T>::zero(), idties);
-        assert_eq!(PendingMembershipsExpireOn::<T, I>::get(BlockNumberFor::<T>::zero()).len(), i as usize);
-    }: {Pallet::<T, I>::expire_pending_memberships(BlockNumberFor::<T>::zero());}
-    verify {
-        assert_eq!(PendingMembershipsExpireOn::<T, I>::get(BlockNumberFor::<T>::zero()).len(), 0 as usize);
-    }
+
     expire_memberships {
         let i in 0..1024;
         let mut idties: Vec<T::IdtyId> = Vec::new();

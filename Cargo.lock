@@ -9790,6 +9790,7 @@ name = "sp-membership"
 version = "3.0.0"
 dependencies = [
  "frame-support",
+ "impl-trait-for-tuples",
  "parity-scale-codec",
  "scale-info",
  "serde",

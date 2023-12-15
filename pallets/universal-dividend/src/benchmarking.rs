@@ -111,7 +111,7 @@ benchmarks! {
     }: {Pallet::<T>::on_removed_member(CurrentUdIndex::<T>::get() - i as u16, &caller);}
     verify {
         if i != 0 {
-            assert_has_event::<T>(Event::<T>::UdsAutoPaidAtRemoval {count: i as u16, total: uds_total, who: caller}.into());
+            assert_has_event::<T>(Event::<T>::UdsAutoPaid {count: i as u16, total: uds_total, who: caller}.into());
         }
     }
 

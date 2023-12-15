@@ -40,7 +40,7 @@ struct Account<T: Config> {
     key: T::AccountId,
     index: T::IdtyIndex,
     origin: <T as frame_system::Config>::RuntimeOrigin,
-    name: IdtyName,
+    // name: IdtyName,
 }
 
 // Create and confirm one account using Alice authorized account.
@@ -48,7 +48,10 @@ struct Account<T: Config> {
 // Alice next_creatable_identity_on is reinitialized at the end so several account can be
 // created in a row.
 fn create_one_identity<T: Config>(owner_key: T::AccountId) -> Result<Account<T>, &'static str> {
-    let caller: T::AccountId = Identities::<T>::get(T::IdtyIndex::one()).unwrap().owner_key;
+    // get Alice account to create identity
+    let caller: T::AccountId = Identities::<T>::get(T::IdtyIndex::from(1u32))
+        .unwrap()
+        .owner_key;
     let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
         RawOrigin::Signed(caller.clone()).into();
     let owner_key_origin: <T as frame_system::Config>::RuntimeOrigin =
@@ -57,17 +60,23 @@ fn create_one_identity<T: Config>(owner_key: T::AccountId) -> Result<Account<T>,
     let name = IdtyName("new_identity".into());
     Pallet::<T>::confirm_identity(owner_key_origin.clone(), name.clone())?;
     let idty_index = IdentityIndexOf::<T>::get(&owner_key).unwrap();
+    // make identity member
+    <Identities<T>>::mutate_exists(T::IdtyIndex::from(idty_index), |idty_val_opt| {
+        if let Some(ref mut idty_val) = idty_val_opt {
+            idty_val.status = IdtyStatus::Member;
+        }
+    });
     // Reset next_creatable_identity_on to add more identities with Alice
-    <Identities<T>>::mutate_exists(T::IdtyIndex::one(), |idty_val_opt| {
+    <Identities<T>>::mutate_exists(T::IdtyIndex::from(1u32), |idty_val_opt| {
         if let Some(ref mut idty_val) = idty_val_opt {
             idty_val.next_creatable_identity_on = T::BlockNumber::zero();
         }
     });
     Ok(Account {
         key: owner_key,
-        origin: owner_key_origin,
-        name: name,
         index: idty_index,
+        origin: owner_key_origin,
+        // name: name,
     })
 }
 
@@ -75,19 +84,19 @@ fn create_one_identity<T: Config>(owner_key: T::AccountId) -> Result<Account<T>,
 fn create_dummy_identity<T: Config>(i: u32) -> Result<(), &'static str> {
     let idty_index: T::IdtyIndex = i.into();
     let owner_key: T::AccountId = account("Bob", i, SEED);
-    let removable_on = T::BlockNumber::zero();
+    let next_scheduled = T::BlockNumber::zero();
     let value = IdtyValue {
         data: Default::default(),
         next_creatable_identity_on: T::BlockNumber::zero(),
         old_owner_key: None,
         owner_key: owner_key.clone(),
-        removable_on,
-        status: IdtyStatus::ConfirmedByOwner,
+        next_scheduled,
+        status: IdtyStatus::Unvalidated,
     };
     let name = i.to_le_bytes();
     let idty_name = IdtyName(name.into());
     <Identities<T>>::insert(idty_index, value);
-    IdentitiesRemovableOn::<T>::append(removable_on, (idty_index, IdtyStatus::Created));
+    IdentityChangeSchedule::<T>::append(next_scheduled, idty_index);
     IdentityIndexOf::<T>::insert(owner_key.clone(), idty_index);
     <IdentitiesNames<T>>::insert(idty_name.clone(), idty_index);
     Ok(())
@@ -114,6 +123,8 @@ benchmarks! {
             T::AccountId: From<AccountId32>,
             T::IdtyIndex: From<u32>,
     }
+
+    // create identity
     create_identity {
         let caller: T::AccountId  = Identities::<T>::get(T::IdtyIndex::one()).unwrap().owner_key; // Alice
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
@@ -125,6 +136,7 @@ benchmarks! {
         assert_has_event::<T>(Event::<T>::IdtyCreated { idty_index: idty_index.unwrap(), owner_key: owner_key }.into());
     }
 
+    // confirm identity
     confirm_identity {
         let caller: T::AccountId  = Identities::<T>::get(T::IdtyIndex::one()).unwrap().owner_key;
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
@@ -137,26 +149,7 @@ benchmarks! {
         assert_has_event::<T>(Event::<T>::IdtyConfirmed { idty_index: idty_index.unwrap(), owner_key: owner_key, name: IdtyName("new_identity".into()) }.into());
     }
 
-    validate_identity {
-        let index = NextIdtyIndex::<T>::get();
-        let caller: T::AccountId  = Identities::<T>::get(T::IdtyIndex::one()).unwrap().owner_key;
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-        let owner_key: T::AccountId = account("new_identity", 2, SEED);
-        let owner_key_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(owner_key.clone()).into();
-        let name = IdtyName("new_identity".into());
-        Pallet::<T>::create_identity(caller_origin.clone(), owner_key.clone())?;
-        Pallet::<T>::confirm_identity(owner_key_origin.clone(), name.clone())?;
-        // Should be superior to the minimal number of certificates to gain membership.
-        for j in 0..100 {
-            let issuer: T::IdtyIndex = j.into();
-            T::BenchmarkSetupHandler::add_cert(&issuer, &index);
-        }
-        T::BenchmarkSetupHandler::force_status_ok(&index, &owner_key);
-    }: _<T::RuntimeOrigin>(caller_origin, index.into())
-    verify {
-        assert_has_event::<T>(Event::<T>::IdtyValidated { idty_index: index.into() }.into());
-    }
-
+    // change owner key
     change_owner_key {
         let old_key: T::AccountId = account("new_identity", 2, SEED);
         let account: Account<T> = create_one_identity(old_key.clone())?;
@@ -194,12 +187,13 @@ benchmarks! {
         assert!(IdentityIndexOf::<T>::get(&caller).unwrap() == account.index, "Owner key not changed");
     }
 
+    // revoke identity
     revoke_identity {
         let old_key: T::AccountId = account("new_identity", 2, SEED);
         let account: Account<T> = create_one_identity(old_key.clone())?;
 
         // Change key
-        //  The sufficients for the old key will drop to 0 during benchmark
+        //  The sufficients for the old key will drop to 0 during benchmark (not for revoke, only for remove)
         let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
         let new_key_payload = IdtyIndexAccountIdPayload {
             genesis_hash: &genesis_hash,
@@ -221,22 +215,9 @@ benchmarks! {
         let signature = sr25519_sign(0.into(), &caller_public, &message).unwrap().into();
     }: _<T::RuntimeOrigin>(account.origin.clone(), account.index.clone().into(), caller.clone(), signature)
     verify {
-        assert_has_event::<T>(Event::<T>::IdtyRemoved { idty_index: account.index, reason: IdtyRemovalReason::Revoked }.into());
-        assert!(IdentityIndexOf::<T>::get(&account.key).is_none(), "Identity not revoked");
-    }
-
-    force_remove_identity {
-        let new_identity: T::AccountId = account("new_identity", 2, SEED);
-        let account: Account<T> = create_one_identity(new_identity)?;
-        let identities = Pallet::<T>::identities_count();
-    }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), account.index.clone(), Some(account.name.clone()), IdtyRemovalReason::Manual)
-    verify {
-        assert!(
-            Pallet::<T>::identities_count() == identities - 1,
-            "Identities not removed"
-        );
-        assert_has_event::<T>(Event::<T>::IdtyRemoved { idty_index: account.index, reason: IdtyRemovalReason::Manual }.into());
-        assert!(IdentityIndexOf::<T>::get(&account.key).is_none(), "Identity not removed");
+        assert_has_event::<T>(Event::<T>::IdtyRevoked { idty_index: account.index, reason: RevocationReason::User }.into());
+        // revocation does not mean deletion anymore
+        // assert!(IdentityIndexOf::<T>::get(&account.key).is_none(), "Identity not revoked");
     }
 
     // The complexity depends on the number of identities to prune
@@ -258,6 +239,7 @@ benchmarks! {
         }
     }
 
+    // fix sufficients identity
     fix_sufficients {
         let new_identity: T::AccountId = account("Bob", 2, SEED);
         let account: Account<T> = create_one_identity(new_identity)?;
@@ -267,6 +249,7 @@ benchmarks! {
         assert!(sufficient < frame_system::Pallet::<T>::sufficients(&account.key), "Sufficient not incremented");
     }
 
+    // link account
     link_account {
         let alice_origin = RawOrigin::Signed(Identities::<T>::get(T::IdtyIndex::one()).unwrap().owner_key);
         let bob_public = sr25519_generate(0.into(), None);
@@ -277,13 +260,36 @@ benchmarks! {
         ).encode();
         let signature = sr25519_sign(0.into(), &bob_public, &payload).unwrap().into();
     }: _<T::RuntimeOrigin>(alice_origin.into(), bob, signature)
+
     // Base weight of an empty initialize
     on_initialize {
     }: {Pallet::<T>::on_initialize(BlockNumberFor::<T>::zero());}
+
+    // --- do revoke identity
+    do_revoke_identity_noop {
+        let idty_index: T::IdtyIndex = 0u32.into();
+        assert!(Identities::<T>::get(idty_index).is_none());
+    }: {Pallet::<T>::do_revoke_identity(idty_index, RevocationReason::Root);}
+    do_revoke_identity {
+        let idty_index: T::IdtyIndex = 1u32.into();
+        let new_identity: T::AccountId = account("Bob", 2, SEED);
+        assert!(Identities::<T>::get(idty_index).is_some());
+        Identities::<T>::mutate( idty_index, |id| {
+            if let Some(id) = id {
+                id.old_owner_key = Some((new_identity, BlockNumberFor::<T>::zero()));
+            }
+        });
+        assert!(Identities::<T>::get(idty_index).unwrap().old_owner_key.is_some());
+    }: {Pallet::<T>::do_revoke_identity(idty_index, RevocationReason::Root);}
+    verify {
+        assert_has_event::<T>(Event::<T>::IdtyRevoked { idty_index, reason: RevocationReason::Root }.into());
+    }
+
+    // --- do remove identity
     do_remove_identity_noop {
         let idty_index: T::IdtyIndex = 0u32.into();
         assert!(Identities::<T>::get(idty_index).is_none());
-    }: {Pallet::<T>::do_remove_identity(idty_index, IdtyRemovalReason::Revoked);}
+    }: {Pallet::<T>::do_remove_identity(idty_index, RemovalReason::Revoked);}
     do_remove_identity {
         let idty_index: T::IdtyIndex = 1u32.into();
         let new_identity: T::AccountId = account("Bob", 2, SEED);
@@ -294,24 +300,27 @@ benchmarks! {
             }
         });
         assert!(Identities::<T>::get(idty_index).unwrap().old_owner_key.is_some());
-    }: {Pallet::<T>::do_remove_identity(idty_index, IdtyRemovalReason::Revoked);}
+    }: {Pallet::<T>::do_remove_identity(idty_index, RemovalReason::Revoked);}
     verify {
-        assert_has_event::<T>(Event::<T>::IdtyRemoved { idty_index, reason: IdtyRemovalReason::Revoked }.into());
+        assert_has_event::<T>(Event::<T>::IdtyRemoved { idty_index, reason: RemovalReason::Revoked }.into());
     }
+
+    // --- prune identities
     prune_identities_noop {
-        assert!(IdentitiesRemovableOn::<T>::try_get(T::BlockNumber::zero()).is_err());
+        assert!(IdentityChangeSchedule::<T>::try_get(T::BlockNumber::zero()).is_err());
     }: {Pallet::<T>::prune_identities(T::BlockNumber::zero());}
+
     prune_identities_none {
         let idty_index: T::IdtyIndex = 100u32.into();
-        IdentitiesRemovableOn::<T>::append(T::BlockNumber::zero(), (idty_index, IdtyStatus::Created));
-        assert!(IdentitiesRemovableOn::<T>::try_get(T::BlockNumber::zero()).is_ok());
+        IdentityChangeSchedule::<T>::append(T::BlockNumber::zero(), idty_index);
+        assert!(IdentityChangeSchedule::<T>::try_get(T::BlockNumber::zero()).is_ok());
         assert!(<Identities<T>>::try_get(idty_index).is_err());
     }: {Pallet::<T>::prune_identities(T::BlockNumber::zero());}
+
     prune_identities_err {
         let idty_index: T::IdtyIndex = 100u32.into();
         create_dummy_identity::<T>(100u32)?;
-        IdentitiesRemovableOn::<T>::append(T::BlockNumber::zero(), (idty_index, IdtyStatus::Created));
-        assert!(<Identities<T>>::get(idty_index).unwrap().status != IdentitiesRemovableOn::<T>::get(T::BlockNumber::zero())[0].1);
+        IdentityChangeSchedule::<T>::append(T::BlockNumber::zero(), idty_index);
     }: {Pallet::<T>::prune_identities(T::BlockNumber::zero());}
 
     impl_benchmark_test_suite!(
@@ -326,8 +335,8 @@ benchmarks! {
                     next_creatable_identity_on: 0,
                     old_owner_key: None,
                     owner_key: account("Alice", 1, SEED),
-                    removable_on: 0,
-                    status: crate::IdtyStatus::Validated,
+                    next_scheduled: 0,
+                    status: crate::IdtyStatus::Member,
                 },
             },
             GenesisIdty {
@@ -338,8 +347,8 @@ benchmarks! {
                     next_creatable_identity_on: 0,
                     old_owner_key: None,
                     owner_key: account("Bob", 1, SEED),
-                    removable_on: 0,
-                    status: crate::IdtyStatus::Created,
+                    next_scheduled: 0,
+                    status: crate::IdtyStatus::Unconfirmed,
                 },
             },
         ]}),

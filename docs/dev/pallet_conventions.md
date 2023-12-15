@@ -5,7 +5,7 @@
 Custom Duniter pallet calls should adhere to the standard Substrate naming convention:
 
 - `action_` for regular calls (e.g., `create_identity`).
-- `force_action_`  for calls with a privileged origin (e.g., `force_remove_identity`).
+- `force_action_` for calls with a privileged origin (e.g., `force_set_distance_status`).
 
 ## Error
 

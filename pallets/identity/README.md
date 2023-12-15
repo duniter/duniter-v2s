@@ -9,13 +9,15 @@ A Duniter identity contains:
 - its **owner key** (that can change)
 - an optional **old owner key** with the date of the key change
 - a **status** that can be
-  - created (by an existing identity)
-  - confirmed (by owner, comes with a name)
-  - validated (that has become member in the allowed timeframe)
+  - unconfirmed (created by a member identity)
+  - unvalidated (confirmed by owner = given a name)
+  - member (of the main wot)
+  - notmember (of the main wot)
+  - revoked (automatically of manually)
 
 It also contains:
 
-- the block number at which it can emit its **next certification**
+- the block number at which it can emit its **next certification** (TODO distinguish next certification and next identity creation)
 - the block number at which it can be **removed from storage**
 
 It also contains attached data defined by the runtime that can be for example
@@ -24,7 +26,7 @@ It also contains attached data defined by the runtime that can be for example
 
 ### Name
 
-Each identity is declared with a name emited on confirmation event. Duniter keeps a list of identity names hash to ensure unicity. 
+Each identity is declared with a name emited on confirmation event. Duniter keeps a list of identity names hash to ensure unicity.
 
 ### Owner key
 

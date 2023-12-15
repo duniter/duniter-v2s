@@ -22,6 +22,9 @@ try-runtime = ['frame-support/try-runtime']
 
 [dependencies]
 
+# crates.io
+impl-trait-for-tuples = "0.2.1"
+
 # substrate
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 

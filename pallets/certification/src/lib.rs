@@ -283,38 +283,8 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            // Forbid self cert
-            ensure!(issuer != receiver, Error::<T, I>::CannotCertifySelf);
-
-            // Verify caller ownership
-            let issuer_owner_key =
-                T::OwnerKeyOf::convert(issuer).ok_or(Error::<T, I>::IssuerNotFound)?;
-            ensure!(issuer_owner_key == who, DispatchError::BadOrigin);
-
-            // Verify compatibility with other pallets state
-            T::CheckCertAllowed::check_cert_allowed(issuer, receiver)?;
-
-            // Verify rule MinReceivedCertToBeAbleToIssueCert
-            let issuer_idty_cert_meta = <StorageIdtyCertMeta<T, I>>::get(issuer);
-            ensure!(
-                issuer_idty_cert_meta.received_count
-                    >= T::MinReceivedCertToBeAbleToIssueCert::get(),
-                Error::<T, I>::NotEnoughCertReceived
-            );
-
-            // Verify rule MaxByIssuer
-            ensure!(
-                issuer_idty_cert_meta.issued_count < T::MaxByIssuer::get(),
-                Error::<T, I>::IssuedTooManyCert
-            );
-
-            // Verify rule CertPeriod
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
-            ensure!(
-                block_number >= issuer_idty_cert_meta.next_issuable_on,
-                Error::<T, I>::NotRespectCertPeriod
-            );
-
+            Self::check_cert_allowed(who, issuer, receiver, block_number)?;
             Self::do_add_cert(block_number, issuer, receiver)
         }
 
@@ -523,6 +493,54 @@ pub mod pallet {
                 total_weight.saturating_add(T::WeightInfo::do_remove_cert());
             }
             total_weight
+        }
+
+        /// check cert allowed
+        // first internal checks
+        // then external checks
+        fn check_cert_allowed(
+            caller_key: T::AccountId,
+            issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
+            block_number: T::BlockNumber,
+        ) -> DispatchResult {
+            // --- first internal checks
+            // 1. Forbid self cert
+            ensure!(issuer != receiver, Error::<T, I>::CannotCertifySelf);
+
+            // 2. Verify caller ownership
+            let issuer_owner_key =
+                T::OwnerKeyOf::convert(issuer).ok_or(Error::<T, I>::IssuerNotFound)?;
+            ensure!(issuer_owner_key == caller_key, DispatchError::BadOrigin);
+
+            // 3. Verify rule MinReceivedCertToBeAbleToIssueCert
+            // (this number can differ from the one necessary to be member)
+            let issuer_idty_cert_meta = <StorageIdtyCertMeta<T, I>>::get(issuer);
+            ensure!(
+                issuer_idty_cert_meta.received_count
+                    >= T::MinReceivedCertToBeAbleToIssueCert::get(),
+                Error::<T, I>::NotEnoughCertReceived
+            );
+
+            // 4. Verify rule MaxByIssuer
+            ensure!(
+                issuer_idty_cert_meta.issued_count < T::MaxByIssuer::get(),
+                Error::<T, I>::IssuedTooManyCert
+            );
+
+            // 5. Verify rule CertPeriod
+            ensure!(
+                block_number >= issuer_idty_cert_meta.next_issuable_on,
+                Error::<T, I>::NotRespectCertPeriod
+            );
+
+            // --- then external checks
+            // - issuer is member
+            // - receiver is confirmed
+            // - receiver is not revoked
+            T::CheckCertAllowed::check_cert_allowed(issuer, receiver)?;
+
+            Ok(())
         }
     }
 }

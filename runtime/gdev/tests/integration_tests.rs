@@ -23,7 +23,6 @@ use frame_support::traits::{Get, PalletInfo, StorageInfo, StorageInfoTrait};
 use frame_support::{assert_noop, assert_ok};
 use frame_support::{StorageHasher, Twox128};
 use gdev_runtime::*;
-use pallet_duniter_wot::IdtyRemovalWotReason;
 use pallet_membership::MembershipRemovalReason;
 use sp_core::Encode;
 use sp_keyring::AccountKeyring;
@@ -284,28 +283,24 @@ fn test_session_change() {
     })
 }
 
-/// test calling force_remove_identity
+/// test calling do_remove_identity
 #[test]
-fn test_force_remove_identity() {
+fn test_remove_identity() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         run_to_block(2);
         // remove the identity
-        assert_ok!(Identity::force_remove_identity(
-            frame_system::RawOrigin::Root.into(),
-            4,
-            None,
-            pallet_identity::IdtyRemovalReason::Manual
-        ));
-        System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipRemoved {
-                member: 4,
-                reason: MembershipRemovalReason::Revoked,
-            },
-        ));
+        Identity::do_remove_identity(4, pallet_identity::RemovalReason::Root);
+        // // membership removal is no more automatic
+        // System::assert_has_event(RuntimeEvent::Membership(
+        //     pallet_membership::Event::MembershipRemoved {
+        //         member: 4,
+        //         reason: MembershipRemovalReason::System,
+        //     },
+        // ));
         System::assert_has_event(RuntimeEvent::Identity(
             pallet_identity::Event::IdtyRemoved {
                 idty_index: 4,
-                reason: pallet_identity::IdtyRemovalReason::Manual,
+                reason: pallet_identity::RemovalReason::Root,
             },
         ));
         // since Dave does not have ED, his account is killed
@@ -377,15 +372,7 @@ fn test_validate_identity_when_claim() {
                         ),
                 },
             ));
-
-            // ferdie can not validate eve identity because already validated
-            assert_noop!(
-                Identity::validate_identity(
-                    frame_system::RawOrigin::Signed(AccountKeyring::Ferdie.to_account_id()).into(),
-                    5,
-                ),
-                pallet_identity::Error::<Runtime>::IdtyAlreadyValidated
-            );
+            // not possible anymore to validate identity of someone else
         });
 }
 
@@ -401,15 +388,12 @@ fn test_membership_expiry() {
             },
         ));
         // membership expiry should not trigger identity removal
-        assert!(!System::events().iter().any(|record| record.event
-            == RuntimeEvent::Identity(pallet_identity::Event::IdtyRemoved {
-                idty_index: 1,
-                reason: pallet_identity::IdtyRemovalReason::Expired
-            })));
+        assert!(Identity::identity(1).is_some());
     });
 }
 
 #[test]
+#[ignore = "long to go to autorevocation period"]
 fn test_membership_expiry_with_identity_removal() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         run_to_block(100);
@@ -422,16 +406,12 @@ fn test_membership_expiry_with_identity_removal() {
         ));
 
         // Trigger pending membership expiry
-        run_to_block(
-            100 + <Runtime as pallet_membership::Config<Instance1>>::PendingMembershipPeriod::get(),
-        );
+        run_to_block(100 + <Runtime as pallet_identity::Config>::AutorevocationPeriod::get());
 
         System::assert_has_event(RuntimeEvent::Identity(
-            pallet_identity::Event::IdtyRemoved {
+            pallet_identity::Event::IdtyRevoked {
                 idty_index: 4,
-                reason: pallet_identity::IdtyRemovalReason::Other(
-                    IdtyRemovalWotReason::MembershipExpired,
-                ),
+                reason: pallet_identity::RevocationReason::Expired,
             },
         ));
     });
@@ -496,9 +476,9 @@ fn test_membership_renewal() {
         });
 }
 
-// test that UD are auto claimed when identity is removed
+// test that UD are auto claimed when identity is revoked
 #[test]
-fn test_remove_identity_after_one_ud() {
+fn test_revoke_identity_after_one_ud() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         //println!("UdCreationPeriod={}", <Runtime as pallet_universal_dividend::Config>::UdCreationPeriod::get());
         run_to_block(
@@ -520,18 +500,13 @@ fn test_remove_identity_after_one_ud() {
                 / <Runtime as pallet_babe::Config>::ExpectedBlockTime::get()
                 + 1) as u32,
         );
-        // remove identity
-        assert_ok!(Identity::force_remove_identity(
-            frame_system::RawOrigin::Root.into(),
-            4,
-            None,
-            pallet_identity::IdtyRemovalReason::Manual
-        ));
+        // revoke identity
+        Identity::do_revoke_identity(4, pallet_identity::RevocationReason::Root);
 
         // Verify events
         // universal dividend was automatically paid to dave
         System::assert_has_event(RuntimeEvent::UniversalDividend(
-            pallet_universal_dividend::Event::UdsAutoPaidAtRemoval {
+            pallet_universal_dividend::Event::UdsAutoPaid {
                 count: 1,
                 total: 1_000,
                 who: AccountKeyring::Dave.to_account_id(),
@@ -550,14 +525,13 @@ fn test_remove_identity_after_one_ud() {
             },
         ));
         System::assert_has_event(RuntimeEvent::Identity(
-            pallet_identity::Event::IdtyRemoved {
+            pallet_identity::Event::IdtyRevoked {
                 idty_index: 4,
-                reason: pallet_identity::IdtyRemovalReason::Manual,
+                reason: pallet_identity::RevocationReason::Root,
             },
         ));
 
-        // thanks to the new UD, Dave has existential deposit and is not killed
-        assert!(Identity::identity(4).is_none());
+        assert!(Identity::identity(4).is_some()); // identity still exists, but its status is revoked
         assert_eq!(
             Balances::free_balance(AccountKeyring::Dave.to_account_id()),
             1_000
@@ -588,9 +562,9 @@ fn test_ud_claimed_membership_on_and_off() {
 
         run_to_block(13);
         // alice identity expires
-        assert_ok!(Membership::force_expire_membership(1));
+        Membership::do_remove_membership(1, MembershipRemovalReason::System);
         System::assert_has_event(RuntimeEvent::UniversalDividend(
-            pallet_universal_dividend::Event::UdsAutoPaidAtRemoval {
+            pallet_universal_dividend::Event::UdsAutoPaid {
                 count: 1,
                 total: 1_000,
                 who: AccountKeyring::Alice.to_account_id(),
@@ -665,18 +639,13 @@ fn test_ud_claimed_membership_on_and_off() {
     });
 }
 
-/// test when root removes and identity, all consumers should be deleted
+/// test when root revokes and identity, all membership should be deleted
 #[test]
-fn test_remove_smith_identity() {
+fn test_revoke_smith_identity() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         run_to_block(2);
 
-        assert_ok!(Identity::force_remove_identity(
-            frame_system::RawOrigin::Root.into(),
-            3,
-            None,
-            pallet_identity::IdtyRemovalReason::Manual
-        ));
+        Identity::do_revoke_identity(3, pallet_identity::RevocationReason::Root);
         // Verify events
         System::assert_has_event(RuntimeEvent::SmithMembership(
             pallet_membership::Event::MembershipRemoved {
@@ -694,9 +663,9 @@ fn test_remove_smith_identity() {
             },
         ));
         System::assert_has_event(RuntimeEvent::Identity(
-            pallet_identity::Event::IdtyRemoved {
+            pallet_identity::Event::IdtyRevoked {
                 idty_index: 3,
-                reason: pallet_identity::IdtyRemovalReason::Manual,
+                reason: pallet_identity::RevocationReason::Root,
             },
         ));
     });
@@ -733,59 +702,68 @@ fn test_smith_certification() {
 /// test the full process to join smith from main wot member to authority member
 #[test]
 fn test_smith_process() {
-    ExtBuilder::new(1, 3, 4).with_initial_balances(vec![(AccountKeyring::Dave.to_account_id(), 1_000)])
-    .build().execute_with(|| {
-        run_to_block(1);
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(AccountKeyring::Dave.to_account_id(), 1_000)])
+        .build()
+        .execute_with(|| {
+            run_to_block(1);
 
-        let alice = AccountKeyring::Alice.to_account_id();
-        let bob = AccountKeyring::Bob.to_account_id();
-        let charlie = AccountKeyring::Charlie.to_account_id();
+            let alice = AccountKeyring::Alice.to_account_id();
+            let bob = AccountKeyring::Bob.to_account_id();
+            let charlie = AccountKeyring::Charlie.to_account_id();
 
-        // Eve can not request smith membership because not member of the smith wot
-        assert_noop!(SmithMembership::request_membership(
-            frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into()),
-            pallet_membership::Error::<gdev_runtime::Runtime, pallet_membership::Instance2>::IdtyIdNotFound,
-        );
+            // Eve can not request smith membership because not member of the smith wot
+            // no more membership request
 
-        // Dave can request smith membership (currently optional)
-        assert_ok!(SmithMembership::request_membership(
-            frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
-        ));
+            // Dave can request smith membership (currently optional)
+            // no more membership request
 
-        assert_eq!(SmithMembership::pending_membership(5), None); // none for Eve
-        assert_eq!(SmithMembership::pending_membership(4), Some(())); // Dave
+            // Alice Bob and Charlie can certify Dave
+            assert_ok!(SmithCert::add_cert(
+                frame_system::RawOrigin::Signed(alice).into(),
+                1,
+                4
+            ));
+            assert_ok!(SmithCert::add_cert(
+                frame_system::RawOrigin::Signed(bob).into(),
+                2,
+                4
+            ));
+            assert_ok!(SmithCert::add_cert(
+                frame_system::RawOrigin::Signed(charlie).into(),
+                3,
+                4
+            ));
 
-        // then Alice Bob and Charlie can certify Dave
-        assert_ok!(SmithCert::add_cert(frame_system::RawOrigin::Signed(alice).into(), 1, 4));
-        assert_ok!(SmithCert::add_cert(frame_system::RawOrigin::Signed(bob).into(), 2, 4));
-        assert_ok!(SmithCert::add_cert(frame_system::RawOrigin::Signed(charlie).into(), 3, 4));
+            // with these three smith certs, Dave can claim membership
+            assert_ok!(SmithMembership::claim_membership(
+                frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
+            ));
 
-        // with these three smith certs, Dave can claim membership
-        assert_ok!(SmithMembership::claim_membership(
-            frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
-        ));
+            // Dave is then member of the smith wot
+            assert_eq!(
+                SmithMembership::membership(4),
+                Some(sp_membership::MembershipData {
+                    expire_on: 1001, // 1 + 1000
+                })
+            );
 
-        // Dave is then member of the smith wot
-        assert_eq!(SmithMembership::membership(4), Some(sp_membership::MembershipData {
-            expire_on: 1001, // 1 + 1000
-        }));
+            // Dave can set his (dummy) session keys
+            assert_ok!(AuthorityMembers::set_session_keys(
+                frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
+                gdev_runtime::opaque::SessionKeys {
+                    grandpa: sp_core::ed25519::Public([0u8; 32]).into(),
+                    babe: sp_core::sr25519::Public([0u8; 32]).into(),
+                    im_online: sp_core::sr25519::Public([0u8; 32]).into(),
+                    authority_discovery: sp_core::sr25519::Public([0u8; 32]).into(),
+                }
+            ));
 
-        // Dave can set his (dummy) session keys
-        assert_ok!(AuthorityMembers::set_session_keys(
-            frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
-            gdev_runtime::opaque::SessionKeys{
-                grandpa: sp_core::ed25519::Public([0u8; 32]).into(),
-                babe: sp_core::sr25519::Public([0u8; 32]).into(),
-                im_online: sp_core::sr25519::Public([0u8; 32]).into(),
-                authority_discovery: sp_core::sr25519::Public([0u8; 32]).into(),
-            }
-        ));
-
-        // Dave can go online
-        assert_ok!(AuthorityMembers::go_online(
-            frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
-        ));
-    })
+            // Dave can go online
+            assert_ok!(AuthorityMembers::go_online(
+                frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
+            ));
+        })
 }
 
 /// test create new account with balance lower than existential deposit
@@ -1060,9 +1038,8 @@ fn test_validate_new_idty_after_few_uds() {
                     pallet_distance::DistanceStatus::Valid
                 ))
             ));
-            assert_ok!(Identity::validate_identity(
-                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
-                5,
+            assert_ok!(Membership::claim_membership(
+                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
             ));
 
             // The new member should have first_eligible_ud equal to three

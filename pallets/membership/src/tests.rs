@@ -21,7 +21,6 @@ use frame_support::{assert_noop, assert_ok};
 use maplit::btreemap;
 use sp_membership::traits::*;
 use sp_membership::MembershipData;
-use sp_runtime::traits::IsMember;
 
 // alias
 type RtEvent = RuntimeEvent;
@@ -49,32 +48,8 @@ fn test_genesis_build() {
     });
 }
 
-#[test]
-fn test_membership_already_acquired() {
-    new_test_ext(default_gen_conf()).execute_with(|| {
-        run_to_block(1);
-        // Membership 0 cannot be reclaimed because there is no membership request
-        assert_noop!(
-            DefaultMembership::claim_membership(RuntimeOrigin::signed(0)),
-            Error::<Test, _>::MembershipRequestNotFound
-        );
-    });
-}
-
-#[test]
-fn test_membership_request_not_found() {
-    new_test_ext(default_gen_conf()).execute_with(|| {
-        run_to_block(1);
-        // Membership 0 cannot be reclaimed
-        assert_noop!(
-            DefaultMembership::claim_membership(RuntimeOrigin::signed(1)),
-            Error::<Test, _>::MembershipRequestNotFound
-        );
-    });
-}
-
 /// test membership expiration
-// membership should be moved to pending membership and expire after
+// membership should expire
 #[test]
 fn test_membership_expiration() {
     new_test_ext(default_gen_conf()).execute_with(|| {
@@ -88,11 +63,6 @@ fn test_membership_expiration() {
             member: 0,
             reason: MembershipRemovalReason::Expired,
         }));
-        // it should be added to pending membership and expire on block #6
-        run_to_block(6);
-        System::assert_has_event(RtEvent::DefaultMembership(
-            Event::PendingMembershipExpired { member: 0 },
-        ));
     });
 }
 
@@ -156,64 +126,27 @@ fn test_membership_revocation() {
             member: 0,
             reason: MembershipRemovalReason::Revoked,
         }));
+        assert_eq!(DefaultMembership::membership(0), None);
 
-        // Membership 0 can re-request membership
+        // Membership 0 can re-claim membership
         run_to_block(5);
-        assert_ok!(DefaultMembership::request_membership(
-            RuntimeOrigin::signed(0),
-        ));
-        System::assert_has_event(RtEvent::DefaultMembership(Event::PendingMembershipAdded {
+        assert_ok!(DefaultMembership::claim_membership(RuntimeOrigin::signed(
+            0
+        ),));
+        System::assert_has_event(RtEvent::DefaultMembership(Event::MembershipAdded {
             member: 0,
-            expire_on: 5 + <Test as crate::Config>::PendingMembershipPeriod::get(),
+            expire_on: 5 + <Test as crate::Config>::MembershipPeriod::get(),
         }));
     });
 }
 
-/// test pending membership expiration
-#[test]
-fn test_pending_membership_expiration() {
-    new_test_ext(Default::default()).execute_with(|| {
-        // Idty 0 request membership
-        run_to_block(1);
-        assert_ok!(DefaultMembership::request_membership(
-            RuntimeOrigin::signed(0),
-        ));
-        System::assert_has_event(RtEvent::DefaultMembership(Event::PendingMembershipAdded {
-            member: 0,
-            expire_on: 1 + <Test as crate::Config>::PendingMembershipPeriod::get(),
-        }));
-
-        // Then, idty 0 shold still in pending memberships until PendingMembershipPeriod ended
-        run_to_block(PendingMembershipPeriod::get());
-        assert!(DefaultMembership::is_in_pending_memberships(0));
-
-        // Then, idty 0 request should expire after PendingMembershipPeriod
-        run_to_block(1 + PendingMembershipPeriod::get());
-        assert!(!DefaultMembership::is_in_pending_memberships(0));
-        System::assert_has_event(RtEvent::DefaultMembership(
-            Event::PendingMembershipExpired { member: 0 },
-        ));
-    })
-}
-
 /// test membership workflow
-// - request membership
 // - claim membership
 // - renew membership
 // - membership expiry
 #[test]
 fn test_membership_workflow() {
     new_test_ext(Default::default()).execute_with(|| {
-        // - Idty 0 request membership
-        run_to_block(1);
-        assert_ok!(DefaultMembership::request_membership(
-            RuntimeOrigin::signed(0),
-        ));
-        System::assert_has_event(RtEvent::DefaultMembership(Event::PendingMembershipAdded {
-            member: 0,
-            expire_on: 1 + <Test as crate::Config>::PendingMembershipPeriod::get(),
-        }));
-
         // - Then, idty 0 claim membership
         run_to_block(2);
         assert_ok!(DefaultMembership::claim_membership(RuntimeOrigin::signed(

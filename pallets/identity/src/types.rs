@@ -23,28 +23,44 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::vec::Vec;
 
-/// events related to identity
+/// internal events related to identity
 pub enum IdtyEvent<T: crate::Config> {
+    /// IdtyEvent::Created
     /// creation of a new identity by an other
+    // pallet account links account to identity
+    // pallet wot adds certification
+    // pallet quota adds storage item for this identity
     Created {
         creator: T::IdtyIndex,
         owner_key: T::AccountId,
     },
-    /// confirmation of an identity (with a given name)
-    Confirmed,
-    /// validation of an identity
-    Validated,
-    /// changing the owner key of the identity
-    ChangedOwnerKey { new_owner_key: T::AccountId },
-    /// removing an identity
+    /// IdtyEvent::Removed
+    /// removing an identity (unvalidated or revoked)
+    // pallet wot removes associated certifications if status is not revoked
+    // pallet quota removes associated quota
     Removed { status: IdtyStatus },
+    // TODO add a way to unlink accounts corresponding to revoked or removed identities
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub enum IdtyRemovalReason<OtherReason: TypeInfo + Decode + Encode + Eq + Clone> {
+pub enum RevocationReason {
+    /// revoked by root (e.g. governance or migration)
+    Root,
+    /// revoked by user action (revocation document)
+    User,
+    /// revoked due to inactive period
     Expired,
-    Manual,
-    Other(OtherReason),
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum RemovalReason {
+    /// removed by root
+    Root,
+    /// removed because unconfirmed
+    Unconfirmed,
+    /// removed because unvalidated
+    Unvalidated,
+    /// removed automatically after revocation buffer
     Revoked,
 }
 
@@ -85,20 +101,22 @@ impl<'de> serde::Deserialize<'de> for IdtyName {
 }
 
 /// status of the identity
-/// used for temporary period before validation
-/// also used for buffer when losing membership before being deleted
+// this is a kind of index to tell the state of the identity
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum IdtyStatus {
-    /// created through a first certification
+    /// created through a first certification but unconfirmed
     #[default]
-    Created,
-    /// confirmed by owner with a name published
-    ConfirmedByOwner,
-    /// validated by the main web of trust
-    Validated,
-    // disabled by the main web of trust, deletion planned
-    // Disabled,
+    Unconfirmed,
+    /// confirmed by key owner with a name published but unvalidated
+    Unvalidated,
+    /// member of the main web of trust
+    // (there must be a membership in membership pallet storage)
+    Member,
+    /// not member of the main web of trust, auto-revocation planned
+    NotMember,
+    /// revoked manually or automatically, deletion possible
+    Revoked,
 }
 
 /// identity value (as in key/value)
@@ -114,10 +132,9 @@ pub struct IdtyValue<BlockNumber, AccountId, IdtyData> {
     pub old_owner_key: Option<(AccountId, BlockNumber)>,
     /// current owner key of this identity
     pub owner_key: AccountId,
-    /// block before which this identity can not be removed
-    /// used only for temporary period before validation
-    /// equals 0 for a validated identity
-    pub removable_on: BlockNumber,
+    /// next action scheduled on identity
+    // 0 if no action scheduled
+    pub next_scheduled: BlockNumber,
     /// current status of the identity (until validation)
     pub status: IdtyStatus,
 }

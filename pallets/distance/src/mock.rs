@@ -215,9 +215,10 @@ impl pallet_balances::Config for Test {
 parameter_types! {
     pub const ChangeOwnerKeyPeriod: u64 = 10;
     pub const ConfirmPeriod: u64 = 2;
+    pub const ValidationPeriod: u64 = 3;
+    pub const AutorevocationPeriod: u64 = 5;
+    pub const DeletionPeriod: u64 = 7;
     pub const IdtyCreationPeriod: u64 = 3;
-    pub const MaxInactivityPeriod: u64 = 5;
-    pub const ValidationPeriod: u64 = 2;
 }
 
 pub struct IdtyNameValidatorTestImpl;
@@ -230,17 +231,18 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
 impl pallet_identity::Config for Test {
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
+    type ValidationPeriod = ValidationPeriod;
+    type AutorevocationPeriod = AutorevocationPeriod;
+    type DeletionPeriod = DeletionPeriod;
     type CheckIdtyCallAllowed = ();
     type IdtyCreationPeriod = IdtyCreationPeriod;
     type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = u32;
     type AccountLinker = ();
-    type IdtyRemovalOtherReason = ();
     type Signer = UintAuthorityId;
     type Signature = TestSignature;
     type OnIdtyChange = ();
-    type RemoveIdentityConsumers = ();
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     #[cfg(feature = "runtime-benchmarks")]
@@ -277,8 +279,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
                     next_creatable_identity_on: 0,
                     owner_key: i as u64,
                     old_owner_key: None,
-                    removable_on: 0,
-                    status: pallet_identity::IdtyStatus::Validated,
+                    next_scheduled: 0,
+                    status: pallet_identity::IdtyStatus::Member,
                 },
             })
             .collect(),

@@ -72,27 +72,6 @@ pub async fn confirm_identity(client: &Client, from: AccountKeyring, pseudo: Str
     Ok(())
 }
 
-pub async fn validate_identity(client: &Client, from: AccountKeyring, to: u32) -> Result<()> {
-    let from = PairSigner::new(from.pair());
-
-    let _events = create_block_with_extrinsic(
-        client,
-        client
-            .tx()
-            .create_signed(
-                &gdev::tx().identity().validate_identity(to),
-                &from,
-                BaseExtrinsicParamsBuilder::new(),
-            )
-            .await
-            .unwrap(),
-    )
-    .await
-    .unwrap();
-
-    Ok(())
-}
-
 // get identity index from account keyring name
 pub async fn get_identity_index(world: &DuniterWorld, account: String) -> Result<u32> {
     let account: AccountId = AccountKeyring::from_str(&account)

@@ -460,20 +460,26 @@ macro_rules! pallets_config {
             type MinCertForCreateIdtyRight = WotMinCertForCreateIdtyRight;
         }
 
+        parameter_types! {
+            pub const ValidationPeriod: BlockNumber = 2 * MONTHS;
+            pub const AutorevocationPeriod: BlockNumber = 1 * YEARS;
+            pub const DeletionPeriod: BlockNumber = 10 * YEARS;
+        }
         impl pallet_identity::Config for Runtime {
 			type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
             type ConfirmPeriod = ConfirmPeriod;
+            type ValidationPeriod = ValidationPeriod;
+            type AutorevocationPeriod = AutorevocationPeriod;
+            type DeletionPeriod = DeletionPeriod;
             type CheckIdtyCallAllowed = (Wot, SmithSubWot);
             type IdtyCreationPeriod = IdtyCreationPeriod;
 			type IdtyData = IdtyData;
             type IdtyIndex = IdtyIndex;
             type AccountLinker = Account;
             type IdtyNameValidator = IdtyNameValidatorImpl;
-            type IdtyRemovalOtherReason = pallet_duniter_wot::IdtyRemovalWotReason;
             type Signer = <Signature as sp_runtime::traits::Verify>::Signer;
 			type Signature = Signature;
-            type OnIdtyChange = (common_runtime::handlers::OnIdtyChangeHandler<Runtime>, Wot, Quota, Account);
-            type RemoveIdentityConsumers = RemoveIdentityConsumersImpl<Self>;
+            type OnIdtyChange = (Wot, SmithSubWot, Quota, Account);
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_identity::WeightInfo<Runtime>;
             #[cfg(feature = "runtime-benchmarks")]
@@ -486,8 +492,7 @@ macro_rules! pallets_config {
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type AccountIdOf = common_runtime::providers::IdentityAccountIdProvider<Self>;
             type MembershipPeriod = MembershipPeriod;
-            type OnEvent = OnMembershipEventHandler<Wot, Runtime>;
-            type PendingMembershipPeriod = PendingMembershipPeriod;
+            type OnEvent = (OnMembershipEventHandler<Wot, Runtime>, Wot);
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_membership_membership::WeightInfo<Runtime>;
             #[cfg(feature = "runtime-benchmarks")]
@@ -537,7 +542,6 @@ macro_rules! pallets_config {
             type AccountIdOf = common_runtime::providers::IdentityAccountIdProvider<Self>;
             type MembershipPeriod = SmithMembershipPeriod;
             type OnEvent = OnSmithMembershipEventHandler<SmithSubWot, Runtime>;
-            type PendingMembershipPeriod = SmithPendingMembershipPeriod;
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_membership_smith_membership::WeightInfo<Runtime>;
             #[cfg(feature = "runtime-benchmarks")]

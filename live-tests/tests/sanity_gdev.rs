@@ -46,7 +46,7 @@ type IdtyData = gdev::runtime_types::common_runtime::entities::IdtyData;
 type IdtyIndex = u32;
 type IdtyValue =
     gdev::runtime_types::pallet_identity::types::IdtyValue<BlockNumber, AccountId32, IdtyData>;
-use gdev::runtime_types::pallet_identity::types::IdtyStatus;
+// use gdev::runtime_types::pallet_identity::types::IdtyStatus;
 
 struct Storage {
     accounts: HashMap<AccountId32, AccountInfo>,
@@ -110,7 +110,7 @@ async fn sanity_tests_at(client: Client, _maybe_block_hash: Option<H256>) -> any
             next_creatable_identity_on: idty_value.next_creatable_identity_on,
             old_owner_key: None, // Not used in the live test, skip the conversion
             owner_key: AccountId32::from(idty_value.owner_key.0),
-            removable_on: idty_value.removable_on,
+            next_scheduled: idty_value.next_scheduled,
             status: idty_value.status,
         };
         identities.insert(IdtyIndex::from_le_bytes(idty_index_bytes), idty_val);
@@ -274,27 +274,6 @@ mod verifier {
                             idty_index
                         ),
                     );
-                }
-
-                match idty_value.status {
-                    IdtyStatus::Validated => {
-                        // Rule 3: If the identity is validated, removable_on should be zero
-                        self.assert(
-                            idty_value.removable_on == 0,
-                            format!(
-                                "Identity {} is corrupted: removable_on > 0 on validated idty",
-                                idty_index
-                            ),
-                        );
-                    }
-                    _ => {
-                        // Rule 4: If the identity is not validated, next_creatable_identity_on should be zero
-                        self.assert(
-							idty_value.next_creatable_identity_on == 0,
-							format!("Identity {} is corrupted: next_creatable_identity_on > 0 on non-validated idty",
-							idty_index)
-						);
-                    }
                 }
             }
 

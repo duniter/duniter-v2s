@@ -89,7 +89,6 @@ impl pallet_membership::Config for Test {
     type AccountIdOf = ConvertInto;
     type MembershipPeriod = MembershipPeriod;
     type OnEvent = ();
-    type PendingMembershipPeriod = PendingMembershipPeriod;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     #[cfg(feature = "runtime-benchmarks")]

@@ -20,8 +20,6 @@ use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::instances::{Instance1, Instance2};
 use frame_support::pallet_prelude::Weight;
 use frame_support::Parameter;
-use pallet_identity::IdtyEvent;
-use sp_runtime::traits::IsMember;
 
 // new session handler
 pub struct OnNewSessionHandler<Runtime>(core::marker::PhantomData<Runtime>);
@@ -32,37 +30,6 @@ where
     fn on_new_session(index: sp_staking::SessionIndex) {
         pallet_provide_randomness::Pallet::<Runtime>::on_new_epoch();
         pallet_distance::Pallet::<Runtime>::on_new_session(index);
-    }
-}
-
-// identity change runtime handler
-pub struct OnIdtyChangeHandler<Runtime>(core::marker::PhantomData<Runtime>);
-impl<T> pallet_identity::traits::OnIdtyChange<T> for OnIdtyChangeHandler<T>
-where
-    T: frame_system::Config<AccountId = AccountId>,
-    T: pallet_authority_members::Config<MemberId = IdtyIndex>,
-    T: pallet_identity::Config<IdtyIndex = IdtyIndex, IdtyData = IdtyData>,
-    T: pallet_universal_dividend::Config,
-{
-    fn on_idty_change(idty_index: IdtyIndex, idty_event: &IdtyEvent<T>) {
-        match idty_event {
-            IdtyEvent::Validated => {
-                // when identity is validated, it starts getting right to UD
-                // but this is handeled by membership event handler (MembershipAdded)
-            }
-            IdtyEvent::ChangedOwnerKey { new_owner_key } => {
-                if let Err(e) = pallet_authority_members::Pallet::<T>::change_owner_key(
-                    idty_index,
-                    new_owner_key.clone(),
-                ) {
-                    log::error!(
-                        "on_idty_change: pallet_authority_members.change_owner_key(): {:?}",
-                        e
-                    );
-                }
-            }
-            IdtyEvent::Created { .. } | IdtyEvent::Confirmed | IdtyEvent::Removed { .. } => {}
-        }
     }
 }
 
@@ -102,9 +69,7 @@ impl<
                 });
             }
             // in other case, ther is nothing to do
-            sp_membership::Event::MembershipRenewed(_)
-            | sp_membership::Event::PendingMembershipAdded(_)
-            | sp_membership::Event::PendingMembershipExpired(_) => (),
+            sp_membership::Event::MembershipRenewed(_) => (),
         });
         Inner::on_event(membership_event)
     }
@@ -148,6 +113,8 @@ impl<
 }
 
 // authority member removal handler
+// TODO refac smith wot
+// or document the link between smith membership and authority member
 pub struct OnRemovedAuthorityMemberHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_authority_members::traits::OnRemovedMember<IdtyIndex>
     for OnRemovedAuthorityMemberHandler<Runtime>
@@ -155,30 +122,10 @@ where
     Runtime: frame_system::Config + pallet_membership::Config<Instance2, IdtyId = IdtyIndex>,
 {
     fn on_removed_member(idty_index: IdtyIndex) {
-        // TODO investigate why we should remove smith membership when removing authority member
-        pallet_membership::Pallet::<Runtime, Instance2>::force_revoke_membership(idty_index);
-    }
-}
-
-// identity removal handler
-pub struct RemoveIdentityConsumersImpl<Runtime>(core::marker::PhantomData<Runtime>);
-impl<Runtime> pallet_identity::traits::RemoveIdentityConsumers<IdtyIndex>
-    for RemoveIdentityConsumersImpl<Runtime>
-where
-    Runtime: pallet_identity::Config<IdtyIndex = IdtyIndex>
-        + pallet_authority_members::Config<MemberId = IdtyIndex>
-        + pallet_membership::Config<Instance1, IdtyId = IdtyIndex>
-        + pallet_membership::Config<Instance2, IdtyId = IdtyIndex>,
-{
-    fn remove_idty_consumers(idty_index: IdtyIndex) -> Weight {
-        // Remove smith member
-        if pallet_membership::Pallet::<Runtime, Instance2>::is_member(&idty_index) {
-            pallet_membership::Pallet::<Runtime, Instance2>::force_revoke_membership(idty_index);
-        }
-        // Remove "classic" member
-        pallet_membership::Pallet::<Runtime, Instance1>::force_revoke_membership(idty_index);
-
-        Weight::zero()
+        pallet_membership::Pallet::<Runtime, Instance2>::do_remove_membership(
+            idty_index,
+            pallet_membership::MembershipRemovalReason::System,
+        );
     }
 }
 

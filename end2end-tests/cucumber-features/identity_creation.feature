@@ -14,10 +14,10 @@ Feature: Identity creation
     # then next cert can be done after cert_period, which is 15
     When 15 block later
     When alice creates identity for dave
-    Then dave identity should be created
+    Then dave identity should be unconfirmed
     Then dave should be certified by alice
     When dave confirms his identity with pseudo "dave"
-    Then dave identity should be confirmed
+    Then dave identity should be unvalidated
     When 3 block later
     When bob certifies dave
     When charlie certifies dave
@@ -30,5 +30,5 @@ Feature: Identity creation
     When alice runs distance oracle
     When 30 blocks later
     Then dave should have distance ok
-    When eve validates dave identity
-    Then dave identity should be validated
+    When dave claims membership
+    Then dave identity should be member

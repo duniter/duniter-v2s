@@ -20,6 +20,7 @@ pub mod balances;
 pub mod cert;
 pub mod distance;
 pub mod identity;
+pub mod membership;
 pub mod oneshot;
 
 #[subxt::subxt(

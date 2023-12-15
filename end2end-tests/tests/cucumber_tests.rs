@@ -334,15 +334,11 @@ async fn confirm_identity(world: &mut DuniterWorld, from: String, pseudo: String
 }
 
 #[allow(clippy::needless_pass_by_ref_mut)]
-#[when(regex = r#"([a-zA-Z]+) validates ([a-zA-Z]+) identity"#)]
-async fn validate_identity(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
+#[when(regex = r#"([a-zA-Z]+) claims membership"#)]
+async fn claim_membership(world: &mut DuniterWorld, from: String) -> Result<()> {
     // input names to keyrings
     let from = AccountKeyring::from_str(&from).expect("unknown from");
-    let to: u32 = common::identity::get_identity_index(world, to)
-        .await
-        .unwrap();
-
-    common::identity::validate_identity(world.client(), from, to).await
+    common::membership::claim_membership(world.client(), from).await
 }
 
 #[allow(clippy::needless_pass_by_ref_mut)]
@@ -576,9 +572,11 @@ impl FromStr for IdtyStatus {
 
     fn from_str(input: &str) -> std::result::Result<IdtyStatus, String> {
         match input {
-            "created" => Ok(IdtyStatus::Created),
-            "confirmed" => Ok(IdtyStatus::ConfirmedByOwner),
-            "validated" => Ok(IdtyStatus::Validated),
+            "unconfirmed" => Ok(IdtyStatus::Unconfirmed),
+            "unvalidated" => Ok(IdtyStatus::Unvalidated),
+            "member" => Ok(IdtyStatus::Member),
+            "notmember" => Ok(IdtyStatus::NotMember),
+            "revoked" => Ok(IdtyStatus::Revoked),
             _ => Err(format!("'{input}' does not match a status")),
         }
     }

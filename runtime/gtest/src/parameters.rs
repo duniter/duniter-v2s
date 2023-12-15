@@ -71,7 +71,7 @@ parameter_types! {
 /*********/
 
 // Balances
-frame_support::parameter_types! {
+parameter_types! {
     // we take 100 of existential deposit to mimic duniter v1
     // and avoid loosing too many accounts during the migration
     pub const ExistentialDeposit: Balance = 100;
@@ -98,7 +98,7 @@ parameter_types! {
 }
 
 // Identity
-frame_support::parameter_types! {
+parameter_types! {
     pub const ChangeOwnerKeyPeriod: BlockNumber = MONTHS;
     pub const ConfirmPeriod: BlockNumber = DAYS;
     pub const IdtyCreationPeriod: BlockNumber = DAYS;

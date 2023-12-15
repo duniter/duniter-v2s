@@ -15,11 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::mock::*;
-use crate::{
-    pallet, Error, GenesisIdty, IdtyIndexAccountIdPayload, IdtyName, IdtyRemovalReason, IdtyValue,
-    RevocationPayload, LINK_IDTY_PAYLOAD_PREFIX, NEW_OWNER_KEY_PAYLOAD_PREFIX,
-    REVOCATION_PAYLOAD_PREFIX,
-};
+use crate::*;
 use codec::Encode;
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_support::{assert_noop, assert_ok};
@@ -58,8 +54,8 @@ fn alice() -> GenesisIdty<Test> {
             next_creatable_identity_on: 0,
             old_owner_key: None,
             owner_key: account(1).id,
-            removable_on: 0,
-            status: crate::IdtyStatus::Validated,
+            next_scheduled: 0,
+            status: crate::IdtyStatus::Member,
         },
     }
 }
@@ -73,8 +69,8 @@ fn bob() -> GenesisIdty<Test> {
             next_creatable_identity_on: 0,
             old_owner_key: None,
             owner_key: account(2).id,
-            removable_on: 0,
-            status: crate::IdtyStatus::Validated,
+            next_scheduled: 0,
+            status: crate::IdtyStatus::Member,
         },
     }
 }
@@ -88,8 +84,8 @@ fn inactive_bob() -> GenesisIdty<Test> {
             next_creatable_identity_on: 0,
             old_owner_key: None,
             owner_key: account(2).id,
-            removable_on: 2,
-            status: crate::IdtyStatus::Validated,
+            next_scheduled: 2,
+            status: crate::IdtyStatus::NotMember,
         },
     }
 }
@@ -112,8 +108,8 @@ fn test_identity_index() {
     })
     .execute_with(|| {
         assert_eq!(Identity::identities_count(), 2);
-        // assert_eq!(NextIdtyIndex, 3); // TODO see if we can debug that
-        // TODO create identity and check it was incremented
+        // assert_eq!(NextIdtyIndex, 3); // TODO check how to test that
+        // ... create identity and check it was incremented
     });
 }
 
@@ -154,12 +150,12 @@ fn test_create_identity_but_not_confirm_it() {
             account(2).id
         ));
 
-        // The identity shoud expire in blocs #3
+        // The identity should expire in blocs #3
         run_to_block(3);
 
         System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
             idty_index: 2,
-            reason: IdtyRemovalReason::<()>::Expired,
+            reason: RemovalReason::Unconfirmed,
         }));
 
         // We shoud be able to recreate the identity
@@ -304,8 +300,8 @@ fn test_change_owner_key() {
                 next_creatable_identity_on: 0,
                 old_owner_key: Some((account(1).id, 1)),
                 owner_key: account(10).id,
-                removable_on: 0,
-                status: crate::IdtyStatus::Validated,
+                next_scheduled: 0,
+                status: crate::IdtyStatus::Member,
             })
         );
         // Alice still sufficient
@@ -364,10 +360,10 @@ fn test_change_owner_key() {
                     .encode()
             )
         ));
-        // Old owner key should not be sufficient anymore
-        assert_eq!(System::sufficients(&account(10).id), 0);
-        // Last owner key should not be sufficient anymore
-        assert_eq!(System::sufficients(&account(100).id), 0);
+        // Old owner key is still sufficient (identity is revoked but not removed)
+        assert_eq!(System::sufficients(&account(10).id), 1);
+        // Last owner key should still be sufficient  (identity is revoked but not removed)
+        assert_eq!(System::sufficients(&account(100).id), 1);
     });
 }
 
@@ -586,17 +582,23 @@ fn test_idty_revocation() {
             )
         ));
 
-        System::assert_has_event(RuntimeEvent::System(frame_system::Event::KilledAccount {
-            account: account(1).id,
-        }));
-        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
+        // // account is not killed anymore for revoked identity
+        // System::assert_has_event(RuntimeEvent::System(frame_system::Event::KilledAccount {
+        //     account: account(1).id,
+        // }));
+        // // identity is not removed immediately after revocation
+        // System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
+        //     idty_index: 1,
+        //     reason: RemovalReason::Revoked,
+        // }));
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRevoked {
             idty_index: 1,
-            reason: IdtyRemovalReason::<()>::Revoked,
+            reason: RevocationReason::User,
         }));
 
         run_to_block(2);
 
-        // The identity no longer exists
+        // The identity can not be revoked multiple times
         assert_eq!(
             Identity::revoke_identity(
                 RuntimeOrigin::signed(account(1).id),
@@ -607,7 +609,7 @@ fn test_idty_revocation() {
                     (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode()
                 )
             ),
-            Err(Error::<Test>::IdtyNotFound.into())
+            Err(Error::<Test>::AlreadyRevoked.into())
         );
     });
 }
@@ -629,16 +631,17 @@ fn test_inactive_genesis_members() {
         // alice identity remains untouched
         assert!(pallet::Identities::<Test>::get(alice.index).is_some());
         assert!(pallet::IdentityIndexOf::<Test>::get(&alice.value.owner_key).is_some());
-        // but bob identity has been removed
-        assert!(pallet::Identities::<Test>::get(bob.index).is_none());
-        assert!(pallet::IdentityIndexOf::<Test>::get(&bob.value.owner_key).is_none());
+        // but bob identity has been revoked
+        assert!(pallet::Identities::<Test>::get(bob.index).is_some());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&bob.value.owner_key).is_some());
 
-        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRevoked {
             idty_index: bob.index,
-            reason: IdtyRemovalReason::Expired,
+            reason: RevocationReason::Expired,
         }));
     });
 }
+
 #[test]
 fn test_revocation_of_genesis_member() {
     let alice = alice();
@@ -660,13 +663,13 @@ fn test_revocation_of_genesis_member() {
         // alice identity remains untouched
         assert!(pallet::Identities::<Test>::get(alice.index).is_some());
         assert!(pallet::IdentityIndexOf::<Test>::get(&alice.value.owner_key).is_some());
-        // but bob identity has been removed
-        assert!(pallet::Identities::<Test>::get(bob.index).is_none());
-        assert!(pallet::IdentityIndexOf::<Test>::get(&bob.value.owner_key).is_none());
+        // but bob identity has been revoked
+        assert!(pallet::Identities::<Test>::get(bob.index).is_some());
+        assert!(pallet::IdentityIndexOf::<Test>::get(&bob.value.owner_key).is_some());
 
-        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRevoked {
             idty_index: bob.index,
-            reason: IdtyRemovalReason::Revoked,
+            reason: RevocationReason::User, // because called manually by revoke_self_identity
         }));
     });
 }
@@ -689,3 +692,5 @@ fn revoke_self_identity(idty: GenesisIdty<Test>) -> DispatchResultWithPostInfo {
         ),
     )
 }
+
+// TODO add tests for all periods (confirmation, validation, autorevocation, deletion)

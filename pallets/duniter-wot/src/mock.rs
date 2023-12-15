@@ -108,8 +108,10 @@ impl pallet_duniter_wot::Config<Instance1> for Test {
 parameter_types! {
     pub const ChangeOwnerKeyPeriod: u64 = 10;
     pub const ConfirmPeriod: u64 = 2;
+    pub const ValidationPeriod: u64 = 5;
+    pub const AutorevocationPeriod: u64 = 6;
+    pub const DeletionPeriod: u64 = 7;
     pub const IdtyCreationPeriod: u64 = 3;
-    pub const ValidationPeriod: u64 = 2;
 }
 
 pub struct IdtyNameValidatorTestImpl;
@@ -124,15 +126,16 @@ impl pallet_identity::Config for Test {
     type ConfirmPeriod = ConfirmPeriod;
     type CheckIdtyCallAllowed = (DuniterWot, SmithSubWot);
     type IdtyCreationPeriod = IdtyCreationPeriod;
+    type ValidationPeriod = ValidationPeriod;
+    type AutorevocationPeriod = AutorevocationPeriod;
+    type DeletionPeriod = DeletionPeriod;
     type IdtyData = ();
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = IdtyIndex;
     type AccountLinker = ();
-    type IdtyRemovalOtherReason = IdtyRemovalWotReason;
     type Signer = UintAuthorityId;
     type Signature = TestSignature;
-    type OnIdtyChange = DuniterWot;
-    type RemoveIdentityConsumers = ();
+    type OnIdtyChange = (DuniterWot, SmithSubWot);
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
     #[cfg(feature = "runtime-benchmarks")]
@@ -142,7 +145,6 @@ impl pallet_identity::Config for Test {
 // Membership
 parameter_types! {
     pub const MembershipPeriod: u64 = 8;
-    pub const PendingMembershipPeriod: u64 = 3;
 }
 
 impl pallet_membership::Config<Instance1> for Test {
@@ -154,7 +156,6 @@ impl pallet_membership::Config<Instance1> for Test {
     type OnEvent = DuniterWot;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    type PendingMembershipPeriod = PendingMembershipPeriod;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkSetupHandler = ();
 }
@@ -199,7 +200,6 @@ impl pallet_duniter_wot::Config<Instance2> for Test {
 // SmithMembership
 parameter_types! {
     pub const SmithMembershipPeriod: u64 = 20;
-    pub const SmithPendingMembershipPeriod: u64 = 3;
 }
 
 impl pallet_membership::Config<Instance2> for Test {
@@ -209,7 +209,6 @@ impl pallet_membership::Config<Instance2> for Test {
     type AccountIdOf = ();
     type MembershipPeriod = SmithMembershipPeriod;
     type OnEvent = SmithSubWot;
-    type PendingMembershipPeriod = SmithPendingMembershipPeriod;
     type WeightInfo = ();
     type RuntimeEvent = RuntimeEvent;
     #[cfg(feature = "runtime-benchmarks")]
@@ -259,8 +258,8 @@ pub fn new_test_ext(
                     next_creatable_identity_on: 0,
                     owner_key: i as u64,
                     old_owner_key: None,
-                    removable_on: 0,
-                    status: pallet_identity::IdtyStatus::Validated,
+                    next_scheduled: 0,
+                    status: pallet_identity::IdtyStatus::Member,
                 },
             })
             .collect(),

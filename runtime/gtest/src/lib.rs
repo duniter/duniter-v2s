@@ -171,17 +171,10 @@ mod benches {
 pub struct BaseCallFilter;
 
 // implement filter
+// session pallet calls are filtered in order to use authority member instead
 impl Contains<RuntimeCall> for BaseCallFilter {
     fn contains(call: &RuntimeCall) -> bool {
-        !matches!(
-            call,
-            // in main web of trust, membership request and revoke are handeled through identity pallet
-            // the user can not call them directly
-            RuntimeCall::Membership(
-                pallet_membership::Call::request_membership { .. }
-                    | pallet_membership::Call::revoke_membership { .. }
-            ) | RuntimeCall::Session(_)
-        )
+        !matches!(call, RuntimeCall::Session(_))
     }
 }
 
