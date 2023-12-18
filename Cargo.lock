@@ -3234,6 +3234,7 @@ dependencies = [
  "sp-offchain",
  "sp-runtime",
  "sp-session",
+ "sp-staking",
  "sp-std 5.0.0",
  "sp-transaction-pool",
  "sp-version",

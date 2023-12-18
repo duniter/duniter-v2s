@@ -135,6 +135,7 @@ try-runtime = [
 [dev-dependencies]
 sp-io = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false }
 sp-keyring = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false }
+sp-staking = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false }
 
 [dependencies]
 # local

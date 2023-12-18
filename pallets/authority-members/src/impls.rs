@@ -59,6 +59,9 @@ where
                         {
                             if !blacklist.contains(&member_id) {
                                 blacklist.push(member_id);
+                                Self::deposit_event(Event::MemberAddedToBlacklist {
+                                    member: member_id,
+                                });
                                 add_db_reads_writes(0, 1);
                             }
                             Self::insert_out(member_id);

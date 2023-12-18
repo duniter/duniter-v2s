@@ -179,6 +179,8 @@ pub mod pallet {
         MemberRemoved { member: T::MemberId },
         /// A member has been removed from the blacklist.
         MemberRemovedFromBlacklist { member: T::MemberId },
+        /// A member has been blacklisted.
+        MemberAddedToBlacklist { member: T::MemberId },
     }
 
     // ERRORS //
