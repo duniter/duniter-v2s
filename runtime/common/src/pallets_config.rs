@@ -479,7 +479,7 @@ macro_rules! pallets_config {
             type IdtyNameValidator = IdtyNameValidatorImpl;
             type Signer = <Signature as sp_runtime::traits::Verify>::Signer;
 			type Signature = Signature;
-            type OnIdtyChange = (Wot, SmithSubWot, Quota, Account);
+            type OnIdtyChange = (Wot, SmithSubWot, Quota);
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_identity::WeightInfo<Runtime>;
             #[cfg(feature = "runtime-benchmarks")]

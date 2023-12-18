@@ -53,10 +53,12 @@ impl<T: Config> OnIdtyChange<T> for Tuple {
 
 /// trait used to link an account to an identity
 pub trait LinkIdty<AccountId, IdtyIndex> {
-    fn link_identity(account_id: AccountId, idty_index: IdtyIndex);
+    fn link_identity(account_id: AccountId, idty_index: IdtyIndex) -> Result<(), DispatchError>;
 }
 impl<AccountId, IdtyIndex> LinkIdty<AccountId, IdtyIndex> for () {
-    fn link_identity(_: AccountId, _: IdtyIndex) {}
+    fn link_identity(_: AccountId, _: IdtyIndex) -> Result<(), DispatchError> {
+        Ok(())
+    }
 }
 
 /// trait used only in benchmarks to prepare identity for benchmarking

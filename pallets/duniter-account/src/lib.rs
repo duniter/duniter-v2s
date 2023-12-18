@@ -32,7 +32,6 @@ use frame_support::pallet_prelude::*;
 use frame_support::traits::{Currency, ExistenceRequirement, StorageVersion};
 use frame_support::traits::{OnUnbalanced, StoredMap};
 use frame_system::pallet_prelude::*;
-use pallet_identity::IdtyEvent;
 use pallet_provide_randomness::RequestId;
 use pallet_quota::traits::RefundFee;
 use pallet_transaction_payment::OnChargeTransaction;
@@ -219,7 +218,16 @@ pub mod pallet {
         }
 
         /// link account to identity
-        pub fn do_link_identity(account_id: T::AccountId, idty_id: IdtyIdOf<T>) {
+        pub fn do_link_identity(
+            account_id: T::AccountId,
+            idty_id: IdtyIdOf<T>,
+        ) -> Result<(), DispatchError> {
+            // Check that account exist
+            ensure!(
+                (frame_system::Account::<T>::get(&account_id).providers >= 1)
+                    || (frame_system::Account::<T>::get(&account_id).sufficients >= 1),
+                pallet_identity::Error::<T>::AccountNotExist
+            );
             // no-op if identity does not change
             if frame_system::Account::<T>::get(&account_id)
                 .data
@@ -234,6 +242,7 @@ pub mod pallet {
                     });
                 })
             }
+            Ok(())
         }
     }
 
@@ -326,8 +335,8 @@ impl<T> pallet_identity::traits::LinkIdty<T::AccountId, IdtyIdOf<T>> for Pallet<
 where
     T: Config,
 {
-    fn link_identity(account_id: T::AccountId, idty_id: IdtyIdOf<T>) {
-        Self::do_link_identity(account_id, idty_id);
+    fn link_identity(account_id: T::AccountId, idty_id: IdtyIdOf<T>) -> Result<(), DispatchError> {
+        Self::do_link_identity(account_id, idty_id)
     }
 }
 
@@ -476,18 +485,5 @@ where
             T::Refund::request_refund(who.clone(), idty_index, corrected_fee.saturating_sub(tip));
         }
         Ok(())
-    }
-}
-
-// implement identity event handler
-impl<T: Config> pallet_identity::traits::OnIdtyChange<T> for Pallet<T> {
-    fn on_idty_change(idty_id: IdtyIdOf<T>, idty_event: &IdtyEvent<T>) {
-        match idty_event {
-            // link account to newly created identity
-            IdtyEvent::Created { owner_key, .. } => {
-                Self::do_link_identity(owner_key.clone(), idty_id);
-            }
-            IdtyEvent::Removed { .. } => {}
-        }
     }
 }

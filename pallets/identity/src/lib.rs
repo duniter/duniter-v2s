@@ -328,6 +328,7 @@ pub mod pallet {
                 idty_index,
                 owner_key: owner_key.clone(),
             });
+            T::AccountLinker::link_identity(owner_key.clone(), idty_index)?;
             T::OnIdtyChange::on_idty_change(
                 idty_index,
                 &IdtyEvent::Created {
@@ -454,9 +455,10 @@ pub mod pallet {
             frame_system::Pallet::<T>::inc_sufficients(&idty_value.owner_key);
             IdentityIndexOf::<T>::insert(&idty_value.owner_key, idty_index);
             Identities::<T>::insert(idty_index, idty_value);
+            T::AccountLinker::link_identity(new_key.clone(), idty_index)?;
             Self::deposit_event(Event::IdtyChangedOwnerKey {
                 idty_index,
-                new_owner_key: new_key.clone(),
+                new_owner_key: new_key,
             });
 
             Ok(().into())
@@ -584,7 +586,7 @@ pub mod pallet {
                 Error::<T>::InvalidSignature
             );
             // apply
-            Self::do_link_account(account_id, idty_index);
+            T::AccountLinker::link_identity(account_id, idty_index)?;
 
             Ok(().into())
         }
@@ -614,7 +616,7 @@ pub mod pallet {
         InvalidSignature,
         /// Invalid revocation key.
         InvalidRevocationKey,
-        /// Issuer is not member and can not perform this action
+        /// Issuer is not member and can not perform this action.
         IssuerNotMember,
         /// Identity creation period is not respected.
         NotRespectIdtyCreationPeriod,
@@ -624,12 +626,14 @@ pub mod pallet {
         OwnerKeyAlreadyUsed,
         /// Reverting to an old key is prohibited.
         ProhibitedToRevertToAnOldKey,
-        /// Already revoked
+        /// Already revoked.
         AlreadyRevoked,
-        /// Can not revoke identity that never was member
+        /// Can not revoke identity that never was member.
         CanNotRevokeUnconfirmed,
-        /// Can not revoke identity that never was member
+        /// Can not revoke identity that never was member.
         CanNotRevokeUnvalidated,
+        /// Cannot link to an inexisting account.
+        AccountNotExist,
     }
 
     // INTERNAL FUNCTIONS //
@@ -771,12 +775,6 @@ pub mod pallet {
             }
 
             total_weight.saturating_add(T::WeightInfo::prune_identities_noop())
-        }
-
-        /// link account
-        fn do_link_account(account_id: T::AccountId, idty_index: T::IdtyIndex) {
-            // call account linker
-            T::AccountLinker::link_identity(account_id, idty_index);
         }
 
         /// change identity status and reschedule next action

@@ -254,6 +254,7 @@ benchmarks! {
         let alice_origin = RawOrigin::Signed(Identities::<T>::get(T::IdtyIndex::one()).unwrap().owner_key);
         let bob_public = sr25519_generate(0.into(), None);
         let bob: T::AccountId = MultiSigner::Sr25519(bob_public).into_account().into();
+        frame_system::Pallet::<T>::inc_providers(&bob);
         let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
         let payload = (
             LINK_IDTY_PAYLOAD_PREFIX, genesis_hash, T::IdtyIndex::one(), bob.clone(),

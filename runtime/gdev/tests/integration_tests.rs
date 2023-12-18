@@ -1196,19 +1196,38 @@ fn test_oneshot_accounts() {
 /// test linking account to identity
 #[test]
 fn test_link_account() {
-    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
-        let genesis_hash = System::block_hash(0);
-        let alice = AccountKeyring::Alice.to_account_id();
-        let ferdie = AccountKeyring::Ferdie.to_account_id();
-        let payload = (b"link", genesis_hash, 1u32, ferdie.clone()).encode();
-        let signature = AccountKeyring::Ferdie.sign(&payload);
-        // Ferdie's account can be linked to Alice identity
-        assert_ok!(Identity::link_account(
-            frame_system::RawOrigin::Signed(alice).into(),
-            ferdie,
-            signature.into()
-        ));
-    })
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 8888)])
+        .build()
+        .execute_with(|| {
+            let genesis_hash = System::block_hash(0);
+            let alice = AccountKeyring::Alice.to_account_id();
+            let ferdie = AccountKeyring::Ferdie.to_account_id();
+            let payload = (b"link", genesis_hash, 1u32, ferdie.clone()).encode();
+            let signature = AccountKeyring::Ferdie.sign(&payload);
+
+            // Ferdie's account cannot be linked to Alice identity because the account does not exist
+            assert_noop!(
+                Identity::link_account(
+                    frame_system::RawOrigin::Signed(alice.clone()).into(),
+                    ferdie.clone(),
+                    signature.clone().into()
+                ),
+                pallet_identity::Error::<gdev_runtime::Runtime>::AccountNotExist
+            );
+
+            assert_ok!(Balances::transfer(
+                frame_system::RawOrigin::Signed(alice.clone()).into(),
+                MultiAddress::Id(ferdie.clone()),
+                1_000
+            ));
+            // Ferdie's account can be linked to Alice identity
+            assert_ok!(Identity::link_account(
+                frame_system::RawOrigin::Signed(alice).into(),
+                ferdie,
+                signature.into()
+            ));
+        })
 }
 
 /// test change owner key
@@ -1220,12 +1239,25 @@ fn test_change_owner_key() {
         let ferdie = AccountKeyring::Ferdie.to_account_id();
         let payload = (b"icok", genesis_hash, 4u32, dave.clone()).encode();
         let signature = AccountKeyring::Ferdie.sign(&payload);
+
+        assert_eq!(
+            frame_system::Pallet::<Runtime>::get(&dave).linked_idty,
+            Some(4)
+        );
+        assert_eq!(
+            frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
+            None
+        );
         // Dave can change his owner key to Ferdie's
         assert_ok!(Identity::change_owner_key(
-            frame_system::RawOrigin::Signed(dave).into(),
-            ferdie,
+            frame_system::RawOrigin::Signed(dave.clone()).into(),
+            ferdie.clone(),
             signature.into()
         ));
+        assert_eq!(
+            frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
+            Some(4)
+        );
     })
 }
 
@@ -1305,4 +1337,38 @@ fn smith_data_problem() {
         .execute_with(|| {
             run_to_block(4);
         });
+}
+
+/// test killed account
+// The only way to kill an account is to kill  the identity
+// and transfer all funds.
+#[test]
+fn test_killed_account() {
+    ExtBuilder::new(1, 2, 4)
+        .with_initial_balances(vec![(AccountKeyring::Bob.to_account_id(), 1_000)])
+        .build()
+        .execute_with(|| {
+            let alice_account = AccountKeyring::Alice.to_account_id();
+            let bob_account = AccountKeyring::Bob.to_account_id();
+            // check that Alice is 1 and Bob 2
+            assert_eq!(Identity::identity_index_of(&alice_account), Some(1));
+            assert_eq!(Identity::identity_index_of(&bob_account), Some(2));
+
+            let _ = Identity::do_remove_identity(2, pallet_identity::RemovalReason::Revoked);
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&bob_account).linked_idty,
+                Some(2)
+            );
+            assert_ok!(Balances::transfer_all(
+                frame_system::RawOrigin::Signed(bob_account.clone()).into(),
+                sp_runtime::MultiAddress::Id(alice_account.clone()),
+                false
+            ));
+
+            // Bob account should have been reaped
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&bob_account),
+                pallet_duniter_account::AccountData::default()
+            );
+        })
 }
