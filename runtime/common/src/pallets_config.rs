@@ -481,8 +481,6 @@ macro_rules! pallets_config {
             type OnIdtyChange = (Wot, SmithSubWot, Quota);
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_identity::WeightInfo<Runtime>;
-            #[cfg(feature = "runtime-benchmarks")]
-            type BenchmarkSetupHandler = common_runtime::providers::BenchmarkSetupHandler<Runtime>;
         }
 
         impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {

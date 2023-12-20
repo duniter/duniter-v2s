@@ -59,12 +59,12 @@ benchmarks! {
         let caller: T::AccountId = Members::<T>::get(id).unwrap().owner_key;
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
             let validator_id = T::ValidatorIdOf::convert(caller.clone()).unwrap();
-            let session_keys: T::Keys = pallet_session::NextKeys::<T>::get(validator_id).unwrap().into();
+            let session_keys: T::Keys = pallet_session::NextKeys::<T>::get(validator_id).unwrap();
         }: _<T::RuntimeOrigin>(caller_origin, session_keys)
      remove_member {
         let id: T::MemberId = OnlineAuthorities::<T>::get()[0];
         let caller_origin = RawOrigin::Root.into();
-        }: _<T::RuntimeOrigin>(caller_origin, id.clone())
+        }: _<T::RuntimeOrigin>(caller_origin, id)
     verify {
         assert_has_event::<T>(Event::<T>::MemberRemoved{member: id}.into());
     }

@@ -138,8 +138,6 @@ impl pallet_identity::Config for Test {
     type OnIdtyChange = (DuniterWot, SmithSubWot);
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkSetupHandler = ();
 }
 
 // Membership

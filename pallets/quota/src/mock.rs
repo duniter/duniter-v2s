@@ -164,8 +164,6 @@ impl pallet_identity::Config for Test {
     type OnIdtyChange = ();
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkSetupHandler = ();
 }
 
 // Build genesis storage according to the mock runtime.

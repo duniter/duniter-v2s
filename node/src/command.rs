@@ -310,20 +310,20 @@ pub fn run() -> sc_cli::Result<()> {
             let chain_spec = &runner.config().chain_spec;
 
             match &**cmd {
-                BenchmarkCmd::Storage(cmd) => runner.sync_run(|mut config| {
-                    let (client, backend, _, _) = service::new_chain_ops(&mut config, false)?;
+                BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
+                    let (client, backend, _, _) = service::new_chain_ops(&config, false)?;
                     let db = backend.expose_db();
                     let storage = backend.expose_storage();
 
                     unwrap_client!(client, cmd.run(config, client.clone(), db, storage))
                 }),
-                BenchmarkCmd::Block(cmd) => runner.sync_run(|mut config| {
-                    let (client, _, _, _) = service::new_chain_ops(&mut config, false)?;
+                BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
+                    let (client, _, _, _) = service::new_chain_ops(&config, false)?;
 
                     unwrap_client!(client, cmd.run(client.clone()))
                 }),
-                BenchmarkCmd::Overhead(cmd) => runner.sync_run(|mut config| {
-                    let (client, _, _, _) = service::new_chain_ops(&mut config, false)?;
+                BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
+                    let (client, _, _, _) = service::new_chain_ops(&config, false)?;
                     let wrapped = client.clone();
 
                     let inherent_data = crate::service::client::benchmark_inherent_data()

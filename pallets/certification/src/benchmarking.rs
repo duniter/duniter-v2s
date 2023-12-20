@@ -60,7 +60,7 @@ benchmarks_instance_pallet! {
         frame_system::pallet::Pallet::<T>::set_block_number(T::CertPeriod::get());
     }: _<T::RuntimeOrigin>(caller_origin, issuer, receiver)
     verify {
-        assert_has_event::<T, I>(Event::<T, I>::CertAdded{ issuer: issuer, receiver: receiver }.into());
+        assert_has_event::<T, I>(Event::<T, I>::CertAdded{ issuer, receiver }.into());
     }
     del_cert {
         let issuer: T::IdtyIndex = 1.into();
@@ -70,14 +70,14 @@ benchmarks_instance_pallet! {
         let issuer_cert: u32 = StorageIdtyCertMeta::<T, I>::get(issuer).issued_count;
     }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), issuer, receiver)
     verify {
-        assert_has_event::<T, I>(Event::<T, I>::CertRemoved{ issuer: issuer, receiver: receiver, expiration: false }.into());
+        assert_has_event::<T, I>(Event::<T, I>::CertRemoved{ issuer,  receiver, expiration: false }.into());
     }
     remove_all_certs_received_by {
         let receiver: T::IdtyIndex = 0.into();
         let i in 2..1000 => add_certs::<T, I>(i, receiver)?;
     }: _<T::RuntimeOrigin>(RawOrigin::Root.into(),  receiver)
     verify {
-        assert!(CertsByReceiver::<T, I>::get(receiver).len() == 0 );
+        assert!(CertsByReceiver::<T, I>::get(receiver).is_empty() );
     }
     on_initialize {
         assert!(StorageCertsRemovableOn::<T, I>::try_get(T::BlockNumber::zero()).is_err());
@@ -94,7 +94,7 @@ benchmarks_instance_pallet! {
         frame_system::pallet::Pallet::<T>::set_block_number(block_number);
     }: {Pallet::<T, I>::do_remove_cert(issuer, receiver, Some(block_number));}
     verify {
-        assert_has_event::<T, I>(Event::<T, I>::CertRemoved{ issuer: issuer, receiver: receiver, expiration: true }.into());
+        assert_has_event::<T, I>(Event::<T, I>::CertRemoved{ issuer,  receiver, expiration: true }.into());
     }
 
     impl_benchmark_test_suite!(

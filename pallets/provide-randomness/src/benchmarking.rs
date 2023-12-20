@@ -80,11 +80,11 @@ benchmarks! {
         // Set randomness parameters
         let random = RandomnessType::RandomnessFromOneEpochAgo;
         let salt: H256 = H256([1; 32]);
-    }: _<T::RuntimeOrigin>(caller_origin.clone(), random, salt.clone())
+    }: _<T::RuntimeOrigin>(caller_origin.clone(), random, salt)
     verify {
         let request_id = RequestIdProvider::<T>::get() - 1;
         assert_has_event::<T>(Event::RequestedRandomness {
-              request_id: request_id, salt: salt, r#type: random }.into() );
+              request_id, salt, r#type: random }.into() );
     }
     on_initialize {
         let i in 1 .. T::MaxRequests::get() => add_requests_next_block::<T>(i)?;
@@ -97,11 +97,11 @@ benchmarks! {
     }: { Pallet::<T>::on_initialize(T::BlockNumber::one()); }
     verify {
         ensure!(RequestsIds::<T>::count() == 0, "List not processed.");
-        ensure!(RequestsReadyAtNextBlock::<T>::get().len() == 0, "List not processed.");
+        ensure!(RequestsReadyAtNextBlock::<T>::get().is_empty(), "List not processed.");
     }
     on_initialize_epoch {
         let i in 1 .. T::MaxRequests::get() => add_requests_next_epoch::<T>(i)?;
-        ensure!(RequestsReadyAtNextBlock::<T>::get().len() == 0, "List not filled properly.");
+        ensure!(RequestsReadyAtNextBlock::<T>::get().is_empty(), "List not filled properly.");
         ensure!(RequestsIds::<T>::count() == i, "List not filled properly.");
         ensure!(RequestsReadyAtEpoch::<T>::get(T::GetCurrentEpochIndex::get()).len() == i as usize, "List not filled properly.");
         let next_epoch_hook_in = NexEpochHookIn::<T>::mutate(|next_in| {
@@ -110,6 +110,6 @@ benchmarks! {
     }: { Pallet::<T>::on_initialize(1.into()); }
     verify {
         ensure!(RequestsIds::<T>::count() == 0, "List not processed.");
-        ensure!(RequestsReadyAtEpoch::<T>::get(T::GetCurrentEpochIndex::get()).len() == 0, "List not processed properly.");
+        ensure!(RequestsReadyAtEpoch::<T>::get(T::GetCurrentEpochIndex::get()).is_empty(), "List not processed properly.");
     }
 }

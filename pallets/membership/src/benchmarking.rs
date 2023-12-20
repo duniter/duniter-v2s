@@ -42,7 +42,7 @@ benchmarks_instance_pallet! {
     claim_membership {
         let idty: T::IdtyId = 3.into();
         Membership::<T, I>::take(idty);
-        let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
+        let caller: T::AccountId = T::AccountIdOf::convert(idty).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         T::BenchmarkSetupHandler::force_status_ok(&idty, &caller);
     }: _<T::RuntimeOrigin>(caller_origin)
@@ -53,7 +53,7 @@ benchmarks_instance_pallet! {
     // renew membership
     renew_membership {
         let idty: T::IdtyId = 3.into();
-        let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
+        let caller: T::AccountId = T::AccountIdOf::convert(idty).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         T::BenchmarkSetupHandler::force_status_ok(&idty, &caller);
     }: _<T::RuntimeOrigin>(caller_origin)
@@ -64,7 +64,7 @@ benchmarks_instance_pallet! {
     // revoke membership
     revoke_membership {
         let idty: T::IdtyId = 3.into();
-        let caller: T::AccountId = T::AccountIdOf::convert(idty.clone()).unwrap();
+        let caller: T::AccountId = T::AccountIdOf::convert(idty).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
@@ -87,7 +87,7 @@ benchmarks_instance_pallet! {
         assert_eq!(MembershipsExpireOn::<T, I>::get(BlockNumberFor::<T>::zero()).len(), i as usize);
     }: {Pallet::<T, I>::expire_memberships(BlockNumberFor::<T>::zero());}
     verify {
-        assert_eq!(MembershipsExpireOn::<T, I>::get(BlockNumberFor::<T>::zero()).len(), 0 as usize);
+        assert_eq!(MembershipsExpireOn::<T, I>::get(BlockNumberFor::<T>::zero()).len(), 0_usize);
     }
 
     impl_benchmark_test_suite!(

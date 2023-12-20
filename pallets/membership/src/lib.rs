@@ -44,14 +44,14 @@ use std::collections::BTreeMap;
 
 #[cfg(feature = "runtime-benchmarks")]
 pub trait SetupBenchmark<IdtyId, AccountId> {
-    fn force_status_ok(idty_index: &IdtyId, account: &AccountId) -> ();
-    fn add_cert(_issuer: &IdtyId, _receiver: &IdtyId) -> ();
+    fn force_status_ok(idty_index: &IdtyId, account: &AccountId);
+    fn add_cert(_issuer: &IdtyId, _receiver: &IdtyId);
 }
 
 #[cfg(feature = "runtime-benchmarks")]
 impl<IdtyId, AccountId> SetupBenchmark<IdtyId, AccountId> for () {
-    fn force_status_ok(_idty_id: &IdtyId, _account: &AccountId) -> () {}
-    fn add_cert(_issuer: &IdtyId, _receiver: &IdtyId) -> () {}
+    fn force_status_ok(_idty_id: &IdtyId, _account: &AccountId) {}
+    fn add_cert(_issuer: &IdtyId, _receiver: &IdtyId) {}
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]

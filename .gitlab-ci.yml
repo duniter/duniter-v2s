@@ -41,6 +41,16 @@ check_labels:
   script:
     - ./scripts/check_labels.sh $CI_MERGE_REQUEST_LABELS $CI_MERGE_REQUEST_MILESTONE
 
+
+check_metadata:
+  extends: .env
+  stage: tests
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - when: never
+  script:
+    - ./scripts/check_metadata.sh
+
 .env:
   image: paritytech/ci-linux:production
   tags:
@@ -63,7 +73,7 @@ fmt_and_clippy:
     - cargo fmt -- --version
     - cargo fmt -- --check
     - cargo clippy -- -V
-    - cargo clippy --all --tests -- -D warnings
+    - cargo clippy --features runtime-benchmarks --all --tests -- -D warnings
 
 run_benchmarks:
   stage: tests

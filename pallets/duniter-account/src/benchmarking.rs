@@ -40,8 +40,7 @@ fn create_pending_accounts<T: Config>(
             let existential_deposit = T::ExistentialDeposit::get();
             let balance = existential_deposit.saturating_mul((200u32).into());
             let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::make_free_balance_be(
-                &caller,
-                balance.into(),
+                &caller, balance,
             );
         } else {
             assert!(

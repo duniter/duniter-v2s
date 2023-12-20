@@ -63,7 +63,7 @@ benchmarks! {
                 amount: quota_amount.into(),
             },
         );
-    }: { Pallet::<T>::spend_quota(idty_id.into(), amount.into()) }
+    }: { Pallet::<T>::spend_quota(idty_id, amount.into()) }
     verify {
         let quota_growth = sp_runtime::Perbill::from_rational(
             T::BlockNumber::one(),

@@ -61,7 +61,7 @@ fn create_one_identity<T: Config>(owner_key: T::AccountId) -> Result<Account<T>,
     Pallet::<T>::confirm_identity(owner_key_origin.clone(), name.clone())?;
     let idty_index = IdentityIndexOf::<T>::get(&owner_key).unwrap();
     // make identity member
-    <Identities<T>>::mutate_exists(T::IdtyIndex::from(idty_index), |idty_val_opt| {
+    <Identities<T>>::mutate_exists(idty_index, |idty_val_opt| {
         if let Some(ref mut idty_val) = idty_val_opt {
             idty_val.status = IdtyStatus::Member;
         }
@@ -133,7 +133,7 @@ benchmarks! {
     verify {
         let idty_index = IdentityIndexOf::<T>::get(&owner_key);
         assert!(idty_index.is_some(), "Identity not added");
-        assert_has_event::<T>(Event::<T>::IdtyCreated { idty_index: idty_index.unwrap(), owner_key: owner_key }.into());
+        assert_has_event::<T>(Event::<T>::IdtyCreated { idty_index: idty_index.unwrap(), owner_key }.into());
     }
 
     // confirm identity
@@ -146,7 +146,7 @@ benchmarks! {
     }: _<T::RuntimeOrigin>(owner_key_origin.clone(), IdtyName("new_identity".into()))
     verify {
         let idty_index = IdentityIndexOf::<T>::get(&owner_key);
-        assert_has_event::<T>(Event::<T>::IdtyConfirmed { idty_index: idty_index.unwrap(), owner_key: owner_key, name: IdtyName("new_identity".into()) }.into());
+        assert_has_event::<T>(Event::<T>::IdtyConfirmed { idty_index: idty_index.unwrap(), owner_key, name: IdtyName("new_identity".into()) }.into());
     }
 
     // change owner key
@@ -163,7 +163,7 @@ benchmarks! {
         };
         let message = (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode();
         let caller_public = sr25519_generate(0.into(), None);
-        let caller: T::AccountId = MultiSigner::Sr25519(caller_public.clone()).into_account().into();
+        let caller: T::AccountId = MultiSigner::Sr25519(caller_public).into_account().into();
         let signature = sr25519_sign(0.into(), &caller_public, &message).unwrap().into();
         Pallet::<T>::change_owner_key(account.origin.clone(), caller.clone(), signature)?;
 
@@ -178,7 +178,7 @@ benchmarks! {
         };
         let message = (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode();
         let caller_public = sr25519_generate(0.into(), None);
-        let caller: T::AccountId = MultiSigner::Sr25519(caller_public.clone()).into_account().into();
+        let caller: T::AccountId = MultiSigner::Sr25519(caller_public).into_account().into();
         let signature = sr25519_sign(0.into(), &caller_public, &message).unwrap().into();
         <frame_system::Pallet<T>>::set_block_number(<frame_system::Pallet<T>>::block_number() + T::ChangeOwnerKeyPeriod::get());
     }: _<T::RuntimeOrigin>(caller_origin.clone(), caller.clone(), signature)
@@ -202,18 +202,18 @@ benchmarks! {
         };
         let message = (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode();
         let caller_public = sr25519_generate(0.into(), None);
-        let caller: T::AccountId = MultiSigner::Sr25519(caller_public.clone()).into_account().into();
+        let caller: T::AccountId = MultiSigner::Sr25519(caller_public).into_account().into();
         let signature = sr25519_sign(0.into(), &caller_public, &message).unwrap().into();
         Pallet::<T>::change_owner_key(account.origin.clone(), caller.clone(), signature)?;
 
         let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
         let revocation_payload = RevocationPayload {
             genesis_hash: &genesis_hash,
-            idty_index: account.index.clone(),
+            idty_index: account.index,
         };
         let message = (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode();
         let signature = sr25519_sign(0.into(), &caller_public, &message).unwrap().into();
-    }: _<T::RuntimeOrigin>(account.origin.clone(), account.index.clone().into(), caller.clone(), signature)
+    }: _<T::RuntimeOrigin>(account.origin, account.index, caller.clone(), signature)
     verify {
         assert_has_event::<T>(Event::<T>::IdtyRevoked { idty_index: account.index, reason: RevocationReason::User }.into());
         // revocation does not mean deletion anymore

@@ -125,9 +125,6 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
-        /// Type representing the a distance handler to prepare identity for benchmarking
-        #[cfg(feature = "runtime-benchmarks")]
-        type BenchmarkSetupHandler: SetupBenchmark<Self::IdtyIndex, Self::AccountId>;
     }
 
     // GENESIS STUFF //
@@ -328,7 +325,7 @@ pub mod pallet {
                 idty_index,
                 owner_key: owner_key.clone(),
             });
-            T::AccountLinker::link_identity(owner_key.clone(), idty_index)?;
+            T::AccountLinker::link_identity(&owner_key, idty_index)?;
             T::OnIdtyChange::on_idty_change(
                 idty_index,
                 &IdtyEvent::Created {
@@ -455,7 +452,7 @@ pub mod pallet {
             frame_system::Pallet::<T>::inc_sufficients(&idty_value.owner_key);
             IdentityIndexOf::<T>::insert(&idty_value.owner_key, idty_index);
             Identities::<T>::insert(idty_index, idty_value);
-            T::AccountLinker::link_identity(new_key.clone(), idty_index)?;
+            T::AccountLinker::link_identity(&new_key, idty_index)?;
             Self::deposit_event(Event::IdtyChangedOwnerKey {
                 idty_index,
                 new_owner_key: new_key,
@@ -586,7 +583,7 @@ pub mod pallet {
                 Error::<T>::InvalidSignature
             );
             // apply
-            T::AccountLinker::link_identity(account_id, idty_index)?;
+            T::AccountLinker::link_identity(&account_id, idty_index)?;
 
             Ok(().into())
         }

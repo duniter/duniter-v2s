@@ -985,9 +985,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.4.8"
+version = "4.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2275f18819641850fa26c89acc84d465c1bf91ce57bc2748b28c420473352f64"
+checksum = "bfaff671f6b22ca62406885ece523383b9b64022e341e53e009a62ebc47a45f2"
 dependencies = [
  "clap_builder",
  "clap_derive 4.4.7",
@@ -995,9 +995,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.4.8"
+version = "4.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07cdf1b148b25c1e1f7a42225e30a0d99a615cd4637eae7365548dd4529b95bc"
+checksum = "a216b506622bb1d316cd51328dce24e07bdff4a6128a47c7e7fad11878d5adbb"
 dependencies = [
  "anstream",
  "anstyle",
@@ -1011,7 +1011,7 @@ version = "4.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bffe91f06a11b4b9420f62103854e90867812cd5d01557f853c5ee8e791b12ae"
 dependencies = [
- "clap 4.4.8",
+ "clap 4.4.11",
 ]
 
 [[package]]
@@ -1402,9 +1402,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.16"
+version = "0.8.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a22b2d63d4d1dc0b7f1b6b2747dd0088008a9be28b6ddf0b1e7d335e3037294"
+checksum = "c06d96137f14f244c37f989d9fff8f95e6c18b918e71f36638f8c49112e4c78f"
 dependencies = [
  "cfg-if 1.0.0",
 ]
@@ -1944,7 +1944,7 @@ name = "distance-oracle"
 version = "0.1.0"
 dependencies = [
  "bincode",
- "clap 4.4.8",
+ "clap 4.4.11",
  "dubp-wot",
  "flate2",
  "fnv",
@@ -1999,7 +1999,7 @@ version = "0.7.1"
 dependencies = [
  "async-io 1.13.0",
  "bs58 0.5.0",
- "clap 4.4.8",
+ "clap 4.4.11",
  "clap_complete",
  "common-runtime",
  "dc-distance",
@@ -2658,7 +2658,7 @@ dependencies = [
  "Inflector",
  "array-bytes",
  "chrono",
- "clap 4.4.8",
+ "clap 4.4.11",
  "comfy-table",
  "frame-benchmarking",
  "frame-support",
@@ -6939,9 +6939,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.69"
+version = "1.0.70"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "134c189feb4956b20f6f547d2cf727d4c0fe06722b20a0eec87ed445a97f92da"
+checksum = "39278fbbf5fb4f646ce651690877f89d1c5811a3d4acb27700c1cb3cdb78fd3b"
 dependencies = [
  "unicode-ident",
 ]
@@ -7827,7 +7827,7 @@ source = "git+https://github.com/duniter/substrate?branch=duniter-substrate-v0.9
 dependencies = [
  "array-bytes",
  "chrono",
- "clap 4.4.8",
+ "clap 4.4.11",
  "fdlimit",
  "futures 0.3.29",
  "libp2p",
@@ -8645,7 +8645,7 @@ name = "sc-storage-monitor"
 version = "0.1.0"
 source = "git+https://github.com/duniter/substrate?branch=duniter-substrate-v0.9.42#f1c396107a2312e5e029a5fe8e36f05234fc2511"
 dependencies = [
- "clap 4.4.8",
+ "clap 4.4.11",
  "fs4",
  "futures 0.3.29",
  "log",
@@ -11018,7 +11018,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/duniter/substrate?branch=duniter-substrate-v0.9.42#f1c396107a2312e5e029a5fe8e36f05234fc2511"
 dependencies = [
  "async-trait",
- "clap 4.4.8",
+ "clap 4.4.11",
  "frame-remote-externalities",
  "hex",
  "log",
@@ -12327,7 +12327,7 @@ name = "xtask"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.8",
+ "clap 4.4.11",
  "frame-metadata",
  "graphql_client",
  "hex",

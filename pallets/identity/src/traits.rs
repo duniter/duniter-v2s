@@ -53,23 +53,10 @@ impl<T: Config> OnIdtyChange<T> for Tuple {
 
 /// trait used to link an account to an identity
 pub trait LinkIdty<AccountId, IdtyIndex> {
-    fn link_identity(account_id: AccountId, idty_index: IdtyIndex) -> Result<(), DispatchError>;
+    fn link_identity(account_id: &AccountId, idty_index: IdtyIndex) -> Result<(), DispatchError>;
 }
 impl<AccountId, IdtyIndex> LinkIdty<AccountId, IdtyIndex> for () {
-    fn link_identity(_: AccountId, _: IdtyIndex) -> Result<(), DispatchError> {
+    fn link_identity(_: &AccountId, _: IdtyIndex) -> Result<(), DispatchError> {
         Ok(())
     }
-}
-
-/// trait used only in benchmarks to prepare identity for benchmarking
-#[cfg(feature = "runtime-benchmarks")]
-pub trait SetupBenchmark<IndtyIndex, AccountId> {
-    fn force_status_ok(idty_index: &IndtyIndex, account: &AccountId) -> ();
-    fn add_cert(issuer: &IndtyIndex, receiver: &IndtyIndex) -> ();
-}
-
-#[cfg(feature = "runtime-benchmarks")]
-impl<IdtyIndex, AccountId> SetupBenchmark<IdtyIndex, AccountId> for () {
-    fn force_status_ok(_idty_id: &IdtyIndex, _account: &AccountId) -> () {}
-    fn add_cert(_issuer: &IdtyIndex, _receiver: &IdtyIndex) -> () {}
 }

@@ -123,5 +123,3 @@ macro_rules! impl_benchmark_setup_handler {
 
 #[cfg(feature = "runtime-benchmarks")]
 impl_benchmark_setup_handler!(pallet_membership::SetupBenchmark<<T as pallet_identity::Config>::IdtyIndex, T::AccountId>);
-#[cfg(feature = "runtime-benchmarks")]
-impl_benchmark_setup_handler!(pallet_identity::traits::SetupBenchmark<<T as pallet_identity::Config>::IdtyIndex, T::AccountId>);

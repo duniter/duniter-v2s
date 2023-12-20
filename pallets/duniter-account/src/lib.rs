@@ -219,22 +219,18 @@ pub mod pallet {
 
         /// link account to identity
         pub fn do_link_identity(
-            account_id: T::AccountId,
+            account_id: &T::AccountId,
             idty_id: IdtyIdOf<T>,
         ) -> Result<(), DispatchError> {
             // Check that account exist
             ensure!(
-                (frame_system::Account::<T>::get(&account_id).providers >= 1)
-                    || (frame_system::Account::<T>::get(&account_id).sufficients >= 1),
+                (frame_system::Account::<T>::get(account_id).providers >= 1)
+                    || (frame_system::Account::<T>::get(account_id).sufficients >= 1),
                 pallet_identity::Error::<T>::AccountNotExist
             );
             // no-op if identity does not change
-            if frame_system::Account::<T>::get(&account_id)
-                .data
-                .linked_idty
-                != Some(idty_id)
-            {
-                frame_system::Account::<T>::mutate(&account_id, |account| {
+            if frame_system::Account::<T>::get(account_id).data.linked_idty != Some(idty_id) {
+                frame_system::Account::<T>::mutate(account_id, |account| {
                     account.data.linked_idty = Some(idty_id);
                     Self::deposit_event(Event::AccountLinked {
                         who: account_id.clone(),
@@ -335,7 +331,7 @@ impl<T> pallet_identity::traits::LinkIdty<T::AccountId, IdtyIdOf<T>> for Pallet<
 where
     T: Config,
 {
-    fn link_identity(account_id: T::AccountId, idty_id: IdtyIdOf<T>) -> Result<(), DispatchError> {
+    fn link_identity(account_id: &T::AccountId, idty_id: IdtyIdOf<T>) -> Result<(), DispatchError> {
         Self::do_link_identity(account_id, idty_id)
     }
 }

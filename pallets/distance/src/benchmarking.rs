@@ -37,7 +37,7 @@ fn populate_pool<T: Config>(i: u32) -> Result<(), &'static str> {
         for j in 0..i {
             current_pool
                 .evaluations
-                .try_push((j.into(), median::MedianAcc::new()))
+                .try_push((j, median::MedianAcc::new()))
                 .map_err(|_| Error::<T>::QueueFull)?;
         }
         Ok(())
@@ -57,7 +57,7 @@ benchmarks! {
             let _ = <Balances<T> as Currency<_>>::make_free_balance_be(&caller, T::Balance::max_value());
     }: _<T::RuntimeOrigin>(caller_origin.clone())
     verify {
-        assert!(IdentityDistanceStatus::<T>::get(&idty) == Some((caller.clone(), DistanceStatus::Pending)), "Request not added");
+        assert!(IdentityDistanceStatus::<T>::get(idty) == Some((caller.clone(), DistanceStatus::Pending)), "Request not added");
         assert_has_event::<T>(Event::<T>::EvaluationRequested { idty_index: idty, who: caller }.into());
     }
     update_evaluation {
@@ -89,7 +89,7 @@ benchmarks! {
             let status = Some((caller.clone(), DistanceStatus::Valid));
     }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), idty, status.clone())
     verify {
-        assert!(IdentityDistanceStatus::<T>::get(&idty) == Some((caller, DistanceStatus::Valid)), "Status not set");
+        assert!(IdentityDistanceStatus::<T>::get(idty) == Some((caller, DistanceStatus::Valid)), "Status not set");
         assert_has_event::<T>(Event::<T>::EvaluationStatusForced { idty_index: idty, status }.into());
     }
     on_finalize {
