@@ -18,8 +18,6 @@ use crate::{entities::IdtyData, AccountId, IdtyIndex};
 use core::marker::PhantomData;
 use pallet_universal_dividend::FirstEligibleUd;
 use sp_runtime::DispatchError;
-use sp_std::boxed::Box;
-use sp_std::vec::Vec;
 
 pub struct IdentityAccountIdProvider<Runtime>(PhantomData<Runtime>);
 
@@ -70,41 +68,6 @@ where
                 f(&mut None)
             }
         })
-    }
-}
-
-#[allow(clippy::type_complexity)]
-pub struct UdMembersStorageIter<T: pallet_identity::Config>(
-    Box<dyn Iterator<Item = pallet_identity::IdtyValue<T::BlockNumber, T::AccountId, T::IdtyData>>>,
-    PhantomData<T>,
-);
-
-impl<T: pallet_identity::Config> From<Option<Vec<u8>>> for UdMembersStorageIter<T> {
-    fn from(maybe_key: Option<Vec<u8>>) -> Self {
-        let mut iter = pallet_identity::Identities::<T>::iter_values();
-        if let Some(key) = maybe_key {
-            iter.set_last_raw_key(key);
-        }
-        Self(Box::new(iter), PhantomData)
-    }
-}
-
-impl<T> Iterator for UdMembersStorageIter<T>
-where
-    T: pallet_identity::Config,
-    T::IdtyData: Into<FirstEligibleUd>,
-{
-    type Item = (T::AccountId, FirstEligibleUd);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(pallet_identity::IdtyValue {
-            owner_key, data, ..
-        }) = self.0.next()
-        {
-            Some((owner_key, data.into()))
-        } else {
-            None
-        }
     }
 }
 

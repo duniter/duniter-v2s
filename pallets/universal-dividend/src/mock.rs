@@ -139,23 +139,6 @@ impl frame_support::traits::StoredMap<u32, FirstEligibleUd> for TestMembersStora
         Ok(result)
     }
 }
-pub struct TestMembersStorageIter(frame_support::storage::PrefixIterator<(u32, FirstEligibleUd)>);
-impl From<Option<Vec<u8>>> for TestMembersStorageIter {
-    fn from(maybe_key: Option<Vec<u8>>) -> Self {
-        let mut iter = crate::TestMembers::<Test>::iter();
-        if let Some(key) = maybe_key {
-            iter.set_last_raw_key(key);
-        }
-        Self(iter)
-    }
-}
-impl Iterator for TestMembersStorageIter {
-    type Item = (u32, FirstEligibleUd);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
-    }
-}
 
 impl pallet_universal_dividend::Config for Test {
     type MomentIntoBalance = sp_runtime::traits::ConvertInto;
@@ -163,7 +146,6 @@ impl pallet_universal_dividend::Config for Test {
     type MaxPastReeval = frame_support::traits::ConstU32<2>;
     type MembersCount = MembersCount;
     type MembersStorage = TestMembersStorage;
-    type MembersStorageIter = TestMembersStorageIter;
     type RuntimeEvent = RuntimeEvent;
     type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
     type UdCreationPeriod = UdCreationPeriod;

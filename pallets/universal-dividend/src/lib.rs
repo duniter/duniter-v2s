@@ -43,7 +43,6 @@ pub mod pallet {
     use frame_support::traits::{StorageVersion, StoredMap};
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::Convert;
-    use sp_std::vec::Vec;
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -69,9 +68,6 @@ pub mod pallet {
         type MembersCount: Get<BalanceOf<Self>>;
         /// Somethings that must provide the list of accounts ids allowed to create the universal dividend
         type MembersStorage: frame_support::traits::StoredMap<Self::AccountId, FirstEligibleUd>;
-        /// An iterator over all members
-        type MembersStorageIter: From<Option<Vec<u8>>>
-            + Iterator<Item = (Self::AccountId, FirstEligibleUd)>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         #[pallet::constant]

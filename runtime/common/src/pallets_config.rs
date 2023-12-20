@@ -439,7 +439,6 @@ macro_rules! pallets_config {
 			type MaxPastReeval = frame_support::traits::ConstU32<160>;
             type MembersCount = MembersCount;
             type MembersStorage = common_runtime::providers::UdMembersStorage<Runtime>;
-			type MembersStorageIter = common_runtime::providers::UdMembersStorageIter<Runtime>;
             type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
             type UdCreationPeriod = UdCreationPeriod;
             type UdReevalPeriod = UdReevalPeriod;
