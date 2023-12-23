@@ -36,6 +36,7 @@ benchmarks_instance_pallet! {
     where_clause {
         where
             T::IdtyId: From<u32>,
+            <T as frame_system::Config>::BlockNumber: From<u32>,
     }
 
     // claim membership
@@ -66,6 +67,7 @@ benchmarks_instance_pallet! {
         let idty: T::IdtyId = 3.into();
         let caller: T::AccountId = T::AccountIdOf::convert(idty).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
+        frame_system::pallet::Pallet::<T>::set_block_number(10_000_000.into()); // Arbitrarily high, to be in the worst case of wot instance.
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
         assert_has_event::<T, I>(Event::<T, I>::MembershipRemoved{member: idty, reason: MembershipRemovalReason::Revoked}.into());
@@ -76,18 +78,22 @@ benchmarks_instance_pallet! {
     }: {Pallet::<T, I>::on_initialize(BlockNumberFor::<T>::zero());}
 
     expire_memberships {
-        let i in 0..1024;
+        let i in 0..3; // Limited by the number of validators
+        // Arbitrarily high, to be in the worst case of wot instance,
+        // this will overcount the weight in hooks see https://git.duniter.org/nodes/rust/duniter-v2s/-/issues/167
+        let block_number: BlockNumberFor::<T> = 10_000_000.into();
+        frame_system::pallet::Pallet::<T>::set_block_number(block_number);
         let mut idties: Vec<T::IdtyId> = Vec::new();
-        for j in 0..i {
+        for j in 1..i+1 {
             let j: T::IdtyId = j.into();
             Membership::<T, I>::insert(j, MembershipData::<T::BlockNumber>::default());
             idties.push(j);
         }
-        MembershipsExpireOn::<T, I>::insert(BlockNumberFor::<T>::zero(), idties);
-        assert_eq!(MembershipsExpireOn::<T, I>::get(BlockNumberFor::<T>::zero()).len(), i as usize);
-    }: {Pallet::<T, I>::expire_memberships(BlockNumberFor::<T>::zero());}
+        MembershipsExpireOn::<T, I>::insert(block_number, idties);
+        assert_eq!(MembershipsExpireOn::<T, I>::get(block_number).len(), i as usize);
+    }: {Pallet::<T, I>::expire_memberships(block_number);}
     verify {
-        assert_eq!(MembershipsExpireOn::<T, I>::get(BlockNumberFor::<T>::zero()).len(), 0_usize);
+        assert_eq!(MembershipsExpireOn::<T, I>::get(block_number).len(), 0_usize);
     }
 
     impl_benchmark_test_suite!(

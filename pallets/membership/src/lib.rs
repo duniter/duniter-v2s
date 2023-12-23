@@ -308,7 +308,7 @@ pub mod pallet {
             for idty_id in MembershipsExpireOn::<T, I>::take(block_number) {
                 // remove membership (take)
                 Self::do_remove_membership(idty_id, MembershipRemovalReason::Expired);
-                expired_idty_count = 0;
+                expired_idty_count += 1;
             }
             T::WeightInfo::expire_memberships(expired_idty_count)
         }
