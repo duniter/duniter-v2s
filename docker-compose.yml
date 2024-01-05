@@ -30,7 +30,7 @@ services:
     environment:
       ORACLE_RPC_URL: "ws://duniter-v2s:9944"
       ORACLE_RESULT_DIR: "/var/lib/duniter/chains/gdev/distance/"
-      ORACLE_EXECUTION_INTERVAL: "10"
+      ORACLE_EXECUTION_INTERVAL: "1800"
       ORACLE_MAX_DEPTH: "5"
       ORACLE_LOG_LEVEL: "info"
     volumes:
