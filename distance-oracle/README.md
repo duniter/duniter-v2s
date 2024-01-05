@@ -18,3 +18,12 @@ This feature is organized in multiple parts:
 - **/primitives/distance/**: primitive types used both by client and runtime
 - **/client/distance/**: exposes the `create_distance_inherent_data_provider` which provides data to the runtime
 - **/pallets/distance/**: distance pallet exposing type, traits, storage/calls/hooks executing in the runtime
+
+## Usage (with Docker)
+
+See [docker-compose.yml](../docker-compose.yml) for an example of how to run the distance oracle with Docker.
+
+Output:
+
+    2023-12-09T14:45:05.942Z INFO [distance_oracle] Nothing to do: Pool does not exist
+    Waiting 1800 seconds before next execution...

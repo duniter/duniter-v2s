@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Custom startup if a first argument is present and is equal to '--'
+# then we just run duniter with the provided arguments (but the '--')
+# without applying all the automated configuration below
+if [ "$1" = -- ]; then
+  shift
+  distance-oracle "$@"
+else
+  ORACLE_RESULT_DIR="${ORACLE_RESULT_DIR:-/distance}"
+  ORACLE_EXECUTION_INTERVAL="${ORACLE_EXECUTION_INTERVAL:-1800}"
+  ORACLE_MAX_DEPTH="${ORACLE_MAX_DEPTH:-5}"
+  ORACLE_RPC_URL="${ORACLE_RPC_URL:-ws://127.0.0.1:9944}"
+  ORACLE_LOG_LEVEL="${ORACLE_LOG_LEVEL:-info}"
+
+  while [ true ]; do
+    distance-oracle -d "$ORACLE_RESULT_DIR" -D "$ORACLE_MAX_DEPTH" -u "$ORACLE_RPC_URL" -l "$ORACLE_LOG_LEVEL"
+    echo "Waiting $ORACLE_EXECUTION_INTERVAL seconds before next execution..."
+    sleep $ORACLE_EXECUTION_INTERVAL
+  done
+fi

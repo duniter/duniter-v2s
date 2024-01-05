@@ -15,6 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::runtime;
+use log::debug;
 
 use sp_core::H256;
 use subxt::storage::StorageKey;
@@ -52,9 +53,18 @@ pub async fn current_pool(
         .storage()
         .at(parent_hash)
         .fetch(&match current_session % 3 {
-            0 => runtime::storage().distance().evaluation_pool1(),
-            1 => runtime::storage().distance().evaluation_pool2(),
-            2 => runtime::storage().distance().evaluation_pool0(),
+            0 => {
+                debug!("Looking at Pool1 for session {}", current_session);
+                runtime::storage().distance().evaluation_pool1()
+            }
+            1 => {
+                debug!("Looking at Pool2 for session {}", current_session);
+                runtime::storage().distance().evaluation_pool2()
+            }
+            2 => {
+                debug!("Looking at Pool0 for session {}", current_session);
+                runtime::storage().distance().evaluation_pool0()
+            }
             _ => unreachable!("n%3<3"),
         })
         .await

@@ -28,7 +28,7 @@ use api::{AccountId, IdtyIndex};
 
 use codec::Encode;
 use fnv::{FnvHashMap, FnvHashSet};
-use log::{debug, error, warn};
+use log::{debug, error, info, warn};
 use rayon::iter::IntoParallelRefIterator;
 use rayon::iter::ParallelIterator;
 use std::io::Write;
@@ -93,6 +93,7 @@ pub async fn run_and_save(client: &api::Client, settings: Settings) {
         return;
     };
 
+    debug!("Saving distance evaluation result to file `{evaluation_result_path:?}`");
     let mut evaluation_result_file = std::fs::OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -155,13 +156,13 @@ pub async fn run(
     // Fetch the pending identities
     let Some(evaluation_pool) = api::current_pool(client, parent_hash, current_session).await
     else {
-        debug!("Nothing to do: Pool does not exist");
+        info!("Nothing to do: Pool does not exist");
         return None;
     };
 
     // Stop if nothing to evaluate
     if evaluation_pool.evaluations.0.is_empty() {
-        debug!("Nothing to do: Pool is empty");
+        info!("Nothing to do: Pool is empty");
         return None;
     }
 
@@ -172,7 +173,7 @@ pub async fn run(
     if handle_fs {
         // Stop if already evaluated
         if evaluation_result_path.try_exists().unwrap() {
-            debug!("Nothing to do: File already exists");
+            info!("Nothing to do: File already exists");
             return None;
         }
 
@@ -184,6 +185,7 @@ pub async fn run(
         });
     }
 
+    info!("Evaluating distance for session {}", current_session);
     let evaluation_block = api::evaluation_block(client, parent_hash).await;
 
     // member idty -> issued certs
@@ -292,6 +294,7 @@ fn distance_rule(
     depth: u32,
     idty: IdtyIndex,
 ) -> sp_runtime::Perbill {
+    debug!("Evaluating distance for idty {}", idty);
     let mut accessible_referees =
         FnvHashSet::<IdtyIndex>::with_capacity_and_hasher(referees.len(), Default::default());
     let mut known_idties =
@@ -304,12 +307,20 @@ fn distance_rule(
         &mut known_idties,
         depth,
     );
-    if referees.contains_key(&idty) {
+    let result = if referees.contains_key(&idty) {
         sp_runtime::Perbill::from_rational(
             accessible_referees.len() as u32 - 1,
             referees.len() as u32 - 1,
         )
     } else {
         sp_runtime::Perbill::from_rational(accessible_referees.len() as u32, referees.len() as u32)
-    }
+    };
+    info!(
+        "Distance for idty {}: {}/{} = {}%",
+        idty,
+        accessible_referees.len(),
+        referees.len(),
+        result.deconstruct() as f32 / 1_000_000_000f32 * 100f32
+    );
+    result
 }

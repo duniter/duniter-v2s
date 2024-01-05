@@ -84,6 +84,12 @@ LABEL maintainer="Gilles Filippini <gilles.filippini@pini.fr>"
 LABEL version="0.0.0"
 LABEL description="Crypto-currency software (based on Substrate framework) to operate Ğ1 libre currency"
 
+# Required certificates for RPC connections
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates
+RUN update-ca-certificates
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
 RUN adduser --home /var/lib/duniter duniter
 
 # Configuration
@@ -96,3 +102,4 @@ USER duniter
 # Intall
 COPY --from=build /root/build /usr/local/bin/
 COPY docker/docker-entrypoint /usr/local/bin/
+COPY docker/docker-distance-entrypoint /usr/local/bin/

@@ -22,6 +22,19 @@ services:
       DUNITER_CHAIN_NAME: "gdev"
     volumes:
       - duniter-local-data:/var/lib/duniter
+  distance-oracle:
+    container_name: distance-oracle
+    # choose the version of the image here
+    image: duniter/duniter-v2s:latest
+    entrypoint: docker-distance-entrypoint
+    environment:
+      ORACLE_RPC_URL: "ws://duniter-v2s:9944"
+      ORACLE_RESULT_DIR: "/var/lib/duniter/chains/gdev/distance/"
+      ORACLE_EXECUTION_INTERVAL: "10"
+      ORACLE_MAX_DEPTH: "5"
+      ORACLE_LOG_LEVEL: "info"
+    volumes:
+      - duniter-local-data:/var/lib/duniter
 
 volumes:
   duniter-local-data:

@@ -43,6 +43,7 @@ where
     IdtyIndex: Decode + Encode + PartialEq + TypeInfo,
 {
     let &[owner_key] = owner_keys else {
+        log::error!("🧙 [distance oracle] More than one Babe owner key: oracle cannot work");
         return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
     };
     let owner_key = sp_runtime::AccountId32::new(owner_key.0);
@@ -82,23 +83,33 @@ where
 
     // Have we already published a result for this session?
     if published_results.evaluators.contains(&owner_key) {
+        log::debug!("🧙 [distance oracle] Already published a result for this session");
         return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
     }
 
     // Read evaluation result from file, if it exists
+    log::debug!(
+        "🧙 [distance oracle] Reading evaluation result from file {:?}",
+        distance_dir.clone().join(session_index.to_string())
+    );
     let evaluation_result = match std::fs::read(distance_dir.join(session_index.to_string())) {
         Ok(data) => data,
         Err(e) => {
             match e.kind() {
-                std::io::ErrorKind::NotFound => {}
+                std::io::ErrorKind::NotFound => {
+                    log::debug!("🧙 [distance oracle] Evaluation result file not found");
+                }
                 _ => {
-                    log::error!("Cannot read distance evaluation result file: {e:?}");
+                    log::error!(
+                        "🧙 [distance oracle] Cannot read distance evaluation result file: {e:?}"
+                    );
                 }
             }
             return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
         }
     };
 
+    log::info!("🧙 [distance oracle] Providing evaluation result");
     Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(Some(
         sp_distance::ComputationResult::decode(&mut evaluation_result.as_slice()).unwrap(),
     )))
