@@ -163,6 +163,7 @@ members = [
     'runtime/common',
     'runtime/gdev',
     'xtask',
+    'resources/weight_analyzer'
 ]
 
 # The list of dependencies below (which can be both direct and indirect dependencies) are crates

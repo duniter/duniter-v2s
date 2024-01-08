@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+#![feature(let_chains)]
+
 mod gen_doc;
 mod release_runtime;
 

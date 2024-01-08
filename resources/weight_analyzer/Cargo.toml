@@ -1,0 +1,19 @@
+[package]
+name = "weight-analyzer"
+authors = ['Axiom-Team Developers <https://axiom-team.fr>']
+description = 'Crypto-currency software (based on Substrate framework) to operate Ğ1 libre currency'
+edition = "2021"
+homepage = 'https://duniter.org'
+license = 'AGPL-3.0'
+repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
+version = '0.0.0'
+
+[lib]
+name = "weightanalyzer"
+path = "src/lib.rs"
+
+[dependencies]
+subweight-core = "3.3.1"
+convert_case = "0.6.0"
+glob = "0.3.1"
+serde = { version = "1.0.101", features = ["derive"] }

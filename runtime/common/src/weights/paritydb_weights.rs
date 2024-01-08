@@ -1,111 +1,95 @@
-// Copyright 2021 Axiom-Team
-//
-// This file is part of Duniter-v2S.
-//
-// Duniter-v2S is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, version 3 of the License.
-//
-// Duniter-v2S is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2022-11-18 (Y/M/D)
-//! HOSTNAME: `raspberrypi`, CPU: `ARMv7 Processor rev 3 (v7l)`
+//! DATE: 2023-12-26 (Y/M/D)
+//! HOSTNAME: `bgallois-ms7d43`, CPU: `12th Gen Intel(R) Core(TM) i3-12100F`
 //!
-//! DATABASE: `ParityDb`, RUNTIME: `Ğdev`
-//! BLOCK-NUM: `BlockId::Number(85630)`
+//! DATABASE: `ParityDb`, RUNTIME: `ĞDev`
+//! BLOCK-NUM: `BlockId::Number(0)`
 //! SKIP-WRITE: `false`, SKIP-READ: `false`, WARMUPS: `1`
-//! STATE-VERSION: `V1`, STATE-CACHE-SIZE: `0`
-//! WEIGHT-PATH: `.`
-//! METRIC: `Average`, WEIGHT-MUL: `2`, WEIGHT-ADD: `0`
+//! STATE-VERSION: `V1`, STATE-CACHE-SIZE: ``
+//! WEIGHT-PATH: `runtime/common/src/weights/`
+//! METRIC: `Average`, WEIGHT-MUL: `2.0`, WEIGHT-ADD: `0`
 
 // Executed Command:
-//   ./duniter
+//   target/release/duniter
 //   benchmark
 //   storage
-//   -d=/mnt/ssd1/duniter-v2s/t1
 //   --chain=gdev
 //   --mul=2
-//   --weight-path=.
 //   --state-version=1
+//   --weight-path
+//   runtime/common/src/weights/
 
-/// Storage DB weights for the `Ğdev` runtime and `ParityDb`.
+/// Storage DB weights for the `ĞDev` runtime and `ParityDb`.
 pub mod constants {
-    use frame_support::{
-        parameter_types,
-        weights::{constants, RuntimeDbWeight},
-    };
+	use frame_support::weights::constants;
+	use sp_core::parameter_types;
+	use sp_weights::RuntimeDbWeight;
 
-    parameter_types! {
-        /// `ParityDB` can be enabled with a feature flag, but is still experimental. These weights
-        /// are available for brave runtime engineers who may want to try this out as default.
-        pub const ParityDbWeight: RuntimeDbWeight = RuntimeDbWeight {
-            /// Time to read one storage item.
-            /// Calculated by multiplying the *Average* of all values with `2` and adding `0`.
-            ///
-            /// Stats nanoseconds:
-            ///   Min, Max: 62_017, 5_238_182
-            ///   Average:  125_949
-            ///   Median:   124_943
-            ///   Std-Dev:  19659.02
-            ///
-            /// Percentiles nanoseconds:
-            ///   99th: 151_424
-            ///   95th: 143_017
-            ///   75th: 133_498
-            read: 250_000 * constants::WEIGHT_REF_TIME_PER_NANOS,
+	parameter_types! {
+		/// `ParityDB` can be enabled with a feature flag, but is still experimental. These weights
+		/// are available for brave runtime engineers who may want to try this out as default.
+		pub const ParityDbWeight: RuntimeDbWeight = RuntimeDbWeight {
+			/// Time to read one storage item.
+			/// Calculated by multiplying the *Average* of all values with `2.0` and adding `0`.
+			///
+			/// Stats nanoseconds:
+			///   Min, Max: 1_139, 113_508
+			///   Average:  3_659
+			///   Median:   3_601
+			///   Std-Dev:  820.57
+			///
+			/// Percentiles nanoseconds:
+			///   99th: 5_347
+			///   95th: 4_760
+			///   75th: 4_064
+			read: 7_318 * constants::WEIGHT_REF_TIME_PER_NANOS,
 
-            /// Time to write one storage item.
-            /// Calculated by multiplying the *Average* of all values with `2` and adding `0`.
-            ///
-            /// Stats nanoseconds:
-            ///   Min, Max: 88_054, 107_065_367
-            ///   Average:  419_064
-            ///   Median:   424_994
-            ///   Std-Dev:  423253.1
-            ///
-            /// Percentiles nanoseconds:
-            ///   99th: 611_825
-            ///   95th: 512_789
-            ///   75th: 457_938
-            write: 840_000 * constants::WEIGHT_REF_TIME_PER_NANOS,
-        };
-    }
+			/// Time to write one storage item.
+			/// Calculated by multiplying the *Average* of all values with `2.0` and adding `0`.
+			///
+			/// Stats nanoseconds:
+			///   Min, Max: 4_337, 511_811
+			///   Average:  25_862
+			///   Median:   24_782
+			///   Std-Dev:  5817.92
+			///
+			/// Percentiles nanoseconds:
+			///   99th: 47_862
+			///   95th: 37_929
+			///   75th: 27_045
+			write: 51_724 * constants::WEIGHT_REF_TIME_PER_NANOS,
+		};
+	}
 
-    #[cfg(test)]
-    mod test_db_weights {
-        use super::constants::ParityDbWeight as W;
-        use frame_support::weights::constants;
+	#[cfg(test)]
+	mod test_db_weights {
+		use super::constants::ParityDbWeight as W;
+		use sp_weights::constants;
 
-        /// Checks that all weights exist and have sane values.
-        // NOTE: If this test fails but you are sure that the generated values are fine,
-        // you can delete it.
-        #[test]
-        fn bound() {
-            // At least 1 µs.
-            assert!(
-                W::get().reads(1).ref_time() >= constants::WEIGHT_REF_TIME_PER_MICROS,
-                "Read weight should be at least 1 µs."
-            );
-            assert!(
-                W::get().writes(1).ref_time() >= constants::WEIGHT_REF_TIME_PER_MICROS,
-                "Write weight should be at least 1 µs."
-            );
-            // At most 1 ms.
-            assert!(
-                W::get().reads(1).ref_time() <= constants::WEIGHT_REF_TIME_PER_MILLIS,
-                "Read weight should be at most 1 ms."
-            );
-            assert!(
-                W::get().writes(1).ref_time() <= constants::WEIGHT_REF_TIME_PER_MILLIS,
-                "Write weight should be at most 1 ms."
-            );
-        }
-    }
+		/// Checks that all weights exist and have sane values.
+		// NOTE: If this test fails but you are sure that the generated values are fine,
+		// you can delete it.
+		#[test]
+		fn bound() {
+			// At least 1 µs.
+			assert!(
+				W::get().reads(1).ref_time() >= constants::WEIGHT_REF_TIME_PER_MICROS,
+				"Read weight should be at least 1 µs."
+			);
+			assert!(
+				W::get().writes(1).ref_time() >= constants::WEIGHT_REF_TIME_PER_MICROS,
+				"Write weight should be at least 1 µs."
+			);
+			// At most 1 ms.
+			assert!(
+				W::get().reads(1).ref_time() <= constants::WEIGHT_REF_TIME_PER_MILLIS,
+				"Read weight should be at most 1 ms."
+			);
+			assert!(
+				W::get().writes(1).ref_time() <= constants::WEIGHT_REF_TIME_PER_MILLIS,
+				"Write weight should be at most 1 ms."
+			);
+		}
+	}
 }

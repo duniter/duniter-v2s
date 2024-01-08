@@ -1,24 +1,9 @@
-// Copyright 2021-2022 Axiom-Team
-//
-// This file is part of Duniter-v2S.
-//
-// Duniter-v2S is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, version 3 of the License.
-//
-// Duniter-v2S is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2023-06-08 (Y/M/D)
-//! HOSTNAME: `benjamin-xps139380`, CPU: `Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz`
+//! DATE: 2023-12-26 (Y/M/D)
+//! HOSTNAME: `bgallois-ms7d43`, CPU: `12th Gen Intel(R) Core(TM) i3-12100F`
 //!
-//! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `Development`
+//! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `Ğdev Local Testnet`
 //! WARMUPS: `10`, REPEAT: `100`
 //! WEIGHT-PATH: `./runtime/common/src/weights/`
 //! WEIGHT-METRIC: `Average`, WEIGHT-MUL: `1.0`, WEIGHT-ADD: `0`
@@ -27,13 +12,12 @@
 //   target/release/duniter
 //   benchmark
 //   overhead
-//   --chain=gdev-benchmark
+//   --chain=dev
 //   --execution=wasm
 //   --wasm-execution=compiled
 //   --weight-path=./runtime/common/src/weights/
 //   --warmup=10
 //   --repeat=100
-//   --header=./file_header.txt
 
 use sp_core::parameter_types;
 use sp_weights::{constants::WEIGHT_REF_TIME_PER_NANOS, Weight};
@@ -43,17 +27,17 @@ parameter_types! {
 	/// Calculated by multiplying the *Average* with `1.0` and adding `0`.
 	///
 	/// Stats nanoseconds:
-	///   Min, Max: 623_420, 1_116_421
-	///   Average:  690_884
-	///   Median:   634_164
-	///   Std-Dev:  114940.42
+	///   Min, Max: 151_798, 231_989
+	///   Average:  164_390
+	///   Median:   161_435
+	///   Std-Dev:  11994.84
 	///
 	/// Percentiles nanoseconds:
-	///   99th: 1_050_988
-	///   95th: 973_973
-	///   75th: 680_020
+	///   99th: 213_693
+	///   95th: 188_989
+	///   75th: 164_199
 	pub const BlockExecutionWeight: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(690_884), 0);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(164_390), 0);
 }
 
 #[cfg(test)]

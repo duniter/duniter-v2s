@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **186** errors from **37** pallets.
+There are **187** errors from **37** pallets.
 
 <ul>
 <li>System - 0
@@ -818,7 +818,7 @@ Invalid revocation key.
 <details>
 <summary>
 <code>IssuerNotMember</code> - 10</summary>
-Issuer is not member and can not perform this action
+Issuer is not member and can not perform this action.
 </details>
 </li>
 <li>
@@ -853,21 +853,28 @@ Reverting to an old key is prohibited.
 <details>
 <summary>
 <code>AlreadyRevoked</code> - 15</summary>
-Already revoked
+Already revoked.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>CanNotRevokeUnconfirmed</code> - 16</summary>
-Can not revoke identity that never was member
+Can not revoke identity that never was member.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>CanNotRevokeUnvalidated</code> - 17</summary>
-Can not revoke identity that never was member
+Can not revoke identity that never was member.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>AccountNotExist</code> - 18</summary>
+Cannot link to an inexisting account.
 </details>
 </li>
 </ul>

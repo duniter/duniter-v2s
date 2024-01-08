@@ -16,13 +16,28 @@
 
 use anyhow::{bail, Context, Result};
 use codec::Decode;
+use core::hash::Hash;
 use scale_info::form::PortableForm;
 use serde::Serialize;
+use std::collections::HashMap;
+use std::path::Path;
 use std::{
     fs::File,
     io::{Read, Write},
 };
 use tera::Tera;
+use weightanalyzer::analyze_weight;
+use weightanalyzer::MaxBlockWeight;
+use weightanalyzer::WeightInfo;
+
+fn rename_key<K, V>(h: &mut HashMap<K, V>, old_key: &K, new_key: K)
+where
+    K: Eq + Hash,
+{
+    if let Some(v) = h.remove(old_key) {
+        h.insert(new_key, v);
+    }
+}
 
 // consts
 
@@ -30,6 +45,7 @@ const CALLS_DOC_FILEPATH: &str = "docs/api/runtime-calls.md";
 const EVENTS_DOC_FILEPATH: &str = "docs/api/runtime-events.md";
 const ERRORS_DOC_FILEPATH: &str = "docs/api/runtime-errors.md";
 const TEMPLATES_GLOB: &str = "xtask/res/templates/*.md";
+const WEIGHT_FILEPATH: &str = "runtime/common/src/weights/";
 
 // define structs and implementations
 
@@ -49,6 +65,7 @@ struct Call {
     index: u8,
     name: String,
     params: Vec<CallParam>,
+    weight: f64,
 }
 #[derive(Clone, Serialize)]
 struct CallParam {
@@ -132,6 +149,7 @@ impl From<&scale_info::Variant<PortableForm>> for Call {
             index: variant.index,
             name: variant.name.to_owned(),
             params: variant.fields.iter().map(Into::into).collect(),
+            weight: Default::default(),
         }
     }
 }
@@ -237,11 +255,68 @@ pub(super) fn gen_doc() -> Result<()> {
 
     println!("Metadata successfully loaded!");
 
-    let runtime = if let frame_metadata::RuntimeMetadata::V14(metadata_v14) = metadata.1 {
-        get_from_metadata_v14(metadata_v14)?
-    } else {
-        bail!("unsuported metadata version")
-    };
+    let (mut runtime, max_weight) =
+        if let frame_metadata::RuntimeMetadata::V14(ref metadata_v14) = metadata.1 {
+            (
+                get_from_metadata_v14(metadata_v14.clone())?,
+                get_max_weight_from_metadata_v14(metadata_v14.clone())?,
+            )
+        } else {
+            bail!("unsuported metadata version")
+        };
+
+    let mut weights = get_weights(max_weight)?;
+
+    // Ad hoc names conversion between pallet filename and instance name
+    rename_key(&mut weights, &"FrameSystem".into(), "System".into());
+    rename_key(&mut weights, &"DuniterAccount".into(), "Account".into());
+    rename_key(
+        &mut weights,
+        &"Collective".into(),
+        "TechnicalCommittee".into(),
+    );
+    rename_key(
+        &mut weights,
+        &"MembershipMembership".into(),
+        "Membership".into(),
+    );
+    rename_key(
+        &mut weights,
+        &"MembershipSmithMembership".into(),
+        "SmithMembership".into(),
+    );
+    rename_key(&mut weights, &"CertificationCert".into(), "Cert".into());
+    rename_key(
+        &mut weights,
+        &"CertificationSmithCert".into(),
+        "SmithCert".into(),
+    );
+
+    // We enforce weight for each pallet.
+    // For pallets with manual or no weight, we define a default value.
+    weights.insert("Babe".to_string(), Default::default()); // Manual
+    weights.insert("Grandpa".to_string(), Default::default()); // Manual
+    weights.insert("Sudo".to_string(), Default::default()); // Only > v1.0 has WeightInfo TODO at update
+    weights.insert("AtomicSwap".to_string(), Default::default()); // No weight
+
+    // Insert weights for each call of each pallet.
+    // If no weight is available, the weight is set to -1.
+    // We use the relative weight in percent computed as the extrinsic base +
+    // the extrinsic execution divided by the total weight available in
+    // one block. If the weight depends on a complexity parameter,
+    // we display the worst possible weight, taking the upper limit as
+    // defined during the benchmark.
+    runtime.iter_mut().for_each(|pallet| {
+        pallet.calls.iter_mut().for_each(|call| {
+            call.weight = weights
+                .get(&pallet.name)
+                .expect(&("No weight for ".to_owned() + &pallet.name))
+                .get(&call.name)
+                .map_or(-1f64, |weight| {
+                    (weight.relative_weight * 10000.).round() / 10000.
+                })
+        })
+    });
 
     let (call_doc, event_doc, error_doc) = print_runtime(runtime);
 
@@ -259,6 +334,39 @@ pub(super) fn gen_doc() -> Result<()> {
         .with_context(|| format!("Failed to write to file '{}'", ERRORS_DOC_FILEPATH))?;
 
     Ok(())
+}
+
+fn get_max_weight_from_metadata_v14(
+    metadata_v14: frame_metadata::v14::RuntimeMetadataV14,
+) -> Result<u128> {
+    // Extract the maximal weight available in one block
+    // from the metadata.
+    let block_weights = metadata_v14
+        .pallets
+        .iter()
+        .find(|pallet| pallet.name == "System")
+        .expect("Can't find System pallet metadata")
+        .constants
+        .iter()
+        .find(|constant| constant.name == "BlockWeights")
+        .expect("Can't find BlockWeights");
+
+    let block_weights = scale_value::scale::decode_as_type(
+        &mut &*block_weights.value,
+        block_weights.ty.id,
+        &metadata_v14.types,
+    )
+    .expect("Can't decode max_weight")
+    .value;
+
+    if let scale_value::ValueDef::Composite(scale_value::Composite::Named(i)) = block_weights
+            && let scale_value::ValueDef::Composite(scale_value::Composite::Named(j)) = &i.iter().find(|name| name.0 == "max_block").unwrap().1.value
+            && let scale_value::ValueDef::Primitive(scale_value::Primitive::U128(k)) = &j.iter().find(|name| name.0 == "ref_time").unwrap().1.value
+        {
+            Ok(*k)
+        } else {
+            bail!("Invalid max_weight")
+        }
 }
 
 fn get_from_metadata_v14(
@@ -324,6 +432,14 @@ fn get_from_metadata_v14(
         pallets.push(pallet);
     }
     Ok(pallets)
+}
+
+fn get_weights(max_weight: u128) -> Result<HashMap<String, HashMap<String, WeightInfo>>> {
+    analyze_weight(
+        Path::new(WEIGHT_FILEPATH),
+        &MaxBlockWeight::new(max_weight as f64),
+    )
+    .map_err(|e| anyhow::anyhow!(e))
 }
 
 /// use template to render markdown file with runtime calls documentation

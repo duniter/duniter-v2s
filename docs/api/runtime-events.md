@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **126** events from **37** pallets.
+There are **127** events from **37** pallets.
 
 <ul>
 <li>System - 0
@@ -711,6 +711,18 @@ member: T::MemberId
 <summary>
 <code>MemberRemovedFromBlacklist(member)</code> - 5</summary>
 A member has been removed from the blacklist.
+
+```rust
+member: T::MemberId
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>MemberAddedToBlacklist(member)</code> - 6</summary>
+A member has been blacklisted.
 
 ```rust
 member: T::MemberId

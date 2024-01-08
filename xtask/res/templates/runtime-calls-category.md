@@ -8,10 +8,14 @@ There are **{{ calls_counter }}** {{ category_name }} calls from **{{ pallets | 
 
 <details><summary><code>{{ call.name }}(
     {%- for param in call.params -%}
-    {{ param.name }}{% if loop.last != true %}, {% endif %} 
+    {{ param.name }}{% if loop.last != true %}, {% endif %}
     {%- endfor -%}
     )</code></summary>
-
+{% if call.weight == -1 %}
+No weight available.
+{% else %}
+Taking {{ call.weight }} % of a block.
+{% endif %}
 ```rust
 {% for param in call.params -%}
 {{ param.name }}: {{ param.type_name }}
