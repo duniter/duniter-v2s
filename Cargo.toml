@@ -18,7 +18,7 @@ name = 'duniter'
 path = "node/src/main.rs"
 
 [features]
-default = ["gdev"]
+default = ["gdev", "distance-oracle"]
 gdev = ["gdev-runtime"] # gdev feature enables gdev runtime and gdev command line options
 g1 = ["g1-runtime"]
 gtest = ["gtest-runtime"]
@@ -58,7 +58,7 @@ sp-trie = { git = "https://github.com/duniter/substrate", branch = "duniter-subs
 # local dependencies
 common-runtime = { path = 'runtime/common' }
 dc-distance = { path = 'client/distance' }
-distance-oracle = { path = 'distance-oracle', optional = true }
+distance-oracle = { path = 'distance-oracle', default-features = false, optional = true }
 g1-runtime = { path = 'runtime/g1', optional = true }
 gdev-runtime = { path = 'runtime/gdev', optional = true }
 gtest-runtime = { path = 'runtime/gtest', optional = true }

@@ -37,6 +37,10 @@ pub enum Subcommand {
     /// Validate blocks.
     CheckBlock(sc_cli::CheckBlockCmd),
 
+    /// Run distance oracle.
+    #[cfg(feature = "distance-oracle")]
+    DistanceOracle(DistanceOracle),
+
     /// Export blocks.
     ExportBlocks(sc_cli::ExportBlocksCmd),
 
@@ -131,4 +135,15 @@ impl std::str::FromStr for Sealing {
 pub struct Completion {
     #[clap(short, long, value_enum)]
     pub generator: clap_complete::Shell,
+}
+
+#[derive(Debug, clap::Args)]
+pub struct DistanceOracle {
+    #[clap(short = 'd', long, default_value = "/tmp/duniter/chains/gdev/distance")]
+    pub evaluation_result_dir: String,
+    /// Maximum depth to explore the WoT graph for referees
+    #[clap(short = 'D', long, default_value = "5")]
+    pub max_depth: u32,
+    #[clap(short = 'u', long, default_value = "ws://127.0.0.1:9944")]
+    pub rpc_url: String,
 }

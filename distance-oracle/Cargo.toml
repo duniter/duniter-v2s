@@ -9,7 +9,7 @@ edition = "2021"
 [dependencies]
 sp-distance = { path = "../primitives/distance" }
 
-codec = { package = "parity-scale-codec", version = "3.1.5" }
+codec = { package = "parity-scale-codec", version = "3.6.5" }
 fnv = "1.0.7"
 log = "0.4.17"
 num-traits = "0.2.15"

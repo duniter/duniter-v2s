@@ -304,6 +304,19 @@ pub fn run() -> sc_cli::Result<()> {
             );
             Ok(())
         }
+        #[cfg(feature = "distance-oracle")]
+        Some(Subcommand::DistanceOracle(cmd)) => sc_cli::build_runtime()?.block_on(async move {
+            distance_oracle::run_and_save(
+                &distance_oracle::api::client(cmd.rpc_url.clone()).await,
+                distance_oracle::Settings {
+                    evaluation_result_dir: cmd.evaluation_result_dir.clone().into(),
+                    max_depth: cmd.max_depth,
+                    rpc_url: cmd.rpc_url.clone(),
+                },
+            )
+            .await;
+            Ok(())
+        }),
         #[cfg(feature = "runtime-benchmarks")]
         Some(Subcommand::Benchmark(cmd)) => {
             let runner = cli.create_runner(&**cmd)?;
