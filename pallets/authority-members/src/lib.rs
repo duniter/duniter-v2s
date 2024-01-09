@@ -123,12 +123,6 @@ pub mod pallet {
 
     // STORAGE //
 
-    /// maps member id to account id
-    #[pallet::storage]
-    #[pallet::getter(fn account_id_of)]
-    pub type AccountIdOf<T: Config> =
-        StorageMap<_, Twox64Concat, T::MemberId, T::AccountId, OptionQuery>;
-
     /// count the number of authorities
     #[pallet::storage]
     #[pallet::getter(fn authorities_counter)]
