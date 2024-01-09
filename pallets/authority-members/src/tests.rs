@@ -175,6 +175,8 @@ fn test_too_many_authorities() {
         assert_eq!(AuthorityMembers::authorities_counter(), 3);
         assert_ok!(AuthorityMembers::go_online(RuntimeOrigin::signed(15)),);
         assert_eq!(AuthorityMembers::authorities_counter(), 4);
+        assert_ok!(AuthorityMembers::remove_member(RawOrigin::Root.into(), 15));
+        assert_eq!(AuthorityMembers::authorities_counter(), 3);
     });
 }
 

@@ -116,17 +116,11 @@ pub mod pallet {
                 .collect::<Vec<T::MemberId>>();
             members_ids.sort();
 
-            AuthoritiesCounter::<T>::put(members_ids.len() as u32);
             OnlineAuthorities::<T>::put(members_ids.clone());
         }
     }
 
     // STORAGE //
-
-    /// count the number of authorities
-    #[pallet::storage]
-    #[pallet::getter(fn authorities_counter)]
-    pub type AuthoritiesCounter<T: Config> = StorageValue<_, u32, ValueQuery>;
 
     /// list incoming authorities
     #[pallet::storage]
@@ -264,7 +258,7 @@ pub mod pallet {
             if Self::is_online(member_id) && !is_outgoing {
                 return Err(Error::<T>::AlreadyOnline.into());
             }
-            if AuthoritiesCounter::<T>::get() >= T::MaxAuthorities::get() {
+            if Self::authorities_counter() >= T::MaxAuthorities::get() {
                 return Err(Error::<T>::TooManyAuthorities.into());
             }
 
@@ -371,6 +365,12 @@ pub mod pallet {
 
             Ok(().into())
         }
+
+        pub fn authorities_counter() -> u32 {
+            let count = OnlineAuthorities::<T>::get().len() + IncomingAuthorities::<T>::get().len()
+                - OutgoingAuthorities::<T>::get().len();
+            count as u32
+        }
     }
 
     // INTERNAL FUNCTIONS //
@@ -414,7 +414,6 @@ pub mod pallet {
                 }
             });
             if not_already_inserted {
-                AuthoritiesCounter::<T>::mutate(|counter| *counter += 1);
                 Self::deposit_event(Event::MemberGoOnline { member: member_id });
             }
             not_already_inserted
@@ -430,11 +429,6 @@ pub mod pallet {
                 }
             });
             if not_already_inserted {
-                AuthoritiesCounter::<T>::mutate(|counter| {
-                    if *counter > 0 {
-                        *counter -= 1
-                    }
-                });
                 Self::deposit_event(Event::MemberGoOffline { member: member_id });
             }
             not_already_inserted
@@ -463,7 +457,6 @@ pub mod pallet {
         }
         /// perform removal from incoming authorities
         fn remove_in(member_id: T::MemberId) {
-            AuthoritiesCounter::<T>::mutate(|counter| counter.saturating_sub(1));
             IncomingAuthorities::<T>::mutate(|members_ids| {
                 if let Ok(index) = members_ids.binary_search(&member_id) {
                     members_ids.remove(index);
@@ -472,7 +465,6 @@ pub mod pallet {
         }
         /// perform removal from online authorities
         fn remove_online(member_id: T::MemberId) {
-            AuthoritiesCounter::<T>::mutate(|counter| counter.saturating_add(1));
             OnlineAuthorities::<T>::mutate(|members_ids| {
                 if let Ok(index) = members_ids.binary_search(&member_id) {
                     members_ids.remove(index);
