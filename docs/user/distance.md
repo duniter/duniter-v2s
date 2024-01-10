@@ -10,15 +10,9 @@ Any smith member authoring blocks can run a distance evaluation oracle. It is be
 
 The simplest way is to run the oracle on the same machine as Duniter.
 
-Build the oracle:
-
-    cargo build --release -p distance-oracle
-
-It will be available at `./target/release/distance-oracle`. Move it to somewhere appropriate.
-
 Add this line to your cron with the command `crontab -e`: (add option `-u <user>` to edit another user's cron)
 
-    4,24,44 * * * * nice -n 2 /absolute/path/to/distance-oracle
+    4,24,44 * * * * nice -n 2 /absolute/path/to/duniter distance-oracle
 
 The precise hours don't matter so you can pick random values, but it should run at least one time per hour, and running it more often decreases the risk of problem in case of missing blocks or temporary network failure.
 
@@ -28,4 +22,4 @@ The `nice -n 2` lowers the oracle's priority, so that Duniter has the priority e
 
 ### Additional Duniter configuration
 
-Duniter should keep states at least one session old, that it 600 blocks (while 256 is the default). Use the option `--state-pruning 600` if your node is not already an archive (`--state-pruning archive`).
+Duniter should keep states at least one session old, that is 600 blocks (while 256 is the default). Use the option `--state-pruning 600` if your node is not already an archive (`--state-pruning archive`).

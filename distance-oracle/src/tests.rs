@@ -26,7 +26,6 @@ use std::{fs::File, io::Read};
 async fn test_distance_against_v1() {
     let wot = wot_from_v1_file();
     let n = wot.size();
-    let max_depth = 5;
     let min_certs_for_referee = (wot.get_enabled().len() as f32).powf(1. / 5.).ceil() as u32;
 
     // Reference implementation
@@ -44,7 +43,7 @@ async fn test_distance_against_v1() {
                     dubp_wot::operations::distance::WotDistanceParameters {
                         node: i,
                         sentry_requirement: min_certs_for_referee,
-                        step_max: max_depth,
+                        step_max: 5,
                         x_percent: 0.8,
                     },
                 )
@@ -59,16 +58,9 @@ async fn test_distance_against_v1() {
     client.pool_len = n;
 
     let t_a = std::time::Instant::now();
-    let results = crate::run(
-        &client,
-        &crate::Settings {
-            max_depth,
-            ..Default::default()
-        },
-        false,
-    )
-    .await
-    .unwrap();
+    let results = crate::run(&client, &Default::default(), false)
+        .await
+        .unwrap();
     println!("new time: {}", t_a.elapsed().as_millis());
     assert_eq!(results.0.len(), n);
 

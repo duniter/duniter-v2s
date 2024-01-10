@@ -72,7 +72,6 @@ impl From<u64> for Tip {
 
 pub struct Settings {
     pub evaluation_result_dir: PathBuf,
-    pub max_depth: u32,
     pub rpc_url: String,
 }
 
@@ -80,7 +79,6 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             evaluation_result_dir: PathBuf::from("/tmp/duniter/chains/gdev/distance"),
-            max_depth: 5,
             rpc_url: String::from("ws://127.0.0.1:9944"),
         }
     }
@@ -151,6 +149,8 @@ pub async fn run(
 ) -> Option<(Vec<sp_runtime::Perbill>, u32, PathBuf)> {
     let parent_hash = api::parent_hash(client).await;
 
+    let max_depth = api::max_referee_distance(client).await;
+
     let current_session = api::current_session(client, parent_hash).await;
 
     // Fetch the pending identities
@@ -196,9 +196,7 @@ pub async fn run(
         members.insert(member_idty, 0);
     }
 
-    let min_certs_for_referee = (members.len() as f32)
-        .powf(1. / (settings.max_depth as f32))
-        .ceil() as u32;
+    let min_certs_for_referee = (members.len() as f32).powf(1. / (max_depth as f32)).ceil() as u32;
 
     // idty -> received certs
     let mut received_certs = FnvHashMap::<IdtyIndex, Vec<IdtyIndex>>::default();
@@ -236,7 +234,7 @@ pub async fn run(
         .0
         .as_slice()
         .par_iter()
-        .map(|(idty, _)| distance_rule(&received_certs, &referees, settings.max_depth, *idty))
+        .map(|(idty, _)| distance_rule(&received_certs, &referees, max_depth, *idty))
         .collect();
 
     Some((evaluation, current_session, evaluation_result_path))

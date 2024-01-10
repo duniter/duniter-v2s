@@ -72,6 +72,10 @@ pub mod pallet {
         type EvaluationPrice: Get<
             <Self::Currency as frame_support::traits::Currency<Self::AccountId>>::Balance,
         >;
+        /// Maximum distance used to define referee's accessibility
+        /// Unused by runtime but needed by client distance oracle
+        #[pallet::constant]
+        type MaxRefereeDistance: Get<u32>;
         /// Minimum ratio of accessible referees
         #[pallet::constant]
         type MinAccessibleReferees: Get<Perbill>;

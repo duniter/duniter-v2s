@@ -141,9 +141,6 @@ pub struct Completion {
 pub struct DistanceOracle {
     #[clap(short = 'd', long, default_value = "/tmp/duniter/chains/gdev/distance")]
     pub evaluation_result_dir: String,
-    /// Maximum depth to explore the WoT graph for referees
-    #[clap(short = 'D', long, default_value = "5")]
-    pub max_depth: u32,
     #[clap(short = 'u', long, default_value = "ws://127.0.0.1:9944")]
     pub rpc_url: String,
 }

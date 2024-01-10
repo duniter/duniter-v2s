@@ -49,7 +49,6 @@ pub async fn run_oracle(client: &Client, origin: AccountKeyring, rpc_url: String
         &distance_oracle::api::client(rpc_url.clone()).await,
         &distance_oracle::Settings {
             evaluation_result_dir: PathBuf::default(),
-            max_depth: 5,
             rpc_url,
         },
         false,

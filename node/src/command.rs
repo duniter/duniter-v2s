@@ -310,7 +310,6 @@ pub fn run() -> sc_cli::Result<()> {
                 &distance_oracle::api::client(cmd.rpc_url.clone()).await,
                 distance_oracle::Settings {
                     evaluation_result_dir: cmd.evaluation_result_dir.clone().into(),
-                    max_depth: cmd.max_depth,
                     rpc_url: cmd.rpc_url.clone(),
                 },
             )

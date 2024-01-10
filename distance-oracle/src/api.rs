@@ -81,6 +81,13 @@ pub async fn evaluation_block(client: &Client, parent_hash: H256) -> H256 {
         .expect("No evaluation block")
 }
 
+pub async fn max_referee_distance(client: &Client) -> u32 {
+    client
+        .constants()
+        .at(&runtime::constants().distance().max_referee_distance())
+        .expect("Cannot fetch referee distance")
+}
+
 pub async fn member_iter(client: &Client, evaluation_block: H256) -> MemberIter {
     MemberIter(
         client

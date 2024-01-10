@@ -76,6 +76,10 @@ pub async fn evaluation_block(_client: &Client, _parent_hash: H256) -> H256 {
     Default::default()
 }
 
+pub async fn max_referee_distance(_client: &Client) -> u32 {
+    5
+}
+
 pub async fn member_iter(client: &Client, _evaluation_block: H256) -> MemberIter {
     MemberIter(client.wot.get_enabled().into_iter())
 }

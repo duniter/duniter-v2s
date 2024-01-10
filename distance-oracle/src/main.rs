@@ -20,9 +20,6 @@ use clap::Parser;
 struct Cli {
     #[clap(short = 'd', long, default_value = "/tmp/duniter/chains/gdev/distance")]
     evaluation_result_dir: String,
-    /// Maximum depth to explore the WoT graph for referees
-    #[clap(short = 'D', long, default_value = "5")]
-    max_depth: u32,
     #[clap(short = 'u', long, default_value = "ws://127.0.0.1:9944")]
     rpc_url: String,
     /// Log level (off, error, warn, info, debug, trace)
@@ -43,7 +40,6 @@ async fn main() {
         &distance_oracle::api::client(cli.rpc_url.clone()).await,
         distance_oracle::Settings {
             evaluation_result_dir: cli.evaluation_result_dir.into(),
-            max_depth: cli.max_depth,
             rpc_url: cli.rpc_url,
         },
     )
