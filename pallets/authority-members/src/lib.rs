@@ -51,6 +51,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::{Convert, IsMember};
     use sp_std::collections::btree_map::BTreeMap;
+    use sp_std::vec;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -68,7 +69,8 @@ pub mod pallet {
     {
         type IsMember: IsMember<Self::MemberId>;
         type OnNewSession: OnNewSession;
-        type OnRemovedMember: OnRemovedMember<Self::MemberId>;
+        type OnOutgoingMember: OnOutgoingMember<Self::MemberId>;
+        type OnIncomingMember: OnIncomingMember<Self::MemberId>;
         /// Max number of authorities allowed
         #[pallet::constant]
         type MaxAuthorities: Get<u32>;
@@ -401,7 +403,6 @@ pub mod pallet {
 
             // Emit event
             Self::deposit_event(Event::MemberRemoved { member: member_id });
-            T::OnRemovedMember::on_removed_member(member_id);
         }
         /// perform incoming authorities insertion
         fn insert_in(member_id: T::MemberId) -> bool {
@@ -513,18 +514,21 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
         let members_ids_to_add = IncomingAuthorities::<T>::take();
         let members_ids_to_del = OutgoingAuthorities::<T>::take();
 
-        if members_ids_to_add.is_empty() {
-            if members_ids_to_del.is_empty() {
-                // when no change to the set of autorities, return None
-                return None;
-            } else {
-                Self::deposit_event(Event::OutgoingAuthorities {
-                    members: members_ids_to_del.clone(),
-                });
-            }
-        } else {
+        if members_ids_to_add.is_empty() && members_ids_to_del.is_empty() {
+            // when no change to the set of autorities, return None
+            return None;
+        }
+
+        for member_id in members_ids_to_add.iter() {
+            T::OnIncomingMember::on_incoming_member(*member_id);
             Self::deposit_event(Event::IncomingAuthorities {
                 members: members_ids_to_add.clone(),
+            });
+        }
+        for member_id in members_ids_to_del.iter() {
+            T::OnOutgoingMember::on_outgoing_member(*member_id);
+            Self::deposit_event(Event::OutgoingAuthorities {
+                members: members_ids_to_del.clone(),
             });
         }
 

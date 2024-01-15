@@ -17,11 +17,9 @@
 use crate::mock::*;
 use crate::pallet as pallet_duniter_wot;
 use codec::Encode;
-use frame_support::instances::{Instance1, Instance2};
 use frame_support::{assert_noop, assert_ok};
 use pallet_identity::{
-    IdtyIndexAccountIdPayload, IdtyName, IdtyStatus, RevocationPayload, RevocationReason,
-    NEW_OWNER_KEY_PAYLOAD_PREFIX, REVOCATION_PAYLOAD_PREFIX,
+    IdtyName, IdtyStatus, RevocationPayload, RevocationReason, REVOCATION_PAYLOAD_PREFIX,
 };
 use pallet_membership::MembershipRemovalReason;
 use sp_runtime::testing::TestSignature;
@@ -30,13 +28,13 @@ use sp_runtime::testing::TestSignature;
 /// and good identity and certification metadate
 #[test]
 fn test_genesis_build() {
-    new_test_ext(3, 2).execute_with(|| {
+    new_test_ext(3).execute_with(|| {
         run_to_block(1);
         // Verify state
         assert_eq!(Identity::identities_count(), 3);
         assert_eq!(Identity::identity(1).unwrap().next_creatable_identity_on, 0);
         assert_eq!(
-            pallet_certification::Pallet::<Test, Instance1>::idty_cert_meta(1).next_issuable_on,
+            pallet_certification::Pallet::<Test>::idty_cert_meta(1).next_issuable_on,
             2
         );
     });
@@ -45,7 +43,7 @@ fn test_genesis_build() {
 /// test that Alice is not able to create an identity when she received too few certs (2 of 4)
 #[test]
 fn test_creator_not_allowed_to_create_idty() {
-    new_test_ext(3, 2).execute_with(|| {
+    new_test_ext(3).execute_with(|| {
         run_to_block(1);
 
         // Alice did not receive enough certs
@@ -53,7 +51,7 @@ fn test_creator_not_allowed_to_create_idty() {
         // because Alice.next_issuable_on = 2)
         assert_noop!(
             Identity::create_identity(RuntimeOrigin::signed(1), 4),
-            pallet_duniter_wot::Error::<Test, Instance1>::NotEnoughReceivedCertsToCreateIdty
+            pallet_duniter_wot::Error::<Test>::NotEnoughReceivedCertsToCreateIdty
         );
     });
 }
@@ -61,123 +59,21 @@ fn test_creator_not_allowed_to_create_idty() {
 /// test that Alice is able to create an identity when she received enough certs (4)
 #[test]
 fn test_creator_allowed_to_create_idty() {
-    new_test_ext(5, 2).execute_with(|| {
+    new_test_ext(5).execute_with(|| {
         run_to_block(2);
 
         // Alice should be able to create an identity
         assert_ok!(
             Identity::create_identity(RuntimeOrigin::signed(1), 6),
-            // pallet_duniter_wot::Error::<Test, Instance1>::NotEnoughReceivedCertsToCreateIdty
+            // pallet_duniter_wot::Error::<Test>::NotEnoughReceivedCertsToCreateIdty
         );
-    });
-}
-
-/// test smith joining workflow
-#[test]
-fn test_join_smiths() {
-    new_test_ext(5, 3).execute_with(|| {
-        run_to_block(2);
-
-        // Alice should be able to send a smith cert to Dave
-        run_to_block(3);
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(1), 1, 4));
-
-        // Bob should be able to send a smith cert to Dave
-        run_to_block(4);
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(2), 2, 4));
-
-        // Dave should be able to claim his membership
-        run_to_block(4);
-        assert_ok!(SmithMembership::claim_membership(RuntimeOrigin::signed(4),));
-        System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipAdded {
-                member: 4,
-                expire_on: 4
-                    + <Test as pallet_membership::Config<Instance2>>::MembershipPeriod::get(),
-            },
-        ));
-    });
-}
-
-/// test smith membership expiry after cert expiration
-#[test]
-fn test_smith_certs_expirations_should_expire_smith_membership() {
-    new_test_ext(5, 3).execute_with(|| {
-        // After block #10, alice membership should be revoked due to smith certs expiration
-        run_to_block(10);
-        System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipRemoved {
-                member: 1,
-                reason: MembershipRemovalReason::NotEnoughCerts,
-            },
-        ));
-    });
-}
-
-/// test that smith can not change owner key
-#[test]
-fn test_smith_member_cant_change_its_idty_address() {
-    new_test_ext(5, 3).execute_with(|| {
-        run_to_block(2);
-
-        let genesis_hash = System::block_hash(0);
-        let new_key_payload = IdtyIndexAccountIdPayload {
-            genesis_hash: &genesis_hash,
-            idty_index: 3u32,
-            old_owner_key: &3u64,
-        };
-
-        // Identity 3 can't change it's address
-        assert_noop!(
-            Identity::change_owner_key(
-                RuntimeOrigin::signed(3),
-                13,
-                TestSignature(13, (NEW_OWNER_KEY_PAYLOAD_PREFIX, new_key_payload).encode())
-            ),
-            pallet_duniter_wot::Error::<Test, Instance2>::NotAllowedToChangeIdtyAddress
-        );
-    });
-}
-
-/// members of the smith subwot can revoke their identity
-#[test]
-fn test_smith_member_can_revoke_its_idty() {
-    new_test_ext(5, 3).execute_with(|| {
-        run_to_block(2);
-
-        let revocation_payload = RevocationPayload {
-            idty_index: 3u32,
-            genesis_hash: System::block_hash(0),
-        };
-
-        // Identity 3 can't change it's address
-        assert_ok!(Identity::revoke_identity(
-            RuntimeOrigin::signed(3),
-            3,
-            3,
-            TestSignature(3, (REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode())
-        ));
-        // membership should be removed
-        System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipRemoved {
-                member: 3,
-                reason: pallet_membership::MembershipRemovalReason::Revoked,
-            },
-        ));
-        // smith membership should be removed as well
-        System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipRemoved {
-                member: 3,
-                reason: pallet_membership::MembershipRemovalReason::Revoked,
-            },
-        ));
     });
 }
 
 /// test identity creation and that a first cert is emitted
 #[test]
 fn test_create_idty_ok() {
-    new_test_ext(5, 2).execute_with(|| {
+    new_test_ext(5).execute_with(|| {
         run_to_block(2);
 
         // Alice should be able to create an identity at block #2
@@ -205,7 +101,7 @@ fn test_create_idty_ok() {
 /// test identity validation
 #[test]
 fn test_new_idty_validation() {
-    new_test_ext(5, 2).execute_with(|| {
+    new_test_ext(5).execute_with(|| {
         // Alice creates Ferdie identity
         run_to_block(2);
         assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 6));
@@ -231,8 +127,7 @@ fn test_new_idty_validation() {
         System::assert_has_event(RuntimeEvent::Membership(
             pallet_membership::Event::MembershipAdded {
                 member: 6,
-                expire_on: 5
-                    + <Test as pallet_membership::Config<Instance1>>::MembershipPeriod::get(),
+                expire_on: 5 + <Test as pallet_membership::Config>::MembershipPeriod::get(),
             },
         ));
         System::assert_has_event(RuntimeEvent::Identity(
@@ -258,7 +153,7 @@ fn test_new_idty_validation() {
 /// test that Ferdie can confirm an identity created for him by Alice
 #[test]
 fn test_confirm_idty_ok() {
-    new_test_ext(5, 2).execute_with(|| {
+    new_test_ext(5).execute_with(|| {
         run_to_block(2);
 
         // Alice creates Ferdie identity
@@ -282,11 +177,10 @@ fn test_confirm_idty_ok() {
 }
 
 /// test identity revocation
-/// - a smith ca not revoke his identity
 /// - anyone can submit a revocation certificate signed by bob
 #[test]
 fn test_revoke_idty() {
-    new_test_ext(5, 1).execute_with(|| {
+    new_test_ext(5).execute_with(|| {
         run_to_block(2);
 
         // Alice identity can be revoked
@@ -308,13 +202,6 @@ fn test_revoke_idty() {
         ));
         // her membership should be removed
         System::assert_has_event(RuntimeEvent::Membership(
-            pallet_membership::Event::MembershipRemoved {
-                member: 1,
-                reason: pallet_membership::MembershipRemovalReason::Revoked,
-            },
-        ));
-        // and her smith membership should be removed as well
-        System::assert_has_event(RuntimeEvent::SmithMembership(
             pallet_membership::Event::MembershipRemoved {
                 member: 1,
                 reason: pallet_membership::MembershipRemovalReason::Revoked,
@@ -351,7 +238,7 @@ fn test_revoke_idty() {
 /// test that expired membership lose the identity after a delay
 #[test]
 fn test_idty_membership_expire() {
-    new_test_ext(3, 2).execute_with(|| {
+    new_test_ext(3).execute_with(|| {
         run_to_block(4);
 
         // Alice renews her membership
@@ -411,7 +298,7 @@ fn test_idty_membership_expire() {
         // Alice can't certify revoked identity
         assert_noop!(
             Cert::add_cert(RuntimeOrigin::signed(1), 1, 3),
-            pallet_duniter_wot::Error::<Test, Instance1>::CertToRevoked
+            pallet_duniter_wot::Error::<Test>::CertToRevoked
         );
 
         run_to_block(21);
@@ -424,7 +311,7 @@ fn test_idty_membership_expire() {
         // Alice can't certify removed identity
         assert_noop!(
             Cert::add_cert(RuntimeOrigin::signed(1), 1, 3),
-            pallet_duniter_wot::Error::<Test, Instance1>::IdtyNotFound
+            pallet_duniter_wot::Error::<Test>::IdtyNotFound
         );
     });
 }
@@ -432,7 +319,7 @@ fn test_idty_membership_expire() {
 /// when an identity is confirmed and not validated, the certification received should be removed
 #[test]
 fn test_unvalidated_idty_certs_removal() {
-    new_test_ext(5, 2).execute_with(|| {
+    new_test_ext(5).execute_with(|| {
         // Alice creates Ferdie identity
         run_to_block(2);
         assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 6));
@@ -455,49 +342,23 @@ fn test_unvalidated_idty_certs_removal() {
 /// test what happens when certification expire
 #[test]
 fn test_certification_expire() {
-    new_test_ext(3, 3).execute_with(|| {
+    new_test_ext(3).execute_with(|| {
         // smith cert Bob → Alice not renewed
         // cert Bob → Alice not renewed
         // --- BLOCK 2 ---
         run_to_block(2);
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(1), 1, 2));
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(2), 2, 3));
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(3), 3, 1));
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(1), 1, 2));
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 2, 3));
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 1));
         // --- BLOCK 4 ---
         run_to_block(4);
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(1), 1, 3));
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(3), 3, 2));
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(1), 1, 3));
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 2));
         // --- BLOCK 7 ---
         run_to_block(7);
-        assert_ok!(SmithMembership::renew_membership(RuntimeOrigin::signed(1)));
-        assert_ok!(SmithMembership::renew_membership(RuntimeOrigin::signed(2)));
-        assert_ok!(SmithMembership::renew_membership(RuntimeOrigin::signed(3)));
         assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(1)));
         assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(2)));
         assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(3)));
-
-        // smith cert Bob → Alice expires at block 10
-        run_to_block(10);
-        // println!("{:?}", System::events());
-        System::assert_has_event(RuntimeEvent::SmithCert(
-            pallet_certification::Event::CertRemoved {
-                issuer: 2,   // Bob
-                receiver: 1, // Alice
-                expiration: true,
-            },
-        ));
-        // in consequence, since Alice has only 1/2 smith certification remaining, she looses smith membership
-        System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipRemoved {
-                member: 1,
-                reason: MembershipRemovalReason::NotEnoughCerts,
-            },
-        ));
 
         // --- BLOCK 14 ---
         run_to_block(14);
@@ -532,13 +393,13 @@ fn test_certification_expire() {
         // Alice can not renew her membership which does not exist
         assert_noop!(
             Membership::renew_membership(RuntimeOrigin::signed(1)),
-            pallet_membership::Error::<Test, Instance1>::MembershipNotFound
+            pallet_membership::Error::<Test>::MembershipNotFound
         );
 
         // Alice can not claim her membership because she does not have enough certifications
         assert_noop!(
             Membership::claim_membership(RuntimeOrigin::signed(1)),
-            pallet_duniter_wot::Error::<Test, Instance1>::NotEnoughCertsToClaimMembership
+            pallet_duniter_wot::Error::<Test>::NotEnoughCertsToClaimMembership
         );
 
         // --- BLOCK 23 ---
@@ -559,77 +420,26 @@ fn test_certification_expire() {
 // - when source or target membership is pending (both wot)
 #[test]
 fn test_cert_can_not_be_issued() {
-    new_test_ext(4, 3).execute_with(|| {
+    new_test_ext(4).execute_with(|| {
         // smith cert Bob → Alice not renewed
         // cert Bob → Alice not renewed
         // --- BLOCK 2 ---
         run_to_block(2);
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(1), 1, 2)); // +10
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(2), 2, 3)); // +10
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(3), 3, 1)); // +10
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(1), 1, 2)); // +20
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 2, 3)); // +20
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 4)); // +20
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(4), 4, 1)); // +20
                                                                     // --- BLOCK 4 ---
         run_to_block(4);
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(1), 1, 3)); // +10
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(3), 3, 2)); // +10
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 2, 4)); // +20
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 2)); // +20
         assert_ok!(Cert::add_cert(RuntimeOrigin::signed(4), 4, 3)); // +20
                                                                     // --- BLOCK 7 ---
         run_to_block(7);
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(3), 3, 1)); // +10
-        assert_ok!(SmithMembership::renew_membership(RuntimeOrigin::signed(1))); // +20
-        assert_ok!(SmithMembership::renew_membership(RuntimeOrigin::signed(2))); // +20
-        assert_ok!(SmithMembership::renew_membership(RuntimeOrigin::signed(3))); // +20
         assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(1))); // + 8
         assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(2))); // + 8
         assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(3))); // + 8
         assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(4))); // + 8
-
-        // smith cert Bob → Alice expires at block 10
-        run_to_block(10);
-        // println!("{:?}", System::events());
-        System::assert_has_event(RuntimeEvent::SmithCert(
-            pallet_certification::Event::CertRemoved {
-                issuer: 2,   // Bob
-                receiver: 1, // Alice
-                expiration: true,
-            },
-        ));
-        // in consequence, since Alice has only 1/2 smith certification remaining, she looses smith membership
-        System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipRemoved {
-                member: 1,
-                reason: MembershipRemovalReason::NotEnoughCerts,
-            },
-        ));
-
-        run_to_block(11);
-        // Dave should be able to receive a smith cert since
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(3), 3, 4));
-        // Bob renews his smith certification towards Alice
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(2), 2, 1));
-        // now Alice has enough certs
-        assert_eq!(
-            SmithCert::idty_cert_meta(1),
-            pallet_certification::IdtyCertMeta {
-                issued_count: 2, // → Bob, → Charlie
-                // since Alice got back to min number of received certs to be able to issue cert
-                // her next_issuable_on was updated to block_number (11) + cert_period (2)
-                next_issuable_on: 13, // 11 + 2
-                received_count: 2     // ← Bob, ← Charlie
-            }
-        );
-
-        // because Alice did not claim membership, she is not member at this point
-        assert_eq!(SmithMembership::membership(1), None);
-        run_to_block(13);
-        // /!\ COUNTERINTUITIVE BEHAVIOR
-        // Alice is not smith member, she should not be able to issue cert
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(1), 1, 2));
 
         run_to_block(14);
         assert_ok!(Membership::renew_membership(RuntimeOrigin::signed(1))); // + 8
@@ -667,56 +477,5 @@ fn test_cert_can_not_be_issued() {
         // run_to_block(23);
         // if identity of alice was not removed because pending for too long
         // she would have been able to emit a cert without being member
-    })
-}
-
-/// test non smith identity can not emit smith cert
-#[test]
-fn test_non_smith_can_not_issue_smith_cert() {
-    new_test_ext(4, 3).execute_with(|| {
-        assert_noop!(
-            SmithCert::add_cert(RuntimeOrigin::signed(4), 4, 1),
-            pallet_certification::Error::<Test, Instance2>::NotEnoughCertReceived
-        );
-    })
-}
-
-/// FIXME this test should not fail with NotRespectCertPeriod but NotSmith or somthing like that
-/// test non smith identity can not emit smith cert
-#[test]
-fn test_non_smith_with_certs_can_not_issue_smith_cert() {
-    new_test_ext(4, 3).execute_with(|| {
-        run_to_block(2);
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(1), 1, 4));
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(2), 2, 4));
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(3), 3, 4));
-        assert_noop!(
-            SmithCert::add_cert(RuntimeOrigin::signed(4), 4, 1),
-            pallet_certification::Error::<Test, Instance2>::NotRespectCertPeriod
-        );
-    })
-}
-
-/// FIXME this test should not succeed because Dave should not be able to issue cert
-/// after revocation of his smith membership
-/// test non smith identity can not emit smith cert
-#[test]
-fn test_revoked_smith_with_certs_can_not_issue_smith_cert() {
-    new_test_ext(4, 3).execute_with(|| {
-        run_to_block(2);
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(1), 1, 4));
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(2), 2, 4));
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(3), 3, 4));
-        assert_ok!(SmithMembership::claim_membership(RuntimeOrigin::signed(4)));
-        assert_noop!(
-            SmithCert::add_cert(RuntimeOrigin::signed(4), 4, 1),
-            pallet_certification::Error::<Test, Instance2>::NotRespectCertPeriod
-        );
-        run_to_block(4);
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(4), 4, 1),);
-        run_to_block(5);
-        assert_ok!(SmithMembership::revoke_membership(RuntimeOrigin::signed(4)));
-        run_to_block(6);
-        assert_ok!(SmithCert::add_cert(RuntimeOrigin::signed(4), 4, 1),);
     })
 }

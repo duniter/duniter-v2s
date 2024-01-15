@@ -36,7 +36,6 @@ use frame_support::pallet_prelude::*;
 use pallet_certification::traits::SetNextIssuableOn;
 use pallet_identity::{IdtyEvent, IdtyStatus};
 use pallet_membership::MembershipRemovalReason;
-use sp_runtime::traits::IsMember;
 
 type IdtyIndex = u32;
 
@@ -51,23 +50,21 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
-    pub struct Pallet<T, I = ()>(_);
+    pub struct Pallet<T>(_);
 
     // CONFIG //
 
     #[pallet::config]
-    pub trait Config<I: 'static = ()>:
+    pub trait Config:
         frame_system::Config
-        + pallet_certification::Config<I, IdtyIndex = IdtyIndex>
+        + pallet_certification::Config<IdtyIndex = IdtyIndex>
         + pallet_identity::Config<IdtyIndex = IdtyIndex>
-        + pallet_membership::Config<I, IdtyId = IdtyIndex>
+        + pallet_membership::Config<IdtyId = IdtyIndex>
     {
         /// Distance evaluation provider
         type IsDistanceOk: IsDistanceOk<IdtyIndex>;
         #[pallet::constant]
         type FirstIssuableOn: Get<Self::BlockNumber>;
-        #[pallet::constant]
-        type IsSubWot: Get<bool>;
         #[pallet::constant]
         type MinCertForMembership: Get<u32>;
         #[pallet::constant]
@@ -76,10 +73,10 @@ pub mod pallet {
 
     // INTERNAL FUNCTIONS //
 
-    impl<T: Config<I>, I: 'static> Pallet<T, I> {
+    impl<T: Config> Pallet<T> {
         pub(super) fn do_apply_first_issuable_on(idty_index: IdtyIndex) {
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
-            pallet_certification::Pallet::<T, I>::set_next_issuable_on(
+            pallet_certification::Pallet::<T>::set_next_issuable_on(
                 idty_index,
                 block_number + T::FirstIssuableOn::get(),
             );
@@ -89,7 +86,7 @@ pub mod pallet {
     // ERRORS //
 
     #[pallet::error]
-    pub enum Error<T, I = ()> {
+    pub enum Error<T> {
         /// Insufficient certifications received to claim membership.
         NotEnoughCertsToClaimMembership,
         /// Distance is invalid.
@@ -126,61 +123,37 @@ pub mod pallet {
 }
 
 // implement identity call checks
-impl<AccountId, T: Config<I>, I: 'static> pallet_identity::traits::CheckIdtyCallAllowed<T>
-    for Pallet<T, I>
+impl<AccountId, T: Config> pallet_identity::traits::CheckIdtyCallAllowed<T> for Pallet<T>
 where
-    T: frame_system::Config<AccountId = AccountId> + pallet_membership::Config<I>,
+    T: frame_system::Config<AccountId = AccountId> + pallet_membership::Config,
 {
     // identity creation checks
     fn check_create_identity(creator: IdtyIndex) -> Result<(), DispatchError> {
-        // main WoT constraints
-        if !T::IsSubWot::get() {
-            let cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(creator);
-            // perform all checks
-            // 1. check that identity has the right to create an identity
-            // identity can be member with 5 certifications and still not reach identity creation threshold which could be higher (6, 7...)
-            ensure!(
-                cert_meta.received_count >= T::MinCertForCreateIdtyRight::get(),
-                Error::<T, I>::NotEnoughReceivedCertsToCreateIdty
-            );
-            // 2. check that issuer can emit one more certification
-            // (this is only a partial check)
-            ensure!(
-                cert_meta.issued_count < T::MaxByIssuer::get(),
-                Error::<T, I>::MaxEmittedCertsReached
-            );
-            // 3. check that issuer respects certification creation period
-            ensure!(
-                cert_meta.next_issuable_on <= frame_system::pallet::Pallet::<T>::block_number(),
-                Error::<T, I>::IdtyCreationPeriodNotRespected
-            );
-        }
-        // TODO (#136) make these trait implementation work on instances rather than static to avoid checking IsSubWot
-        // smith subwot can never prevent from creating identity
-        Ok(())
-    }
-
-    // identity change owner key cheks
-    fn change_owner_key(idty_index: IdtyIndex) -> Result<(), DispatchError> {
-        // sub WoT prevents from changing identity
-        if T::IsSubWot::get() {
-            ensure!(
-                !pallet_membership::Pallet::<T, I>::is_member(&idty_index),
-                Error::<T, I>::NotAllowedToChangeIdtyAddress
-            );
-        }
-        // no constraints for main wot
+        let cert_meta = pallet_certification::Pallet::<T>::idty_cert_meta(creator);
+        // perform all checks
+        // 1. check that identity has the right to create an identity
+        // identity can be member with 5 certifications and still not reach identity creation threshold which could be higher (6, 7...)
+        ensure!(
+            cert_meta.received_count >= T::MinCertForCreateIdtyRight::get(),
+            Error::<T>::NotEnoughReceivedCertsToCreateIdty
+        );
+        // 2. check that issuer can emit one more certification
+        // (this is only a partial check)
+        ensure!(
+            cert_meta.issued_count < T::MaxByIssuer::get(),
+            Error::<T>::MaxEmittedCertsReached
+        );
+        // 3. check that issuer respects certification creation period
+        ensure!(
+            cert_meta.next_issuable_on <= frame_system::pallet::Pallet::<T>::block_number(),
+            Error::<T>::IdtyCreationPeriodNotRespected
+        );
         Ok(())
     }
 }
 
 // implement cert call checks
-impl<T: Config<I>, I: 'static> pallet_certification::traits::CheckCertAllowed<IdtyIndex>
-    for Pallet<T, I>
-// TODO (#136) add the following where clause once checks can be done on pallet instance
-// where
-//     T: pallet_membership::Config<I>,
-{
+impl<T: Config> pallet_certification::traits::CheckCertAllowed<IdtyIndex> for Pallet<T> {
     // check the following:
     // - issuer has identity
     // - issuer identity is member
@@ -192,10 +165,10 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::CheckCertAllowed<Id
         if let Some(issuer_data) = pallet_identity::Pallet::<T>::identity(issuer) {
             ensure!(
                 issuer_data.status == IdtyStatus::Member,
-                Error::<T, I>::IssuerNotMember
+                Error::<T>::IssuerNotMember
             );
         } else {
-            return Err(Error::<T, I>::IdtyNotFound.into());
+            return Err(Error::<T>::IdtyNotFound.into());
         }
 
         // receiver checks
@@ -204,26 +177,24 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::CheckCertAllowed<Id
             match receiver_data.status {
                 // able to receive cert
                 IdtyStatus::Unvalidated | IdtyStatus::Member | IdtyStatus::NotMember => {}
-                IdtyStatus::Unconfirmed => return Err(Error::<T, I>::CertToUnconfirmed.into()),
-                IdtyStatus::Revoked => return Err(Error::<T, I>::CertToRevoked.into()),
+                IdtyStatus::Unconfirmed => return Err(Error::<T>::CertToUnconfirmed.into()),
+                IdtyStatus::Revoked => return Err(Error::<T>::CertToRevoked.into()),
             };
         } else {
-            return Err(Error::<T, I>::IdtyNotFound.into());
+            return Err(Error::<T>::IdtyNotFound.into());
         }
         Ok(())
     }
 }
 
 // implement membership call checks
-impl<T: Config<I>, I: 'static> sp_membership::traits::CheckMembershipCallAllowed<IdtyIndex>
-    for Pallet<T, I>
-{
+impl<T: Config> sp_membership::traits::CheckMembershipCallAllowed<IdtyIndex> for Pallet<T> {
     // membership claim is only possible when enough certs are received (both wots) and distance is ok
     fn check_idty_allowed_to_claim_membership(idty_index: &IdtyIndex) -> Result<(), DispatchError> {
-        let idty_cert_meta = pallet_certification::Pallet::<T, I>::idty_cert_meta(idty_index);
+        let idty_cert_meta = pallet_certification::Pallet::<T>::idty_cert_meta(idty_index);
         ensure!(
             idty_cert_meta.received_count >= T::MinCertForMembership::get(),
-            Error::<T, I>::NotEnoughCertsToClaimMembership
+            Error::<T>::NotEnoughCertsToClaimMembership
         );
         T::IsDistanceOk::is_distance_ok(idty_index)?;
         Ok(())
@@ -234,35 +205,31 @@ impl<T: Config<I>, I: 'static> sp_membership::traits::CheckMembershipCallAllowed
         if let Some(idty_value) = pallet_identity::Pallet::<T>::identity(idty_index) {
             ensure!(
                 idty_value.status == IdtyStatus::Member,
-                Error::<T, I>::IdtyNotAllowedToRenewMembership
+                Error::<T>::IdtyNotAllowedToRenewMembership
             );
             T::IsDistanceOk::is_distance_ok(idty_index)?;
         } else {
-            return Err(Error::<T, I>::IdtyNotFound.into());
+            return Err(Error::<T>::IdtyNotFound.into());
         }
         Ok(())
     }
 }
 
 // implement membership event handler
-impl<T: Config<I>, I: 'static> sp_membership::traits::OnEvent<IdtyIndex> for Pallet<T, I>
+impl<T: Config> sp_membership::traits::OnEvent<IdtyIndex> for Pallet<T>
 where
-    T: pallet_membership::Config<I>,
+    T: pallet_membership::Config,
 {
     fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) {
         match membership_event {
             sp_membership::Event::<IdtyIndex>::MembershipAdded(idty_index) => {
-                if !T::IsSubWot::get() {
-                    // when main membership is acquired, tell identity
-                    // (only used on first membership acquiry)
-                    pallet_identity::Pallet::<T>::membership_added(*idty_index);
-                }
+                // when main membership is acquired, tell identity
+                // (only used on first membership acquiry)
+                pallet_identity::Pallet::<T>::membership_added(*idty_index);
             }
             sp_membership::Event::<IdtyIndex>::MembershipRemoved(idty_index) => {
-                if !T::IsSubWot::get() {
-                    // when main membership is lost, tell identity
-                    pallet_identity::Pallet::<T>::membership_removed(*idty_index);
-                }
+                // when main membership is lost, tell identity
+                pallet_identity::Pallet::<T>::membership_removed(*idty_index);
             }
             sp_membership::Event::<IdtyIndex>::MembershipRenewed(_) => {}
         }
@@ -270,12 +237,12 @@ where
 }
 
 // implement identity event handler
-impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pallet<T, I> {
+impl<T: Config> pallet_identity::traits::OnIdtyChange<T> for Pallet<T> {
     fn on_idty_change(idty_index: IdtyIndex, idty_event: &IdtyEvent<T>) {
         match idty_event {
             // identity just has been created, a cert must be added
             IdtyEvent::Created { creator, .. } => {
-                if let Err(e) = <pallet_certification::Pallet<T, I>>::do_add_cert_checked(
+                if let Err(e) = <pallet_certification::Pallet<T>>::do_add_cert_checked(
                     *creator, idty_index, true,
                 ) {
                     sp_std::if_std! {
@@ -288,7 +255,7 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pall
             // if identity is removed also remove certs
             IdtyEvent::Removed { status } => {
                 // try remove membership in any case
-                <pallet_membership::Pallet<T, I>>::do_remove_membership(
+                <pallet_membership::Pallet<T>>::do_remove_membership(
                     idty_index,
                     MembershipRemovalReason::Revoked,
                 );
@@ -297,7 +264,7 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pall
                 match status {
                     IdtyStatus::Unconfirmed | IdtyStatus::Unvalidated => {
                         if let Err(e) =
-                            <pallet_certification::Pallet<T, I>>::remove_all_certs_received_by(
+                            <pallet_certification::Pallet<T>>::remove_all_certs_received_by(
                                 frame_system::Origin::<T>::Root.into(),
                                 idty_index,
                             )
@@ -321,7 +288,7 @@ impl<T: Config<I>, I: 'static> pallet_identity::traits::OnIdtyChange<T> for Pall
 
 // implement certification event handlers
 // new cert handler
-impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex> for Pallet<T, I> {
+impl<T: Config> pallet_certification::traits::OnNewcert<IdtyIndex> for Pallet<T> {
     fn on_new_cert(
         _issuer: IdtyIndex,
         _issuer_issued_count: u32,
@@ -335,9 +302,7 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnNewcert<IdtyIndex
 }
 
 // remove cert handler
-impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyIndex>
-    for Pallet<T, I>
-{
+impl<T: Config> pallet_certification::traits::OnRemovedCert<IdtyIndex> for Pallet<T> {
     fn on_removed_cert(
         _issuer: IdtyIndex,
         _issuer_issued_count: u32,
@@ -346,10 +311,10 @@ impl<T: Config<I>, I: 'static> pallet_certification::traits::OnRemovedCert<IdtyI
         _expiration: bool,
     ) {
         if receiver_received_count < T::MinCertForMembership::get()
-            && pallet_membership::Pallet::<T, I>::is_member(&receiver)
+            && pallet_membership::Pallet::<T>::is_member(&receiver)
         {
             // expire receiver membership
-            <pallet_membership::Pallet<T, I>>::do_remove_membership(
+            <pallet_membership::Pallet<T>>::do_remove_membership(
                 receiver,
                 MembershipRemovalReason::NotEnoughCerts,
             )

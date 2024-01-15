@@ -156,6 +156,7 @@ members = [
     'pallets/membership',
     'pallets/oneshot-account',
     'pallets/authority-members',
+    'pallets/smith-members',
     'pallets/universal-dividend',
     'pallets/upgrade-origin',
     'primitives/membership',

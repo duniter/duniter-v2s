@@ -18,7 +18,7 @@
 
 use super::*;
 
-use frame_benchmarking::benchmarks_instance_pallet;
+use frame_benchmarking::benchmarks;
 use frame_system::pallet_prelude::BlockNumberFor;
 use frame_system::RawOrigin;
 use sp_runtime::traits::{Convert, One};
@@ -28,11 +28,11 @@ use maplit::btreemap;
 
 use crate::Pallet;
 
-fn assert_has_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::RuntimeEvent) {
+fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     frame_system::Pallet::<T>::assert_has_event(generic_event.into());
 }
 
-benchmarks_instance_pallet! {
+benchmarks! {
     where_clause {
         where
             T::IdtyId: From<u32>,
@@ -42,13 +42,13 @@ benchmarks_instance_pallet! {
     // claim membership
     claim_membership {
         let idty: T::IdtyId = 3.into();
-        Membership::<T, I>::take(idty);
+        Membership::<T>::take(idty);
         let caller: T::AccountId = T::AccountIdOf::convert(idty).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         T::BenchmarkSetupHandler::force_status_ok(&idty, &caller);
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
-        assert_has_event::<T, I>(Event::<T, I>::MembershipAdded{member: idty, expire_on: BlockNumberFor::<T>::one() + T::MembershipPeriod::get()}.into());
+        assert_has_event::<T>(Event::<T>::MembershipAdded{member: idty, expire_on: BlockNumberFor::<T>::one() + T::MembershipPeriod::get()}.into());
     }
 
     // renew membership
@@ -59,7 +59,7 @@ benchmarks_instance_pallet! {
         T::BenchmarkSetupHandler::force_status_ok(&idty, &caller);
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
-        assert_has_event::<T, I>(Event::<T, I>::MembershipAdded{member: idty, expire_on: BlockNumberFor::<T>::one() + T::MembershipPeriod::get()}.into());
+        assert_has_event::<T>(Event::<T>::MembershipAdded{member: idty, expire_on: BlockNumberFor::<T>::one() + T::MembershipPeriod::get()}.into());
     }
 
     // revoke membership
@@ -70,12 +70,12 @@ benchmarks_instance_pallet! {
         frame_system::pallet::Pallet::<T>::set_block_number(10_000_000.into()); // Arbitrarily high, to be in the worst case of wot instance.
     }: _<T::RuntimeOrigin>(caller_origin)
     verify {
-        assert_has_event::<T, I>(Event::<T, I>::MembershipRemoved{member: idty, reason: MembershipRemovalReason::Revoked}.into());
+        assert_has_event::<T>(Event::<T>::MembershipRemoved{member: idty, reason: MembershipRemovalReason::Revoked}.into());
     }
 
     // Base weight of an empty initialize
     on_initialize {
-    }: {Pallet::<T, I>::on_initialize(BlockNumberFor::<T>::zero());}
+    }: {Pallet::<T>::on_initialize(BlockNumberFor::<T>::zero());}
 
     expire_memberships {
         let i in 0..3; // Limited by the number of validators
@@ -86,14 +86,14 @@ benchmarks_instance_pallet! {
         let mut idties: Vec<T::IdtyId> = Vec::new();
         for j in 1..i+1 {
             let j: T::IdtyId = j.into();
-            Membership::<T, I>::insert(j, MembershipData::<T::BlockNumber>::default());
+            Membership::<T>::insert(j, MembershipData::<T::BlockNumber>::default());
             idties.push(j);
         }
-        MembershipsExpireOn::<T, I>::insert(block_number, idties);
-        assert_eq!(MembershipsExpireOn::<T, I>::get(block_number).len(), i as usize);
-    }: {Pallet::<T, I>::expire_memberships(block_number);}
+        MembershipsExpireOn::<T>::insert(block_number, idties);
+        assert_eq!(MembershipsExpireOn::<T>::get(block_number).len(), i as usize);
+    }: {Pallet::<T>::expire_memberships(block_number);}
     verify {
-        assert_eq!(MembershipsExpireOn::<T, I>::get(block_number).len(), 0_usize);
+        assert_eq!(MembershipsExpireOn::<T>::get(block_number).len(), 0_usize);
     }
 
     impl_benchmark_test_suite!(

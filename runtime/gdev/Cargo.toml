@@ -23,6 +23,7 @@ runtime-benchmarks = [
     'frame-system/runtime-benchmarks',
     'hex-literal',
     'pallet-authority-members/runtime-benchmarks',
+    'pallet-smith-members/runtime-benchmarks',
     'pallet-babe/runtime-benchmarks',
     'pallet-balances/runtime-benchmarks',
     'pallet-certification/runtime-benchmarks',
@@ -62,6 +63,7 @@ std = [
     'pallet-atomic-swap/std',
     'pallet-authority-discovery/std',
     'pallet-authority-members/std',
+    'pallet-smith-members/std',
     'pallet-babe/std',
     'pallet-balances/std',
     'pallet-certification/std',
@@ -141,6 +143,7 @@ sp-staking = { git = 'https://github.com/duniter/substrate', branch = 'duniter-s
 # local
 common-runtime = { path = "../common", default-features = false }
 pallet-authority-members = { path = '../../pallets/authority-members', default-features = false }
+pallet-smith-members = { path = '../../pallets/smith-members', default-features = false }
 pallet-certification = { path = '../../pallets/certification', default-features = false }
 pallet-distance = { path = "../../pallets/distance", default-features = false }
 pallet-duniter-test-parameters = { path = '../../pallets/duniter-test-parameters', default-features = false }

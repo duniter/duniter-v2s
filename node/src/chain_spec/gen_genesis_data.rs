@@ -74,8 +74,7 @@ pub struct GenesisData<Parameters: DeserializeOwned, SessionKeys: Decode> {
     pub parameters: Option<Parameters>,
     pub common_parameters: Option<CommonParameters>,
     pub session_keys_map: BTreeMap<AccountId, SessionKeys>,
-    pub smith_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
-    pub smith_memberships: BTreeMap<u32, MembershipData>,
+    pub initial_smiths: BTreeMap<u32, (bool, Vec<u32>)>,
     pub sudo_key: Option<AccountId>,
     pub technical_committee_members: Vec<AccountId>,
     pub ud: u64,
@@ -235,9 +234,8 @@ struct CliqueSmith {
     session_keys: Option<String>,
 }
 
-struct SmithWoT<SK: Decode> {
-    smith_certs_by_receiver: BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
-    smith_memberships: BTreeMap<u32, sp_membership::MembershipData<u32>>,
+struct SmithMembers<SK: Decode> {
+    initial_smiths_wot: BTreeMap<u32, (bool, Vec<u32>)>,
     session_keys_map:
         BTreeMap<<<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId, SK>,
 }
@@ -249,7 +247,7 @@ struct GenesisInfo<'a> {
     inactive_identities: &'a HashMap<u32, String>,
     identities: &'a Vec<GenesisIdentity>,
     identity_index: &'a HashMap<u32, String>,
-    smith_memberships: &'a BTreeMap<u32, MembershipData>,
+    initial_smiths: &'a BTreeMap<u32, (bool, Vec<u32>)>,
     counter_online_authorities: &'a u32,
     counter_cert: &'a u32,
     counter_smith_cert: &'a u32,
@@ -395,16 +393,14 @@ where
         was_fatal,
         counter_online_authorities,
         counter_smith_cert,
-        SmithWoT {
-            smith_certs_by_receiver,
-            smith_memberships,
+        SmithMembers {
+            initial_smiths_wot,
             session_keys_map,
         },
     ) = create_smith_wot(
         &mut initial_authorities,
         &identities_v2,
         &smiths,
-        &common_parameters,
         &clique_smiths,
     )?;
     if was_fatal {
@@ -429,7 +425,7 @@ where
     }
 
     // Verify smith certifications coherence
-    for (idty_index, certs) in &smith_certs_by_receiver {
+    for (idty_index, (_online, certs)) in &initial_smiths_wot {
         if certs.len() < common_parameters.smith_sub_wot_min_cert_for_membership as usize {
             log::error!(
                 "[{}] has received only {}/{} smith certifications",
@@ -515,7 +511,7 @@ where
         identities: &identities,
         inactive_identities: &inactive_identities,
         identity_index: &identity_index,
-        smith_memberships: &smith_memberships,
+        initial_smiths: &initial_smiths_wot,
         counter_online_authorities: &counter_online_authorities,
         counter_cert: &counter_cert,
         counter_smith_cert: &counter_smith_cert,
@@ -637,8 +633,8 @@ where
         identities.len() - inactive_identities.len(),
         memberships.len()
     );
-    assert_eq!(smith_memberships.len(), initial_authorities.len());
-    assert_eq!(smith_memberships.len(), session_keys_map.len());
+    assert_eq!(initial_smiths_wot.len(), initial_authorities.len());
+    assert_eq!(initial_smiths_wot.len(), session_keys_map.len());
     assert_eq!(identity_index.len(), identities.len());
     assert_eq!(
         accounts.len(),
@@ -657,7 +653,6 @@ where
         // genesis_certs_min_received => min_cert
         // genesis_memberships_expire_on => membership_period
         // genesis_smith_certs_min_received => smith_min_cert
-        // genesis_smith_memberships_expire_on => smith_membership_period
         let export = GenesisIndexerExport {
             first_ud,
             first_ud_reeval,
@@ -730,8 +725,7 @@ where
         parameters,
         common_parameters: Some(common_parameters),
         session_keys_map,
-        smith_certs_by_receiver,
-        smith_memberships,
+        initial_smiths: initial_smiths_wot,
         sudo_key,
         technical_committee_members,
         ud,
@@ -759,7 +753,7 @@ fn dump_genesis_info(info: GenesisInfo) {
         info.identity_index.len(),
         info.identities.len() - info.inactive_identities.len(),
         info.inactive_identities.len(),
-        info.smith_memberships.len(),
+        info.initial_smiths.len(),
         info.counter_online_authorities,
         info.counter_cert,
         info.counter_smith_cert,
@@ -829,28 +823,15 @@ fn dump_genesis_info(info: GenesisInfo) {
         get_best_unit_and_diviser_for_perbill(p.distance_min_accessible_referees);
     let (distance_max_depth, distance_max_depth_unit) =
         get_best_unit_and_diviser_for_depth(p.distance_max_depth);
-    let (smith_sub_wot_first_issuable_on, smith_sub_wot_first_issuable_on_unit) =
-        get_best_unit_and_diviser_for_blocks(p.smith_sub_wot_first_issuable_on);
-    let (smith_sub_wot_min_cert_for_membership, smith_sub_wot_min_cert_for_membership_unit) =
+    let (smith_members_min_cert_for_membership, smith_members_min_cert_for_membership_unit) =
         get_best_unit_and_diviser_for_certs(p.smith_sub_wot_min_cert_for_membership);
-    let (smith_membership_membership_period, smith_membership_membership_period_unit) =
-        get_best_unit_and_diviser_for_blocks(p.smith_membership_membership_period);
-    let (
-        smith_membership_pending_membership_period,
-        smith_membership_pending_membership_period_unit,
-    ) = get_best_unit_and_diviser_for_blocks(p.smith_membership_pending_membership_period);
-    let (smith_cert_cert_period, smith_cert_cert_period_unit) =
-        get_best_unit_and_diviser_for_blocks(p.smith_cert_cert_period);
-    let (smith_cert_max_by_issuer, smith_cert_max_by_issuer_unit) =
+    let (smith_members_max_by_issuer, smith_members_max_by_issuer_unit) =
         get_best_unit_and_diviser_for_certs(p.smith_cert_max_by_issuer);
-    let (
-        smith_cert_min_received_cert_to_be_able_to_issue_cert,
-        smith_cert_min_received_cert_to_be_able_to_issue_cert_unit,
-    ) = get_best_unit_and_diviser_for_certs(
-        p.smith_cert_min_received_cert_to_be_able_to_issue_cert,
-    );
-    let (smith_cert_validity_period, smith_cert_validity_period_unit) =
-        get_best_unit_and_diviser_for_blocks(p.smith_cert_validity_period);
+    let (smith_members_inactivity_max_duration, smith_members_inactivity_max_duration_unit) =
+        get_best_unit_and_diviser_for_sessions(
+            p.smith_inactivity_max_duration,
+            p.babe_epoch_duration,
+        );
     let (treasury_spend_period, treasury_spend_period_unit) =
         get_best_unit_and_diviser_for_blocks(p.treasury_spend_period);
 
@@ -883,14 +864,9 @@ fn dump_genesis_info(info: GenesisInfo) {
         - cert.validity_period: {} {}
         - distance.min_accessible_referees: {} {}
         - distance.max_depth: {} {},
-        - smith_sub_wot.first_issuable_on: {} {}
-        - smith_sub_wot.min_cert_for_membership: {} {}
-        - smith_membership.membership_period: {} {}
-        - smith_membership.pending_membership_period: {} {}
-        - smith_cert.cert_period: {} {}
-        - smith_cert.max_by_issuer: {} {}
-        - smith_cert.min_received_cert_to_be_able_to_issue_cert: {} {}
-        - smith_cert.validity_period: {} {}
+        - smith_members.min_cert_for_membership: {} {}
+        - smith_members.max_by_issuer: {} {}
+        - smith_members.smith_inactivity_max_duration: {} {}
         - treasury.spend_period: {} {}
         - currency decimals: {}",
         babe_epoch_duration,
@@ -945,22 +921,12 @@ fn dump_genesis_info(info: GenesisInfo) {
         distance_min_accessible_referees_unit,
         distance_max_depth,
         distance_max_depth_unit,
-        smith_sub_wot_first_issuable_on,
-        smith_sub_wot_first_issuable_on_unit,
-        smith_sub_wot_min_cert_for_membership,
-        smith_sub_wot_min_cert_for_membership_unit,
-        smith_membership_membership_period,
-        smith_membership_membership_period_unit,
-        smith_membership_pending_membership_period,
-        smith_membership_pending_membership_period_unit,
-        smith_cert_cert_period,
-        smith_cert_cert_period_unit,
-        smith_cert_max_by_issuer,
-        smith_cert_max_by_issuer_unit,
-        smith_cert_min_received_cert_to_be_able_to_issue_cert,
-        smith_cert_min_received_cert_to_be_able_to_issue_cert_unit,
-        smith_cert_validity_period,
-        smith_cert_validity_period_unit,
+        smith_members_min_cert_for_membership,
+        smith_members_min_cert_for_membership_unit,
+        smith_members_max_by_issuer,
+        smith_members_max_by_issuer_unit,
+        smith_members_inactivity_max_duration,
+        smith_members_inactivity_max_duration_unit,
         treasury_spend_period,
         treasury_spend_period_unit,
         info.common_parameters.decimals,
@@ -976,6 +942,16 @@ fn get_best_unit_and_diviser_for_ms(duration_in_ms: f32) -> (f32, String) {
 
 fn get_best_unit_and_diviser_for_blocks(duration_in_blocks: u32) -> (f32, String) {
     let duration_in_ms = duration_in_blocks as f32 * (MILLISECS_PER_BLOCK as u32) as f32;
+    get_best_unit_and_diviser_for_ms(duration_in_ms)
+}
+
+fn get_best_unit_and_diviser_for_sessions(
+    duration_in_sessions: u32,
+    babe_epoch_duration_in_blocks: u64,
+) -> (f32, String) {
+    let duration_in_ms = duration_in_sessions as f32
+        * babe_epoch_duration_in_blocks as f32
+        * (MILLISECS_PER_BLOCK as u32) as f32;
     get_best_unit_and_diviser_for_ms(duration_in_ms)
 }
 
@@ -1073,16 +1049,14 @@ fn create_smith_wot<SK: Decode>(
     initial_authorities: &mut BTreeMap<u32, (AccountId32, bool)>,
     identities_v2: &HashMap<String, IdentityV2>,
     smiths: &Vec<SmithData>,
-    common_parameters: &CommonParameters,
     clique_smiths: &Option<Vec<CliqueSmith>>,
-) -> Result<(bool, u32, u32, SmithWoT<SK>), String> {
+) -> Result<(bool, u32, u32, SmithMembers<SK>), String> {
     let mut fatal = false;
     let mut counter_online_authorities = 0;
     // counter for smith certifications
     let mut counter_smith_cert = 0;
     let mut smith_certs_by_receiver = BTreeMap::new();
     // smith memberships
-    let mut smith_memberships = BTreeMap::new();
     let mut session_keys_map = BTreeMap::new();
     // Then create the smith WoT
     for smith in smiths {
@@ -1103,16 +1077,7 @@ fn create_smith_wot<SK: Decode>(
                 &smith,
                 identity,
                 &identities_v2_clone,
-                common_parameters,
             )?;
-
-            // smith memberships
-            smith_memberships.insert(
-                identity.index,
-                MembershipData {
-                    expire_on: common_parameters.smith_membership_membership_period,
-                },
-            );
         } else {
             log::error!(
                 "Smith '{}' does not correspond to exising identity",
@@ -1125,9 +1090,18 @@ fn create_smith_wot<SK: Decode>(
         fatal,
         counter_online_authorities,
         counter_smith_cert,
-        SmithWoT {
-            smith_certs_by_receiver,
-            smith_memberships,
+        SmithMembers {
+            initial_smiths_wot: smith_certs_by_receiver
+                .iter()
+                .map(|(k, v)| {
+                    let is_online = initial_authorities
+                        .iter()
+                        .filter(|(k2, (_, online))| *k2 == k && *online)
+                        .count()
+                        > 0;
+                    (*k, (is_online, v.clone()))
+                })
+                .collect(),
             session_keys_map,
         },
     ))
@@ -1549,15 +1523,14 @@ where
 }
 
 fn feed_smith_certs_by_receiver(
-    smith_certs_by_receiver: &mut BTreeMap<u32, BTreeMap<u32, Option<u32>>>,
+    smith_certs_by_receiver: &mut BTreeMap<u32, Vec<u32>>,
     clique_smiths: &Option<Vec<CliqueSmith>>,
     smith: &&SmithData,
     identity: &IdentityV2,
     identities_v2: &HashMap<String, IdentityV2>,
-    common_parameters: &CommonParameters,
 ) -> Result<u32, String> {
     let mut counter_smith_cert = 0;
-    let mut certs = BTreeMap::new();
+    let mut certs = Vec::<u32>::new();
     if clique_smiths.is_some() {
         // All initial smiths are considered to be certifying all each other
         clique_smiths
@@ -1572,7 +1545,7 @@ fn feed_smith_certs_by_receiver(
                         panic!("Identity '{}' does not exist", other_smith.name.as_str())
                     })
                     .index;
-                certs.insert(*issuer_index, None);
+                certs.push(*issuer_index);
                 counter_smith_cert += 1;
             });
     } else {
@@ -1581,10 +1554,7 @@ fn feed_smith_certs_by_receiver(
                 .get(issuer)
                 .ok_or(format!("Identity '{}' does not exist", issuer))?
                 .index;
-            certs.insert(
-                *issuer_index,
-                Some(common_parameters.smith_cert_validity_period),
-            );
+            certs.push(*issuer_index);
             counter_smith_cert += 1;
         }
     }
@@ -1767,11 +1737,11 @@ where
     let genesis_data_wallets_count = 0;
     let inactive_identities = HashMap::new();
 
-    let smith_memberships = (1..=initial_smiths_len)
-        .map(|i| (i as u32, MembershipData { expire_on: 0 }))
-        .collect();
-
-    let (smith_certs_by_receiver, counter_smith_cert) = clique_wot(initial_smiths_len);
+    let initial_smiths_wot: BTreeMap<u32, (bool, Vec<u32>)> = clique_smith_wot(initial_smiths_len);
+    let counter_smith_cert = initial_smiths_wot
+        .iter()
+        .map(|(_, (_, v))| v.len())
+        .sum::<usize>() as u32;
 
     let initial_authorities: BTreeMap<
         u32,
@@ -1808,7 +1778,7 @@ where
         identities: &identities,
         inactive_identities: &inactive_identities,
         identity_index: &identity_index,
-        smith_memberships: &smith_memberships,
+        initial_smiths: &initial_smiths_wot,
         counter_online_authorities: &counter_online_authorities,
         counter_cert: &counter_cert,
         counter_smith_cert: &counter_smith_cert,
@@ -1834,8 +1804,7 @@ where
         parameters,
         common_parameters: None,
         session_keys_map,
-        smith_certs_by_receiver,
-        smith_memberships,
+        initial_smiths: initial_smiths_wot,
         sudo_key: Some(root_key),
         technical_committee_members,
         ud,
@@ -1869,6 +1838,23 @@ fn clique_wot(
         );
     }
     (certs_by_issuer, count)
+}
+
+#[cfg(feature = "gdev")]
+fn clique_smith_wot(initial_identities_len: usize) -> BTreeMap<IdtyIndex, (bool, Vec<IdtyIndex>)> {
+    let mut certs_by_issuer = BTreeMap::new();
+    for i in 1..=initial_identities_len {
+        certs_by_issuer.insert(
+            i as IdtyIndex,
+            (
+                true,
+                (1..=initial_identities_len)
+                    .filter_map(|j| if i != j { Some(j as IdtyIndex) } else { None })
+                    .collect(),
+            ),
+        );
+    }
+    certs_by_issuer
 }
 
 fn check_parameters_consistency(
@@ -1999,14 +1985,9 @@ pub struct CommonParameters {
     pub cert_validity_period: u32,
     pub distance_min_accessible_referees: Perbill,
     pub distance_max_depth: u32,
-    pub smith_sub_wot_first_issuable_on: u32,
     pub smith_sub_wot_min_cert_for_membership: u32,
-    pub smith_membership_membership_period: u32,
-    pub smith_membership_pending_membership_period: u32,
-    pub smith_cert_cert_period: u32,
     pub smith_cert_max_by_issuer: u32,
-    pub smith_cert_min_received_cert_to_be_able_to_issue_cert: u32,
-    pub smith_cert_validity_period: u32,
+    pub smith_inactivity_max_duration: u32,
     pub treasury_spend_period: u32,
     // TODO: replace u32 by BlockNumber when appropriate
     pub currency_name: String,

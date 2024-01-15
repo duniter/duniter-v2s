@@ -67,6 +67,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
+use frame_support::instances::Instance2;
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{EqualPrivilegeOnly, KeyOwnerProofSystem, Randomness},
@@ -141,7 +142,6 @@ pub type TechnicalCommitteeInstance = Instance2;
 mod benches {
     define_benchmarks!(
         [pallet_certification, Cert]
-        [pallet_certification, SmithCert]
         [pallet_distance, Distance]
         [pallet_oneshot_account, OneshotAccount]
         [pallet_universal_dividend, UniversalDividend]
@@ -151,7 +151,7 @@ mod benches {
         [pallet_quota, Quota]
         [pallet_identity, Identity]
         [pallet_membership, Membership]
-        [pallet_membership, SmithMembership]
+        [pallet_smith_members, SmithMembers]
         [pallet_authority_members, AuthorityMembers]
         // Substrate
         [pallet_balances, Balances]
@@ -218,7 +218,9 @@ impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
                 // Some calls are never authorized from a proxied account
                 !matches!(
                     c,
-                    RuntimeCall::Cert(..) | RuntimeCall::Identity(..) | RuntimeCall::SmithCert(..)
+                    RuntimeCall::Cert(..)
+                        | RuntimeCall::Identity(..)
+                        | RuntimeCall::SmithMembers(..)
                 )
             }
             ProxyType::TransferOnly => {
@@ -261,20 +263,16 @@ common_runtime::pallets_config! {
     pub type WotMinCertForMembership = pallet_duniter_test_parameters::WotMinCertForMembership<Runtime>;
     pub type WotMinCertForCreateIdtyRight =
         pallet_duniter_test_parameters::WotMinCertForCreateIdtyRight<Runtime>;
-    pub type SmithCertPeriod = pallet_duniter_test_parameters::SmithCertPeriod<Runtime>;
     pub type SmithMaxByIssuer = pallet_duniter_test_parameters::SmithCertMaxByIssuer<Runtime>;
-    pub type SmithMinReceivedCertToBeAbleToIssueCert =
-        pallet_duniter_test_parameters::SmithCertMinReceivedCertToIssueCert<Runtime>;
-    pub type SmithValidityPeriod = pallet_duniter_test_parameters::SmithCertValidityPeriod<Runtime>;
-    pub type SmithMembershipPeriod = pallet_duniter_test_parameters::SmithMembershipPeriod<Runtime>;
-    pub type SmithWotFirstCertIssuableOn =
-        pallet_duniter_test_parameters::SmithWotFirstCertIssuableOn<Runtime>;
     pub type SmithWotMinCertForMembership =
         pallet_duniter_test_parameters::SmithWotMinCertForMembership<Runtime>;
+    pub type SmithInactivityMaxDuration =
+        pallet_duniter_test_parameters::SmithInactivityMaxDuration<Runtime>;
 
     impl pallet_duniter_test_parameters::Config for Runtime {
         type CertCount = u32;
         type PeriodCount = Balance;
+        type SessionCount = u32;
     }
 
     impl pallet_sudo::Config for Runtime {
@@ -309,14 +307,15 @@ construct_runtime!(
         Quota: pallet_quota::{Pallet, Storage, Config<T>, Event<T>} = 66,
 
         // Consensus support
-        AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-        Authorship: pallet_authorship::{Pallet, Storage} = 11,
-        Offences: pallet_offences::{Pallet, Storage, Event} = 12,
-        Historical: session_historical::{Pallet} = 13,
-        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 14,
-        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event, ValidateUnsigned} = 15,
-        ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 16,
-        AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 17,
+        SmithMembers: pallet_smith_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
+        AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 11,
+        Authorship: pallet_authorship::{Pallet, Storage} = 12,
+        Offences: pallet_offences::{Pallet, Storage, Event} = 13,
+        Historical: session_historical::{Pallet} = 14,
+        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 15,
+        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event, ValidateUnsigned} = 16,
+        ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 17,
+        AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 18,
 
         // Governance stuff
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
@@ -328,24 +327,19 @@ construct_runtime!(
         UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 30,
 
         // Web Of Trust
-        Wot: pallet_duniter_wot::<Instance1>::{Pallet} = 40,
+        Wot: pallet_duniter_wot::{Pallet} = 40,
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
-        Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
-        Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
+        Membership: pallet_membership::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
+        Cert: pallet_certification::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
         Distance: pallet_distance::{Pallet, Call, Storage, Inherent, Event<T>} = 44,
 
-        // Smith Sub-Wot
-        SmithSubWot: pallet_duniter_wot::<Instance2>::{Pallet} = 50,
-        SmithMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 52,
-        SmithCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
-
         // Utilities
-        AtomicSwap: pallet_atomic_swap::{Pallet, Call, Storage, Event<T>} = 60,
-        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 61,
-        ProvideRandomness: pallet_provide_randomness::{Pallet, Call, Storage, Event} = 62,
-        Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 63,
-        Utility: pallet_utility::{Pallet, Call, Event} = 64,
-        Treasury: pallet_treasury::{Pallet, Call, Config, Storage, Event<T>} = 65,
+        AtomicSwap: pallet_atomic_swap::{Pallet, Call, Storage, Event<T>} = 50,
+        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 51,
+        ProvideRandomness: pallet_provide_randomness::{Pallet, Call, Storage, Event} = 52,
+        Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 53,
+        Utility: pallet_utility::{Pallet, Call, Event} = 54,
+        Treasury: pallet_treasury::{Pallet, Call, Config, Storage, Event<T>} = 55,
     }
 );
 

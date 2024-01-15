@@ -18,11 +18,11 @@
 
 use common_runtime::constants::*;
 use common_runtime::*;
-use frame_support::instances::{Instance1, Instance2};
 use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
 use gdev_runtime::opaque::SessionKeys;
 use gdev_runtime::*;
 use pallet_authority_members::OnNewSession;
+use pallet_smith_members::SmithMeta;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::{AuthorityId as BabeId, Slot};
 use sp_consensus_babe::{VrfOutput, VrfProof};
@@ -54,7 +54,7 @@ pub struct ExtBuilder {
     initial_authorities_len: usize,
     initial_identities: BTreeMap<IdtyName, AccountId>,
     initial_smiths: Vec<AuthorityKeys>,
-    parameters: GenesisParameters<u32, u32, Balance>,
+    parameters: GenesisParameters<u32, u32, Balance, u32>,
 }
 
 impl ExtBuilder {
@@ -108,14 +108,9 @@ impl ExtBuilder {
                 pending_membership_period: 500,
                 ud_creation_period: 60_000,
                 ud_reeval_period: 60_000 * 20,
-                smith_cert_period: 15,
                 smith_cert_max_by_issuer: 8,
-                smith_cert_min_received_cert_to_issue_cert: 2,
-                smith_cert_validity_period: 1_000,
-                smith_membership_period: 1_000,
-                smith_pending_membership_period: 500,
-                smith_wot_first_cert_issuable_on: 20,
                 smith_wot_min_cert_for_membership: 2,
+                smith_inactivity_max_duration: 48,
                 wot_first_cert_issuable_on: 20,
                 wot_min_cert_for_create_idty_right: 2,
                 wot_min_cert_for_membership: 2,
@@ -142,7 +137,7 @@ impl ExtBuilder {
     }*/
 
     pub fn change_parameters<
-        F: Fn(&mut pallet_duniter_test_parameters::Parameters<u32, u32, Balance>),
+        F: Fn(&mut pallet_duniter_test_parameters::Parameters<u32, u32, Balance, u32>),
     >(
         mut self,
         f: F,
@@ -251,7 +246,7 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .unwrap();
 
-        pallet_membership::GenesisConfig::<Runtime, Instance1> {
+        pallet_membership::GenesisConfig::<Runtime> {
             memberships: (1..=initial_identities.len())
                 .map(|i| {
                     (
@@ -266,7 +261,7 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .unwrap();
 
-        pallet_certification::GenesisConfig::<Runtime, Instance1> {
+        pallet_certification::GenesisConfig::<Runtime> {
             certs_by_receiver: clique_wot(
                 initial_identities.len(),
                 parameters.cert_validity_period,
@@ -276,27 +271,8 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .unwrap();
 
-        pallet_membership::GenesisConfig::<Runtime, Instance2> {
-            memberships: (1..=initial_smiths.len())
-                .map(|i| {
-                    (
-                        i as u32,
-                        MembershipData {
-                            expire_on: parameters.smith_membership_period,
-                        },
-                    )
-                })
-                .collect(),
-        }
-        .assimilate_storage(&mut t)
-        .unwrap();
-
-        pallet_certification::GenesisConfig::<Runtime, Instance2> {
-            apply_cert_period_at_genesis: false,
-            certs_by_receiver: clique_wot(
-                initial_smiths.len(),
-                parameters.smith_cert_validity_period,
-            ),
+        pallet_smith_members::GenesisConfig::<Runtime> {
+            initial_smiths: clique_smith_wot(initial_smiths.len()),
         }
         .assimilate_storage(&mut t)
         .unwrap();
@@ -393,9 +369,6 @@ pub fn run_to_block(n: u32) {
         Identity::on_initialize(System::block_number());
         Membership::on_initialize(System::block_number());
         Cert::on_initialize(System::block_number());
-        SmithSubWot::on_initialize(System::block_number());
-        SmithMembership::on_initialize(System::block_number());
-        SmithCert::on_initialize(System::block_number());
 
         Timestamp::set_timestamp(System::block_number() as u64 * BLOCK_TIME);
         Distance::on_initialize(System::block_number());
@@ -471,6 +444,22 @@ fn clique_wot(
                     }
                 })
                 .collect(),
+        );
+    }
+    certs_by_issuer
+}
+
+fn clique_smith_wot(initial_identities_len: usize) -> BTreeMap<IdtyIndex, (bool, Vec<IdtyIndex>)> {
+    let mut certs_by_issuer = BTreeMap::new();
+    for i in 1..=initial_identities_len {
+        certs_by_issuer.insert(
+            i as IdtyIndex,
+            (
+                true,
+                (1..=initial_identities_len)
+                    .filter_map(|j| if i != j { Some(j as IdtyIndex) } else { None })
+                    .collect(),
+            ),
         );
     }
     certs_by_issuer

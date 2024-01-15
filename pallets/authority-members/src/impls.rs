@@ -20,7 +20,6 @@
 //! The offences are executed here based. The offenders are disconnected and
 //! can be added to a blacklist to avoid futur connection.
 
-#![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
 use super::pallet::*;
@@ -54,9 +53,8 @@ where
         match strategy {
             SlashStrategy::Blacklist => {
                 for offender in offenders {
-                    Blacklist::<T>::mutate(|blacklist| {
-                        if let Some(member_id) = T::MemberIdOf::convert(offender.offender.0.clone())
-                        {
+                    if let Some(member_id) = T::MemberIdOf::convert(offender.offender.0.clone()) {
+                        Blacklist::<T>::mutate(|blacklist| {
                             if !blacklist.contains(&member_id) {
                                 blacklist.push(member_id);
                                 Self::deposit_event(Event::MemberAddedToBlacklist {
@@ -66,8 +64,8 @@ where
                             }
                             Self::insert_out(member_id);
                             add_db_reads_writes(2, 1);
-                        }
-                    })
+                        });
+                    }
                 }
             }
             SlashStrategy::Disconnect => {

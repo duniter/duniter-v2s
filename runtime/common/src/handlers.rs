@@ -17,9 +17,8 @@
 use super::entities::*;
 use super::{AccountId, IdtyIndex};
 use frame_support::dispatch::UnfilteredDispatchable;
-use frame_support::instances::{Instance1, Instance2};
 use frame_support::pallet_prelude::Weight;
-use frame_support::Parameter;
+use pallet_smith_members::SmithRemovalReason;
 
 // new session handler
 pub struct OnNewSessionHandler<Runtime>(core::marker::PhantomData<Runtime>);
@@ -39,7 +38,8 @@ impl<
         Inner: sp_membership::traits::OnEvent<IdtyIndex>,
         Runtime: frame_system::Config<AccountId = AccountId>
             + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
-            + pallet_membership::Config<Instance1>
+            + pallet_membership::Config
+            + pallet_smith_members::Config<IdtyIndex = IdtyIndex>
             + pallet_universal_dividend::Config,
     > sp_membership::traits::OnEvent<IdtyIndex> for OnMembershipEventHandler<Inner, Runtime>
 {
@@ -55,6 +55,7 @@ impl<
                         );
                     }
                 }
+                pallet_smith_members::Pallet::<Runtime>::on_removed_wot_member(*idty_index);
             }
             // when main membership is acquired, it starts getting right to UD
             sp_membership::Event::MembershipAdded(idty_index) => {
@@ -75,60 +76,6 @@ impl<
     }
 }
 
-// smith membership event handler
-pub struct OnSmithMembershipEventHandler<Inner, Runtime>(
-    core::marker::PhantomData<(Inner, Runtime)>,
-);
-impl<
-        IdtyIndex: Copy + Parameter,
-        Inner: sp_membership::traits::OnEvent<IdtyIndex>,
-        Runtime: frame_system::Config<AccountId = AccountId>
-            + pallet_identity::Config<IdtyIndex = IdtyIndex>
-            + pallet_authority_members::Config<MemberId = IdtyIndex>
-            + pallet_membership::Config<Instance2>,
-    > sp_membership::traits::OnEvent<IdtyIndex> for OnSmithMembershipEventHandler<Inner, Runtime>
-{
-    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) {
-        (match membership_event {
-            sp_membership::Event::MembershipAdded(_idty_index) => {
-                // nothing when smith membership acquired
-                // user will have to claim authority membership
-            }
-            sp_membership::Event::MembershipRemoved(idty_index) => {
-                let call = pallet_authority_members::Call::<Runtime>::remove_member {
-                    member_id: *idty_index,
-                };
-                if let Err(e) =
-                    call.dispatch_bypass_filter(frame_system::Origin::<Runtime>::Root.into())
-                {
-                    sp_std::if_std! {
-                        println!("faid to remove member: {:?}", e)
-                    }
-                }
-            }
-            _ => (),
-        });
-        Inner::on_event(membership_event)
-    }
-}
-
-// authority member removal handler
-// TODO refac smith wot
-// or document the link between smith membership and authority member
-pub struct OnRemovedAuthorityMemberHandler<Runtime>(core::marker::PhantomData<Runtime>);
-impl<Runtime> pallet_authority_members::traits::OnRemovedMember<IdtyIndex>
-    for OnRemovedAuthorityMemberHandler<Runtime>
-where
-    Runtime: frame_system::Config + pallet_membership::Config<Instance2, IdtyId = IdtyIndex>,
-{
-    fn on_removed_member(idty_index: IdtyIndex) {
-        pallet_membership::Pallet::<Runtime, Instance2>::do_remove_membership(
-            idty_index,
-            pallet_membership::MembershipRemovalReason::System,
-        );
-    }
-}
-
 // spend treasury handler
 pub struct TreasurySpendFunds<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_treasury::SpendFunds<Runtime> for TreasurySpendFunds<Runtime>
@@ -142,5 +89,23 @@ where
         missed_any: &mut bool,
     ) {
         *missed_any = true;
+    }
+}
+
+pub struct OnSmithDeletedHandler<Runtime>(core::marker::PhantomData<Runtime>);
+impl<Runtime> pallet_smith_members::traits::OnSmithDelete<Runtime::MemberId>
+    for OnSmithDeletedHandler<Runtime>
+where
+    Runtime: pallet_authority_members::Config,
+{
+    fn on_smith_delete(idty_index: Runtime::MemberId, _reason: SmithRemovalReason) {
+        let call = pallet_authority_members::Call::<Runtime>::remove_member {
+            member_id: idty_index,
+        };
+        if let Err(e) = call.dispatch_bypass_filter(frame_system::Origin::<Runtime>::Root.into()) {
+            sp_std::if_std! {
+                println!("faid to remove member: {:?}", e)
+            }
+        }
     }
 }

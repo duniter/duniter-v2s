@@ -41,20 +41,10 @@ parameters:
   wot_min_cert_for_create_idty_right: 3
 
   # ----- SMITH WOT -----
-  # Duration to wait between two emitted certifications, in blocks. 14400 blocks = 24h = 1 day.
-  smith_cert_period: 14400
   # Maximum quantity of currently valid certifications emitted by a same issuer. 15 certs.
   smith_cert_max_by_issuer: 15
-  # Minimum quantity of smith certifications received to be able to smith certify someone else.
-  smith_cert_min_received_cert_to_issue_cert: 3
-  # Validity duration of a certification, in blocks. 2102400 blocks = 146 days.
-  smith_cert_validity_period: 2102400
-  # Validity duration of a membership. 1051200 blocks = 73 days.
-  smith_membership_period: 1051200
-  # Validity duration of a pending membership. 172800 blocks = 12 days.
-  smith_pending_membership_period: 172800
-  # Delay a new smith member must observe before being able to emit a smith certification. 14400 blocks = 24h = 1 day.
-  smith_wot_first_cert_issuable_on: 14400
+  # Maximum duration a smith can be offline without being excluded
+  smith_inactivity_max_duration: 48
   # Number of required received smith certs to become a smith member
   smith_wot_min_cert_for_membership: 3
 

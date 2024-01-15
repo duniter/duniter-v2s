@@ -156,10 +156,11 @@ impl pallet_authority_members::Config for Test {
     type MemberId = u64;
     type MemberIdOf = ConvertInto;
     type OnNewSession = ();
-    type OnRemovedMember = ();
     type RemoveMemberOrigin = system::EnsureRoot<u64>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+    type OnIncomingMember = ();
+    type OnOutgoingMember = ();
 }
 
 // Build genesis storage according to the mock runtime.

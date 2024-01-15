@@ -20,17 +20,12 @@ use impl_trait_for_tuples::impl_for_tuples;
 
 pub trait CheckIdtyCallAllowed<T: Config> {
     fn check_create_identity(creator: T::IdtyIndex) -> Result<(), DispatchError>;
-    fn change_owner_key(idty_index: T::IdtyIndex) -> Result<(), DispatchError>;
 }
 
 #[impl_for_tuples(5)]
 impl<T: Config> CheckIdtyCallAllowed<T> for Tuple {
     fn check_create_identity(creator: T::IdtyIndex) -> Result<(), DispatchError> {
         for_tuples!( #( Tuple::check_create_identity(creator)?; )* );
-        Ok(())
-    }
-    fn change_owner_key(idty_index: T::IdtyIndex) -> Result<(), DispatchError> {
-        for_tuples!( #( Tuple::change_owner_key(idty_index)?; )* );
         Ok(())
     }
 }

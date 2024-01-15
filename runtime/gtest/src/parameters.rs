@@ -118,26 +118,13 @@ parameter_types! {
 }
 
 /******************/
-/* SMITHS SUB-WOT */
+/* SMITH-MEMBERS */
 /******************/
 
 parameter_types! {
-    pub const SmithWotFirstCertIssuableOn: BlockNumber = DAYS;
     pub const SmithWotMinCertForMembership: u32 = 3;
-}
-
-// Membership
-parameter_types! {
-    pub const SmithMembershipPeriod: BlockNumber = 73 * DAYS;
-    pub const SmithPendingMembershipPeriod: BlockNumber = 12 * DAYS;
-}
-
-// Certification
-parameter_types! {
-    pub const SmithCertPeriod: BlockNumber = DAYS;
     pub const SmithMaxByIssuer: u32 = 100;
-    pub const SmithMinReceivedCertToBeAbleToIssueCert: u32 = 5;
-    pub const SmithValidityPeriod: BlockNumber = 146 * DAYS;
+    pub const SmithInactivityMaxDuration: u32 = 48;
 }
 
 /*************/

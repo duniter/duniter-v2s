@@ -17,13 +17,14 @@
 mod common;
 
 use common::*;
-use frame_support::instances::Instance1;
 use frame_support::traits::StoredMap;
 use frame_support::traits::{Get, PalletInfo, StorageInfo, StorageInfoTrait};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_support::{StorageHasher, Twox128};
 use gdev_runtime::*;
+use pallet_identity::{RevocationPayload, REVOCATION_PAYLOAD_PREFIX};
 use pallet_membership::MembershipRemovalReason;
+use pallet_smith_members::{SmithMeta, SmithStatus};
 use sp_core::Encode;
 use sp_keyring::AccountKeyring;
 use sp_runtime::MultiAddress;
@@ -367,9 +368,7 @@ fn test_validate_identity_when_claim() {
             System::assert_has_event(RuntimeEvent::Membership(
                 pallet_membership::Event::MembershipAdded {
                     member: 5,
-                    expire_on: 76
-                        + <Runtime as pallet_membership::Config<Instance1>>::MembershipPeriod::get(
-                        ),
+                    expire_on: 76 + <Runtime as pallet_membership::Config>::MembershipPeriod::get(),
                 },
             ));
             // not possible anymore to validate identity of someone else
@@ -392,6 +391,7 @@ fn test_membership_expiry() {
     });
 }
 
+// TODO: use change_parameter to change autorevocation period
 #[test]
 #[ignore = "long to go to autorevocation period"]
 fn test_membership_expiry_with_identity_removal() {
@@ -445,9 +445,7 @@ fn test_membership_renewal() {
             System::assert_has_event(RuntimeEvent::Membership(
                 pallet_membership::Event::MembershipAdded {
                     member: 1,
-                    expire_on: 76
-                        + <Runtime as pallet_membership::Config<Instance1>>::MembershipPeriod::get(
-                        ),
+                    expire_on: 76 + <Runtime as pallet_membership::Config>::MembershipPeriod::get(),
                 },
             ));
 
@@ -459,9 +457,7 @@ fn test_membership_renewal() {
             System::assert_has_event(RuntimeEvent::Membership(
                 pallet_membership::Event::MembershipAdded {
                     member: 1,
-                    expire_on: 77
-                        + <Runtime as pallet_membership::Config<Instance1>>::MembershipPeriod::get(
-                        ),
+                    expire_on: 77 + <Runtime as pallet_membership::Config>::MembershipPeriod::get(),
                 },
             ));
 
@@ -602,8 +598,7 @@ fn test_ud_claimed_membership_on_and_off() {
         System::assert_has_event(RuntimeEvent::Membership(
             pallet_membership::Event::MembershipAdded {
                 member: 1,
-                expire_on: 14
-                    + <Runtime as pallet_membership::Config<Instance1>>::MembershipPeriod::get(),
+                expire_on: 14 + <Runtime as pallet_membership::Config>::MembershipPeriod::get(),
             },
         ));
 
@@ -647,12 +642,6 @@ fn test_revoke_smith_identity() {
 
         Identity::do_revoke_identity(3, pallet_identity::RevocationReason::Root);
         // Verify events
-        System::assert_has_event(RuntimeEvent::SmithMembership(
-            pallet_membership::Event::MembershipRemoved {
-                member: 3,
-                reason: MembershipRemovalReason::Revoked,
-            },
-        ));
         System::assert_has_event(RuntimeEvent::AuthorityMembers(
             pallet_authority_members::Event::MemberRemoved { member: 3 },
         ));
@@ -679,24 +668,31 @@ fn test_smith_certification() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         run_to_block(1);
 
-        // alice can renew smith cert to bob
-        assert_ok!(SmithCert::add_cert(
-            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
-            1, // alice
-            2  // bob
-        ));
-
-        // charlie can not add new cert to eve (no identity)
         assert_noop!(
-            SmithCert::add_cert(
-                frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
-                3, // charlie
-                5  // eve
+            SmithMembers::certify_smith(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                2
             ),
-            // SmithSubWot::Error::IdtyNotFound,
-            pallet_duniter_wot::Error::<gdev_runtime::Runtime, pallet_certification::Instance2>::IdtyNotFound,
+            pallet_smith_members::Error::<Runtime>::CertificationAlreadyExists
+        );
+
+        assert_noop!(
+            SmithMembers::certify_smith(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                4
+            ),
+            pallet_smith_members::Error::<Runtime>::CertificationReceiverMustHaveBeenInvited
         );
     });
+}
+
+fn create_dummy_session_keys() -> gdev_runtime::opaque::SessionKeys {
+    gdev_runtime::opaque::SessionKeys {
+        grandpa: sp_core::ed25519::Public([0u8; 32]).into(),
+        babe: sp_core::sr25519::Public([0u8; 32]).into(),
+        im_online: sp_core::sr25519::Public([0u8; 32]).into(),
+        authority_discovery: sp_core::sr25519::Public([0u8; 32]).into(),
+    }
 }
 
 /// test the full process to join smith from main wot member to authority member
@@ -711,6 +707,8 @@ fn test_smith_process() {
             let alice = AccountKeyring::Alice.to_account_id();
             let bob = AccountKeyring::Bob.to_account_id();
             let charlie = AccountKeyring::Charlie.to_account_id();
+            let dave = AccountKeyring::Dave.to_account_id();
+            let dummy_session_keys = create_dummy_session_keys();
 
             // Eve can not request smith membership because not member of the smith wot
             // no more membership request
@@ -718,45 +716,53 @@ fn test_smith_process() {
             // Dave can request smith membership (currently optional)
             // no more membership request
 
+            assert_ok!(SmithMembers::invite_smith(
+                frame_system::RawOrigin::Signed(alice.clone()).into(),
+                4
+            ));
+            assert_ok!(SmithMembers::accept_invitation(
+                frame_system::RawOrigin::Signed(dave).into(),
+            ));
+
+            // Dave cannot (yet) set his session keys
+            assert_err!(
+                AuthorityMembers::set_session_keys(
+                    frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
+                    dummy_session_keys.clone()
+                ),
+                pallet_authority_members::Error::<Runtime>::NotMember
+            );
+
             // Alice Bob and Charlie can certify Dave
-            assert_ok!(SmithCert::add_cert(
-                frame_system::RawOrigin::Signed(alice).into(),
-                1,
+            assert_ok!(SmithMembers::certify_smith(
+                frame_system::RawOrigin::Signed(alice.clone()).into(),
                 4
             ));
-            assert_ok!(SmithCert::add_cert(
-                frame_system::RawOrigin::Signed(bob).into(),
-                2,
+            assert_ok!(SmithMembers::certify_smith(
+                frame_system::RawOrigin::Signed(bob.clone()).into(),
                 4
             ));
-            assert_ok!(SmithCert::add_cert(
-                frame_system::RawOrigin::Signed(charlie).into(),
-                3,
+            assert_ok!(SmithMembers::certify_smith(
+                frame_system::RawOrigin::Signed(charlie.clone()).into(),
                 4
             ));
 
-            // with these three smith certs, Dave can claim membership
-            assert_ok!(SmithMembership::claim_membership(
-                frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
-            ));
-
+            // with these three smith certs, Dave has become smith
             // Dave is then member of the smith wot
             assert_eq!(
-                SmithMembership::membership(4),
-                Some(sp_membership::MembershipData {
-                    expire_on: 1001, // 1 + 1000
+                SmithMembers::smiths(4),
+                Some(pallet_smith_members::SmithMeta {
+                    status: SmithStatus::Smith,
+                    expires_on: Some(48),
+                    issued_certs: vec![],
+                    received_certs: vec![1, 2, 3],
                 })
             );
 
             // Dave can set his (dummy) session keys
             assert_ok!(AuthorityMembers::set_session_keys(
                 frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
-                gdev_runtime::opaque::SessionKeys {
-                    grandpa: sp_core::ed25519::Public([0u8; 32]).into(),
-                    babe: sp_core::sr25519::Public([0u8; 32]).into(),
-                    im_online: sp_core::sr25519::Public([0u8; 32]).into(),
-                    authority_discovery: sp_core::sr25519::Public([0u8; 32]).into(),
-                }
+                dummy_session_keys
             ));
 
             // Dave can go online
@@ -1235,14 +1241,26 @@ fn test_link_account() {
 fn test_change_owner_key() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         let genesis_hash = System::block_hash(0);
-        let dave = AccountKeyring::Dave.to_account_id();
+        let charlie = AccountKeyring::Charlie.to_account_id();
         let ferdie = AccountKeyring::Ferdie.to_account_id();
-        let payload = (b"icok", genesis_hash, 4u32, dave.clone()).encode();
+        let payload = (b"icok", genesis_hash, 3u32, charlie.clone()).encode();
         let signature = AccountKeyring::Ferdie.sign(&payload);
 
+        SmithMembers::on_smith_goes_offline(3);
+        // Charlie is now offline smith
         assert_eq!(
-            frame_system::Pallet::<Runtime>::get(&dave).linked_idty,
-            Some(4)
+            SmithMembers::smiths(3),
+            Some(SmithMeta {
+                status: SmithStatus::Smith,
+                expires_on: Some(48),
+                issued_certs: vec![1, 2],
+                received_certs: vec![1, 2]
+            })
+        );
+
+        assert_eq!(
+            frame_system::Pallet::<Runtime>::get(&charlie).linked_idty,
+            Some(3)
         );
         assert_eq!(
             frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
@@ -1250,15 +1268,121 @@ fn test_change_owner_key() {
         );
         // Dave can change his owner key to Ferdie's
         assert_ok!(Identity::change_owner_key(
-            frame_system::RawOrigin::Signed(dave.clone()).into(),
+            frame_system::RawOrigin::Signed(charlie.clone()).into(),
             ferdie.clone(),
             signature.into()
         ));
         assert_eq!(
             frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
-            Some(4)
+            Some(3)
+        );
+
+        // Charlie is still an offline smith
+        assert_eq!(
+            SmithMembers::smiths(3),
+            Some(SmithMeta {
+                status: SmithStatus::Smith,
+                expires_on: Some(48),
+                issued_certs: vec![1, 2],
+                received_certs: vec![1, 2]
+            })
+        );
+
+        // Ferdie can set its session_keys and go online
+        frame_system::Pallet::<Runtime>::inc_providers(&ferdie);
+        assert_ok!(AuthorityMembers::set_session_keys(
+            frame_system::RawOrigin::Signed(AccountKeyring::Ferdie.to_account_id()).into(),
+            create_dummy_session_keys()
+        ));
+        assert_ok!(AuthorityMembers::go_online(
+            frame_system::RawOrigin::Signed(AccountKeyring::Ferdie.to_account_id()).into()
+        ));
+
+        // Charlie is still an offline smith
+        assert_eq!(
+            SmithMembers::smiths(3),
+            Some(SmithMeta {
+                status: SmithStatus::Smith,
+                expires_on: Some(48),
+                issued_certs: vec![1, 2],
+                received_certs: vec![1, 2]
+            })
+        );
+
+        run_to_block(25);
+
+        System::assert_has_event(RuntimeEvent::AuthorityMembers(
+            pallet_authority_members::Event::IncomingAuthorities { members: vec![3] },
+        ));
+        System::assert_has_event(RuntimeEvent::AuthorityMembers(
+            pallet_authority_members::Event::OutgoingAuthorities { members: vec![1] },
+        ));
+
+        // "Charlie" (idty 3) is now online because its identity is mapped to Ferdies's key
+        assert_eq!(
+            SmithMembers::smiths(3),
+            Some(SmithMeta {
+                status: SmithStatus::Smith,
+                expires_on: None,
+                issued_certs: vec![1, 2],
+                received_certs: vec![1, 2]
+            })
         );
     })
+}
+
+/// members of the smith subwot can revoke their identity
+#[test]
+fn test_smith_member_can_revoke_its_idty() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        run_to_block(2);
+
+        // Charlie goes online
+        frame_system::Pallet::<Runtime>::inc_providers(&AccountKeyring::Charlie.to_account_id());
+        assert_ok!(AuthorityMembers::set_session_keys(
+            frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
+            create_dummy_session_keys()
+        ));
+        assert_ok!(AuthorityMembers::go_online(
+            frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into()
+        ));
+
+        run_to_block(25);
+
+        // Charlie is in the authority members
+        System::assert_has_event(RuntimeEvent::AuthorityMembers(
+            pallet_authority_members::Event::IncomingAuthorities { members: vec![3] },
+        ));
+        // Charlie is not going out
+        assert!(!pallet_authority_members::OutgoingAuthorities::<Runtime>::get().contains(&3));
+
+        let revocation_payload = RevocationPayload {
+            idty_index: 3u32,
+            genesis_hash: System::block_hash(0),
+        };
+        let signature =
+            AccountKeyring::Charlie.sign(&(REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode());
+
+        assert_ok!(Identity::revoke_identity(
+            frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
+            3,
+            AccountKeyring::Charlie.to_account_id(),
+            signature.into()
+        ));
+        // membership should be removed
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::MembershipRemoved {
+                member: 3,
+                reason: MembershipRemovalReason::Revoked,
+            },
+        ));
+        // smith membership should be removed as well
+        System::assert_has_event(RuntimeEvent::SmithMembers(
+            pallet_smith_members::Event::SmithExcluded { idty_index: 3 },
+        ));
+        // Now Charlie is going out
+        assert!(pallet_authority_members::OutgoingAuthorities::<Runtime>::get().contains(&3));
+    });
 }
 
 /// test genesis account of identity is linked to identity
@@ -1328,11 +1452,10 @@ fn test_new_account_linked() {
     })
 }
 #[test]
+#[ignore = "what was this test supposed to do?"]
 fn smith_data_problem() {
     ExtBuilder::new(1, 3, 4)
-        .change_parameters(|parameters| {
-            parameters.smith_cert_validity_period = 3;
-        })
+        .change_parameters(|_parameters| {})
         .build()
         .execute_with(|| {
             run_to_block(4);

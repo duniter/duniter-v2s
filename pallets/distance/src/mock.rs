@@ -185,10 +185,11 @@ impl pallet_authority_members::Config for Test {
     type MemberId = u32;
     type MemberIdOf = IdentityIndexOf<Self>;
     type OnNewSession = ();
-    type OnRemovedMember = ();
     type RemoveMemberOrigin = system::EnsureRoot<AccountId>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+    type OnOutgoingMember = ();
+    type OnIncomingMember = ();
 }
 
 parameter_types! {

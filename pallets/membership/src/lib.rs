@@ -79,12 +79,12 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
-    pub struct Pallet<T, I = ()>(_);
+    pub struct Pallet<T>(_);
 
     // CONFIG //
 
     #[pallet::config]
-    pub trait Config<I: 'static = ()>: frame_system::Config {
+    pub trait Config: frame_system::Config {
         /// Ask the runtime whether the identity can perform membership operations
         type CheckMembershipCallAllowed: CheckMembershipCallAllowed<Self::IdtyId>;
         /// Something that identifies an identity
@@ -99,8 +99,7 @@ pub mod pallet {
         /// On event handler
         type OnEvent: OnEvent<Self::IdtyId>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
-        type RuntimeEvent: From<Event<Self, I>>
-            + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type WeightInfo: WeightInfo;
         #[cfg(feature = "runtime-benchmarks")]
         type BenchmarkSetupHandler: SetupBenchmark<Self::IdtyId, Self::AccountId>;
@@ -109,12 +108,12 @@ pub mod pallet {
     // GENESIS STUFF //
 
     #[pallet::genesis_config]
-    pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+    pub struct GenesisConfig<T: Config> {
         pub memberships: BTreeMap<T::IdtyId, MembershipData<T::BlockNumber>>,
     }
 
     #[cfg(feature = "std")]
-    impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+    impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
                 memberships: Default::default(),
@@ -123,11 +122,11 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             for (idty_id, membership_data) in &self.memberships {
-                MembershipsExpireOn::<T, I>::append(membership_data.expire_on, idty_id);
-                Membership::<T, I>::insert(idty_id, membership_data);
+                MembershipsExpireOn::<T>::append(membership_data.expire_on, idty_id);
+                Membership::<T>::insert(idty_id, membership_data);
             }
         }
     }
@@ -138,20 +137,20 @@ pub mod pallet {
     // (expiration block for instance)
     #[pallet::storage]
     #[pallet::getter(fn membership)]
-    pub type Membership<T: Config<I>, I: 'static = ()> =
+    pub type Membership<T: Config> =
         CountedStorageMap<_, Twox64Concat, T::IdtyId, MembershipData<T::BlockNumber>, OptionQuery>;
 
     /// maps block number to the list of identity id set to expire at this block
     #[pallet::storage]
     #[pallet::getter(fn memberships_expire_on)]
-    pub type MembershipsExpireOn<T: Config<I>, I: 'static = ()> =
+    pub type MembershipsExpireOn<T: Config> =
         StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::IdtyId>, ValueQuery>;
 
     // EVENTS //
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
-    pub enum Event<T: Config<I>, I: 'static = ()> {
+    pub enum Event<T: Config> {
         /// A membership was added.
         MembershipAdded {
             member: T::IdtyId,
@@ -167,7 +166,7 @@ pub mod pallet {
     // ERRORS//
 
     #[pallet::error]
-    pub enum Error<T, I = ()> {
+    pub enum Error<T> {
         /// Identity ID not found.
         IdtyIdNotFound,
         /// Membership already acquired.
@@ -179,7 +178,7 @@ pub mod pallet {
     // HOOKS //
 
     #[pallet::hooks]
-    impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
             if n > T::BlockNumber::zero() {
                 T::WeightInfo::on_initialize().saturating_add(Self::expire_memberships(n))
@@ -192,7 +191,7 @@ pub mod pallet {
     // CALLS //
 
     #[pallet::call]
-    impl<T: Config<I>, I: 'static> Pallet<T, I> {
+    impl<T: Config> Pallet<T> {
         /// claim membership
         /// it must fullfill the requirements (certs, distance)
         /// TODO #159 for main wot claim_membership is called automatically when distance is evaluated positively
@@ -215,7 +214,7 @@ pub mod pallet {
             // Verify phase
             let idty_id = Self::get_idty_id(origin)?;
             let membership_data =
-                Membership::<T, I>::get(idty_id).ok_or(Error::<T, I>::MembershipNotFound)?;
+                Membership::<T>::get(idty_id).ok_or(Error::<T>::MembershipNotFound)?;
 
             T::CheckMembershipCallAllowed::check_idty_allowed_to_renew_membership(&idty_id)?;
 
@@ -244,14 +243,14 @@ pub mod pallet {
 
     // INTERNAL FUNCTIONS //
 
-    impl<T: Config<I>, I: 'static> Pallet<T, I> {
+    impl<T: Config> Pallet<T> {
         /// unschedule membership expiry
         fn unschedule_membership_expiry(idty_id: T::IdtyId, block_number: T::BlockNumber) {
-            let mut scheduled = MembershipsExpireOn::<T, I>::get(block_number);
+            let mut scheduled = MembershipsExpireOn::<T>::get(block_number);
 
             if let Some(pos) = scheduled.iter().position(|x| *x == idty_id) {
                 scheduled.swap_remove(pos);
-                MembershipsExpireOn::<T, I>::set(block_number, scheduled);
+                MembershipsExpireOn::<T>::set(block_number, scheduled);
             }
         }
         /// schedule membership expiry
@@ -259,8 +258,8 @@ pub mod pallet {
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             let expire_on = block_number + T::MembershipPeriod::get();
 
-            Membership::<T, I>::insert(idty_id, MembershipData { expire_on });
-            MembershipsExpireOn::<T, I>::append(expire_on, idty_id);
+            Membership::<T>::insert(idty_id, MembershipData { expire_on });
+            MembershipsExpireOn::<T>::append(expire_on, idty_id);
             Self::deposit_event(Event::MembershipAdded {
                 member: idty_id,
                 expire_on,
@@ -282,7 +281,7 @@ pub mod pallet {
 
         /// perform membership removal
         pub fn do_remove_membership(idty_id: T::IdtyId, reason: MembershipRemovalReason) {
-            if let Some(membership_data) = Membership::<T, I>::take(idty_id) {
+            if let Some(membership_data) = Membership::<T>::take(idty_id) {
                 Self::unschedule_membership_expiry(idty_id, membership_data.expire_on);
                 Self::deposit_event(Event::MembershipRemoved {
                     member: idty_id,
@@ -295,7 +294,7 @@ pub mod pallet {
         /// check the origin and get identity id if valid
         fn get_idty_id(origin: OriginFor<T>) -> Result<T::IdtyId, DispatchError> {
             if let Ok(RawOrigin::Signed(account_id)) = origin.into() {
-                T::IdtyIdOf::convert(account_id).ok_or_else(|| Error::<T, I>::IdtyIdNotFound.into())
+                T::IdtyIdOf::convert(account_id).ok_or_else(|| Error::<T>::IdtyIdNotFound.into())
             } else {
                 Err(BadOrigin.into())
             }
@@ -305,7 +304,7 @@ pub mod pallet {
         pub fn expire_memberships(block_number: T::BlockNumber) -> Weight {
             let mut expired_idty_count = 0u32;
 
-            for idty_id in MembershipsExpireOn::<T, I>::take(block_number) {
+            for idty_id in MembershipsExpireOn::<T>::take(block_number) {
                 // remove membership (take)
                 Self::do_remove_membership(idty_id, MembershipRemovalReason::Expired);
                 expired_idty_count += 1;
@@ -314,22 +313,22 @@ pub mod pallet {
         }
 
         /// check if identity is member
-        pub(super) fn is_member(idty_id: &T::IdtyId) -> bool {
-            Membership::<T, I>::contains_key(idty_id)
+        pub fn is_member(idty_id: &T::IdtyId) -> bool {
+            Membership::<T>::contains_key(idty_id)
         }
     }
 }
 
 // implement traits
 
-impl<T: Config<I>, I: 'static> sp_runtime::traits::IsMember<T::IdtyId> for Pallet<T, I> {
+impl<T: Config> sp_runtime::traits::IsMember<T::IdtyId> for Pallet<T> {
     fn is_member(idty_id: &T::IdtyId) -> bool {
         Self::is_member(idty_id)
     }
 }
 
-impl<T: Config<I>, I: 'static> MembersCount for Pallet<T, I> {
+impl<T: Config> MembersCount for Pallet<T> {
     fn members_count() -> u32 {
-        Membership::<T, I>::count()
+        Membership::<T>::count()
     }
 }

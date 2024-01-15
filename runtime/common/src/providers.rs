@@ -76,7 +76,7 @@ pub struct MainWotIsDistanceOk<T>(PhantomData<T>);
 impl<T> pallet_duniter_wot::traits::IsDistanceOk<<T as pallet_identity::Config>::IdtyIndex>
     for MainWotIsDistanceOk<T>
 where
-    T: pallet_distance::Config + pallet_duniter_wot::Config<frame_support::instances::Instance1>,
+    T: pallet_distance::Config + pallet_duniter_wot::Config,
 {
     fn is_distance_ok(
         idty_id: &<T as pallet_identity::Config>::IdtyIndex,
@@ -84,11 +84,27 @@ where
         match pallet_distance::Pallet::<T>::identity_distance_status(idty_id) {
             Some((_, status)) => match status {
                 pallet_distance::DistanceStatus::Valid => Ok(()),
-                pallet_distance::DistanceStatus::Invalid => Err(pallet_duniter_wot::Error::<T, frame_support::instances::Instance1>::DistanceIsInvalid.into()),
-                pallet_distance::DistanceStatus::Pending => Err(pallet_duniter_wot::Error::<T, frame_support::instances::Instance1>::DistanceEvaluationPending.into()),
+                pallet_distance::DistanceStatus::Invalid => {
+                    Err(pallet_duniter_wot::Error::<T>::DistanceIsInvalid.into())
+                }
+                pallet_distance::DistanceStatus::Pending => {
+                    Err(pallet_duniter_wot::Error::<T>::DistanceEvaluationPending.into())
+                }
             },
-			None => Err(pallet_duniter_wot::Error::<T, frame_support::instances::Instance1>::DistanceEvaluationNotRequested.into()),
-		}
+            None => Err(pallet_duniter_wot::Error::<T>::DistanceEvaluationNotRequested.into()),
+        }
+    }
+}
+
+pub struct IsWoTMemberProvider<T>(PhantomData<T>);
+impl<T: pallet_smith_members::Config>
+    sp_runtime::traits::IsMember<<T as pallet_membership::Config>::IdtyId>
+    for IsWoTMemberProvider<T>
+where
+    T: pallet_distance::Config + pallet_membership::Config,
+{
+    fn is_member(idty_id: &T::IdtyId) -> bool {
+        pallet_membership::Pallet::<T>::is_member(idty_id)
     }
 }
 
@@ -102,8 +118,8 @@ macro_rules! impl_benchmark_setup_handler {
         impl<T> $t for BenchmarkSetupHandler<T>
         where
             T: pallet_distance::Config,
-            T: pallet_certification::Config<frame_support::instances::Instance1>,
-            <T as pallet_certification::Config<frame_support::instances::Instance1>>::IdtyIndex: From<u32>,
+            T: pallet_certification::Config,
+            <T as pallet_certification::Config>::IdtyIndex: From<u32>,
         {
             fn force_status_ok(
                 idty_id: &IdtyIndex,
@@ -115,7 +131,11 @@ macro_rules! impl_benchmark_setup_handler {
                 );
             }
             fn add_cert(issuer: &IdtyIndex, receiver: &IdtyIndex) {
-                let _ = pallet_certification::Pallet::<T, frame_support::instances::Instance1>::do_add_cert_checked((*issuer).into(), (*receiver).into(), false);
+                let _ = pallet_certification::Pallet::<T>::do_add_cert_checked(
+                    (*issuer).into(),
+                    (*receiver).into(),
+                    false,
+                );
             }
         }
     };

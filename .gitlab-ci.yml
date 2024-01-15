@@ -94,6 +94,7 @@ run_benchmarks:
   tags:
     - podman
 
+# FIXME: "gtest_build"
 gdev_build:
   stage: build
   image: rust:1-bullseye

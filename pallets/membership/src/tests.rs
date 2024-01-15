@@ -106,7 +106,7 @@ fn test_membership_renewal_nope() {
         // Membership 1 can not be renewed
         assert_noop!(
             DefaultMembership::renew_membership(RuntimeOrigin::signed(1)),
-            Error::<Test, _>::MembershipNotFound,
+            Error::<Test>::MembershipNotFound,
         );
         run_to_block(3);
         assert!(!DefaultMembership::is_member(&1));

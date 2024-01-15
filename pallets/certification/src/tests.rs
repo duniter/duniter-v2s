@@ -29,7 +29,7 @@ fn test_must_receive_cert_before_can_issue() {
     .execute_with(|| {
         assert_eq!(
             DefaultCertification::add_cert(RuntimeOrigin::signed(0), 0, 1),
-            Err(Error::<Test, _>::NotEnoughCertReceived.into())
+            Err(Error::<Test>::NotEnoughCertReceived.into())
         );
     });
 }
@@ -50,7 +50,7 @@ fn test_cannot_certify_self() {
 
         assert_eq!(
             DefaultCertification::add_cert(RuntimeOrigin::signed(0), 0, 0),
-            Err(Error::<Test, _>::CannotCertifySelf.into())
+            Err(Error::<Test>::CannotCertifySelf.into())
         );
     });
 }
@@ -152,7 +152,7 @@ fn test_cert_period() {
         );
         assert_eq!(
             DefaultCertification::add_cert(RuntimeOrigin::signed(0), 0, 3),
-            Err(Error::<Test, _>::NotRespectCertPeriod.into())
+            Err(Error::<Test>::NotRespectCertPeriod.into())
         );
         run_to_block(CertPeriod::get());
         assert_ok!(DefaultCertification::add_cert(
@@ -163,7 +163,7 @@ fn test_cert_period() {
         run_to_block(CertPeriod::get() + 1);
         assert_eq!(
             DefaultCertification::add_cert(RuntimeOrigin::signed(0), 0, 4),
-            Err(Error::<Test, _>::NotRespectCertPeriod.into())
+            Err(Error::<Test>::NotRespectCertPeriod.into())
         );
         run_to_block((2 * CertPeriod::get()) + 1);
         assert_ok!(DefaultCertification::add_cert(
@@ -290,7 +290,7 @@ fn test_cert_renewal_cert_delay() {
         // try to renew again
         assert_noop!(
             DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
-            Error::<Test, _>::NotRespectCertPeriod,
+            Error::<Test>::NotRespectCertPeriod,
         );
         // no renewal event should be emitted
         assert_eq!(System::events().last(), None);

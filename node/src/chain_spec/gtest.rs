@@ -20,12 +20,12 @@ use common_runtime::constants::*;
 use common_runtime::entities::IdtyData;
 use common_runtime::*;
 use frame_benchmarking::frame_support::traits::Get;
+use gtest_runtime::SmithMembersConfig;
 use gtest_runtime::{
     opaque::SessionKeys, pallet_universal_dividend, parameters, AccountConfig, AccountId,
     AuthorityMembersConfig, BabeConfig, BalancesConfig, CertConfig, GenesisConfig, IdentityConfig,
-    ImOnlineId, MembershipConfig, Perbill, QuotaConfig, Runtime, SessionConfig, SmithCertConfig,
-    SmithMembershipConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
-    UniversalDividendConfig, WASM_BINARY,
+    ImOnlineId, MembershipConfig, Perbill, QuotaConfig, Runtime, SessionConfig, SudoConfig,
+    SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_consensus_grandpa::AuthorityId as GrandpaId;
@@ -98,15 +98,9 @@ fn get_parameters(_: &Option<GenesisParameters>) -> CommonParameters {
         cert_validity_period: parameters::ValidityPeriod::get(),
         distance_min_accessible_referees: Perbill::from_percent(80), // TODO: generalize
         distance_max_depth: 5,                                       // TODO: generalize
-        smith_sub_wot_first_issuable_on: parameters::SmithWotFirstCertIssuableOn::get(),
         smith_sub_wot_min_cert_for_membership: parameters::SmithWotMinCertForMembership::get(),
-        smith_membership_membership_period: parameters::SmithMembershipPeriod::get(),
-        smith_membership_pending_membership_period: parameters::SmithPendingMembershipPeriod::get(),
-        smith_cert_cert_period: parameters::SmithCertPeriod::get(),
+        smith_inactivity_max_duration: parameters::SmithInactivityMaxDuration::get(),
         smith_cert_max_by_issuer: parameters::SmithMaxByIssuer::get(),
-        smith_cert_min_received_cert_to_be_able_to_issue_cert:
-            parameters::SmithMinReceivedCertToBeAbleToIssueCert::get(),
-        smith_cert_validity_period: parameters::SmithValidityPeriod::get(),
         cert_cert_period: parameters::CertPeriod::get(),
         treasury_spend_period: <Runtime as pallet_treasury::Config>::SpendPeriod::get(),
     }
@@ -239,8 +233,7 @@ fn genesis_data_to_gtest_genesis_conf(
         parameters: _,
         common_parameters: _,
         session_keys_map,
-        smith_certs_by_receiver,
-        smith_memberships,
+        initial_smiths,
         sudo_key,
         technical_committee_members,
         ud,
@@ -313,13 +306,7 @@ fn genesis_data_to_gtest_genesis_conf(
             certs_by_receiver,
         },
         membership: MembershipConfig { memberships },
-        smith_cert: SmithCertConfig {
-            apply_cert_period_at_genesis: true,
-            certs_by_receiver: smith_certs_by_receiver,
-        },
-        smith_membership: SmithMembershipConfig {
-            memberships: smith_memberships,
-        },
+        smith_members: SmithMembersConfig { initial_smiths },
         universal_dividend: UniversalDividendConfig {
             first_reeval: first_ud_reeval,
             first_ud,

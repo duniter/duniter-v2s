@@ -236,14 +236,15 @@ macro_rules! pallets_config {
         }
         impl pallet_authority_members::Config for Runtime {
             type RuntimeEvent = RuntimeEvent;
-            type IsMember = SmithMembership;
+            type IsMember = SmithMembers;
             type OnNewSession = OnNewSessionHandler<Runtime>;
-            type OnRemovedMember = OnRemovedAuthorityMemberHandler<Runtime>;
             type MemberId = IdtyIndex;
             type MemberIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type MaxAuthorities = MaxAuthorities;
             type RemoveMemberOrigin = EnsureRoot<Self::AccountId>;
 			type WeightInfo = common_runtime::weights::pallet_authority_members::WeightInfo<Runtime>;
+            type OnIncomingMember = SmithMembers;
+            type OnOutgoingMember = SmithMembers;
         }
         impl pallet_authorship::Config for Runtime {
             type EventHandler = ImOnline;
@@ -453,11 +454,9 @@ macro_rules! pallets_config {
 
         // WEB OF TRUST //
 
-        use frame_support::instances::Instance1;
-        impl pallet_duniter_wot::Config<Instance1> for Runtime {
+        impl pallet_duniter_wot::Config for Runtime {
             type FirstIssuableOn = WotFirstCertIssuableOn;
             type IsDistanceOk = common_runtime::providers::MainWotIsDistanceOk<Runtime>;
-            type IsSubWot = frame_support::traits::ConstBool<false>;
             type MinCertForMembership = WotMinCertForMembership;
             type MinCertForCreateIdtyRight = WotMinCertForCreateIdtyRight;
         }
@@ -473,7 +472,7 @@ macro_rules! pallets_config {
             type ValidationPeriod = ValidationPeriod;
             type AutorevocationPeriod = AutorevocationPeriod;
             type DeletionPeriod = DeletionPeriod;
-            type CheckIdtyCallAllowed = (Wot, SmithSubWot);
+            type CheckIdtyCallAllowed = Wot;
             type IdtyCreationPeriod = IdtyCreationPeriod;
 			type IdtyData = IdtyData;
             type IdtyIndex = IdtyIndex;
@@ -481,12 +480,12 @@ macro_rules! pallets_config {
             type IdtyNameValidator = IdtyNameValidatorImpl;
             type Signer = <Signature as sp_runtime::traits::Verify>::Signer;
 			type Signature = Signature;
-            type OnIdtyChange = (Wot, SmithSubWot, Quota);
+            type OnIdtyChange = (Wot, Quota);
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_identity::WeightInfo<Runtime>;
         }
 
-        impl pallet_membership::Config<frame_support::instances::Instance1> for Runtime {
+        impl pallet_membership::Config for Runtime {
             type CheckMembershipCallAllowed = Wot;
             type IdtyId = IdtyIndex;
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
@@ -499,7 +498,7 @@ macro_rules! pallets_config {
             type BenchmarkSetupHandler = common_runtime::providers::BenchmarkSetupHandler<Runtime>;
         }
 
-        impl pallet_certification::Config<Instance1> for Runtime {
+        impl pallet_certification::Config for Runtime {
             type CertPeriod = CertPeriod;
             type IdtyIndex = IdtyIndex;
             type OwnerKeyOf = Identity;
@@ -525,42 +524,21 @@ macro_rules! pallets_config {
             type WeightInfo = common_runtime::weights::pallet_distance::WeightInfo<Runtime>;
         }
 
-        // SMITHS SUB-WOT //
-
-        use frame_support::instances::Instance2;
-        impl pallet_duniter_wot::Config<Instance2> for Runtime {
-            type FirstIssuableOn = SmithWotFirstCertIssuableOn;
-            type IsDistanceOk = pallet_duniter_wot::traits::DistanceAlwaysOk;
-            type IsSubWot = frame_support::traits::ConstBool<true>;
-            type MinCertForMembership = SmithWotMinCertForMembership;
-            type MinCertForCreateIdtyRight = frame_support::traits::ConstU32<0>;
-        }
-
-        impl pallet_membership::Config<Instance2> for Runtime {
-            type CheckMembershipCallAllowed = SmithSubWot;
-            type IdtyId = IdtyIndex;
-            type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
-            type AccountIdOf = common_runtime::providers::IdentityAccountIdProvider<Self>;
-            type MembershipPeriod = SmithMembershipPeriod;
-            type OnEvent = OnSmithMembershipEventHandler<SmithSubWot, Runtime>;
+        // SMITH-MEMBERS
+        impl pallet_smith_members::Config for Runtime {
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_membership_smith_membership::WeightInfo<Runtime>;
-            #[cfg(feature = "runtime-benchmarks")]
-            type BenchmarkSetupHandler = common_runtime::providers::BenchmarkSetupHandler<Runtime>;
-        }
-
-        impl pallet_certification::Config<Instance2> for Runtime {
-            type CertPeriod = SmithCertPeriod;
             type IdtyIndex = IdtyIndex;
-            type OwnerKeyOf = Identity;
-            type CheckCertAllowed = SmithSubWot;
+            type IsWoTMember = common_runtime::providers::IsWoTMemberProvider<Runtime>;
+            type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
+            type MinCertForMembership = SmithWotMinCertForMembership;
             type MaxByIssuer = SmithMaxByIssuer;
-            type MinReceivedCertToBeAbleToIssueCert = SmithMinReceivedCertToBeAbleToIssueCert;
-            type OnNewcert = SmithSubWot;
-            type OnRemovedCert = SmithSubWot;
-            type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_certification_smith_cert::WeightInfo<Runtime>;
-            type ValidityPeriod = SmithValidityPeriod;
+            type SmithInactivityMaxDuration = SmithInactivityMaxDuration;
+            type OnSmithDelete = OnSmithDeletedHandler<Runtime>;
+            type IdtyIdOfAuthorityId = sp_runtime::traits::ConvertInto;
+            type MemberId = IdtyIndex;
+            type WeightInfo = common_runtime::weights::pallet_smith_members::WeightInfo<Runtime>;
+            // TODO: remove as it is only used for benchmarking
+            type OwnerKeyOf = Identity;
         }
 
         pub struct TechnicalCommitteeDefaultVote;

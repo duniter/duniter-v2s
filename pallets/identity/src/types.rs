@@ -38,6 +38,7 @@ pub enum IdtyEvent<T: crate::Config> {
     /// removing an identity (unvalidated or revoked)
     // pallet wot removes associated certifications if status is not revoked
     // pallet quota removes associated quota
+    // pallet smith-members exclude smith
     Removed { status: IdtyStatus },
     // TODO add a way to unlink accounts corresponding to revoked or removed identities
 }

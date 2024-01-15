@@ -24,9 +24,8 @@ use common_runtime::*;
 use gdev_runtime::{
     opaque::SessionKeys, pallet_universal_dividend, parameters, AccountConfig,
     AuthorityMembersConfig, BabeConfig, BalancesConfig, CertConfig, GenesisConfig, IdentityConfig,
-    MembershipConfig, ParametersConfig, QuotaConfig, Runtime, SessionConfig, SmithCertConfig,
-    SmithMembershipConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
-    UniversalDividendConfig, WASM_BINARY,
+    MembershipConfig, ParametersConfig, QuotaConfig, Runtime, SessionConfig, SmithMembersConfig,
+    SudoConfig, SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_network::config::MultiaddrWithPeerId;
@@ -39,7 +38,7 @@ use std::{env, fs};
 
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
 
-type GenesisParameters = gdev_runtime::GenesisParameters<u32, u32, u64>;
+type GenesisParameters = gdev_runtime::GenesisParameters<u32, u32, u64, u32>;
 
 const TOKEN_DECIMALS: usize = 2;
 const TOKEN_SYMBOL: &str = "ĞD";
@@ -94,17 +93,10 @@ fn get_parameters(parameters_from_file: &Option<GenesisParameters>) -> CommonPar
         cert_validity_period: parameters_from_file.cert_validity_period,
         distance_min_accessible_referees: Perbill::from_percent(80), // TODO: generalize
         distance_max_depth: 5,                                       // TODO: generalize
-        smith_sub_wot_first_issuable_on: parameters_from_file.smith_wot_first_cert_issuable_on,
         smith_sub_wot_min_cert_for_membership: parameters_from_file
             .smith_wot_min_cert_for_membership,
-        smith_membership_membership_period: parameters_from_file.smith_membership_period,
-        smith_membership_pending_membership_period: parameters_from_file
-            .smith_pending_membership_period,
-        smith_cert_cert_period: parameters_from_file.smith_cert_period,
         smith_cert_max_by_issuer: parameters_from_file.smith_cert_max_by_issuer,
-        smith_cert_min_received_cert_to_be_able_to_issue_cert: parameters_from_file
-            .smith_cert_min_received_cert_to_issue_cert,
-        smith_cert_validity_period: parameters_from_file.smith_cert_validity_period,
+        smith_inactivity_max_duration: parameters_from_file.smith_inactivity_max_duration,
         cert_cert_period: parameters_from_file.cert_period,
         treasury_spend_period: <Runtime as pallet_treasury::Config>::SpendPeriod::get(),
     }
@@ -290,8 +282,7 @@ fn genesis_data_to_gdev_genesis_conf(
         parameters,
         common_parameters: _,
         session_keys_map,
-        smith_certs_by_receiver,
-        smith_memberships,
+        initial_smiths,
         sudo_key,
         technical_committee_members,
         ud,
@@ -366,13 +357,7 @@ fn genesis_data_to_gdev_genesis_conf(
             certs_by_receiver,
         },
         membership: MembershipConfig { memberships },
-        smith_cert: SmithCertConfig {
-            apply_cert_period_at_genesis: true,
-            certs_by_receiver: smith_certs_by_receiver,
-        },
-        smith_membership: SmithMembershipConfig {
-            memberships: smith_memberships,
-        },
+        smith_members: SmithMembersConfig { initial_smiths },
         universal_dividend: UniversalDividendConfig {
             first_reeval: first_ud_reeval,
             first_ud,
@@ -387,8 +372,6 @@ fn get_local_chain_parameters() -> Option<GenesisParameters> {
     let babe_epoch_duration = get_env("DUNITER_BABE_EPOCH_DURATION", 30) as u64;
     let cert_validity_period = get_env("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
     let membership_period = get_env("DUNITER_MEMBERSHIP_PERIOD", 1_000);
-    let smith_cert_validity_period = get_env("DUNITER_SMITH_CERT_VALIDITY_PERIOD", 1_000);
-    let smith_membership_period = get_env("DUNITER_SMITH_MEMBERSHIP_PERIOD", 1_000);
     let ud_creation_period = get_env("DUNITER_UD_CREATION_PERIOD", 60_000);
     let ud_reeval_period = get_env("DUNITER_UD_REEEVAL_PERIOD", 1_200_000);
     Some(GenesisParameters {
@@ -403,13 +386,8 @@ fn get_local_chain_parameters() -> Option<GenesisParameters> {
         pending_membership_period: 500,
         ud_creation_period,
         ud_reeval_period,
-        smith_cert_period: 15,
         smith_cert_max_by_issuer: 8,
-        smith_cert_min_received_cert_to_issue_cert: 2,
-        smith_cert_validity_period,
-        smith_membership_period,
-        smith_pending_membership_period: 500,
-        smith_wot_first_cert_issuable_on: 20,
+        smith_inactivity_max_duration: 48,
         smith_wot_min_cert_for_membership: 2,
         wot_first_cert_issuable_on: 20,
         wot_min_cert_for_create_idty_right: 2,

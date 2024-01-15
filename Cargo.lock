@@ -1160,6 +1160,7 @@ dependencies = [
  "pallet-scheduler",
  "pallet-session",
  "pallet-session-benchmarking",
+ "pallet-smith-members",
  "pallet-timestamp",
  "pallet-treasury",
  "pallet-universal-dividend",
@@ -3171,6 +3172,7 @@ dependencies = [
  "pallet-scheduler",
  "pallet-session",
  "pallet-session-benchmarking",
+ "pallet-smith-members",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -3241,6 +3243,7 @@ dependencies = [
  "pallet-scheduler",
  "pallet-session",
  "pallet-session-benchmarking",
+ "pallet-smith-members",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -3572,6 +3575,7 @@ dependencies = [
  "pallet-scheduler",
  "pallet-session",
  "pallet-session-benchmarking",
+ "pallet-smith-members",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -6345,6 +6349,27 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-session",
+ "sp-std 5.0.0",
+]
+
+[[package]]
+name = "pallet-smith-members"
+version = "3.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "maplit",
+ "pallet-authority-members",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
  "sp-std 5.0.0",
 ]
 

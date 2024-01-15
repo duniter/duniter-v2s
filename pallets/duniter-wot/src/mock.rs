@@ -46,13 +46,10 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        DuniterWot: pallet_duniter_wot::<Instance1>::{Pallet},
+        DuniterWot: pallet_duniter_wot::{Pallet},
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Membership: pallet_membership::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Cert: pallet_certification::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>},
-        SmithSubWot: pallet_duniter_wot::<Instance2>::{Pallet},
-        SmithMembership: pallet_membership::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>},
-        SmithCert: pallet_certification::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Membership: pallet_membership::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Cert: pallet_certification::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
 );
 
@@ -96,8 +93,7 @@ parameter_types! {
     pub const FirstIssuableOn: u64 = 2;
 }
 
-impl pallet_duniter_wot::Config<Instance1> for Test {
-    type IsSubWot = frame_support::traits::ConstBool<false>;
+impl pallet_duniter_wot::Config for Test {
     type MinCertForMembership = MinCertForMembership;
     type MinCertForCreateIdtyRight = MinCertForCreateIdtyRight;
     type FirstIssuableOn = FirstIssuableOn;
@@ -124,7 +120,7 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
 impl pallet_identity::Config for Test {
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type ConfirmPeriod = ConfirmPeriod;
-    type CheckIdtyCallAllowed = (DuniterWot, SmithSubWot);
+    type CheckIdtyCallAllowed = DuniterWot;
     type IdtyCreationPeriod = IdtyCreationPeriod;
     type ValidationPeriod = ValidationPeriod;
     type AutorevocationPeriod = AutorevocationPeriod;
@@ -135,7 +131,7 @@ impl pallet_identity::Config for Test {
     type AccountLinker = ();
     type Signer = UintAuthorityId;
     type Signature = TestSignature;
-    type OnIdtyChange = (DuniterWot, SmithSubWot);
+    type OnIdtyChange = DuniterWot;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
@@ -145,7 +141,7 @@ parameter_types! {
     pub const MembershipPeriod: u64 = 8;
 }
 
-impl pallet_membership::Config<Instance1> for Test {
+impl pallet_membership::Config for Test {
     type CheckMembershipCallAllowed = DuniterWot;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
@@ -166,7 +162,7 @@ parameter_types! {
     pub const ValidityPeriod: u64 = 20;
 }
 
-impl pallet_certification::Config<Instance1> for Test {
+impl pallet_certification::Config for Test {
     type CertPeriod = CertPeriod;
     type IdtyIndex = IdtyIndex;
     type OwnerKeyOf = Identity;
@@ -180,68 +176,10 @@ impl pallet_certification::Config<Instance1> for Test {
     type ValidityPeriod = ValidityPeriod;
 }
 
-// SMITHS SUB-WOT //
-
-parameter_types! {
-    pub const SmithMinCertForMembership: u32 = 2;
-    pub const SmithFirstIssuableOn: u64 = 2;
-}
-
-impl pallet_duniter_wot::Config<Instance2> for Test {
-    type IsSubWot = frame_support::traits::ConstBool<true>;
-    type MinCertForMembership = SmithMinCertForMembership;
-    type MinCertForCreateIdtyRight = frame_support::traits::ConstU32<0>;
-    type FirstIssuableOn = SmithFirstIssuableOn;
-    type IsDistanceOk = crate::traits::DistanceAlwaysOk;
-}
-
-// SmithMembership
-parameter_types! {
-    pub const SmithMembershipPeriod: u64 = 20;
-}
-
-impl pallet_membership::Config<Instance2> for Test {
-    type CheckMembershipCallAllowed = SmithSubWot;
-    type IdtyId = IdtyIndex;
-    type IdtyIdOf = IdentityIndexOf<Self>;
-    type AccountIdOf = ();
-    type MembershipPeriod = SmithMembershipPeriod;
-    type OnEvent = SmithSubWot;
-    type WeightInfo = ();
-    type RuntimeEvent = RuntimeEvent;
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkSetupHandler = ();
-}
-
-// SmithCert
-parameter_types! {
-    pub const SmithMaxByIssuer: u8 = 8;
-    pub const SmithMinReceivedCertToBeAbleToIssueCert: u32 = 2;
-    pub const SmithCertPeriod: u64 = 2;
-    pub const SmithValidityPeriod: u64 = 10;
-}
-
-impl pallet_certification::Config<Instance2> for Test {
-    type CertPeriod = SmithCertPeriod;
-    type IdtyIndex = IdtyIndex;
-    type OwnerKeyOf = Identity;
-    type CheckCertAllowed = SmithSubWot;
-    type MaxByIssuer = SmithMaxByIssuer;
-    type MinReceivedCertToBeAbleToIssueCert = SmithMinReceivedCertToBeAbleToIssueCert;
-    type OnNewcert = SmithSubWot;
-    type OnRemovedCert = SmithSubWot;
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
-    type ValidityPeriod = SmithValidityPeriod;
-}
-
 pub const NAMES: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"];
 
 // Build genesis storage according to the mock runtime.
-pub fn new_test_ext(
-    initial_identities_len: usize,
-    initial_smiths_len: usize,
-) -> sp_io::TestExternalities {
+pub fn new_test_ext(initial_identities_len: usize) -> sp_io::TestExternalities {
     let mut t = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
         .unwrap();
@@ -265,7 +203,7 @@ pub fn new_test_ext(
     .assimilate_storage(&mut t)
     .unwrap();
 
-    pallet_membership::GenesisConfig::<Test, Instance1> {
+    pallet_membership::GenesisConfig::<Test> {
         memberships: (1..=initial_identities_len)
             .map(|i| {
                 (
@@ -280,31 +218,9 @@ pub fn new_test_ext(
     .assimilate_storage(&mut t)
     .unwrap();
 
-    pallet_certification::GenesisConfig::<Test, Instance1> {
+    pallet_certification::GenesisConfig::<Test> {
         apply_cert_period_at_genesis: true,
         certs_by_receiver: clique_wot(initial_identities_len, ValidityPeriod::get()),
-    }
-    .assimilate_storage(&mut t)
-    .unwrap();
-
-    pallet_membership::GenesisConfig::<Test, Instance2> {
-        memberships: (1..=initial_smiths_len)
-            .map(|i| {
-                (
-                    i as u32,
-                    sp_membership::MembershipData {
-                        expire_on: SmithMembershipPeriod::get(),
-                    },
-                )
-            })
-            .collect(),
-    }
-    .assimilate_storage(&mut t)
-    .unwrap();
-
-    pallet_certification::GenesisConfig::<Test, Instance2> {
-        apply_cert_period_at_genesis: true,
-        certs_by_receiver: clique_wot(initial_smiths_len, SmithValidityPeriod::get()),
     }
     .assimilate_storage(&mut t)
     .unwrap();
@@ -330,9 +246,6 @@ pub fn run_to_block(n: u64) {
         Identity::on_finalize(System::block_number());
         Membership::on_finalize(System::block_number());
         Cert::on_finalize(System::block_number());
-        SmithSubWot::on_finalize(System::block_number());
-        SmithMembership::on_finalize(System::block_number());
-        SmithCert::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
         // reset events and change block number
         System::reset_events();
@@ -343,9 +256,6 @@ pub fn run_to_block(n: u64) {
         Identity::on_initialize(System::block_number());
         Membership::on_initialize(System::block_number());
         Cert::on_initialize(System::block_number());
-        SmithSubWot::on_initialize(System::block_number());
-        SmithMembership::on_initialize(System::block_number());
-        SmithCert::on_initialize(System::block_number());
     }
 }
 

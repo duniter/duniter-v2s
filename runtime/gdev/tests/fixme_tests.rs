@@ -43,10 +43,7 @@ fn can_still_issue_cert_when_membership_lost() {
         run_to_block(1);
 
         // expire Bob membership
-        Membership::do_remove_membership(
-            2,
-            MembershipRemovalReason::System
-        );
+        Membership::do_remove_membership(2, MembershipRemovalReason::System);
         System::assert_has_event(RuntimeEvent::Membership(
             pallet_membership::Event::MembershipRemoved {
                 member: 2,
@@ -55,12 +52,13 @@ fn can_still_issue_cert_when_membership_lost() {
         ));
 
         // fixed :)
-        assert_noop!(Cert::add_cert(
-            frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+        assert_noop!(
+            Cert::add_cert(
+                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
                 2, // Bob
                 3, // Charlie
             ),
-            pallet_duniter_wot::Error::<gdev_runtime::Runtime, pallet_certification::Instance1>::IssuerNotMember
+            pallet_duniter_wot::Error::<gdev_runtime::Runtime>::IssuerNotMember
         );
         // // not anymore
         // System::assert_has_event(RuntimeEvent::Cert(

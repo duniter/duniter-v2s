@@ -35,6 +35,7 @@ pub mod types {
         BlockNumber: Default + Parameter,
         CertCount: Default + Parameter,
         PeriodCount: Default + Parameter,
+        SessionCount: Default + Parameter,
     > {
         pub babe_epoch_duration: PeriodCount,
         pub cert_period: BlockNumber,
@@ -47,14 +48,9 @@ pub mod types {
         pub pending_membership_period: BlockNumber,
         pub ud_creation_period: PeriodCount,
         pub ud_reeval_period: PeriodCount,
-        pub smith_cert_period: BlockNumber,
         pub smith_cert_max_by_issuer: CertCount,
-        pub smith_cert_min_received_cert_to_issue_cert: CertCount,
-        pub smith_cert_validity_period: BlockNumber,
-        pub smith_membership_period: BlockNumber,
-        pub smith_pending_membership_period: BlockNumber,
-        pub smith_wot_first_cert_issuable_on: BlockNumber,
         pub smith_wot_min_cert_for_membership: CertCount,
+        pub smith_inactivity_max_duration: SessionCount,
         pub wot_first_cert_issuable_on: BlockNumber,
         pub wot_min_cert_for_create_idty_right: CertCount,
         pub wot_min_cert_for_membership: CertCount,
@@ -81,20 +77,24 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type CertCount: Default + MaybeSerializeDeserialize + Parameter;
         type PeriodCount: Default + MaybeSerializeDeserialize + Parameter;
+        type SessionCount: Default + MaybeSerializeDeserialize + Parameter;
     }
 
     // STORAGE //
 
     #[pallet::storage]
     #[pallet::getter(fn parameters)]
-    pub type ParametersStorage<T: Config> =
-        StorageValue<_, Parameters<T::BlockNumber, T::CertCount, T::PeriodCount>, ValueQuery>;
+    pub type ParametersStorage<T: Config> = StorageValue<
+        _,
+        Parameters<T::BlockNumber, T::CertCount, T::PeriodCount, T::SessionCount>,
+        ValueQuery,
+    >;
 
     // GENESIS
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub parameters: Parameters<T::BlockNumber, T::CertCount, T::PeriodCount>,
+        pub parameters: Parameters<T::BlockNumber, T::CertCount, T::PeriodCount, T::SessionCount>,
     }
 
     #[cfg(feature = "std")]

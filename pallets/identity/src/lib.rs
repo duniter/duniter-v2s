@@ -410,8 +410,6 @@ pub mod pallet {
                 Error::<T>::OwnerKeyAlreadyUsed
             );
 
-            T::CheckIdtyCallAllowed::change_owner_key(idty_index)?;
-
             let block_number = frame_system::Pallet::<T>::block_number();
             let maybe_old_old_owner_key =
                 if let Some((old_owner_key, last_change)) = idty_value.old_owner_key {

@@ -24,10 +24,22 @@ impl OnNewSession for () {
     fn on_new_session(_: SessionIndex) {}
 }
 
-pub trait OnRemovedMember<MemberId> {
-    fn on_removed_member(member_id: MemberId);
+/// Handle the consequences of going in the authority set for other pallets.
+/// Typically, a smith won't expire as long as he is in the authority set.
+pub trait OnIncomingMember<MemberId> {
+    fn on_incoming_member(member_id: MemberId);
+}
+/// By default: no consequences
+impl<MemberId> OnIncomingMember<MemberId> for () {
+    fn on_incoming_member(_: MemberId) {}
 }
 
-impl<MemberId> OnRemovedMember<MemberId> for () {
-    fn on_removed_member(_: MemberId) {}
+/// Handle the consequences of going out of authority set for other pallets.
+/// Typically, the smiths are not allowed to stay offline for a too long time.
+pub trait OnOutgoingMember<MemberId> {
+    fn on_outgoing_member(member_id: MemberId);
+}
+/// By default: no consequences
+impl<MemberId> OnOutgoingMember<MemberId> for () {
+    fn on_outgoing_member(_: MemberId) {}
 }
