@@ -7,6 +7,7 @@ authors = ['Axiom-Team Developers <https://axiom-team.fr>']
 edition = "2021"
 
 [features]
+constant-fees = []
 runtime-benchmarks = [
     "frame-benchmarking/runtime-benchmarks",
     'frame-support/runtime-benchmarks',

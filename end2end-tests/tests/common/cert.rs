@@ -51,7 +51,9 @@ pub async fn certify(client: &Client, from: AccountKeyring, to: AccountKeyring) 
         client
             .tx()
             .create_signed(
-                &gdev::tx().cert().add_cert(issuer_index, receiver_index),
+                &gdev::tx()
+                    .certification()
+                    .add_cert(issuer_index, receiver_index),
                 &signer,
                 BaseExtrinsicParamsBuilder::new(),
             )

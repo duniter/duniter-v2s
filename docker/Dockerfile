@@ -59,11 +59,11 @@ RUN set -x && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/ && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/distance-oracle build/
 
-# Run tests if requested, expted when cross-building
+# Run tests if requested, except when cross-building
 ARG cucumber=0
 RUN if [ "$cucumber" != 0 ] && [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then \
         cargo ta && \
-        cargo test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features runtime-benchmarks \
+        cargo test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features=runtime-benchmarks,constant-fees \
         cd target/debug/deps/ && \
         rm cucumber_tests-*.d && \
         mv cucumber_tests* ../../../build/duniter-cucumber; \

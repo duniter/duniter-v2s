@@ -23,9 +23,10 @@ use common_runtime::entities::IdtyData;
 use common_runtime::*;
 use gdev_runtime::{
     opaque::SessionKeys, pallet_universal_dividend, parameters, AccountConfig,
-    AuthorityMembersConfig, BabeConfig, BalancesConfig, CertConfig, GenesisConfig, IdentityConfig,
-    MembershipConfig, ParametersConfig, QuotaConfig, Runtime, SessionConfig, SmithMembersConfig,
-    SudoConfig, SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
+    AuthorityMembersConfig, BabeConfig, BalancesConfig, CertificationConfig, GenesisConfig,
+    IdentityConfig, MembershipConfig, ParametersConfig, QuotaConfig, Runtime, SessionConfig,
+    SmithMembersConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
+    UniversalDividendConfig, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_network::config::MultiaddrWithPeerId;
@@ -352,7 +353,7 @@ fn genesis_data_to_gdev_genesis_conf(
                 )
                 .collect(),
         },
-        cert: CertConfig {
+        certification: CertificationConfig {
             apply_cert_period_at_genesis: false,
             certs_by_receiver,
         },

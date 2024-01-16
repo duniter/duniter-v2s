@@ -2,7 +2,7 @@ Feature: Oneshot account
 
   Scenario: Simple oneshot consumption
     When alice sends 7 ĞD to oneshot dave
-    # Alice is treasury funder for 1 ĞD and pays fees
+    # Alice is treasury funder for 1 ĞD and pays fees TODO
     Then alice should have 199 cĞD
     Then dave should have oneshot 7 ĞD
     When oneshot dave consumes into account bob
@@ -12,7 +12,7 @@ Feature: Oneshot account
 
   Scenario: Double oneshot consumption
     When alice sends 7 ĞD to oneshot dave
-    # Alice is treasury funder for 1 ĞD and pays fees
+    # Alice is treasury funder for 1 ĞD and pays fees TODO
     Then alice should have 199 cĞD
     Then dave should have oneshot 7 ĞD
     When oneshot dave consumes 4 ĞD into account bob and the rest into oneshot charlie

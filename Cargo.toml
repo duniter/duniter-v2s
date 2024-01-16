@@ -21,6 +21,7 @@ path = "node/src/main.rs"
 default = ["gdev", "distance-oracle"]
 gdev = ["gdev-runtime"] # gdev feature enables gdev runtime and gdev command line options
 g1 = ["g1-runtime"]
+constant-fees = ["common-runtime/constant-fees"] # Activate constant fees model, 1 extrinsic = 2 cG
 gtest = ["gtest-runtime"]
 embed = [] # embed feature enables embedding raw chainspecs that must be in ./specs/gdev-raw.json
 runtime-benchmarks = [

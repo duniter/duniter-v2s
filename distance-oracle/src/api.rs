@@ -122,7 +122,7 @@ pub async fn cert_iter(client: &Client, evaluation_block: H256) -> CertIter {
         client
             .storage()
             .at(evaluation_block)
-            .iter(runtime::storage().cert().certs_by_receiver(0), 100)
+            .iter(runtime::storage().certification().certs_by_receiver(0), 100)
             .await
             .expect("Cannot fetch certifications"),
     )

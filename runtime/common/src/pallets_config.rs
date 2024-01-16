@@ -214,10 +214,7 @@ macro_rules! pallets_config {
             // does a filter on the call
             type OnChargeTransaction = OneshotAccount;
             type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
-            #[cfg(not(feature = "runtime-benchmarks"))]
             type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance>;
-            #[cfg(feature = "runtime-benchmarks")]
-            type WeightToFee = frame_support::weights::ConstantMultiplier::<u64, sp_core::ConstU64<0u64>>; // Necessary for overhead benchmarking until WeightToFee has a correct implementation
             type LengthToFee = common_runtime::fees::LengthToFeeImpl<Balance>;
             type FeeMultiplierUpdate = pallet_transaction_payment::ConstFeeMultiplier<FeeMultiplier>;
         }
@@ -493,7 +490,7 @@ macro_rules! pallets_config {
             type MembershipPeriod = MembershipPeriod;
             type OnEvent = (OnMembershipEventHandler<Wot, Runtime>, Wot);
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_membership_membership::WeightInfo<Runtime>;
+            type WeightInfo = common_runtime::weights::pallet_membership::WeightInfo<Runtime>;
             #[cfg(feature = "runtime-benchmarks")]
             type BenchmarkSetupHandler = common_runtime::providers::BenchmarkSetupHandler<Runtime>;
         }
@@ -508,7 +505,7 @@ macro_rules! pallets_config {
             type OnNewcert = Wot;
             type OnRemovedCert = Wot;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_certification_cert::WeightInfo<Runtime>;
+            type WeightInfo = common_runtime::weights::pallet_certification::WeightInfo<Runtime>;
             type ValidityPeriod = ValidityPeriod;
         }
         parameter_types! {

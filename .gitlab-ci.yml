@@ -131,9 +131,8 @@ tests:
   script:
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
-    # cargo build is required for cucumber tests anyway
-    - cargo build
     - cargo tu
+    - cargo cucumber-build
     - cargo cucumber
 
 .deploy_docker_multiplatform:

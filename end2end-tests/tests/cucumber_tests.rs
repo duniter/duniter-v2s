@@ -476,7 +476,11 @@ async fn should_be_certified_by(
         .unwrap();
 
     let issuers = world
-        .read_or_default(&gdev::storage().cert().certs_by_receiver(receiver_index))
+        .read_or_default(
+            &gdev::storage()
+                .certification()
+                .certs_by_receiver(receiver_index),
+        )
         .await
         .await?;
 

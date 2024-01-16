@@ -23,9 +23,9 @@ use frame_benchmarking::frame_support::traits::Get;
 use gtest_runtime::SmithMembersConfig;
 use gtest_runtime::{
     opaque::SessionKeys, pallet_universal_dividend, parameters, AccountConfig, AccountId,
-    AuthorityMembersConfig, BabeConfig, BalancesConfig, CertConfig, GenesisConfig, IdentityConfig,
-    ImOnlineId, MembershipConfig, Perbill, QuotaConfig, Runtime, SessionConfig, SudoConfig,
-    SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
+    AuthorityMembersConfig, BabeConfig, BalancesConfig, CertificationConfig, GenesisConfig,
+    IdentityConfig, ImOnlineId, MembershipConfig, Perbill, QuotaConfig, Runtime, SessionConfig,
+    SudoConfig, SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_consensus_grandpa::AuthorityId as GrandpaId;
@@ -301,7 +301,7 @@ fn genesis_data_to_gtest_genesis_conf(
                 )
                 .collect(),
         },
-        cert: CertConfig {
+        certification: CertificationConfig {
             apply_cert_period_at_genesis: true,
             certs_by_receiver,
         },

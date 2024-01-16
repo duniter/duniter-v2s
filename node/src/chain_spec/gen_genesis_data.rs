@@ -1676,6 +1676,7 @@ where
     let idty_index_start: u32 = 1;
     let common_parameters = get_common_parameters(&parameters);
     let names: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"];
+    let initial_idty_balance = 1_000 * ud;
 
     let initial_smiths = (0..initial_smiths_len)
         .map(|i| get_authority_keys_from_seed(names[i]))
@@ -1722,7 +1723,8 @@ where
                     random_id: H256(blake2_256(
                         &(i as u32 + idty_index_start, owner_key).encode(),
                     )),
-                    balance: ud,
+                    // Should be sufficient for the overhead benchmark
+                    balance: initial_idty_balance,
                     idty_id: Some(i as u32 + idty_index_start),
                 },
             )
@@ -1797,7 +1799,7 @@ where
         first_ud_reeval: None,
         identities,
         initial_authorities,
-        initial_monetary_mass: initial_identities_len as u64 * ud,
+        initial_monetary_mass: initial_identities_len as u64 * initial_idty_balance,
         memberships: (1..=initial_identities.len())
             .map(|i| (i as u32, MembershipData { expire_on: 0 }))
             .collect(),

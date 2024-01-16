@@ -139,7 +139,7 @@ pub type TechnicalCommitteeInstance = Instance2;
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
     define_benchmarks!(
-        [pallet_certification, Cert]
+        [pallet_certification, Certification]
         [pallet_distance, Distance]
         [pallet_oneshot_account, OneshotAccount]
         [pallet_universal_dividend, UniversalDividend]
@@ -214,7 +214,7 @@ impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
                 // Some calls are never authorized from a proxied account
                 !matches!(
                     c,
-                    RuntimeCall::Cert(..)
+                    RuntimeCall::Certification(..)
                         | RuntimeCall::Identity(..)
                         | RuntimeCall::SmithMembers(..)
                 )
@@ -288,7 +288,7 @@ construct_runtime!(
         Wot: pallet_duniter_wot::{Pallet} = 40,
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
         Membership: pallet_membership::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
-        Cert: pallet_certification::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
+        Certification: pallet_certification::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
         Distance: pallet_distance::{Pallet, Call, Storage, Inherent, Event<T>} = 44,
 
         // Utilities

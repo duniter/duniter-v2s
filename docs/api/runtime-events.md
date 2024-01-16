@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **127** events from **37** pallets.
+There are **127** events from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -644,7 +644,73 @@ no args
 </li>
 </ul>
 </li>
-<li>AuthorityMembers - 10
+<li>SmithMembers - 10
+<ul>
+<li>
+<details>
+<summary>
+<code>InvitationSent(idty_index, invited_by)</code> - 0</summary>
+An identity is being inivited to become a smith
+
+```rust
+idty_index: T::IdtyIndex
+invited_by: T::IdtyIndex
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>InvitationAccepted(idty_index)</code> - 1</summary>
+The invitation has been accepted
+
+```rust
+idty_index: T::IdtyIndex
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CertificationReceived(idty_index, issued_by)</code> - 2</summary>
+Certification received
+
+```rust
+idty_index: T::IdtyIndex
+issued_by: T::IdtyIndex
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>PromotedToSmith(idty_index)</code> - 3</summary>
+A smith gathered enough certifications to become an authority (can call `go_online()`).
+
+```rust
+idty_index: T::IdtyIndex
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>SmithExcluded(idty_index)</code> - 4</summary>
+A smith has been removed from the smiths set
+
+```rust
+idty_index: T::IdtyIndex
+```
+
+</details>
+</li>
+</ul>
+</li>
+<li>AuthorityMembers - 11
 <ul>
 <li>
 <details>
@@ -732,11 +798,11 @@ member: T::MemberId
 </li>
 </ul>
 </li>
-<li>Authorship - 11
+<li>Authorship - 12
 <ul>
 </ul>
 </li>
-<li>Offences - 12
+<li>Offences - 13
 <ul>
 <li>
 <details>
@@ -753,11 +819,11 @@ timeslot: OpaqueTimeSlot
 </li>
 </ul>
 </li>
-<li>Historical - 13
+<li>Historical - 14
 <ul>
 </ul>
 </li>
-<li>Session - 14
+<li>Session - 15
 <ul>
 <li>
 <details>
@@ -774,7 +840,7 @@ session_index: SessionIndex
 </li>
 </ul>
 </li>
-<li>Grandpa - 15
+<li>Grandpa - 16
 <ul>
 <li>
 <details>
@@ -814,7 +880,7 @@ no args
 </li>
 </ul>
 </li>
-<li>ImOnline - 16
+<li>ImOnline - 17
 <ul>
 <li>
 <details>
@@ -854,7 +920,7 @@ offline: Vec<IdentificationTuple<T>>
 </li>
 </ul>
 </li>
-<li>AuthorityDiscovery - 17
+<li>AuthorityDiscovery - 18
 <ul>
 </ul>
 </li>
@@ -1232,7 +1298,7 @@ reason: MembershipRemovalReason
 </li>
 </ul>
 </li>
-<li>Cert - 43
+<li>Certification - 43
 <ul>
 <li>
 <details>
@@ -1318,85 +1384,7 @@ status: Option<(<T as frame_system::Config>::AccountId, DistanceStatus)>
 </li>
 </ul>
 </li>
-<li>SmithSubWot - 50
-<ul>
-</ul>
-</li>
-<li>SmithMembership - 52
-<ul>
-<li>
-<details>
-<summary>
-<code>MembershipAdded(member, expire_on)</code> - 0</summary>
-A membership was added.
-
-```rust
-member: T::IdtyId
-expire_on: BlockNumberFor<T>
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MembershipRemoved(member, reason)</code> - 1</summary>
-A membership was removed.
-
-```rust
-member: T::IdtyId
-reason: MembershipRemovalReason
-```
-
-</details>
-</li>
-</ul>
-</li>
-<li>SmithCert - 53
-<ul>
-<li>
-<details>
-<summary>
-<code>CertAdded(issuer, receiver)</code> - 0</summary>
-A new certification was added.
-
-```rust
-issuer: T::IdtyIndex
-receiver: T::IdtyIndex
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>CertRemoved(issuer, receiver, expiration)</code> - 1</summary>
-A certification was removed.
-
-```rust
-issuer: T::IdtyIndex
-receiver: T::IdtyIndex
-expiration: bool
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>CertRenewed(issuer, receiver)</code> - 2</summary>
-A certification was renewed.
-
-```rust
-issuer: T::IdtyIndex
-receiver: T::IdtyIndex
-```
-
-</details>
-</li>
-</ul>
-</li>
-<li>AtomicSwap - 60
+<li>AtomicSwap - 50
 <ul>
 <li>
 <details>
@@ -1441,7 +1429,7 @@ proof: HashedProof
 </li>
 </ul>
 </li>
-<li>Multisig - 61
+<li>Multisig - 51
 <ul>
 <li>
 <details>
@@ -1505,7 +1493,7 @@ call_hash: CallHash
 </li>
 </ul>
 </li>
-<li>ProvideRandomness - 62
+<li>ProvideRandomness - 52
 <ul>
 <li>
 <details>
@@ -1536,7 +1524,7 @@ r#type: RandomnessType
 </li>
 </ul>
 </li>
-<li>Proxy - 63
+<li>Proxy - 53
 <ul>
 <li>
 <details>
@@ -1612,7 +1600,7 @@ delay: T::BlockNumber
 </li>
 </ul>
 </li>
-<li>Utility - 64
+<li>Utility - 54
 <ul>
 <li>
 <details>
@@ -1690,7 +1678,7 @@ result: DispatchResult
 </li>
 </ul>
 </li>
-<li>Treasury - 65
+<li>Treasury - 55
 <ul>
 <li>
 <details>

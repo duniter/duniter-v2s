@@ -53,7 +53,7 @@ fn can_still_issue_cert_when_membership_lost() {
 
         // fixed :)
         assert_noop!(
-            Cert::add_cert(
+            Certification::add_cert(
                 frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
                 2, // Bob
                 3, // Charlie

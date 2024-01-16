@@ -275,22 +275,6 @@ pub(super) fn gen_doc() -> Result<()> {
         &"Collective".into(),
         "TechnicalCommittee".into(),
     );
-    rename_key(
-        &mut weights,
-        &"MembershipMembership".into(),
-        "Membership".into(),
-    );
-    rename_key(
-        &mut weights,
-        &"MembershipSmithMembership".into(),
-        "SmithMembership".into(),
-    );
-    rename_key(&mut weights, &"CertificationCert".into(), "Cert".into());
-    rename_key(
-        &mut weights,
-        &"CertificationSmithCert".into(),
-        "SmithCert".into(),
-    );
 
     // We enforce weight for each pallet.
     // For pallets with manual or no weight, we define a default value.

@@ -335,12 +335,12 @@ fn test_validate_identity_when_claim() {
             ));
             run_to_block(3);
             // eve gets certified by bob and charlie
-            assert_ok!(Cert::add_cert(
+            assert_ok!(Certification::add_cert(
                 frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
                 2,
                 5
             ));
-            assert_ok!(Cert::add_cert(
+            assert_ok!(Certification::add_cert(
                 frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
                 3,
                 5
@@ -1031,7 +1031,7 @@ fn test_validate_new_idty_after_few_uds() {
 
             // At next block, Bob should be able to certify and validate the new identity
             run_to_block(23);
-            assert_ok!(Cert::add_cert(
+            assert_ok!(Certification::add_cert(
                 frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
                 2,
                 5,
@@ -1089,7 +1089,7 @@ fn test_claim_memberhsip_after_few_uds() {
 
             // At next block, Bob should be able to certify the new identity
             run_to_block(23);
-            assert_ok!(Cert::add_cert(
+            assert_ok!(Certification::add_cert(
                 frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
                 2,
                 5,

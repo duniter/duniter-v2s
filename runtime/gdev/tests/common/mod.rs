@@ -368,7 +368,7 @@ pub fn run_to_block(n: u32) {
         Wot::on_initialize(System::block_number());
         Identity::on_initialize(System::block_number());
         Membership::on_initialize(System::block_number());
-        Cert::on_initialize(System::block_number());
+        Certification::on_initialize(System::block_number());
 
         Timestamp::set_timestamp(System::block_number() as u64 * BLOCK_TIME);
         Distance::on_initialize(System::block_number());

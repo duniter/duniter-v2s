@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **187** errors from **37** pallets.
+There are **178** errors from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -271,7 +271,116 @@ Source oneshot account does not exist.
 <ul>
 </ul>
 </li>
-<li>AuthorityMembers - 10
+<li>SmithMembers - 10
+<ul>
+<li>
+<details>
+<summary>
+<code>OriginMustHaveAnIdentity</code> - 0</summary>
+Issuer of anything (invitation, acceptance, certification) must have an identity ID
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>OriginHasNeverBeenInvited</code> - 1</summary>
+Issuer must be known as a potential smith
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>InvitationIsASmithPrivilege</code> - 2</summary>
+Invitation is reseverd to smiths
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>InvitationIsAOnlineSmithPrivilege</code> - 3</summary>
+Invitation is reseverd to online smiths
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>InvitationAlreadyAccepted</code> - 4</summary>
+Invitation must not have been accepted yet
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>InvitationOfExistingNonExcluded</code> - 5</summary>
+Invitation of an already known smith is forbidden except if it has been excluded
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>InvitationOfNonMember</code> - 6</summary>
+Invitation of a non-member (of the WoT) is forbidden
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CertificationMustBeAgreed</code> - 7</summary>
+Certification cannot be made on someone who has not accepted an invitation
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CertificationOnExcludedIsForbidden</code> - 8</summary>
+Certification cannot be made on excluded
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CertificationIsASmithPrivilege</code> - 9</summary>
+Issuer must be a smith
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CertificationIsAOnlineSmithPrivilege</code> - 10</summary>
+Only online smiths can certify
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CertificationOfSelfIsForbidden</code> - 11</summary>
+Smith cannot certify itself
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CertificationReceiverMustHaveBeenInvited</code> - 12</summary>
+Receiver must be invited by another smith
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CertificationAlreadyExists</code> - 13</summary>
+Receiver must not already have this certification
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CertificationStockFullyConsumed</code> - 14</summary>
+A smith has a limited stock of certifications
+</details>
+</li>
+</ul>
+</li>
+<li>AuthorityMembers - 11
 <ul>
 <li>
 <details>
@@ -352,19 +461,19 @@ Too many authorities.
 </li>
 </ul>
 </li>
-<li>Authorship - 11
+<li>Authorship - 12
 <ul>
 </ul>
 </li>
-<li>Offences - 12
+<li>Offences - 13
 <ul>
 </ul>
 </li>
-<li>Historical - 13
+<li>Historical - 14
 <ul>
 </ul>
 </li>
-<li>Session - 14
+<li>Session - 15
 <ul>
 <li>
 <details>
@@ -403,7 +512,7 @@ Key setting account is not live, so it's impossible to associate keys.
 </li>
 </ul>
 </li>
-<li>Grandpa - 15
+<li>Grandpa - 16
 <ul>
 <li>
 <details>
@@ -458,7 +567,7 @@ A given equivocation report is valid but already previously reported.
 </li>
 </ul>
 </li>
-<li>ImOnline - 16
+<li>ImOnline - 17
 <ul>
 <li>
 <details>
@@ -476,7 +585,7 @@ Duplicated heartbeat.
 </li>
 </ul>
 </li>
-<li>AuthorityDiscovery - 17
+<li>AuthorityDiscovery - 18
 <ul>
 </ul>
 </li>
@@ -904,7 +1013,7 @@ Membership not found.
 </li>
 </ul>
 </li>
-<li>Cert - 43
+<li>Certification - 43
 <ul>
 <li>
 <details>
@@ -1003,187 +1112,7 @@ Evaluation result has a wrong length.
 </li>
 </ul>
 </li>
-<li>SmithSubWot - 50
-<ul>
-<li>
-<details>
-<summary>
-<code>NotEnoughCertsToClaimMembership</code> - 0</summary>
-Insufficient certifications received to claim membership.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>DistanceIsInvalid</code> - 1</summary>
-Distance is invalid.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>DistanceNotEvaluated</code> - 2</summary>
-Distance is not evaluated.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>DistanceEvaluationPending</code> - 3</summary>
-Distance evaluation has been requested but is still pending
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>DistanceEvaluationNotRequested</code> - 4</summary>
-Distance evaluation has not been requested
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IdtyNotAllowedToRequestMembership</code> - 5</summary>
-Identity is not allowed to request membership.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IdtyNotAllowedToRenewMembership</code> - 6</summary>
-Identity not allowed to renew membership.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IdtyCreationPeriodNotRespected</code> - 7</summary>
-Identity creation period not respected.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>NotEnoughReceivedCertsToCreateIdty</code> - 8</summary>
-Insufficient received certifications to create identity.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MaxEmittedCertsReached</code> - 9</summary>
-Maximum number of emitted certifications reached.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>NotAllowedToChangeIdtyAddress</code> - 10</summary>
-Not allowed to change identity address.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>NotAllowedToRemoveIdty</code> - 11</summary>
-Not allowed to remove identity.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IssuerNotMember</code> - 12</summary>
-Issuer cannot emit a certification because it is not member.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>CertToUnconfirmed</code> - 13</summary>
-Cannot issue a certification to an unconfirmed identity
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>CertToRevoked</code> - 14</summary>
-Cannot issue a certification to a revoked identity
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IdtyNotFound</code> - 15</summary>
-Issuer or receiver not found.
-</details>
-</li>
-</ul>
-</li>
-<li>SmithMembership - 52
-<ul>
-<li>
-<details>
-<summary>
-<code>IdtyIdNotFound</code> - 0</summary>
-Identity ID not found.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MembershipAlreadyAcquired</code> - 1</summary>
-Membership already acquired.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MembershipNotFound</code> - 2</summary>
-Membership not found.
-</details>
-</li>
-</ul>
-</li>
-<li>SmithCert - 53
-<ul>
-<li>
-<details>
-<summary>
-<code>CannotCertifySelf</code> - 0</summary>
-Identity cannot certify itself
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IssuedTooManyCert</code> - 1</summary>
-Identity has already issued the maximum number of certifications
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IssuerNotFound</code> - 2</summary>
-Issuer not found
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>NotEnoughCertReceived</code> - 3</summary>
-Insufficient certifications received.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>NotRespectCertPeriod</code> - 4</summary>
-Identity has issued a certification too recently.
-</details>
-</li>
-</ul>
-</li>
-<li>AtomicSwap - 60
+<li>AtomicSwap - 50
 <ul>
 <li>
 <details>
@@ -1243,7 +1172,7 @@ Duration has not yet passed for the swap to be cancelled.
 </li>
 </ul>
 </li>
-<li>Multisig - 61
+<li>Multisig - 51
 <ul>
 <li>
 <details>
@@ -1345,7 +1274,7 @@ The data to be stored is already stored.
 </li>
 </ul>
 </li>
-<li>ProvideRandomness - 62
+<li>ProvideRandomness - 52
 <ul>
 <li>
 <details>
@@ -1356,7 +1285,7 @@ Request randomness queue is full.
 </li>
 </ul>
 </li>
-<li>Proxy - 63
+<li>Proxy - 53
 <ul>
 <li>
 <details>
@@ -1416,7 +1345,7 @@ Cannot add self as proxy.
 </li>
 </ul>
 </li>
-<li>Utility - 64
+<li>Utility - 54
 <ul>
 <li>
 <details>
@@ -1427,7 +1356,7 @@ Too many calls batched.
 </li>
 </ul>
 </li>
-<li>Treasury - 65
+<li>Treasury - 55
 <ul>
 <li>
 <details>
