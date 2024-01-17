@@ -82,18 +82,18 @@ pub mod pallet {
         /// Period after which a revoked identity is removed and the keys are freed.
         #[pallet::constant]
         type DeletionPeriod: Get<Self::BlockNumber>;
-        /// Minimum duration between two owner key changes
+        /// Minimum duration between two owner key changes.
         // to avoid stealing the identity without means to revoke
         #[pallet::constant]
         type ChangeOwnerKeyPeriod: Get<Self::BlockNumber>;
-        /// Minimum duration between the creation of 2 identities by the same creator
+        /// Minimum duration between the creation of 2 identities by the same creator.
         // it should be greater or equal than the certification period in certification pallet
         #[pallet::constant]
         type IdtyCreationPeriod: Get<Self::BlockNumber>;
         /// Management of the authorizations of the different calls.
         /// The default implementation allows everything.
         type CheckIdtyCallAllowed: CheckIdtyCallAllowed<Self>;
-        /// Custom data to store in each identity
+        /// Custom data to store in each identity.
         type IdtyData: Clone
             + Codec
             + Default

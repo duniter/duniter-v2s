@@ -292,7 +292,7 @@ construct_runtime!(
         // Web Of Trust
         Wot: pallet_duniter_wot::{Pallet} = 40,
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
-        Membership: pallet_membership::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
+        Membership: pallet_membership::{Pallet, Config<T>, Storage, Event<T>} = 42,
         Certification: pallet_certification::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
         Distance: pallet_distance::{Pallet, Call, Storage, Inherent, Event<T>} = 44,
 

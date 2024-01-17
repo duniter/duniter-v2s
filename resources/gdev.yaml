@@ -27,8 +27,8 @@ parameters:
   cert_validity_period: 2102400
   # Validity duration of a membership. 1051200 blocks = 73 days.
   membership_period: 1051200
-  # Validity duration of a pending membership. 172800 blocks = 12 days.
-  pending_membership_period: 172800
+  # Period to wait before membership renewal. 1051200 blocks = 1 days.
+  membership_renewal_period: 14400
   # Delay a new member must observe before being able to emit a certification
   wot_first_cert_issuable_on: 0
   # Number of required received certs to become a member
@@ -68,4 +68,5 @@ sudo_key: "5CfodrEFe64MJtWvfhTHYBuUySr4WXLv2B41mZFucTXSGMFA"
 treasury_funder_address: "5E6q47RRGZU15LjUiBTm2DZjpqFKAjRNafYS8YV8AzTQZtLG"
 
 # The technical committee members, to act as sudo
-technical_committee: ["Pini", "moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek"]
+technical_committee:
+  ["Pini", "moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek"]

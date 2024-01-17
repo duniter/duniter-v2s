@@ -105,7 +105,7 @@ impl ExtBuilder {
                 idty_confirm_period: 40,
                 idty_creation_period: 50,
                 membership_period: 100,
-                pending_membership_period: 500,
+                membership_renewal_period: 10,
                 ud_creation_period: 60_000,
                 ud_reeval_period: 60_000 * 20,
                 smith_cert_max_by_issuer: 8,

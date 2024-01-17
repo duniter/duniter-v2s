@@ -177,10 +177,9 @@ impl Contains<RuntimeCall> for BaseCallFilter {
     fn contains(call: &RuntimeCall) -> bool {
         !matches!(
             call,
-            // in main web of trust, membership request and revoke are handeled through identity pallet
-            // the user can not call them directly
-            RuntimeCall::Membership(pallet_membership::Call::revoke_membership { .. })
-                | RuntimeCall::Session(_)
+            // session calls can not be called directly
+            // it should be done through authority-members pallet
+            RuntimeCall::Session(_)
         )
     }
 }
@@ -257,6 +256,7 @@ common_runtime::pallets_config! {
     pub type ConfirmPeriod = pallet_duniter_test_parameters::IdtyConfirmPeriod<Runtime>;
     pub type IdtyCreationPeriod = pallet_duniter_test_parameters::IdtyCreationPeriod<Runtime>;
     pub type MembershipPeriod = pallet_duniter_test_parameters::MembershipPeriod<Runtime>;
+    pub type MembershipRenewalPeriod = pallet_duniter_test_parameters::MembershipRenewalPeriod<Runtime>;
     pub type UdCreationPeriod = pallet_duniter_test_parameters::UdCreationPeriod<Runtime>;
     pub type UdReevalPeriod = pallet_duniter_test_parameters::UdReevalPeriod<Runtime>;
     pub type WotFirstCertIssuableOn = pallet_duniter_test_parameters::WotFirstCertIssuableOn<Runtime>;
@@ -329,7 +329,7 @@ construct_runtime!(
         // Web Of Trust
         Wot: pallet_duniter_wot::{Pallet} = 40,
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
-        Membership: pallet_membership::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
+        Membership: pallet_membership::{Pallet, Config<T>, Storage, Event<T>} = 42,
         Certification: pallet_certification::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
         Distance: pallet_distance::{Pallet, Call, Storage, Inherent, Event<T>} = 44,
 

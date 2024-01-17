@@ -128,12 +128,12 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// An identity is being inivited to become a smith
+        /// An identity is being inivited to become a smith.
         InvitationSent {
             idty_index: T::IdtyIndex,
             invited_by: T::IdtyIndex,
         },
-        /// The invitation has been accepted
+        /// The invitation has been accepted.
         InvitationAccepted { idty_index: T::IdtyIndex },
         /// Certification received
         CertificationReceived {
@@ -142,7 +142,7 @@ pub mod pallet {
         },
         /// A smith gathered enough certifications to become an authority (can call `go_online()`).
         PromotedToSmith { idty_index: T::IdtyIndex },
-        /// A smith has been removed from the smiths set
+        /// A smith has been removed from the smiths set.
         SmithExcluded { idty_index: T::IdtyIndex },
     }
 

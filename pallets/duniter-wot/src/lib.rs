@@ -30,8 +30,6 @@ mod benchmarking;*/
 
 pub use pallet::*;
 
-use traits::*;
-
 use frame_support::pallet_prelude::*;
 use pallet_certification::traits::SetNextIssuableOn;
 use pallet_identity::{IdtyEvent, IdtyStatus};
@@ -61,8 +59,6 @@ pub mod pallet {
         + pallet_identity::Config<IdtyIndex = IdtyIndex>
         + pallet_membership::Config<IdtyId = IdtyIndex>
     {
-        /// Distance evaluation provider
-        type IsDistanceOk: IsDistanceOk<IdtyIndex>;
         #[pallet::constant]
         type FirstIssuableOn: Get<Self::BlockNumber>;
         #[pallet::constant]
@@ -87,38 +83,24 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Insufficient certifications received to claim membership.
-        NotEnoughCertsToClaimMembership,
-        /// Distance is invalid.
-        DistanceIsInvalid,
-        /// Distance is not evaluated.
-        DistanceNotEvaluated,
-        /// Distance evaluation has been requested but is still pending
-        DistanceEvaluationPending,
-        /// Distance evaluation has not been requested
-        DistanceEvaluationNotRequested,
-        /// Identity is not allowed to request membership.
-        IdtyNotAllowedToRequestMembership,
-        /// Identity not allowed to renew membership.
-        IdtyNotAllowedToRenewMembership,
+        /// Insufficient certifications received.
+        NotEnoughCerts,
+        /// Target status is incompatible with this operation.
+        // - Membership can not be added/renewed with this status
+        // - Certification can not be added to identity with this status
+        TargetStatusInvalid,
         /// Identity creation period not respected.
         IdtyCreationPeriodNotRespected,
         /// Insufficient received certifications to create identity.
         NotEnoughReceivedCertsToCreateIdty,
         /// Maximum number of emitted certifications reached.
         MaxEmittedCertsReached,
-        /// Not allowed to change identity address.
-        NotAllowedToChangeIdtyAddress,
-        /// Not allowed to remove identity.
-        NotAllowedToRemoveIdty,
         /// Issuer cannot emit a certification because it is not member.
         IssuerNotMember,
-        /// Cannot issue a certification to an unconfirmed identity
-        CertToUnconfirmed,
-        /// Cannot issue a certification to a revoked identity
-        CertToRevoked,
         /// Issuer or receiver not found.
         IdtyNotFound,
+        /// Membership can only be renewed after an antispam delay.
+        MembershipRenewalPeriodNotRespected,
     }
 }
 
@@ -162,55 +144,53 @@ impl<T: Config> pallet_certification::traits::CheckCertAllowed<IdtyIndex> for Pa
     fn check_cert_allowed(issuer: IdtyIndex, receiver: IdtyIndex) -> Result<(), DispatchError> {
         // issuer checks
         // ensure issuer is member
-        if let Some(issuer_data) = pallet_identity::Pallet::<T>::identity(issuer) {
-            ensure!(
-                issuer_data.status == IdtyStatus::Member,
-                Error::<T>::IssuerNotMember
-            );
-        } else {
-            return Err(Error::<T>::IdtyNotFound.into());
-        }
+        let issuer_data =
+            pallet_identity::Pallet::<T>::identity(issuer).ok_or(Error::<T>::IdtyNotFound)?;
+        ensure!(
+            issuer_data.status == IdtyStatus::Member,
+            Error::<T>::IssuerNotMember
+        );
 
         // receiver checks
         // ensure receiver identity is confirmed and not revoked
-        if let Some(receiver_data) = pallet_identity::Pallet::<T>::identity(receiver) {
-            match receiver_data.status {
-                // able to receive cert
-                IdtyStatus::Unvalidated | IdtyStatus::Member | IdtyStatus::NotMember => {}
-                IdtyStatus::Unconfirmed => return Err(Error::<T>::CertToUnconfirmed.into()),
-                IdtyStatus::Revoked => return Err(Error::<T>::CertToRevoked.into()),
-            };
-        } else {
-            return Err(Error::<T>::IdtyNotFound.into());
-        }
+        let receiver_data =
+            pallet_identity::Pallet::<T>::identity(receiver).ok_or(Error::<T>::IdtyNotFound)?;
+        ensure!(
+            receiver_data.status == IdtyStatus::Unvalidated
+                || receiver_data.status == IdtyStatus::Member
+                || receiver_data.status == IdtyStatus::NotMember,
+            Error::<T>::TargetStatusInvalid
+        );
         Ok(())
     }
 }
 
 // implement membership call checks
-impl<T: Config> sp_membership::traits::CheckMembershipCallAllowed<IdtyIndex> for Pallet<T> {
-    // membership claim is only possible when enough certs are received (both wots) and distance is ok
-    fn check_idty_allowed_to_claim_membership(idty_index: &IdtyIndex) -> Result<(), DispatchError> {
-        let idty_cert_meta = pallet_certification::Pallet::<T>::idty_cert_meta(idty_index);
+impl<T: Config> sp_membership::traits::CheckMembershipOpAllowed<IdtyIndex> for Pallet<T> {
+    fn check_add_membership(idty_index: IdtyIndex) -> Result<(), DispatchError> {
+        // check identity status
+        let idty_value =
+            pallet_identity::Pallet::<T>::identity(idty_index).ok_or(Error::<T>::IdtyNotFound)?;
         ensure!(
-            idty_cert_meta.received_count >= T::MinCertForMembership::get(),
-            Error::<T>::NotEnoughCertsToClaimMembership
+            idty_value.status == IdtyStatus::Unvalidated
+                || idty_value.status == IdtyStatus::NotMember,
+            Error::<T>::TargetStatusInvalid
         );
-        T::IsDistanceOk::is_distance_ok(idty_index)?;
+        // check cert count
+        check_cert_count::<T>(idty_index)?;
         Ok(())
     }
 
     // membership renewal is only possible when identity is member (otherwise it should claim again)
-    fn check_idty_allowed_to_renew_membership(idty_index: &IdtyIndex) -> Result<(), DispatchError> {
-        if let Some(idty_value) = pallet_identity::Pallet::<T>::identity(idty_index) {
-            ensure!(
-                idty_value.status == IdtyStatus::Member,
-                Error::<T>::IdtyNotAllowedToRenewMembership
-            );
-            T::IsDistanceOk::is_distance_ok(idty_index)?;
-        } else {
-            return Err(Error::<T>::IdtyNotFound.into());
-        }
+    fn check_renew_membership(idty_index: IdtyIndex) -> Result<(), DispatchError> {
+        // check identity status
+        let idty_value =
+            pallet_identity::Pallet::<T>::identity(idty_index).ok_or(Error::<T>::IdtyNotFound)?;
+        ensure!(
+            idty_value.status == IdtyStatus::Member,
+            Error::<T>::TargetStatusInvalid
+        );
+        // no need to check certification count since loosing certifications make membership expire
         Ok(())
     }
 }
@@ -250,7 +230,7 @@ impl<T: Config> pallet_identity::traits::OnIdtyChange<T> for Pallet<T> {
                     }
                 }
             }
-            // TODO split in removed / revoked in two events:
+            // we could split this event in removed / revoked:
             // if identity is revoked keep it
             // if identity is removed also remove certs
             IdtyEvent::Removed { status } => {
@@ -320,4 +300,92 @@ impl<T: Config> pallet_certification::traits::OnRemovedCert<IdtyIndex> for Palle
             )
         }
     }
+}
+
+/// valid distance status handler
+impl<T: Config + pallet_distance::Config> pallet_distance::traits::OnValidDistanceStatus<T>
+    for Pallet<T>
+{
+    fn on_valid_distance_status(idty_index: IdtyIndex) {
+        if let Some(identity) = pallet_identity::Identities::<T>::get(idty_index) {
+            match identity.status {
+                IdtyStatus::Unconfirmed | IdtyStatus::Revoked => {
+                    // IdtyStatus::Unconfirmed
+                    // distance evaluation request should never happen for unconfirmed identity
+                    // IdtyStatus::Revoked
+                    // the identity can have been revoked during distance evaluation by the oracle
+                }
+
+                IdtyStatus::Unvalidated | IdtyStatus::NotMember => {
+                    // IdtyStatus::Unvalidated
+                    // normal scenario for first entry
+                    // IdtyStatus::NotMember
+                    // normal scenario for re-entry
+                    // the following can fail if a certification expired during distance evaluation
+                    // otherwise it should succeed
+                    let _ = pallet_membership::Pallet::<T>::try_add_membership(idty_index);
+                    // sp_std::if_std! {
+                    //     if let Err(e) = r {
+                    //         print!("failed to claim identity when distance status was found ok: ");
+                    //         println!("{:?}", idty_index);
+                    //         println!("reason: {:?}", e);
+                    //     }
+                    // }
+                }
+                IdtyStatus::Member => {
+                    // IdtyStatus::Member
+                    // normal scenario for renewal
+                    // should succeed
+                    let _ = pallet_membership::Pallet::<T>::try_renew_membership(idty_index);
+                    // sp_std::if_std! {
+                    //     if let Err(e) = r {
+                    //         print!("failed to renew identity when distance status was found ok: ");
+                    //         println!("{:?}", idty_index);
+                    //         println!("reason: {:?}", e);
+                    //     }
+                    // }
+                }
+            }
+        } else {
+            // identity was removed before distance status was found
+            // so it's ok to do nothing
+            sp_std::if_std! {
+                println!("identity was removed before distance status was found: {:?}", idty_index);
+            }
+        }
+    }
+}
+
+/// distance evaluation request allowed check
+impl<T: Config + pallet_distance::Config> pallet_distance::traits::CheckRequestDistanceEvaluation<T>
+    for Pallet<T>
+{
+    fn check_request_distance_evaluation(idty_index: IdtyIndex) -> Result<(), DispatchError> {
+        // check membership renewal antispam
+        let maybe_membership_data = pallet_membership::Pallet::<T>::membership(idty_index);
+        if let Some(membership_data) = maybe_membership_data {
+            // if membership data exists, this is for a renewal, apply antispam
+            ensure!(
+                // current_block > expiration block - membership period + renewal period
+                membership_data.expire_on
+                    + <T as pallet_membership::Config>::MembershipRenewalPeriod::get()
+                    < frame_system::Pallet::<T>::block_number()
+                        + <T as pallet_membership::Config>::MembershipPeriod::get(),
+                Error::<T>::MembershipRenewalPeriodNotRespected
+            );
+        };
+        // check cert count
+        check_cert_count::<T>(idty_index)?;
+        Ok(())
+    }
+}
+
+/// check certification count
+fn check_cert_count<T: Config>(idty_index: IdtyIndex) -> Result<(), DispatchError> {
+    let idty_cert_meta = pallet_certification::Pallet::<T>::idty_cert_meta(idty_index);
+    ensure!(
+        idty_cert_meta.received_count >= T::MinCertForMembership::get(),
+        Error::<T>::NotEnoughCerts
+    );
+    Ok(())
 }

@@ -14,8 +14,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-pub trait HandleNegativeEvaluation<T: crate::Config> {
-    /// Do something with the reserved amount on the account,
-    /// when distance evaluation result is negative.
-    fn handle_negative_evaluation(account_id: T::AccountId);
+use crate::*;
+use frame_support::pallet_prelude::*;
+
+pub trait OnValidDistanceStatus<T: Config> {
+    /// Handler for valid distance evaluation
+    fn on_valid_distance_status(idty_index: T::IdtyIndex);
+}
+
+impl<T: Config> OnValidDistanceStatus<T> for () {
+    fn on_valid_distance_status(_idty_index: T::IdtyIndex) {}
+}
+
+pub trait CheckRequestDistanceEvaluation<T: Config> {
+    fn check_request_distance_evaluation(idty_index: T::IdtyIndex) -> Result<(), DispatchError>;
+}
+
+impl<T: Config> CheckRequestDistanceEvaluation<T> for () {
+    fn check_request_distance_evaluation(_idty_index: T::IdtyIndex) -> Result<(), DispatchError> {
+        Ok(())
+    }
 }

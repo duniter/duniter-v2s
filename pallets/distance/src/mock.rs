@@ -19,7 +19,7 @@ use crate::{self as pallet_distance};
 use core::marker::PhantomData;
 use frame_support::{
     parameter_types,
-    traits::{Everything, GenesisBuild},
+    traits::{Everything, GenesisBuild, OnFinalize, OnInitialize},
 };
 use frame_system as system;
 use pallet_balances::AccountData;
@@ -256,9 +256,10 @@ impl pallet_distance::Config for Test {
     type EvaluationPrice = frame_support::traits::ConstU64<1000>;
     type MaxRefereeDistance = frame_support::traits::ConstU32<5>;
     type MinAccessibleReferees = MinAccessibleReferees;
-    type ResultExpiration = frame_support::traits::ConstU32<720>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+    type OnValidDistanceStatus = ();
+    type CheckRequestDistanceEvaluation = ();
 }
 
 // Build genesis storage according to the mock runtime.
@@ -289,4 +290,15 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     .unwrap();
 
     sp_io::TestExternalities::new(t)
+}
+
+pub fn run_to_block(n: u64) {
+    while System::block_number() < n {
+        Session::on_finalize(System::block_number());
+        System::on_finalize(System::block_number());
+        System::reset_events();
+        System::set_block_number(System::block_number() + 1);
+        System::on_initialize(System::block_number());
+        Session::on_initialize(System::block_number());
+    }
 }

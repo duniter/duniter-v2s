@@ -20,17 +20,15 @@ use super::*;
 
 use frame_benchmarking::benchmarks;
 use frame_system::pallet_prelude::BlockNumberFor;
-use frame_system::RawOrigin;
-use sp_runtime::traits::{Convert, One};
 
 #[cfg(test)]
 use maplit::btreemap;
 
 use crate::Pallet;
 
-fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
-    frame_system::Pallet::<T>::assert_has_event(generic_event.into());
-}
+// fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+//     frame_system::Pallet::<T>::assert_has_event(generic_event.into());
+// }
 
 benchmarks! {
     where_clause {
@@ -39,39 +37,7 @@ benchmarks! {
             <T as frame_system::Config>::BlockNumber: From<u32>,
     }
 
-    // claim membership
-    claim_membership {
-        let idty: T::IdtyId = 3.into();
-        Membership::<T>::take(idty);
-        let caller: T::AccountId = T::AccountIdOf::convert(idty).unwrap();
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-        T::BenchmarkSetupHandler::force_status_ok(&idty, &caller);
-    }: _<T::RuntimeOrigin>(caller_origin)
-    verify {
-        assert_has_event::<T>(Event::<T>::MembershipAdded{member: idty, expire_on: BlockNumberFor::<T>::one() + T::MembershipPeriod::get()}.into());
-    }
-
-    // renew membership
-    renew_membership {
-        let idty: T::IdtyId = 3.into();
-        let caller: T::AccountId = T::AccountIdOf::convert(idty).unwrap();
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-        T::BenchmarkSetupHandler::force_status_ok(&idty, &caller);
-    }: _<T::RuntimeOrigin>(caller_origin)
-    verify {
-        assert_has_event::<T>(Event::<T>::MembershipAdded{member: idty, expire_on: BlockNumberFor::<T>::one() + T::MembershipPeriod::get()}.into());
-    }
-
-    // revoke membership
-    revoke_membership {
-        let idty: T::IdtyId = 3.into();
-        let caller: T::AccountId = T::AccountIdOf::convert(idty).unwrap();
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-        frame_system::pallet::Pallet::<T>::set_block_number(10_000_000.into()); // Arbitrarily high, to be in the worst case of wot instance.
-    }: _<T::RuntimeOrigin>(caller_origin)
-    verify {
-        assert_has_event::<T>(Event::<T>::MembershipRemoved{member: idty, reason: MembershipRemovalReason::Revoked}.into());
-    }
+    // TODO membership add and renewal should be included to distance on_new_session as worst case scenario
 
     // Base weight of an empty initialize
     on_initialize {
@@ -98,7 +64,7 @@ benchmarks! {
 
     impl_benchmark_test_suite!(
         Pallet,
-        crate::mock::new_test_ext(crate::mock::DefaultMembershipConfig {
+        crate::mock::new_test_ext(crate::mock::MembershipConfig {
         memberships: btreemap![
             3 => MembershipData {
                 expire_on: 3,

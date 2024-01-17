@@ -41,7 +41,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        DefaultMembership: pallet_membership::{Pallet, Call, Event<T>, Storage, Config<T>},
+        Membership: pallet_membership::{Pallet, Event<T>, Storage, Config<T>},
     }
 );
 
@@ -79,15 +79,16 @@ impl system::Config for Test {
 
 parameter_types! {
     pub const MembershipPeriod: BlockNumber = 5;
-    pub const PendingMembershipPeriod: BlockNumber = 3;
+    pub const MembershipRenewalPeriod: BlockNumber = 2;
 }
 
 impl pallet_membership::Config for Test {
-    type CheckMembershipCallAllowed = ();
+    type CheckMembershipOpAllowed = ();
     type IdtyId = IdtyId;
     type IdtyIdOf = ConvertInto;
     type AccountIdOf = ConvertInto;
     type MembershipPeriod = MembershipPeriod;
+    type MembershipRenewalPeriod = MembershipRenewalPeriod;
     type OnEvent = ();
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
@@ -99,7 +100,7 @@ impl pallet_membership::Config for Test {
 pub fn new_test_ext(gen_conf: pallet_membership::GenesisConfig<Test>) -> sp_io::TestExternalities {
     GenesisConfig {
         system: SystemConfig::default(),
-        default_membership: gen_conf,
+        membership: gen_conf,
     }
     .build_storage()
     .unwrap()
@@ -108,11 +109,11 @@ pub fn new_test_ext(gen_conf: pallet_membership::GenesisConfig<Test>) -> sp_io::
 
 pub fn run_to_block(n: u64) {
     while System::block_number() < n {
-        DefaultMembership::on_finalize(System::block_number());
+        Membership::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
         System::reset_events();
         System::set_block_number(System::block_number() + 1);
         System::on_initialize(System::block_number());
-        DefaultMembership::on_initialize(System::block_number());
+        Membership::on_initialize(System::block_number());
     }
 }

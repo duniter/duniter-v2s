@@ -33,7 +33,7 @@ impl WeightInfo for () {
     // Storage: Identity Identities (r:2 w:0)
     // Storage: Cert StorageIdtyCertMeta (r:2 w:2)
     // Storage: Parameters ParametersStorage (r:1 w:0)
-    // Storage: Cert StorageCertsRemovableOn (r:1 w:1)
+    // Storage: Cert CertsRemovableOn (r:1 w:1)
     // Storage: Cert CertsByReceiver (r:1 w:1)
     fn add_cert() -> Weight {
         // Minimum execution time: 259_247 nanoseconds.

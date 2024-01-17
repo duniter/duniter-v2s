@@ -45,7 +45,7 @@ pub mod types {
         pub idty_confirm_period: BlockNumber,
         pub idty_creation_period: BlockNumber,
         pub membership_period: BlockNumber,
-        pub pending_membership_period: BlockNumber,
+        pub membership_renewal_period: BlockNumber,
         pub ud_creation_period: PeriodCount,
         pub ud_reeval_period: PeriodCount,
         pub smith_cert_max_by_issuer: CertCount,

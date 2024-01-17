@@ -58,7 +58,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         #[pallet::constant]
-        /// Minimum duration between two certifications issued by the same issuer
+        /// Minimum duration between two certifications issued by the same issuer.
         type CertPeriod: Get<Self::BlockNumber>;
         /// A short identity index.
         type IdtyIndex: Parameter
@@ -70,27 +70,26 @@ pub mod pallet {
             + MaybeSerializeDeserialize
             + Debug
             + MaxEncodedLen;
-        /// Something that give the owner key of an identity
+        /// Something that give the owner key of an identity.
         type OwnerKeyOf: Convert<Self::IdtyIndex, Option<Self::AccountId>>;
-        ///
+        /// Provide method to check that cert is allowed.
         type CheckCertAllowed: CheckCertAllowed<Self::IdtyIndex>;
         #[pallet::constant]
-        /// Maximum number of active certifications by issuer
+        /// Maximum number of active certifications by issuer.
         type MaxByIssuer: Get<u32>;
-        /// Minimum number of certifications that must be received to be able to issue
-        /// certifications.
+        /// Minimum number of certifications received to be allowed to issue a certification.
         #[pallet::constant]
         type MinReceivedCertToBeAbleToIssueCert: Get<u32>;
-        /// Handler for NewCert event
+        /// Handler for NewCert event.
         type OnNewcert: OnNewcert<Self::IdtyIndex>;
-        /// Handler for Removed event
+        /// Handler for Removed event.
         type OnRemovedCert: OnRemovedCert<Self::IdtyIndex>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        /// Type representing the weight of this pallet
+        /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
         #[pallet::constant]
-        /// Duration of validity of a certification
+        /// Duration of validity of a certification.
         type ValidityPeriod: Get<Self::BlockNumber>;
     }
 
@@ -191,31 +190,31 @@ pub mod pallet {
                 );
                 StorageIdtyCertMeta::<T>::insert(issuer, cert_meta);
             }
-            // Write storage StorageCertsRemovableOn
+            // Write storage CertsRemovableOn
             for (removable_on, certs) in certs_removable_on {
-                StorageCertsRemovableOn::<T>::insert(removable_on, certs);
+                CertsRemovableOn::<T>::insert(removable_on, certs);
             }
         }
     }
 
     // STORAGE //
 
-    /// Certifications metada by issuer
+    /// Certifications metada by issuer.
     #[pallet::storage]
     #[pallet::getter(fn idty_cert_meta)]
     pub type StorageIdtyCertMeta<T: Config> =
         StorageMap<_, Twox64Concat, T::IdtyIndex, IdtyCertMeta<T::BlockNumber>, ValueQuery>;
 
-    /// Certifications by receiver
+    /// Certifications by receiver.
     #[pallet::storage]
     #[pallet::getter(fn certs_by_receiver)]
     pub type CertsByReceiver<T: Config> =
         StorageMap<_, Twox64Concat, T::IdtyIndex, Vec<(T::IdtyIndex, T::BlockNumber)>, ValueQuery>;
 
-    /// Certifications removable on
+    /// Certifications removable on.
     #[pallet::storage]
     #[pallet::getter(fn certs_removable_on)]
-    pub type StorageCertsRemovableOn<T: Config> =
+    pub type CertsRemovableOn<T: Config> =
         StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(T::IdtyIndex, T::IdtyIndex)>, OptionQuery>;
 
     // EVENTS //
@@ -245,11 +244,11 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Identity cannot certify itself
+        /// Identity cannot certify itself.
         CannotCertifySelf,
-        /// Identity has already issued the maximum number of certifications
+        /// Identity has already issued the maximum number of certifications.
         IssuedTooManyCert,
-        /// Issuer not found
+        /// Issuer not found.
         IssuerNotFound,
         /// Insufficient certifications received.
         NotEnoughCertReceived,
@@ -282,9 +281,16 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
+            // Verify caller ownership
+            let issuer_owner_key =
+                T::OwnerKeyOf::convert(issuer).ok_or(Error::<T>::IssuerNotFound)?;
+            ensure!(issuer_owner_key == who, DispatchError::BadOrigin);
+
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
-            Self::check_cert_allowed(who, issuer, receiver, block_number)?;
-            Self::do_add_cert(block_number, issuer, receiver)
+            Self::check_add_cert(issuer, receiver, block_number)?;
+            Self::do_add_cert(block_number, issuer, receiver);
+
+            Ok(().into())
         }
 
         /// remove a certification (only root)
@@ -324,44 +330,23 @@ pub mod pallet {
             receiver: T::IdtyIndex,
             verify_rules: bool,
         ) -> DispatchResultWithPostInfo {
-            // Forbid self cert
-            ensure!(issuer != receiver, Error::<T>::CannotCertifySelf);
-
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
 
             if verify_rules {
-                // Verify rule MinReceivedCertToBeAbleToIssueCert
-                let issuer_idty_cert_meta = StorageIdtyCertMeta::<T>::get(issuer);
-                ensure!(
-                    issuer_idty_cert_meta.received_count
-                        >= T::MinReceivedCertToBeAbleToIssueCert::get(),
-                    Error::<T>::NotEnoughCertReceived
-                );
-
-                // Verify rule MaxByIssuer
-                ensure!(
-                    issuer_idty_cert_meta.issued_count < T::MaxByIssuer::get(),
-                    Error::<T>::IssuedTooManyCert
-                );
-
-                // Verify rule CertPeriod
-                ensure!(
-                    block_number >= issuer_idty_cert_meta.next_issuable_on,
-                    Error::<T>::NotRespectCertPeriod
-                );
+                // only verify internal rules if asked
+                Self::check_add_cert_internal(issuer, receiver, block_number)?;
             };
 
-            Self::do_add_cert(block_number, issuer, receiver)
+            Self::do_add_cert(block_number, issuer, receiver);
+
+            Ok(().into())
         }
+
         /// perform cert addition or renewal
-        fn do_add_cert(
-            block_number: T::BlockNumber,
-            issuer: T::IdtyIndex,
-            receiver: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
-            // Write StorageCertsRemovableOn
+        fn do_add_cert(block_number: T::BlockNumber, issuer: T::IdtyIndex, receiver: T::IdtyIndex) {
+            // Write CertsRemovableOn
             let removable_on = block_number + T::ValidityPeriod::get();
-            <StorageCertsRemovableOn<T>>::append(removable_on, (issuer, receiver));
+            <CertsRemovableOn<T>>::append(removable_on, (issuer, receiver));
 
             // Write CertsByReceiver
             let mut created = false;
@@ -414,17 +399,16 @@ pub mod pallet {
                 });
                 // emit CertRenewed event
                 Self::deposit_event(Event::CertRenewed { issuer, receiver });
-            }
-
-            Ok(().into())
+            };
         }
+
         /// remove the certifications due to expire on the given block
         // (run at on_initialize step)
         fn prune_certifications(block_number: T::BlockNumber) -> Weight {
             // See on initialize for the overhead weight accounting
             let mut total_weight = Weight::zero();
 
-            if let Some(certs) = StorageCertsRemovableOn::<T>::take(block_number) {
+            if let Some(certs) = CertsRemovableOn::<T>::take(block_number) {
                 for (issuer, receiver) in certs {
                     total_weight += Self::do_remove_cert(issuer, receiver, Some(block_number));
                 }
@@ -432,6 +416,7 @@ pub mod pallet {
 
             total_weight
         }
+
         /// perform the certification removal
         /// if block number is given only remove cert if still set to expire at this block number
         pub fn do_remove_cert(
@@ -495,24 +480,19 @@ pub mod pallet {
         }
 
         /// check cert allowed
-        // first internal checks
-        // then external checks
-        fn check_cert_allowed(
-            caller_key: T::AccountId,
+        // 1. no self cert
+        // 2. issuer received cert count
+        // 3. issuer max emitted cert
+        // 4. issuer cert period
+        fn check_add_cert_internal(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
             block_number: T::BlockNumber,
         ) -> DispatchResult {
-            // --- first internal checks
             // 1. Forbid self cert
             ensure!(issuer != receiver, Error::<T>::CannotCertifySelf);
 
-            // 2. Verify caller ownership
-            let issuer_owner_key =
-                T::OwnerKeyOf::convert(issuer).ok_or(Error::<T>::IssuerNotFound)?;
-            ensure!(issuer_owner_key == caller_key, DispatchError::BadOrigin);
-
-            // 3. Verify rule MinReceivedCertToBeAbleToIssueCert
+            // 2. Verify rule MinReceivedCertToBeAbleToIssueCert
             // (this number can differ from the one necessary to be member)
             let issuer_idty_cert_meta = <StorageIdtyCertMeta<T>>::get(issuer);
             ensure!(
@@ -521,17 +501,31 @@ pub mod pallet {
                 Error::<T>::NotEnoughCertReceived
             );
 
-            // 4. Verify rule MaxByIssuer
+            // 3. Verify rule MaxByIssuer
             ensure!(
                 issuer_idty_cert_meta.issued_count < T::MaxByIssuer::get(),
                 Error::<T>::IssuedTooManyCert
             );
 
-            // 5. Verify rule CertPeriod
+            // 4. Verify rule CertPeriod
             ensure!(
                 block_number >= issuer_idty_cert_meta.next_issuable_on,
                 Error::<T>::NotRespectCertPeriod
             );
+
+            Ok(())
+        }
+
+        /// check cert allowed
+        // first internal checks
+        // then external checks
+        fn check_add_cert(
+            issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
+            block_number: T::BlockNumber,
+        ) -> DispatchResult {
+            // internal checks
+            Self::check_add_cert_internal(issuer, receiver, block_number)?;
 
             // --- then external checks
             // - issuer is member

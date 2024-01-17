@@ -15,6 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 // these integration tests aim to test fees and extrinsic-related externalities
+// they need constant-fees feature to work
 
 mod common;
 

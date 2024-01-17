@@ -80,7 +80,7 @@ benchmarks! {
         assert!(CertsByReceiver::<T>::get(receiver).is_empty() );
     }
     on_initialize {
-        assert!(StorageCertsRemovableOn::<T>::try_get(T::BlockNumber::zero()).is_err());
+        assert!(CertsRemovableOn::<T>::try_get(T::BlockNumber::zero()).is_err());
     }: {Pallet::<T>::on_initialize(T::BlockNumber::zero());}
     do_remove_cert_noop {
     }: {Pallet::<T>::do_remove_cert(100.into(), 101.into(), Some(T::BlockNumber::zero()));}

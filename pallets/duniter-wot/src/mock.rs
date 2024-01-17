@@ -48,7 +48,7 @@ frame_support::construct_runtime!(
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         DuniterWot: pallet_duniter_wot::{Pallet},
         Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Membership: pallet_membership::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Membership: pallet_membership::{Pallet, Config<T>, Storage, Event<T>},
         Cert: pallet_certification::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
 );
@@ -97,7 +97,6 @@ impl pallet_duniter_wot::Config for Test {
     type MinCertForMembership = MinCertForMembership;
     type MinCertForCreateIdtyRight = MinCertForCreateIdtyRight;
     type FirstIssuableOn = FirstIssuableOn;
-    type IsDistanceOk = crate::traits::DistanceAlwaysOk;
 }
 
 // Identity
@@ -139,14 +138,16 @@ impl pallet_identity::Config for Test {
 // Membership
 parameter_types! {
     pub const MembershipPeriod: u64 = 8;
+    pub const MembershipRenewalPeriod: u64 = 2;
 }
 
 impl pallet_membership::Config for Test {
-    type CheckMembershipCallAllowed = DuniterWot;
+    type CheckMembershipOpAllowed = DuniterWot;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
     type AccountIdOf = ();
     type MembershipPeriod = MembershipPeriod;
+    type MembershipRenewalPeriod = MembershipRenewalPeriod;
     type OnEvent = DuniterWot;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();

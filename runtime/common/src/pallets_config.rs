@@ -453,7 +453,6 @@ macro_rules! pallets_config {
 
         impl pallet_duniter_wot::Config for Runtime {
             type FirstIssuableOn = WotFirstCertIssuableOn;
-            type IsDistanceOk = common_runtime::providers::MainWotIsDistanceOk<Runtime>;
             type MinCertForMembership = WotMinCertForMembership;
             type MinCertForCreateIdtyRight = WotMinCertForCreateIdtyRight;
         }
@@ -483,11 +482,12 @@ macro_rules! pallets_config {
         }
 
         impl pallet_membership::Config for Runtime {
-            type CheckMembershipCallAllowed = Wot;
+            type CheckMembershipOpAllowed = Wot;
             type IdtyId = IdtyIndex;
             type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
             type AccountIdOf = common_runtime::providers::IdentityAccountIdProvider<Self>;
             type MembershipPeriod = MembershipPeriod;
+            type MembershipRenewalPeriod = MembershipRenewalPeriod;
             type OnEvent = (OnMembershipEventHandler<Wot, Runtime>, Wot);
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_membership::WeightInfo<Runtime>;
@@ -516,9 +516,10 @@ macro_rules! pallets_config {
             type EvaluationPrice = frame_support::traits::ConstU64<1000>;
             type MaxRefereeDistance = frame_support::traits::ConstU32<5>;
             type MinAccessibleReferees = MinAccessibleReferees;
-            type ResultExpiration = frame_support::traits::ConstU32<720>;
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_distance::WeightInfo<Runtime>;
+            type OnValidDistanceStatus = Wot;
+            type CheckRequestDistanceEvaluation = Wot;
         }
 
         // SMITH-MEMBERS

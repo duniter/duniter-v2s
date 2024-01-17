@@ -91,7 +91,7 @@ fn get_parameters(_: &Option<GenesisParameters>) -> CommonParameters {
         identity_change_owner_key_period: parameters::ChangeOwnerKeyPeriod::get(),
         identity_idty_creation_period: parameters::IdtyCreationPeriod::get(),
         membership_membership_period: parameters::MembershipPeriod::get(),
-        membership_pending_membership_period: parameters::PendingMembershipPeriod::get(),
+        membership_membership_renewal_period: parameters::MembershipRenewalPeriod::get(),
         cert_max_by_issuer: parameters::MaxByIssuer::get(),
         cert_min_received_cert_to_be_able_to_issue_cert:
             parameters::MinReceivedCertToBeAbleToIssueCert::get(),

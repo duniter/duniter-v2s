@@ -156,8 +156,6 @@ mod verifier {
             Self { errors: Vec::new() }
         }
 
-        // FIXME why async functions when called with await?
-
         /// method to run all storage tests
         pub(super) async fn verify_storage(&mut self, storage: &Storage) -> anyhow::Result<()> {
             self.verify_accounts(&storage.accounts).await;

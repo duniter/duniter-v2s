@@ -334,14 +334,6 @@ async fn confirm_identity(world: &mut DuniterWorld, from: String, pseudo: String
 }
 
 #[allow(clippy::needless_pass_by_ref_mut)]
-#[when(regex = r#"([a-zA-Z]+) claims membership"#)]
-async fn claim_membership(world: &mut DuniterWorld, from: String) -> Result<()> {
-    // input names to keyrings
-    let from = AccountKeyring::from_str(&from).expect("unknown from");
-    common::membership::claim_membership(world.client(), from).await
-}
-
-#[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r#"([a-zA-Z]+) requests distance evaluation"#)]
 async fn request_distance_evaluation(world: &mut DuniterWorld, who: String) -> Result<()> {
     let who = AccountKeyring::from_str(&who).expect("unknown origin");
@@ -539,33 +531,6 @@ async fn should_have_distance_result_in_sessions(
     }
 
     Err(anyhow::anyhow!("no evaluation in given pool").into())
-}
-
-#[allow(clippy::needless_pass_by_ref_mut)]
-#[then(regex = r"([a-zA-Z]+) should have distance ok")]
-async fn should_have_distance_ok(world: &mut DuniterWorld, who: String) -> Result<()> {
-    let who = AccountKeyring::from_str(&who).unwrap().to_account_id();
-
-    let idty_id = world
-        .read(&gdev::storage().identity().identity_index_of(&who.into()))
-        .await
-        .await?
-        .unwrap();
-
-    match world
-        .read(&gdev::storage().distance().identity_distance_status(idty_id))
-        .await
-        .await?
-    {
-        Some((_, gdev::runtime_types::pallet_distance::types::DistanceStatus::Valid)) => Ok(()),
-        Some((_, gdev::runtime_types::pallet_distance::types::DistanceStatus::Invalid)) => {
-            Err(anyhow::anyhow!("invalid distance status").into())
-        }
-        Some((_, gdev::runtime_types::pallet_distance::types::DistanceStatus::Pending)) => {
-            Err(anyhow::anyhow!("pending distance status").into())
-        }
-        None => Err(anyhow::anyhow!("no distance status").into()),
-    }
 }
 
 use gdev::runtime_types::pallet_identity::types::IdtyStatus;

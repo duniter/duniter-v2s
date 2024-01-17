@@ -20,7 +20,6 @@ pub mod balances;
 pub mod cert;
 pub mod distance;
 pub mod identity;
-pub mod membership;
 pub mod oneshot;
 
 #[subxt::subxt(
@@ -234,9 +233,9 @@ fn spawn_full_node(
 
     let timeout =
         if let Ok(duration_string) = std::env::var("DUNITER_END2END_TESTS_SPAWN_NODE_TIMEOUT") {
-            duration_string.parse().unwrap_or(4)
+            duration_string.parse().unwrap_or(10)
         } else {
-            4
+            10
         };
 
     wait_until_log_line(

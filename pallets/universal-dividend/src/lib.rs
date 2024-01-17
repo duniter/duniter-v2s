@@ -61,8 +61,8 @@ pub mod pallet {
         type MomentIntoBalance: Convert<Self::Moment, BalanceOf<Self>>;
         // The currency
         type Currency: Currency<Self::AccountId>;
-        #[pallet::constant]
         /// Maximum number of past UD revaluations to keep in storage.
+        #[pallet::constant]
         type MaxPastReeval: Get<u32>;
         /// Somethings that must provide the number of accounts allowed to create the universal dividend
         type MembersCount: Get<BalanceOf<Self>>;
@@ -70,19 +70,19 @@ pub mod pallet {
         type MembersStorage: frame_support::traits::StoredMap<Self::AccountId, FirstEligibleUd>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        #[pallet::constant]
         /// Square of the money growth rate per ud reevaluation period
+        #[pallet::constant]
         type SquareMoneyGrowthRate: Get<Perbill>;
-        #[pallet::constant]
         /// Universal dividend creation period (ms)
+        #[pallet::constant]
         type UdCreationPeriod: Get<Self::Moment>;
-        #[pallet::constant]
         /// Universal dividend reevaluation period (ms)
-        type UdReevalPeriod: Get<Self::Moment>;
         #[pallet::constant]
+        type UdReevalPeriod: Get<Self::Moment>;
         /// The number of units to divide the amounts expressed in number of UDs
         /// Example: If you wish to express the UD amounts with a maximum precision of the order
         /// of the milliUD, choose 1000
+        #[pallet::constant]
         type UnitsPerUd: Get<BalanceOf<Self>>;
         /// Pallet weights info
         type WeightInfo: WeightInfo;
@@ -97,12 +97,14 @@ pub mod pallet {
     #[pallet::getter(fn current_ud)]
     pub type CurrentUd<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
+    // default value for number of the next UD
     #[pallet::type_value]
     pub fn DefaultForCurrentUdIndex() -> UdIndex {
         1
     }
 
     /// Current UD index
+    // (more like the index of the ongoing UD = the next one)
     #[pallet::storage]
     #[pallet::getter(fn ud_index)]
     pub type CurrentUdIndex<T: Config> =
@@ -110,6 +112,9 @@ pub mod pallet {
 
     #[cfg(test)]
     #[pallet::storage]
+    // UD should be linked to idtyid instead of accountid
+    // if it is convenient in test, why not have it in runtime also?
+    // storing it in idty_value.data is strange
     pub type TestMembers<T: Config> = StorageMap<
         _,
         Blake2_128Concat,

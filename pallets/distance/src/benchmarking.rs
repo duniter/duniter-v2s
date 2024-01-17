@@ -50,16 +50,36 @@ benchmarks! {
         T: pallet_balances::Config, T::Balance: From<u64>,
         T::BlockNumber: From<u32>,
     }
+
+    // request distance evaluation
     request_distance_evaluation {
-            let idty = T::IdtyIndex::one();
-            let caller: T::AccountId  = pallet_identity::Identities::<T>::get(idty).unwrap().owner_key;
-            let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-            let _ = <Balances<T> as Currency<_>>::make_free_balance_be(&caller, T::Balance::max_value());
+        let idty = T::IdtyIndex::one();
+        let caller: T::AccountId  = pallet_identity::Identities::<T>::get(idty).unwrap().owner_key;
+        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
+        let _ = <Balances<T> as Currency<_>>::make_free_balance_be(&caller, T::Balance::max_value());
     }: _<T::RuntimeOrigin>(caller_origin.clone())
     verify {
-        assert!(IdentityDistanceStatus::<T>::get(idty) == Some((caller.clone(), DistanceStatus::Pending)), "Request not added");
+        assert!(PendingEvaluationRequest::<T>::get(idty) == Some(caller.clone()), "Request not added");
         assert_has_event::<T>(Event::<T>::EvaluationRequested { idty_index: idty, who: caller }.into());
     }
+
+    // request distance evaluation for
+    request_distance_evaluation_for {
+        let idty = T::IdtyIndex::one();
+        let caller: T::AccountId  = pallet_identity::Identities::<T>::get(idty).unwrap().owner_key;
+        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
+        let _ = <Balances<T> as Currency<_>>::make_free_balance_be(&caller, T::Balance::max_value());
+        let target = 2u32;
+        // set target status since targeted distance evaluation only allowed for unvalidated
+        pallet_identity::Identities::<T>::mutate(target,
+            |idty_val| idty_val.as_mut().unwrap().status = pallet_identity::IdtyStatus::Unvalidated);
+    }: _<T::RuntimeOrigin>(caller_origin.clone(), target)
+    verify {
+        assert!(PendingEvaluationRequest::<T>::get(target) == Some(caller.clone()), "Request not added");
+        assert_has_event::<T>(Event::<T>::EvaluationRequested { idty_index: target, who: caller }.into());
+    }
+
+    // update evaluation
     update_evaluation {
         let digest_data = sp_consensus_babe::digests::PreDigest::SecondaryPlain(
         sp_consensus_babe::digests::SecondaryPlainPreDigest { authority_index: 0u32, slot: Default::default() });
@@ -71,27 +91,25 @@ benchmarks! {
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         let i in 1 .. MAX_EVALUATIONS_PER_SESSION => populate_pool::<T>(i)?;
     }: _<T::RuntimeOrigin>(RawOrigin::None.into(), ComputationResult{distances: vec![Perbill::one(); i as usize]})
-    verify {
-        assert_has_event::<T>(Event::<T>::EvaluationUpdated { evaluator: caller }.into());
-    }
+
+    // force update evaluation
     force_update_evaluation {
             let idty = T::IdtyIndex::one();
             let caller: T::AccountId  = pallet_identity::Identities::<T>::get(idty).unwrap().owner_key;
             let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
             let i in 1 .. MAX_EVALUATIONS_PER_SESSION => populate_pool::<T>(i)?;
     }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), caller.clone(), ComputationResult{distances: vec![Perbill::one(); i as usize]})
+
+    // force valid distance status
+    force_valid_distance_status {
+        let idty = T::IdtyIndex::one();
+        let caller: T::AccountId  = pallet_identity::Identities::<T>::get(idty).unwrap().owner_key;
+    }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), idty)
     verify {
-        assert_has_event::<T>(Event::<T>::EvaluationUpdated { evaluator: caller }.into());
+        assert_has_event::<T>(Event::<T>::EvaluatedValid { idty_index: idty }.into());
     }
-    force_set_distance_status {
-            let idty = T::IdtyIndex::one();
-            let caller: T::AccountId  = pallet_identity::Identities::<T>::get(idty).unwrap().owner_key;
-            let status = Some((caller.clone(), DistanceStatus::Valid));
-    }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), idty, status.clone())
-    verify {
-        assert!(IdentityDistanceStatus::<T>::get(idty) == Some((caller, DistanceStatus::Valid)), "Status not set");
-        assert_has_event::<T>(Event::<T>::EvaluationStatusForced { idty_index: idty, status }.into());
-    }
+
+    // on finalize
     on_finalize {
         DidUpdate::<T>::set(true);
     }: { Pallet::<T>::on_finalize(Default::default()); }

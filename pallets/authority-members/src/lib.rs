@@ -177,25 +177,25 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Member already incoming
+        /// Member already incoming.
         AlreadyIncoming,
-        /// Member already online
+        /// Member already online.
         AlreadyOnline,
-        /// Member already outgoing
+        /// Member already outgoing.
         AlreadyOutgoing,
         /// Owner key is invalid as a member.
         MemberIdNotFound,
-        /// Member is blacklisted
+        /// Member is blacklisted.
         MemberBlacklisted,
-        /// Member is not blacklisted
+        /// Member is not blacklisted.
         MemberNotBlacklisted,
-        /// Member not found
+        /// Member not found.
         MemberNotFound,
-        /// Neither online nor scheduled
+        /// Neither online nor scheduled.
         NotOnlineNorIncoming,
-        /// Not member
+        /// Not member.
         NotMember,
-        /// Session keys not provided
+        /// Session keys not provided.
         SessionKeysNotProvided,
         /// Too many authorities.
         TooManyAuthorities,

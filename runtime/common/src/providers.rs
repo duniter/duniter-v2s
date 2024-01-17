@@ -17,7 +17,6 @@
 use crate::{entities::IdtyData, AccountId, IdtyIndex};
 use core::marker::PhantomData;
 use pallet_universal_dividend::FirstEligibleUd;
-use sp_runtime::DispatchError;
 
 pub struct IdentityAccountIdProvider<Runtime>(PhantomData<Runtime>);
 
@@ -71,31 +70,6 @@ where
     }
 }
 
-pub struct MainWotIsDistanceOk<T>(PhantomData<T>);
-
-impl<T> pallet_duniter_wot::traits::IsDistanceOk<<T as pallet_identity::Config>::IdtyIndex>
-    for MainWotIsDistanceOk<T>
-where
-    T: pallet_distance::Config + pallet_duniter_wot::Config,
-{
-    fn is_distance_ok(
-        idty_id: &<T as pallet_identity::Config>::IdtyIndex,
-    ) -> Result<(), DispatchError> {
-        match pallet_distance::Pallet::<T>::identity_distance_status(idty_id) {
-            Some((_, status)) => match status {
-                pallet_distance::DistanceStatus::Valid => Ok(()),
-                pallet_distance::DistanceStatus::Invalid => {
-                    Err(pallet_duniter_wot::Error::<T>::DistanceIsInvalid.into())
-                }
-                pallet_distance::DistanceStatus::Pending => {
-                    Err(pallet_duniter_wot::Error::<T>::DistanceEvaluationPending.into())
-                }
-            },
-            None => Err(pallet_duniter_wot::Error::<T>::DistanceEvaluationNotRequested.into()),
-        }
-    }
-}
-
 pub struct IsWoTMemberProvider<T>(PhantomData<T>);
 impl<T: pallet_smith_members::Config>
     sp_runtime::traits::IsMember<<T as pallet_membership::Config>::IdtyId>
@@ -121,14 +95,8 @@ macro_rules! impl_benchmark_setup_handler {
             T: pallet_certification::Config,
             <T as pallet_certification::Config>::IdtyIndex: From<u32>,
         {
-            fn force_status_ok(
-                idty_id: &IdtyIndex,
-                account: &<T as frame_system::Config>::AccountId,
-            ) -> () {
-                let _ = pallet_distance::Pallet::<T>::set_distance_status(
-                    *idty_id,
-                    Some((account.clone(), pallet_distance::DistanceStatus::Valid)),
-                );
+            fn force_valid_distance_status(idty_id: &IdtyIndex) -> () {
+                let _ = pallet_distance::Pallet::<T>::do_valid_distance_status(*idty_id);
             }
             fn add_cert(issuer: &IdtyIndex, receiver: &IdtyIndex) {
                 let _ = pallet_certification::Pallet::<T>::do_add_cert_checked(

@@ -90,6 +90,11 @@ frame_support::parameter_types! {
     pub const ChangeOwnerKeyPeriod: BlockNumber = 7 * DAYS;
 }
 
+// Membership
+frame_support::parameter_types! {
+    pub const SmithMembershipRenewalPeriod: BlockNumber = MONTHS;
+}
+
 /*************/
 /* UTILITIES */
 /*************/

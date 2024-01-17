@@ -105,7 +105,7 @@ parameter_types! {
 // Membership
 parameter_types! {
     pub const MembershipPeriod: BlockNumber = YEARS;
-    pub const PendingMembershipPeriod: BlockNumber = 2 * MONTHS;
+    pub const MembershipRenewalPeriod: BlockNumber = 2 * MONTHS;
 }
 
 // Certification

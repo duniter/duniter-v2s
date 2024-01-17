@@ -29,6 +29,4 @@ Feature: Identity creation
     Then dave should have distance result in 1 session
     When alice runs distance oracle
     When 30 blocks later
-    Then dave should have distance ok
-    When dave claims membership
     Then dave identity should be member

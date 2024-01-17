@@ -311,7 +311,7 @@ fn test_remove_identity() {
     });
 }
 
-/// test identity is validated when membership is claimed
+/// test identity is "validated" (= membership is claimed) when distance is evaluated positively
 #[test]
 fn test_validate_identity_when_claim() {
     ExtBuilder::new(1, 3, 4)
@@ -346,11 +346,14 @@ fn test_validate_identity_when_claim() {
                 5
             ));
 
+            // eve request distance evaluation for herself
             assert_ok!(Distance::request_distance_evaluation(
                 frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
             ));
 
-            run_to_block(51); // Pass 2 sessions
+            // Pass 2 sessions
+            run_to_block(51);
+            // simulate an evaluation published by smith Alice
             assert_ok!(Distance::force_update_evaluation(
                 frame_system::RawOrigin::Root.into(),
                 AccountKeyring::Alice.to_account_id(),
@@ -358,20 +361,161 @@ fn test_validate_identity_when_claim() {
                     distances: vec![Perbill::one()],
                 }
             ));
-            run_to_block(76); // Pass 1 session
-
-            // eve can claim her membership
-            assert_ok!(Membership::claim_membership(
-                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+            run_to_block(75); // Pass 1 session
+            System::assert_has_event(RuntimeEvent::Distance(
+                pallet_distance::Event::EvaluatedValid { idty_index: 5 },
             ));
 
+            // eve can not claim her membership manually because it is done automatically
+            // the following call does not exist anymore
+            // assert_noop!(
+            //     Membership::claim_membership(
+            //         frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+            //     ),
+            //     pallet_membership::Error::<Runtime>::AlreadyMember
+            // );
+
+            // println!("{:?}", System::events());
             System::assert_has_event(RuntimeEvent::Membership(
                 pallet_membership::Event::MembershipAdded {
                     member: 5,
-                    expire_on: 76 + <Runtime as pallet_membership::Config>::MembershipPeriod::get(),
+                    expire_on: 75 + <Runtime as pallet_membership::Config>::MembershipPeriod::get(),
                 },
             ));
-            // not possible anymore to validate identity of someone else
+        });
+}
+
+/// test identity creation workflow
+// with distance requested by last certifier
+#[test]
+fn test_identity_creation_workflow() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (AccountKeyring::Charlie.to_account_id(), 10_000), // necessary for evalation distance reserve
+            (AccountKeyring::Eve.to_account_id(), 2_000),
+            (AccountKeyring::Ferdie.to_account_id(), 1_000),
+        ])
+        .build()
+        .execute_with(|| {
+            run_to_block(1);
+            // alice create identity for Eve
+            assert_ok!(Identity::create_identity(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                AccountKeyring::Eve.to_account_id(),
+            ));
+            assert_eq!(
+                Identity::identity(5),
+                Some(pallet_identity::IdtyValue {
+                    data: Default::default(),
+                    next_creatable_identity_on: 0u32,
+                    old_owner_key: None,
+                    owner_key: AccountKeyring::Eve.to_account_id(),
+                    next_scheduled: 1 + 40,
+                    status: pallet_identity::IdtyStatus::Unconfirmed,
+                })
+            );
+            run_to_block(2);
+            // eve confirms her identity
+            assert_ok!(Identity::confirm_identity(
+                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                "Eeeeeveeeee".into(),
+            ));
+            assert_eq!(
+                Identity::identity(5),
+                Some(pallet_identity::IdtyValue {
+                    data: Default::default(),
+                    next_creatable_identity_on: 0u32,
+                    old_owner_key: None,
+                    owner_key: AccountKeyring::Eve.to_account_id(),
+                    next_scheduled: 2 + 876600,
+                    status: pallet_identity::IdtyStatus::Unvalidated,
+                })
+            );
+            run_to_block(3);
+            // eve gets certified by bob and charlie
+            assert_ok!(Certification::add_cert(
+                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+                2,
+                5
+            ));
+            assert_ok!(Certification::add_cert(
+                frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
+                3,
+                5
+            ));
+            // charlie also request distance evaluation for eve
+            // (could be done in batch)
+            assert_ok!(Distance::request_distance_evaluation_for(
+                frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
+                5
+            ));
+            // then the evaluation is pending
+            assert_eq!(
+                Distance::pending_evaluation_request(5),
+                Some(AccountKeyring::Charlie.to_account_id(),)
+            );
+
+            // Pass 2 sessions
+            run_to_block(51);
+            // simulate evaluation published by smith Alice
+            assert_ok!(Distance::force_update_evaluation(
+                frame_system::RawOrigin::Root.into(),
+                AccountKeyring::Alice.to_account_id(),
+                pallet_distance::ComputationResult {
+                    distances: vec![Perbill::one()],
+                }
+            ));
+            // Pass 1 session
+            run_to_block(75);
+
+            // eve should not even have to claim her membership
+            System::assert_has_event(RuntimeEvent::Membership(
+                pallet_membership::Event::MembershipAdded {
+                    member: 5,
+                    expire_on: 75 + <Runtime as pallet_membership::Config>::MembershipPeriod::get(),
+                },
+            ));
+
+            // test state coherence
+            assert_eq!(
+                Identity::identity(5),
+                Some(pallet_identity::IdtyValue {
+                    data: IdtyData {
+                        // block time is 6_000 ms
+                        // ud creation period is 60_000 ms ~ 10 blocks
+                        // first ud is at 24_000 ms ~ 4 blocks
+                        // at block 75 this is UD number 8, so next is 9
+                        first_eligible_ud: pallet_universal_dividend::FirstEligibleUd(Some(
+                            sp_std::num::NonZeroU16::new(9).unwrap()
+                        ))
+                    },
+                    next_creatable_identity_on: 0u32,
+                    old_owner_key: None,
+                    owner_key: AccountKeyring::Eve.to_account_id(),
+                    next_scheduled: 0,
+                    status: pallet_identity::IdtyStatus::Member,
+                })
+            );
+
+            run_to_block(84);
+            System::assert_has_event(RuntimeEvent::UniversalDividend(
+                pallet_universal_dividend::Event::NewUdCreated {
+                    amount: 1000,
+                    index: 9,
+                    monetary_mass: 50_000, // 13_000 (initial) + 4 * 1000 * 8 (produced) + 5000
+                    members_count: 5,
+                },
+            ));
+            assert_ok!(UniversalDividend::claim_uds(
+                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+            ));
+            System::assert_has_event(RuntimeEvent::UniversalDividend(
+                pallet_universal_dividend::Event::UdsClaimed {
+                    count: 1,
+                    total: 1000,
+                    who: AccountKeyring::Eve.to_account_id(),
+                },
+            ));
         });
 }
 
@@ -424,6 +568,16 @@ fn test_membership_renewal() {
         .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 2000)])
         .build()
         .execute_with(|| {
+            // can not renew membership immediately
+            assert_noop!(
+                Distance::request_distance_evaluation(
+                    frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                ),
+                pallet_duniter_wot::Error::<Runtime>::MembershipRenewalPeriodNotRespected,
+            );
+
+            // but ok after waiting 10 blocks delay
+            run_to_block(11);
             assert_ok!(Distance::request_distance_evaluation(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
             ));
@@ -436,33 +590,27 @@ fn test_membership_renewal() {
                     distances: vec![Perbill::one()],
                 }
             ));
-            run_to_block(76); // Pass 1 session
-
-            // renew at block 76
-            assert_ok!(Membership::renew_membership(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
-            ));
+            // Pass 1 session, membership is renewed automatically
+            run_to_block(75);
             System::assert_has_event(RuntimeEvent::Membership(
-                pallet_membership::Event::MembershipAdded {
+                pallet_membership::Event::MembershipRenewed {
                     member: 1,
-                    expire_on: 76 + <Runtime as pallet_membership::Config>::MembershipPeriod::get(),
+                    expire_on: 75 + <Runtime as pallet_membership::Config>::MembershipPeriod::get(),
                 },
             ));
 
-            // renew at block 77
-            run_to_block(77);
-            assert_ok!(Membership::renew_membership(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
-            ));
-            System::assert_has_event(RuntimeEvent::Membership(
-                pallet_membership::Event::MembershipAdded {
-                    member: 1,
-                    expire_on: 77 + <Runtime as pallet_membership::Config>::MembershipPeriod::get(),
-                },
-            ));
+            run_to_block(76);
+            // not possible to renew manually
+            // can not ask renewal when period is not respected
+            assert_noop!(
+                Distance::request_distance_evaluation(
+                    frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                ),
+                pallet_duniter_wot::Error::<Runtime>::MembershipRenewalPeriodNotRespected,
+            );
 
-            // should expire at block 177 = 77+100
-            run_to_block(177);
+            // should expire at block 175 = 75+100
+            run_to_block(175);
             System::assert_has_event(RuntimeEvent::Membership(
                 pallet_membership::Event::MembershipRemoved {
                     member: 1,
@@ -583,18 +731,19 @@ fn test_ud_claimed_membership_on_and_off() {
             },
         ));
 
-        // alice claims back her membership
-        assert_ok!(Distance::force_set_distance_status(
+        // alice claims back her membership through distance evaluation
+        assert_ok!(Distance::force_valid_distance_status(
             frame_system::RawOrigin::Root.into(),
             1,
-            Some((
-                AccountKeyring::Alice.to_account_id(),
-                pallet_distance::DistanceStatus::Valid
-            ))
         ));
-        assert_ok!(Membership::claim_membership(
-            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into()
-        ));
+        // it can not be done manually
+        // because the call does not exist anymore
+        // assert_noop!(
+        //     Membership::claim_membership(
+        //         frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+        //     ),
+        //     pallet_membership::Error::<Runtime>::AlreadyMember
+        // );
         System::assert_has_event(RuntimeEvent::Membership(
             pallet_membership::Event::MembershipAdded {
                 member: 1,
@@ -963,11 +1112,21 @@ fn test_create_new_idty_without_founds() {
         .build()
         .execute_with(|| {
             run_to_block(2);
+            assert_eq!(
+                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
+                0
+            );
 
             // Should be able to create an identity without founds
             assert_ok!(Identity::create_identity(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                 AccountKeyring::Eve.to_account_id(),
+            ));
+            System::assert_has_event(RuntimeEvent::Identity(
+                pallet_identity::Event::IdtyCreated {
+                    idty_index: 5,
+                    owner_key: AccountKeyring::Eve.to_account_id(),
+                },
             ));
 
             // At next block, nothing should be preleved
@@ -1029,24 +1188,26 @@ fn test_validate_new_idty_after_few_uds() {
                 pallet_identity::IdtyName::from("Eve"),
             ));
 
-            // At next block, Bob should be able to certify and validate the new identity
+            // At next block, Bob should be able to certify the new identity
             run_to_block(23);
             assert_ok!(Certification::add_cert(
                 frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
                 2,
                 5,
             ));
-            assert_ok!(Distance::force_set_distance_status(
+            // valid distance status should trigger identity validation
+            assert_ok!(Distance::force_valid_distance_status(
                 frame_system::RawOrigin::Root.into(),
                 5,
-                Some((
-                    AccountKeyring::Bob.to_account_id(),
-                    pallet_distance::DistanceStatus::Valid
-                ))
             ));
-            assert_ok!(Membership::claim_membership(
-                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
-            ));
+            // and it is not possible to call it manually
+            // because the call does not exist anymore
+            // assert_noop!(
+            //     Membership::claim_membership(
+            //         frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+            //     ),
+            //     pallet_membership::Error::<Runtime>::AlreadyMember
+            // );
 
             // The new member should have first_eligible_ud equal to three
             assert!(Identity::identity(5).is_some());
@@ -1095,18 +1256,19 @@ fn test_claim_memberhsip_after_few_uds() {
                 5,
             ));
 
-            // eve should be able to claim her membership
-            assert_ok!(Distance::force_set_distance_status(
+            // eve membership should be able to be claimed through distance evaluation
+            assert_ok!(Distance::force_valid_distance_status(
                 frame_system::RawOrigin::Root.into(),
                 5,
-                Some((
-                    AccountKeyring::Eve.to_account_id(),
-                    pallet_distance::DistanceStatus::Valid
-                ))
             ));
-            assert_ok!(Membership::claim_membership(
-                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
-            ));
+            // but not manually
+            // because the call does not exist
+            // assert_noop!(
+            //     Membership::claim_membership(
+            //         frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+            //     ),
+            //     pallet_membership::Error::<Runtime>::AlreadyMember
+            // );
 
             // The new member should have first_eligible_ud equal to three
             assert!(Identity::identity(5).is_some());
@@ -1450,16 +1612,6 @@ fn test_new_account_linked() {
             Some(5)
         );
     })
-}
-#[test]
-#[ignore = "what was this test supposed to do?"]
-fn smith_data_problem() {
-    ExtBuilder::new(1, 3, 4)
-        .change_parameters(|_parameters| {})
-        .build()
-        .execute_with(|| {
-            run_to_block(4);
-        });
 }
 
 /// test killed account

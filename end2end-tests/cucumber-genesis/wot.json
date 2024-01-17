@@ -62,7 +62,7 @@
     "idty_confirm_period": 40,
     "idty_creation_period": 50,
     "membership_period": 1000,
-    "pending_membership_period": 500,
+    "membership_renewal_period": 500,
     "ud_creation_period": 60000,
     "ud_reeval_period": 600000,
     "smith_cert_max_by_issuer": 8,
@@ -73,9 +73,15 @@
     "wot_min_cert_for_membership": 2
   },
   "clique_smiths": [
-    { "name":  "Alice" },
-    { "name":  "Bob" },
-    { "name":  "Charlie" }
+    {
+      "name": "Alice"
+    },
+    {
+      "name": "Bob"
+    },
+    {
+      "name": "Charlie"
+    }
   ],
   "sudo_key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
   "technical_committee": [

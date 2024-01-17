@@ -17,7 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod median;
-mod traits;
+pub mod traits;
 mod types;
 mod weights;
 
@@ -26,6 +26,8 @@ pub mod benchmarking;
 
 #[cfg(test)]
 mod mock;
+#[cfg(test)]
+mod tests;
 
 pub use pallet::*;
 pub use traits::*;
@@ -37,6 +39,7 @@ use pallet_authority_members::SessionIndex;
 use sp_distance::{InherentError, INHERENT_IDENTIFIER};
 use sp_inherents::{InherentData, InherentIdentifier};
 use sp_std::convert::TryInto;
+use sp_std::prelude::*;
 
 type IdtyIndex = u32;
 
@@ -66,6 +69,7 @@ pub mod pallet {
         + pallet_identity::Config<IdtyIndex = IdtyIndex>
         + pallet_session::Config
     {
+        /// Currency type used in this pallet (used for reserve/slash)
         type Currency: ReservableCurrency<Self::AccountId>;
         /// Amount reserved during evaluation
         #[pallet::constant]
@@ -79,12 +83,14 @@ pub mod pallet {
         /// Minimum ratio of accessible referees
         #[pallet::constant]
         type MinAccessibleReferees: Get<Perbill>;
-        /// Number of session to keep a positive evaluation result
-        type ResultExpiration: Get<u32>;
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
+        /// Handler for successful distance evaluation
+        type OnValidDistanceStatus: OnValidDistanceStatus<Self>;
+        /// Trait to check that distance evaluation request is allowed
+        type CheckRequestDistanceEvaluation: CheckRequestDistanceEvaluation<Self>;
     }
 
     // STORAGE //
@@ -128,33 +134,18 @@ pub mod pallet {
     pub type EvaluationBlock<T: Config> =
         StorageValue<_, <T as frame_system::Config>::Hash, ValueQuery>;
 
-    /// Distance evaluation status by identity
+    /// Pending evaluation requesters
     ///
-    /// * `.0` is the account who requested an evaluation and reserved the price,
+    /// account who requested an evaluation and reserved the price,
     ///   for whom the price will be unreserved or slashed when the evaluation completes.
-    /// * `.1` is the status of the evaluation.
     #[pallet::storage]
-    #[pallet::getter(fn identity_distance_status)]
-    pub type IdentityDistanceStatus<T: Config> = StorageMap<
+    #[pallet::getter(fn pending_evaluation_request)]
+    pub type PendingEvaluationRequest<T: Config> = StorageMap<
         _,
         Twox64Concat,
         <T as pallet_identity::Config>::IdtyIndex,
-        (<T as frame_system::Config>::AccountId, DistanceStatus),
+        <T as frame_system::Config>::AccountId,
         OptionQuery,
-    >;
-
-    /// Identities by distance status expiration session index
-    #[pallet::storage]
-    #[pallet::getter(fn distance_status_expire_on)]
-    pub type DistanceStatusExpireOn<T: Config> = StorageMap<
-        _,
-        Twox64Concat,
-        u32,
-        BoundedVec<
-            <T as pallet_identity::Config>::IdtyIndex,
-            ConstU32<MAX_EVALUATIONS_PER_SESSION>,
-        >,
-        ValueQuery,
     >;
 
     /// Did evaluation get updated in this block?
@@ -176,13 +167,10 @@ pub mod pallet {
             idty_index: T::IdtyIndex,
             who: T::AccountId,
         },
-        /// A distance evaluation was updated.
-        EvaluationUpdated { evaluator: T::AccountId },
-        /// A distance status was forced.
-        EvaluationStatusForced {
-            idty_index: T::IdtyIndex,
-            status: Option<(<T as frame_system::Config>::AccountId, DistanceStatus)>,
-        },
+        /// Distance rule was found valid.
+        EvaluatedValid { idty_index: T::IdtyIndex },
+        /// Distance rule was found invalid.
+        EvaluatedInvalid { idty_index: T::IdtyIndex },
     }
 
     // ERRORS //
@@ -198,13 +186,23 @@ pub mod pallet {
         /// No author for this block.
         NoAuthor,
         /// Caller has no identity.
-        NoIdentity,
+        CallerHasNoIdentity,
+        /// Caller identity not found.
+        CallerIdentityNotFound,
+        /// Caller not member.
+        CallerNotMember,
+        // Caller status can only be Unvalidated, Member or NotMember.
+        CallerStatusInvalid,
+        /// Target identity not found.
+        TargetIdentityNotFound,
         /// Evaluation queue is full.
         QueueFull,
         /// Too many evaluators in the current evaluation pool.
         TooManyEvaluators,
         /// Evaluation result has a wrong length.
         WrongResultLength,
+        /// Targeted distance evaluation request is only possible for an unvalidated identity.
+        TargetMustBeUnvalidated,
     }
 
     #[pallet::hooks]
@@ -228,32 +226,45 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Request an identity to be evaluated
+        /// Request caller identity to be evaluated
+        /// positive evaluation will result in claim/renew membership
+        /// negative evaluation will result in slash for caller
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::request_distance_evaluation())]
         pub fn request_distance_evaluation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            let idty =
-                pallet_identity::IdentityIndexOf::<T>::get(&who).ok_or(Error::<T>::NoIdentity)?;
+            let idty = Self::check_request_distance_evaluation_self(&who)?;
 
-            ensure!(
-                IdentityDistanceStatus::<T>::get(idty)
-                    != Some((who.clone(), DistanceStatus::Pending)),
-                Error::<T>::AlreadyInEvaluation
-            );
+            Pallet::<T>::do_request_distance_evaluation(&who, idty)?;
+            Ok(().into())
+        }
 
-            Pallet::<T>::do_request_distance_evaluation(who, idty)?;
+        /// Request target identity to be evaluated
+        /// only possible for unvalidated identity
+        #[pallet::call_index(4)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::request_distance_evaluation_for())]
+        pub fn request_distance_evaluation_for(
+            origin: OriginFor<T>,
+            target: T::IdtyIndex,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            Self::check_request_distance_evaluation_for(&who, target)?;
+
+            Pallet::<T>::do_request_distance_evaluation(&who, target)?;
             Ok(().into())
         }
 
         /// (Inherent) Push an evaluation result to the pool
+        /// this is called internally by validators (= inherent)
         #[pallet::call_index(1)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::update_evaluation(MAX_EVALUATIONS_PER_SESSION))]
         pub fn update_evaluation(
             origin: OriginFor<T>,
             computation_result: ComputationResult,
         ) -> DispatchResult {
+            // no origin = inherent
             ensure_none(origin)?;
             ensure!(
                 !DidUpdate::<T>::exists(),
@@ -267,7 +278,8 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Push an evaluation result to the pool
+        /// Force push an evaluation result to the pool
+        // (it is convenient to have this call in end2end tests)
         #[pallet::call_index(2)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::force_update_evaluation(MAX_EVALUATIONS_PER_SESSION))]
         pub fn force_update_evaluation(
@@ -280,57 +292,18 @@ pub mod pallet {
             Pallet::<T>::do_update_evaluation(evaluator, computation_result)
         }
 
-        /// Set the distance evaluation status of an identity
-        ///
-        /// Removes the status if `status` is `None`.
-        ///
-        /// * `status.0` is the account for whom the price will be unreserved or slashed
-        ///   when the evaluation completes.
-        /// * `status.1` is the status of the evaluation.
+        /// Force set the distance evaluation status of an identity
+        // (it is convenient to have this in test network)
         #[pallet::call_index(3)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::force_set_distance_status())]
-        pub fn force_set_distance_status(
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::force_valid_distance_status())]
+        pub fn force_valid_distance_status(
             origin: OriginFor<T>,
             identity: <T as pallet_identity::Config>::IdtyIndex,
-            status: Option<(<T as frame_system::Config>::AccountId, DistanceStatus)>,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            IdentityDistanceStatus::<T>::set(identity, status.clone());
-            DistanceStatusExpireOn::<T>::mutate(
-                pallet_session::CurrentIndex::<T>::get() + T::ResultExpiration::get(),
-                move |identities| {
-                    identities
-                        .try_push(identity)
-                        .map_err(|_| Error::<T>::TooManyEvaluationsInBlock)
-                },
-            )?;
-            Self::deposit_event(Event::EvaluationStatusForced {
-                idty_index: identity,
-                status,
-            });
+            Self::do_valid_distance_status(identity);
             Ok(())
-        }
-    }
-
-    // BENCHMARK FUNCTIONS //
-
-    impl<T: Config> Pallet<T> {
-        /// Force the distance status using IdtyIndex and AccountId
-        /// only to prepare identity for benchmarking.
-        pub fn set_distance_status(
-            identity: <T as pallet_identity::Config>::IdtyIndex,
-            status: Option<(<T as frame_system::Config>::AccountId, DistanceStatus)>,
-        ) -> DispatchResult {
-            IdentityDistanceStatus::<T>::set(identity, status);
-            DistanceStatusExpireOn::<T>::mutate(
-                pallet_session::CurrentIndex::<T>::get() + T::ResultExpiration::get(),
-                move |identities| {
-                    identities
-                        .try_push(identity)
-                        .map_err(|_| Error::<T>::TooManyEvaluationsInBlock.into())
-                },
-            )
         }
     }
 
@@ -398,55 +371,119 @@ pub mod pallet {
             }
         }
 
+        /// check that request distance evaluation is allowed
+        fn check_request_distance_evaluation_self(
+            who: &T::AccountId,
+        ) -> Result<<T as pallet_identity::Config>::IdtyIndex, DispatchError> {
+            // caller has an identity
+            let idty_index = pallet_identity::IdentityIndexOf::<T>::get(who)
+                .ok_or(Error::<T>::CallerHasNoIdentity)?;
+            let idty = pallet_identity::Identities::<T>::get(idty_index)
+                .ok_or(Error::<T>::CallerIdentityNotFound)?;
+            // caller is (Unvalidated, Member, NotMember)
+            ensure!(
+                idty.status == pallet_identity::IdtyStatus::Unvalidated
+                    || idty.status == pallet_identity::IdtyStatus::Member
+                    || idty.status == pallet_identity::IdtyStatus::NotMember,
+                Error::<T>::CallerStatusInvalid
+            );
+            Self::check_request_distance_evaluation_common(idty_index)?;
+            Ok(idty_index)
+        }
+
+        /// check that targeted request distance evaluation is allowed
+        fn check_request_distance_evaluation_for(
+            who: &T::AccountId,
+            target: <T as pallet_identity::Config>::IdtyIndex,
+        ) -> Result<(), DispatchError> {
+            // caller has an identity
+            let caller_idty_index = pallet_identity::IdentityIndexOf::<T>::get(who)
+                .ok_or(Error::<T>::CallerHasNoIdentity)?;
+            let caller_idty = pallet_identity::Identities::<T>::get(caller_idty_index)
+                .ok_or(Error::<T>::CallerIdentityNotFound)?;
+            // caller is member
+            ensure!(
+                caller_idty.status == pallet_identity::IdtyStatus::Member,
+                Error::<T>::CallerNotMember
+            );
+            // target has an identity
+            let target_idty = pallet_identity::Identities::<T>::get(target)
+                .ok_or(Error::<T>::TargetIdentityNotFound)?;
+            // target is unvalidated
+            ensure!(
+                target_idty.status == pallet_identity::IdtyStatus::Unvalidated,
+                Error::<T>::TargetMustBeUnvalidated
+            );
+            Self::check_request_distance_evaluation_common(target)?;
+            Ok(())
+        }
+
+        // common checks between check_request_distance_evaluation _self and _for
+        fn check_request_distance_evaluation_common(
+            target: <T as pallet_identity::Config>::IdtyIndex,
+        ) -> Result<(), DispatchError> {
+            // no pending evaluation request
+            ensure!(
+                PendingEvaluationRequest::<T>::get(target).is_none(),
+                Error::<T>::AlreadyInEvaluation
+            );
+            // external validation (wot)
+            // - membership renewal antispam
+            // - target has received enough certifications
+            T::CheckRequestDistanceEvaluation::check_request_distance_evaluation(target)
+        }
+
+        /// request distance evaluation in current pool
         fn do_request_distance_evaluation(
-            who: T::AccountId,
+            who: &T::AccountId,
             idty_index: <T as pallet_identity::Config>::IdtyIndex,
         ) -> Result<(), DispatchError> {
             Pallet::<T>::mutate_current_pool(
                 pallet_session::CurrentIndex::<T>::get(),
                 |current_pool| {
+                    // extrinsics are transactional by default, this check might not be needed
                     ensure!(
                         current_pool.evaluations.len() < (MAX_EVALUATIONS_PER_SESSION as usize),
                         Error::<T>::QueueFull
                     );
 
-                    T::Currency::reserve(&who, <T as Config>::EvaluationPrice::get())?;
+                    T::Currency::reserve(who, <T as Config>::EvaluationPrice::get())?;
 
                     current_pool
                         .evaluations
                         .try_push((idty_index, median::MedianAcc::new()))
                         .map_err(|_| Error::<T>::QueueFull)?;
 
-                    IdentityDistanceStatus::<T>::insert(
-                        idty_index,
-                        (&who, DistanceStatus::Pending),
-                    );
+                    PendingEvaluationRequest::<T>::insert(idty_index, who);
 
-                    DistanceStatusExpireOn::<T>::mutate(
-                        pallet_session::CurrentIndex::<T>::get() + T::ResultExpiration::get(),
-                        move |identities| identities.try_push(idty_index).ok(),
-                    );
-                    Self::deposit_event(Event::EvaluationRequested { idty_index, who });
+                    Self::deposit_event(Event::EvaluationRequested {
+                        idty_index,
+                        who: who.clone(),
+                    });
                     Ok(())
                 },
             )
         }
 
+        /// update distance evaluation in next pool
         fn do_update_evaluation(
             evaluator: <T as frame_system::Config>::AccountId,
             computation_result: ComputationResult,
         ) -> DispatchResult {
             Pallet::<T>::mutate_next_pool(pallet_session::CurrentIndex::<T>::get(), |result_pool| {
+                // evaluation must be provided for all identities (no more, no less)
                 ensure!(
                     computation_result.distances.len() == result_pool.evaluations.len(),
                     Error::<T>::WrongResultLength
                 );
 
+                // insert the evaluator if not already there
                 if result_pool
                     .evaluators
                     .try_insert(evaluator.clone())
                     .map_err(|_| Error::<T>::TooManyEvaluators)?
                 {
+                    // update the median accumulator with the new result
                     for (distance_value, (_identity, median_acc)) in computation_result
                         .distances
                         .into_iter()
@@ -454,22 +491,27 @@ pub mod pallet {
                     {
                         median_acc.push(distance_value);
                     }
-
-                    Self::deposit_event(Event::EvaluationUpdated { evaluator });
                     Ok(())
                 } else {
+                    // one author can only submit one evaluation
                     Err(Error::<T>::TooManyEvaluationsByAuthor.into())
                 }
             })
+        }
+
+        /// Set the distance status using IdtyIndex and AccountId
+        pub fn do_valid_distance_status(idty: <T as pallet_identity::Config>::IdtyIndex) {
+            // callback
+            T::OnValidDistanceStatus::on_valid_distance_status(idty);
+            // deposit event
+            Self::deposit_event(Event::EvaluatedValid { idty_index: idty });
         }
     }
 
     impl<T: Config> pallet_authority_members::OnNewSession for Pallet<T> {
         fn on_new_session(index: SessionIndex) {
+            // set evaluation block
             EvaluationBlock::<T>::set(frame_system::Pallet::<T>::parent_hash());
-
-            // Make results expire
-            DistanceStatusExpireOn::<T>::remove(index);
 
             // Apply the results from the current pool (which was previous session's result pool)
             // We take the results so the pool is left empty for the new session.
@@ -479,35 +521,48 @@ pub mod pallet {
                 <T as pallet_identity::Config>::IdtyIndex,
             > = Pallet::<T>::take_current_pool(index);
             for (idty, median_acc) in current_pool.evaluations.into_iter() {
+                // distance result
+                let mut distance_result: Option<bool> = None;
+
+                // get result of the computation
                 if let Some(median_result) = median_acc.get_median() {
                     let median = match median_result {
                         MedianResult::One(m) => m,
                         MedianResult::Two(m1, m2) => m1 + (m2 - m1) / 2, // Avoid overflow (since max is 1)
                     };
-                    IdentityDistanceStatus::<T>::mutate(idty, |entry| {
-                        if let Some((account_id, status)) = entry.as_mut() {
-                            if median >= T::MinAccessibleReferees::get() {
-                                T::Currency::unreserve(
-                                    account_id,
-                                    <T as Config>::EvaluationPrice::get(),
-                                );
-                                *status = DistanceStatus::Valid;
-                            } else {
-                                T::Currency::slash_reserved(
-                                    account_id,
-                                    <T as Config>::EvaluationPrice::get(),
-                                );
-                                *status = DistanceStatus::Invalid;
-                            }
-                        }
-                    });
-                } else if let Some((account_id, _status)) = IdentityDistanceStatus::<T>::take(idty)
-                {
-                    <T as Config>::Currency::unreserve(
-                        &account_id,
-                        <T as Config>::EvaluationPrice::get(),
-                    );
+                    // update distance result
+                    distance_result = Some(median >= T::MinAccessibleReferees::get());
                 }
+
+                // take requester and perform unreserve or slash
+                if let Some(requester) = PendingEvaluationRequest::<T>::take(idty) {
+                    match distance_result {
+                        None => {
+                            // no result, unreserve
+                            T::Currency::unreserve(
+                                &requester,
+                                <T as Config>::EvaluationPrice::get(),
+                            );
+                        }
+                        Some(true) => {
+                            // positive result, unreserve and apply
+                            T::Currency::unreserve(
+                                &requester,
+                                <T as Config>::EvaluationPrice::get(),
+                            );
+                            Self::do_valid_distance_status(idty);
+                        }
+                        Some(false) => {
+                            // negative result, slash and deposit event
+                            T::Currency::slash_reserved(
+                                &requester,
+                                <T as Config>::EvaluationPrice::get(),
+                            );
+                            Self::deposit_event(Event::EvaluatedInvalid { idty_index: idty });
+                        }
+                    }
+                }
+                // if evaluation happened without request, it's ok to do nothing
             }
         }
     }

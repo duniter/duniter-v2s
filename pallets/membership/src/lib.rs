@@ -32,9 +32,7 @@ pub use pallet::*;
 pub use weights::WeightInfo;
 
 use frame_support::dispatch::Weight;
-use frame_support::error::BadOrigin;
 use frame_support::pallet_prelude::*;
-use frame_system::RawOrigin;
 use sp_membership::traits::*;
 use sp_membership::MembershipData;
 use sp_runtime::traits::Zero;
@@ -44,13 +42,13 @@ use std::collections::BTreeMap;
 
 #[cfg(feature = "runtime-benchmarks")]
 pub trait SetupBenchmark<IdtyId, AccountId> {
-    fn force_status_ok(idty_index: &IdtyId, account: &AccountId);
+    fn force_valid_distance_status(idty_index: &IdtyId);
     fn add_cert(_issuer: &IdtyId, _receiver: &IdtyId);
 }
 
 #[cfg(feature = "runtime-benchmarks")]
 impl<IdtyId, AccountId> SetupBenchmark<IdtyId, AccountId> for () {
-    fn force_status_ok(_idty_id: &IdtyId, _account: &AccountId) {}
+    fn force_valid_distance_status(_idty_id: &IdtyId) {}
     fn add_cert(_issuer: &IdtyId, _receiver: &IdtyId) {}
 }
 
@@ -86,16 +84,21 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// Ask the runtime whether the identity can perform membership operations
-        type CheckMembershipCallAllowed: CheckMembershipCallAllowed<Self::IdtyId>;
+        type CheckMembershipOpAllowed: CheckMembershipOpAllowed<Self::IdtyId>;
         /// Something that identifies an identity
         type IdtyId: Copy + MaybeSerializeDeserialize + Parameter + Ord;
         /// Something that gives the IdtyId of an AccountId
         type IdtyIdOf: Convert<Self::AccountId, Option<Self::IdtyId>>;
         /// Something that gives the AccountId of an IdtyId
         type AccountIdOf: Convert<Self::IdtyId, Option<Self::AccountId>>;
+        /// Maximum life span of a single membership (in number of blocks)
+        // (this could be renamed "validity" or "duration")
         #[pallet::constant]
-        /// Maximum life span of a non-renewable membership (in number of blocks)
         type MembershipPeriod: Get<Self::BlockNumber>;
+        /// Minimum delay to wait before renewing membership
+        // i.e. asking for distance evaluation
+        #[pallet::constant]
+        type MembershipRenewalPeriod: Get<Self::BlockNumber>;
         /// On event handler
         type OnEvent: OnEvent<Self::IdtyId>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
@@ -156,6 +159,11 @@ pub mod pallet {
             member: T::IdtyId,
             expire_on: BlockNumberFor<T>,
         },
+        /// A membership was renewed.
+        MembershipRenewed {
+            member: T::IdtyId,
+            expire_on: BlockNumberFor<T>,
+        },
         /// A membership was removed.
         MembershipRemoved {
             member: T::IdtyId,
@@ -173,6 +181,8 @@ pub mod pallet {
         MembershipAlreadyAcquired,
         /// Membership not found.
         MembershipNotFound,
+        /// Already member, can not claim membership.
+        AlreadyMember,
     }
 
     // HOOKS //
@@ -188,61 +198,13 @@ pub mod pallet {
         }
     }
 
-    // CALLS //
-
-    #[pallet::call]
-    impl<T: Config> Pallet<T> {
-        /// claim membership
-        /// it must fullfill the requirements (certs, distance)
-        /// TODO #159 for main wot claim_membership is called automatically when distance is evaluated positively
-        /// for smith wot, it means joining the authority members
-        #[pallet::call_index(1)]
-        #[pallet::weight(T::WeightInfo::claim_membership())]
-        pub fn claim_membership(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // get identity
-            let idty_id = Self::get_idty_id(origin)?;
-
-            Self::check_allowed_to_claim(idty_id)?;
-            Self::do_add_membership(idty_id);
-            Ok(().into())
-        }
-
-        /// extend the validity period of an active membership
-        #[pallet::call_index(2)]
-        #[pallet::weight(T::WeightInfo::renew_membership())]
-        pub fn renew_membership(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // Verify phase
-            let idty_id = Self::get_idty_id(origin)?;
-            let membership_data =
-                Membership::<T>::get(idty_id).ok_or(Error::<T>::MembershipNotFound)?;
-
-            T::CheckMembershipCallAllowed::check_idty_allowed_to_renew_membership(&idty_id)?;
-
-            // apply phase
-            Self::unschedule_membership_expiry(idty_id, membership_data.expire_on);
-            Self::insert_membership_and_schedule_expiry(idty_id);
-            T::OnEvent::on_event(&sp_membership::Event::MembershipRenewed(idty_id));
-
-            Ok(().into())
-        }
-
-        /// revoke an active membership
-        /// (only available for sub wot, automatic for main wot)
-        #[pallet::call_index(3)]
-        #[pallet::weight(T::WeightInfo::revoke_membership())]
-        pub fn revoke_membership(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // Verify phase
-            let idty_id = Self::get_idty_id(origin)?;
-
-            // Apply phase
-            Self::do_remove_membership(idty_id, MembershipRemovalReason::Revoked);
-
-            Ok(().into())
-        }
-    }
+    // // CALLS //
+    // #[pallet::call]
+    // impl<T: Config> Pallet<T> {
+    //     // no calls for membership pallet
+    // }
 
     // INTERNAL FUNCTIONS //
-
     impl<T: Config> Pallet<T> {
         /// unschedule membership expiry
         fn unschedule_membership_expiry(idty_id: T::IdtyId, block_number: T::BlockNumber) {
@@ -254,29 +216,76 @@ pub mod pallet {
             }
         }
         /// schedule membership expiry
-        fn insert_membership_and_schedule_expiry(idty_id: T::IdtyId) {
+        fn insert_membership_and_schedule_expiry(idty_id: T::IdtyId) -> T::BlockNumber {
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             let expire_on = block_number + T::MembershipPeriod::get();
 
             Membership::<T>::insert(idty_id, MembershipData { expire_on });
             MembershipsExpireOn::<T>::append(expire_on, idty_id);
-            Self::deposit_event(Event::MembershipAdded {
-                member: idty_id,
-                expire_on,
-            });
+            expire_on
         }
 
         /// check that membership can be claimed
-        pub fn check_allowed_to_claim(idty_id: T::IdtyId) -> Result<(), DispatchError> {
+        pub fn check_add_membership(idty_id: T::IdtyId) -> Result<(), DispatchError> {
+            // no-op is error
+            ensure!(
+                Membership::<T>::get(idty_id).is_none(),
+                Error::<T>::AlreadyMember
+            );
+
             // enough certifications and distance rule for example
-            T::CheckMembershipCallAllowed::check_idty_allowed_to_claim_membership(&idty_id)?;
+            T::CheckMembershipOpAllowed::check_add_membership(idty_id)?;
+            Ok(())
+        }
+
+        /// check that membership can be renewed
+        pub fn check_renew_membership(
+            idty_id: T::IdtyId,
+        ) -> Result<MembershipData<T::BlockNumber>, DispatchError> {
+            let membership_data =
+                Membership::<T>::get(idty_id).ok_or(Error::<T>::MembershipNotFound)?;
+
+            // enough certifications and distance rule for example
+            T::CheckMembershipOpAllowed::check_renew_membership(idty_id)?;
+            Ok(membership_data)
+        }
+
+        /// try claim membership
+        pub fn try_add_membership(idty_id: T::IdtyId) -> Result<(), DispatchError> {
+            Self::check_add_membership(idty_id)?;
+            Self::do_add_membership(idty_id);
+            Ok(())
+        }
+
+        /// try renew membership
+        pub fn try_renew_membership(idty_id: T::IdtyId) -> Result<(), DispatchError> {
+            let membership_data = Self::check_renew_membership(idty_id)?;
+            Self::do_renew_membership(idty_id, membership_data);
             Ok(())
         }
 
         /// perform membership addition
         fn do_add_membership(idty_id: T::IdtyId) {
-            Self::insert_membership_and_schedule_expiry(idty_id);
+            let expire_on = Self::insert_membership_and_schedule_expiry(idty_id);
+            Self::deposit_event(Event::MembershipAdded {
+                member: idty_id,
+                expire_on,
+            });
             T::OnEvent::on_event(&sp_membership::Event::MembershipAdded(idty_id));
+        }
+
+        /// perform membership renewal
+        fn do_renew_membership(
+            idty_id: T::IdtyId,
+            membership_data: MembershipData<T::BlockNumber>,
+        ) {
+            Self::unschedule_membership_expiry(idty_id, membership_data.expire_on);
+            let expire_on = Self::insert_membership_and_schedule_expiry(idty_id);
+            Self::deposit_event(Event::MembershipRenewed {
+                member: idty_id,
+                expire_on,
+            });
+            T::OnEvent::on_event(&sp_membership::Event::MembershipRenewed(idty_id));
         }
 
         /// perform membership removal
@@ -288,15 +297,6 @@ pub mod pallet {
                     reason,
                 });
                 T::OnEvent::on_event(&sp_membership::Event::MembershipRemoved(idty_id));
-            }
-        }
-
-        /// check the origin and get identity id if valid
-        fn get_idty_id(origin: OriginFor<T>) -> Result<T::IdtyId, DispatchError> {
-            if let Ok(RawOrigin::Signed(account_id)) = origin.into() {
-                T::IdtyIdOf::convert(account_id).ok_or_else(|| Error::<T>::IdtyIdNotFound.into())
-            } else {
-                Err(BadOrigin.into())
             }
         }
 

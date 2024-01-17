@@ -13,7 +13,7 @@ through on-chain governance mechanisms.
 
 ## User calls
 
-There are **79** user calls from **22** pallets.
+There are **77** user calls from **21** pallets.
 
 ### Account - 1
 
@@ -831,51 +831,6 @@ payload_sig: T::Signature
 
 Link an account to an identity
 
-### Membership - 42
-
-#### claim_membership - 1
-
-<details><summary><code>claim_membership()</code></summary>
-
-Taking 0.0213 % of a block.
-
-```rust
-```
-</details>
-
-
-claim membership
-it must fullfill the requirements (certs, distance)
-TODO #159 for main wot claim_membership is called automatically when distance is evaluated positively
-for smith wot, it means joining the authority members
-
-#### renew_membership - 2
-
-<details><summary><code>renew_membership()</code></summary>
-
-Taking 0.0164 % of a block.
-
-```rust
-```
-</details>
-
-
-extend the validity period of an active membership
-
-#### revoke_membership - 3
-
-<details><summary><code>revoke_membership()</code></summary>
-
-Taking 0.0586 % of a block.
-
-```rust
-```
-</details>
-
-
-revoke an active membership
-(only available for sub wot, automatic for main wot)
-
 ### Certification - 43
 
 #### add_cert - 0
@@ -932,20 +887,37 @@ remove all certifications received by an identity (only root)
 
 <details><summary><code>request_distance_evaluation()</code></summary>
 
-Taking 0.0187 % of a block.
+Taking 0.06 % of a block.
 
 ```rust
 ```
 </details>
 
 
-Request an identity to be evaluated
+Request caller identity to be evaluated
+positive evaluation will result in claim/renew membership
+negative evaluation will result in slash for caller
+
+#### request_distance_evaluation_for - 4
+
+<details><summary><code>request_distance_evaluation_for(target)</code></summary>
+
+Taking 0.0805 % of a block.
+
+```rust
+target: T::IdtyIndex
+```
+</details>
+
+
+Request target identity to be evaluated
+only possible for unvalidated identity
 
 #### update_evaluation - 1
 
 <details><summary><code>update_evaluation(computation_result)</code></summary>
 
-Taking 0.0195 % of a block.
+Taking 0.0914 % of a block.
 
 ```rust
 computation_result: ComputationResult
@@ -954,12 +926,13 @@ computation_result: ComputationResult
 
 
 (Inherent) Push an evaluation result to the pool
+this is called internally by validators (= inherent)
 
 #### force_update_evaluation - 2
 
 <details><summary><code>force_update_evaluation(evaluator, computation_result)</code></summary>
 
-Taking 0.0122 % of a block.
+Taking 0.0759 % of a block.
 
 ```rust
 evaluator: <T as frame_system::Config>::AccountId
@@ -968,28 +941,21 @@ computation_result: ComputationResult
 </details>
 
 
-Push an evaluation result to the pool
+Force push an evaluation result to the pool
 
-#### force_set_distance_status - 3
+#### force_valid_distance_status - 3
 
-<details><summary><code>force_set_distance_status(identity, status)</code></summary>
+<details><summary><code>force_valid_distance_status(identity)</code></summary>
 
-Taking 0.011 % of a block.
+Taking 0.074 % of a block.
 
 ```rust
 identity: <T as pallet_identity::Config>::IdtyIndex
-status: Option<(<T as frame_system::Config>::AccountId, DistanceStatus)>
 ```
 </details>
 
 
-Set the distance evaluation status of an identity
-
-Removes the status if `status` is `None`.
-
-* `status.0` is the account for whom the price will be unreserved or slashed
-  when the evaluation completes.
-* `status.1` is the status of the evaluation.
+Force set the distance evaluation status of an identity
 
 ### AtomicSwap - 50
 

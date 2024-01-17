@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **178** errors from **35** pallets.
+There are **176** errors from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -386,21 +386,21 @@ A smith has a limited stock of certifications
 <details>
 <summary>
 <code>AlreadyIncoming</code> - 0</summary>
-Member already incoming
+Member already incoming.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>AlreadyOnline</code> - 1</summary>
-Member already online
+Member already online.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>AlreadyOutgoing</code> - 2</summary>
-Member already outgoing
+Member already outgoing.
 </details>
 </li>
 <li>
@@ -414,42 +414,42 @@ Owner key is invalid as a member.
 <details>
 <summary>
 <code>MemberBlacklisted</code> - 4</summary>
-Member is blacklisted
+Member is blacklisted.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>MemberNotBlacklisted</code> - 5</summary>
-Member is not blacklisted
+Member is not blacklisted.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>MemberNotFound</code> - 6</summary>
-Member not found
+Member not found.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>NotOnlineNorIncoming</code> - 7</summary>
-Neither online nor scheduled
+Neither online nor scheduled.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>NotMember</code> - 8</summary>
-Not member
+Not member.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>SessionKeysNotProvided</code> - 9</summary>
-Session keys not provided
+Session keys not provided.
 </details>
 </li>
 <li>
@@ -740,113 +740,57 @@ This account is not allowed to claim UDs.
 <li>
 <details>
 <summary>
-<code>NotEnoughCertsToClaimMembership</code> - 0</summary>
-Insufficient certifications received to claim membership.
+<code>NotEnoughCerts</code> - 0</summary>
+Insufficient certifications received.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>DistanceIsInvalid</code> - 1</summary>
-Distance is invalid.
+<code>TargetStatusInvalid</code> - 1</summary>
+Target status is incompatible with this operation.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>DistanceNotEvaluated</code> - 2</summary>
-Distance is not evaluated.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>DistanceEvaluationPending</code> - 3</summary>
-Distance evaluation has been requested but is still pending
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>DistanceEvaluationNotRequested</code> - 4</summary>
-Distance evaluation has not been requested
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IdtyNotAllowedToRequestMembership</code> - 5</summary>
-Identity is not allowed to request membership.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IdtyNotAllowedToRenewMembership</code> - 6</summary>
-Identity not allowed to renew membership.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IdtyCreationPeriodNotRespected</code> - 7</summary>
+<code>IdtyCreationPeriodNotRespected</code> - 2</summary>
 Identity creation period not respected.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NotEnoughReceivedCertsToCreateIdty</code> - 8</summary>
+<code>NotEnoughReceivedCertsToCreateIdty</code> - 3</summary>
 Insufficient received certifications to create identity.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>MaxEmittedCertsReached</code> - 9</summary>
+<code>MaxEmittedCertsReached</code> - 4</summary>
 Maximum number of emitted certifications reached.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NotAllowedToChangeIdtyAddress</code> - 10</summary>
-Not allowed to change identity address.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>NotAllowedToRemoveIdty</code> - 11</summary>
-Not allowed to remove identity.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IssuerNotMember</code> - 12</summary>
+<code>IssuerNotMember</code> - 5</summary>
 Issuer cannot emit a certification because it is not member.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>CertToUnconfirmed</code> - 13</summary>
-Cannot issue a certification to an unconfirmed identity
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>CertToRevoked</code> - 14</summary>
-Cannot issue a certification to a revoked identity
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IdtyNotFound</code> - 15</summary>
+<code>IdtyNotFound</code> - 6</summary>
 Issuer or receiver not found.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>MembershipRenewalPeriodNotRespected</code> - 7</summary>
+Membership can only be renewed after an antispam delay.
 </details>
 </li>
 </ul>
@@ -1011,6 +955,13 @@ Membership already acquired.
 Membership not found.
 </details>
 </li>
+<li>
+<details>
+<summary>
+<code>AlreadyMember</code> - 3</summary>
+Already member, can not claim membership.
+</details>
+</li>
 </ul>
 </li>
 <li>Certification - 43
@@ -1019,21 +970,21 @@ Membership not found.
 <details>
 <summary>
 <code>CannotCertifySelf</code> - 0</summary>
-Identity cannot certify itself
+Identity cannot certify itself.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IssuedTooManyCert</code> - 1</summary>
-Identity has already issued the maximum number of certifications
+Identity has already issued the maximum number of certifications.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>IssuerNotFound</code> - 2</summary>
-Issuer not found
+Issuer not found.
 </details>
 </li>
 <li>
@@ -1085,29 +1036,64 @@ No author for this block.
 <li>
 <details>
 <summary>
-<code>NoIdentity</code> - 4</summary>
+<code>CallerHasNoIdentity</code> - 4</summary>
 Caller has no identity.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>QueueFull</code> - 5</summary>
+<code>CallerIdentityNotFound</code> - 5</summary>
+Caller identity not found.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CallerNotMember</code> - 6</summary>
+Caller not member.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CallerStatusInvalid</code> - 7</summary>
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>TargetIdentityNotFound</code> - 8</summary>
+Target identity not found.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>QueueFull</code> - 9</summary>
 Evaluation queue is full.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>TooManyEvaluators</code> - 6</summary>
+<code>TooManyEvaluators</code> - 10</summary>
 Too many evaluators in the current evaluation pool.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>WrongResultLength</code> - 7</summary>
+<code>WrongResultLength</code> - 11</summary>
 Evaluation result has a wrong length.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>TargetMustBeUnvalidated</code> - 12</summary>
+Targeted distance evaluation request is only possible for an unvalidated identity.
 </details>
 </li>
 </ul>

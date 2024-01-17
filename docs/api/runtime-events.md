@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **127** events from **35** pallets.
+There are **128** events from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -650,7 +650,7 @@ no args
 <details>
 <summary>
 <code>InvitationSent(idty_index, invited_by)</code> - 0</summary>
-An identity is being inivited to become a smith
+An identity is being inivited to become a smith.
 
 ```rust
 idty_index: T::IdtyIndex
@@ -663,7 +663,7 @@ invited_by: T::IdtyIndex
 <details>
 <summary>
 <code>InvitationAccepted(idty_index)</code> - 1</summary>
-The invitation has been accepted
+The invitation has been accepted.
 
 ```rust
 idty_index: T::IdtyIndex
@@ -700,7 +700,7 @@ idty_index: T::IdtyIndex
 <details>
 <summary>
 <code>SmithExcluded(idty_index)</code> - 4</summary>
-A smith has been removed from the smiths set
+A smith has been removed from the smiths set.
 
 ```rust
 idty_index: T::IdtyIndex
@@ -1286,7 +1286,20 @@ expire_on: BlockNumberFor<T>
 <li>
 <details>
 <summary>
-<code>MembershipRemoved(member, reason)</code> - 1</summary>
+<code>MembershipRenewed(member, expire_on)</code> - 1</summary>
+A membership was renewed.
+
+```rust
+member: T::IdtyId
+expire_on: BlockNumberFor<T>
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>MembershipRemoved(member, reason)</code> - 2</summary>
 A membership was removed.
 
 ```rust
@@ -1360,11 +1373,11 @@ who: T::AccountId
 <li>
 <details>
 <summary>
-<code>EvaluationUpdated(evaluator)</code> - 1</summary>
-A distance evaluation was updated.
+<code>EvaluatedValid(idty_index)</code> - 1</summary>
+Distance rule was found valid.
 
 ```rust
-evaluator: T::AccountId
+idty_index: T::IdtyIndex
 ```
 
 </details>
@@ -1372,12 +1385,11 @@ evaluator: T::AccountId
 <li>
 <details>
 <summary>
-<code>EvaluationStatusForced(idty_index, status)</code> - 2</summary>
-A distance status was forced.
+<code>EvaluatedInvalid(idty_index)</code> - 2</summary>
+Distance rule was found invalid.
 
 ```rust
 idty_index: T::IdtyIndex
-status: Option<(<T as frame_system::Config>::AccountId, DistanceStatus)>
 ```
 
 </details>

@@ -553,6 +553,15 @@ where
                 G1_DUNITER_V1_MSVALIDITY as f32 / DUNITER_V1_DAYS as f32
             )
         }
+        if common_parameters.membership_membership_renewal_period / DAYS
+            != G1_DUNITER_V1_MSVALIDITY / DUNITER_V1_DAYS
+        {
+            warn!(
+                "parameter `membership_renewal_period` ({} days) is different from Ğ1's ({} days)",
+                common_parameters.membership_membership_renewal_period as f32 / DAYS as f32,
+                G1_DUNITER_V1_MSVALIDITY as f32 / DUNITER_V1_DAYS as f32
+            )
+        }
         if common_parameters.cert_cert_period / DAYS != G1_DUNITER_V1_SIGPERIOD / DUNITER_V1_DAYS {
             warn!(
                 "parameter `cert_period` ({} days) is different from Ğ1's ({} days)",
@@ -807,8 +816,8 @@ fn dump_genesis_info(info: GenesisInfo) {
         get_best_unit_and_diviser_for_blocks(p.identity_idty_creation_period);
     let (membership_membership_period, membership_membership_period_unit) =
         get_best_unit_and_diviser_for_blocks(p.membership_membership_period);
-    let (membership_pending_membership_period, membership_pending_membership_period_unit) =
-        get_best_unit_and_diviser_for_blocks(p.membership_pending_membership_period);
+    let (membership_membership_renewal_period, membership_membership_renewal_period_unit) =
+        get_best_unit_and_diviser_for_blocks(p.membership_membership_renewal_period);
     let (cert_cert_period, cert_cert_period_unit) =
         get_best_unit_and_diviser_for_blocks(p.cert_cert_period);
     let (cert_max_by_issuer, cert_max_by_issuer_unit) =
@@ -857,7 +866,7 @@ fn dump_genesis_info(info: GenesisInfo) {
         - identity.change_owner_key_period: {} {}
         - identity.idty_creation_period: {} {}
         - membership.membership_period: {} {}
-        - membership.pending_membership_period: {} {}
+        - membership.membership_renewal_period: {} {}
         - cert.cert_period: {} {}
         - cert.max_by_issuer: {} {}
         - cert.min_received_cert_to_be_able_to_issue_cert: {} {}
@@ -907,8 +916,8 @@ fn dump_genesis_info(info: GenesisInfo) {
         identity_idty_creation_period_unit,
         membership_membership_period,
         membership_membership_period_unit,
-        membership_pending_membership_period,
-        membership_pending_membership_period_unit,
+        membership_membership_renewal_period,
+        membership_membership_renewal_period_unit,
         cert_cert_period,
         cert_cert_period_unit,
         cert_max_by_issuer,
@@ -1980,7 +1989,7 @@ pub struct CommonParameters {
     pub identity_change_owner_key_period: u32,
     pub identity_idty_creation_period: u32,
     pub membership_membership_period: u32,
-    pub membership_pending_membership_period: u32,
+    pub membership_membership_renewal_period: u32,
     pub cert_cert_period: u32,
     pub cert_max_by_issuer: u32,
     pub cert_min_received_cert_to_be_able_to_issue_cert: u32,

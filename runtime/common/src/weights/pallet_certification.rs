@@ -54,8 +54,8 @@ impl<T: frame_system::Config> pallet_certification::WeightInfo for WeightInfo<T>
 	/// Proof Skipped: Cert StorageIdtyCertMeta (max_values: None, max_size: None, mode: Measured)
 	/// Storage: Parameters ParametersStorage (r:1 w:0)
 	/// Proof Skipped: Parameters ParametersStorage (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: Cert StorageCertsRemovableOn (r:1 w:1)
-	/// Proof Skipped: Cert StorageCertsRemovableOn (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Cert CertsRemovableOn (r:1 w:1)
+	/// Proof Skipped: Cert CertsRemovableOn (max_values: None, max_size: None, mode: Measured)
 	/// Storage: Cert CertsByReceiver (r:1 w:1)
 	/// Proof Skipped: Cert CertsByReceiver (max_values: None, max_size: None, mode: Measured)
 	fn add_cert() -> Weight {
@@ -110,8 +110,8 @@ impl<T: frame_system::Config> pallet_certification::WeightInfo for WeightInfo<T>
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i.into())))
 			.saturating_add(Weight::from_parts(0, 2511).saturating_mul(i.into()))
 	}
-	/// Storage: Cert StorageCertsRemovableOn (r:1 w:0)
-	/// Proof Skipped: Cert StorageCertsRemovableOn (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Cert CertsRemovableOn (r:1 w:0)
+	/// Proof Skipped: Cert CertsRemovableOn (max_values: None, max_size: None, mode: Measured)
 	fn on_initialize() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `181`

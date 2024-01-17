@@ -16,16 +16,16 @@
 
 use frame_support::pallet_prelude::*;
 
-pub trait CheckMembershipCallAllowed<IdtyId> {
-    fn check_idty_allowed_to_claim_membership(idty_id: &IdtyId) -> Result<(), DispatchError>;
-    fn check_idty_allowed_to_renew_membership(idty_id: &IdtyId) -> Result<(), DispatchError>;
+pub trait CheckMembershipOpAllowed<IdtyId> {
+    fn check_add_membership(idty_id: IdtyId) -> Result<(), DispatchError>;
+    fn check_renew_membership(idty_id: IdtyId) -> Result<(), DispatchError>;
 }
 
-impl<IdtyId> CheckMembershipCallAllowed<IdtyId> for () {
-    fn check_idty_allowed_to_claim_membership(_: &IdtyId) -> Result<(), DispatchError> {
+impl<IdtyId> CheckMembershipOpAllowed<IdtyId> for () {
+    fn check_add_membership(_: IdtyId) -> Result<(), DispatchError> {
         Ok(())
     }
-    fn check_idty_allowed_to_renew_membership(_: &IdtyId) -> Result<(), DispatchError> {
+    fn check_renew_membership(_: IdtyId) -> Result<(), DispatchError> {
         Ok(())
     }
 }

@@ -87,7 +87,7 @@ fn get_parameters(parameters_from_file: &Option<GenesisParameters>) -> CommonPar
         identity_change_owner_key_period: parameters::ChangeOwnerKeyPeriod::get(),
         identity_idty_creation_period: parameters_from_file.idty_creation_period,
         membership_membership_period: parameters_from_file.membership_period,
-        membership_pending_membership_period: parameters_from_file.pending_membership_period,
+        membership_membership_renewal_period: parameters_from_file.membership_renewal_period,
         cert_max_by_issuer: parameters_from_file.cert_max_by_issuer,
         cert_min_received_cert_to_be_able_to_issue_cert: parameters_from_file
             .cert_min_received_cert_to_issue_cert,
@@ -373,6 +373,7 @@ fn get_local_chain_parameters() -> Option<GenesisParameters> {
     let babe_epoch_duration = get_env("DUNITER_BABE_EPOCH_DURATION", 30) as u64;
     let cert_validity_period = get_env("DUNITER_CERT_VALIDITY_PERIOD", 1_000);
     let membership_period = get_env("DUNITER_MEMBERSHIP_PERIOD", 1_000);
+    let membership_renewal_period = get_env("DUNITER_MEMBERSHIP_RENEWAL_PERIOD", 1_000);
     let ud_creation_period = get_env("DUNITER_UD_CREATION_PERIOD", 60_000);
     let ud_reeval_period = get_env("DUNITER_UD_REEEVAL_PERIOD", 1_200_000);
     Some(GenesisParameters {
@@ -384,7 +385,7 @@ fn get_local_chain_parameters() -> Option<GenesisParameters> {
         idty_confirm_period: 40,
         idty_creation_period: 50,
         membership_period,
-        pending_membership_period: 500,
+        membership_renewal_period,
         ud_creation_period,
         ud_reeval_period,
         smith_cert_max_by_issuer: 8,
