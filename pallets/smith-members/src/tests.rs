@@ -46,8 +46,8 @@ fn process_to_become_a_smith_and_lose_it() {
         // Try to invite
         assert_ok!(Pallet::<Runtime>::invite_smith(RuntimeOrigin::signed(1), 5));
         System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::InvitationSent {
-            idty_index: 5,
-            invited_by: 1,
+            receiver: 5,
+            issuer: 1,
         }));
         // Accept invitation
         assert_ok!(Pallet::<Runtime>::accept_invitation(RuntimeOrigin::signed(
@@ -71,12 +71,10 @@ fn process_to_become_a_smith_and_lose_it() {
             RuntimeOrigin::signed(1),
             5
         ));
-        System::assert_has_event(RuntimeEvent::Smith(
-            Event::<Runtime>::CertificationReceived {
-                idty_index: 5,
-                issued_by: 1,
-            },
-        ));
+        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithCertAdded {
+            receiver: 5,
+            issuer: 1,
+        }));
         assert_eq!(
             Smiths::<Runtime>::get(5).unwrap(),
             SmithMeta {
@@ -91,15 +89,13 @@ fn process_to_become_a_smith_and_lose_it() {
             RuntimeOrigin::signed(2),
             5
         ));
-        System::assert_has_event(RuntimeEvent::Smith(
-            Event::<Runtime>::CertificationReceived {
-                idty_index: 5,
-                issued_by: 1,
-            },
-        ));
-        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::PromotedToSmith {
-            idty_index: 5,
+        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithCertAdded {
+            receiver: 5,
+            issuer: 1,
         }));
+        System::assert_has_event(RuntimeEvent::Smith(
+            Event::<Runtime>::SmithMembershipAdded { idty_index: 5 },
+        ));
         assert_eq!(
             Smiths::<Runtime>::get(5).unwrap(),
             SmithMeta {
@@ -120,14 +116,46 @@ fn process_to_become_a_smith_and_lose_it() {
         assert!(Smiths::<Runtime>::get(5).is_some());
         // On session 5 no more smiths because of lack of activity
         Pallet::<Runtime>::on_new_session(5);
-        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithExcluded {
-            idty_index: 1,
+        System::assert_has_event(RuntimeEvent::Smith(
+            Event::<Runtime>::SmithMembershipRemoved { idty_index: 1 },
+        ));
+        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithCertRemoved {
+            receiver: 1,
+            issuer: 2,
         }));
-        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithExcluded {
-            idty_index: 2,
+        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithCertRemoved {
+            receiver: 1,
+            issuer: 3,
         }));
-        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithExcluded {
-            idty_index: 5,
+        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithCertRemoved {
+            receiver: 1,
+            issuer: 4,
+        }));
+        System::assert_has_event(RuntimeEvent::Smith(
+            Event::<Runtime>::SmithMembershipRemoved { idty_index: 2 },
+        ));
+        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithCertRemoved {
+            receiver: 2,
+            issuer: 3,
+        }));
+        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithCertRemoved {
+            receiver: 2,
+            issuer: 4,
+        }));
+        System::assert_has_event(RuntimeEvent::Smith(
+            Event::<Runtime>::SmithMembershipRemoved { idty_index: 5 },
+        ));
+        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithCertRemoved {
+            receiver: 1,
+            issuer: 3,
+        }));
+        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithCertRemoved {
+            receiver: 5,
+            issuer: 1,
+        }));
+        System::assert_has_event(RuntimeEvent::Smith(Event::<Runtime>::SmithCertRemoved {
+            receiver: 5,
+            issuer: 2,
         }));
         assert_eq!(
             Smiths::<Runtime>::get(1),

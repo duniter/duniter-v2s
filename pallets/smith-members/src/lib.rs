@@ -130,20 +130,25 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// An identity is being inivited to become a smith.
         InvitationSent {
-            idty_index: T::IdtyIndex,
-            invited_by: T::IdtyIndex,
+            receiver: T::IdtyIndex,
+            issuer: T::IdtyIndex,
         },
         /// The invitation has been accepted.
         InvitationAccepted { idty_index: T::IdtyIndex },
         /// Certification received
-        CertificationReceived {
-            idty_index: T::IdtyIndex,
-            issued_by: T::IdtyIndex,
+        SmithCertAdded {
+            receiver: T::IdtyIndex,
+            issuer: T::IdtyIndex,
+        },
+        /// Certification lost
+        SmithCertRemoved {
+            receiver: T::IdtyIndex,
+            issuer: T::IdtyIndex,
         },
         /// A smith gathered enough certifications to become an authority (can call `go_online()`).
-        PromotedToSmith { idty_index: T::IdtyIndex },
+        SmithMembershipAdded { idty_index: T::IdtyIndex },
         /// A smith has been removed from the smiths set.
-        SmithExcluded { idty_index: T::IdtyIndex },
+        SmithMembershipRemoved { idty_index: T::IdtyIndex },
     }
 
     #[pallet::genesis_config]
@@ -275,6 +280,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// Invite a WoT member to try becoming a Smith
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::invite_smith())]
         pub fn invite_smith(
@@ -289,6 +295,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Accept an invitation (must have been invited first)
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::accept_invitation())]
         pub fn accept_invitation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -300,6 +307,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Certify an invited smith which can lead the certified to become a Smith
         #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::certify_smith())]
         pub fn certify_smith(
@@ -352,10 +360,7 @@ impl<T: Config> Pallet<T> {
         existing.received_certs = vec![];
         Smiths::<T>::insert(receiver, existing);
         ExpiresOn::<T>::append(new_expires_on, receiver);
-        Self::deposit_event(Event::<T>::InvitationSent {
-            idty_index: receiver,
-            invited_by: issuer,
-        });
+        Self::deposit_event(Event::<T>::InvitationSent { receiver, issuer });
     }
 
     fn check_accept_invitation(receiver: T::IdtyIndex) -> DispatchResultWithPostInfo {
@@ -445,12 +450,9 @@ impl<T: Config> Pallet<T> {
                 let new_expires_on =
                     CurrentSession::<T>::get() + T::SmithInactivityMaxDuration::get();
                 smith_meta.expires_on = Some(new_expires_on);
-                Self::deposit_event(Event::<T>::CertificationReceived {
-                    idty_index: receiver,
-                    issued_by: issuer,
-                });
+                Self::deposit_event(Event::<T>::SmithCertAdded { receiver, issuer });
                 if smith_meta.status == SmithStatus::Smith {
-                    Self::deposit_event(Event::<T>::PromotedToSmith {
+                    Self::deposit_event(Event::<T>::SmithMembershipAdded {
                         idty_index: receiver,
                     });
                 }
@@ -479,9 +481,9 @@ impl<T: Config> Pallet<T> {
         }
     }
 
-    fn _do_exclude_smith(idty_index: T::IdtyIndex, reason: SmithRemovalReason) {
+    fn _do_exclude_smith(receiver: T::IdtyIndex, reason: SmithRemovalReason) {
         let mut lost_certs = vec![];
-        Smiths::<T>::mutate(idty_index, |maybe_smith_meta| {
+        Smiths::<T>::mutate(receiver, |maybe_smith_meta| {
             if let Some(smith_meta) = maybe_smith_meta {
                 smith_meta.expires_on = None;
                 smith_meta.status = SmithStatus::Excluded;
@@ -493,18 +495,24 @@ impl<T: Config> Pallet<T> {
             }
         });
         // We remove the lost certs from their issuer's stock
-        for lost_cert in lost_certs {
-            Smiths::<T>::mutate(lost_cert, |maybe_smith_meta| {
+        for lost_cert_issuer in lost_certs {
+            Smiths::<T>::mutate(lost_cert_issuer, |maybe_smith_meta| {
                 if let Some(smith_meta) = maybe_smith_meta {
-                    if let Ok(index) = smith_meta.issued_certs.binary_search(&idty_index) {
+                    if let Ok(index) = smith_meta.issued_certs.binary_search(&receiver) {
                         smith_meta.issued_certs.remove(index);
+                        Self::deposit_event(Event::<T>::SmithCertRemoved {
+                            receiver,
+                            issuer: lost_cert_issuer,
+                        });
                     }
                 }
             });
         }
         // Deletion done: notify (authority-members) for cascading
-        T::OnSmithDelete::on_smith_delete(idty_index, reason);
-        Self::deposit_event(Event::<T>::SmithExcluded { idty_index });
+        T::OnSmithDelete::on_smith_delete(receiver, reason);
+        Self::deposit_event(Event::<T>::SmithMembershipRemoved {
+            idty_index: receiver,
+        });
     }
 
     pub fn on_smith_goes_online(idty_index: T::IdtyIndex) {

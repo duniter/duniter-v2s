@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **128** events from **35** pallets.
+There are **129** events from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -649,12 +649,12 @@ no args
 <li>
 <details>
 <summary>
-<code>InvitationSent(idty_index, invited_by)</code> - 0</summary>
+<code>InvitationSent(receiver, issuer)</code> - 0</summary>
 An identity is being inivited to become a smith.
 
 ```rust
-idty_index: T::IdtyIndex
-invited_by: T::IdtyIndex
+receiver: T::IdtyIndex
+issuer: T::IdtyIndex
 ```
 
 </details>
@@ -674,12 +674,12 @@ idty_index: T::IdtyIndex
 <li>
 <details>
 <summary>
-<code>CertificationReceived(idty_index, issued_by)</code> - 2</summary>
+<code>SmithCertAdded(receiver, issuer)</code> - 2</summary>
 Certification received
 
 ```rust
-idty_index: T::IdtyIndex
-issued_by: T::IdtyIndex
+receiver: T::IdtyIndex
+issuer: T::IdtyIndex
 ```
 
 </details>
@@ -687,7 +687,20 @@ issued_by: T::IdtyIndex
 <li>
 <details>
 <summary>
-<code>PromotedToSmith(idty_index)</code> - 3</summary>
+<code>SmithCertRemoved(receiver, issuer)</code> - 3</summary>
+Certification lost
+
+```rust
+receiver: T::IdtyIndex
+issuer: T::IdtyIndex
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>SmithMembershipAdded(idty_index)</code> - 4</summary>
 A smith gathered enough certifications to become an authority (can call `go_online()`).
 
 ```rust
@@ -699,7 +712,7 @@ idty_index: T::IdtyIndex
 <li>
 <details>
 <summary>
-<code>SmithExcluded(idty_index)</code> - 4</summary>
+<code>SmithMembershipRemoved(idty_index)</code> - 5</summary>
 A smith has been removed from the smiths set.
 
 ```rust

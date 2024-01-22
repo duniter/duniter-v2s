@@ -45,8 +45,8 @@ benchmarks! {
     }: _<T::RuntimeOrigin>(caller_origin, receiver)
     verify {
         assert_has_event::<T>(Event::<T>::InvitationSent{
-            idty_index: receiver,
-            invited_by: issuer,
+            receiver,
+            issuer,
         }.into());
     }
     accept_invitation {
@@ -85,9 +85,9 @@ benchmarks! {
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
     }: _<T::RuntimeOrigin>(caller_origin, receiver)
     verify {
-        assert_has_event::<T>(Event::<T>::CertificationReceived{
-            idty_index: receiver,
-            issued_by: issuer,
+        assert_has_event::<T>(Event::<T>::SmithCertAdded{
+            receiver,
+            issuer,
         }.into());
     }
 

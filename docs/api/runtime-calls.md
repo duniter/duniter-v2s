@@ -359,7 +359,7 @@ receiver: T::IdtyIndex
 </details>
 
 
-
+Invite a WoT member to try becoming a Smith
 
 #### accept_invitation - 1
 
@@ -372,7 +372,7 @@ Taking 0.0085 % of a block.
 </details>
 
 
-
+Accept an invitation (must have been invited first)
 
 #### certify_smith - 2
 
@@ -386,7 +386,7 @@ receiver: T::IdtyIndex
 </details>
 
 
-
+Certify an invited smith which can lead the certified to become a Smith
 
 ### AuthorityMembers - 11
 

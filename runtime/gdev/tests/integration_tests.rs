@@ -1540,7 +1540,19 @@ fn test_smith_member_can_revoke_its_idty() {
         ));
         // smith membership should be removed as well
         System::assert_has_event(RuntimeEvent::SmithMembers(
-            pallet_smith_members::Event::SmithExcluded { idty_index: 3 },
+            pallet_smith_members::Event::SmithMembershipRemoved { idty_index: 3 },
+        ));
+        System::assert_has_event(RuntimeEvent::SmithMembers(
+            pallet_smith_members::Event::SmithCertRemoved {
+                receiver: 3,
+                issuer: 1,
+            },
+        ));
+        System::assert_has_event(RuntimeEvent::SmithMembers(
+            pallet_smith_members::Event::SmithCertRemoved {
+                receiver: 3,
+                issuer: 2,
+            },
         ));
         // Now Charlie is going out
         assert!(pallet_authority_members::OutgoingAuthorities::<Runtime>::get().contains(&3));
