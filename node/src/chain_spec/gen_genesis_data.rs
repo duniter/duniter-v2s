@@ -92,7 +92,6 @@ pub struct GenesisIdentity {
     pub idty_index: u32,
     pub name: String,
     pub owner_key: AccountId,
-    pub old_owner_key: Option<AccountId>,
     pub active: bool,
 }
 
@@ -193,8 +192,6 @@ struct IdentityV2 {
     index: u32,
     /// ss58 address in gx network
     owner_key: AccountId,
-    /// optional ss58 address in the Ğ1v1
-    old_owner_key: Option<AccountId>,
     /// block at which the membership is set to expire (0 for expired members)
     membership_expire_on: u32,
     /// block at which the next cert can be emitted
@@ -210,8 +207,6 @@ struct RawSmith {
     name: String,
     /// optional pre-set session keys (at least for the smith bootstraping the blockchain)
     session_keys: Option<String>,
-    /// optional pre-set account migration
-    migration_address: Option<AccountId>,
     #[serde(default)]
     certs_received: Vec<String>,
 }
@@ -230,7 +225,6 @@ struct SmithData {
 #[derive(Clone, Deserialize, Serialize)]
 struct CliqueSmith {
     name: String,
-    migration_address: Option<AccountId>,
     session_keys: Option<String>,
 }
 
@@ -301,7 +295,7 @@ where
         &common_parameters,
     );
     let mut identities_v2: HashMap<String, IdentityV2> =
-        genesis_data_to_identities_v2(genesis_data.identities, genesis_timestamp, &smiths);
+        genesis_data_to_identities_v2(genesis_data.identities, genesis_timestamp);
     check_identities_v2(&identities_v2, &common_parameters);
 
     // MONEY AND WOT //
@@ -1250,18 +1244,7 @@ fn check_genesis_data_and_filter_expired_certs_since_export(
 fn genesis_data_to_identities_v2(
     genesis_identities: BTreeMap<String, IdentityV1>,
     genesis_timestamp: u64,
-    smiths: &[RawSmith],
 ) -> HashMap<String, IdentityV2> {
-    let key_migrations: HashMap<String, AccountId> = smiths
-        .iter()
-        .filter(|s| s.migration_address.is_some())
-        .map(|s| {
-            (
-                s.name.clone(),
-                s.migration_address.clone().expect("already filtered"),
-            )
-        })
-        .collect();
     genesis_identities
         .into_iter()
         .map(|(name, i)| {
@@ -1276,23 +1259,12 @@ fn genesis_data_to_identities_v2(
                         panic!("neither pubkey nor address is defined for {}", name)
                     })
                 });
-            let migration = key_migrations.get(name.as_str());
-            let owner_key = if let Some(migrated_account) = migration {
-                migrated_account.clone()
-            } else {
-                legacy_account.clone()
-            };
-            let old_owner_key = if migration.is_none() {
-                None
-            } else {
-                Some(legacy_account)
-            };
+            let owner_key = legacy_account.clone();
             (
                 name,
                 IdentityV2 {
                     index: i.index,
                     owner_key,
-                    old_owner_key,
                     membership_expire_on: timestamp_to_relative_blocs(
                         i.membership_expire_on,
                         genesis_timestamp,
@@ -1338,7 +1310,6 @@ fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKey
                 balance: common_parameters.balances_existential_deposit,
                 certs_received: HashMap::new(),
                 membership_expire_on: common_parameters.membership_membership_period,
-                old_owner_key: None,
                 next_cert_issuable_on: 0,
             },
         );
@@ -1371,12 +1342,10 @@ fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKey
     // Add forced authority to smiths (whether explicit smith WoT or clique)
     if let Some(smith) = smiths.iter_mut().find(|s| &s.name == authority_name) {
         smith.session_keys = Some(forced_authority_session_keys);
-        smith.migration_address = None;
     } else {
         smiths.push(RawSmith {
             name: authority_name.clone(),
             session_keys: Some(forced_authority_session_keys),
-            migration_address: None,
             certs_received: vec![],
         })
     }
@@ -1463,7 +1432,6 @@ fn feed_identities(
             idty_index: identity.index,
             name: name.to_owned().clone(),
             owner_key: identity.owner_key.clone(),
-            old_owner_key: identity.old_owner_key.clone(),
             // but expired identities will just have their pseudonym reserved in the storage
             active: !expired,
         });
@@ -1626,7 +1594,6 @@ fn build_smiths_wot(
                 name: smith.name.clone(),
                 session_keys: smith.session_keys.clone(),
                 certs_received: vec![],
-                migration_address: smith.migration_address.clone(),
             })
             .collect::<Vec<RawSmith>>()
     } else {
@@ -1715,7 +1682,6 @@ where
             idty_index: i as u32 + idty_index_start,
             name: String::from_utf8(name.0.clone()).unwrap(),
             owner_key: owner_key.clone(),
-            old_owner_key: None,
             active: true,
         })
         .collect();

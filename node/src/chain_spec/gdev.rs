@@ -336,7 +336,6 @@ fn genesis_data_to_gdev_genesis_conf(
                          idty_index,
                          name,
                          owner_key,
-                         old_owner_key,
                          active,
                      }| GenesisIdty {
                         index: idty_index,
@@ -344,7 +343,7 @@ fn genesis_data_to_gdev_genesis_conf(
                         value: common_runtime::IdtyValue {
                             data: IdtyData::new(),
                             next_creatable_identity_on: 0,
-                            old_owner_key: old_owner_key.map(|address| (address, 0)),
+                            old_owner_key: None,
                             owner_key,
                             next_scheduled: if active { 0 } else { 2 },
                             status: IdtyStatus::Member,
