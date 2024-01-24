@@ -188,6 +188,52 @@ fn process_to_become_a_smith_and_lose_it() {
 }
 
 #[test]
+fn avoid_multiple_events_for_becoming_smith() {
+    new_test_ext(GenesisConfig {
+        initial_smiths: btreemap![
+            1 => (false, vec![2, 3, 4]),
+            2 => (false, vec![3, 4]),
+            3 => (false, vec![1, 2]),
+            4 => (false, vec![]),
+        ],
+    })
+    .execute_with(|| {
+        // Go online to be able to invite+certify
+        Pallet::<Runtime>::on_smith_goes_online(1);
+        Pallet::<Runtime>::on_smith_goes_online(2);
+        Pallet::<Runtime>::on_smith_goes_online(3);
+        // Events cannot be recorded on genesis
+        run_to_block(1);
+        // State before
+        assert_eq!(Smiths::<Runtime>::get(5), None);
+        // Try to invite
+        assert_ok!(Pallet::<Runtime>::invite_smith(RuntimeOrigin::signed(1), 5));
+        assert_ok!(Pallet::<Runtime>::accept_invitation(RuntimeOrigin::signed(
+            5
+        )));
+        assert_ok!(Pallet::<Runtime>::certify_smith(
+            RuntimeOrigin::signed(1),
+            5
+        ));
+        assert_ok!(Pallet::<Runtime>::certify_smith(
+            RuntimeOrigin::signed(2),
+            5
+        ));
+        System::assert_has_event(RuntimeEvent::Smith(
+            Event::<Runtime>::SmithMembershipAdded { idty_index: 5 },
+        ));
+        run_to_block(2);
+        assert_ok!(Pallet::<Runtime>::certify_smith(
+            RuntimeOrigin::signed(3),
+            5
+        ));
+        // Should not be promoted again
+        assert!(!System::events().iter().any(|record| record.event
+            == RuntimeEvent::Smith(Event::<Runtime>::SmithMembershipAdded { idty_index: 5 },)));
+    });
+}
+
+#[test]
 fn should_have_checks_on_certify() {
     new_test_ext(GenesisConfig {
         initial_smiths: btreemap![
@@ -506,6 +552,80 @@ fn certifying_on_different_status() {
         assert_err!(
             Pallet::<Runtime>::certify_smith(RuntimeOrigin::signed(1), 5),
             Error::<Runtime>::CertificationOnExcludedIsForbidden
+        );
+    });
+}
+
+#[test]
+fn certifying_an_online_smith() {
+    new_test_ext(GenesisConfig {
+        initial_smiths: btreemap![
+            1 => (false, vec![2, 3, 4]),
+            2 => (false, vec![3, 4]),
+            3 => (false, vec![1, 2]),
+            4 => (false, vec![]),
+        ],
+    })
+    .execute_with(|| {
+        // Go online to be able to invite+certify
+        Pallet::<Runtime>::on_smith_goes_online(1);
+        Pallet::<Runtime>::on_smith_goes_online(2);
+        Pallet::<Runtime>::on_smith_goes_online(3);
+        assert_ok!(Pallet::<Runtime>::invite_smith(RuntimeOrigin::signed(1), 5));
+        assert_ok!(Pallet::<Runtime>::accept_invitation(RuntimeOrigin::signed(
+            5
+        )));
+        Pallet::<Runtime>::on_new_session(2);
+        assert_ok!(Pallet::<Runtime>::certify_smith(
+            RuntimeOrigin::signed(1),
+            5
+        ));
+        Pallet::<Runtime>::on_new_session(3);
+        assert_ok!(Pallet::<Runtime>::certify_smith(
+            RuntimeOrigin::signed(2),
+            5
+        ));
+        // Smith can expire
+        assert_eq!(
+            Smiths::<Runtime>::get(5),
+            Some(SmithMeta {
+                status: Smith,
+                expires_on: Some(8),
+                issued_certs: vec![],
+                received_certs: vec![1, 2]
+            })
+        );
+        assert_eq!(ExpiresOn::<Runtime>::get(7), Some(vec![5]));
+        assert_eq!(ExpiresOn::<Runtime>::get(8), Some(vec![5]));
+
+        Pallet::<Runtime>::on_smith_goes_online(5);
+        // After going online, the expiration disappears
+        assert_eq!(
+            Smiths::<Runtime>::get(5),
+            Some(SmithMeta {
+                status: Smith,
+                expires_on: None,
+                issued_certs: vec![],
+                received_certs: vec![1, 2]
+            })
+        );
+        // ExpiresOn is not unscheduled, but as expires_on has switched to None it's not a problem
+        assert_eq!(ExpiresOn::<Runtime>::get(7), Some(vec![5]));
+        assert_eq!(ExpiresOn::<Runtime>::get(8), Some(vec![5]));
+
+        // We can receive certification without postponing the expiration (because we are online)
+        assert_ok!(Pallet::<Runtime>::certify_smith(
+            RuntimeOrigin::signed(3),
+            5
+        ));
+        assert_eq!(
+            Smiths::<Runtime>::get(5),
+            Some(SmithMeta {
+                status: Smith,
+                expires_on: None,
+                issued_certs: vec![],
+                received_certs: vec![1, 2, 3]
+            })
         );
     });
 }

@@ -430,6 +430,7 @@ impl<T: Config> Pallet<T> {
     }
 
     fn do_certify_smith(receiver: T::IdtyIndex, issuer: T::IdtyIndex) {
+        // - adds a certification in issuer issued list
         Smiths::<T>::mutate(issuer, |maybe_smith_meta| {
             if let Some(smith_meta) = maybe_smith_meta {
                 smith_meta.issued_certs.push(receiver);
@@ -438,25 +439,39 @@ impl<T: Config> Pallet<T> {
         });
         Smiths::<T>::mutate(receiver, |maybe_smith_meta| {
             if let Some(smith_meta) = maybe_smith_meta {
+                // - adds a certification in receiver received list
                 smith_meta.received_certs.push(issuer);
                 smith_meta.received_certs.sort();
+                Self::deposit_event(Event::<T>::SmithCertAdded { receiver, issuer });
+
+                // - receiving a certification either lead us to Pending or Smith status
+                let previous_status = smith_meta.status;
                 smith_meta.status =
                     if smith_meta.received_certs.len() >= T::MinCertForMembership::get() as usize {
+                        // - if the number of certification received by the receiver is enough, win the Smith status (or keep it)
                         SmithStatus::Smith
                     } else {
+                        // - otherwise we are (still) a pending smith
                         SmithStatus::Pending
                     };
-                // expiry postponed
-                let new_expires_on =
-                    CurrentSession::<T>::get() + T::SmithInactivityMaxDuration::get();
-                smith_meta.expires_on = Some(new_expires_on);
-                Self::deposit_event(Event::<T>::SmithCertAdded { receiver, issuer });
-                if smith_meta.status == SmithStatus::Smith {
+
+                if previous_status != SmithStatus::Smith {
+                    // - postpone the expiration: a Pending smith cannot do anything but wait
+                    // this postponement is here to ease the process of becoming a smith
+                    let new_expires_on =
+                        CurrentSession::<T>::get() + T::SmithInactivityMaxDuration::get();
+                    smith_meta.expires_on = Some(new_expires_on);
+                    ExpiresOn::<T>::append(new_expires_on, receiver);
+                }
+
+                // - if the status is smith but wasn't, notify that smith gained membership
+                if smith_meta.status == SmithStatus::Smith && previous_status != SmithStatus::Smith
+                {
                     Self::deposit_event(Event::<T>::SmithMembershipAdded {
                         idty_index: receiver,
                     });
                 }
-                // TODO: unschedule old expiry
+                // TODO: (optimization) unschedule old expiry
             }
         });
     }
