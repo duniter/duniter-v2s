@@ -28,7 +28,7 @@ fn test_must_receive_cert_before_can_issue() {
     })
     .execute_with(|| {
         assert_eq!(
-            DefaultCertification::add_cert(RuntimeOrigin::signed(0), 0, 1),
+            DefaultCertification::add_cert(RuntimeOrigin::signed(0), 1),
             Err(Error::<Test>::NotEnoughCertReceived.into())
         );
     });
@@ -49,7 +49,7 @@ fn test_cannot_certify_self() {
         run_to_block(2);
 
         assert_eq!(
-            DefaultCertification::add_cert(RuntimeOrigin::signed(0), 0, 0),
+            DefaultCertification::add_cert(RuntimeOrigin::signed(0), 0),
             Err(Error::<Test>::CannotCertifySelf.into())
         );
     });
@@ -151,26 +151,18 @@ fn test_cert_period() {
             }
         );
         assert_eq!(
-            DefaultCertification::add_cert(RuntimeOrigin::signed(0), 0, 3),
+            DefaultCertification::add_cert(RuntimeOrigin::signed(0), 3),
             Err(Error::<Test>::NotRespectCertPeriod.into())
         );
         run_to_block(CertPeriod::get());
-        assert_ok!(DefaultCertification::add_cert(
-            RuntimeOrigin::signed(0),
-            0,
-            3
-        ));
+        assert_ok!(DefaultCertification::add_cert(RuntimeOrigin::signed(0), 3));
         run_to_block(CertPeriod::get() + 1);
         assert_eq!(
-            DefaultCertification::add_cert(RuntimeOrigin::signed(0), 0, 4),
+            DefaultCertification::add_cert(RuntimeOrigin::signed(0), 4),
             Err(Error::<Test>::NotRespectCertPeriod.into())
         );
         run_to_block((2 * CertPeriod::get()) + 1);
-        assert_ok!(DefaultCertification::add_cert(
-            RuntimeOrigin::signed(0),
-            0,
-            4
-        ));
+        assert_ok!(DefaultCertification::add_cert(RuntimeOrigin::signed(0), 4));
     });
 }
 
@@ -236,7 +228,7 @@ fn test_cert_renewal() {
         // renew certification from bob to alice
         // this certification should expire 10 blocks later (at block 12)
         assert_eq!(
-            DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
+            DefaultCertification::renew_cert(RuntimeOrigin::signed(1), 0),
             Ok(().into())
         );
         System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRenewed {
@@ -278,7 +270,7 @@ fn test_cert_renewal_cert_delay() {
         run_to_block(2);
         // renew certification from bob to alice
         assert_eq!(
-            DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
+            DefaultCertification::renew_cert(RuntimeOrigin::signed(1), 0),
             Ok(().into())
         );
         System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRenewed {
@@ -289,7 +281,7 @@ fn test_cert_renewal_cert_delay() {
         run_to_block(3);
         // try to renew again
         assert_noop!(
-            DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
+            DefaultCertification::add_cert(RuntimeOrigin::signed(1), 0),
             Error::<Test>::NotRespectCertPeriod,
         );
         // no renewal event should be emitted
@@ -322,7 +314,7 @@ fn test_cert_renewal_expiration() {
         // renew certification from bob to alice
         // this certification should expire 10 blocks later (at block 12)
         assert_eq!(
-            DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
+            DefaultCertification::renew_cert(RuntimeOrigin::signed(1), 0),
             Ok(().into())
         );
         System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRenewed {
@@ -334,7 +326,7 @@ fn test_cert_renewal_expiration() {
         // renew certification from bob to alice again
         // this certification should expire 10 blocks later (at block 14)
         assert_eq!(
-            DefaultCertification::add_cert(RuntimeOrigin::signed(1), 1, 0),
+            DefaultCertification::renew_cert(RuntimeOrigin::signed(1), 0),
             Ok(().into())
         );
         System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRenewed {

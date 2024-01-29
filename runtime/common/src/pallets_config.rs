@@ -497,7 +497,7 @@ macro_rules! pallets_config {
         impl pallet_certification::Config for Runtime {
             type CertPeriod = CertPeriod;
             type IdtyIndex = IdtyIndex;
-            type OwnerKeyOf = Identity;
+            type IdtyAttr = Identity;
             type CheckCertAllowed = Wot;
             type MaxByIssuer = MaxByIssuer;
             type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;

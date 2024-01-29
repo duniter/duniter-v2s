@@ -25,7 +25,7 @@ pub async fn certify(client: &Client, from: AccountKeyring, to: AccountKeyring) 
     let from = from.to_account_id();
     let to = to.to_account_id();
 
-    let issuer_index = client
+    let _issuer_index = client
         .storage()
         .at_latest()
         .await
@@ -51,9 +51,7 @@ pub async fn certify(client: &Client, from: AccountKeyring, to: AccountKeyring) 
         client
             .tx()
             .create_signed(
-                &gdev::tx()
-                    .certification()
-                    .add_cert(issuer_index, receiver_index),
+                &gdev::tx().certification().add_cert(receiver_index),
                 &signer,
                 BaseExtrinsicParamsBuilder::new(),
             )

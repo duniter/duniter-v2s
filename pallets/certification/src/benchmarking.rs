@@ -21,7 +21,6 @@ use super::*;
 use frame_benchmarking::benchmarks;
 use frame_benchmarking::Zero;
 use frame_system::RawOrigin;
-use sp_runtime::traits::Convert;
 
 #[cfg(test)]
 use maplit::btreemap;
@@ -51,27 +50,47 @@ benchmarks! {
     }
     add_cert {
         let issuer: T::IdtyIndex = 1.into();
-        let caller: T::AccountId  = T::OwnerKeyOf::convert(issuer).unwrap();
+        let caller: T::AccountId  = T::IdtyAttr::owner_key(issuer).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         let receiver: T::IdtyIndex = 2.into();
         Pallet::<T>::del_cert(RawOrigin::Root.into(), issuer, receiver)?;
         let issuer_cert: u32 = StorageIdtyCertMeta::<T>::get(issuer).issued_count;
         let receiver_cert: u32 = StorageIdtyCertMeta::<T>::get(receiver).received_count;
         frame_system::pallet::Pallet::<T>::set_block_number(T::CertPeriod::get());
-    }: _<T::RuntimeOrigin>(caller_origin, issuer, receiver)
+    }: _<T::RuntimeOrigin>(caller_origin, receiver)
     verify {
         assert_has_event::<T>(Event::<T>::CertAdded{ issuer, receiver }.into());
     }
+
+    renew_cert {
+        let issuer: T::IdtyIndex = 1.into();
+        let caller: T::AccountId  = T::IdtyAttr::owner_key(issuer).unwrap();
+        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
+        let receiver: T::IdtyIndex = 2.into();
+        Pallet::<T>::del_cert(RawOrigin::Root.into(), issuer, receiver)?;
+        let issuer_cert: u32 = StorageIdtyCertMeta::<T>::get(issuer).issued_count;
+        let receiver_cert: u32 = StorageIdtyCertMeta::<T>::get(receiver).received_count;
+        frame_system::pallet::Pallet::<T>::set_block_number(T::CertPeriod::get());
+        Pallet::<T>::add_cert(caller_origin.clone(), receiver)?;
+        frame_system::pallet::Pallet::<T>::set_block_number(T::CertPeriod::get() + T::CertPeriod::get());
+    }: _<T::RuntimeOrigin>(caller_origin, receiver)
+    verify {
+        assert_has_event::<T>(Event::<T>::CertAdded{ issuer, receiver }.into());
+    }
+
     del_cert {
         let issuer: T::IdtyIndex = 1.into();
-        let receiver: T::IdtyIndex = 0.into();
-        Pallet::<T>::do_add_cert_checked(issuer, receiver, false)?;
+        let receiver: T::IdtyIndex = 2.into();
+        // try to add cert if missing, else ignore
+        // this depends on initial data
+        let _ = Pallet::<T>::do_add_cert_checked(issuer, receiver, false);
         let receiver_cert: u32 = StorageIdtyCertMeta::<T>::get(receiver).received_count;
         let issuer_cert: u32 = StorageIdtyCertMeta::<T>::get(issuer).issued_count;
     }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), issuer, receiver)
     verify {
         assert_has_event::<T>(Event::<T>::CertRemoved{ issuer,  receiver, expiration: false }.into());
     }
+
     remove_all_certs_received_by {
         let receiver: T::IdtyIndex = 0.into();
         let i in 2..1000 => add_certs::<T>(i, receiver)?;
@@ -79,14 +98,18 @@ benchmarks! {
     verify {
         assert!(CertsByReceiver::<T>::get(receiver).is_empty() );
     }
+
     on_initialize {
         assert!(CertsRemovableOn::<T>::try_get(T::BlockNumber::zero()).is_err());
     }: {Pallet::<T>::on_initialize(T::BlockNumber::zero());}
+
     do_remove_cert_noop {
     }: {Pallet::<T>::do_remove_cert(100.into(), 101.into(), Some(T::BlockNumber::zero()));}
+
     do_remove_cert {
         let issuer: T::IdtyIndex = 1.into();
         let receiver: T::IdtyIndex = 0.into();
+        Pallet::<T>::do_remove_cert(issuer, receiver, None);
         Pallet::<T>::do_add_cert_checked(issuer, receiver, false)?;
         let issuer_cert: u32 = StorageIdtyCertMeta::<T>::get(issuer).issued_count;
         let receiver_cert: u32 = StorageIdtyCertMeta::<T>::get(receiver).received_count;

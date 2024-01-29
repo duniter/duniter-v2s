@@ -218,16 +218,7 @@ pub mod pallet {
         }
 
         /// link account to identity
-        pub fn do_link_identity(
-            account_id: &T::AccountId,
-            idty_id: IdtyIdOf<T>,
-        ) -> Result<(), DispatchError> {
-            // Check that account exist
-            ensure!(
-                (frame_system::Account::<T>::get(account_id).providers >= 1)
-                    || (frame_system::Account::<T>::get(account_id).sufficients >= 1),
-                pallet_identity::Error::<T>::AccountNotExist
-            );
+        pub fn do_link_identity(account_id: &T::AccountId, idty_id: IdtyIdOf<T>) {
             // no-op if identity does not change
             if frame_system::Account::<T>::get(account_id).data.linked_idty != Some(idty_id) {
                 frame_system::Account::<T>::mutate(account_id, |account| {
@@ -237,8 +228,7 @@ pub mod pallet {
                         identity: idty_id,
                     });
                 })
-            }
-            Ok(())
+            };
         }
     }
 
@@ -332,7 +322,14 @@ where
     T: Config,
 {
     fn link_identity(account_id: &T::AccountId, idty_id: IdtyIdOf<T>) -> Result<(), DispatchError> {
-        Self::do_link_identity(account_id, idty_id)
+        // Check that account exist
+        ensure!(
+            (frame_system::Account::<T>::get(account_id).providers >= 1)
+                || (frame_system::Account::<T>::get(account_id).sufficients >= 1),
+            pallet_identity::Error::<T>::AccountNotExist
+        );
+        Self::do_link_identity(account_id, idty_id);
+        Ok(())
     }
 }
 

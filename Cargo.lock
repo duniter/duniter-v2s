@@ -5971,6 +5971,7 @@ dependencies = [
 name = "pallet-certification"
 version = "3.0.0"
 dependencies = [
+ "duniter-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6125,6 +6126,7 @@ dependencies = [
 name = "pallet-identity"
 version = "3.0.0"
 dependencies = [
+ "duniter-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

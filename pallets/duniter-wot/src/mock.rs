@@ -166,7 +166,7 @@ parameter_types! {
 impl pallet_certification::Config for Test {
     type CertPeriod = CertPeriod;
     type IdtyIndex = IdtyIndex;
-    type OwnerKeyOf = Identity;
+    type IdtyAttr = Identity;
     type CheckCertAllowed = DuniterWot;
     type MaxByIssuer = MaxByIssuer;
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;

@@ -20,45 +20,12 @@ use frame_support::weights::{constants::RocksDbWeight, Weight};
 
 /// Weight functions needed for pallet_universal_dividend.
 pub trait WeightInfo {
-    fn claim_membership() -> Weight;
-    fn renew_membership() -> Weight;
-    fn revoke_membership() -> Weight;
     fn on_initialize() -> Weight;
     fn expire_memberships(_i: u32) -> Weight;
 }
 
 // Insecure weights implementation, use it for tests only!
 impl WeightInfo for () {
-    fn claim_membership() -> Weight {
-        // Proof Size summary in bytes:
-        //  Measured:  `1272`
-        //  Estimated: `4737`
-        // Minimum execution time: 1_213_348_000 picoseconds.
-        Weight::from_parts(1_439_442_000, 0)
-            .saturating_add(Weight::from_parts(0, 4737))
-            .saturating_add(RocksDbWeight::get().reads(10))
-            .saturating_add(RocksDbWeight::get().writes(4))
-    }
-    fn renew_membership() -> Weight {
-        // Proof Size summary in bytes:
-        //  Measured:  `988`
-        //  Estimated: `6928`
-        // Minimum execution time: 714_537_000 picoseconds.
-        Weight::from_parts(862_085_000, 0)
-            .saturating_add(Weight::from_parts(0, 6928))
-            .saturating_add(RocksDbWeight::get().reads(7))
-            .saturating_add(RocksDbWeight::get().writes(3))
-    }
-    fn revoke_membership() -> Weight {
-        // Proof Size summary in bytes:
-        //  Measured:  `703`
-        //  Estimated: `6643`
-        // Minimum execution time: 847_926_000 picoseconds.
-        Weight::from_parts(1_282_028_000, 0)
-            .saturating_add(Weight::from_parts(0, 6643))
-            .saturating_add(RocksDbWeight::get().reads(8))
-            .saturating_add(RocksDbWeight::get().writes(5))
-    }
     fn on_initialize() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `0`

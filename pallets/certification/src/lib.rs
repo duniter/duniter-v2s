@@ -35,6 +35,7 @@ pub use weights::WeightInfo;
 
 use crate::traits::*;
 use codec::Codec;
+use duniter_primitives::Idty;
 use frame_support::pallet_prelude::*;
 use frame_support::traits::StorageVersion;
 use sp_runtime::traits::AtLeast32BitUnsigned;
@@ -44,7 +45,7 @@ use sp_std::{fmt::Debug, vec::Vec};
 pub mod pallet {
     use super::*;
     use frame_system::pallet_prelude::*;
-    use sp_runtime::traits::{Convert, Saturating};
+    use sp_runtime::traits::Saturating;
     use sp_std::collections::btree_map::BTreeMap;
 
     /// The current storage version.
@@ -70,8 +71,8 @@ pub mod pallet {
             + MaybeSerializeDeserialize
             + Debug
             + MaxEncodedLen;
-        /// Something that give the owner key of an identity.
-        type OwnerKeyOf: Convert<Self::IdtyIndex, Option<Self::AccountId>>;
+        /// Something that gives the IdtyId of an AccountId and reverse
+        type IdtyAttr: duniter_primitives::Idty<Self::IdtyIndex, Self::AccountId>;
         /// Provide method to check that cert is allowed.
         type CheckCertAllowed: CheckCertAllowed<Self::IdtyIndex>;
         #[pallet::constant]
@@ -244,16 +245,20 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        /// Issuer of a certification must have an identity
+        OriginMustHaveAnIdentity,
         /// Identity cannot certify itself.
         CannotCertifySelf,
         /// Identity has already issued the maximum number of certifications.
         IssuedTooManyCert,
-        /// Issuer not found.
-        IssuerNotFound,
         /// Insufficient certifications received.
         NotEnoughCertReceived,
         /// Identity has issued a certification too recently.
         NotRespectCertPeriod,
+        /// Can not add an already-existing cert
+        CertAlreadyExists,
+        /// Can not renew a non-existing cert
+        CertDoesNotExist,
     }
 
     #[pallet::hooks]
@@ -267,29 +272,31 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Add a new certification or renew an existing one
-        ///
-        /// - `receiver`: the account receiving the certification from the origin
-        ///
-        /// The origin must be allow to certify.
+        /// Add a new certification.
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::add_cert())]
         pub fn add_cert(
             origin: OriginFor<T>,
-            issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-
-            // Verify caller ownership
-            let issuer_owner_key =
-                T::OwnerKeyOf::convert(issuer).ok_or(Error::<T>::IssuerNotFound)?;
-            ensure!(issuer_owner_key == who, DispatchError::BadOrigin);
-
+            let issuer = Self::origin_to_index(origin)?;
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             Self::check_add_cert(issuer, receiver, block_number)?;
-            Self::do_add_cert(block_number, issuer, receiver);
+            Self::try_add_cert(block_number, issuer, receiver)?;
+            Ok(().into())
+        }
 
+        /// Renew an existing certification.
+        #[pallet::call_index(3)]
+        #[pallet::weight(T::WeightInfo::renew_cert())]
+        pub fn renew_cert(
+            origin: OriginFor<T>,
+            receiver: T::IdtyIndex,
+        ) -> DispatchResultWithPostInfo {
+            let issuer = Self::origin_to_index(origin)?;
+            let block_number = frame_system::pallet::Pallet::<T>::block_number();
+            Self::check_renew_cert(issuer, receiver, block_number)?;
+            Self::try_renew_cert(block_number, issuer, receiver)?;
             Ok(().into())
         }
 
@@ -324,7 +331,14 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
+        /// get issuer index from origin
+        pub fn origin_to_index(origin: OriginFor<T>) -> Result<T::IdtyIndex, DispatchError> {
+            let who = ensure_signed(origin)?;
+            T::IdtyAttr::idty_index(who).ok_or(Error::<T>::OriginMustHaveAnIdentity.into())
+        }
+
         /// add a certification without checks
+        // this is used on identity creation to add the first certification
         pub fn do_add_cert_checked(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
@@ -337,69 +351,93 @@ pub mod pallet {
                 Self::check_add_cert_internal(issuer, receiver, block_number)?;
             };
 
-            Self::do_add_cert(block_number, issuer, receiver);
+            Self::try_add_cert(block_number, issuer, receiver)?;
 
             Ok(().into())
         }
 
-        /// perform cert addition or renewal
-        fn do_add_cert(block_number: T::BlockNumber, issuer: T::IdtyIndex, receiver: T::IdtyIndex) {
+        /// perform cert addition if not existing, else CertAlreadyExists
+        // must be transactional
+        fn try_add_cert(
+            block_number: T::BlockNumber,
+            issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
+        ) -> DispatchResultWithPostInfo {
             // Write CertsRemovableOn
             let removable_on = block_number + T::ValidityPeriod::get();
             <CertsRemovableOn<T>>::append(removable_on, (issuer, receiver));
 
             // Write CertsByReceiver
-            let mut created = false;
             CertsByReceiver::<T>::mutate_exists(receiver, |maybe_issuers| {
                 let issuers = maybe_issuers.get_or_insert(Vec::with_capacity(0));
-                match issuers.binary_search_by(|(issuer_, _)| issuer_.cmp(&issuer)) {
-                    // cert exists, must be renewed
-                    Ok(index) => {
-                        issuers[index] = (issuer, removable_on);
-                    }
-                    // cert does not exist, must be created
-                    Err(index) => {
-                        issuers.insert(index, (issuer, removable_on));
-                        created = true;
-                    }
+                // cert does not exist, must be created
+                if let Err(index) = issuers.binary_search_by(|(issuer_, _)| issuer_.cmp(&issuer)) {
+                    issuers.insert(index, (issuer, removable_on));
+                    Ok(())
+                } else {
+                    // cert exists, must be renewed instead
+                    Err(Error::<T>::CertAlreadyExists)
                 }
-            });
+            })?;
 
-            if created {
-                // Write StorageIdtyCertMeta for issuer
-                let issuer_issued_count =
-                    StorageIdtyCertMeta::<T>::mutate(issuer, |issuer_idty_cert_meta| {
-                        issuer_idty_cert_meta.issued_count =
-                            issuer_idty_cert_meta.issued_count.saturating_add(1);
-                        issuer_idty_cert_meta.next_issuable_on =
-                            block_number + T::CertPeriod::get();
-                        issuer_idty_cert_meta.issued_count
-                    });
-
-                // Write StorageIdtyCertMeta for receiver
-                let receiver_received_count =
-                    <StorageIdtyCertMeta<T>>::mutate_exists(receiver, |cert_meta_opt| {
-                        let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());
-                        cert_meta.received_count = cert_meta.received_count.saturating_add(1);
-                        cert_meta.received_count
-                    });
-
-                // emit CertAdded event
-                Self::deposit_event(Event::CertAdded { issuer, receiver });
-                T::OnNewcert::on_new_cert(
-                    issuer,
-                    issuer_issued_count,
-                    receiver,
-                    receiver_received_count,
-                );
-            } else {
-                // Update next_issuable_on in StorageIdtyCertMeta for issuer
+            // Write StorageIdtyCertMeta for issuer
+            let issuer_issued_count =
                 StorageIdtyCertMeta::<T>::mutate(issuer, |issuer_idty_cert_meta| {
+                    issuer_idty_cert_meta.issued_count =
+                        issuer_idty_cert_meta.issued_count.saturating_add(1);
                     issuer_idty_cert_meta.next_issuable_on = block_number + T::CertPeriod::get();
+                    issuer_idty_cert_meta.issued_count
                 });
-                // emit CertRenewed event
-                Self::deposit_event(Event::CertRenewed { issuer, receiver });
-            };
+
+            // Write StorageIdtyCertMeta for receiver
+            let receiver_received_count =
+                <StorageIdtyCertMeta<T>>::mutate_exists(receiver, |cert_meta_opt| {
+                    let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());
+                    cert_meta.received_count = cert_meta.received_count.saturating_add(1);
+                    cert_meta.received_count
+                });
+
+            // emit CertAdded event
+            Self::deposit_event(Event::CertAdded { issuer, receiver });
+            T::OnNewcert::on_new_cert(
+                issuer,
+                issuer_issued_count,
+                receiver,
+                receiver_received_count,
+            );
+            Ok(().into())
+        }
+
+        /// perform cert renewal if exisiting, else error with CertDoesNotExist
+        // must be used in transactional context
+        // (it can fail if certification does not exist after having modified state)
+        fn try_renew_cert(
+            block_number: T::BlockNumber,
+            issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
+        ) -> DispatchResultWithPostInfo {
+            // Write CertsRemovableOn
+            let removable_on = block_number + T::ValidityPeriod::get();
+            <CertsRemovableOn<T>>::append(removable_on, (issuer, receiver));
+            // Write CertsByReceiver
+            CertsByReceiver::<T>::mutate_exists(receiver, |maybe_issuers| {
+                let issuers = maybe_issuers.get_or_insert(Vec::with_capacity(0));
+                // cert exists, can be renewed
+                if let Ok(index) = issuers.binary_search_by(|(issuer_, _)| issuer_.cmp(&issuer)) {
+                    issuers[index] = (issuer, removable_on);
+                    Ok(())
+                } else {
+                    // cert does not exist, must be created
+                    Err(Error::<T>::CertDoesNotExist)
+                }
+            })?;
+            // Update next_issuable_on in StorageIdtyCertMeta for issuer
+            StorageIdtyCertMeta::<T>::mutate(issuer, |issuer_idty_cert_meta| {
+                issuer_idty_cert_meta.next_issuable_on = block_number + T::CertPeriod::get();
+            });
+            // emit CertRenewed event
+            Self::deposit_event(Event::CertRenewed { issuer, receiver });
+            Ok(().into())
         }
 
         /// remove the certifications due to expire on the given block
@@ -419,6 +457,7 @@ pub mod pallet {
 
         /// perform the certification removal
         /// if block number is given only remove cert if still set to expire at this block number
+        // this is used because cert expiry unscheduling is not done (#110)
         pub fn do_remove_cert(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
@@ -533,6 +572,17 @@ pub mod pallet {
             // - receiver is not revoked
             T::CheckCertAllowed::check_cert_allowed(issuer, receiver)?;
 
+            Ok(())
+        }
+
+        /// check renew cert allowed
+        fn check_renew_cert(
+            issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
+            block_number: T::BlockNumber,
+        ) -> DispatchResult {
+            Self::check_add_cert_internal(issuer, receiver, block_number)?;
+            T::CheckCertAllowed::check_cert_allowed(issuer, receiver)?;
             Ok(())
         }
     }

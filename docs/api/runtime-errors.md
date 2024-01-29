@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **176** errors from **35** pallets.
+There are **174** errors from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -814,119 +814,105 @@ Identity already created.
 <li>
 <details>
 <summary>
-<code>IdtyAlreadyValidated</code> - 2</summary>
-Identity already validated.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IdtyIndexNotFound</code> - 3</summary>
+<code>IdtyIndexNotFound</code> - 2</summary>
 Identity index not found.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNameAlreadyExist</code> - 4</summary>
+<code>IdtyNameAlreadyExist</code> - 3</summary>
 Identity name already exists.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNameInvalid</code> - 5</summary>
+<code>IdtyNameInvalid</code> - 4</summary>
 Invalid identity name.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IdtyNotConfirmed</code> - 6</summary>
-Identity not confirmed by its owner.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IdtyNotFound</code> - 7</summary>
+<code>IdtyNotFound</code> - 5</summary>
 Identity not found.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>InvalidSignature</code> - 8</summary>
+<code>InvalidSignature</code> - 6</summary>
 Invalid payload signature.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>InvalidRevocationKey</code> - 9</summary>
+<code>InvalidRevocationKey</code> - 7</summary>
 Invalid revocation key.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IssuerNotMember</code> - 10</summary>
+<code>IssuerNotMember</code> - 8</summary>
 Issuer is not member and can not perform this action.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NotRespectIdtyCreationPeriod</code> - 11</summary>
+<code>NotRespectIdtyCreationPeriod</code> - 9</summary>
 Identity creation period is not respected.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>OwnerKeyAlreadyRecentlyChanged</code> - 12</summary>
+<code>OwnerKeyAlreadyRecentlyChanged</code> - 10</summary>
 Owner key already changed recently.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>OwnerKeyAlreadyUsed</code> - 13</summary>
+<code>OwnerKeyAlreadyUsed</code> - 11</summary>
 Owner key already used.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>ProhibitedToRevertToAnOldKey</code> - 14</summary>
+<code>ProhibitedToRevertToAnOldKey</code> - 12</summary>
 Reverting to an old key is prohibited.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>AlreadyRevoked</code> - 15</summary>
+<code>AlreadyRevoked</code> - 13</summary>
 Already revoked.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>CanNotRevokeUnconfirmed</code> - 16</summary>
+<code>CanNotRevokeUnconfirmed</code> - 14</summary>
 Can not revoke identity that never was member.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>CanNotRevokeUnvalidated</code> - 17</summary>
+<code>CanNotRevokeUnvalidated</code> - 15</summary>
 Can not revoke identity that never was member.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>AccountNotExist</code> - 18</summary>
+<code>AccountNotExist</code> - 16</summary>
 Cannot link to an inexisting account.
 </details>
 </li>
@@ -937,29 +923,15 @@ Cannot link to an inexisting account.
 <li>
 <details>
 <summary>
-<code>IdtyIdNotFound</code> - 0</summary>
-Identity ID not found.
+<code>MembershipNotFound</code> - 0</summary>
+Membership not found, can not renew.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>MembershipAlreadyAcquired</code> - 1</summary>
-Membership already acquired.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>MembershipNotFound</code> - 2</summary>
-Membership not found.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>AlreadyMember</code> - 3</summary>
-Already member, can not claim membership.
+<code>AlreadyMember</code> - 1</summary>
+Already member, can not add membership.
 </details>
 </li>
 </ul>
@@ -969,22 +941,22 @@ Already member, can not claim membership.
 <li>
 <details>
 <summary>
-<code>CannotCertifySelf</code> - 0</summary>
+<code>OriginMustHaveAnIdentity</code> - 0</summary>
+Issuer of a certification must have an identity
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CannotCertifySelf</code> - 1</summary>
 Identity cannot certify itself.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IssuedTooManyCert</code> - 1</summary>
+<code>IssuedTooManyCert</code> - 2</summary>
 Identity has already issued the maximum number of certifications.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>IssuerNotFound</code> - 2</summary>
-Issuer not found.
 </details>
 </li>
 <li>
@@ -999,6 +971,20 @@ Insufficient certifications received.
 <summary>
 <code>NotRespectCertPeriod</code> - 4</summary>
 Identity has issued a certification too recently.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CertAlreadyExists</code> - 5</summary>
+Can not add an already-existing cert
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CertDoesNotExist</code> - 6</summary>
+Can not renew a non-existing cert
 </details>
 </li>
 </ul>

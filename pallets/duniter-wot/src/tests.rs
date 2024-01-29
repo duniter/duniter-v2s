@@ -115,7 +115,7 @@ fn test_new_idty_validation() {
 
         // Bob should be able to certify Ferdie
         run_to_block(4);
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 2, 6));
+        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 6));
         System::assert_has_event(RuntimeEvent::Cert(pallet_certification::Event::CertAdded {
             issuer: 2,
             receiver: 6,
@@ -248,8 +248,8 @@ fn test_idty_membership_expire() {
 
         run_to_block(5);
         // renew certifications so that Alice can still issue cert at block 22
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 2, 1));
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 1));
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(2), 1));
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(3), 1));
 
         // Charlie's membership should expire at block #8
         run_to_block(8);
@@ -297,7 +297,7 @@ fn test_idty_membership_expire() {
         );
         // Alice can't certify revoked identity
         assert_noop!(
-            Cert::add_cert(RuntimeOrigin::signed(1), 1, 3),
+            Cert::add_cert(RuntimeOrigin::signed(1), 3),
             pallet_duniter_wot::Error::<Test>::TargetStatusInvalid
         );
 
@@ -310,7 +310,7 @@ fn test_idty_membership_expire() {
         ));
         // Alice can't certify removed identity
         assert_noop!(
-            Cert::add_cert(RuntimeOrigin::signed(1), 1, 3),
+            Cert::add_cert(RuntimeOrigin::signed(1), 3),
             pallet_duniter_wot::Error::<Test>::IdtyNotFound
         );
     });
@@ -347,13 +347,13 @@ fn test_certification_expire() {
         // cert Bob → Alice not renewed
         // --- BLOCK 2 ---
         run_to_block(2);
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(1), 1, 2));
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 2, 3));
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 1));
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(1), 2));
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(2), 3));
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(3), 1));
         // --- BLOCK 4 ---
         run_to_block(4);
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(1), 1, 3));
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 2));
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(1), 3));
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(3), 2));
         // --- BLOCK 7 ---
         run_to_block(7);
         assert_ok!(Membership::try_renew_membership(1));
@@ -425,16 +425,16 @@ fn test_cert_can_not_be_issued() {
         // cert Bob → Alice not renewed
         // --- BLOCK 2 ---
         run_to_block(2);
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(1), 1, 2)); // +20
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 2, 3)); // +20
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 4)); // +20
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(4), 4, 1)); // +20
-                                                                    // --- BLOCK 4 ---
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(1), 2)); // +20
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(2), 3)); // +20
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(3), 4)); // +20
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(4), 1)); // +20
+                                                                   // --- BLOCK 4 ---
         run_to_block(4);
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(2), 2, 4)); // +20
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 2)); // +20
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(4), 4, 3)); // +20
-                                                                    // --- BLOCK 7 ---
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(2), 4)); // +20
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(3), 2)); // +20
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(4), 3)); // +20
+                                                                   // --- BLOCK 7 ---
         run_to_block(7);
         assert_ok!(Membership::try_renew_membership(1)); // + 8
         assert_ok!(Membership::try_renew_membership(2)); // + 8
@@ -468,10 +468,11 @@ fn test_cert_can_not_be_issued() {
         run_to_block(21);
         // println!("{:?}", System::events());
         // Charlie certifies Alice so she again has enough certs
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 3, 1));
-        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(4), 4, 1)); // renew
-                                                                    // Alice did not claim membership, she is not member
-                                                                    // but her cert delay has been reset (→ 23)
+        assert_ok!(Cert::add_cert(RuntimeOrigin::signed(3), 1));
+        assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(4), 1));
+        // renew
+        // Alice did not claim membership, she is not member
+        // but her cert delay has been reset (→ 23)
         assert_eq!(Membership::membership(1), None);
 
         // run_to_block(23);

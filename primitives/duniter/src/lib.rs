@@ -28,6 +28,22 @@ pub fn validate_idty_name(idty_name: &[u8]) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || *c == b'-' || *c == b'_')
 }
 
+/// trait used to go from index to owner key and reverse
+pub trait Idty<IdtyIndex, AccountId> {
+    fn owner_key(index: IdtyIndex) -> Option<AccountId>;
+    fn idty_index(owner_key: AccountId) -> Option<IdtyIndex>;
+}
+
+// mock implementation for any type
+impl<T> Idty<T, T> for () {
+    fn owner_key(t: T) -> Option<T> {
+        Some(t)
+    }
+    fn idty_index(t: T) -> Option<T> {
+        Some(t)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

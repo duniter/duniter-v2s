@@ -87,7 +87,7 @@ parameter_types! {
 impl pallet_certification::Config for Test {
     type CertPeriod = CertPeriod;
     type IdtyIndex = IdtyIndex;
-    type OwnerKeyOf = sp_runtime::traits::ConvertInto;
+    type IdtyAttr = ();
     type CheckCertAllowed = ();
     type MaxByIssuer = MaxByIssuer;
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;

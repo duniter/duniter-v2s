@@ -13,7 +13,7 @@ through on-chain governance mechanisms.
 
 ## User calls
 
-There are **77** user calls from **21** pallets.
+There are **78** user calls from **21** pallets.
 
 ### Account - 1
 
@@ -21,7 +21,7 @@ There are **77** user calls from **21** pallets.
 
 <details><summary><code>unlink_identity()</code></summary>
 
-Taking 0.0076 % of a block.
+Taking 0.0082 % of a block.
 
 ```rust
 ```
@@ -36,7 +36,7 @@ unlink the identity associated with the account
 
 <details><summary><code>schedule(when, maybe_periodic, priority, call)</code></summary>
 
-Taking 0.0088 % of a block.
+Taking 0.0098 % of a block.
 
 ```rust
 when: T::BlockNumber
@@ -53,7 +53,7 @@ Anonymously schedule a task.
 
 <details><summary><code>cancel(when, index)</code></summary>
 
-Taking 0.0118 % of a block.
+Taking 0.0131 % of a block.
 
 ```rust
 when: T::BlockNumber
@@ -68,7 +68,7 @@ Cancel an anonymously scheduled task.
 
 <details><summary><code>schedule_named(id, when, maybe_periodic, priority, call)</code></summary>
 
-Taking 0.012 % of a block.
+Taking 0.0131 % of a block.
 
 ```rust
 id: TaskName
@@ -86,7 +86,7 @@ Schedule a named task.
 
 <details><summary><code>cancel_named(id)</code></summary>
 
-Taking 0.0123 % of a block.
+Taking 0.0137 % of a block.
 
 ```rust
 id: TaskName
@@ -157,7 +157,7 @@ be reported.
 
 <details><summary><code>transfer_allow_death(dest, value)</code></summary>
 
-Taking 0.0129 % of a block.
+Taking 0.0152 % of a block.
 
 ```rust
 dest: AccountIdLookupOf<T>
@@ -199,7 +199,7 @@ WARNING: This call is DEPRECATED! Use `force_set_balance` instead.
 
 <details><summary><code>transfer_keep_alive(dest, value)</code></summary>
 
-Taking 0.0119 % of a block.
+Taking 0.0168 % of a block.
 
 ```rust
 dest: AccountIdLookupOf<T>
@@ -219,7 +219,7 @@ kill the origin account.
 
 <details><summary><code>transfer_all(dest, keep_alive)</code></summary>
 
-Taking 0.0122 % of a block.
+Taking 0.0142 % of a block.
 
 ```rust
 dest: AccountIdLookupOf<T>
@@ -284,7 +284,7 @@ The dispatch origin for this call is `root`.
 
 <details><summary><code>create_oneshot_account(dest, value)</code></summary>
 
-Taking 0.0084 % of a block.
+Taking 0.0095 % of a block.
 
 ```rust
 dest: <T::Lookup as StaticLookup>::Source
@@ -304,7 +304,7 @@ Origin account is kept alive.
 
 <details><summary><code>consume_oneshot_account(block_height, dest)</code></summary>
 
-Taking 0.012 % of a block.
+Taking 0.0134 % of a block.
 
 ```rust
 block_height: T::BlockNumber
@@ -323,7 +323,7 @@ Consume a oneshot account and transfer its balance to an account
 
 <details><summary><code>consume_oneshot_account_with_remaining(block_height, dest, remaining_to, balance)</code></summary>
 
-Taking 0.0155 % of a block.
+Taking 0.0175 % of a block.
 
 ```rust
 block_height: T::BlockNumber
@@ -351,7 +351,7 @@ and the remaining amount to another account.
 
 <details><summary><code>invite_smith(receiver)</code></summary>
 
-Taking 0.0136 % of a block.
+Taking 0.0153 % of a block.
 
 ```rust
 receiver: T::IdtyIndex
@@ -365,7 +365,7 @@ Invite a WoT member to try becoming a Smith
 
 <details><summary><code>accept_invitation()</code></summary>
 
-Taking 0.0085 % of a block.
+Taking 0.0094 % of a block.
 
 ```rust
 ```
@@ -378,7 +378,7 @@ Accept an invitation (must have been invited first)
 
 <details><summary><code>certify_smith(receiver)</code></summary>
 
-Taking 0.0126 % of a block.
+Taking 0.0139 % of a block.
 
 ```rust
 receiver: T::IdtyIndex
@@ -394,7 +394,7 @@ Certify an invited smith which can lead the certified to become a Smith
 
 <details><summary><code>go_offline()</code></summary>
 
-Taking 0.0103 % of a block.
+Taking 0.0117 % of a block.
 
 ```rust
 ```
@@ -407,7 +407,7 @@ ask to leave the set of validators two sessions after
 
 <details><summary><code>go_online()</code></summary>
 
-Taking 0.0114 % of a block.
+Taking 0.0138 % of a block.
 
 ```rust
 ```
@@ -420,7 +420,7 @@ ask to join the set of validators two sessions after
 
 <details><summary><code>set_session_keys(keys)</code></summary>
 
-Taking 0.0142 % of a block.
+Taking 0.0177 % of a block.
 
 ```rust
 keys: T::Keys
@@ -434,7 +434,7 @@ declare new session keys to replace current ones
 
 <details><summary><code>remove_member_from_blacklist(member_id)</code></summary>
 
-Taking 0.0079 % of a block.
+Taking 0.0094 % of a block.
 
 ```rust
 member_id: T::MemberId
@@ -491,7 +491,7 @@ The weight of this call is defined by the caller.
 
 <details><summary><code>note_preimage(bytes)</code></summary>
 
-Taking 0.2804 % of a block.
+Taking 0.5042 % of a block.
 
 ```rust
 bytes: Vec<u8>
@@ -508,7 +508,7 @@ the preimage. Otherwise, a deposit is taken proportional to the size of the prei
 
 <details><summary><code>unnote_preimage(hash)</code></summary>
 
-Taking 0.0119 % of a block.
+Taking 0.0135 % of a block.
 
 ```rust
 hash: T::Hash
@@ -527,7 +527,7 @@ If `len` is provided, then it will be a much cheaper operation.
 
 <details><summary><code>request_preimage(hash)</code></summary>
 
-Taking 0.0085 % of a block.
+Taking 0.0092 % of a block.
 
 ```rust
 hash: T::Hash
@@ -544,7 +544,7 @@ a user may have paid, and take the control of the preimage out of their hands.
 
 <details><summary><code>unrequest_preimage(hash)</code></summary>
 
-Taking 0.0112 % of a block.
+Taking 0.0119 % of a block.
 
 ```rust
 hash: T::Hash
@@ -562,7 +562,7 @@ NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`.
 
 <details><summary><code>execute(proposal, length_bound)</code></summary>
 
-Taking 0.0056 % of a block.
+Taking 0.0061 % of a block.
 
 ```rust
 proposal: Box<<T as Config<I>>::Proposal>
@@ -614,7 +614,7 @@ or put up for voting.
 
 <details><summary><code>vote(proposal, index, approve)</code></summary>
 
-Taking 0.0088 % of a block.
+Taking 0.0104 % of a block.
 
 ```rust
 proposal: T::Hash
@@ -680,7 +680,7 @@ proposal.
 
 <details><summary><code>claim_uds()</code></summary>
 
-Taking 0.0131 % of a block.
+Taking 0.0146 % of a block.
 
 ```rust
 ```
@@ -693,7 +693,7 @@ Claim Universal Dividends
 
 <details><summary><code>transfer_ud(dest, value)</code></summary>
 
-Taking 0.0134 % of a block.
+Taking 0.0158 % of a block.
 
 ```rust
 dest: <T::Lookup as StaticLookup>::Source
@@ -708,7 +708,7 @@ Transfer some liquid free balance to another account, in milliUD.
 
 <details><summary><code>transfer_ud_keep_alive(dest, value)</code></summary>
 
-Taking 0.0125 % of a block.
+Taking 0.0144 % of a block.
 
 ```rust
 dest: <T::Lookup as StaticLookup>::Source
@@ -725,7 +725,7 @@ Transfer some liquid free balance to another account, in milliUD.
 
 <details><summary><code>create_identity(owner_key)</code></summary>
 
-Taking 0.0439 % of a block.
+Taking 0.0484 % of a block.
 
 ```rust
 owner_key: T::AccountId
@@ -743,7 +743,7 @@ The origin must be allowed to create an identity.
 
 <details><summary><code>confirm_identity(idty_name)</code></summary>
 
-Taking 0.0181 % of a block.
+Taking 0.0204 % of a block.
 
 ```rust
 idty_name: IdtyName
@@ -761,7 +761,7 @@ The identity must have been created using `create_identity` before it can be con
 
 <details><summary><code>change_owner_key(new_key, new_key_sig)</code></summary>
 
-Taking 0.0238 % of a block.
+Taking 0.0306 % of a block.
 
 ```rust
 new_key: T::AccountId
@@ -782,7 +782,7 @@ The origin should be the old identity owner key.
 
 <details><summary><code>revoke_identity(idty_index, revocation_key, revocation_sig)</code></summary>
 
-Taking 0.0227 % of a block.
+Taking 0.0293 % of a block.
 
 ```rust
 idty_index: T::IdtyIndex
@@ -805,7 +805,7 @@ Any signed origin can execute this call.
 
 <details><summary><code>fix_sufficients(owner_key, inc)</code></summary>
 
-Taking 0.0077 % of a block.
+Taking 0.0081 % of a block.
 
 ```rust
 owner_key: T::AccountId
@@ -820,7 +820,7 @@ change sufficient ref count for given key
 
 <details><summary><code>link_account(account_id, payload_sig)</code></summary>
 
-Taking 0.011 % of a block.
+Taking 0.0135 % of a block.
 
 ```rust
 account_id: T::AccountId
@@ -835,28 +835,37 @@ Link an account to an identity
 
 #### add_cert - 0
 
-<details><summary><code>add_cert(issuer, receiver)</code></summary>
+<details><summary><code>add_cert(receiver)</code></summary>
 
-Taking 0.019 % of a block.
+Taking 0.0214 % of a block.
 
 ```rust
-issuer: T::IdtyIndex
 receiver: T::IdtyIndex
 ```
 </details>
 
 
-Add a new certification or renew an existing one
+Add a new certification.
 
-- `receiver`: the account receiving the certification from the origin
+#### renew_cert - 3
 
-The origin must be allow to certify.
+<details><summary><code>renew_cert(receiver)</code></summary>
+
+Taking 0.018 % of a block.
+
+```rust
+receiver: T::IdtyIndex
+```
+</details>
+
+
+Renew an existing certification.
 
 #### del_cert - 1
 
 <details><summary><code>del_cert(issuer, receiver)</code></summary>
 
-Taking 0.0153 % of a block.
+Taking 0.0155 % of a block.
 
 ```rust
 issuer: T::IdtyIndex
@@ -871,7 +880,7 @@ remove a certification (only root)
 
 <details><summary><code>remove_all_certs_received_by(idty_index)</code></summary>
 
-Taking 3.5004 % of a block.
+Taking 3.7485 % of a block.
 
 ```rust
 idty_index: T::IdtyIndex
@@ -887,7 +896,7 @@ remove all certifications received by an identity (only root)
 
 <details><summary><code>request_distance_evaluation()</code></summary>
 
-Taking 0.06 % of a block.
+Taking 0.0194 % of a block.
 
 ```rust
 ```
@@ -902,7 +911,7 @@ negative evaluation will result in slash for caller
 
 <details><summary><code>request_distance_evaluation_for(target)</code></summary>
 
-Taking 0.0805 % of a block.
+Taking 0.0199 % of a block.
 
 ```rust
 target: T::IdtyIndex
@@ -917,7 +926,7 @@ only possible for unvalidated identity
 
 <details><summary><code>update_evaluation(computation_result)</code></summary>
 
-Taking 0.0914 % of a block.
+Taking 0.0214 % of a block.
 
 ```rust
 computation_result: ComputationResult
@@ -932,7 +941,7 @@ this is called internally by validators (= inherent)
 
 <details><summary><code>force_update_evaluation(evaluator, computation_result)</code></summary>
 
-Taking 0.0759 % of a block.
+Taking 0.014 % of a block.
 
 ```rust
 evaluator: <T as frame_system::Config>::AccountId
@@ -947,7 +956,7 @@ Force push an evaluation result to the pool
 
 <details><summary><code>force_valid_distance_status(identity)</code></summary>
 
-Taking 0.074 % of a block.
+Taking 0.0173 % of a block.
 
 ```rust
 identity: <T as pallet_identity::Config>::IdtyIndex
@@ -1034,7 +1043,7 @@ The dispatch origin for this call must be _Signed_.
 
 <details><summary><code>as_multi_threshold_1(other_signatories, call)</code></summary>
 
-Taking 0.0049 % of a block.
+Taking 0.0054 % of a block.
 
 ```rust
 other_signatories: Vec<T::AccountId>
@@ -1163,7 +1172,7 @@ NOTE: If this is the final approval, you will want to use `as_multi` instead.
 
 <details><summary><code>cancel_as_multi(threshold, other_signatories, timepoint, call_hash)</code></summary>
 
-Taking 0.0088 % of a block.
+Taking 0.0103 % of a block.
 
 ```rust
 threshold: u16
@@ -1202,7 +1211,7 @@ transaction for this dispatch.
 
 <details><summary><code>request(randomness_type, salt)</code></summary>
 
-Taking 0.0191 % of a block.
+Taking 0.0224 % of a block.
 
 ```rust
 randomness_type: RandomnessType
@@ -1219,7 +1228,7 @@ Request a randomness
 
 <details><summary><code>proxy(real, force_proxy_type, call)</code></summary>
 
-Taking 0.0055 % of a block.
+Taking 0.0064 % of a block.
 
 ```rust
 real: AccountIdLookupOf<T>
@@ -1243,7 +1252,7 @@ Parameters:
 
 <details><summary><code>add_proxy(delegate, proxy_type, delay)</code></summary>
 
-Taking 0.0085 % of a block.
+Taking 0.0098 % of a block.
 
 ```rust
 delegate: AccountIdLookupOf<T>
@@ -1267,7 +1276,7 @@ zero.
 
 <details><summary><code>remove_proxy(delegate, proxy_type, delay)</code></summary>
 
-Taking 0.0085 % of a block.
+Taking 0.0101 % of a block.
 
 ```rust
 delegate: AccountIdLookupOf<T>
@@ -1289,7 +1298,7 @@ Parameters:
 
 <details><summary><code>remove_proxies()</code></summary>
 
-Taking 0.0084 % of a block.
+Taking 0.0098 % of a block.
 
 ```rust
 ```
@@ -1307,7 +1316,7 @@ the unreserved fees will be inaccessible. **All access to this account will be l
 
 <details><summary><code>create_pure(proxy_type, delay, index)</code></summary>
 
-Taking 0.0085 % of a block.
+Taking 0.0109 % of a block.
 
 ```rust
 proxy_type: T::ProxyType
@@ -1340,7 +1349,7 @@ Fails if there are insufficient funds to pay for deposit.
 
 <details><summary><code>kill_pure(spawner, proxy_type, index, height, ext_index)</code></summary>
 
-Taking 0.0084 % of a block.
+Taking 0.0094 % of a block.
 
 ```rust
 spawner: AccountIdLookupOf<T>
@@ -1373,7 +1382,7 @@ account whose `pure` call has corresponding parameters.
 
 <details><summary><code>announce(real, call_hash)</code></summary>
 
-Taking 0.0123 % of a block.
+Taking 0.0138 % of a block.
 
 ```rust
 real: AccountIdLookupOf<T>
@@ -1402,7 +1411,7 @@ Parameters:
 
 <details><summary><code>remove_announcement(real, call_hash)</code></summary>
 
-Taking 0.0116 % of a block.
+Taking 0.0126 % of a block.
 
 ```rust
 real: AccountIdLookupOf<T>
@@ -1426,7 +1435,7 @@ Parameters:
 
 <details><summary><code>reject_announcement(delegate, call_hash)</code></summary>
 
-Taking 0.0116 % of a block.
+Taking 0.0128 % of a block.
 
 ```rust
 delegate: AccountIdLookupOf<T>
@@ -1450,7 +1459,7 @@ Parameters:
 
 <details><summary><code>proxy_announced(delegate, real, force_proxy_type, call)</code></summary>
 
-Taking 0.0125 % of a block.
+Taking 0.0155 % of a block.
 
 ```rust
 delegate: AccountIdLookupOf<T>
@@ -1479,7 +1488,7 @@ Parameters:
 
 <details><summary><code>batch(calls)</code></summary>
 
-Taking 0.1825 % of a block.
+Taking 0.2737 % of a block.
 
 ```rust
 calls: Vec<<T as Config>::RuntimeCall>
@@ -1510,7 +1519,7 @@ event is deposited.
 
 <details><summary><code>as_derivative(index, call)</code></summary>
 
-Taking 0.0046 % of a block.
+Taking 0.0049 % of a block.
 
 ```rust
 index: u16
@@ -1537,7 +1546,7 @@ The dispatch origin for this call must be _Signed_.
 
 <details><summary><code>batch_all(calls)</code></summary>
 
-Taking 0.1899 % of a block.
+Taking 0.2944 % of a block.
 
 ```rust
 calls: Vec<<T as Config>::RuntimeCall>
@@ -1563,7 +1572,7 @@ includes bypassing `frame_system::Config::BaseCallFilter`).
 
 <details><summary><code>force_batch(calls)</code></summary>
 
-Taking 0.1833 % of a block.
+Taking 0.3113 % of a block.
 
 ```rust
 calls: Vec<<T as Config>::RuntimeCall>
@@ -1611,7 +1620,7 @@ The dispatch origin for this call must be _Root_.
 
 <details><summary><code>propose_spend(value, beneficiary)</code></summary>
 
-Taking 0.0111 % of a block.
+Taking 0.0119 % of a block.
 
 ```rust
 value: BalanceOf<T, I>
@@ -1653,7 +1662,7 @@ beneficiary.
 
 <details><summary><code>remove_approval(proposal_id)</code></summary>
 
-Taking 0.0077 % of a block.
+Taking 0.0079 % of a block.
 
 ```rust
 proposal_id: ProposalIndex
@@ -1687,7 +1696,7 @@ There are **15** root calls from **8** pallets.
 
 <details><summary><code>set_heap_pages(pages)</code></summary>
 
-Taking 0.0101 % of a block.
+Taking 0.0105 % of a block.
 
 ```rust
 pages: u64
@@ -1735,7 +1744,7 @@ Set the new runtime code without doing any checks of the given `code`.
 
 <details><summary><code>set_storage(items)</code></summary>
 
-Taking 2.6239 % of a block.
+Taking 2.6599 % of a block.
 
 ```rust
 items: Vec<KeyValue>
@@ -1749,7 +1758,7 @@ Set some items of storage.
 
 <details><summary><code>kill_storage(keys)</code></summary>
 
-Taking 2.6145 % of a block.
+Taking 2.6329 % of a block.
 
 ```rust
 keys: Vec<Key>
@@ -1763,7 +1772,7 @@ Kill some items from storage.
 
 <details><summary><code>kill_prefix(prefix, subkeys)</code></summary>
 
-Taking 3.0011 % of a block.
+Taking 3.0283 % of a block.
 
 ```rust
 prefix: Key
@@ -1802,7 +1811,7 @@ not been enacted yet.
 
 <details><summary><code>force_transfer(source, dest, value)</code></summary>
 
-Taking 0.0157 % of a block.
+Taking 0.0242 % of a block.
 
 ```rust
 source: AccountIdLookupOf<T>
@@ -1819,7 +1828,7 @@ may be specified.
 
 <details><summary><code>force_unreserve(who, amount)</code></summary>
 
-Taking 0.0081 % of a block.
+Taking 0.0096 % of a block.
 
 ```rust
 who: AccountIdLookupOf<T>
@@ -1838,7 +1847,7 @@ Can only be called by ROOT.
 
 <details><summary><code>remove_member(member_id)</code></summary>
 
-Taking 0.0345 % of a block.
+Taking 0.0366 % of a block.
 
 ```rust
 member_id: T::MemberId
@@ -1882,7 +1891,7 @@ Only callable by root.
 
 <details><summary><code>set_members(new_members, prime, old_count)</code></summary>
 
-Taking 0.0823 % of a block.
+Taking 0.0868 % of a block.
 
 ```rust
 new_members: Vec<T::AccountId>
@@ -1921,7 +1930,7 @@ with other logic managing the member set.
 
 <details><summary><code>disapprove_proposal(proposal_hash)</code></summary>
 
-Taking 0.0134 % of a block.
+Taking 0.014 % of a block.
 
 ```rust
 proposal_hash: T::Hash
@@ -1946,7 +1955,7 @@ O(P) where P is the number of max proposals
 
 <details><summary><code>prune_item_identities_names(names)</code></summary>
 
-Taking 2.6583 % of a block.
+Taking 2.6984 % of a block.
 
 ```rust
 names: Vec<IdtyName>
@@ -1962,7 +1971,7 @@ remove identity names from storage
 
 <details><summary><code>dispatch_as(as_origin, call)</code></summary>
 
-Taking 0.0048 % of a block.
+Taking 0.0059 % of a block.
 
 ```rust
 as_origin: Box<T::PalletsOrigin>
@@ -1993,7 +2002,7 @@ There are **4** disabled calls from **2** pallets.
 
 <details><summary><code>remark(remark)</code></summary>
 
-Taking 0.0544 % of a block.
+Taking 0.0955 % of a block.
 
 ```rust
 remark: Vec<u8>
@@ -2010,7 +2019,7 @@ Make some on-chain remark.
 
 <details><summary><code>remark_with_event(remark)</code></summary>
 
-Taking 0.2043 % of a block.
+Taking 0.3514 % of a block.
 
 ```rust
 remark: Vec<u8>
@@ -2026,7 +2035,7 @@ Make some on-chain remark and emit event.
 
 <details><summary><code>set_keys(keys, proof)</code></summary>
 
-Taking 0.0204 % of a block.
+Taking 0.0212 % of a block.
 
 ```rust
 keys: T::Keys
@@ -2049,7 +2058,7 @@ The dispatch origin of this function must be signed.
 
 <details><summary><code>purge_keys()</code></summary>
 
-Taking 0.0185 % of a block.
+Taking 0.0189 % of a block.
 
 ```rust
 ```

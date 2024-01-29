@@ -28,6 +28,7 @@ try-runtime = ['frame-support/try-runtime']
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
+duniter-primitives = { path = "../../primitives/duniter", default-features = false }
 
 # crates.io
 codec = { package = 'parity-scale-codec', version = "3.1.5", features = ['derive'], default-features = false }

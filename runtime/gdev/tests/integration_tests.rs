@@ -337,12 +337,10 @@ fn test_validate_identity_when_claim() {
             // eve gets certified by bob and charlie
             assert_ok!(Certification::add_cert(
                 frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
-                2,
                 5
             ));
             assert_ok!(Certification::add_cert(
                 frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
-                3,
                 5
             ));
 
@@ -435,12 +433,10 @@ fn test_identity_creation_workflow() {
             // eve gets certified by bob and charlie
             assert_ok!(Certification::add_cert(
                 frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
-                2,
                 5
             ));
             assert_ok!(Certification::add_cert(
                 frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
-                3,
                 5
             ));
             // charlie also request distance evaluation for eve
@@ -517,6 +513,32 @@ fn test_identity_creation_workflow() {
                 },
             ));
         });
+}
+
+/// an identity should not be able to add cert
+/// when its membership is suspended
+#[test]
+fn test_can_not_issue_cert_when_membership_lost() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        run_to_block(1);
+        // expire Bob membership
+        Membership::do_remove_membership(2, MembershipRemovalReason::System);
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::MembershipRemoved {
+                member: 2,
+                reason: MembershipRemovalReason::System,
+            },
+        ));
+
+        // Bob can not issue a certification
+        assert_noop!(
+            Certification::add_cert(
+                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+                3,
+            ),
+            pallet_duniter_wot::Error::<gdev_runtime::Runtime>::IssuerNotMember
+        );
+    });
 }
 
 /// test membership expiry
@@ -1192,7 +1214,6 @@ fn test_validate_new_idty_after_few_uds() {
             run_to_block(23);
             assert_ok!(Certification::add_cert(
                 frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
-                2,
                 5,
             ));
             // valid distance status should trigger identity validation
@@ -1252,7 +1273,6 @@ fn test_claim_memberhsip_after_few_uds() {
             run_to_block(23);
             assert_ok!(Certification::add_cert(
                 frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
-                2,
                 5,
             ));
 

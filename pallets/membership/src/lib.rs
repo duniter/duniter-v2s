@@ -175,13 +175,9 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Identity ID not found.
-        IdtyIdNotFound,
-        /// Membership already acquired.
-        MembershipAlreadyAcquired,
-        /// Membership not found.
+        /// Membership not found, can not renew.
         MembershipNotFound,
-        /// Already member, can not claim membership.
+        /// Already member, can not add membership.
         AlreadyMember,
     }
 
@@ -245,7 +241,7 @@ pub mod pallet {
             let membership_data =
                 Membership::<T>::get(idty_id).ok_or(Error::<T>::MembershipNotFound)?;
 
-            // enough certifications and distance rule for example
+            // enough certifications
             T::CheckMembershipOpAllowed::check_renew_membership(idty_id)?;
             Ok(membership_data)
         }

@@ -25,6 +25,7 @@ std = [
 try-runtime = ['frame-support/try-runtime']
 
 [dependencies]
+duniter-primitives = { path = "../../primitives/duniter", default-features = false }
 
 # substrate
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }

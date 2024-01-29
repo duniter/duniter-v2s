@@ -480,12 +480,12 @@ pub mod pallet {
             let idty_value = Identities::<T>::get(idty_index).ok_or(Error::<T>::IdtyNotFound)?;
 
             match idty_value.status {
-                IdtyStatus::Unconfirmed => return Err(Error::<T>::CanNotRevokeUnconfirmed.into()),
-                IdtyStatus::Unvalidated => return Err(Error::<T>::CanNotRevokeUnvalidated.into()),
-                IdtyStatus::Member => (),
-                IdtyStatus::NotMember => (),
-                IdtyStatus::Revoked => return Err(Error::<T>::AlreadyRevoked.into()),
-            };
+                IdtyStatus::Unconfirmed => Err(Error::<T>::CanNotRevokeUnconfirmed),
+                IdtyStatus::Unvalidated => Err(Error::<T>::CanNotRevokeUnvalidated),
+                IdtyStatus::Member => Ok(()),
+                IdtyStatus::NotMember => Ok(()),
+                IdtyStatus::Revoked => Err(Error::<T>::AlreadyRevoked),
+            }?;
 
             ensure!(
                 if let Some((ref old_owner_key, last_change)) = idty_value.old_owner_key {
@@ -595,16 +595,12 @@ pub mod pallet {
         IdtyAlreadyConfirmed,
         /// Identity already created.
         IdtyAlreadyCreated,
-        /// Identity already validated.
-        IdtyAlreadyValidated,
         /// Identity index not found.
         IdtyIndexNotFound,
         /// Identity name already exists.
         IdtyNameAlreadyExist,
         /// Invalid identity name.
         IdtyNameInvalid,
-        /// Identity not confirmed by its owner.
-        IdtyNotConfirmed,
         /// Identity not found.
         IdtyNotFound,
         /// Invalid payload signature.
@@ -647,9 +643,12 @@ pub mod pallet {
             if let Some(mut idty_value) = Identities::<T>::get(idty_index) {
                 Self::unschedule_identity_change(idty_index, idty_value.next_scheduled);
                 idty_value.next_scheduled = T::BlockNumber::zero();
+                if idty_value.status == IdtyStatus::Unvalidated {
+                    // only submit event first time, after that, only membership events are relevant
+                    Self::deposit_event(Event::IdtyValidated { idty_index });
+                };
                 idty_value.status = IdtyStatus::Member;
                 <Identities<T>>::insert(idty_index, idty_value);
-                Self::deposit_event(Event::IdtyValidated { idty_index });
             }
             // else should not happen
         }
@@ -849,6 +848,15 @@ pub mod pallet {
 // implement getting owner key of identity index
 impl<T: Config> sp_runtime::traits::Convert<T::IdtyIndex, Option<T::AccountId>> for Pallet<T> {
     fn convert(idty_index: T::IdtyIndex) -> Option<T::AccountId> {
+        Identities::<T>::get(idty_index).map(|idty_val| idty_val.owner_key)
+    }
+}
+// implement Idty trait
+impl<T: Config> duniter_primitives::Idty<T::IdtyIndex, T::AccountId> for Pallet<T> {
+    fn idty_index(owner_key: T::AccountId) -> Option<T::IdtyIndex> {
+        IdentityIndexOf::<T>::get(owner_key)
+    }
+    fn owner_key(idty_index: T::IdtyIndex) -> Option<T::AccountId> {
         Identities::<T>::get(idty_index).map(|idty_val| idty_val.owner_key)
     }
 }
