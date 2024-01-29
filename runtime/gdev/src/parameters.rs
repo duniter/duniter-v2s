@@ -88,6 +88,7 @@ parameter_types! {
 // Identity
 frame_support::parameter_types! {
     pub const ChangeOwnerKeyPeriod: BlockNumber = 7 * DAYS;
+    pub const AutorevocationPeriod: BlockNumber = YEARS;
 }
 
 // Membership

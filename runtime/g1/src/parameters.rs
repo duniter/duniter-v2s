@@ -100,6 +100,7 @@ parameter_types! {
     pub const ConfirmPeriod: BlockNumber = 14 * DAYS;
     pub const IdtyCreationPeriod: BlockNumber = MONTHS;
     pub const ValidationPeriod: BlockNumber = YEARS;
+    pub const AutorevocationPeriod: BlockNumber = YEARS;
 }
 
 // Membership

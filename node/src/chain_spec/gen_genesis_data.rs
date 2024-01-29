@@ -92,7 +92,9 @@ pub struct GenesisIdentity {
     pub idty_index: u32,
     pub name: String,
     pub owner_key: AccountId,
-    pub active: bool,
+    pub status: IdtyStatus,
+    pub expires_on: Option<u32>,
+    pub revokes_on: Option<u32>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -177,6 +179,10 @@ struct IdentityV1 {
     old_owner_key: Option<PubkeyV1>,
     /// timestamp at which the membership is set to expire (0 for expired members)
     membership_expire_on: TimestampV1,
+    /// timestamp at which the identity would be set as revoked (value in the past for already revoked identities)
+    membership_revokes_on: TimestampV1,
+    /// whether the identity is revoked (manually or automatically)
+    revoked: bool,
     /// timestamp at which the next cert can be emitted
     next_cert_issuable_on: TimestampV1, // TODO: unused?
     /// balance of the account of this identity
@@ -194,6 +200,10 @@ struct IdentityV2 {
     owner_key: AccountId,
     /// block at which the membership is set to expire (0 for expired members)
     membership_expire_on: u32,
+    /// block at which the identity should be revoked (value in the past for already revoked identities)
+    identity_revokes_on: u32,
+    /// whether the identity is revoked (manually or automatically)
+    revoked: bool,
     /// block at which the next cert can be emitted
     next_cert_issuable_on: u32,
     /// balance of the account of this identity
@@ -238,7 +248,7 @@ struct GenesisInfo<'a> {
     genesis_timestamp: u64,
     accounts: &'a BTreeMap<AccountId32, GenesisAccountData<u64, u32>>,
     genesis_data_wallets_count: &'a usize,
-    inactive_identities: &'a HashMap<u32, String>,
+    inactive_identities: &'a HashMap<u32, (String, IdtyStatus)>,
     identities: &'a Vec<GenesisIdentity>,
     identity_index: &'a HashMap<u32, String>,
     initial_smiths: &'a BTreeMap<u32, (bool, Vec<u32>)>,
@@ -308,7 +318,7 @@ where
     // track identity index
     let mut identity_index = HashMap::new();
     // track inactive identities
-    let mut inactive_identities = HashMap::<u32, String>::new();
+    let mut inactive_identities = HashMap::<u32, (String, IdtyStatus)>::new();
 
     // declare variables to fill in genesis
     // -------------------------------------
@@ -743,7 +753,7 @@ fn dump_genesis_info(info: GenesisInfo) {
         "prepared genesis with:
         - {} as genesis timestamp
         - {} accounts ({} identities, {} simple wallets)
-        - {} total identities ({} active, {} inactive)
+        - {} total identities ({} members, {} inactives, {} revoked)
         - {} smiths
         - {} initial online authorities
         - {} certifications
@@ -755,7 +765,14 @@ fn dump_genesis_info(info: GenesisInfo) {
         info.genesis_data_wallets_count,
         info.identity_index.len(),
         info.identities.len() - info.inactive_identities.len(),
-        info.inactive_identities.len(),
+        info.inactive_identities
+            .iter()
+            .filter(|(_, (_, status))| *status == IdtyStatus::NotMember)
+            .count(),
+        info.inactive_identities
+            .iter()
+            .filter(|(_, (_, status))| *status == IdtyStatus::Revoked)
+            .count(),
         info.initial_smiths.len(),
         info.counter_online_authorities,
         info.counter_cert,
@@ -1020,13 +1037,15 @@ fn get_best_diviser(ms_value: f32) -> f32 {
 }
 
 fn smiths_and_technical_committee_checks(
-    inactive_identities: &HashMap<u32, String>,
+    inactive_identities: &HashMap<u32, (String, IdtyStatus)>,
     technical_committee: &Vec<String>,
     smiths: &Vec<SmithData>,
 ) {
     // no inactive tech comm
     for tech_com_member in technical_committee {
-        let inactive_commitee_member = inactive_identities.values().any(|v| v == tech_com_member);
+        let inactive_commitee_member = inactive_identities
+            .values()
+            .any(|(name, _)| name == tech_com_member);
         if inactive_commitee_member {
             log::error!(
                 "{} is an inactive technical commitee member",
@@ -1039,11 +1058,11 @@ fn smiths_and_technical_committee_checks(
     for SmithData { name: smith, .. } in smiths {
         let inactive_smiths: Vec<_> = inactive_identities
             .values()
-            .filter(|v| *v == smith)
+            .filter(|(name, _)| name == smith)
             .collect();
         inactive_smiths
             .iter()
-            .for_each(|s| log::warn!("Smith {} is inactive", s));
+            .for_each(|(name, _)| log::warn!("Smith {} is inactive", name));
         assert_eq!(inactive_smiths.len(), 0);
     }
 }
@@ -1269,6 +1288,11 @@ fn genesis_data_to_identities_v2(
                         i.membership_expire_on,
                         genesis_timestamp,
                     ),
+                    identity_revokes_on: timestamp_to_relative_blocs(
+                        i.membership_revokes_on,
+                        genesis_timestamp,
+                    ),
+                    revoked: i.revoked,
                     next_cert_issuable_on: timestamp_to_relative_blocs(
                         i.next_cert_issuable_on,
                         genesis_timestamp,
@@ -1310,6 +1334,8 @@ fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKey
                 balance: common_parameters.balances_existential_deposit,
                 certs_received: HashMap::new(),
                 membership_expire_on: common_parameters.membership_membership_period,
+                identity_revokes_on: common_parameters.identity_autorevocation_period,
+                revoked: false,
                 next_cert_issuable_on: 0,
             },
         );
@@ -1355,7 +1381,7 @@ fn feed_identities(
     accounts: &mut BTreeMap<AccountId32, GenesisAccountData<u64, u32>>,
     identity_index: &mut HashMap<u32, String>,
     monetary_mass: &mut u64,
-    inactive_identities: &mut HashMap<u32, String>,
+    inactive_identities: &mut HashMap<u32, (String, IdtyStatus)>,
     memberships: &mut BTreeMap<u32, MembershipData>,
     identities_v2: &HashMap<String, IdentityV2>,
 ) -> Result<(bool, Vec<GenesisIdentity>), String> {
@@ -1422,18 +1448,42 @@ fn feed_identities(
         let expired = identity.membership_expire_on == 0;
         // only add the identity if not expired
         if expired {
-            inactive_identities.insert(identity.index, name.clone());
+            inactive_identities.insert(
+                identity.index,
+                (
+                    name.clone(),
+                    if identity.revoked {
+                        IdtyStatus::Revoked
+                    } else {
+                        IdtyStatus::NotMember
+                    },
+                ),
+            );
+        };
+        let status = match (identity.revoked, expired) {
+            (true, _) => IdtyStatus::Revoked,
+            (false, true) => IdtyStatus::NotMember,
+            (false, false) => IdtyStatus::Member,
         };
         identities.push(GenesisIdentity {
             // N.B.: every **non-expired** identity on Genesis is considered to have:
             //  - removable_on: 0,
             //  - next_creatable_identity_on: 0,
-            //  - status: IdtyStatus::Validated,
             idty_index: identity.index,
             name: name.to_owned().clone(),
             owner_key: identity.owner_key.clone(),
             // but expired identities will just have their pseudonym reserved in the storage
-            active: !expired,
+            status,
+            expires_on: if status == IdtyStatus::Member {
+                Some(identity.membership_expire_on)
+            } else {
+                None
+            },
+            revokes_on: if status == IdtyStatus::NotMember {
+                Some(identity.identity_revokes_on)
+            } else {
+                None
+            },
         });
 
         // insert the membershup data (only if not expired)
@@ -1682,7 +1732,9 @@ where
             idty_index: i as u32 + idty_index_start,
             name: String::from_utf8(name.0.clone()).unwrap(),
             owner_key: owner_key.clone(),
-            active: true,
+            status: IdtyStatus::Member,
+            expires_on: Some(common_parameters.membership_membership_period),
+            revokes_on: None,
         })
         .collect();
 
@@ -1712,7 +1764,7 @@ where
         .collect();
 
     let genesis_data_wallets_count = 0;
-    let inactive_identities = HashMap::new();
+    let inactive_identities: HashMap<u32, (String, IdtyStatus)> = HashMap::new();
 
     let initial_smiths_wot: BTreeMap<u32, (bool, Vec<u32>)> = clique_smith_wot(initial_smiths_len);
     let counter_smith_cert = initial_smiths_wot
@@ -1954,6 +2006,7 @@ pub struct CommonParameters {
     pub identity_confirm_period: u32,
     pub identity_change_owner_key_period: u32,
     pub identity_idty_creation_period: u32,
+    pub identity_autorevocation_period: u32,
     pub membership_membership_period: u32,
     pub membership_membership_renewal_period: u32,
     pub cert_cert_period: u32,

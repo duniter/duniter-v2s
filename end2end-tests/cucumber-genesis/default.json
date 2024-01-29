@@ -19,6 +19,8 @@
       },
       "owner_address": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
       "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": false,
       "next_cert_issuable_on": 0
     },
     "Bob": {
@@ -30,6 +32,8 @@
       },
       "owner_address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
       "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": false,
       "next_cert_issuable_on": 0
     },
     "Charlie": {
@@ -41,6 +45,8 @@
       },
       "owner_address": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
       "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": false,
       "next_cert_issuable_on": 0
     }
   },

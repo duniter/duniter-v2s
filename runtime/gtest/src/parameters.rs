@@ -102,6 +102,7 @@ parameter_types! {
     pub const ChangeOwnerKeyPeriod: BlockNumber = MONTHS;
     pub const ConfirmPeriod: BlockNumber = DAYS;
     pub const IdtyCreationPeriod: BlockNumber = DAYS;
+    pub const AutorevocationPeriod: BlockNumber = YEARS;
 }
 
 // Membership
