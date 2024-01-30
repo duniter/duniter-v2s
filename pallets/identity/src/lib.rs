@@ -36,7 +36,7 @@ pub use weights::WeightInfo;
 
 use crate::traits::*;
 use codec::Codec;
-use frame_support::dispatch::Weight;
+use frame_support::pallet_prelude::Weight;
 use sp_runtime::traits::{AtLeast32BitUnsigned, IdentifyAccount, One, Saturating, Verify, Zero};
 use sp_std::fmt::Debug;
 use sp_std::prelude::*;
@@ -70,26 +70,26 @@ pub mod pallet {
         /// Period during which the owner can confirm the new identity.
         // something like 2 days but this should be done quickly as the first certifier is helping
         #[pallet::constant]
-        type ConfirmPeriod: Get<Self::BlockNumber>;
+        type ConfirmPeriod: Get<BlockNumberFor<Self>>;
         /// Period before which the identity has to be validated (become member).
         // this is the 2 month period in v1
         #[pallet::constant]
-        type ValidationPeriod: Get<Self::BlockNumber>;
+        type ValidationPeriod: Get<BlockNumberFor<Self>>;
         /// Period before which an identity who lost membership is automatically revoked.
         // this is the 1 year period in v1
         #[pallet::constant]
-        type AutorevocationPeriod: Get<Self::BlockNumber>;
+        type AutorevocationPeriod: Get<BlockNumberFor<Self>>;
         /// Period after which a revoked identity is removed and the keys are freed.
         #[pallet::constant]
-        type DeletionPeriod: Get<Self::BlockNumber>;
+        type DeletionPeriod: Get<BlockNumberFor<Self>>;
         /// Minimum duration between two owner key changes.
         // to avoid stealing the identity without means to revoke
         #[pallet::constant]
-        type ChangeOwnerKeyPeriod: Get<Self::BlockNumber>;
+        type ChangeOwnerKeyPeriod: Get<BlockNumberFor<Self>>;
         /// Minimum duration between the creation of 2 identities by the same creator.
         // it should be greater or equal than the certification period in certification pallet
         #[pallet::constant]
-        type IdtyCreationPeriod: Get<Self::BlockNumber>;
+        type IdtyCreationPeriod: Get<BlockNumberFor<Self>>;
         /// Management of the authorizations of the different calls.
         /// The default implementation allows everything.
         type CheckIdtyCallAllowed: CheckIdtyCallAllowed<Self>;
@@ -129,12 +129,12 @@ pub mod pallet {
 
     // GENESIS STUFF //
 
-    #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-    #[derive(Encode, Decode, Clone, PartialEq, Eq)]
+    #[derive(Encode, Decode, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+    #[serde(deny_unknown_fields, bound(serialize = ""), bound(deserialize = ""))]
     pub struct GenesisIdty<T: Config> {
         pub index: T::IdtyIndex,
         pub name: IdtyName,
-        pub value: IdtyValue<T::BlockNumber, T::AccountId, T::IdtyData>,
+        pub value: IdtyValue<BlockNumberFor<T>, T::AccountId, T::IdtyData>,
     }
 
     #[pallet::genesis_config]
@@ -142,7 +142,6 @@ pub mod pallet {
         pub identities: Vec<GenesisIdty<T>>,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
@@ -152,7 +151,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             let mut names = sp_std::collections::btree_set::BTreeSet::new();
             for idty in &self.identities {
@@ -173,7 +172,7 @@ pub mod pallet {
                 let _ = Pallet::<T>::get_next_idty_index();
                 // use instead custom provided index
                 let idty_index = idty.index;
-                if idty.value.next_scheduled > T::BlockNumber::zero() {
+                if idty.value.next_scheduled > BlockNumberFor::<T>::zero() {
                     <IdentityChangeSchedule<T>>::append(idty.value.next_scheduled, idty_index)
                 }
                 <Identities<T>>::insert(idty_index, idty.value.clone());
@@ -196,7 +195,7 @@ pub mod pallet {
         _,
         Twox64Concat,
         T::IdtyIndex,
-        IdtyValue<T::BlockNumber, T::AccountId, T::IdtyData>,
+        IdtyValue<BlockNumberFor<T>, T::AccountId, T::IdtyData>,
         OptionQuery,
     >;
 
@@ -220,14 +219,14 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn next_scheduled)]
     pub type IdentityChangeSchedule<T: Config> =
-        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::IdtyIndex>, ValueQuery>;
+        StorageMap<_, Twox64Concat, BlockNumberFor<T>, Vec<T::IdtyIndex>, ValueQuery>;
 
     // HOOKS //
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(n: T::BlockNumber) -> Weight {
-            if n > T::BlockNumber::zero() {
+        fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+            if n > BlockNumberFor::<T>::zero() {
                 Self::prune_identities(n).saturating_add(T::WeightInfo::on_initialize())
             } else {
                 T::WeightInfo::on_initialize()
@@ -309,7 +308,7 @@ pub mod pallet {
                 idty_index,
                 IdtyValue {
                     data: Default::default(),
-                    next_creatable_identity_on: T::BlockNumber::zero(),
+                    next_creatable_identity_on: BlockNumberFor::<T>::zero(),
                     old_owner_key: None,
                     owner_key: owner_key.clone(),
                     next_scheduled: Self::schedule_identity_change(
@@ -426,7 +425,7 @@ pub mod pallet {
                     None
                 };
 
-            let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
+            let genesis_hash = frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero());
             let new_key_payload = IdtyIndexAccountIdPayload {
                 genesis_hash: &genesis_hash,
                 idty_index,
@@ -501,7 +500,7 @@ pub mod pallet {
             );
 
             // then check payload signature
-            let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
+            let genesis_hash = frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero());
             let revocation_payload = RevocationPayload {
                 genesis_hash,
                 idty_index,
@@ -569,7 +568,7 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             let idty_index =
                 IdentityIndexOf::<T>::get(&who).ok_or(Error::<T>::IdtyIndexNotFound)?;
-            let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
+            let genesis_hash = frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero());
             let payload = IdtyIndexAccountIdPayload {
                 genesis_hash: &genesis_hash,
                 idty_index,
@@ -642,7 +641,7 @@ pub mod pallet {
         pub fn membership_added(idty_index: T::IdtyIndex) {
             if let Some(mut idty_value) = Identities::<T>::get(idty_index) {
                 Self::unschedule_identity_change(idty_index, idty_value.next_scheduled);
-                idty_value.next_scheduled = T::BlockNumber::zero();
+                idty_value.next_scheduled = BlockNumberFor::<T>::zero();
                 if idty_value.status == IdtyStatus::Unvalidated {
                     // only submit event first time, after that, only membership events are relevant
                     Self::deposit_event(Event::IdtyValidated { idty_index });
@@ -731,7 +730,7 @@ pub mod pallet {
         }
 
         /// remove identities planned for removal at the given block
-        pub fn prune_identities(block_number: T::BlockNumber) -> Weight {
+        pub fn prune_identities(block_number: BlockNumberFor<T>) -> Weight {
             let mut total_weight = Weight::zero();
 
             for idty_index in IdentityChangeSchedule::<T>::take(block_number) {
@@ -774,9 +773,9 @@ pub mod pallet {
         /// change identity status and reschedule next action
         fn update_identity_status(
             idty_index: T::IdtyIndex,
-            mut idty_value: IdtyValue<T::BlockNumber, T::AccountId, T::IdtyData>,
+            mut idty_value: IdtyValue<BlockNumberFor<T>, T::AccountId, T::IdtyData>,
             new_status: IdtyStatus,
-            period: T::BlockNumber,
+            period: BlockNumberFor<T>,
         ) {
             Self::unschedule_identity_change(idty_index, idty_value.next_scheduled);
             idty_value.next_scheduled = Self::schedule_identity_change(idty_index, period);
@@ -785,18 +784,19 @@ pub mod pallet {
         }
 
         /// unschedule identity change
-        fn unschedule_identity_change(idty_id: T::IdtyIndex, block_number: T::BlockNumber) {
+        fn unschedule_identity_change(idty_id: T::IdtyIndex, block_number: BlockNumberFor<T>) {
             let mut scheduled = IdentityChangeSchedule::<T>::get(block_number);
             if let Some(pos) = scheduled.iter().position(|x| *x == idty_id) {
                 scheduled.swap_remove(pos);
                 IdentityChangeSchedule::<T>::set(block_number, scheduled);
             }
         }
+
         /// schedule identity change after given period
         fn schedule_identity_change(
             idty_id: T::IdtyIndex,
-            period: T::BlockNumber,
-        ) -> T::BlockNumber {
+            period: BlockNumberFor<T>,
+        ) -> BlockNumberFor<T> {
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             let next_scheduled = block_number + period;
             IdentityChangeSchedule::<T>::append(next_scheduled, idty_id);
@@ -809,7 +809,7 @@ pub mod pallet {
         fn check_create_identity(
             issuer_key: &T::AccountId,
             receiver_key: &T::AccountId,
-            block_number: T::BlockNumber,
+            block_number: BlockNumberFor<T>,
         ) -> Result<T::IdtyIndex, DispatchError> {
             // first get issuer details
             let creator_index = IdentityIndexOf::<T>::try_get(issuer_key)
@@ -856,6 +856,7 @@ impl<T: Config> duniter_primitives::Idty<T::IdtyIndex, T::AccountId> for Pallet<
     fn idty_index(owner_key: T::AccountId) -> Option<T::IdtyIndex> {
         IdentityIndexOf::<T>::get(owner_key)
     }
+
     fn owner_key(idty_index: T::IdtyIndex) -> Option<T::AccountId> {
         Identities::<T>::get(idty_index).map(|idty_val| idty_val.owner_key)
     }
@@ -878,6 +879,7 @@ where
             Default::default()
         }
     }
+
     /// mutate an account given a function of its data
     fn try_mutate_exists<R, E: From<sp_runtime::DispatchError>>(
         key: &T::AccountId,

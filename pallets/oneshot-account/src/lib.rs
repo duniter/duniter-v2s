@@ -162,6 +162,7 @@ pub mod pallet {
 
             Ok(())
         }
+
         /// Consume a oneshot account and transfer its balance to an account
         ///
         /// - `block_height`: Must be a recent block number. The limit is `BlockHashCount` in the past. (this is to prevent replay attacks)
@@ -171,7 +172,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::consume_oneshot_account())]
         pub fn consume_oneshot_account(
             origin: OriginFor<T>,
-            block_height: T::BlockNumber,
+            block_height: BlockNumberFor<T>,
             dest: Account<<T::Lookup as StaticLookup>::Source>,
         ) -> DispatchResult {
             let transactor = ensure_signed(origin)?;
@@ -216,6 +217,7 @@ pub mod pallet {
 
             Ok(())
         }
+
         /// Consume a oneshot account then transfer some amount to an account,
         /// and the remaining amount to another account.
         ///
@@ -230,7 +232,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::consume_oneshot_account_with_remaining())]
         pub fn consume_oneshot_account_with_remaining(
             origin: OriginFor<T>,
-            block_height: T::BlockNumber,
+            block_height: BlockNumberFor<T>,
             dest: Account<<T::Lookup as StaticLookup>::Source>,
             remaining_to: Account<<T::Lookup as StaticLookup>::Source>,
             #[pallet::compact] balance: <T::Currency as Currency<T::AccountId>>::Balance,
@@ -328,6 +330,7 @@ where
 {
     type Balance = <T::Currency as Currency<T::AccountId>>::Balance;
     type LiquidityInfo = Option<<T::Currency as Currency<T::AccountId>>::NegativeImbalance>;
+
     fn withdraw_fee(
         who: &T::AccountId,
         call: &T::RuntimeCall,
@@ -364,6 +367,7 @@ where
             T::InnerOnChargeTransaction::withdraw_fee(who, call, dispatch_info, fee, tip)
         }
     }
+
     fn correct_and_deposit_fee(
         who: &T::AccountId,
         dispatch_info: &DispatchInfoOf<T::RuntimeCall>,

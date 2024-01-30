@@ -22,17 +22,21 @@ pub mod utils;
 use crate::chain_spec::gtest;
 use crate::cli::{Cli, Subcommand};
 #[cfg(feature = "g1")]
-use crate::service::G1Executor;
+use crate::service::g1_executor::G1Executor;
 #[cfg(feature = "gdev")]
-use crate::service::GDevExecutor;
+#[cfg(feature = "runtime-benchmarks")]
+use crate::service::gdev_executor::GDevExecutor;
 #[cfg(feature = "gtest")]
-use crate::service::GTestExecutor;
+#[cfg(feature = "runtime-benchmarks")]
+use crate::service::gtest_executor::GTestExecutor;
 use crate::service::{IdentifyRuntimeType, RuntimeType};
 use crate::{chain_spec, service};
 use clap::CommandFactory;
 #[cfg(feature = "runtime-benchmarks")]
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
+use sc_cli::SubstrateCli;
+#[cfg(feature = "runtime-benchmarks")]
+use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
 
 // TODO: create our own reference hardware
 /*
@@ -210,18 +214,6 @@ impl SubstrateCli for Cli {
             }
         })
     }
-
-    fn native_runtime_version(spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        match spec.runtime_type() {
-            #[cfg(feature = "g1")]
-            RuntimeType::G1 => &g1_runtime::VERSION,
-            #[cfg(feature = "gtest")]
-            RuntimeType::GTest => &gtest_runtime::VERSION,
-            #[cfg(feature = "gdev")]
-            RuntimeType::GDev => &gdev_runtime::VERSION,
-            _ => panic!("unknown runtime {:?}", spec.runtime_type()),
-        }
-    }
 }
 
 /// Parse and run command line arguments
@@ -357,15 +349,24 @@ pub fn run() -> sc_cli::Result<()> {
                         match chain_spec.runtime_type() {
                             #[cfg(feature = "g1")]
                             RuntimeType::G1 => runner.sync_run(|config| {
-                                cmd.run::<g1_runtime::Block, G1Executor>(config)
+                                cmd.run::<g1_runtime::Block, ExtendedHostFunctions<
+                                    sp_io::SubstrateHostFunctions,
+                                    <G1Executor as NativeExecutionDispatch>::ExtendHostFunctions,
+                                >>(config)
                             }),
                             #[cfg(feature = "gtest")]
                             RuntimeType::GTest => runner.sync_run(|config| {
-                                cmd.run::<gtest_runtime::Block, GTestExecutor>(config)
+                                cmd.run::<gtest_runtime::Block, ExtendedHostFunctions<
+                                    sp_io::SubstrateHostFunctions,
+                                    <GTestExecutor as NativeExecutionDispatch>::ExtendHostFunctions,
+                                >>(config)
                             }),
                             #[cfg(feature = "gdev")]
                             RuntimeType::GDev => runner.sync_run(|config| {
-                                cmd.run::<gdev_runtime::Block, GDevExecutor>(config)
+                                cmd.run::<gdev_runtime::Block, ExtendedHostFunctions<
+                                    sp_io::SubstrateHostFunctions,
+                                    <GDevExecutor as NativeExecutionDispatch>::ExtendHostFunctions,
+                                >>(config)
                             }),
                             _ => Err(sc_cli::Error::Application("unknown runtime type".into())),
                         }
@@ -443,22 +444,18 @@ pub fn run() -> sc_cli::Result<()> {
                 match config.chain_spec.runtime_type() {
                     #[cfg(feature = "g1")]
                     RuntimeType::G1 => {
-                        service::new_full::<g1_runtime::RuntimeApi, G1Executor>(config, cli.sealing)
+                        service::new_full::<g1_runtime::RuntimeApi>(config, cli.sealing)
                             .map_err(sc_cli::Error::Service)
                     }
                     #[cfg(feature = "gtest")]
-                    RuntimeType::GTest => service::new_full::<
-                        gtest_runtime::RuntimeApi,
-                        GTestExecutor,
-                    >(config, cli.sealing)
-                    .map_err(sc_cli::Error::Service),
+                    RuntimeType::GTest => {
+                        service::new_full::<gtest_runtime::RuntimeApi>(config, cli.sealing)
+                            .map_err(sc_cli::Error::Service)
+                    }
                     #[cfg(feature = "gdev")]
                     RuntimeType::GDev => {
-                        service::new_full::<gdev_runtime::RuntimeApi, GDevExecutor>(
-                            config,
-                            cli.sealing,
-                        )
-                        .map_err(sc_cli::Error::Service)
+                        service::new_full::<gdev_runtime::RuntimeApi>(config, cli.sealing)
+                            .map_err(sc_cli::Error::Service)
                     }
                     _ => Err(sc_cli::Error::Application("unknown runtime".into())),
                 }

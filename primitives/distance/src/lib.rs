@@ -20,7 +20,7 @@
 #![allow(clippy::type_complexity)]
 
 use codec::{Decode, Encode};
-use frame_support::RuntimeDebug;
+use frame_support::pallet_prelude::RuntimeDebug;
 use scale_info::TypeInfo;
 //#[cfg(feature = "std")]
 //use serde::{Deserialize, Serialize};

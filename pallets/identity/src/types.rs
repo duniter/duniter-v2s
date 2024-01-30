@@ -17,9 +17,9 @@
 //! Various basic types for use in the identity pallet.
 
 use codec::{Decode, Encode};
+use core::primitive::str;
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
-#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_std::vec::Vec;
 
@@ -66,45 +66,43 @@ pub enum RemovalReason {
 }
 
 /// name of the identity, ascii encoded
-#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug)]
+#[derive(
+    Encode,
+    Decode,
+    Default,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    RuntimeDebug,
+    Serialize,
+    Deserialize,
+    TypeInfo,
+)]
 pub struct IdtyName(pub Vec<u8>);
 
-/// implement scale string typeinfo for encoding
-impl scale_info::TypeInfo for IdtyName {
-    type Identity = str;
-
-    fn type_info() -> scale_info::Type {
-        Self::Identity::type_info()
-    }
-}
-
-#[cfg(feature = "std")]
 impl From<&str> for IdtyName {
     fn from(s: &str) -> Self {
         Self(s.as_bytes().to_vec())
     }
 }
 
-#[cfg(feature = "std")]
-impl serde::Serialize for IdtyName {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        std::str::from_utf8(&self.0)
-            .map_err(|e| serde::ser::Error::custom(format!("{:?}", e)))?
-            .serialize(serializer)
-    }
-}
-
-#[cfg(feature = "std")]
-impl<'de> serde::Deserialize<'de> for IdtyName {
-    fn deserialize<D: serde::Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
-        Ok(Self(String::deserialize(de)?.as_bytes().to_vec()))
-    }
-}
-
 /// status of the identity
 // this is a kind of index to tell the state of the identity
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    Default,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    RuntimeDebug,
+    TypeInfo,
+    Deserialize,
+    Serialize,
+)]
 pub enum IdtyStatus {
     /// created through a first certification but unconfirmed
     #[default]
@@ -121,8 +119,7 @@ pub enum IdtyStatus {
 }
 
 /// identity value (as in key/value)
-#[cfg_attr(feature = "std", derive(Debug, Deserialize, Serialize))]
-#[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
+#[derive(Serialize, Deserialize, Debug, Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 pub struct IdtyValue<BlockNumber, AccountId, IdtyData> {
     /// data shared between pallets defined by runtime
     /// only contains first_eligible_ud in our case

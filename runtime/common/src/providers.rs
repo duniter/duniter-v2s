@@ -51,6 +51,7 @@ where
     fn get(key: &T::AccountId) -> FirstEligibleUd {
         pallet_identity::Pallet::<T>::get(key).first_eligible_ud
     }
+
     fn try_mutate_exists<R, E: From<sp_runtime::DispatchError>>(
         key: &T::AccountId,
         f: impl FnOnce(&mut Option<FirstEligibleUd>) -> Result<R, E>,
@@ -98,6 +99,7 @@ macro_rules! impl_benchmark_setup_handler {
             fn force_valid_distance_status(idty_id: &IdtyIndex) -> () {
                 let _ = pallet_distance::Pallet::<T>::do_valid_distance_status(*idty_id);
             }
+
             fn add_cert(issuer: &IdtyIndex, receiver: &IdtyIndex) {
                 let _ = pallet_certification::Pallet::<T>::do_add_cert_checked(
                     (*issuer).into(),

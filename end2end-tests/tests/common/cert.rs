@@ -20,12 +20,13 @@ use super::*;
 use sp_keyring::AccountKeyring;
 use subxt::{tx::PairSigner, utils::MultiAddress};
 
-pub async fn certify(client: &Client, from: AccountKeyring, to: AccountKeyring) -> Result<()> {
+pub async fn certify(client: &FullClient, from: AccountKeyring, to: AccountKeyring) -> Result<()> {
     let signer = PairSigner::new(from.pair());
     let from = from.to_account_id();
     let to = to.to_account_id();
 
     let _issuer_index = client
+        .client
         .storage()
         .at_latest()
         .await
@@ -38,6 +39,7 @@ pub async fn certify(client: &Client, from: AccountKeyring, to: AccountKeyring) 
         .await?
         .unwrap_or_else(|| panic!("{} issuer must exist", from));
     let receiver_index = client
+        .client
         .storage()
         .at_latest()
         .await
@@ -47,13 +49,14 @@ pub async fn certify(client: &Client, from: AccountKeyring, to: AccountKeyring) 
         .unwrap_or_else(|| panic!("{} issuer must exist", from));
 
     let _events = create_block_with_extrinsic(
-        client,
+        &client.rpc,
         client
+            .client
             .tx()
             .create_signed(
                 &gdev::tx().certification().add_cert(receiver_index),
                 &signer,
-                BaseExtrinsicParamsBuilder::new(),
+                SubstrateExtrinsicParamsBuilder::new().build(),
             )
             .await?,
     )

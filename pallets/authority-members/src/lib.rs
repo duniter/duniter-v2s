@@ -31,7 +31,7 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-pub use impls::*;
+//pub use impls::*;
 pub use pallet::*;
 pub use sp_staking::SessionIndex;
 pub use traits::*;
@@ -88,7 +88,6 @@ pub mod pallet {
         pub initial_authorities: BTreeMap<T::MemberId, (T::AccountId, bool)>,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
@@ -98,7 +97,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             for (member_id, (account_id, _is_online)) in &self.initial_authorities {
                 Members::<T>::insert(member_id, MemberData::new_genesis(account_id.to_owned()));
@@ -233,6 +232,7 @@ pub mod pallet {
 
             Ok(().into())
         }
+
         /// ask to join the set of validators two sessions after
         #[pallet::call_index(1)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::go_online())]
@@ -291,6 +291,7 @@ pub mod pallet {
 
             Ok(().into())
         }
+
         /// remove an identity from the set of authorities
         #[pallet::call_index(3)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_member())]
@@ -305,6 +306,7 @@ pub mod pallet {
 
             Ok(().into())
         }
+
         #[pallet::call_index(4)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_member_from_blacklist())]
         /// remove an identity from the blacklist
@@ -404,6 +406,7 @@ pub mod pallet {
             // Emit event
             Self::deposit_event(Event::MemberRemoved { member: member_id });
         }
+
         /// perform incoming authorities insertion
         fn insert_in(member_id: T::MemberId) -> bool {
             let not_already_inserted = IncomingAuthorities::<T>::mutate(|members_ids| {
@@ -419,6 +422,7 @@ pub mod pallet {
             }
             not_already_inserted
         }
+
         /// perform outgoing authority insertion
         pub fn insert_out(member_id: T::MemberId) -> bool {
             let not_already_inserted = OutgoingAuthorities::<T>::mutate(|members_ids| {
@@ -434,28 +438,33 @@ pub mod pallet {
             }
             not_already_inserted
         }
+
         /// check if member is incoming
         fn is_incoming(member_id: T::MemberId) -> bool {
             IncomingAuthorities::<T>::get()
                 .binary_search(&member_id)
                 .is_ok()
         }
+
         /// check if member is online
         fn is_online(member_id: T::MemberId) -> bool {
             OnlineAuthorities::<T>::get()
                 .binary_search(&member_id)
                 .is_ok()
         }
+
         /// check if member is outgoing
         fn is_outgoing(member_id: T::MemberId) -> bool {
             OutgoingAuthorities::<T>::get()
                 .binary_search(&member_id)
                 .is_ok()
         }
+
         /// check if member is blacklisted
         fn is_blacklisted(member_id: T::MemberId) -> bool {
             Blacklist::<T>::get().contains(&member_id)
         }
+
         /// perform removal from incoming authorities
         fn remove_in(member_id: T::MemberId) {
             IncomingAuthorities::<T>::mutate(|members_ids| {
@@ -464,6 +473,7 @@ pub mod pallet {
                 }
             })
         }
+
         /// perform removal from online authorities
         fn remove_online(member_id: T::MemberId) {
             OnlineAuthorities::<T>::mutate(|members_ids| {
@@ -472,6 +482,7 @@ pub mod pallet {
                 }
             });
         }
+
         /// perform removal from outgoing authorities
         fn remove_out(member_id: T::MemberId) {
             OutgoingAuthorities::<T>::mutate(|members_ids| {
@@ -480,6 +491,7 @@ pub mod pallet {
                 }
             });
         }
+
         /// check that accountid is member
         fn verify_ownership_and_membership(
             who: &T::AccountId,
@@ -558,6 +570,7 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
             .collect(),
         )
     }
+
     /// Same as `new_session`, but it this should only be called at genesis.
     fn new_session_genesis(_new_index: SessionIndex) -> Option<Vec<T::ValidatorId>> {
         Some(
@@ -573,11 +586,13 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
                 .collect(),
         )
     }
+
     /// End the session.
     ///
     /// Because the session pallet can queue validator set the ending session can be lower than the
     /// last new session index.
     fn end_session(_end_index: SessionIndex) {}
+
     /// Start an already planned session.
     ///
     /// The session start to be used for validation.
@@ -609,6 +624,7 @@ impl<T: Config> pallet_session::historical::SessionManager<T::ValidatorId, T::Fu
                 .collect()
         })
     }
+
     fn new_session_genesis(
         new_index: SessionIndex,
     ) -> Option<sp_std::vec::Vec<(T::ValidatorId, T::FullIdentification)>> {
@@ -621,9 +637,11 @@ impl<T: Config> pallet_session::historical::SessionManager<T::ValidatorId, T::Fu
             },
         )
     }
+
     fn start_session(start_index: SessionIndex) {
         <Self as pallet_session::SessionManager<_>>::start_session(start_index)
     }
+
     fn end_session(end_index: SessionIndex) {
         <Self as pallet_session::SessionManager<_>>::end_session(end_index)
     }

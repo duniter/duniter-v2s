@@ -11,14 +11,14 @@ version = '1.0.0'
 
 [dependencies]
 
-pallet-distance = { path = "../../pallets/distance" }
-sp-distance = { path = "../../primitives/distance" }
-
 log = "0.4"
-thiserror = "1.0.30"
+
+pallet-distance = { path = "../../pallets/distance" }
 
 # substrate
 scale-info = { version = "2.1.1", features = ["derive"] }
+sp-distance = { path = "../../primitives/distance" }
+thiserror = "1.0.30"
 
 [dependencies.codec]
 features = ['derive']
@@ -26,26 +26,25 @@ package = 'parity-scale-codec'
 version = '3.1.5'
 
 [dependencies.frame-support]
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.sc-client-api]
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.sp-core]
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.sp-keystore]
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
-
-[dependencies.sp-runtime]
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
-
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 ### DOC ###
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies.sp-runtime]
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'

@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -48,10 +47,10 @@ use core::marker::PhantomData;
 /// Weight functions for `pallet_session`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_session::WeightInfo for WeightInfo<T> {
-	/// Storage: Session NextKeys (r:1 w:1)
-	/// Proof Skipped: Session NextKeys (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Session KeyOwner (r:4 w:4)
-	/// Proof Skipped: Session KeyOwner (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Session::NextKeys` (r:1 w:1)
+	/// Proof: `Session::NextKeys` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::KeyOwner` (r:4 w:4)
+	/// Proof: `Session::KeyOwner` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn set_keys() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `723`
@@ -62,10 +61,10 @@ impl<T: frame_system::Config> pallet_session::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
-	/// Storage: Session NextKeys (r:1 w:1)
-	/// Proof Skipped: Session NextKeys (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Session KeyOwner (r:0 w:4)
-	/// Proof Skipped: Session KeyOwner (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Session::NextKeys` (r:1 w:1)
+	/// Proof: `Session::NextKeys` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::KeyOwner` (r:0 w:4)
+	/// Proof: `Session::KeyOwner` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn purge_keys() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `412`

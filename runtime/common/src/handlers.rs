@@ -16,8 +16,8 @@
 
 use super::entities::*;
 use super::{AccountId, IdtyIndex};
-use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::pallet_prelude::Weight;
+use frame_support::traits::UnfilteredDispatchable;
 use pallet_smith_members::SmithRemovalReason;
 
 // new session handler

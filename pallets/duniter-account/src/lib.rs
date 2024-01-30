@@ -104,7 +104,6 @@ pub mod pallet {
         pub treasury_balance: T::Balance,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
@@ -115,7 +114,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             // Treasury
             frame_system::Account::<T>::mutate(
@@ -132,7 +131,7 @@ pub mod pallet {
                 .accounts
                 .keys()
                 .cloned()
-                .collect::<std::collections::BTreeSet<_>>();
+                .collect::<sp_std::collections::btree_set::BTreeSet<_>>();
 
             assert!(
                 endowed_accounts.len() == self.accounts.len(),
@@ -236,7 +235,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         // on initialize, withdraw account creation tax
-        fn on_initialize(_: T::BlockNumber) -> Weight {
+        fn on_initialize(_: BlockNumberFor<T>) -> Weight {
             let mut total_weight = Weight::zero();
             for account_id in PendingNewAccounts::<T>::iter_keys()
                 .drain()

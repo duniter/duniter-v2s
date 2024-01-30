@@ -170,7 +170,6 @@ pub mod pallet {
         pub ud: BalanceOf<T>,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T>
     where
         <T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
@@ -188,7 +187,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T>
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T>
     where
         <T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
     {
@@ -403,6 +402,7 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             Self::do_claim_uds(&who)
         }
+
         /// Transfer some liquid free balance to another account, in milliUD.
         #[pallet::call_index(1)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer_ud())]
@@ -432,6 +432,7 @@ pub mod pallet {
         pub fn init_first_eligible_ud() -> FirstEligibleUd {
             CurrentUdIndex::<T>::get().into()
         }
+
         /// function to call when removing a member
         /// auto-claims UDs
         pub fn on_removed_member(first_ud_index: UdIndex, who: &T::AccountId) -> Weight {

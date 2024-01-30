@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -48,18 +47,18 @@ use core::marker::PhantomData;
 /// Weight functions for `pallet_smith_members`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_smith_members::WeightInfo for WeightInfo<T> {
-	/// Storage: Identity IdentityIndexOf (r:1 w:0)
-	/// Proof Skipped: Identity IdentityIndexOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: SmithMembers Smiths (r:2 w:1)
-	/// Proof Skipped: SmithMembers Smiths (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Membership Membership (r:1 w:0)
-	/// Proof Skipped: Membership Membership (max_values: None, max_size: None, mode: Measured)
-	/// Storage: SmithMembers CurrentSession (r:1 w:0)
-	/// Proof Skipped: SmithMembers CurrentSession (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: Parameters ParametersStorage (r:1 w:0)
-	/// Proof Skipped: Parameters ParametersStorage (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: SmithMembers ExpiresOn (r:1 w:1)
-	/// Proof Skipped: SmithMembers ExpiresOn (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Identity::IdentityIndexOf` (r:1 w:0)
+	/// Proof: `Identity::IdentityIndexOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `SmithMembers::Smiths` (r:2 w:1)
+	/// Proof: `SmithMembers::Smiths` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Membership::Membership` (r:1 w:0)
+	/// Proof: `Membership::Membership` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `SmithMembers::CurrentSession` (r:1 w:0)
+	/// Proof: `SmithMembers::CurrentSession` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Parameters::ParametersStorage` (r:1 w:0)
+	/// Proof: `Parameters::ParametersStorage` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `SmithMembers::ExpiresOn` (r:1 w:1)
+	/// Proof: `SmithMembers::ExpiresOn` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn invite_smith() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `732`
@@ -70,10 +69,10 @@ impl<T: frame_system::Config> pallet_smith_members::WeightInfo for WeightInfo<T>
 			.saturating_add(T::DbWeight::get().reads(7))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: Identity IdentityIndexOf (r:1 w:0)
-	/// Proof Skipped: Identity IdentityIndexOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: SmithMembers Smiths (r:1 w:1)
-	/// Proof Skipped: SmithMembers Smiths (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Identity::IdentityIndexOf` (r:1 w:0)
+	/// Proof: `Identity::IdentityIndexOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `SmithMembers::Smiths` (r:1 w:1)
+	/// Proof: `SmithMembers::Smiths` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn accept_invitation() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `463`
@@ -84,14 +83,14 @@ impl<T: frame_system::Config> pallet_smith_members::WeightInfo for WeightInfo<T>
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Identity IdentityIndexOf (r:1 w:0)
-	/// Proof Skipped: Identity IdentityIndexOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: SmithMembers Smiths (r:2 w:2)
-	/// Proof Skipped: SmithMembers Smiths (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Parameters ParametersStorage (r:1 w:0)
-	/// Proof Skipped: Parameters ParametersStorage (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: SmithMembers CurrentSession (r:1 w:0)
-	/// Proof Skipped: SmithMembers CurrentSession (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `Identity::IdentityIndexOf` (r:1 w:0)
+	/// Proof: `Identity::IdentityIndexOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `SmithMembers::Smiths` (r:2 w:2)
+	/// Proof: `SmithMembers::Smiths` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Parameters::ParametersStorage` (r:1 w:0)
+	/// Proof: `Parameters::ParametersStorage` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `SmithMembers::CurrentSession` (r:1 w:0)
+	/// Proof: `SmithMembers::CurrentSession` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn certify_smith() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `577`

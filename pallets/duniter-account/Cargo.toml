@@ -13,22 +13,45 @@ version = '3.0.0'
 default = ['std']
 runtime-benchmarks = [
     'frame-benchmarking/runtime-benchmarks',
+    'frame-support/runtime-benchmarks',
+    'frame-system/runtime-benchmarks',
+    'sp-runtime/runtime-benchmarks',
+    'pallet-identity/runtime-benchmarks',
+    'pallet-provide-randomness/runtime-benchmarks',
+    'pallet-treasury/runtime-benchmarks',
+    'pallet-quota/runtime-benchmarks',
+    'pallet-balances/runtime-benchmarks',
 ]
 std = [
     'codec/std',
     'frame-support/std',
     'frame-system/std',
-    'frame-benchmarking/std',
+    'frame-benchmarking?/std',
     'pallet-balances/std',
+    'pallet-transaction-payment/std',
+    'pallet-identity/std',
     'pallet-provide-randomness/std',
     'pallet-treasury/std',
-    'serde',
+    'pallet-quota/std',
+    'serde/std',
+    'log/std',
+    'scale-info/std',
     'sp-core/std',
     'sp-io/std',
     'sp-runtime/std',
     'sp-std/std',
 ]
-try-runtime = ['frame-support/try-runtime']
+try-runtime = [
+    'frame-support/try-runtime',
+    'frame-system/try-runtime',
+    'sp-runtime/try-runtime',
+    'pallet-identity/try-runtime',
+    'pallet-provide-randomness/try-runtime',
+    'pallet-treasury/try-runtime',
+    'pallet-quota/try-runtime',
+    'pallet-balances/try-runtime',
+    'pallet-transaction-payment/try-runtime',
+]
 
 [dependencies]
 # local
@@ -37,84 +60,75 @@ pallet-identity = { path = "../identity", default-features = false }
 pallet-provide-randomness = { path = "../provide-randomness", default-features = false }
 
 # crates.io
-codec = { package = 'parity-scale-codec', version = "3.1.5", default-features = false, features = ["derive"] }
-log = { version = "0.4.14", default-features = false }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+codec = { package = 'parity-scale-codec', version = "3.6.9", default-features = false, features = ["derive"] }
+log = { version = "0.4.20", default-features = false }
+scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
 
 # substrate
 [dependencies.frame-benchmarking]
 default-features = false
-git = 'https://github.com/duniter/substrate'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
 optional = true
-branch = 'duniter-substrate-v0.9.42'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.frame-support]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.frame-system]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.pallet-balances]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.pallet-transaction-payment]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.pallet-treasury]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.serde]
-version = "1.0.101"
-optional = true
+default-features = false
+version = "1.0.195"
 features = ["derive"]
 
 [dependencies.sp-core]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.sp-io]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.sp-runtime]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.sp-std]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 ### DOC ###
 
 [package.metadata.docs.rs]
+default-features = false
 targets = ['x86_64-unknown-linux-gnu']
 
 ### DEV ###
 
-[dev-dependencies.pallet-balances]
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
-
 [dev-dependencies.maplit]
+default-features = false
 version = '1.0.2'
-
-[dev-dependencies.serde]
-version = '1.0.119'
-
-[dev-dependencies.sp-io]
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'

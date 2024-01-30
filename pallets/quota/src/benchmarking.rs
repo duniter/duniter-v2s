@@ -59,14 +59,14 @@ benchmarks! {
         IdtyQuota::<T>::insert(
             idty_id,
             Quota {
-                last_use: T::BlockNumber::zero(),
+                last_use: BlockNumberFor::<T>::zero(),
                 amount: quota_amount.into(),
             },
         );
     }: { Pallet::<T>::spend_quota(idty_id, amount.into()) }
     verify {
         let quota_growth = sp_runtime::Perbill::from_rational(
-            T::BlockNumber::one(),
+            BlockNumberFor::<T>::one(),
             T::ReloadRate::get(),
         ).mul_floor(T::MaxQuota::get());
         assert_eq!(IdtyQuota::<T>::get(idty_id).unwrap().amount,  quota_growth +quota_amount.into() - amount.into());
@@ -77,7 +77,7 @@ benchmarks! {
         IdtyQuota::<T>::insert(
             idty_id,
             Quota {
-                last_use: T::BlockNumber::zero(),
+                last_use: BlockNumberFor::<T>::zero(),
                 amount: 10u64.into(),
             },
         );
@@ -127,7 +127,7 @@ benchmarks! {
         IdtyQuota::<T>::insert(
             idty_id,
             Quota {
-                last_use: T::BlockNumber::zero(),
+                last_use: BlockNumberFor::<T>::zero(),
                 amount: 10u64.into(),
             },
         );

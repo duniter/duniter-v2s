@@ -1,26 +1,25 @@
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2023-12-26 (Y/M/D)
+//! DATE: 2024-01-24 (Y/M/D)
 //! HOSTNAME: `bgallois-ms7d43`, CPU: `12th Gen Intel(R) Core(TM) i3-12100F`
 //!
-//! DATABASE: `ParityDb`, RUNTIME: `ĞDev`
+//! DATABASE: `ParityDb`, RUNTIME: `Ğdev Local Testnet`
 //! BLOCK-NUM: `BlockId::Number(0)`
 //! SKIP-WRITE: `false`, SKIP-READ: `false`, WARMUPS: `1`
 //! STATE-VERSION: `V1`, STATE-CACHE-SIZE: ``
-//! WEIGHT-PATH: `runtime/common/src/weights/`
+//! WEIGHT-PATH: `./runtime/common/src/weights/`
 //! METRIC: `Average`, WEIGHT-MUL: `2.0`, WEIGHT-ADD: `0`
 
 // Executed Command:
 //   target/release/duniter
 //   benchmark
 //   storage
-//   --chain=gdev
+//   --chain=dev
 //   --mul=2
+//   --weight-path=./runtime/common/src/weights/
 //   --state-version=1
-//   --weight-path
-//   runtime/common/src/weights/
 
-/// Storage DB weights for the `ĞDev` runtime and `ParityDb`.
+/// Storage DB weights for the `Ğdev Local Testnet` runtime and `ParityDb`.
 pub mod constants {
 	use frame_support::weights::constants;
 	use sp_core::parameter_types;
@@ -34,31 +33,31 @@ pub mod constants {
 			/// Calculated by multiplying the *Average* of all values with `2.0` and adding `0`.
 			///
 			/// Stats nanoseconds:
-			///   Min, Max: 1_139, 113_508
-			///   Average:  3_659
-			///   Median:   3_601
-			///   Std-Dev:  820.57
+			///   Min, Max: 951, 1_277_318
+			///   Average:  11_592
+			///   Median:   1_567
+			///   Std-Dev:  111445.56
 			///
 			/// Percentiles nanoseconds:
-			///   99th: 5_347
-			///   95th: 4_760
-			///   75th: 4_064
-			read: 7_318 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			///   99th: 10_193
+			///   95th: 2_928
+			///   75th: 1_855
+			read: 23_184 * constants::WEIGHT_REF_TIME_PER_NANOS,
 
 			/// Time to write one storage item.
 			/// Calculated by multiplying the *Average* of all values with `2.0` and adding `0`.
 			///
 			/// Stats nanoseconds:
-			///   Min, Max: 4_337, 511_811
-			///   Average:  25_862
-			///   Median:   24_782
-			///   Std-Dev:  5817.92
+			///   Min, Max: 3_824, 6_440_944
+			///   Average:  58_440
+			///   Median:   8_907
+			///   Std-Dev:  561954.34
 			///
 			/// Percentiles nanoseconds:
-			///   99th: 47_862
-			///   95th: 37_929
-			///   75th: 27_045
-			write: 51_724 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			///   99th: 18_256
+			///   95th: 13_376
+			///   75th: 10_858
+			write: 116_880 * constants::WEIGHT_REF_TIME_PER_NANOS,
 		};
 	}
 

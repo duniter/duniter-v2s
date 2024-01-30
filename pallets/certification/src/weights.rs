@@ -42,6 +42,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(7 as u64))
             .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
+
     // Storage: Identity Identities (r:2 w:0)
     // Storage: Cert StorageIdtyCertMeta (r:2 w:2)
     // Storage: Parameters ParametersStorage (r:1 w:0)
@@ -53,6 +54,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(7 as u64))
             .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
+
     // Storage: Cert CertsByReceiver (r:1 w:1)
     // Storage: Cert StorageIdtyCertMeta (r:2 w:2)
     // Storage: Parameters ParametersStorage (r:1 w:0)
@@ -63,6 +65,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(5 as u64))
             .saturating_add(RocksDbWeight::get().writes(3 as u64))
     }
+
     // Storage: Cert CertsByReceiver (r:1 w:1)
     // Storage: Cert StorageIdtyCertMeta (r:2 w:2)
     // Storage: Parameters ParametersStorage (r:1 w:0)
@@ -78,18 +81,21 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
             .saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
     }
+
     fn on_initialize() -> Weight {
         // Minimum execution time: 259_247 nanoseconds.
         Weight::from_parts(269_348_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(7 as u64))
             .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
+
     fn do_remove_cert_noop() -> Weight {
         // Minimum execution time: 259_247 nanoseconds.
         Weight::from_parts(269_348_000 as u64, 0)
             .saturating_add(RocksDbWeight::get().reads(7 as u64))
             .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
+
     fn do_remove_cert() -> Weight {
         // Minimum execution time: 259_247 nanoseconds.
         Weight::from_parts(269_348_000 as u64, 0)

@@ -25,8 +25,8 @@ use frame_support::{
     weights::{constants::RocksDbWeight, Weight},
 };
 use sp_core::H256;
+use sp_runtime::BuildStorage;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
@@ -54,56 +54,51 @@ impl<Reporter, Offender> pallet_offences::OnOffenceHandler<Reporter, Offender, W
     }
 }
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
 frame_support::construct_runtime!(
-    pub struct Runtime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Offences: pallet_offences::{Pallet, Storage, Event},
+    pub struct Runtime {
+        System: frame_system,
+        Offences: pallet_offences,
     }
 );
 
 impl frame_system::Config for Runtime {
+    type AccountData = ();
+    type AccountId = u64;
     type BaseCallFilter = frame_support::traits::Everything;
-    type BlockWeights = ();
+    type Block = Block;
+    type BlockHashCount = ConstU64<250>;
     type BlockLength = ();
+    type BlockWeights = ();
     type DbWeight = RocksDbWeight;
-    type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
-    type BlockNumber = u64;
-    type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = ConstU64<250>;
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = ();
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
     type MaxConsumers = ConstU32<16>;
+    type Nonce = u64;
+    type OnKilledAccount = ();
+    type OnNewAccount = ();
+    type OnSetCode = ();
+    type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeTask = ();
+    type SS58Prefix = ();
+    type SystemWeightInfo = ();
+    type Version = ();
 }
 
 impl Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type IdentificationTuple = u64;
     type OnOffenceHandler = OnOffenceHandler;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let t = frame_system::GenesisConfig::default()
-        .build_storage::<Runtime>()
+    let t = frame_system::GenesisConfig::<Runtime>::default()
+        .build_storage()
         .unwrap();
     let mut ext = sp_io::TestExternalities::new(t);
     ext.execute_with(|| System::set_block_number(1));
@@ -131,8 +126,9 @@ pub struct Offence {
 }
 
 impl pallet_offences::Offence<u64> for Offence {
-    const ID: pallet_offences::Kind = KIND;
     type TimeSlot = u128;
+
+    const ID: pallet_offences::Kind = KIND;
 
     fn offenders(&self) -> Vec<u64> {
         self.offenders.clone()

@@ -17,6 +17,7 @@
 use super::gdev;
 use super::gdev::runtime_types::pallet_identity;
 use super::*;
+use crate::gdev::runtime_types::pallet_identity::types::IdtyName;
 use crate::DuniterWorld;
 use sp_keyring::AccountKeyring;
 use subxt::tx::PairSigner;
@@ -30,7 +31,7 @@ type IdtyValue =
 // submit extrinsics
 
 pub async fn create_identity(
-    client: &Client,
+    client: &FullClient,
     from: AccountKeyring,
     to: AccountKeyring,
 ) -> Result<()> {
@@ -38,13 +39,14 @@ pub async fn create_identity(
     let to = to.to_account_id();
 
     let _events = create_block_with_extrinsic(
-        client,
+        &client.rpc,
         client
+            .client
             .tx()
             .create_signed(
                 &gdev::tx().identity().create_identity(to.into()),
                 &from,
-                BaseExtrinsicParamsBuilder::new(),
+                SubstrateExtrinsicParamsBuilder::new().build(),
             )
             .await?,
     )
@@ -53,17 +55,23 @@ pub async fn create_identity(
     Ok(())
 }
 
-pub async fn confirm_identity(client: &Client, from: AccountKeyring, pseudo: String) -> Result<()> {
+pub async fn confirm_identity(
+    client: &FullClient,
+    from: AccountKeyring,
+    pseudo: String,
+) -> Result<()> {
     let from = PairSigner::new(from.pair());
+    let pseudo: IdtyName = IdtyName(pseudo.as_bytes().to_vec());
 
     let _events = create_block_with_extrinsic(
-        client,
+        &client.rpc,
         client
+            .client
             .tx()
             .create_signed(
                 &gdev::tx().identity().confirm_identity(pseudo),
                 &from,
-                BaseExtrinsicParamsBuilder::new(),
+                SubstrateExtrinsicParamsBuilder::new().build(),
             )
             .await?,
     )

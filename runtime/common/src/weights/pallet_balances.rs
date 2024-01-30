@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -48,10 +47,10 @@ use core::marker::PhantomData;
 /// Weight functions for `pallet_balances`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
-	/// Storage: Account PendingNewAccounts (r:0 w:1)
-	/// Proof Skipped: Account PendingNewAccounts (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
+	/// Storage: `Account::PendingNewAccounts` (r:0 w:1)
+	/// Proof: `Account::PendingNewAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn transfer_allow_death() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
@@ -76,30 +75,6 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
-	fn force_set_balance_creating() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `101`
-		//  Estimated: `3591`
-		// Minimum execution time: 27_197_000 picoseconds.
-		Weight::from_parts(30_641_000, 0)
-			.saturating_add(Weight::from_parts(0, 3591))
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
-	fn force_set_balance_killing() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `101`
-		//  Estimated: `3591`
-		// Minimum execution time: 38_585_000 picoseconds.
-		Weight::from_parts(42_563_000, 0)
-			.saturating_add(Weight::from_parts(0, 3591))
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
 	/// Storage: System Account (r:2 w:2)
 	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
 	/// Storage: Account PendingNewAccounts (r:0 w:1)
@@ -114,22 +89,46 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
-	/// Storage: Account PendingNewAccounts (r:0 w:1)
-	/// Proof Skipped: Account PendingNewAccounts (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
+	fn force_set_balance_creating() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `101`
+		//  Estimated: `3591`
+		// Minimum execution time: 9_693_000 picoseconds.
+		Weight::from_parts(10_211_000, 0)
+			.saturating_add(Weight::from_parts(0, 3591))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
+	fn force_set_balance_killing() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `101`
+		//  Estimated: `3591`
+		// Minimum execution time: 14_040_000 picoseconds.
+		Weight::from_parts(14_480_000, 0)
+			.saturating_add(Weight::from_parts(0, 3591))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
+	/// Storage: `Account::PendingNewAccounts` (r:0 w:1)
+	/// Proof: `Account::PendingNewAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn transfer_all() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `3591`
-		// Minimum execution time: 81_086_000 picoseconds.
-		Weight::from_parts(84_267_000, 0)
+		// Minimum execution time: 38_912_000 picoseconds.
+		Weight::from_parts(40_985_000, 0)
 			.saturating_add(Weight::from_parts(0, 3591))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	fn force_unreserve() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `101`

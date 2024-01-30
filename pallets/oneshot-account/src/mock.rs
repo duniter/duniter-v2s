@@ -20,27 +20,22 @@ use frame_system as system;
 use pallet_transaction_payment::CurrencyAdapter;
 use sp_core::{ConstU32, H256};
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     BuildStorage,
 };
 use sp_std::convert::{TryFrom, TryInto};
 
 type Balance = u64;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
-        OneshotAccount: pallet_oneshot_account::{Pallet, Call, Storage, Event<T>},
+        System: frame_system,
+        Balances: pallet_balances,
+        TransactionPayment: pallet_transaction_payment,
+        OneshotAccount: pallet_oneshot_account,
     }
 );
 
@@ -50,30 +45,30 @@ parameter_types! {
 }
 
 impl system::Config for Test {
+    type AccountData = pallet_balances::AccountData<Balance>;
+    type AccountId = u64;
     type BaseCallFilter = Everything;
-    type BlockWeights = ();
+    type Block = Block;
+    type BlockHashCount = BlockHashCount;
     type BlockLength = ();
+    type BlockWeights = ();
     type DbWeight = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = SS58Prefix;
-    type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type Nonce = u64;
+    type OnKilledAccount = ();
+    type OnNewAccount = ();
+    type OnSetCode = ();
+    type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeTask = ();
+    type SS58Prefix = SS58Prefix;
+    type SystemWeightInfo = ();
+    type Version = ();
 }
 
 parameter_types! {
@@ -82,27 +77,28 @@ parameter_types! {
 }
 
 impl pallet_balances::Config for Test {
+    type AccountStore = System;
     type Balance = Balance;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<0>;
+    type MaxHolds = ConstU32<0>;
     type MaxLocks = MaxLocks;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type RuntimeEvent = RuntimeEvent;
-    type HoldIdentifier = ();
-    type FreezeIdentifier = ();
-    type MaxHolds = ConstU32<0>;
-    type MaxFreezes = ConstU32<0>;
+    type RuntimeFreezeReason = ();
+    type RuntimeHoldReason = ();
+    type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
 }
 impl pallet_transaction_payment::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
+    type FeeMultiplierUpdate = ();
+    type LengthToFee = IdentityFee<u64>;
     type OnChargeTransaction = OneshotAccount;
     type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightToFee = IdentityFee<u64>;
-    type LengthToFee = IdentityFee<u64>;
-    type FeeMultiplierUpdate = ();
 }
 impl pallet_oneshot_account::Config for Test {
     type Currency = Balances;
@@ -120,9 +116,10 @@ impl frame_support::traits::OnUnbalanced<NegativeImbalance> for HandleFees {
 // Build genesis storage according to the mock runtime.
 #[allow(dead_code)]
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    GenesisConfig {
+    RuntimeGenesisConfig {
         system: SystemConfig::default(),
         balances: BalancesConfig::default(), // FIXME (explicit absence of oneshot account in genesis)
+        transaction_payment: TransactionPaymentConfig::default(),
     }
     .build_storage()
     .unwrap()

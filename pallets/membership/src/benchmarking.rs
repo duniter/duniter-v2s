@@ -34,7 +34,7 @@ benchmarks! {
     where_clause {
         where
             T::IdtyId: From<u32>,
-            <T as frame_system::Config>::BlockNumber: From<u32>,
+            BlockNumberFor<T>: From<u32>,
     }
 
     // TODO membership add and renewal should be included to distance on_new_session as worst case scenario
@@ -52,7 +52,7 @@ benchmarks! {
         let mut idties: Vec<T::IdtyId> = Vec::new();
         for j in 1..i+1 {
             let j: T::IdtyId = j.into();
-            Membership::<T>::insert(j, MembershipData::<T::BlockNumber>::default());
+            Membership::<T>::insert(j, MembershipData::<BlockNumberFor<T>>::default());
             idties.push(j);
         }
         MembershipsExpireOn::<T>::insert(block_number, idties);

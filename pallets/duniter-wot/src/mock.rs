@@ -19,15 +19,16 @@ use crate::{self as pallet_duniter_wot};
 use frame_support::{parameter_types, traits::Everything};
 use frame_system as system;
 use sp_core::H256;
+use sp_runtime::BuildStorage;
 use sp_runtime::{
-    testing::{Header, TestSignature, UintAuthorityId},
+    testing::{TestSignature, UintAuthorityId},
     traits::{BlakeTwo256, IdentityLookup},
 };
+use sp_state_machine::BasicExternalities;
 use std::collections::BTreeMap;
 
 type AccountId = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
 pub struct IdentityIndexOf<T: pallet_identity::Config>(PhantomData<T>);
 impl<T: pallet_identity::Config> sp_runtime::traits::Convert<T::AccountId, Option<T::IdtyIndex>>
@@ -40,16 +41,12 @@ impl<T: pallet_identity::Config> sp_runtime::traits::Convert<T::AccountId, Optio
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        DuniterWot: pallet_duniter_wot::{Pallet},
-        Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Membership: pallet_membership::{Pallet, Config<T>, Storage, Event<T>},
-        Cert: pallet_certification::{Pallet, Call, Config<T>, Storage, Event<T>},
+    pub enum Test {
+        System: frame_system,
+        DuniterWot: pallet_duniter_wot,
+        Identity: pallet_identity,
+        Membership: pallet_membership,
+        Cert: pallet_certification,
     }
 );
 
@@ -60,30 +57,30 @@ parameter_types! {
 }
 
 impl system::Config for Test {
+    type AccountData = ();
+    type AccountId = AccountId;
     type BaseCallFilter = Everything;
-    type BlockWeights = ();
+    type Block = Block;
+    type BlockHashCount = BlockHashCount;
     type BlockLength = ();
+    type BlockWeights = ();
     type DbWeight = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = ();
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = SS58Prefix;
-    type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type Nonce = u64;
+    type OnKilledAccount = ();
+    type OnNewAccount = ();
+    type OnSetCode = ();
+    type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeTask = ();
+    type SS58Prefix = SS58Prefix;
+    type SystemWeightInfo = ();
+    type Version = ();
 }
 
 // DuniterWot
@@ -94,9 +91,9 @@ parameter_types! {
 }
 
 impl pallet_duniter_wot::Config for Test {
-    type MinCertForMembership = MinCertForMembership;
-    type MinCertForCreateIdtyRight = MinCertForCreateIdtyRight;
     type FirstIssuableOn = FirstIssuableOn;
+    type MinCertForCreateIdtyRight = MinCertForCreateIdtyRight;
+    type MinCertForMembership = MinCertForMembership;
 }
 
 // Identity
@@ -117,21 +114,21 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
 }
 
 impl pallet_identity::Config for Test {
-    type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
-    type ConfirmPeriod = ConfirmPeriod;
-    type CheckIdtyCallAllowed = DuniterWot;
-    type IdtyCreationPeriod = IdtyCreationPeriod;
-    type ValidationPeriod = ValidationPeriod;
-    type AutorevocationPeriod = AutorevocationPeriod;
-    type DeletionPeriod = DeletionPeriod;
-    type IdtyData = ();
-    type IdtyNameValidator = IdtyNameValidatorTestImpl;
-    type IdtyIndex = IdtyIndex;
     type AccountLinker = ();
-    type Signer = UintAuthorityId;
-    type Signature = TestSignature;
+    type AutorevocationPeriod = AutorevocationPeriod;
+    type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
+    type CheckIdtyCallAllowed = DuniterWot;
+    type ConfirmPeriod = ConfirmPeriod;
+    type DeletionPeriod = DeletionPeriod;
+    type IdtyCreationPeriod = IdtyCreationPeriod;
+    type IdtyData = ();
+    type IdtyIndex = IdtyIndex;
+    type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type OnIdtyChange = DuniterWot;
     type RuntimeEvent = RuntimeEvent;
+    type Signature = TestSignature;
+    type Signer = UintAuthorityId;
+    type ValidationPeriod = ValidationPeriod;
     type WeightInfo = ();
 }
 
@@ -142,17 +139,17 @@ parameter_types! {
 }
 
 impl pallet_membership::Config for Test {
+    type AccountIdOf = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkSetupHandler = ();
     type CheckMembershipOpAllowed = DuniterWot;
     type IdtyId = IdtyIndex;
     type IdtyIdOf = IdentityIndexOf<Self>;
-    type AccountIdOf = ();
     type MembershipPeriod = MembershipPeriod;
     type MembershipRenewalPeriod = MembershipRenewalPeriod;
     type OnEvent = DuniterWot;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkSetupHandler = ();
 }
 
 // Cert
@@ -165,24 +162,24 @@ parameter_types! {
 
 impl pallet_certification::Config for Test {
     type CertPeriod = CertPeriod;
-    type IdtyIndex = IdtyIndex;
-    type IdtyAttr = Identity;
     type CheckCertAllowed = DuniterWot;
+    type IdtyAttr = Identity;
+    type IdtyIndex = IdtyIndex;
     type MaxByIssuer = MaxByIssuer;
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = DuniterWot;
     type OnRemovedCert = DuniterWot;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
     type ValidityPeriod = ValidityPeriod;
+    type WeightInfo = ();
 }
 
 pub const NAMES: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"];
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext(initial_identities_len: usize) -> sp_io::TestExternalities {
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
+    let mut t = frame_system::GenesisConfig::<Test>::default()
+        .build_storage()
         .unwrap();
 
     pallet_identity::GenesisConfig::<Test> {
@@ -226,7 +223,7 @@ pub fn new_test_ext(initial_identities_len: usize) -> sp_io::TestExternalities {
     .assimilate_storage(&mut t)
     .unwrap();
 
-    frame_support::BasicExternalities::execute_with_storage(&mut t, || {
+    BasicExternalities::execute_with_storage(&mut t, || {
         // manually increment genesis identities sufficient counter
         // In real world, this is done by pallet-identity
         for i in 1..=initial_identities_len {

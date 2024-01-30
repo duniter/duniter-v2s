@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -48,8 +47,8 @@ use core::marker::PhantomData;
 /// Weight functions for `pallet_quota`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_quota::WeightInfo for WeightInfo<T> {
-	/// Storage: Quota RefundQueue (r:1 w:1)
-	/// Proof: Quota RefundQueue (max_values: Some(1), max_size: Some(11266), added: 11761, mode: MaxEncodedLen)
+	/// Storage: `Quota::RefundQueue` (r:1 w:1)
+	/// Proof: `Quota::RefundQueue` (`max_values`: Some(1), `max_size`: Some(11266), added: 11761, mode: `MaxEncodedLen`)
 	fn queue_refund() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `11288`
@@ -60,8 +59,8 @@ impl<T: frame_system::Config> pallet_quota::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Quota IdtyQuota (r:1 w:1)
-	/// Proof: Quota IdtyQuota (max_values: None, max_size: Some(24), added: 2499, mode: MaxEncodedLen)
+	/// Storage: `Quota::IdtyQuota` (r:1 w:1)
+	/// Proof: `Quota::IdtyQuota` (`max_values`: None, `max_size`: Some(24), added: 2499, mode: `MaxEncodedLen`)
 	fn spend_quota() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `139`
@@ -72,10 +71,10 @@ impl<T: frame_system::Config> pallet_quota::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Quota IdtyQuota (r:1 w:1)
-	/// Proof: Quota IdtyQuota (max_values: None, max_size: Some(24), added: 2499, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:0)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `Quota::IdtyQuota` (r:1 w:1)
+	/// Proof: `Quota::IdtyQuota` (`max_values`: None, `max_size`: Some(24), added: 2499, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:2 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	fn try_refund() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `139`
@@ -86,10 +85,10 @@ impl<T: frame_system::Config> pallet_quota::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Quota IdtyQuota (r:1 w:1)
-	/// Proof: Quota IdtyQuota (max_values: None, max_size: Some(24), added: 2499, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:0)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `Quota::IdtyQuota` (r:1 w:1)
+	/// Proof: `Quota::IdtyQuota` (`max_values`: None, `max_size`: Some(24), added: 2499, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:2 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	fn do_refund() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `139`
@@ -100,8 +99,8 @@ impl<T: frame_system::Config> pallet_quota::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Quota RefundQueue (r:1 w:1)
-	/// Proof: Quota RefundQueue (max_values: Some(1), max_size: Some(11266), added: 11761, mode: MaxEncodedLen)
+	/// Storage: `Quota::RefundQueue` (r:1 w:1)
+	/// Proof: `Quota::RefundQueue` (`max_values`: Some(1), `max_size`: Some(11266), added: 11761, mode: `MaxEncodedLen`)
 	fn on_process_refund_queue() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `43`
@@ -112,12 +111,12 @@ impl<T: frame_system::Config> pallet_quota::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Quota RefundQueue (r:1 w:1)
-	/// Proof: Quota RefundQueue (max_values: Some(1), max_size: Some(11266), added: 11761, mode: Measured)
-	/// Storage: Quota IdtyQuota (r:1 w:1)
-	/// Proof: Quota IdtyQuota (max_values: None, max_size: Some(24), added: 2499, mode: Measured)
-	/// Storage: System Account (r:1 w:0)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: Measured)
+	/// Storage: `Quota::RefundQueue` (r:1 w:1)
+	/// Proof: `Quota::RefundQueue` (`max_values`: Some(1), `max_size`: Some(11266), added: 11761, mode: `Measured`)
+	/// Storage: `Quota::IdtyQuota` (r:1 w:1)
+	/// Proof: `Quota::IdtyQuota` (`max_values`: None, `max_size`: Some(24), added: 2499, mode: `Measured`)
+	/// Storage: `System::Account` (r:2 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `Measured`)
 	/// The range of component `i` is `[1, 256]`.
 	fn on_process_refund_queue_elements(i: u32, ) -> Weight {
 		// Proof Size summary in bytes:

@@ -15,10 +15,11 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use common_runtime::{AccountId, Balance, Block, BlockNumber, Hash, Header, Index};
+use sc_client_api::MerkleValue;
 use sc_client_api::{
     AuxStore, Backend as BackendT, BlockchainEvents, KeysIter, PairsIter, UsageProvider,
 };
-use sp_api::{CallApiAt, NumberFor, ProvideRuntimeApi};
+use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
 use sp_consensus::BlockStatus;
 use sp_core::{Encode, Pair};
@@ -40,15 +41,15 @@ pub trait AbstractClient<Block, Backend>:
     + Sync
     + ProvideRuntimeApi<Block>
     + HeaderBackend<Block>
-    + CallApiAt<Block, StateBackend = Backend::State>
+    + CallApiAt<Block>
     + AuxStore
     + UsageProvider<Block>
     + HeaderMetadata<Block, Error = sp_blockchain::Error>
 where
     Block: BlockT,
     Backend: BackendT<Block>,
-    Backend::State: sp_api::StateBackend<BlakeTwo256>,
-    Self::Api: RuntimeApiCollection<StateBackend = Backend::State>,
+    Backend::State: sc_client_api::StateBackend<BlakeTwo256>,
+    Self::Api: RuntimeApiCollection,
 {
 }
 
@@ -56,7 +57,7 @@ impl<Block, Backend, Client> AbstractClient<Block, Backend> for Client
 where
     Block: BlockT,
     Backend: BackendT<Block>,
-    Backend::State: sp_api::StateBackend<BlakeTwo256>,
+    Backend::State: sc_client_api::StateBackend<BlakeTwo256>,
     Client: BlockchainEvents<Block>
         + ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
@@ -65,9 +66,9 @@ where
         + Sized
         + Send
         + Sync
-        + CallApiAt<Block, StateBackend = Backend::State>
+        + CallApiAt<Block>
         + HeaderMetadata<Block, Error = sp_blockchain::Error>,
-    Client::Api: RuntimeApiCollection<StateBackend = Backend::State>,
+    Client::Api: RuntimeApiCollection,
 {
 }
 
@@ -102,10 +103,9 @@ pub trait ExecuteWithClient {
     /// Execute whatever should be executed with the given client instance.
     fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
     where
-        <Api as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
         Backend: sc_client_api::Backend<Block> + 'static,
-        Backend::State: sp_api::StateBackend<BlakeTwo256>,
-        Api: crate::service::RuntimeApiCollection<StateBackend = Backend::State>,
+        Backend::State: sc_client_api::StateBackend<BlakeTwo256>,
+        Api: crate::service::RuntimeApiCollection,
         Client: AbstractClient<Block, Backend, Api = Api> + 'static;
 }
 
@@ -125,12 +125,9 @@ pub trait RuntimeApiCollection:
     + sp_session::SessionKeys<Block>
     + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
     + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>
-where
-    <Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
 }
-impl<Api> RuntimeApiCollection for Api
-where
+impl<Api> RuntimeApiCollection for Api where
     Api: pallet_grandpa::fg_primitives::GrandpaApi<Block>
         + pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>
         + sp_api::ApiExt<Block>
@@ -141,8 +138,7 @@ where
         + sp_offchain::OffchainWorkerApi<Block>
         + sp_session::SessionKeys<Block>
         + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
-        + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
-    <Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
+        + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>
 {
 }
 
@@ -150,11 +146,11 @@ where
 #[derive(Clone)]
 pub enum Client {
     #[cfg(feature = "g1")]
-    G1(Arc<super::FullClient<g1_runtime::RuntimeApi, super::G1Executor>>),
+    G1(Arc<super::FullClient<g1_runtime::RuntimeApi>>),
     #[cfg(feature = "gtest")]
-    GTest(Arc<super::FullClient<gtest_runtime::RuntimeApi, super::GTestExecutor>>),
+    GTest(Arc<super::FullClient<gtest_runtime::RuntimeApi>>),
     #[cfg(feature = "gdev")]
-    GDev(Arc<super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>>),
+    GDev(Arc<super::FullClient<gdev_runtime::RuntimeApi>>),
 }
 
 macro_rules! with_client {
@@ -201,24 +197,22 @@ impl ClientHandle for Client {
 }
 
 #[cfg(feature = "g1")]
-impl From<Arc<super::FullClient<g1_runtime::RuntimeApi, super::G1Executor>>> for Client {
-    fn from(client: Arc<super::FullClient<g1_runtime::RuntimeApi, super::G1Executor>>) -> Self {
+impl From<Arc<super::FullClient<g1_runtime::RuntimeApi>>> for Client {
+    fn from(client: Arc<super::FullClient<g1_runtime::RuntimeApi>>) -> Self {
         Self::G1(client)
     }
 }
 
 #[cfg(feature = "gtest")]
-impl From<Arc<super::FullClient<gtest_runtime::RuntimeApi, super::GTestExecutor>>> for Client {
-    fn from(
-        client: Arc<super::FullClient<gtest_runtime::RuntimeApi, super::GTestExecutor>>,
-    ) -> Self {
+impl From<Arc<super::FullClient<gtest_runtime::RuntimeApi>>> for Client {
+    fn from(client: Arc<super::FullClient<gtest_runtime::RuntimeApi>>) -> Self {
         Self::GTest(client)
     }
 }
 
 #[cfg(feature = "gdev")]
-impl From<Arc<super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>>> for Client {
-    fn from(client: Arc<super::FullClient<gdev_runtime::RuntimeApi, super::GDevExecutor>>) -> Self {
+impl From<Arc<super::FullClient<gdev_runtime::RuntimeApi>>> for Client {
+    fn from(client: Arc<super::FullClient<gdev_runtime::RuntimeApi>>) -> Self {
         Self::GDev(client)
     }
 }
@@ -271,7 +265,7 @@ impl sc_client_api::BlockBackend<Block> for Client {
 
     fn block_hash(
         &self,
-        number: NumberFor<Block>,
+        number: sp_runtime::traits::NumberFor<Block>,
     ) -> sp_blockchain::Result<Option<<Block as BlockT>::Hash>> {
         match_client!(self, block_hash(number))
     }
@@ -320,11 +314,11 @@ use g1_runtime as runtime;
 #[cfg(feature = "gdev")]
 use gdev_runtime as runtime;
 #[cfg(feature = "gdev")]
-type FullClient = super::FullClient<runtime::RuntimeApi, super::GDevExecutor>;
+type FullClient = super::FullClient<runtime::RuntimeApi>;
 #[cfg(feature = "gtest")]
 use gtest_runtime as runtime;
 #[cfg(feature = "gtest")]
-type FullClient = super::FullClient<runtime::RuntimeApi, super::GTestExecutor>;
+type FullClient = super::FullClient<runtime::RuntimeApi>;
 
 #[cfg(any(feature = "gdev", feature = "gtest"))]
 impl BenchmarkCallSigner<runtime::RuntimeCall, sp_core::sr25519::Pair> for FullClient {
@@ -382,9 +376,11 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for Client {
     fn pallet(&self) -> &str {
         "system"
     }
+
     fn extrinsic(&self) -> &str {
         "remark"
     }
+
     fn build(&self, nonce: u32) -> std::result::Result<sp_runtime::OpaqueExtrinsic, &'static str> {
         with_client! {
             self, client, {
@@ -404,6 +400,7 @@ impl sp_blockchain::HeaderBackend<Block> for Client {
     fn header(&self, hash: Hash) -> sp_blockchain::Result<Option<Header>> {
         match_client!(self, header(hash))
     }
+
     fn info(&self) -> sp_blockchain::Info<Block> {
         match_client!(self, info())
     }
@@ -491,6 +488,25 @@ impl sc_client_api::StorageProvider<Block, super::FullBackend> for Client {
         key: &StorageKey,
     ) -> sp_blockchain::Result<Option<<Block as BlockT>::Hash>> {
         match_client!(self, child_storage_hash(hash, child_info, key))
+    }
+
+    // Given a block's hash and a key, return the closest merkle value.
+    fn closest_merkle_value(
+        &self,
+        hash: <Block as BlockT>::Hash,
+        key: &StorageKey,
+    ) -> sp_blockchain::Result<Option<MerkleValue<<Block as BlockT>::Hash>>> {
+        match_client!(self, closest_merkle_value(hash, key))
+    }
+
+    // Given a block's hash and a key and a child storage key, return the closest merkle value.
+    fn child_closest_merkle_value(
+        &self,
+        hash: <Block as BlockT>::Hash,
+        child_info: &ChildInfo,
+        key: &StorageKey,
+    ) -> sp_blockchain::Result<Option<MerkleValue<<Block as BlockT>::Hash>>> {
+        match_client!(self, child_closest_merkle_value(hash, child_info, key))
     }
 }
 

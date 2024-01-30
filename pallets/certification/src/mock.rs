@@ -22,26 +22,19 @@ use frame_support::{
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     BuildStorage,
 };
 
 type AccountId = u64;
-type BlockNumber = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
 pub type IdtyIndex = u64;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        DefaultCertification: pallet_certification::{Pallet, Call, Event<T>, Storage, Config<T>},
+    pub enum Test {
+        System: frame_system,
+        DefaultCertification: pallet_certification,
     }
 );
 
@@ -51,30 +44,30 @@ parameter_types! {
 }
 
 impl system::Config for Test {
+    type AccountData = ();
+    type AccountId = AccountId;
     type BaseCallFilter = Everything;
-    type BlockWeights = ();
+    type Block = Block;
+    type BlockHashCount = BlockHashCount;
     type BlockLength = ();
+    type BlockWeights = ();
     type DbWeight = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = ();
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = SS58Prefix;
-    type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type Nonce = u64;
+    type OnKilledAccount = ();
+    type OnNewAccount = ();
+    type OnSetCode = ();
+    type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeTask = ();
+    type SS58Prefix = SS58Prefix;
+    type SystemWeightInfo = ();
+    type Version = ();
 }
 
 parameter_types! {
@@ -86,23 +79,23 @@ parameter_types! {
 
 impl pallet_certification::Config for Test {
     type CertPeriod = CertPeriod;
-    type IdtyIndex = IdtyIndex;
-    type IdtyAttr = ();
     type CheckCertAllowed = ();
+    type IdtyAttr = ();
+    type IdtyIndex = IdtyIndex;
     type MaxByIssuer = MaxByIssuer;
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = ();
     type OnRemovedCert = ();
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
     type ValidityPeriod = ValidityPeriod;
+    type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext(
     gen_conf: pallet_certification::GenesisConfig<Test>,
 ) -> sp_io::TestExternalities {
-    GenesisConfig {
+    RuntimeGenesisConfig {
         system: SystemConfig::default(),
         default_certification: gen_conf,
     }

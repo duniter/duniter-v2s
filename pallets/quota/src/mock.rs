@@ -28,7 +28,6 @@ use sp_runtime::traits::IdentifyAccount;
 use sp_runtime::traits::Verify;
 use sp_runtime::BuildStorage;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     MultiSignature, MultiSigner,
 };
@@ -36,7 +35,6 @@ use sp_runtime::{
 type BlockNumber = u64;
 type Balance = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Signature = MultiSignature;
 pub type AccountPublic = <Signature as Verify>::Signer;
 pub type AccountId = <AccountPublic as IdentifyAccount>::AccountId;
@@ -48,15 +46,11 @@ pub fn account(id: u8) -> AccountId {
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Quota: pallet_quota::{Pallet, Storage, Config<T>, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Identity: pallet_identity::{Pallet, Call, Storage, Config<T>, Event<T>},
+    pub enum Test{
+        System: frame_system,
+        Quota: pallet_quota,
+        Balances: pallet_balances,
+        Identity: pallet_identity,
     }
 );
 
@@ -72,10 +66,10 @@ parameter_types! {
     pub const MaxQuota: u64 = 1000;
 }
 impl Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type ReloadRate = ReloadRate;
     type MaxQuota = MaxQuota;
     type RefundAccount = TreasuryAccountId;
+    type ReloadRate = ReloadRate;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -85,30 +79,30 @@ parameter_types! {
     pub const SS58Prefix: u8 = 42;
 }
 impl system::Config for Test {
+    type AccountData = pallet_balances::AccountData<Balance>;
+    type AccountId = AccountId;
     type BaseCallFilter = Everything;
-    type BlockWeights = ();
+    type Block = Block;
+    type BlockHashCount = BlockHashCount;
     type BlockLength = ();
+    type BlockWeights = ();
     type DbWeight = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = SS58Prefix;
-    type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type Nonce = u64;
+    type OnKilledAccount = ();
+    type OnNewAccount = ();
+    type OnSetCode = ();
+    type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeTask = ();
+    type SS58Prefix = SS58Prefix;
+    type SystemWeightInfo = ();
+    type Version = ();
 }
 
 // BALANCES //
@@ -117,19 +111,20 @@ parameter_types! {
     pub const MaxLocks: u32 = 50;
 }
 impl pallet_balances::Config for Test {
+    type AccountStore = System;
     type Balance = Balance;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<0>;
+    type MaxHolds = ConstU32<0>;
     type MaxLocks = MaxLocks;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type RuntimeEvent = RuntimeEvent;
-    type HoldIdentifier = ();
-    type FreezeIdentifier = ();
-    type MaxHolds = ConstU32<0>;
-    type MaxFreezes = ConstU32<0>;
+    type RuntimeFreezeReason = ();
+    type RuntimeHoldReason = ();
+    type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
 }
 
 // IDENTITY //
@@ -148,27 +143,27 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
     }
 }
 impl pallet_identity::Config for Test {
-    type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
-    type ConfirmPeriod = ConfirmPeriod;
-    type ValidationPeriod = ValidationPeriod;
+    type AccountLinker = ();
     type AutorevocationPeriod = AutorevocationPeriod;
-    type DeletionPeriod = DeletionPeriod;
+    type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
     type CheckIdtyCallAllowed = ();
+    type ConfirmPeriod = ConfirmPeriod;
+    type DeletionPeriod = DeletionPeriod;
     type IdtyCreationPeriod = IdtyCreationPeriod;
     type IdtyData = ();
-    type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type IdtyIndex = u64;
-    type AccountLinker = ();
-    type Signer = AccountPublic;
-    type Signature = Signature;
+    type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type OnIdtyChange = ();
     type RuntimeEvent = RuntimeEvent;
+    type Signature = Signature;
+    type Signer = AccountPublic;
+    type ValidationPeriod = ValidationPeriod;
     type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext(gen_conf: pallet_quota::GenesisConfig<Test>) -> sp_io::TestExternalities {
-    GenesisConfig {
+    RuntimeGenesisConfig {
         system: SystemConfig::default(),
         balances: BalancesConfig::default(),
         quota: gen_conf,

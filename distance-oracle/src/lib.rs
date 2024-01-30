@@ -40,16 +40,15 @@ pub mod runtime {}
 
 pub enum RuntimeConfig {}
 impl subxt::config::Config for RuntimeConfig {
-    type Index = u32;
-    // type BlockNumber = u32;
-    type Hash = sp_core::H256;
-    type Hasher = subxt::config::substrate::BlakeTwo256;
     type AccountId = AccountId;
     type Address = subxt::ext::sp_runtime::MultiAddress<Self::AccountId, u32>;
+    type AssetId = ();
+    type ExtrinsicParams = subxt::config::substrate::SubstrateExtrinsicParams<Self>;
+    type Hash = sp_core::H256;
+    type Hasher = subxt::config::substrate::BlakeTwo256;
     type Header =
         subxt::config::substrate::SubstrateHeader<u32, subxt::config::substrate::BlakeTwo256>;
     type Signature = subxt::ext::sp_runtime::MultiSignature;
-    type ExtrinsicParams = subxt::config::extrinsic_params::BaseExtrinsicParams<Self, Tip>;
 }
 
 #[derive(Copy, Clone, Debug, Default, Encode)]
@@ -172,7 +171,10 @@ pub async fn run(
 
     if handle_fs {
         // Stop if already evaluated
-        if evaluation_result_path.try_exists().unwrap() {
+        if evaluation_result_path
+            .try_exists()
+            .expect("Result path unavailable")
+        {
             info!("Nothing to do: File already exists");
             return None;
         }
@@ -192,7 +194,11 @@ pub async fn run(
     let mut members = FnvHashMap::<IdtyIndex, u32>::default();
 
     let mut members_iter = api::member_iter(client, evaluation_block).await;
-    while let Some(member_idty) = members_iter.next().await.unwrap() {
+    while let Some(member_idty) = members_iter
+        .next()
+        .await
+        .expect("Cannot fetch next members")
+    {
         members.insert(member_idty, 0);
     }
 

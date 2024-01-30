@@ -10,10 +10,10 @@ version = '3.0.0'
 
 [dev-dependencies]
 anyhow = "1.0"
+countmap = "0.2.0"
 hex-literal = "0.4"
 parity-scale-codec = "3.4.0"
-sp-core = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false }
-subxt = { git = 'https://github.com/duniter/subxt', branch = 'duniter-substrate-v0.9.42', default-features = false, features = ["jsonrpsee-ws"] }
+sp-core = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
+sp-runtime = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false, features = ["std"] } # https://github.com/paritytech/subxt/issues/437
+subxt = { git = 'https://github.com/duniter/subxt', branch = 'subxt-v0.34.0-duniter-substrate-v1.6.0', default-features = false, features = ["substrate-compat", "native", "jsonrpsee"] }
 tokio = { version = "1.28", features = ["macros", "time", "rt-multi-thread"], default-features = false }
-sp-runtime = {  git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false , features = ["std"] } # https://github.com/paritytech/subxt/issues/437
-countmap = "0.2.0"

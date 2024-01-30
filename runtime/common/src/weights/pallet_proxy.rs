@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -48,8 +47,8 @@ use core::marker::PhantomData;
 /// Weight functions for `pallet_proxy`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_proxy::WeightInfo for WeightInfo<T> {
-	/// Storage: Proxy Proxies (r:1 w:0)
-	/// Proof: Proxy Proxies (max_values: None, max_size: Some(1233), added: 3708, mode: MaxEncodedLen)
+	/// Storage: `Proxy::Proxies` (r:1 w:0)
+	/// Proof: `Proxy::Proxies` (`max_values`: None, `max_size`: Some(1233), added: 3708, mode: `MaxEncodedLen`)
 	/// The range of component `p` is `[1, 31]`.
 	fn proxy(p: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -62,12 +61,12 @@ impl<T: frame_system::Config> pallet_proxy::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(191_683, 0).saturating_mul(p.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 	}
-	/// Storage: Proxy Proxies (r:1 w:0)
-	/// Proof: Proxy Proxies (max_values: None, max_size: Some(1233), added: 3708, mode: MaxEncodedLen)
-	/// Storage: Proxy Announcements (r:1 w:1)
-	/// Proof: Proxy Announcements (max_values: None, max_size: Some(2225), added: 4700, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `Proxy::Proxies` (r:1 w:0)
+	/// Proof: `Proxy::Proxies` (`max_values`: None, `max_size`: Some(1233), added: 3708, mode: `MaxEncodedLen`)
+	/// Storage: `Proxy::Announcements` (r:1 w:1)
+	/// Proof: `Proxy::Announcements` (`max_values`: None, `max_size`: Some(2225), added: 4700, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	/// The range of component `a` is `[0, 31]`.
 	/// The range of component `p` is `[1, 31]`.
 	fn proxy_announced(a: u32, p: u32, ) -> Weight {
@@ -84,10 +83,10 @@ impl<T: frame_system::Config> pallet_proxy::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: Proxy Announcements (r:1 w:1)
-	/// Proof: Proxy Announcements (max_values: None, max_size: Some(2225), added: 4700, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `Proxy::Announcements` (r:1 w:1)
+	/// Proof: `Proxy::Announcements` (`max_values`: None, `max_size`: Some(2225), added: 4700, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	/// The range of component `a` is `[0, 31]`.
 	/// The range of component `p` is `[1, 31]`.
 	fn remove_announcement(_a: u32, _p: u32, ) -> Weight {
@@ -100,10 +99,10 @@ impl<T: frame_system::Config> pallet_proxy::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: Proxy Announcements (r:1 w:1)
-	/// Proof: Proxy Announcements (max_values: None, max_size: Some(2225), added: 4700, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `Proxy::Announcements` (r:1 w:1)
+	/// Proof: `Proxy::Announcements` (`max_values`: None, `max_size`: Some(2225), added: 4700, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	/// The range of component `a` is `[0, 31]`.
 	/// The range of component `p` is `[1, 31]`.
 	fn reject_announcement(a: u32, p: u32, ) -> Weight {
@@ -120,12 +119,12 @@ impl<T: frame_system::Config> pallet_proxy::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: Proxy Proxies (r:1 w:0)
-	/// Proof: Proxy Proxies (max_values: None, max_size: Some(1233), added: 3708, mode: MaxEncodedLen)
-	/// Storage: Proxy Announcements (r:1 w:1)
-	/// Proof: Proxy Announcements (max_values: None, max_size: Some(2225), added: 4700, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `Proxy::Proxies` (r:1 w:0)
+	/// Proof: `Proxy::Proxies` (`max_values`: None, `max_size`: Some(1233), added: 3708, mode: `MaxEncodedLen`)
+	/// Storage: `Proxy::Announcements` (r:1 w:1)
+	/// Proof: `Proxy::Announcements` (`max_values`: None, `max_size`: Some(2225), added: 4700, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	/// The range of component `a` is `[0, 31]`.
 	/// The range of component `p` is `[1, 31]`.
 	fn announce(a: u32, _p: u32, ) -> Weight {
@@ -140,8 +139,8 @@ impl<T: frame_system::Config> pallet_proxy::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: Proxy Proxies (r:1 w:1)
-	/// Proof: Proxy Proxies (max_values: None, max_size: Some(1233), added: 3708, mode: MaxEncodedLen)
+	/// Storage: `Proxy::Proxies` (r:1 w:1)
+	/// Proof: `Proxy::Proxies` (`max_values`: None, `max_size`: Some(1233), added: 3708, mode: `MaxEncodedLen`)
 	/// The range of component `p` is `[1, 31]`.
 	fn add_proxy(_p: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -153,8 +152,8 @@ impl<T: frame_system::Config> pallet_proxy::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Proxy Proxies (r:1 w:1)
-	/// Proof: Proxy Proxies (max_values: None, max_size: Some(1233), added: 3708, mode: MaxEncodedLen)
+	/// Storage: `Proxy::Proxies` (r:1 w:1)
+	/// Proof: `Proxy::Proxies` (`max_values`: None, `max_size`: Some(1233), added: 3708, mode: `MaxEncodedLen`)
 	/// The range of component `p` is `[1, 31]`.
 	fn remove_proxy(p: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -168,8 +167,8 @@ impl<T: frame_system::Config> pallet_proxy::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Proxy Proxies (r:1 w:1)
-	/// Proof: Proxy Proxies (max_values: None, max_size: Some(1233), added: 3708, mode: MaxEncodedLen)
+	/// Storage: `Proxy::Proxies` (r:1 w:1)
+	/// Proof: `Proxy::Proxies` (`max_values`: None, `max_size`: Some(1233), added: 3708, mode: `MaxEncodedLen`)
 	/// The range of component `p` is `[1, 31]`.
 	fn remove_proxies(_p: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -181,21 +180,23 @@ impl<T: frame_system::Config> pallet_proxy::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Proxy Proxies (r:1 w:1)
-	/// Proof: Proxy Proxies (max_values: None, max_size: Some(1233), added: 3708, mode: MaxEncodedLen)
+	/// Storage: `Proxy::Proxies` (r:1 w:1)
+	/// Proof: `Proxy::Proxies` (`max_values`: None, `max_size`: Some(1233), added: 3708, mode: `MaxEncodedLen`)
 	/// The range of component `p` is `[1, 31]`.
-	fn create_pure(_p: u32, ) -> Weight {
+	fn create_pure(p: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `177`
 		//  Estimated: `4698`
 		// Minimum execution time: 44_405_000 picoseconds.
 		Weight::from_parts(71_055_316, 0)
 			.saturating_add(Weight::from_parts(0, 4698))
+			// Standard Error: 1_936
+			.saturating_add(Weight::from_parts(2_195, 0).saturating_mul(p.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Proxy Proxies (r:1 w:1)
-	/// Proof: Proxy Proxies (max_values: None, max_size: Some(1233), added: 3708, mode: MaxEncodedLen)
+	/// Storage: `Proxy::Proxies` (r:1 w:1)
+	/// Proof: `Proxy::Proxies` (`max_values`: None, `max_size`: Some(1233), added: 3708, mode: `MaxEncodedLen`)
 	/// The range of component `p` is `[0, 30]`.
 	fn kill_pure(_p: u32, ) -> Weight {
 		// Proof Size summary in bytes:

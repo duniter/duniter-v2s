@@ -20,10 +20,11 @@ use super::*;
 use sp_keyring::AccountKeyring;
 use subxt::{tx::PairSigner, utils::MultiAddress};
 
-pub async fn set_balance(client: &Client, who: AccountKeyring, amount: u64) -> Result<()> {
+pub async fn set_balance(client: &FullClient, who: AccountKeyring, amount: u64) -> Result<()> {
     let _events = create_block_with_extrinsic(
-        client,
+        &client.rpc,
         client
+            .client
             .tx()
             .create_signed(
                 &gdev::tx()
@@ -35,7 +36,7 @@ pub async fn set_balance(client: &Client, who: AccountKeyring, amount: u64) -> R
                         },
                     )),
                 &PairSigner::new(SUDO_ACCOUNT.pair()),
-                BaseExtrinsicParamsBuilder::new(),
+                SubstrateExtrinsicParamsBuilder::new().build(),
             )
             .await?,
     )
@@ -45,7 +46,7 @@ pub async fn set_balance(client: &Client, who: AccountKeyring, amount: u64) -> R
 }
 
 pub async fn transfer(
-    client: &Client,
+    client: &FullClient,
     from: AccountKeyring,
     amount: u64,
     to: AccountKeyring,
@@ -54,15 +55,16 @@ pub async fn transfer(
     let to = to.to_account_id();
 
     let _events = create_block_with_extrinsic(
-        client,
+        &client.rpc,
         client
+            .client
             .tx()
             .create_signed(
                 &gdev::tx()
                     .universal_dividend()
                     .transfer_ud(to.clone().into(), amount),
                 &from,
-                BaseExtrinsicParamsBuilder::new(),
+                SubstrateExtrinsicParamsBuilder::new().build(),
             )
             .await?,
     )
@@ -71,18 +73,23 @@ pub async fn transfer(
     Ok(())
 }
 
-pub async fn transfer_all(client: &Client, from: AccountKeyring, to: AccountKeyring) -> Result<()> {
+pub async fn transfer_all(
+    client: &FullClient,
+    from: AccountKeyring,
+    to: AccountKeyring,
+) -> Result<()> {
     let from = PairSigner::new(from.pair());
     let to = to.to_account_id();
 
     let _events = create_block_with_extrinsic(
-        client,
+        &client.rpc,
         client
+            .client
             .tx()
             .create_signed(
                 &gdev::tx().balances().transfer_all(to.into(), false),
                 &from,
-                BaseExtrinsicParamsBuilder::new(),
+                SubstrateExtrinsicParamsBuilder::new().build(),
             )
             .await?,
     )
@@ -92,7 +99,7 @@ pub async fn transfer_all(client: &Client, from: AccountKeyring, to: AccountKeyr
 }
 
 pub async fn transfer_ud(
-    client: &Client,
+    client: &FullClient,
     from: AccountKeyring,
     amount: u64,
     to: AccountKeyring,
@@ -101,15 +108,16 @@ pub async fn transfer_ud(
     let to = to.to_account_id();
 
     let _events = create_block_with_extrinsic(
-        client,
+        &client.rpc,
         client
+            .client
             .tx()
             .create_signed(
                 &gdev::tx()
                     .universal_dividend()
                     .transfer_ud(to.clone().into(), amount),
                 &from,
-                BaseExtrinsicParamsBuilder::new(),
+                SubstrateExtrinsicParamsBuilder::new().build(),
             )
             .await?,
     )

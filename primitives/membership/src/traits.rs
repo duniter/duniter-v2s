@@ -25,6 +25,7 @@ impl<IdtyId> CheckMembershipOpAllowed<IdtyId> for () {
     fn check_add_membership(_: IdtyId) -> Result<(), DispatchError> {
         Ok(())
     }
+
     fn check_renew_membership(_: IdtyId) -> Result<(), DispatchError> {
         Ok(())
     }

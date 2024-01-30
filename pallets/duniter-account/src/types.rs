@@ -74,8 +74,20 @@ impl<Balance: Zero, IdtyId> From<AccountData<Balance, IdtyId>>
     }
 }
 
-#[derive(Clone, Decode, Default, Encode, Eq, MaxEncodedLen, PartialEq, RuntimeDebug, TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+#[derive(
+    Clone,
+    Decode,
+    Default,
+    Encode,
+    Eq,
+    MaxEncodedLen,
+    PartialEq,
+    RuntimeDebug,
+    TypeInfo,
+    serde::Serialize,
+    serde::Deserialize,
+)]
+#[serde(deny_unknown_fields)]
 pub struct GenesisAccountData<Balance, IdtyId> {
     pub random_id: H256,
     pub balance: Balance,

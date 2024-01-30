@@ -69,7 +69,7 @@ fn create_one_identity<T: Config>(owner_key: T::AccountId) -> Result<Account<T>,
     // Reset next_creatable_identity_on to add more identities with Alice
     <Identities<T>>::mutate_exists(T::IdtyIndex::from(1u32), |idty_val_opt| {
         if let Some(ref mut idty_val) = idty_val_opt {
-            idty_val.next_creatable_identity_on = T::BlockNumber::zero();
+            idty_val.next_creatable_identity_on = BlockNumberFor::<T>::zero();
         }
     });
     Ok(Account {
@@ -84,10 +84,10 @@ fn create_one_identity<T: Config>(owner_key: T::AccountId) -> Result<Account<T>,
 fn create_dummy_identity<T: Config>(i: u32) -> Result<(), &'static str> {
     let idty_index: T::IdtyIndex = i.into();
     let owner_key: T::AccountId = account("Bob", i, SEED);
-    let next_scheduled = T::BlockNumber::zero();
+    let next_scheduled = BlockNumberFor::<T>::zero();
     let value = IdtyValue {
         data: Default::default(),
-        next_creatable_identity_on: T::BlockNumber::zero(),
+        next_creatable_identity_on: BlockNumberFor::<T>::zero(),
         old_owner_key: None,
         owner_key: owner_key.clone(),
         next_scheduled,
@@ -155,7 +155,7 @@ benchmarks! {
         let account: Account<T> = create_one_identity(old_key.clone())?;
 
         // Change key a first time to add an old-old key
-        let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
+        let genesis_hash = frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero());
         let new_key_payload = IdtyIndexAccountIdPayload {
             genesis_hash: &genesis_hash,
             idty_index: account.index,
@@ -170,7 +170,7 @@ benchmarks! {
         // Change key a second time to benchmark
         //  The sufficients for the old_old key will drop to 0 during benchmark
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-        let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
+        let genesis_hash = frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero());
         let new_key_payload = IdtyIndexAccountIdPayload {
             genesis_hash: &genesis_hash,
             idty_index: account.index,
@@ -194,7 +194,7 @@ benchmarks! {
 
         // Change key
         //  The sufficients for the old key will drop to 0 during benchmark (not for revoke, only for remove)
-        let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
+        let genesis_hash = frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero());
         let new_key_payload = IdtyIndexAccountIdPayload {
             genesis_hash: &genesis_hash,
             idty_index: account.index,
@@ -206,7 +206,7 @@ benchmarks! {
         let signature = sr25519_sign(0.into(), &caller_public, &message).unwrap().into();
         Pallet::<T>::change_owner_key(account.origin.clone(), caller.clone(), signature)?;
 
-        let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
+        let genesis_hash = frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero());
         let revocation_payload = RevocationPayload {
             genesis_hash: &genesis_hash,
             idty_index: account.index,
@@ -255,7 +255,7 @@ benchmarks! {
         let bob_public = sr25519_generate(0.into(), None);
         let bob: T::AccountId = MultiSigner::Sr25519(bob_public).into_account().into();
         frame_system::Pallet::<T>::inc_providers(&bob);
-        let genesis_hash = frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero());
+        let genesis_hash = frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero());
         let payload = (
             LINK_IDTY_PAYLOAD_PREFIX, genesis_hash, T::IdtyIndex::one(), bob.clone(),
         ).encode();
@@ -308,21 +308,21 @@ benchmarks! {
 
     // --- prune identities
     prune_identities_noop {
-        assert!(IdentityChangeSchedule::<T>::try_get(T::BlockNumber::zero()).is_err());
-    }: {Pallet::<T>::prune_identities(T::BlockNumber::zero());}
+        assert!(IdentityChangeSchedule::<T>::try_get(BlockNumberFor::<T>::zero()).is_err());
+    }: {Pallet::<T>::prune_identities(BlockNumberFor::<T>::zero());}
 
     prune_identities_none {
         let idty_index: T::IdtyIndex = 100u32.into();
-        IdentityChangeSchedule::<T>::append(T::BlockNumber::zero(), idty_index);
-        assert!(IdentityChangeSchedule::<T>::try_get(T::BlockNumber::zero()).is_ok());
+        IdentityChangeSchedule::<T>::append(BlockNumberFor::<T>::zero(), idty_index);
+        assert!(IdentityChangeSchedule::<T>::try_get(BlockNumberFor::<T>::zero()).is_ok());
         assert!(<Identities<T>>::try_get(idty_index).is_err());
-    }: {Pallet::<T>::prune_identities(T::BlockNumber::zero());}
+    }: {Pallet::<T>::prune_identities(BlockNumberFor::<T>::zero());}
 
     prune_identities_err {
         let idty_index: T::IdtyIndex = 100u32.into();
         create_dummy_identity::<T>(100u32)?;
-        IdentityChangeSchedule::<T>::append(T::BlockNumber::zero(), idty_index);
-    }: {Pallet::<T>::prune_identities(T::BlockNumber::zero());}
+        IdentityChangeSchedule::<T>::append(BlockNumberFor::<T>::zero(), idty_index);
+    }: {Pallet::<T>::prune_identities(BlockNumberFor::<T>::zero());}
 
     impl_benchmark_test_suite!(
         Pallet,

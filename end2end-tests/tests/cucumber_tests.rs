@@ -27,6 +27,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
+use subxt::backend::rpc::RpcClient;
 
 // ===== world =====
 
@@ -44,25 +45,47 @@ impl DuniterWorld {
         }
         self.inner = Some(DuniterWorldInner::new(maybe_genesis_conf_file, no_spawn).await);
     }
+
     fn kill(&mut self) {
         if let Some(ref mut inner) = self.inner {
             inner.kill();
         }
     }
+
     fn set_ignore_errors(&mut self, ignore_errors: bool) {
         self.ignore_errors = ignore_errors;
     }
+
     // Read methods
+    fn rpc_client(&self) -> &RpcClient {
+        if let Some(ref inner) = self.inner {
+            &inner.client.rpc
+        } else {
+            panic!("uninit")
+        }
+    }
+
     fn client(&self) -> &Client {
+        if let Some(ref inner) = self.inner {
+            &inner.client.client
+        } else {
+            panic!("uninit")
+        }
+    }
+
+    fn full_client(&self) -> &FullClient {
         if let Some(ref inner) = self.inner {
             &inner.client
         } else {
             panic!("uninit")
         }
     }
+
+    // Read methods
     fn ignore_errors(&self) -> bool {
         self.ignore_errors
     }
+
     // Read storage entry on last block
     async fn read<'a, Address>(
         &self,
@@ -80,6 +103,7 @@ impl DuniterWorld {
             .unwrap()
             .fetch(address)
     }
+
     // Read storage entry with default value (on last block)
     async fn read_or_default<'a, Address>(
         &self,
@@ -120,7 +144,7 @@ impl World for DuniterWorld {
 }
 
 struct DuniterWorldInner {
-    client: Client,
+    client: FullClient,
     process: Option<Process>,
     ws_port: u16,
 }
@@ -134,6 +158,7 @@ impl DuniterWorldInner {
             ws_port,
         }
     }
+
     fn kill(&mut self) {
         if let Some(p) = &mut self.process {
             p.kill();
@@ -170,7 +195,7 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
     }
 
     // Create {amount} ĞD for {who}
-    common::balances::set_balance(world.client(), who, amount).await?;
+    common::balances::set_balance(world.full_client(), who, amount).await?;
 
     Ok(())
 }
@@ -181,7 +206,7 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
 #[when(regex = r"(\d+) blocks? later")]
 async fn n_blocks_later(world: &mut DuniterWorld, n: usize) -> Result<()> {
     for _ in 0..n {
-        common::create_empty_block(world.client()).await?;
+        common::create_empty_block(world.rpc_client()).await?;
     }
     Ok(())
 }
@@ -201,9 +226,9 @@ async fn transfer(
     let (amount, is_ud) = parse_amount(amount, &unit);
 
     let res = if is_ud {
-        common::balances::transfer_ud(world.client(), from, amount, to).await
+        common::balances::transfer_ud(world.full_client(), from, amount, to).await
     } else {
-        common::balances::transfer(world.client(), from, amount, to).await
+        common::balances::transfer(world.full_client(), from, amount, to).await
     };
 
     if world.ignore_errors() {
@@ -229,7 +254,7 @@ async fn create_oneshot_account(
 
     assert!(!is_ud);
 
-    common::oneshot::create_oneshot_account(world.client(), from, amount, to).await
+    common::oneshot::create_oneshot_account(world.full_client(), from, amount, to).await
 }
 
 #[allow(clippy::needless_pass_by_ref_mut)]
@@ -249,7 +274,7 @@ async fn consume_oneshot_account(
         _ => unreachable!(),
     };
 
-    common::oneshot::consume_oneshot_account(world.client(), from, to).await
+    common::oneshot::consume_oneshot_account(world.full_client(), from, to).await
 }
 
 #[when(
@@ -286,7 +311,7 @@ async fn consume_oneshot_account_with_remaining(
     assert!(!is_ud);
 
     common::oneshot::consume_oneshot_account_with_remaining(
-        world.client(),
+        world.full_client(),
         from,
         amount,
         to,
@@ -302,7 +327,7 @@ async fn send_all_to(world: &mut DuniterWorld, from: String, to: String) -> Resu
     let from = AccountKeyring::from_str(&from).expect("unknown from");
     let to = AccountKeyring::from_str(&to).expect("unknown to");
 
-    common::balances::transfer_all(world.client(), from, to).await
+    common::balances::transfer_all(world.full_client(), from, to).await
 }
 
 #[allow(clippy::needless_pass_by_ref_mut)]
@@ -312,7 +337,7 @@ async fn certifies(world: &mut DuniterWorld, from: String, to: String) -> Result
     let from = AccountKeyring::from_str(&from).expect("unknown from");
     let to = AccountKeyring::from_str(&to).expect("unknown to");
 
-    common::cert::certify(world.client(), from, to).await
+    common::cert::certify(world.full_client(), from, to).await
 }
 
 #[allow(clippy::needless_pass_by_ref_mut)]
@@ -322,7 +347,7 @@ async fn creates_identity(world: &mut DuniterWorld, from: String, to: String) ->
     let from = AccountKeyring::from_str(&from).expect("unknown from");
     let to = AccountKeyring::from_str(&to).expect("unknown to");
 
-    common::identity::create_identity(world.client(), from, to).await
+    common::identity::create_identity(world.full_client(), from, to).await
 }
 
 #[allow(clippy::needless_pass_by_ref_mut)]
@@ -330,7 +355,7 @@ async fn creates_identity(world: &mut DuniterWorld, from: String, to: String) ->
 async fn confirm_identity(world: &mut DuniterWorld, from: String, pseudo: String) -> Result<()> {
     let from = AccountKeyring::from_str(&from).expect("unknown from");
 
-    common::identity::confirm_identity(world.client(), from, pseudo).await
+    common::identity::confirm_identity(world.full_client(), from, pseudo).await
 }
 
 #[allow(clippy::needless_pass_by_ref_mut)]
@@ -338,7 +363,7 @@ async fn confirm_identity(world: &mut DuniterWorld, from: String, pseudo: String
 async fn request_distance_evaluation(world: &mut DuniterWorld, who: String) -> Result<()> {
     let who = AccountKeyring::from_str(&who).expect("unknown origin");
 
-    common::distance::request_evaluation(world.client(), who).await
+    common::distance::request_evaluation(world.full_client(), who).await
 }
 
 #[allow(clippy::needless_pass_by_ref_mut)]
@@ -347,7 +372,7 @@ async fn run_distance_oracle(world: &mut DuniterWorld, who: String) -> Result<()
     let who = AccountKeyring::from_str(&who).expect("unknown origin");
 
     common::distance::run_oracle(
-        world.client(),
+        world.full_client(),
         who,
         format!("ws://127.0.0.1:{}", world.inner.as_ref().unwrap().ws_port),
     )

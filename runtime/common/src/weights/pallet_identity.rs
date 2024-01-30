@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -80,14 +79,14 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(13))
 			.saturating_add(T::DbWeight::get().writes(12))
 	}
-	/// Storage: Identity IdentityIndexOf (r:1 w:0)
-	/// Proof Skipped: Identity IdentityIndexOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Identity Identities (r:1 w:1)
-	/// Proof Skipped: Identity Identities (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Identity IdentitiesNames (r:1 w:1)
-	/// Proof Skipped: Identity IdentitiesNames (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Identity IdentityChangeSchedule (r:2 w:2)
-	/// Proof Skipped: Identity IdentityChangeSchedule (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Identity::IdentityIndexOf` (r:1 w:0)
+	/// Proof: `Identity::IdentityIndexOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Identity::Identities` (r:1 w:1)
+	/// Proof: `Identity::Identities` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Identity::IdentitiesNames` (r:1 w:1)
+	/// Proof: `Identity::IdentitiesNames` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Identity::IdentityChangeSchedule` (r:2 w:2)
+	/// Proof: `Identity::IdentityChangeSchedule` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn confirm_identity() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `661`
@@ -98,14 +97,14 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(4))
 	}
-	/// Storage: Identity IdentityIndexOf (r:2 w:2)
-	/// Proof Skipped: Identity IdentityIndexOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Identity Identities (r:1 w:1)
-	/// Proof Skipped: Identity Identities (max_values: None, max_size: None, mode: Measured)
-	/// Storage: System BlockHash (r:1 w:0)
-	/// Proof: System BlockHash (max_values: None, max_size: Some(44), added: 2519, mode: MaxEncodedLen)
-	/// Storage: System Account (r:2 w:2)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `Identity::IdentityIndexOf` (r:2 w:2)
+	/// Proof: `Identity::IdentityIndexOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Identity::Identities` (r:1 w:1)
+	/// Proof: `Identity::Identities` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `System::BlockHash` (r:1 w:0)
+	/// Proof: `System::BlockHash` (`max_values`: None, `max_size`: Some(44), added: 2519, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	fn change_owner_key() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `714`
@@ -116,16 +115,16 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
-	/// Storage: Identity Identities (r:1 w:1)
-	/// Proof Skipped: Identity Identities (max_values: None, max_size: None, mode: Measured)
-	/// Storage: System BlockHash (r:1 w:0)
-	/// Proof: System BlockHash (max_values: None, max_size: Some(44), added: 2519, mode: MaxEncodedLen)
-	/// Storage: Identity IdentityChangeSchedule (r:2 w:2)
-	/// Proof Skipped: Identity IdentityChangeSchedule (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Membership Membership (r:1 w:1)
-	/// Proof Skipped: Membership Membership (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Quota IdtyQuota (r:0 w:1)
-	/// Proof: Quota IdtyQuota (max_values: None, max_size: Some(24), added: 2499, mode: MaxEncodedLen)
+	/// Storage: `Identity::Identities` (r:1 w:1)
+	/// Proof: `Identity::Identities` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `System::BlockHash` (r:1 w:0)
+	/// Proof: `System::BlockHash` (`max_values`: None, `max_size`: Some(44), added: 2519, mode: `MaxEncodedLen`)
+	/// Storage: `Identity::IdentityChangeSchedule` (r:2 w:2)
+	/// Proof: `Identity::IdentityChangeSchedule` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Membership::Membership` (r:1 w:1)
+	/// Proof: `Membership::Membership` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Quota::IdtyQuota` (r:0 w:1)
+	/// Proof: `Quota::IdtyQuota` (`max_values`: None, `max_size`: Some(24), added: 2499, mode: `MaxEncodedLen`)
 	fn revoke_identity() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `631`
@@ -150,11 +149,11 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(2_138_979, 0).saturating_mul(i.into()))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i.into())))
 	}
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	fn fix_sufficients() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `67`
+		//  Measured:  `105`
 		//  Estimated: `3591`
 		// Minimum execution time: 13_275_000 picoseconds.
 		Weight::from_parts(14_053_000, 0)
@@ -162,12 +161,12 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Identity IdentityIndexOf (r:1 w:0)
-	/// Proof Skipped: Identity IdentityIndexOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: System BlockHash (r:1 w:0)
-	/// Proof: System BlockHash (max_values: None, max_size: Some(44), added: 2519, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `Identity::IdentityIndexOf` (r:1 w:0)
+	/// Proof: `Identity::IdentityIndexOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `System::BlockHash` (r:1 w:0)
+	/// Proof: `System::BlockHash` (`max_values`: None, `max_size`: Some(44), added: 2519, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	fn link_account() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `371`
@@ -186,8 +185,8 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 		Weight::from_parts(492_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 	}
-	/// Storage: Identity Identities (r:1 w:0)
-	/// Proof Skipped: Identity Identities (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Identity::Identities` (r:1 w:0)
+	/// Proof: `Identity::Identities` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn do_revoke_identity_noop() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `269`
@@ -197,36 +196,36 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(0, 3734))
 			.saturating_add(T::DbWeight::get().reads(1))
 	}
-	/// Storage: Identity Identities (r:1 w:1)
-	/// Proof Skipped: Identity Identities (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Identity IdentityChangeSchedule (r:2 w:1)
-	/// Proof Skipped: Identity IdentityChangeSchedule (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Membership Membership (r:1 w:1)
-	/// Proof Skipped: Membership Membership (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Membership CounterForMembership (r:1 w:1)
-	/// Proof: Membership CounterForMembership (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	/// Storage: Membership MembershipsExpireOn (r:1 w:1)
-	/// Proof Skipped: Membership MembershipsExpireOn (max_values: None, max_size: None, mode: Measured)
-	/// Storage: UniversalDividend CurrentUdIndex (r:1 w:0)
-	/// Proof: UniversalDividend CurrentUdIndex (max_values: Some(1), max_size: Some(2), added: 497, mode: MaxEncodedLen)
-	/// Storage: SmithMembers Smiths (r:3 w:3)
-	/// Proof Skipped: SmithMembers Smiths (max_values: None, max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers Members (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers Members (max_values: None, max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers OnlineAuthorities (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers OnlineAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers OutgoingAuthorities (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers OutgoingAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers IncomingAuthorities (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers IncomingAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: Session NextKeys (r:1 w:1)
-	/// Proof Skipped: Session NextKeys (max_values: None, max_size: None, mode: Measured)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
-	/// Storage: Quota IdtyQuota (r:0 w:1)
-	/// Proof: Quota IdtyQuota (max_values: None, max_size: Some(24), added: 2499, mode: MaxEncodedLen)
-	/// Storage: Session KeyOwner (r:0 w:4)
-	/// Proof Skipped: Session KeyOwner (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Identity::Identities` (r:1 w:1)
+	/// Proof: `Identity::Identities` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Identity::IdentityChangeSchedule` (r:2 w:1)
+	/// Proof: `Identity::IdentityChangeSchedule` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Membership::Membership` (r:1 w:1)
+	/// Proof: `Membership::Membership` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Membership::CounterForMembership` (r:1 w:1)
+	/// Proof: `Membership::CounterForMembership` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `Membership::MembershipsExpireOn` (r:1 w:1)
+	/// Proof: `Membership::MembershipsExpireOn` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `UniversalDividend::CurrentUdIndex` (r:1 w:0)
+	/// Proof: `UniversalDividend::CurrentUdIndex` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `SmithMembers::Smiths` (r:3 w:3)
+	/// Proof: `SmithMembers::Smiths` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::Members` (r:1 w:1)
+	/// Proof: `AuthorityMembers::Members` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::OnlineAuthorities` (r:1 w:1)
+	/// Proof: `AuthorityMembers::OnlineAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::OutgoingAuthorities` (r:1 w:1)
+	/// Proof: `AuthorityMembers::OutgoingAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::IncomingAuthorities` (r:1 w:1)
+	/// Proof: `AuthorityMembers::IncomingAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::NextKeys` (r:1 w:1)
+	/// Proof: `Session::NextKeys` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
+	/// Storage: `Quota::IdtyQuota` (r:0 w:1)
+	/// Proof: `Quota::IdtyQuota` (`max_values`: None, `max_size`: Some(24), added: 2499, mode: `MaxEncodedLen`)
+	/// Storage: `Session::KeyOwner` (r:0 w:4)
+	/// Proof: `Session::KeyOwner` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn do_revoke_identity() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `1540`
@@ -237,8 +236,8 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(16))
 			.saturating_add(T::DbWeight::get().writes(19))
 	}
-	/// Storage: Identity Identities (r:1 w:0)
-	/// Proof Skipped: Identity Identities (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Identity::Identities` (r:1 w:0)
+	/// Proof: `Identity::Identities` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn do_remove_identity_noop() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `269`
@@ -248,36 +247,36 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(0, 3734))
 			.saturating_add(T::DbWeight::get().reads(1))
 	}
-	/// Storage: Identity Identities (r:1 w:1)
-	/// Proof Skipped: Identity Identities (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Identity CounterForIdentities (r:1 w:1)
-	/// Proof: Identity CounterForIdentities (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	/// Storage: System Account (r:2 w:2)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
-	/// Storage: Membership Membership (r:1 w:1)
-	/// Proof Skipped: Membership Membership (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Membership CounterForMembership (r:1 w:1)
-	/// Proof: Membership CounterForMembership (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	/// Storage: Membership MembershipsExpireOn (r:1 w:1)
-	/// Proof Skipped: Membership MembershipsExpireOn (max_values: None, max_size: None, mode: Measured)
-	/// Storage: SmithMembers Smiths (r:3 w:3)
-	/// Proof Skipped: SmithMembers Smiths (max_values: None, max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers Members (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers Members (max_values: None, max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers OnlineAuthorities (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers OnlineAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers OutgoingAuthorities (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers OutgoingAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers IncomingAuthorities (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers IncomingAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: Session NextKeys (r:1 w:1)
-	/// Proof Skipped: Session NextKeys (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Identity IdentityIndexOf (r:0 w:1)
-	/// Proof Skipped: Identity IdentityIndexOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Quota IdtyQuota (r:0 w:1)
-	/// Proof: Quota IdtyQuota (max_values: None, max_size: Some(24), added: 2499, mode: MaxEncodedLen)
-	/// Storage: Session KeyOwner (r:0 w:4)
-	/// Proof Skipped: Session KeyOwner (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Identity::Identities` (r:1 w:1)
+	/// Proof: `Identity::Identities` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Identity::CounterForIdentities` (r:1 w:1)
+	/// Proof: `Identity::CounterForIdentities` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
+	/// Storage: `Membership::Membership` (r:1 w:1)
+	/// Proof: `Membership::Membership` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Membership::CounterForMembership` (r:1 w:1)
+	/// Proof: `Membership::CounterForMembership` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `Membership::MembershipsExpireOn` (r:1 w:1)
+	/// Proof: `Membership::MembershipsExpireOn` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `SmithMembers::Smiths` (r:3 w:3)
+	/// Proof: `SmithMembers::Smiths` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::Members` (r:1 w:1)
+	/// Proof: `AuthorityMembers::Members` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::OnlineAuthorities` (r:1 w:1)
+	/// Proof: `AuthorityMembers::OnlineAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::OutgoingAuthorities` (r:1 w:1)
+	/// Proof: `AuthorityMembers::OutgoingAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::IncomingAuthorities` (r:1 w:1)
+	/// Proof: `AuthorityMembers::IncomingAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::NextKeys` (r:1 w:1)
+	/// Proof: `Session::NextKeys` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Identity::IdentityIndexOf` (r:0 w:1)
+	/// Proof: `Identity::IdentityIndexOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Quota::IdtyQuota` (r:0 w:1)
+	/// Proof: `Quota::IdtyQuota` (`max_values`: None, `max_size`: Some(24), added: 2499, mode: `MaxEncodedLen`)
+	/// Storage: `Session::KeyOwner` (r:0 w:4)
+	/// Proof: `Session::KeyOwner` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn do_remove_identity() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `1447`
@@ -288,8 +287,8 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(15))
 			.saturating_add(T::DbWeight::get().writes(21))
 	}
-	/// Storage: Identity IdentityChangeSchedule (r:1 w:0)
-	/// Proof Skipped: Identity IdentityChangeSchedule (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Identity::IdentityChangeSchedule` (r:1 w:0)
+	/// Proof: `Identity::IdentityChangeSchedule` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn prune_identities_noop() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `108`
@@ -299,10 +298,10 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(0, 3573))
 			.saturating_add(T::DbWeight::get().reads(1))
 	}
-	/// Storage: Identity IdentityChangeSchedule (r:1 w:1)
-	/// Proof Skipped: Identity IdentityChangeSchedule (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Identity Identities (r:1 w:0)
-	/// Proof Skipped: Identity Identities (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Identity::IdentityChangeSchedule` (r:1 w:1)
+	/// Proof: `Identity::IdentityChangeSchedule` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Identity::Identities` (r:1 w:0)
+	/// Proof: `Identity::Identities` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn prune_identities_none() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `292`

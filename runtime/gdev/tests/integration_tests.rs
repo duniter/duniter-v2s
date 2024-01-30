@@ -196,7 +196,7 @@ fn test_identity_below_ed() {
             // new behavior : nobody is able to go below ED without killing the account
             // a transfer below ED will lead to frozen token error
             assert_noop!(
-                Balances::transfer(
+                Balances::transfer_allow_death(
                     frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                     MultiAddress::Id(AccountKeyring::Bob.to_account_id()),
                     850
@@ -957,7 +957,7 @@ fn test_create_new_account_with_insufficient_balance() {
             assert_eq!(Balances::free_balance(Treasury::account_id()), 100);
 
             // Should be able to transfer 4 units to a new account
-            assert_ok!(Balances::transfer(
+            assert_ok!(Balances::transfer_allow_death(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 300
@@ -1014,7 +1014,7 @@ fn test_create_new_account() {
             assert_eq!(Balances::free_balance(Treasury::account_id()), 100);
 
             // Should be able to transfer 5 units to a new account
-            assert_ok!(Balances::transfer(
+            assert_ok!(Balances::transfer_allow_death(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 500
@@ -1066,7 +1066,7 @@ fn test_create_new_account() {
             run_to_block(4);
             // can not remove using transfer
             assert_noop!(
-                Balances::transfer(
+                Balances::transfer_allow_death(
                     frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
                     MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
                     200
@@ -1104,7 +1104,7 @@ fn test_create_new_idty() {
             run_to_block(2);
 
             // Should be able to create an identity
-            assert_ok!(Balances::transfer(
+            assert_ok!(Balances::transfer_allow_death(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 200
@@ -1158,7 +1158,7 @@ fn test_create_new_idty_without_founds() {
 
             // Deposit some founds on the identity account,
             // this should trigger the random id assignemt
-            assert_ok!(Balances::transfer(
+            assert_ok!(Balances::transfer_allow_death(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 200
@@ -1193,7 +1193,7 @@ fn test_validate_new_idty_after_few_uds() {
             run_to_block(21);
 
             // Should be able to create an identity
-            assert_ok!(Balances::transfer(
+            assert_ok!(Balances::transfer_allow_death(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 200
@@ -1404,7 +1404,7 @@ fn test_link_account() {
                 pallet_identity::Error::<gdev_runtime::Runtime>::AccountNotExist
             );
 
-            assert_ok!(Balances::transfer(
+            assert_ok!(Balances::transfer_allow_death(
                 frame_system::RawOrigin::Signed(alice.clone()).into(),
                 MultiAddress::Id(ferdie.clone()),
                 1_000

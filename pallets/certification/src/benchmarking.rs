@@ -19,8 +19,8 @@
 use super::*;
 
 use frame_benchmarking::benchmarks;
-use frame_benchmarking::Zero;
 use frame_system::RawOrigin;
+use sp_runtime::traits::Zero;
 
 #[cfg(test)]
 use maplit::btreemap;
@@ -100,11 +100,11 @@ benchmarks! {
     }
 
     on_initialize {
-        assert!(CertsRemovableOn::<T>::try_get(T::BlockNumber::zero()).is_err());
-    }: {Pallet::<T>::on_initialize(T::BlockNumber::zero());}
+        assert!(CertsRemovableOn::<T>::try_get(BlockNumberFor::<T>::zero()).is_err());
+    }: {Pallet::<T>::on_initialize(BlockNumberFor::<T>::zero());}
 
     do_remove_cert_noop {
-    }: {Pallet::<T>::do_remove_cert(100.into(), 101.into(), Some(T::BlockNumber::zero()));}
+    }: {Pallet::<T>::do_remove_cert(100.into(), 101.into(), Some(BlockNumberFor::<T>::zero()));}
 
     do_remove_cert {
         let issuer: T::IdtyIndex = 1.into();

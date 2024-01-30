@@ -12,83 +12,83 @@ version = '3.0.0'
 [features]
 default = ['std']
 runtime-benchmarks = [
-	"frame-benchmarking/runtime-benchmarks",
+    'frame-benchmarking/runtime-benchmarks',
+    'frame-support/runtime-benchmarks',
+    'frame-system/runtime-benchmarks',
+    'sp-runtime/runtime-benchmarks',
 ]
 std = [
+    'scale-info/std',
+    'sp-membership/std',
     'codec/std',
+    'frame-benchmarking?/std',
     'frame-support/std',
     'frame-system/std',
-    'frame-benchmarking/std',
-    'serde',
     'sp-core/std',
-    'sp-membership/std',
     'sp-runtime/std',
     'sp-std/std',
+    'sp-io/std',
 ]
-try-runtime = ['frame-support/try-runtime']
+try-runtime = [
+    'frame-support/try-runtime',
+    'frame-system/try-runtime',
+    'sp-runtime/try-runtime',
+    'sp-membership/try-runtime',
+]
 
 [dependencies]
-sp-membership = { path = "../../primitives/membership", default-features = false }
 
 # substrate
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
+sp-membership = { path = "../../primitives/membership", default-features = false }
 
 [dependencies.codec]
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
-version = "3.1.5"
+version = "3.6.9"
 
 [dependencies.frame-benchmarking]
 default-features = false
-git = 'https://github.com/duniter/substrate'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
 optional = true
-branch = 'duniter-substrate-v0.9.42'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.frame-support]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.frame-system]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
-
-[dependencies.serde]
-version = "1.0.101"
-optional = true
-features = ["derive"]
-
-[dependencies.sp-core]
-default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
-
-[dependencies.sp-std]
-default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
-
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 ### DOC ###
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
-[dev-dependencies.serde]
-version = '1.0.119'
 
-### DEV ###
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dev-dependencies.maplit]
+default-features = false
 version = '1.0.2'
 
 [dev-dependencies.sp-io]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'

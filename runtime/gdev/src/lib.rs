@@ -159,6 +159,7 @@ mod benches {
         [pallet_collective, TechnicalCommittee]
         [pallet_session, SessionBench::<Runtime>]
         [pallet_im_online, ImOnline]
+        [pallet_sudo, Sudo]
         [pallet_multisig, Multisig]
         [pallet_preimage, Preimage]
         [pallet_proxy, Proxy]
@@ -194,7 +195,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
     PartialOrd,
     codec::Encode,
     codec::Decode,
-    frame_support::RuntimeDebug,
+    frame_support::pallet_prelude::RuntimeDebug,
     codec::MaxEncodedLen,
     scale_info::TypeInfo,
 )]
@@ -270,76 +271,68 @@ common_runtime::pallets_config! {
         pallet_duniter_test_parameters::SmithInactivityMaxDuration<Runtime>;
 
     impl pallet_duniter_test_parameters::Config for Runtime {
+        type BlockNumber = u32;
         type CertCount = u32;
         type PeriodCount = Balance;
         type SessionCount = u32;
-    }
-
-    impl pallet_sudo::Config for Runtime {
-        type RuntimeEvent = RuntimeEvent;
-        type RuntimeCall = RuntimeCall;
     }
 }
 
 // Create the runtime by composing the pallets that were previously configured.
 construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = common_runtime::Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
-    {
+    pub enum Runtime    {
         // Basic stuff
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
-        Account: pallet_duniter_account::{Pallet, Call, Storage, Config<T>, Event<T>} = 1,
-        Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 2,
+        System: frame_system = 0,
+        Account: pallet_duniter_account = 1,
+        Scheduler: pallet_scheduler = 2,
 
         // Block creation
-        Babe: pallet_babe::{Pallet, Call, Storage, Config, ValidateUnsigned} = 3,
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 4,
+        Babe: pallet_babe = 3,
+        Timestamp: pallet_timestamp = 4,
 
         // Test parameters
-        Parameters: pallet_duniter_test_parameters::{Pallet, Config<T>, Storage} = 5,
+        Parameters: pallet_duniter_test_parameters = 5,
 
         // Money management
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 6,
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 32,
-        OneshotAccount: pallet_oneshot_account::{Pallet, Call, Storage, Event<T>} = 7,
-        Quota: pallet_quota::{Pallet, Storage, Config<T>, Event<T>} = 66,
+        Balances: pallet_balances = 6,
+        TransactionPayment: pallet_transaction_payment = 32,
+        OneshotAccount: pallet_oneshot_account = 7,
+        Quota: pallet_quota = 66,
 
         // Consensus support
-        SmithMembers: pallet_smith_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-        AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>} = 11,
-        Authorship: pallet_authorship::{Pallet, Storage} = 12,
-        Offences: pallet_offences::{Pallet, Storage, Event} = 13,
-        Historical: session_historical::{Pallet} = 14,
-        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 15,
-        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event, ValidateUnsigned} = 16,
-        ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 17,
-        AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 18,
+        SmithMembers: pallet_smith_members = 10,
+        AuthorityMembers: pallet_authority_members = 11,
+        Authorship: pallet_authorship = 12,
+        Offences: pallet_offences = 13,
+        Historical: session_historical = 14,
+        Session: pallet_session = 15,
+        Grandpa: pallet_grandpa= 16,
+        ImOnline: pallet_im_online = 17,
+        AuthorityDiscovery: pallet_authority_discovery = 18,
 
         // Governance stuff
-        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
-        UpgradeOrigin: pallet_upgrade_origin::{Pallet, Call, Event} = 21,
-        Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 22,
-        TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Config<T>, Storage, Event<T>, Origin<T>} = 23,
+        Sudo: pallet_sudo = 20,
+        UpgradeOrigin: pallet_upgrade_origin = 21,
+        Preimage: pallet_preimage = 22,
+        TechnicalCommittee: pallet_collective::<Instance2> = 23,
 
         // Universal dividend
-        UniversalDividend: pallet_universal_dividend::{Pallet, Call, Config<T>, Storage, Event<T>} = 30,
+        UniversalDividend: pallet_universal_dividend = 30,
 
         // Web Of Trust
-        Wot: pallet_duniter_wot::{Pallet} = 40,
-        Identity: pallet_identity::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
-        Membership: pallet_membership::{Pallet, Config<T>, Storage, Event<T>} = 42,
-        Certification: pallet_certification::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
-        Distance: pallet_distance::{Pallet, Call, Storage, Inherent, Event<T>} = 44,
+        Wot: pallet_duniter_wot = 40,
+        Identity: pallet_identity = 41,
+        Membership: pallet_membership = 42,
+        Certification: pallet_certification = 43,
+        Distance: pallet_distance = 44,
 
         // Utilities
-        AtomicSwap: pallet_atomic_swap::{Pallet, Call, Storage, Event<T>} = 50,
-        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 51,
-        ProvideRandomness: pallet_provide_randomness::{Pallet, Call, Storage, Event} = 52,
-        Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 53,
-        Utility: pallet_utility::{Pallet, Call, Event} = 54,
-        Treasury: pallet_treasury::{Pallet, Call, Config, Storage, Event<T>} = 55,
+        AtomicSwap: pallet_atomic_swap = 50,
+        Multisig: pallet_multisig = 51,
+        ProvideRandomness: pallet_provide_randomness = 52,
+        Proxy: pallet_proxy = 53,
+        Utility: pallet_utility = 54,
+        Treasury: pallet_treasury = 55,
     }
 );
 

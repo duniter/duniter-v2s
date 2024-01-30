@@ -23,80 +23,88 @@ use async_io::Timer;
 use common_runtime::Block;
 use futures::{Stream, StreamExt};
 use sc_client_api::client::BlockBackend;
+use sc_client_api::Backend;
 use sc_consensus_grandpa::SharedVoterState;
 use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
-pub use sc_executor::NativeElseWasmExecutor;
-use sc_network_common::sync::warp::WarpSyncParams;
+pub use sc_executor::WasmExecutor;
+use sc_service::WarpSyncParams;
 use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_core::H256;
 use sp_runtime::traits::BlakeTwo256;
-use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
-type FullClient<RuntimeApi, Executor> =
-    sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>;
+#[cfg(not(feature = "runtime-benchmarks"))]
+type HostFunctions = sp_io::SubstrateHostFunctions;
+
+#[cfg(feature = "runtime-benchmarks")]
+type HostFunctions = (
+    sp_io::SubstrateHostFunctions,
+    frame_benchmarking::benchmarking::HostFunctions,
+);
+
+type FullClient<RuntimeApi> =
+    sc_service::TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>;
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
 #[cfg(feature = "gdev")]
-pub struct GDevExecutor;
-#[cfg(feature = "gdev")]
-impl sc_executor::NativeExecutionDispatch for GDevExecutor {
-    /// Only enable the benchmarking host functions when we actually want to benchmark.
-    #[cfg(feature = "runtime-benchmarks")]
-    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-    /// Otherwise we only use the default Substrate host functions.
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    type ExtendHostFunctions = ();
+pub mod gdev_executor {
+    pub use gdev_runtime;
 
-    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-        gdev_runtime::api::dispatch(method, data)
-    }
+    pub struct GDevExecutor;
+    impl sc_executor::NativeExecutionDispatch for GDevExecutor {
+        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
-    fn native_version() -> sc_executor::NativeVersion {
-        gdev_runtime::native_version()
-    }
-}
+        fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+            gdev_runtime::api::dispatch(method, data)
+        }
 
-#[cfg(feature = "gtest")]
-pub struct GTestExecutor;
-#[cfg(feature = "gtest")]
-impl sc_executor::NativeExecutionDispatch for GTestExecutor {
-    /// Only enable the benchmarking host functions when we actually want to benchmark.
-    #[cfg(feature = "runtime-benchmarks")]
-    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-    /// Otherwise we only use the default Substrate host functions.
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    type ExtendHostFunctions = ();
-
-    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-        gtest_runtime::api::dispatch(method, data)
-    }
-
-    fn native_version() -> sc_executor::NativeVersion {
-        gtest_runtime::native_version()
+        fn native_version() -> sc_executor::NativeVersion {
+            gdev_runtime::native_version()
+        }
     }
 }
 
 #[cfg(feature = "g1")]
-pub struct G1Executor;
-#[cfg(feature = "g1")]
-impl sc_executor::NativeExecutionDispatch for G1Executor {
-    /// Only enable the benchmarking host functions when we actually want to benchmark.
-    #[cfg(feature = "runtime-benchmarks")]
-    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-    /// Otherwise we only use the default Substrate host functions.
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    type ExtendHostFunctions = ();
+pub mod g1_executor {
+    pub use g1_runtime;
 
-    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-        g1_runtime::api::dispatch(method, data)
-    }
+    pub struct G1Executor;
+    impl sc_executor::NativeExecutionDispatch for G1Executor {
+        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
-    fn native_version() -> sc_executor::NativeVersion {
-        g1_runtime::native_version()
+        fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+            g1_runtime::api::dispatch(method, data)
+        }
+
+        fn native_version() -> sc_executor::NativeVersion {
+            g1_runtime::native_version()
+        }
     }
 }
+
+#[cfg(feature = "gtest")]
+pub mod gtest_executor {
+    pub use gtest_runtime;
+
+    pub struct GTestExecutor;
+    impl sc_executor::NativeExecutionDispatch for GTestExecutor {
+        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+        fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+            gtest_runtime::api::dispatch(method, data)
+        }
+
+        fn native_version() -> sc_executor::NativeVersion {
+            gtest_runtime::native_version()
+        }
+    }
+}
+///
+/// The minimum period of blocks on which justifications will be
+/// imported and generated.
+const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
 #[derive(Debug)]
 pub enum RuntimeType {
@@ -135,7 +143,7 @@ pub fn new_chain_ops(
     (
         Arc<Client>,
         Arc<FullBackend>,
-        sc_consensus::BasicQueue<Block, sp_trie::PrefixedMemoryDB<BlakeTwo256>>,
+        sc_consensus::BasicQueue<Block>,
         TaskManager,
     ),
     ServiceError,
@@ -149,7 +157,7 @@ pub fn new_chain_ops(
                 import_queue,
                 task_manager,
                 ..
-            } = new_partial::<g1_runtime::RuntimeApi, G1Executor>(config, manual_consensus)?;
+            } = new_partial::<g1_runtime::RuntimeApi>(config, manual_consensus)?;
             Ok((
                 Arc::new(Client::G1(client)),
                 backend,
@@ -165,7 +173,7 @@ pub fn new_chain_ops(
                 import_queue,
                 task_manager,
                 ..
-            } = new_partial::<gtest_runtime::RuntimeApi, GTestExecutor>(config, manual_consensus)?;
+            } = new_partial::<gtest_runtime::RuntimeApi>(config, manual_consensus)?;
             Ok((
                 Arc::new(Client::GTest(client)),
                 backend,
@@ -181,7 +189,7 @@ pub fn new_chain_ops(
                 import_queue,
                 task_manager,
                 ..
-            } = new_partial::<gdev_runtime::RuntimeApi, GDevExecutor>(config, manual_consensus)?;
+            } = new_partial::<gdev_runtime::RuntimeApi>(config, manual_consensus)?;
             Ok((
                 Arc::new(Client::GDev(client)),
                 backend,
@@ -193,50 +201,41 @@ pub fn new_chain_ops(
     }
 }
 
-type FullGrandpaBlockImport<RuntimeApi, Executor> = sc_consensus_grandpa::GrandpaBlockImport<
+type FullGrandpaBlockImport<RuntimeApi> = sc_consensus_grandpa::GrandpaBlockImport<
     FullBackend,
     Block,
-    FullClient<RuntimeApi, Executor>,
+    FullClient<RuntimeApi>,
     FullSelectChain,
 >;
 
 #[allow(clippy::type_complexity)]
-pub fn new_partial<RuntimeApi, Executor>(
+pub fn new_partial<RuntimeApi>(
     config: &Configuration,
     consensus_manual: bool,
 ) -> Result<
     sc_service::PartialComponents<
-        FullClient<RuntimeApi, Executor>,
+        FullClient<RuntimeApi>,
         FullBackend,
         FullSelectChain,
-        sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
-        sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>,
+        sc_consensus::DefaultImportQueue<Block>,
+        sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi>>,
         (
             sc_consensus_babe::BabeBlockImport<
                 Block,
-                FullClient<RuntimeApi, Executor>,
-                FullGrandpaBlockImport<RuntimeApi, Executor>,
+                FullClient<RuntimeApi>,
+                FullGrandpaBlockImport<RuntimeApi>,
             >,
             sc_consensus_babe::BabeLink<Block>,
             Option<sc_consensus_babe::BabeWorkerHandle<Block>>,
-            sc_consensus_grandpa::LinkHalf<
-                Block,
-                FullClient<RuntimeApi, Executor>,
-                FullSelectChain,
-            >,
+            sc_consensus_grandpa::LinkHalf<Block, FullClient<RuntimeApi>, FullSelectChain>,
             Option<Telemetry>,
         ),
     >,
     ServiceError,
 >
 where
-    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
-        + Send
-        + Sync
-        + 'static,
-    RuntimeApi::RuntimeApi:
-        RuntimeApiCollection<StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi: RuntimeApiCollection,
 {
     let telemetry = config
         .telemetry_endpoints
@@ -249,7 +248,7 @@ where
         })
         .transpose()?;
 
-    let executor = sc_service::new_native_or_wasm_executor(config);
+    let executor = sc_service::new_wasm_executor(config);
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts::<Block, RuntimeApi, _>(
@@ -279,6 +278,7 @@ where
     let client_ = client.clone();
     let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
         client.clone(),
+        GRANDPA_JUSTIFICATION_PERIOD,
         &(client_ as Arc<_>),
         select_chain.clone(),
         telemetry.as_ref().map(|x| x.handle()),
@@ -301,26 +301,33 @@ where
         (import_queue, None)
     } else {
         let slot_duration = babe_link.config().slot_duration();
-        let (queue, handle) = sc_consensus_babe::import_queue(
-            babe_link.clone(),
-            babe_block_import.clone(),
-            Some(Box::new(justification_import)),
-            client.clone(),
-            select_chain.clone(),
-            move |_parent, ()| async move {
-                let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+        let (queue, handle) =
+            sc_consensus_babe::import_queue(sc_consensus_babe::ImportQueueParams {
+                link: babe_link.clone(),
+                block_import: babe_block_import.clone(),
+                justification_import: Some(Box::new(justification_import)),
+                client: client.clone(),
+                select_chain: select_chain.clone(),
+                create_inherent_data_providers: move |_, ()| async move {
+                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-                let slot =
-                    sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                        *timestamp,
-                        slot_duration,
-                    );
-                Ok((slot, timestamp))
-            },
-            &task_manager.spawn_essential_handle(),
-            config.prometheus_registry(),
-            telemetry.as_ref().map(|x| x.handle()),
-        )?;
+                    let slot =
+				sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+					*timestamp,
+					slot_duration,
+				);
+
+                    Ok((slot, timestamp))
+                },
+                spawner: &task_manager.spawn_essential_handle(),
+                registry: config.prometheus_registry(),
+                telemetry: telemetry.as_ref().map(|x| x.handle()),
+                offchain_tx_pool_factory:
+                    sc_transaction_pool_api::OffchainTransactionPoolFactory::new(
+                        transaction_pool.clone(),
+                    ),
+            })?;
+
         (queue, Some(handle))
     };
 
@@ -343,18 +350,13 @@ where
 }
 
 /// Builds a new service for a full client.
-pub fn new_full<RuntimeApi, Executor>(
-    mut config: Configuration,
+pub fn new_full<RuntimeApi>(
+    config: Configuration,
     sealing: crate::cli::Sealing,
 ) -> Result<TaskManager, ServiceError>
 where
-    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
-        + Send
-        + Sync
-        + 'static,
-    RuntimeApi::RuntimeApi:
-        RuntimeApiCollection<StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi: RuntimeApiCollection,
 {
     let sc_service::PartialComponents {
         client,
@@ -365,7 +367,7 @@ where
         select_chain,
         transaction_pool,
         other: (block_import, babe_link, babe_worker_handle, grandpa_link, mut telemetry),
-    } = new_partial::<RuntimeApi, Executor>(&config, sealing.is_manual_consensus())?;
+    } = new_partial::<RuntimeApi>(&config, sealing.is_manual_consensus())?;
 
     let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
         &client
@@ -375,12 +377,12 @@ where
             .expect("Genesis block exists; qed"),
         &config.chain_spec,
     );
-    config
-        .network
-        .extra_sets
-        .push(sc_consensus_grandpa::grandpa_peers_set_config(
-            grandpa_protocol_name.clone(),
-        ));
+
+    let mut net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
+    let (grandpa_protocol_config, grandpa_notification_service) =
+        sc_consensus_grandpa::grandpa_peers_set_config(grandpa_protocol_name.clone());
+    net_config.add_notification_protocol(grandpa_protocol_config);
+
     let warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
         backend.clone(),
         grandpa_link.shared_authority_set().clone(),
@@ -390,22 +392,15 @@ where
     let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
+            net_config,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: None,
             warp_sync_params: Some(WarpSyncParams::WithProvider(warp_sync)),
+            block_relay: None,
         })?;
-
-    if config.offchain_worker.enabled {
-        sc_service::build_offchain_workers(
-            &config,
-            task_manager.spawn_handle(),
-            client.clone(),
-            network.clone(),
-        );
-    }
 
     let role = config.role.clone();
     let force_authoring = config.force_authoring;
@@ -414,21 +409,37 @@ where
     let enable_grandpa = !config.disable_grandpa;
     let prometheus_registry = config.prometheus_registry().cloned();
 
+    if config.offchain_worker.enabled {
+        use futures::FutureExt;
+
+        task_manager.spawn_handle().spawn(
+            "offchain-workers-runner",
+            "offchain-work",
+            sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
+                runtime_api_provider: client.clone(),
+                keystore: Some(keystore_container.keystore()),
+                offchain_db: backend.offchain_storage(),
+                transaction_pool: Some(
+                    sc_transaction_pool_api::OffchainTransactionPoolFactory::new(
+                        transaction_pool.clone(),
+                    ),
+                ),
+                network_provider: network.clone(),
+                is_validator: role.is_authority(),
+                enable_http_requests: false,
+                custom_extensions: move |_| vec![],
+            })
+            .run(client.clone(), task_manager.spawn_handle())
+            .boxed(),
+        );
+    }
+
     let mut command_sink_opt = None;
     if role.is_authority() {
-        let distance_dir = config.base_path.as_ref().map_or_else(
-            || {
-                PathBuf::from(format!(
-                    "/tmp/duniter/chains/{}/distance",
-                    config.chain_spec.id()
-                ))
-            },
-            |base_path| {
-                base_path
-                    .config_dir(config.chain_spec.id())
-                    .join("distance")
-            },
-        );
+        let distance_dir = config
+            .base_path
+            .config_dir(config.chain_spec.id())
+            .join("distance");
 
         let proposer_factory = sc_basic_authorship::ProposerFactory::new(
             task_manager.spawn_handle(),
@@ -522,7 +533,7 @@ where
                             let distance =
                                 dc_distance::create_distance_inherent_data_provider::<
                                     Block,
-                                    FullClient<RuntimeApi, Executor>,
+                                    FullClient<RuntimeApi>,
                                     FullBackend,
                                 >(
                                     &*client, parent, distance_dir, &babe_owner_keys.clone()
@@ -569,7 +580,7 @@ where
 
                         let distance = dc_distance::create_distance_inherent_data_provider::<
                             Block,
-                            FullClient<RuntimeApi, Executor>,
+                            FullClient<RuntimeApi>,
                             FullBackend,
                         >(
                             &*client, parent, distance_dir, &babe_owner_keys.clone()
@@ -631,7 +642,7 @@ where
         client,
         keystore: keystore_container.keystore(),
         task_manager: &mut task_manager,
-        transaction_pool,
+        transaction_pool: transaction_pool.clone(),
         rpc_builder: rpc_extensions_builder,
         system_rpc_tx,
         tx_handler_controller,
@@ -647,9 +658,8 @@ where
     };
 
     let grandpa_config = sc_consensus_grandpa::Config {
-        // FIXME #1578 make this available through chainspec
         gossip_duration: Duration::from_millis(333),
-        justification_period: 512,
+        justification_generation_period: GRANDPA_JUSTIFICATION_PERIOD,
         name: Some(name),
         observer_enabled: false,
         keystore,
@@ -674,6 +684,10 @@ where
             prometheus_registry,
             shared_voter_state: SharedVoterState::empty(),
             telemetry: telemetry.as_ref().map(|x| x.handle()),
+            notification_service: grandpa_notification_service,
+            offchain_tx_pool_factory: sc_transaction_pool_api::OffchainTransactionPoolFactory::new(
+                transaction_pool.clone(),
+            ),
         };
 
         // the GRANDPA voter task is considered infallible, i.e.
@@ -716,10 +730,9 @@ impl client::ExecuteWithClient for RevertConsensus {
 
     fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
     where
-        <Api as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
-        Backend: sc_client_api::Backend<Block> + 'static,
-        Backend::State: sp_api::StateBackend<BlakeTwo256>,
-        Api: RuntimeApiCollection<StateBackend = Backend::State>,
+        Backend: sc_client_api::Backend<Block>,
+        Backend::State: sc_client_api::StateBackend<BlakeTwo256>,
+        Api: RuntimeApiCollection,
         Client: client::AbstractClient<Block, Backend, Api = Api> + 'static,
     {
         // Revert consensus-related components.

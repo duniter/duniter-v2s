@@ -104,18 +104,20 @@ pub mod pallet {
             });
             Ok(Pays::No.into())
         }
+
         /// Dispatches a function call from root origin.
         /// This function does not check the weight of the call, and instead allows the
         /// caller to specify the weight of the call.
         ///
         /// The weight of this call is defined by the caller.
         #[pallet::call_index(1)]
-        #[pallet::weight((*_weight, call.get_dispatch_info().class))]
+        #[pallet::weight((*weight, call.get_dispatch_info().class))]
         pub fn dispatch_as_root_unchecked_weight(
             origin: OriginFor<T>,
             call: Box<<T as Config>::Call>,
-            _weight: Weight,
+            weight: Weight,
         ) -> DispatchResultWithPostInfo {
+            let _ = weight; // We dont need to check the weight witness.
             T::UpgradableOrigin::ensure_origin(origin)?;
 
             let res = call.dispatch_bypass_filter(frame_system::RawOrigin::Root.into());

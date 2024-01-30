@@ -24,13 +24,18 @@ pub mod types {
     use codec::{Decode, Encode};
     use frame_support::pallet_prelude::*;
     use pallet_duniter_test_parameters_macro::generate_fields_getters;
-    use scale_info::TypeInfo;
-    #[cfg(feature = "std")]
-    use serde::{Deserialize, Serialize};
 
     #[generate_fields_getters]
-    #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-    #[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+    #[derive(
+        Default,
+        Encode,
+        Decode,
+        Clone,
+        PartialEq,
+        serde::Serialize,
+        serde::Deserialize,
+        scale_info::TypeInfo,
+    )]
     pub struct Parameters<
         BlockNumber: Default + Parameter,
         CertCount: Default + Parameter,
@@ -75,6 +80,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
+        type BlockNumber: Default + MaybeSerializeDeserialize + Parameter;
         type CertCount: Default + MaybeSerializeDeserialize + Parameter;
         type PeriodCount: Default + MaybeSerializeDeserialize + Parameter;
         type SessionCount: Default + MaybeSerializeDeserialize + Parameter;
@@ -97,7 +103,6 @@ pub mod pallet {
         pub parameters: Parameters<T::BlockNumber, T::CertCount, T::PeriodCount, T::SessionCount>,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
@@ -107,7 +112,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             <ParametersStorage<T>>::put(self.parameters.clone());
         }

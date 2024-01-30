@@ -22,9 +22,9 @@
 pub mod traits;
 
 use codec::{Decode, Encode};
-use frame_support::RuntimeDebug;
+use frame_support::pallet_prelude::RuntimeDebug;
+
 use scale_info::TypeInfo;
-#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
 /// membership events
@@ -37,8 +37,19 @@ pub enum Event<IdtyId> {
     MembershipRenewed(IdtyId),
 }
 
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Encode, Decode, Default, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    Default,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    RuntimeDebug,
+    TypeInfo,
+    Deserialize,
+    Serialize,
+)]
 pub struct MembershipData<BlockNumber: Decode + Encode + TypeInfo> {
     pub expire_on: BlockNumber,
 }

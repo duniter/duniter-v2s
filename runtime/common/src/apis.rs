@@ -268,9 +268,9 @@ macro_rules! runtime_apis {
 					Vec<frame_benchmarking::BenchmarkBatch>,
 					sp_runtime::RuntimeString,
 				> {
-					use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
-					// Trying to add benchmarks directly to some pallets caused cyclic dependency issues.
-					// To get around that, we separated the benchmarks into its own crate.
+					use frame_benchmarking::{Benchmarking, BenchmarkBatch};
+use frame_support::traits::TrackedStorageKey;
+use frame_support::traits::WhitelistedStorageKeys;
                     use pallet_session_benchmarking::Pallet as SessionBench;
 					use frame_system_benchmarking::Pallet as SystemBench;
 					use frame_benchmarking::baseline::Pallet as Baseline;
@@ -279,7 +279,7 @@ macro_rules! runtime_apis {
 					impl frame_system_benchmarking::Config for Runtime {}
 					impl frame_benchmarking::baseline::Config for Runtime {}
 
-					let whitelist: Vec<TrackedStorageKey> = vec![
+					/*let whitelist: Vec<TrackedStorageKey> = vec![
 						// Block Number
 						hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac").to_vec().into(),
 						// Total Issuance
@@ -292,8 +292,9 @@ macro_rules! runtime_apis {
 						hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),
 						// Treasury Account
 						hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef7b99d880ec681799c0cf30e8886371da95ecffd7b6c0f78751baa9d281e0bfa3a6d6f646c70792f74727372790000000000000000000000000000000000000000").to_vec().into(),
-					];
+					];*/
 
+let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 					let mut batches = Vec::<BenchmarkBatch>::new();
 					let params = (&config, &whitelist);
                     add_benchmarks!(params, batches);

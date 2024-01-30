@@ -39,6 +39,7 @@ impl<T> Idty<T, T> for () {
     fn owner_key(t: T) -> Option<T> {
         Some(t)
     }
+
     fn idty_index(t: T) -> Option<T> {
         Some(t)
     }

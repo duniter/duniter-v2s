@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -70,10 +69,10 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 			// Standard Error: 145
 			.saturating_add(Weight::from_parts(1_760, 0).saturating_mul(b.into()))
 	}
-	/// Storage: System Digest (r:1 w:1)
-	/// Proof Skipped: System Digest (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: unknown `0x3a686561707061676573` (r:0 w:1)
-	/// Proof Skipped: unknown `0x3a686561707061676573` (r:0 w:1)
+	/// Storage: `System::Digest` (r:1 w:1)
+	/// Proof: `System::Digest` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: UNKNOWN KEY `0x3a686561707061676573` (r:0 w:1)
+	/// Proof: UNKNOWN KEY `0x3a686561707061676573` (r:0 w:1)
 	fn set_heap_pages() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
@@ -84,8 +83,22 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: Skipped Metadata (r:0 w:0)
-	/// Proof Skipped: Skipped Metadata (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `System::Digest` (r:1 w:1)
+	/// Proof: `System::Digest` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: UNKNOWN KEY `0x3a636f6465` (r:0 w:1)
+	/// Proof: UNKNOWN KEY `0x3a636f6465` (r:0 w:1)
+	fn set_code() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `1485`
+		// Minimum execution time: 77_630_689_000 picoseconds.
+		Weight::from_parts(78_881_053_000, 0)
+			.saturating_add(Weight::from_parts(0, 1485))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(2))
+	}
+	/// Storage: `Skipped::Metadata` (r:0 w:0)
+	/// Proof: `Skipped::Metadata` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `i` is `[0, 1000]`.
 	fn set_storage(i: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -98,8 +111,8 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(1_380_876, 0).saturating_mul(i.into()))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i.into())))
 	}
-	/// Storage: Skipped Metadata (r:0 w:0)
-	/// Proof Skipped: Skipped Metadata (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Skipped::Metadata` (r:0 w:0)
+	/// Proof: `Skipped::Metadata` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `i` is `[0, 1000]`.
 	fn kill_storage(i: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -112,8 +125,8 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(841_068, 0).saturating_mul(i.into()))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i.into())))
 	}
-	/// Storage: Skipped Metadata (r:0 w:0)
-	/// Proof Skipped: Skipped Metadata (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Skipped::Metadata` (r:0 w:0)
+	/// Proof: `Skipped::Metadata` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `p` is `[0, 1000]`.
 	fn kill_prefix(p: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -127,5 +140,32 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(p.into())))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(p.into())))
 			.saturating_add(Weight::from_parts(0, 70).saturating_mul(p.into()))
+	}
+	/// Storage: `System::AuthorizedUpgrade` (r:0 w:1)
+	/// Proof: `System::AuthorizedUpgrade` (`max_values`: Some(1), `max_size`: Some(33), added: 528, mode: `MaxEncodedLen`)
+	fn authorize_upgrade() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 7_879_000 picoseconds.
+		Weight::from_parts(8_896_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
+	/// Storage: `System::AuthorizedUpgrade` (r:1 w:1)
+	/// Proof: `System::AuthorizedUpgrade` (`max_values`: Some(1), `max_size`: Some(33), added: 528, mode: `MaxEncodedLen`)
+	/// Storage: `System::Digest` (r:1 w:1)
+	/// Proof: `System::Digest` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: UNKNOWN KEY `0x3a636f6465` (r:0 w:1)
+	/// Proof: UNKNOWN KEY `0x3a636f6465` (r:0 w:1)
+	fn apply_authorized_upgrade() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `22`
+		//  Estimated: `1518`
+		// Minimum execution time: 81_052_498_000 picoseconds.
+		Weight::from_parts(81_887_122_000, 0)
+			.saturating_add(Weight::from_parts(0, 1518))
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().writes(3))
 	}
 }

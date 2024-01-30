@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -48,14 +47,14 @@ use core::marker::PhantomData;
 /// Weight functions for `pallet_collective`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_collective::WeightInfo for WeightInfo<T> {
-	/// Storage: TechnicalCommittee Members (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee Members (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Proposals (r:1 w:0)
-	/// Proof Skipped: TechnicalCommittee Proposals (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Voting (r:20 w:20)
-	/// Proof Skipped: TechnicalCommittee Voting (max_values: None, max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Prime (r:0 w:1)
-	/// Proof Skipped: TechnicalCommittee Prime (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `TechnicalCommittee::Members` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Proposals` (r:1 w:0)
+	/// Proof: `TechnicalCommittee::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Voting` (r:20 w:20)
+	/// Proof: `TechnicalCommittee::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Prime` (r:0 w:1)
+	/// Proof: `TechnicalCommittee::Prime` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// The range of component `m` is `[0, 100]`.
 	/// The range of component `n` is `[0, 100]`.
 	/// The range of component `p` is `[0, 20]`.
@@ -77,8 +76,8 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(0, 9624).saturating_mul(m.into()))
 			.saturating_add(Weight::from_parts(0, 1918).saturating_mul(p.into()))
 	}
-	/// Storage: TechnicalCommittee Members (r:1 w:0)
-	/// Proof Skipped: TechnicalCommittee Members (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `TechnicalCommittee::Members` (r:1 w:0)
+	/// Proof: `TechnicalCommittee::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// The range of component `b` is `[2, 1024]`.
 	/// The range of component `m` is `[1, 100]`.
 	fn execute(b: u32, m: u32, ) -> Weight {
@@ -95,10 +94,10 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(Weight::from_parts(0, 32).saturating_mul(m.into()))
 	}
-	/// Storage: TechnicalCommittee Members (r:1 w:0)
-	/// Proof Skipped: TechnicalCommittee Members (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee ProposalOf (r:1 w:0)
-	/// Proof Skipped: TechnicalCommittee ProposalOf (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `TechnicalCommittee::Members` (r:1 w:0)
+	/// Proof: `TechnicalCommittee::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::ProposalOf` (r:1 w:0)
+	/// Proof: `TechnicalCommittee::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `b` is `[2, 1024]`.
 	/// The range of component `m` is `[1, 100]`.
 	fn propose_execute(b: u32, m: u32, ) -> Weight {
@@ -115,16 +114,16 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(Weight::from_parts(0, 32).saturating_mul(m.into()))
 	}
-	/// Storage: TechnicalCommittee Members (r:1 w:0)
-	/// Proof Skipped: TechnicalCommittee Members (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee ProposalOf (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee ProposalOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Proposals (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee Proposals (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee ProposalCount (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee ProposalCount (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Voting (r:0 w:1)
-	/// Proof Skipped: TechnicalCommittee Voting (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `TechnicalCommittee::Members` (r:1 w:0)
+	/// Proof: `TechnicalCommittee::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::ProposalOf` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Proposals` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::ProposalCount` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::ProposalCount` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Voting` (r:0 w:1)
+	/// Proof: `TechnicalCommittee::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `b` is `[2, 1024]`.
 	/// The range of component `m` is `[2, 100]`.
 	/// The range of component `p` is `[1, 20]`.
@@ -144,10 +143,10 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(0, 32).saturating_mul(m.into()))
 			.saturating_add(Weight::from_parts(0, 58).saturating_mul(p.into()))
 	}
-	/// Storage: TechnicalCommittee Members (r:1 w:0)
-	/// Proof Skipped: TechnicalCommittee Members (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Voting (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee Voting (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `TechnicalCommittee::Members` (r:1 w:0)
+	/// Proof: `TechnicalCommittee::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Voting` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `m` is `[5, 100]`.
 	fn vote(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -160,14 +159,14 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().writes(1))
 			.saturating_add(Weight::from_parts(0, 64).saturating_mul(m.into()))
 	}
-	/// Storage: TechnicalCommittee Voting (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee Voting (max_values: None, max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Members (r:1 w:0)
-	/// Proof Skipped: TechnicalCommittee Members (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Proposals (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee Proposals (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee ProposalOf (r:0 w:1)
-	/// Proof Skipped: TechnicalCommittee ProposalOf (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `TechnicalCommittee::Voting` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Members` (r:1 w:0)
+	/// Proof: `TechnicalCommittee::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Proposals` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::ProposalOf` (r:0 w:1)
+	/// Proof: `TechnicalCommittee::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `m` is `[4, 100]`.
 	/// The range of component `p` is `[1, 20]`.
 	fn close_early_disapproved(m: u32, p: u32, ) -> Weight {
@@ -184,14 +183,14 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(0, 64).saturating_mul(m.into()))
 			.saturating_add(Weight::from_parts(0, 55).saturating_mul(p.into()))
 	}
-	/// Storage: TechnicalCommittee Voting (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee Voting (max_values: None, max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Members (r:1 w:0)
-	/// Proof Skipped: TechnicalCommittee Members (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee ProposalOf (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee ProposalOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Proposals (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee Proposals (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `TechnicalCommittee::Voting` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Members` (r:1 w:0)
+	/// Proof: `TechnicalCommittee::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::ProposalOf` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Proposals` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// The range of component `b` is `[2, 1024]`.
 	/// The range of component `m` is `[4, 100]`.
 	/// The range of component `p` is `[1, 20]`.
@@ -212,16 +211,16 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(0, 64).saturating_mul(m.into()))
 			.saturating_add(Weight::from_parts(0, 79).saturating_mul(p.into()))
 	}
-	/// Storage: TechnicalCommittee Voting (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee Voting (max_values: None, max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Members (r:1 w:0)
-	/// Proof Skipped: TechnicalCommittee Members (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Prime (r:1 w:0)
-	/// Proof Skipped: TechnicalCommittee Prime (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Proposals (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee Proposals (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee ProposalOf (r:0 w:1)
-	/// Proof Skipped: TechnicalCommittee ProposalOf (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `TechnicalCommittee::Voting` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Members` (r:1 w:0)
+	/// Proof: `TechnicalCommittee::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Prime` (r:1 w:0)
+	/// Proof: `TechnicalCommittee::Prime` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Proposals` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::ProposalOf` (r:0 w:1)
+	/// Proof: `TechnicalCommittee::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `m` is `[4, 100]`.
 	/// The range of component `p` is `[1, 20]`.
 	fn close_disapproved(m: u32, p: u32, ) -> Weight {
@@ -240,16 +239,16 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(0, 64).saturating_mul(m.into()))
 			.saturating_add(Weight::from_parts(0, 55).saturating_mul(p.into()))
 	}
-	/// Storage: TechnicalCommittee Voting (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee Voting (max_values: None, max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Members (r:1 w:0)
-	/// Proof Skipped: TechnicalCommittee Members (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Prime (r:1 w:0)
-	/// Proof Skipped: TechnicalCommittee Prime (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee ProposalOf (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee ProposalOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Proposals (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee Proposals (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `TechnicalCommittee::Voting` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Members` (r:1 w:0)
+	/// Proof: `TechnicalCommittee::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Prime` (r:1 w:0)
+	/// Proof: `TechnicalCommittee::Prime` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::ProposalOf` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Proposals` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// The range of component `b` is `[2, 1024]`.
 	/// The range of component `m` is `[4, 100]`.
 	/// The range of component `p` is `[1, 20]`.
@@ -268,12 +267,12 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(0, 64).saturating_mul(m.into()))
 			.saturating_add(Weight::from_parts(0, 79).saturating_mul(p.into()))
 	}
-	/// Storage: TechnicalCommittee Proposals (r:1 w:1)
-	/// Proof Skipped: TechnicalCommittee Proposals (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee Voting (r:0 w:1)
-	/// Proof Skipped: TechnicalCommittee Voting (max_values: None, max_size: None, mode: Measured)
-	/// Storage: TechnicalCommittee ProposalOf (r:0 w:1)
-	/// Proof Skipped: TechnicalCommittee ProposalOf (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `TechnicalCommittee::Proposals` (r:1 w:1)
+	/// Proof: `TechnicalCommittee::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::Voting` (r:0 w:1)
+	/// Proof: `TechnicalCommittee::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `TechnicalCommittee::ProposalOf` (r:0 w:1)
+	/// Proof: `TechnicalCommittee::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `p` is `[1, 20]`.
 	fn disapprove_proposal(p: u32, ) -> Weight {
 		// Proof Size summary in bytes:

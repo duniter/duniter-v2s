@@ -65,13 +65,13 @@ benchmarks! {
     }: _<T::RuntimeOrigin>(origin.into())
     on_initialize_sufficient  {
         let i in 0 .. T::MaxNewAccountsPerBlock::get() => create_pending_accounts::<T>(i, false, true)?;
-    }: { Pallet::<T>::on_initialize(T::BlockNumber::one()); }
+    }: { Pallet::<T>::on_initialize(BlockNumberFor::<T>::one()); }
     on_initialize_with_balance {
         let i in 0 .. T::MaxNewAccountsPerBlock::get() => create_pending_accounts::<T>(i, true, false)?;
-    }: { Pallet::<T>::on_initialize(T::BlockNumber::one()); }
+    }: { Pallet::<T>::on_initialize(BlockNumberFor::<T>::one()); }
     on_initialize_no_balance {
         let i in 0 .. T::MaxNewAccountsPerBlock::get() => create_pending_accounts::<T>(i, false, false)?;
-    }: { Pallet::<T>::on_initialize(T::BlockNumber::one()); }
+    }: { Pallet::<T>::on_initialize(BlockNumberFor::<T>::one()); }
     on_filled_randomness_pending {
         let caller: T::AccountId = whitelisted_caller();
         let randomness = H256(T::AccountIdToSalt::convert(caller.clone()));

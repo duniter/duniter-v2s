@@ -84,9 +84,9 @@ pub mod pallet {
         /// Handler for the unbalanced reduction when the requestor pays fees.
         type OnUnbalanced: OnUnbalanced<NegativeImbalanceOf<Self>>;
         /// A safe source of randomness from the parent block
-        type ParentBlockRandomness: Randomness<Option<H256>, Self::BlockNumber>;
+        type ParentBlockRandomness: Randomness<Option<H256>, BlockNumberFor<Self>>;
         /// A safe source of randomness from one epoch ago
-        type RandomnessFromOneEpochAgo: Randomness<H256, Self::BlockNumber>;
+        type RandomnessFromOneEpochAgo: Randomness<H256, BlockNumberFor<Self>>;
         /// The overarching event type.
         type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Type representing the weight of this pallet
@@ -171,7 +171,7 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(_: T::BlockNumber) -> Weight {
+        fn on_initialize(_: BlockNumberFor<T>) -> Weight {
             // Overhead to process an empty request
             let mut total_weight = T::WeightInfo::on_initialize(0);
 
@@ -234,9 +234,11 @@ pub mod pallet {
             // Apply phase
             Ok(Self::apply_request(randomness_type, salt))
         }
+
         pub fn force_request(randomness_type: RandomnessType, salt: H256) -> RequestId {
             Self::apply_request(randomness_type, salt)
         }
+
         pub fn on_new_epoch() {
             NexEpochHookIn::<T>::put(5)
         }
@@ -255,6 +257,7 @@ pub mod pallet {
             T::OnUnbalanced::on_unbalanced(imbalance);
             Ok(())
         }
+
         fn apply_request(randomness_type: RandomnessType, salt: H256) -> RequestId {
             let request_id = RequestIdProvider::<T>::mutate(|next_request_id| {
                 core::mem::replace(next_request_id, next_request_id.saturating_add(1))

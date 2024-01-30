@@ -19,8 +19,9 @@
 use super::*;
 
 use codec::Encode;
-use frame_benchmarking::{benchmarks, vec};
+use frame_benchmarking::benchmarks;
 use frame_support::traits::{Currency, OnFinalize};
+use frame_system::pallet_prelude::BlockNumberFor;
 use frame_system::RawOrigin;
 use pallet_balances::Pallet as Balances;
 use sp_runtime::traits::{Bounded, One};
@@ -48,7 +49,7 @@ benchmarks! {
     where_clause {
         where
         T: pallet_balances::Config, T::Balance: From<u64>,
-        T::BlockNumber: From<u32>,
+        BlockNumberFor<T>: From<u32>,
     }
 
     // request distance evaluation

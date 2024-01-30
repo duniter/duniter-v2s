@@ -33,6 +33,7 @@ impl WeightInfo for () {
         // Minimum execution time: 4_012_000 picoseconds.
         Weight::from_parts(4_629_000, 0).saturating_add(Weight::from_parts(0, 0))
     }
+
     fn expire_memberships(i: u32) -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `567 + i * (23 ±0)`

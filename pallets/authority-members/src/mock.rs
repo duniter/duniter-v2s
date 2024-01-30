@@ -16,28 +16,24 @@
 
 use super::*;
 use crate::{self as pallet_authority_members};
-use frame_support::{
-    pallet_prelude::*,
-    parameter_types,
-    traits::{Everything, GenesisBuild},
-    BasicExternalities,
-};
+use frame_support::{pallet_prelude::*, parameter_types, traits::Everything};
 use frame_system as system;
 use pallet_offences::traits::OnOffenceHandler;
 use pallet_offences::SlashStrategy;
 use pallet_session::ShouldEndSession;
 use sp_core::{crypto::key_types::DUMMY, H256};
+use sp_runtime::BuildStorage;
 use sp_runtime::{
     impl_opaque_keys,
-    testing::{Header, UintAuthorityId},
+    testing::UintAuthorityId,
     traits::{BlakeTwo256, ConvertInto, IdentityLookup, IsMember, OpaqueKeys},
     KeyTypeId,
 };
 use sp_staking::offence::OffenceDetails;
+use sp_state_machine::BasicExternalities;
 
 type AccountId = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
 impl_opaque_keys! {
     pub struct MockSessionKeys {
@@ -53,14 +49,11 @@ impl From<UintAuthorityId> for MockSessionKeys {
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Session: pallet_session::{Pallet, Call, Storage, Config<T>, Event},
-        AuthorityMembers: pallet_authority_members::{Pallet, Call, Storage, Config<T>, Event<T>},
+        System: frame_system,
+        Session: pallet_session,
+        AuthorityMembers: pallet_authority_members,
     }
 );
 
@@ -70,30 +63,30 @@ parameter_types! {
 }
 
 impl system::Config for Test {
+    type AccountData = ();
+    type AccountId = AccountId;
     type BaseCallFilter = Everything;
-    type BlockWeights = ();
+    type Block = Block;
+    type BlockHashCount = BlockHashCount;
     type BlockLength = ();
+    type BlockWeights = ();
     type DbWeight = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = ();
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = SS58Prefix;
-    type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type Nonce = u64;
+    type OnKilledAccount = ();
+    type OnNewAccount = ();
+    type OnSetCode = ();
+    type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeTask = ();
+    type SS58Prefix = SS58Prefix;
+    type SystemWeightInfo = ();
+    type Version = ();
 }
 
 pub struct TestSessionHandler;
@@ -121,14 +114,14 @@ impl ShouldEndSession<u64> for TestShouldEndSession {
 }
 
 impl pallet_session::Config for Test {
+    type Keys = MockSessionKeys;
+    type NextSessionRotation = ();
     type RuntimeEvent = RuntimeEvent;
+    type SessionHandler = TestSessionHandler;
+    type SessionManager = AuthorityMembers;
+    type ShouldEndSession = TestShouldEndSession;
     type ValidatorId = u64;
     type ValidatorIdOf = ConvertInto;
-    type ShouldEndSession = TestShouldEndSession;
-    type NextSessionRotation = ();
-    type SessionManager = AuthorityMembers;
-    type SessionHandler = TestSessionHandler;
-    type Keys = MockSessionKeys;
     type WeightInfo = ();
 }
 
@@ -155,12 +148,12 @@ impl pallet_authority_members::Config for Test {
     type MaxAuthorities = ConstU32<4>;
     type MemberId = u64;
     type MemberIdOf = ConvertInto;
+    type OnIncomingMember = ();
     type OnNewSession = ();
+    type OnOutgoingMember = ();
     type RemoveMemberOrigin = system::EnsureRoot<u64>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
-    type OnIncomingMember = ();
-    type OnOutgoingMember = ();
 }
 
 // Build genesis storage according to the mock runtime.
@@ -172,8 +165,8 @@ pub fn new_test_ext(initial_authorities_len: u64) -> sp_io::TestExternalities {
         .map(|i| (i * 3, i * 3, UintAuthorityId(i * 3).into()))
         .collect();
 
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
+    let mut t = frame_system::GenesisConfig::<Test>::default()
+        .build_storage()
         .unwrap();
     BasicExternalities::execute_with_storage(&mut t, || {
         for (ref k, ..) in &keys {

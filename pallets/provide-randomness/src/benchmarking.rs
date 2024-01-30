@@ -23,6 +23,7 @@ use frame_support::ensure;
 use frame_support::pallet_prelude::IsType;
 use frame_support::sp_runtime::{traits::One, Saturating};
 use frame_support::traits::{Currency, Get, OnInitialize};
+use frame_system::pallet_prelude::BlockNumberFor;
 use frame_system::RawOrigin;
 use sp_core::H256;
 
@@ -64,7 +65,7 @@ benchmarks! {
         T: pallet_balances::Config,
         T::Balance: From<u64>,
         <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>,
-        T::BlockNumber: From<u32>,
+        BlockNumberFor<T>: From<u32>,
     }
     request {
         // Get account
@@ -94,7 +95,7 @@ benchmarks! {
             core::mem::replace(next_in, next_in.saturating_sub(1))
         });
         ensure!(next_epoch_hook_in != 1, "Will be next epoch.");
-    }: { Pallet::<T>::on_initialize(T::BlockNumber::one()); }
+    }: { Pallet::<T>::on_initialize(BlockNumberFor::<T>::one()); }
     verify {
         ensure!(RequestsIds::<T>::count() == 0, "List not processed.");
         ensure!(RequestsReadyAtNextBlock::<T>::get().is_empty(), "List not processed.");

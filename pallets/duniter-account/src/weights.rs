@@ -41,6 +41,7 @@ impl WeightInfo for () {
             .saturating_add(Weight::from_parts(0, 3591))
             .saturating_add(RocksDbWeight::get().reads(1))
     }
+
     // Storage: Account PendingNewAccounts (r:1 w:0)
     // Storage: ProvideRandomness RequestIdProvider (r:1 w:1)
     // Storage: ProvideRandomness RequestsIds (r:1 w:1)
@@ -59,6 +60,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads((6 as u64).saturating_mul(i as u64)))
             .saturating_add(RocksDbWeight::get().writes((6 as u64).saturating_mul(i as u64)))
     }
+
     // Storage: Account PendingNewAccounts (r:1 w:0)
     // Storage: ProvideRandomness RequestIdProvider (r:1 w:1)
     // Storage: ProvideRandomness RequestsIds (r:1 w:1)
@@ -77,6 +79,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads((6 as u64).saturating_mul(i as u64)))
             .saturating_add(RocksDbWeight::get().writes((6 as u64).saturating_mul(i as u64)))
     }
+
     // Storage: Account PendingNewAccounts (r:1 w:0)
     /// The range of component `i` is `[0, 1]`.
     fn on_initialize_no_balance(i: u32) -> Weight {
@@ -87,6 +90,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
     }
+
     // Storage: Account PendingRandomIdAssignments (r:1 w:1)
     fn on_filled_randomness_pending() -> Weight {
         // Minimum execution time: 66_963 nanoseconds.
@@ -94,6 +98,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
+
     // Storage: Account PendingRandomIdAssignments (r:1 w:0)
     fn on_filled_randomness_no_pending() -> Weight {
         // Minimum execution time: 16_088 nanoseconds.

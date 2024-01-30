@@ -29,9 +29,11 @@ impl WeightInfo for () {
     fn invite_smith() -> Weight {
         Weight::zero()
     }
+
     fn accept_invitation() -> Weight {
         Weight::zero()
     }
+
     fn certify_smith() -> Weight {
         Weight::zero()
     }

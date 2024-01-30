@@ -71,7 +71,7 @@ benchmarks! {
         let _ = T::Currency::make_free_balance_be(&recipient, existential_deposit.into());
     }: _(
         RawOrigin::Signed(caller.clone()),
-        T::BlockNumber::zero(),
+        BlockNumberFor::<T>::zero(),
         Account::<<T::Lookup as StaticLookup>::Source>::Normal(recipient_lookup)
     )
     verify {
@@ -104,7 +104,7 @@ benchmarks! {
         let _ = T::Currency::make_free_balance_be(&recipient2, existential_deposit.into());
     }: _(
         RawOrigin::Signed(caller.clone()),
-        T::BlockNumber::zero(),
+        BlockNumberFor::<T>::zero(),
         Account::<<T::Lookup as StaticLookup>::Source>::Normal(recipient1_lookup),
         Account::<<T::Lookup as StaticLookup>::Source>::Normal(recipient2_lookup),
         existential_deposit.into()

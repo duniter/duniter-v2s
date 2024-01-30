@@ -14,11 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+#![allow(clippy::type_complexity)]
+
 use crate::runtime;
 use log::debug;
 
 use sp_core::H256;
-use subxt::storage::StorageKey;
 
 pub type Client = subxt::OnlineClient<crate::RuntimeConfig>;
 pub type AccountId = subxt::utils::AccountId32;
@@ -31,7 +32,12 @@ pub async fn client(rpc_url: String) -> Client {
 }
 
 pub async fn parent_hash(client: &Client) -> H256 {
-    client.rpc().block_hash(None).await.unwrap().unwrap()
+    client
+        .blocks()
+        .at_latest()
+        .await
+        .expect("Cannot fetch latest block hash")
+        .hash()
 }
 
 pub async fn current_session(client: &Client, parent_hash: H256) -> u32 {
@@ -93,27 +99,24 @@ pub async fn member_iter(client: &Client, evaluation_block: H256) -> MemberIter 
         client
             .storage()
             .at(evaluation_block)
-            .iter(runtime::storage().membership().membership(0), 100)
+            .iter(runtime::storage().membership().membership_iter())
             .await
             .expect("Cannot fetch memberships"),
     )
 }
 
 pub struct MemberIter(
-    subxt::storage::KeyIter<
-        crate::RuntimeConfig,
-        Client,
+    subxt::backend::StreamOfResults<(
+        Vec<u8>,
         runtime::runtime_types::sp_membership::MembershipData<u32>,
-    >,
+    )>,
 );
 
 impl MemberIter {
     pub async fn next(&mut self) -> Result<Option<IdtyIndex>, subxt::error::Error> {
-        Ok(self
-            .0
-            .next()
-            .await?
-            .map(|(storage_key, _membership_data)| idty_id_from_storage_key(&storage_key)))
+        self.0.next().await.transpose().map(|i| {
+            i.map(|(storage_key, _membership_data)| idty_id_from_storage_key(&storage_key))
+        })
     }
 }
 
@@ -122,26 +125,28 @@ pub async fn cert_iter(client: &Client, evaluation_block: H256) -> CertIter {
         client
             .storage()
             .at(evaluation_block)
-            .iter(runtime::storage().certification().certs_by_receiver(0), 100)
+            .iter(runtime::storage().certification().certs_by_receiver_iter())
             .await
             .expect("Cannot fetch certifications"),
     )
 }
 
-pub struct CertIter(subxt::storage::KeyIter<crate::RuntimeConfig, Client, Vec<(IdtyIndex, u32)>>);
+pub struct CertIter(subxt::backend::StreamOfResults<(Vec<u8>, Vec<(IdtyIndex, u32)>)>);
 
 impl CertIter {
     pub async fn next(
         &mut self,
     ) -> Result<Option<(IdtyIndex, Vec<(IdtyIndex, u32)>)>, subxt::error::Error> {
-        Ok(self
-            .0
-            .next()
-            .await?
-            .map(|(storage_key, issuers)| (idty_id_from_storage_key(&storage_key), issuers)))
+        self.0.next().await.transpose().map(|i| {
+            i.map(|(storage_key, issuers)| (idty_id_from_storage_key(&storage_key), issuers))
+        })
     }
 }
 
-fn idty_id_from_storage_key(storage_key: &StorageKey) -> IdtyIndex {
-    u32::from_le_bytes(storage_key.as_ref()[40..44].try_into().unwrap())
+fn idty_id_from_storage_key(storage_key: &[u8]) -> IdtyIndex {
+    u32::from_le_bytes(
+        storage_key[40..44]
+            .try_into()
+            .expect("Cannot convert StorageKey to IdtyIndex"),
+    )
 }

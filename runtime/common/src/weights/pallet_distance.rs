@@ -19,8 +19,8 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2024-01-22, STEPS: `2`, REPEAT: `2`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `squirrel`, CPU: `Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz`
-//! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("dev"), DB CACHE: 1024
+//! HOSTNAME: `bgallois-ms7d43`, CPU: `12th Gen Intel(R) Core(TM) i3-12100F`
+//! WASM-EXECUTION: `Compiled`, CHAIN: `Some("dev")`, DB CACHE: 1024
 
 // Executed Command:
 // ./target/release/duniter
@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -104,18 +103,18 @@ impl<T: frame_system::Config> pallet_distance::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(10))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
-	/// Storage: Distance DidUpdate (r:1 w:1)
-	/// Proof Skipped: Distance DidUpdate (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: Authorship Author (r:1 w:1)
-	/// Proof: Authorship Author (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
-	/// Storage: System Digest (r:1 w:0)
-	/// Proof Skipped: System Digest (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: Session Validators (r:1 w:0)
-	/// Proof Skipped: Session Validators (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: Session CurrentIndex (r:1 w:0)
-	/// Proof Skipped: Session CurrentIndex (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: Distance EvaluationPool0 (r:1 w:1)
-	/// Proof Skipped: Distance EvaluationPool0 (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `Distance::DidUpdate` (r:1 w:1)
+	/// Proof: `Distance::DidUpdate` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Authorship::Author` (r:1 w:1)
+	/// Proof: `Authorship::Author` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
+	/// Storage: `System::Digest` (r:1 w:0)
+	/// Proof: `System::Digest` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::Validators` (r:1 w:0)
+	/// Proof: `Session::Validators` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::CurrentIndex` (r:1 w:0)
+	/// Proof: `Session::CurrentIndex` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Distance::EvaluationPool0` (r:1 w:1)
+	/// Proof: `Distance::EvaluationPool0` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// The range of component `i` is `[1, 600]`.
 	fn update_evaluation(i: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -130,10 +129,10 @@ impl<T: frame_system::Config> pallet_distance::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().writes(3))
 			.saturating_add(Weight::from_parts(0, 10).saturating_mul(i.into()))
 	}
-	/// Storage: Session CurrentIndex (r:1 w:0)
-	/// Proof Skipped: Session CurrentIndex (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: Distance EvaluationPool0 (r:1 w:1)
-	/// Proof Skipped: Distance EvaluationPool0 (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `Session::CurrentIndex` (r:1 w:0)
+	/// Proof: `Session::CurrentIndex` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Distance::EvaluationPool0` (r:1 w:1)
+	/// Proof: `Distance::EvaluationPool0` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// The range of component `i` is `[1, 600]`.
 	fn force_update_evaluation(i: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -166,8 +165,8 @@ impl<T: frame_system::Config> pallet_distance::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
-	/// Storage: Distance DidUpdate (r:1 w:1)
-	/// Proof Skipped: Distance DidUpdate (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `Distance::DidUpdate` (r:1 w:1)
+	/// Proof: `Distance::DidUpdate` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn on_finalize() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `170`

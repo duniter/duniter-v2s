@@ -38,16 +38,10 @@ macro_rules! pallets_config {
             type RuntimeCall = RuntimeCall;
             /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
             type Lookup = AccountIdLookup<AccountId, ()>;
-            /// The index type for storing how many extrinsics an account has signed.
-            type Index = Index;
-            /// The index type for blocks.
-            type BlockNumber = BlockNumber;
             /// The type for hashing blocks and tries.
             type Hash = Hash;
             /// The hashing algorithm used.
             type Hashing = BlakeTwo256;
-            /// The header type.
-            type Header = generic::Header<BlockNumber, BlakeTwo256>;
             /// The ubiquitous event type.
             type RuntimeEvent = RuntimeEvent;
             /// The ubiquitous origin type.
@@ -75,6 +69,11 @@ macro_rules! pallets_config {
             /// The set code logic, just the default since we're not a parachain.
             type OnSetCode = ();
             type MaxConsumers = frame_support::traits::ConstU32<16>;
+	/// The type for storing how many extrinsics an account has signed.
+	type Nonce = node_primitives::Nonce;
+	/// The block type for the runtime.
+	type Block = Block;
+type RuntimeTask = ();
         }
 
         // SCHEDULER //
@@ -123,6 +122,8 @@ macro_rules! pallets_config {
         parameter_types! {
             pub const ReloadRate: BlockNumber = 1 * HOURS; // faster than DAYS
             pub const MaxQuota: Balance = 1000; // 10 ĞD
+			pub const MaxNominators: u32 = 64;
+pub TreasuryAccount: AccountId = Treasury::account_id(); // TODO
         }
         impl pallet_quota::Config for Runtime {
             type RuntimeEvent = RuntimeEvent;
@@ -149,6 +150,7 @@ macro_rules! pallets_config {
                 pallet_babe::EquivocationReportSystem<Self, Offences, Historical, ReportLongevity>;
             type WeightInfo = common_runtime::weights::pallet_babe::WeightInfo<Runtime>;
             type MaxAuthorities = MaxAuthorities;
+type MaxNominators = MaxNominators;
         }
 
         impl pallet_timestamp::Config for Runtime {
@@ -161,6 +163,8 @@ macro_rules! pallets_config {
         // MONEY MANAGEMENT //
 
         impl pallet_balances::Config for Runtime {
+type RuntimeHoldReason = ();
+type RuntimeFreezeReason = ();
             type RuntimeEvent = RuntimeEvent;
             type MaxLocks = MaxLocks;
             type MaxReserves = frame_support::pallet_prelude::ConstU32<5>;
@@ -170,7 +174,6 @@ macro_rules! pallets_config {
             type DustRemoval = HandleDust;
             type ExistentialDeposit = ExistentialDeposit;
             type AccountStore = Account;
-			type HoldIdentifier = ();
 			type FreezeIdentifier = ();
 			type MaxHolds = frame_support::pallet_prelude::ConstU32<0>;
 			type MaxFreezes = frame_support::pallet_prelude::ConstU32<0>;
@@ -260,7 +263,6 @@ macro_rules! pallets_config {
             #[cfg(feature = "runtime-benchmarks")]
             type MaxKeys = frame_support::traits::ConstU32<1_000>; // At least 1000 to be benchmarkable see https://github.com/paritytech/substrate/blob/e94cb0dafd4f30ff29512c1c00ec513ada7d2b5d/frame/im-online/src/benchmarking.rs#L35
             type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
-            type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
         }
         impl pallet_offences::Config for Runtime {
             type RuntimeEvent = RuntimeEvent;
@@ -291,6 +293,7 @@ macro_rules! pallets_config {
             type WeightInfo = common_runtime::weights::pallet_grandpa::WeightInfo<Runtime>;
             type MaxAuthorities = MaxAuthorities;
 			type MaxSetIdSessionEntries = MaxSetIdSessionEntries;
+			type MaxNominators = frame_support::traits::ConstU32<64>;
 		}
         parameter_types! {
             // BondingDuration::get() * SessionsPerEra::get();
@@ -327,8 +330,7 @@ macro_rules! pallets_config {
             type WeightInfo = common_runtime::weights::pallet_preimage::WeightInfo<Runtime>;
             type Currency = Balances;
             type ManagerOrigin = EnsureRoot<AccountId>;
-            type BaseDeposit = PreimageBaseDeposit;
-            type ByteDeposit = PreimageByteDeposit;
+			type Consideration = ();
         }
 
         // UTILITIES //
@@ -420,8 +422,16 @@ macro_rules! pallets_config {
             type RejectOrigin = TreasuryRejectOrigin;
             type SpendFunds = TreasurySpendFunds<Self>;
             type SpendPeriod = SpendPeriod;
-            type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u64>;
-			type WeightInfo = common_runtime::weights::pallet_treasury::WeightInfo<Runtime>;
+            type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+            type WeightInfo = common_runtime::weights::pallet_treasury::WeightInfo<Runtime>;
+            type AssetKind = ();
+            type Beneficiary = AccountId;
+            type BeneficiaryLookup = AccountIdLookup<AccountId, ()>;
+            type Paymaster = frame_support::traits::tokens::pay::PayFromAccount<Balances, TreasuryAccount>;
+            type BalanceConverter = frame_support::traits::tokens::UnityAssetBalanceConversion;
+            type PayoutPeriod = sp_core::ConstU32<10>;
+            #[cfg(feature = "runtime-benchmarks")]
+            type BenchmarkHelper = ();
         }
 
         // UNIVERSAL DIVIDEND //
@@ -479,6 +489,12 @@ macro_rules! pallets_config {
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_identity::WeightInfo<Runtime>;
         }
+
+    impl pallet_sudo::Config for Runtime {
+        type RuntimeEvent = RuntimeEvent;
+        type RuntimeCall = RuntimeCall;
+        type WeightInfo = common_runtime::weights::pallet_sudo::WeightInfo<Runtime>;
+    }
 
         impl pallet_membership::Config for Runtime {
             type CheckMembershipOpAllowed = Wot;

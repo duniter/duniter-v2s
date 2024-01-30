@@ -60,7 +60,7 @@ pub mod pallet {
         + pallet_membership::Config<IdtyId = IdtyIndex>
     {
         #[pallet::constant]
-        type FirstIssuableOn: Get<Self::BlockNumber>;
+        type FirstIssuableOn: Get<frame_system::pallet_prelude::BlockNumberFor<Self>>;
         #[pallet::constant]
         type MinCertForMembership: Get<u32>;
         #[pallet::constant]

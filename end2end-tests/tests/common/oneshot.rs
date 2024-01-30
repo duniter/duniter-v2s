@@ -43,7 +43,7 @@ impl Account {
 }
 
 pub async fn create_oneshot_account(
-    client: &Client,
+    client: &FullClient,
     from: AccountKeyring,
     amount: u64,
     to: AccountKeyring,
@@ -52,15 +52,16 @@ pub async fn create_oneshot_account(
     let to = to.to_account_id();
 
     let _events = create_block_with_extrinsic(
-        client,
+        &client.rpc,
         client
+            .client
             .tx()
             .create_signed(
                 &gdev::tx()
                     .oneshot_account()
                     .create_oneshot_account(to.into(), amount),
                 &from,
-                BaseExtrinsicParamsBuilder::new(),
+                SubstrateExtrinsicParamsBuilder::new().build(),
             )
             .await?,
     )
@@ -70,7 +71,7 @@ pub async fn create_oneshot_account(
 }
 
 pub async fn consume_oneshot_account(
-    client: &Client,
+    client: &FullClient,
     from: AccountKeyring,
     to: Account,
 ) -> Result<()> {
@@ -78,13 +79,14 @@ pub async fn consume_oneshot_account(
     let to = to.to_account_id();
 
     let _events = create_block_with_extrinsic(
-        client,
+        &client.rpc,
         client
+            .client
             .tx()
             .create_signed(
                 &gdev::tx().oneshot_account().consume_oneshot_account(0, to),
                 &from,
-                BaseExtrinsicParamsBuilder::new(),
+                SubstrateExtrinsicParamsBuilder::new().build(),
             )
             .await?,
     )
@@ -95,7 +97,7 @@ pub async fn consume_oneshot_account(
 
 #[allow(clippy::too_many_arguments)]
 pub async fn consume_oneshot_account_with_remaining(
-    client: &Client,
+    client: &FullClient,
     from: AccountKeyring,
     amount: u64,
     to: Account,
@@ -106,15 +108,16 @@ pub async fn consume_oneshot_account_with_remaining(
     let remaining_to = remaining_to.to_account_id();
 
     let _events = create_block_with_extrinsic(
-        client,
+        &client.rpc,
         client
+            .client
             .tx()
             .create_signed(
                 &gdev::tx()
                     .oneshot_account()
                     .consume_oneshot_account_with_remaining(0, to, remaining_to, amount),
                 &from,
-                BaseExtrinsicParamsBuilder::new(),
+                SubstrateExtrinsicParamsBuilder::new().build(),
             )
             .await?,
     )

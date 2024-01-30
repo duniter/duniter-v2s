@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -48,14 +47,14 @@ use core::marker::PhantomData;
 /// Weight functions for `pallet_timestamp`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_timestamp::WeightInfo for WeightInfo<T> {
-	/// Storage: Timestamp Now (r:1 w:1)
-	/// Proof: Timestamp Now (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
-	/// Storage: Babe CurrentSlot (r:1 w:0)
-	/// Proof: Babe CurrentSlot (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
-	/// Storage: UniversalDividend NextUd (r:1 w:1)
-	/// Proof: UniversalDividend NextUd (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
-	/// Storage: Parameters ParametersStorage (r:1 w:0)
-	/// Proof Skipped: Parameters ParametersStorage (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `Timestamp::Now` (r:1 w:1)
+	/// Proof: `Timestamp::Now` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
+	/// Storage: `Babe::CurrentSlot` (r:1 w:0)
+	/// Proof: `Babe::CurrentSlot` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
+	/// Storage: `UniversalDividend::NextUd` (r:1 w:1)
+	/// Proof: `UniversalDividend::NextUd` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
+	/// Storage: `Parameters::ParametersStorage` (r:1 w:0)
+	/// Proof: `Parameters::ParametersStorage` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn set() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `379`

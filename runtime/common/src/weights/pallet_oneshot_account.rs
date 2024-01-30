@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -48,8 +47,8 @@ use core::marker::PhantomData;
 /// Weight functions for `pallet_oneshot_account`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_oneshot_account::WeightInfo for WeightInfo<T> {
-	/// Storage: OneshotAccount OneshotAccounts (r:1 w:1)
-	/// Proof Skipped: OneshotAccount OneshotAccounts (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `OneshotAccount::OneshotAccounts` (r:1 w:1)
+	/// Proof: `OneshotAccount::OneshotAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn create_oneshot_account() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `42`
@@ -60,12 +59,12 @@ impl<T: frame_system::Config> pallet_oneshot_account::WeightInfo for WeightInfo<
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: OneshotAccount OneshotAccounts (r:1 w:1)
-	/// Proof Skipped: OneshotAccount OneshotAccounts (max_values: None, max_size: None, mode: Measured)
-	/// Storage: System BlockHash (r:1 w:0)
-	/// Proof: System BlockHash (max_values: None, max_size: Some(44), added: 2519, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `OneshotAccount::OneshotAccounts` (r:1 w:1)
+	/// Proof: `OneshotAccount::OneshotAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `System::BlockHash` (r:1 w:0)
+	/// Proof: `System::BlockHash` (`max_values`: None, `max_size`: Some(44), added: 2519, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	fn consume_oneshot_account() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `242`
@@ -76,12 +75,12 @@ impl<T: frame_system::Config> pallet_oneshot_account::WeightInfo for WeightInfo<
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: OneshotAccount OneshotAccounts (r:1 w:1)
-	/// Proof Skipped: OneshotAccount OneshotAccounts (max_values: None, max_size: None, mode: Measured)
-	/// Storage: System BlockHash (r:1 w:0)
-	/// Proof: System BlockHash (max_values: None, max_size: Some(44), added: 2519, mode: MaxEncodedLen)
-	/// Storage: System Account (r:2 w:2)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `OneshotAccount::OneshotAccounts` (r:1 w:1)
+	/// Proof: `OneshotAccount::OneshotAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `System::BlockHash` (r:1 w:0)
+	/// Proof: `System::BlockHash` (`max_values`: None, `max_size`: Some(44), added: 2519, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	fn consume_oneshot_account_with_remaining() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `306`

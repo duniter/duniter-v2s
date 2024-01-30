@@ -31,14 +31,13 @@ pub mod weights;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
-use frame_support::dispatch::Weight;
+use frame_support::pallet_prelude::Weight;
 use frame_support::pallet_prelude::*;
 use sp_membership::traits::*;
 use sp_membership::MembershipData;
 use sp_runtime::traits::Zero;
+use sp_std::collections::btree_map::BTreeMap;
 use sp_std::prelude::*;
-#[cfg(feature = "std")]
-use std::collections::BTreeMap;
 
 #[cfg(feature = "runtime-benchmarks")]
 pub trait SetupBenchmark<IdtyId, AccountId> {
@@ -49,6 +48,7 @@ pub trait SetupBenchmark<IdtyId, AccountId> {
 #[cfg(feature = "runtime-benchmarks")]
 impl<IdtyId, AccountId> SetupBenchmark<IdtyId, AccountId> for () {
     fn force_valid_distance_status(_idty_id: &IdtyId) {}
+
     fn add_cert(_issuer: &IdtyId, _receiver: &IdtyId) {}
 }
 
@@ -94,11 +94,11 @@ pub mod pallet {
         /// Maximum life span of a single membership (in number of blocks)
         // (this could be renamed "validity" or "duration")
         #[pallet::constant]
-        type MembershipPeriod: Get<Self::BlockNumber>;
+        type MembershipPeriod: Get<BlockNumberFor<Self>>;
         /// Minimum delay to wait before renewing membership
         // i.e. asking for distance evaluation
         #[pallet::constant]
-        type MembershipRenewalPeriod: Get<Self::BlockNumber>;
+        type MembershipRenewalPeriod: Get<BlockNumberFor<Self>>;
         /// On event handler
         type OnEvent: OnEvent<Self::IdtyId>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
@@ -112,10 +112,9 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub memberships: BTreeMap<T::IdtyId, MembershipData<T::BlockNumber>>,
+        pub memberships: BTreeMap<T::IdtyId, MembershipData<BlockNumberFor<T>>>,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
@@ -125,7 +124,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             for (idty_id, membership_data) in &self.memberships {
                 MembershipsExpireOn::<T>::append(membership_data.expire_on, idty_id);
@@ -140,14 +139,19 @@ pub mod pallet {
     // (expiration block for instance)
     #[pallet::storage]
     #[pallet::getter(fn membership)]
-    pub type Membership<T: Config> =
-        CountedStorageMap<_, Twox64Concat, T::IdtyId, MembershipData<T::BlockNumber>, OptionQuery>;
+    pub type Membership<T: Config> = CountedStorageMap<
+        _,
+        Twox64Concat,
+        T::IdtyId,
+        MembershipData<BlockNumberFor<T>>,
+        OptionQuery,
+    >;
 
     /// maps block number to the list of identity id set to expire at this block
     #[pallet::storage]
     #[pallet::getter(fn memberships_expire_on)]
     pub type MembershipsExpireOn<T: Config> =
-        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::IdtyId>, ValueQuery>;
+        StorageMap<_, Twox64Concat, BlockNumberFor<T>, Vec<T::IdtyId>, ValueQuery>;
 
     // EVENTS //
 
@@ -185,8 +189,8 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(n: T::BlockNumber) -> Weight {
-            if n > T::BlockNumber::zero() {
+        fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+            if n > BlockNumberFor::<T>::zero() {
                 T::WeightInfo::on_initialize().saturating_add(Self::expire_memberships(n))
             } else {
                 T::WeightInfo::on_initialize()
@@ -203,7 +207,7 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
     impl<T: Config> Pallet<T> {
         /// unschedule membership expiry
-        fn unschedule_membership_expiry(idty_id: T::IdtyId, block_number: T::BlockNumber) {
+        fn unschedule_membership_expiry(idty_id: T::IdtyId, block_number: BlockNumberFor<T>) {
             let mut scheduled = MembershipsExpireOn::<T>::get(block_number);
 
             if let Some(pos) = scheduled.iter().position(|x| *x == idty_id) {
@@ -211,8 +215,9 @@ pub mod pallet {
                 MembershipsExpireOn::<T>::set(block_number, scheduled);
             }
         }
+
         /// schedule membership expiry
-        fn insert_membership_and_schedule_expiry(idty_id: T::IdtyId) -> T::BlockNumber {
+        fn insert_membership_and_schedule_expiry(idty_id: T::IdtyId) -> BlockNumberFor<T> {
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             let expire_on = block_number + T::MembershipPeriod::get();
 
@@ -237,7 +242,7 @@ pub mod pallet {
         /// check that membership can be renewed
         pub fn check_renew_membership(
             idty_id: T::IdtyId,
-        ) -> Result<MembershipData<T::BlockNumber>, DispatchError> {
+        ) -> Result<MembershipData<BlockNumberFor<T>>, DispatchError> {
             let membership_data =
                 Membership::<T>::get(idty_id).ok_or(Error::<T>::MembershipNotFound)?;
 
@@ -273,7 +278,7 @@ pub mod pallet {
         /// perform membership renewal
         fn do_renew_membership(
             idty_id: T::IdtyId,
-            membership_data: MembershipData<T::BlockNumber>,
+            membership_data: MembershipData<BlockNumberFor<T>>,
         ) {
             Self::unschedule_membership_expiry(idty_id, membership_data.expire_on);
             let expire_on = Self::insert_membership_and_schedule_expiry(idty_id);
@@ -297,7 +302,7 @@ pub mod pallet {
         }
 
         /// perform the membership expiry scheduled at given block
-        pub fn expire_memberships(block_number: T::BlockNumber) -> Weight {
+        pub fn expire_memberships(block_number: BlockNumberFor<T>) -> Weight {
             let mut expired_idty_count = 0u32;
 
             for idty_id in MembershipsExpireOn::<T>::take(block_number) {

@@ -48,6 +48,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(14))
             .saturating_add(RocksDbWeight::get().writes(12))
     }
+
     fn confirm_identity() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `661`
@@ -58,6 +59,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(5))
             .saturating_add(RocksDbWeight::get().writes(4))
     }
+
     fn change_owner_key() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `837`
@@ -68,6 +70,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(7))
             .saturating_add(RocksDbWeight::get().writes(5))
     }
+
     fn revoke_identity() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `778`
@@ -78,6 +81,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(6))
             .saturating_add(RocksDbWeight::get().writes(6))
     }
+
     fn prune_item_identities_names(i: u32) -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `0`
@@ -89,6 +93,7 @@ impl WeightInfo for () {
             .saturating_add(Weight::from_parts(30_016_649, 0).saturating_mul(i.into()))
             .saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(i.into())))
     }
+
     fn fix_sufficients() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `67`
@@ -99,6 +104,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(1))
             .saturating_add(RocksDbWeight::get().writes(1))
     }
+
     fn link_account() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `307`
@@ -109,6 +115,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(3))
             .saturating_add(RocksDbWeight::get().writes(1))
     }
+
     fn on_initialize() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `0`
@@ -116,6 +123,7 @@ impl WeightInfo for () {
         // Minimum execution time: 4_529_000 picoseconds.
         Weight::from_parts(7_360_000, 0).saturating_add(Weight::from_parts(0, 0))
     }
+
     fn do_revoke_identity_noop() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `269`
@@ -125,6 +133,7 @@ impl WeightInfo for () {
             .saturating_add(Weight::from_parts(0, 3734))
             .saturating_add(RocksDbWeight::get().reads(1))
     }
+
     fn do_revoke_identity() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `1525`
@@ -135,6 +144,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(17))
             .saturating_add(RocksDbWeight::get().writes(20))
     }
+
     fn do_remove_identity_noop() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `269`
@@ -144,6 +154,7 @@ impl WeightInfo for () {
             .saturating_add(Weight::from_parts(0, 3734))
             .saturating_add(RocksDbWeight::get().reads(1))
     }
+
     fn do_remove_identity() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `1432`
@@ -154,6 +165,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(16))
             .saturating_add(RocksDbWeight::get().writes(22))
     }
+
     fn prune_identities_noop() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `108`
@@ -163,6 +175,7 @@ impl WeightInfo for () {
             .saturating_add(Weight::from_parts(0, 3573))
             .saturating_add(RocksDbWeight::get().reads(1))
     }
+
     fn prune_identities_none() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `292`
@@ -173,6 +186,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(2))
             .saturating_add(RocksDbWeight::get().writes(1))
     }
+
     fn prune_identities_err() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `1177`

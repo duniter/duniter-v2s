@@ -21,123 +21,133 @@ path = "node/src/main.rs"
 default = ["gdev", "distance-oracle"]
 gdev = ["gdev-runtime"] # gdev feature enables gdev runtime and gdev command line options
 g1 = ["g1-runtime"]
-constant-fees = ["common-runtime/constant-fees"] # Activate constant fees model, 1 extrinsic = 2 cG
+constant-fees = [
+"common-runtime/constant-fees",
+"g1-runtime/constant-fees",
+"gdev-runtime/constant-fees",
+"gtest-runtime/constant-fees",
+] # Activate constant fees model, 1 extrinsic = 2 cG
 gtest = ["gtest-runtime"]
 embed = [] # embed feature enables embedding raw chainspecs that must be in ./specs/gdev-raw.json
 runtime-benchmarks = [
-    #'g1-runtime',
-    #'g1-runtime/runtime-benchmarks',
-    'gdev-runtime',
+    'common-runtime/runtime-benchmarks',
+    'g1-runtime/runtime-benchmarks',
     'gdev-runtime/runtime-benchmarks',
-    #'gtest-runtime',
-    #'gtest-runtime/runtime-benchmarks',
+    'gtest-runtime/runtime-benchmarks',
     'sc-client-db/runtime-benchmarks',
 ]
 try-runtime = [
-    #"g1-runtime/try-runtime",
+    "common-runtime/try-runtime",
+    "g1-runtime/try-runtime",
     "gdev-runtime/try-runtime",
-    #"gtest-runtime/try-runtime",
+    "gtest-runtime/try-runtime",
     "try-runtime-cli",
+]
+std = [
+    "common-runtime/std",
+    "g1-runtime/std",
+    "gdev-runtime/std",
+    "gtest-runtime/std",
 ]
 
 [build-dependencies]
-clap = { version = "4.0" }
+clap = { version = "4.4.18" }
 #clap_complete = { version = "4.0" }
-substrate-build-script-utils = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42' }
+substrate-build-script-utils = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0' }
 
 [dev-dependencies]
 rusty-hook = "^0.11.2"
 
 # Dependencies for specific targets
 [target.'cfg(any(target_arch="x86_64", target_arch="aarch64"))'.dependencies]
-sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-trie = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42" }
-
+sc-cli = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-service = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-trie = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0" }
 
 [dependencies]
+
+# crates.io dependencies
+async-io = { version = "2.3.0", default-features = false }
+bs58 = "0.5.0"
+clap = { version = "4.4.18", default-features = false, features = ["derive"] }
+clap_complete = { version = "4.4.8", default-features = false }
 # local dependencies
-common-runtime = { path = 'runtime/common' }
+common-runtime = { path = 'runtime/common', default-features = false }
 dc-distance = { path = 'client/distance' }
 distance-oracle = { path = 'distance-oracle', default-features = false, optional = true }
+enum-as-inner = { version = "=0.5.1", default-features = false } #https://github.com/bluejekyll/trust-dns/issues/1946
+
+# substrate dependencies
+frame-benchmarking = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+frame-benchmarking-cli = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+frame-system = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+futures = { version = "0.3.28", default-features = false, features = ["compat"] }
 g1-runtime = { path = 'runtime/g1', optional = true }
 gdev-runtime = { path = 'runtime/gdev', optional = true }
 gtest-runtime = { path = 'runtime/gtest', optional = true }
-pallet-certification = { path = 'pallets/certification' }
-pallet-oneshot-account = { path = 'pallets/oneshot-account' }
-sp-distance = { path = 'primitives/distance' }
-sp-membership = { path = 'primitives/membership' }
-
-# crates.io dependencies
-async-io = { version = "1.6.0", default-features = false }
-bs58 = "0.5.0"
-clap = { version = "4.0.9", default-features = false, features = ["derive"] }
-clap_complete = { version = "4", default-features = false }
-futures = { version = "0.3.28", default-features = false, features = ["compat"] }
 hex = { version = "0.4.3", default-features = false }
 jsonrpsee = { version = "0.16.2", default-features = false, features = ["server"] }
 lazy_static = { version = "1.4.0", default-features = false }
-log = { version = "0.4", default-features = false }
+log = { version = "0.4.20", default-features = false }
 maplit = { version = '1.0.2', default-features = false }
-memmap2 = { version = "0.5.10", default-features = false }
-serde = { version = "1.0", default-features = false }
+memmap2 = { version = "0.9.3", default-features = false }
+num-format = "0.4.4"
+pallet-certification = { path = 'pallets/certification' }
+pallet-grandpa = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+pallet-im-online = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+pallet-oneshot-account = { path = 'pallets/oneshot-account' }
+pallet-transaction-payment = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+pallet-transaction-payment-rpc = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+pallet-treasury = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-basic-authorship = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-chain-spec = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-cli = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-client-api = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-client-db = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-consensus = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-consensus-babe = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-consensus-babe-rpc = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-consensus-grandpa = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
+sc-consensus-manual-seal = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-executor = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-keystore = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-network = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-network-common = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-rpc-api = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-service = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-telemetry = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-transaction-pool = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-transaction-pool-api = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+serde = { version = "1.0.195", default-features = false }
 serde_json = { version = "1.0.64", default-features = false }
 serde_yaml = { version = "0.9.27", default-features = false }
+sp-api = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-authority-discovery = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-block-builder = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-blockchain = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-consensus = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-consensus-babe = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-consensus-grandpa = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
+sp-core = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-distance = { path = 'primitives/distance' }
+sp-inherents = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-io = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-keyring = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-keystore = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-membership = { path = 'primitives/membership' }
+sp-offchain = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sc-offchain = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-runtime = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-session = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-storage = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-timestamp = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-transaction-pool = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-transaction-storage-proof = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+sp-trie = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
+substrate-frame-rpc-system = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
 tracing-core = { version = "0.1.28", default-features = false }
-enum-as-inner = { version = "=0.5.1", default-features = false } #https://github.com/bluejekyll/trust-dns/issues/1946
-num-format = "0.4.4"
-
-# substrate dependencies
-frame-benchmarking = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-frame-benchmarking-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-frame-system = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-pallet-grandpa = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-pallet-im-online = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-pallet-transaction-payment = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-pallet-transaction-payment-rpc = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-pallet-treasury = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-basic-authorship = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-chain-spec = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-client-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-consensus = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-consensus-babe = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-consensus-babe-rpc = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-consensus-manual-seal = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-client-db = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-executor = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-keystore = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-network = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-network-common = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-rpc-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-service = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-telemetry = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-transaction-pool = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sc-transaction-pool-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-api = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-authority-discovery = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-transaction-storage-proof = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-block-builder = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-blockchain = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-consensus = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-consensus-babe = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-consensus-grandpa = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false }
-sc-consensus-grandpa = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42', default-features = false }
-sp-core = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-inherents = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-io = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-offchain = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-keyring = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-keystore = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-runtime = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-session = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-storage = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-timestamp = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-transaction-pool = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-sp-trie = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-substrate-frame-rpc-system = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", default-features = false }
-try-runtime-cli = { git = "https://github.com/duniter/substrate", branch = "duniter-substrate-v0.9.42", optional = true, default-features = false }
+try-runtime-cli = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", optional = true, default-features = false }
 
 [workspace]
 resolver = "2"
@@ -147,8 +157,8 @@ members = [
     'distance-oracle',
     'end2end-tests',
     'live-tests',
+    'pallets/authority-members',
     'pallets/certification',
-    'pallets/quota',
     'pallets/distance',
     'pallets/duniter-test-parameters',
     'pallets/duniter-test-parameters/macro',
@@ -156,16 +166,16 @@ members = [
     'pallets/identity',
     'pallets/membership',
     'pallets/oneshot-account',
-    'pallets/authority-members',
+    'pallets/quota',
     'pallets/smith-members',
     'pallets/universal-dividend',
     'pallets/upgrade-origin',
-    'primitives/membership',
     'primitives/distance',
+    'primitives/membership',
+    'resources/weight_analyzer',
     'runtime/common',
     'runtime/gdev',
-    'xtask',
-    'resources/weight_analyzer'
+    'xtask'
 ]
 
 # The list of dependencies below (which can be both direct and indirect dependencies) are crates
@@ -233,7 +243,7 @@ panic = "unwind"
 # # the following patch can be useful to debug substrate dependency
 # # added by tuxmain on 0.9.32 update
 # # updated by hugo on 0.9.42 update (benjamin)
-# [patch.'https://github.com/duniter/substrate']
+# [patch.'https://github.com/duniter/duniter-polkadot-sdk']
 # pallet-balances = {path = '../substrate/frame/balances'}
 # fork-tree = { path = "../substrate/utils/fork-tree" }
 # frame-support = { path = "../substrate/frame/support" }

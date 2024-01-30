@@ -35,6 +35,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(4))
             .saturating_add(RocksDbWeight::get().writes(1))
     }
+
     // Storage: UniversalDividend CurrentUd (r:1 w:0)
     // Storage: System Account (r:1 w:1)
     // Storage: Account PendingNewAccounts (r:0 w:1)
@@ -43,6 +44,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(2))
             .saturating_add(RocksDbWeight::get().writes(2))
     }
+
     // Storage: UniversalDividend CurrentUd (r:1 w:0)
     // Storage: System Account (r:1 w:1)
     // Storage: Account PendingNewAccounts (r:0 w:1)
@@ -51,6 +53,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(2))
             .saturating_add(RocksDbWeight::get().writes(2))
     }
+
     fn on_removed_member(i: u32) -> Weight {
         Weight::from_parts(32_514_000, 0)
             // Standard Error: 32_000

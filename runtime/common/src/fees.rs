@@ -47,6 +47,7 @@ where
     fn weight_to_fee(length_in_bytes: &Weight) -> Self::Balance {
         Self::Balance::saturated_from(length_in_bytes.ref_time() / 100u64)
     }
+
     #[cfg(feature = "constant-fees")]
     fn weight_to_fee(_length_in_bytes: &Weight) -> Self::Balance {
         0u32.into()

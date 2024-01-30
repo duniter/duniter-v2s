@@ -37,9 +37,12 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
-use subxt::config::extrinsic_params::BaseExtrinsicParamsBuilder;
+use subxt::backend::rpc::RpcClient;
+use subxt::backend::rpc::RpcParams;
+use subxt::config::substrate::SubstrateExtrinsicParamsBuilder;
+use subxt::config::SubstrateExtrinsicParams;
 use subxt::ext::{sp_core, sp_runtime};
-use subxt::rpc::rpc_params;
+use subxt::rpc_params;
 
 pub type Client = subxt::OnlineClient<GdevConfig>;
 pub type Event = gdev::Event;
@@ -49,21 +52,26 @@ pub type TxProgress = subxt::tx::TxProgress<GdevConfig, Client>;
 
 pub enum GdevConfig {}
 impl subxt::config::Config for GdevConfig {
-    type Index = u32;
-    type Hash = sp_core::H256;
     type AccountId = subxt::utils::AccountId32;
     type Address = sp_runtime::MultiAddress<Self::AccountId, u32>;
+    type AssetId = ();
+    type ExtrinsicParams = SubstrateExtrinsicParams<Self>;
+    type Hash = sp_core::H256;
+    type Hasher = subxt::config::substrate::BlakeTwo256;
     type Header =
         subxt::config::substrate::SubstrateHeader<u32, subxt::config::substrate::BlakeTwo256>;
-    type Hasher = subxt::config::substrate::BlakeTwo256;
     type Signature = sp_runtime::MultiSignature;
-    type ExtrinsicParams = subxt::config::extrinsic_params::BaseExtrinsicParams<Self, Tip>;
 }
 
 #[derive(Copy, Clone, Debug, Default, Encode)]
 pub struct Tip {
     #[codec(compact)]
     tip: u64,
+}
+
+pub struct FullClient {
+    pub rpc: RpcClient,
+    pub client: Client,
 }
 
 impl Tip {
@@ -101,13 +109,13 @@ const DUNITER_LOCAL_PATH: &str = "../target/debug/duniter";
 struct FullNode {
     process: Process,
     p2p_port: u16,
-    ws_port: u16,
+    rpc_port: u16,
 }
 
 pub async fn spawn_node(
     maybe_genesis_conf_file: Option<PathBuf>,
     no_spawn: bool,
-) -> (Client, Option<Process>, u16) {
+) -> (FullClient, Option<Process>, u16) {
     println!("maybe_genesis_conf_file={:?}", maybe_genesis_conf_file);
     let duniter_binary_path = std::env::var("DUNITER_BINARY_PATH").unwrap_or_else(|_| {
         if std::path::Path::new(DUNITER_DOCKER_PATH).exists() {
@@ -117,14 +125,14 @@ pub async fn spawn_node(
         }
     });
 
-    let mut the_ws_port = 9944;
+    let mut the_rpc_port = 9944;
     let mut opt_process = None;
     // Eventually spawn a node (we most likely will - unless --no-spawn option is used)
     if !no_spawn {
         let FullNode {
             process,
             p2p_port: _,
-            ws_port,
+            rpc_port,
         } = spawn_full_node(
             &[
                 "--chain=gdev_dev",
@@ -144,27 +152,27 @@ pub async fn spawn_node(
             maybe_genesis_conf_file,
         );
         opt_process = Some(process);
-        the_ws_port = ws_port;
+        the_rpc_port = rpc_port;
     }
-    let client = Client::from_url(format!("ws://127.0.0.1:{}", the_ws_port))
+    let rpc = RpcClient::from_url(format!("ws://127.0.0.1:{}", the_rpc_port))
         .await
-        .expect("fail to connect to node");
+        .expect("Failed to create the rpc backend");
+    let client = Client::from_rpc_client(rpc.clone()).await.unwrap();
 
-    (client, opt_process, the_ws_port)
+    (FullClient { rpc, client }, opt_process, the_rpc_port)
 }
 
-pub async fn create_empty_block(client: &Client) -> Result<()> {
+pub async fn create_empty_block(client: &RpcClient) -> Result<()> {
     // Create an empty block
     let _: Value = client
-        .rpc()
-        .request("engine_createBlock", rpc_params![true, false, Value::Null])
+        .request("engine_createBlock", rpc_params![true, true, Value::Null])
         .await?;
 
     Ok(())
 }
 
 pub async fn create_block_with_extrinsic(
-    client: &Client,
+    client: &RpcClient,
     extrinsic: SubmittableExtrinsic,
 ) -> Result<subxt::blocks::ExtrinsicEvents<GdevConfig>> {
     //println!("extrinsic encoded: {}", hex::encode(extrinsic.encoded()));
@@ -173,13 +181,12 @@ pub async fn create_block_with_extrinsic(
 
     // Create a non-empty block
     let _: Value = client
-        .rpc()
-        .request("engine_createBlock", rpc_params![false, false, Value::Null])
+        .request("engine_createBlock", rpc_params![false, true, Value::Null])
         .await?;
 
     // Get extrinsic events
     watcher
-        .wait_for_in_block()
+        .wait_for_finalized()
         .await?
         .fetch_events()
         .await
@@ -194,7 +201,6 @@ fn spawn_full_node(
     // Ports
     let p2p_port = portpicker::pick_unused_port().expect("No ports free");
     let rpc_port = portpicker::pick_unused_port().expect("No ports free");
-    let ws_port = portpicker::pick_unused_port().expect("No ports free");
 
     // Env vars
     let mut envs = Vec::new();
@@ -204,7 +210,7 @@ fn spawn_full_node(
     }
 
     // Logs
-    let log_file_path = format!("duniter-v2s-{}.log", ws_port);
+    let log_file_path = format!("duniter-v2s-{}.log", rpc_port);
     let log_file = std::fs::File::create(&log_file_path).expect("fail to create log file");
 
     // Command
@@ -218,8 +224,6 @@ fn spawn_full_node(
                     &p2p_port.to_string(),
                     "--rpc-port",
                     &rpc_port.to_string(),
-                    "--ws-port",
-                    &ws_port.to_string(),
                 ]
                 .iter()
                 .chain(args),
@@ -247,7 +251,7 @@ fn spawn_full_node(
     FullNode {
         process,
         p2p_port,
-        ws_port,
+        rpc_port,
     }
 }
 

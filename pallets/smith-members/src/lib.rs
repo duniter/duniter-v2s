@@ -31,11 +31,13 @@ pub mod weights;
 mod benchmarking;
 
 use codec::{Codec, Decode, Encode};
-use frame_support::dispatch::{DispatchResultWithPostInfo, TypeInfo};
+use frame_support::dispatch::DispatchResultWithPostInfo;
+use frame_support::ensure;
 use frame_support::pallet_prelude::Get;
-use frame_support::{ensure, RuntimeDebug};
+use frame_support::pallet_prelude::RuntimeDebug;
 use frame_system::ensure_signed;
 use frame_system::pallet_prelude::OriginFor;
+use scale_info::TypeInfo;
 use sp_runtime::traits::AtLeast32BitUnsigned;
 use sp_runtime::traits::IsMember;
 use sp_std::fmt::Debug;
@@ -156,7 +158,6 @@ pub mod pallet {
         pub initial_smiths: BTreeMap<T::IdtyIndex, (bool, Vec<T::IdtyIndex>)>,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
@@ -166,7 +167,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             CurrentSession::<T>::put(0);
             let mut cert_meta_by_issuer = BTreeMap::<T::IdtyIndex, Vec<T::IdtyIndex>>::new();

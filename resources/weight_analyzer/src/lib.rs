@@ -24,6 +24,7 @@ impl Default for MaxBlockWeight {
 }
 impl Div<&MaxBlockWeight> for f64 {
     type Output = Self;
+
     fn div(self, max_block_weight: &MaxBlockWeight) -> Self::Output {
         self / max_block_weight.0
     }

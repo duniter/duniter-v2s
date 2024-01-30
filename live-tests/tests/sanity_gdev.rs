@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+// WARNING
+// these live test build but I'm not sure they actually test something
+// they should be checked against corrupted storage to see that they actually fail
+
 #[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
 pub mod gdev {}
 
@@ -22,7 +26,13 @@ use hex_literal::hex;
 use sp_core::crypto::AccountId32;
 use sp_core::{blake2_128, ByteArray, H256};
 use std::collections::{HashMap, HashSet};
+use subxt::backend::rpc::RpcClient;
 use subxt::config::SubstrateConfig as GdevConfig;
+use subxt::ext::sp_core;
+// use subxt::config::substrate::SubstrateExtrinsicParamsBuilder;
+// use subxt::backend::rpc::RpcParams;
+// use subxt::config::SubstrateExtrinsicParams;
+// use subxt::ext::{sp_core, sp_runtime};
 
 const DEFAULT_ENDPOINT: &str = "ws://localhost:9944";
 
@@ -58,14 +68,17 @@ struct Storage {
 async fn main() -> anyhow::Result<()> {
     let ws_rpc_endpoint =
         std::env::var("WS_RPC_ENDPOINT").unwrap_or_else(|_| DEFAULT_ENDPOINT.to_owned());
-    let client = Client::from_url(ws_rpc_endpoint)
+    let rpc = RpcClient::from_url(ws_rpc_endpoint)
         .await
-        .expect("fail to connect to node");
+        .expect("Failed to create the rpc backend");
+    let client = Client::from_rpc_client(rpc.clone()).await.unwrap();
 
     let maybe_block_hash = if let Ok(block_number) = std::env::var("AT_BLOCK_NUMBER") {
         let block_number: BlockNumber = block_number.parse()?;
         println!("Run sanity tests against ĞDev at block #{}.", block_number);
-        client.rpc().block_hash(Some(block_number.into())).await?
+        // FIXME
+        // client.at(block_number).await?
+        None
     } else {
         println!("Run sanity tests against ĞDev at last best block");
         None
@@ -84,11 +97,11 @@ async fn sanity_tests_at(client: Client, _maybe_block_hash: Option<H256>) -> any
         .at_latest()
         .await
         .unwrap()
-        .iter(gdev::storage().system().account_root(), 100)
+        .iter(gdev::storage().system().account_iter())
         .await?;
-    while let Some((key, account_info)) = account_iter.next().await? {
+    while let Some(Ok((key, account_info))) = account_iter.next().await {
         let mut account_id_bytes = [0u8; 32];
-        account_id_bytes.copy_from_slice(&key.0[48..]);
+        account_id_bytes.copy_from_slice(&key[48..]);
         accounts.insert(AccountId32::new(account_id_bytes), account_info);
     }
     println!("accounts.len(): {}.", accounts.len());
@@ -100,11 +113,11 @@ async fn sanity_tests_at(client: Client, _maybe_block_hash: Option<H256>) -> any
         .at_latest()
         .await
         .unwrap()
-        .iter(gdev::storage().identity().identities_root(), 100)
+        .iter(gdev::storage().identity().identities_iter())
         .await?;
-    while let Some((key, idty_value)) = idty_iter.next().await? {
+    while let Some(Ok((key, idty_value))) = idty_iter.next().await {
         let mut idty_index_bytes = [0u8; 4];
-        idty_index_bytes.copy_from_slice(&key.0[40..]);
+        idty_index_bytes.copy_from_slice(&key[40..]);
         let idty_val = IdtyValue {
             data: idty_value.data,
             next_creatable_identity_on: idty_value.next_creatable_identity_on,
@@ -124,11 +137,11 @@ async fn sanity_tests_at(client: Client, _maybe_block_hash: Option<H256>) -> any
         .at_latest()
         .await
         .unwrap()
-        .iter(gdev::storage().identity().identity_index_of_root(), 100)
+        .iter(gdev::storage().identity().identity_index_of_iter())
         .await?;
-    while let Some((key, idty_index)) = idty_index_of_iter.next().await? {
+    while let Some(Ok((key, idty_index))) = idty_index_of_iter.next().await {
         let mut blake2_128_bytes = [0u8; 16];
-        blake2_128_bytes.copy_from_slice(&key.0[32..48]);
+        blake2_128_bytes.copy_from_slice(&key[32..48]);
         identity_index_of.insert(blake2_128_bytes, idty_index);
     }
     println!("identity_index_of.len(): {}.", identity_index_of.len());

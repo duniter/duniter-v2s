@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+#![allow(deprecated)]
+
 use super::*;
 use crate::chain_spec::gen_genesis_data::{
     AuthorityKeys, CommonParameters, GenesisIdentity, SessionKeysProvider,
@@ -23,10 +25,9 @@ use common_runtime::entities::IdtyData;
 use common_runtime::*;
 use gdev_runtime::{
     opaque::SessionKeys, pallet_universal_dividend, parameters, AccountConfig,
-    AuthorityMembersConfig, BabeConfig, BalancesConfig, CertificationConfig, GenesisConfig,
-    IdentityConfig, MembershipConfig, ParametersConfig, QuotaConfig, Runtime, SessionConfig,
-    SmithMembersConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
-    UniversalDividendConfig, WASM_BINARY,
+    AuthorityMembersConfig, BabeConfig, BalancesConfig, CertificationConfig, IdentityConfig,
+    MembershipConfig, ParametersConfig, QuotaConfig, Runtime, RuntimeGenesisConfig, SessionConfig,
+    SmithMembersConfig, SudoConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_network::config::MultiaddrWithPeerId;
@@ -37,7 +38,7 @@ use sp_core::{sr25519, Get};
 use sp_runtime::Perbill;
 use std::{env, fs};
 
-pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
+pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig>;
 
 type GenesisParameters = gdev_runtime::GenesisParameters<u32, u32, u64, u32>;
 
@@ -61,8 +62,9 @@ impl SessionKeysProvider<SessionKeys> for GDevSKP {
 }
 
 fn get_parameters(parameters_from_file: &Option<GenesisParameters>) -> CommonParameters {
-    let parameters_from_file =
-        parameters_from_file.expect("parameters must be defined in file for GDev");
+    let parameters_from_file = parameters_from_file
+        .clone()
+        .expect("parameters must be defined in file for GDev");
     CommonParameters {
         currency_name: TOKEN_SYMBOL.to_string(),
         decimals: TOKEN_DECIMALS,
@@ -124,7 +126,7 @@ pub fn gdev_development_chain_spec(config_file_path: String) -> Result<ChainSpec
                     Some("Alice".to_owned()),
                 )
                 .expect("Genesis Data must be buildable");
-            genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary.to_vec())
+            genesis_data_to_gdev_genesis_conf(genesis_data)
         },
         // Bootnodes
         vec![],
@@ -146,6 +148,7 @@ pub fn gdev_development_chain_spec(config_file_path: String) -> Result<ChainSpec
         ),
         // Extensions
         None,
+        &wasm_binary.to_vec().clone(), // TODO upgrade to builder
     ))
 }
 
@@ -190,7 +193,7 @@ pub fn gen_live_conf(
                     None,
                 )
                 .expect("Genesis Data must be buildable");
-            genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary.to_vec())
+            genesis_data_to_gdev_genesis_conf(genesis_data)
         },
         // Bootnodes
         client_spec.boot_nodes,
@@ -204,6 +207,7 @@ pub fn gen_live_conf(
         client_spec.properties,
         // Extensions
         None,
+        &wasm_binary.clone(), // TODO upgrade to builder
     ))
 }
 
@@ -241,7 +245,7 @@ pub fn local_testnet_config(
                 get_parameters,
             )
             .expect("Genesis Data must be buildable");
-            genesis_data_to_gdev_genesis_conf(genesis_data, wasm_binary.to_vec())
+            genesis_data_to_gdev_genesis_conf(genesis_data)
         },
         // Bootnodes
         vec![],
@@ -263,14 +267,14 @@ pub fn local_testnet_config(
         ),
         // Extensions
         None,
+        &wasm_binary.clone(), // TODO upgrade to builder
     ))
 }
 
 /// custom genesis
 fn genesis_data_to_gdev_genesis_conf(
     genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
-    wasm_binary: Vec<u8>,
-) -> gdev_runtime::GenesisConfig {
+) -> gdev_runtime::RuntimeGenesisConfig {
     let super::gen_genesis_data::GenesisData {
         accounts,
         treasury_balance,
@@ -290,11 +294,8 @@ fn genesis_data_to_gdev_genesis_conf(
         ud,
     } = genesis_data;
 
-    gdev_runtime::GenesisConfig {
-        system: SystemConfig {
-            // Add Wasm runtime to storage.
-            code: wasm_binary,
-        },
+    gdev_runtime::RuntimeGenesisConfig {
+        system: Default::default(),
         account: AccountConfig {
             accounts,
             treasury_balance,
@@ -312,6 +313,7 @@ fn genesis_data_to_gdev_genesis_conf(
         babe: BabeConfig {
             authorities: Vec::with_capacity(0),
             epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
+            _config: Default::default(),
         },
         grandpa: Default::default(),
         im_online: Default::default(),
@@ -377,6 +379,7 @@ fn genesis_data_to_gdev_genesis_conf(
             ud,
         },
         treasury: Default::default(),
+        transaction_payment: Default::default(),
     }
 }
 

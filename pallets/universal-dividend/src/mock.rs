@@ -23,7 +23,6 @@ use frame_support::{
 use frame_system as system;
 use sp_core::{ConstU32, H256};
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     BuildStorage,
 };
@@ -34,20 +33,16 @@ use sp_runtime::traits::ConvertInto;
 pub const BLOCK_TIME: u64 = 6_000;
 
 type Balance = u64;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        UniversalDividend: pallet_universal_dividend::{Pallet, Storage, Config<T>, Event<T>},
+        System: frame_system,
+        Timestamp: pallet_timestamp,
+        Balances: pallet_balances,
+        UniversalDividend: pallet_universal_dividend,
     }
 );
 
@@ -57,30 +52,30 @@ parameter_types! {
 }
 
 impl system::Config for Test {
+    type AccountData = pallet_balances::AccountData<Balance>;
+    type AccountId = u32;
     type BaseCallFilter = Everything;
-    type BlockWeights = ();
+    type Block = Block;
+    type BlockHashCount = BlockHashCount;
     type BlockLength = ();
+    type BlockWeights = ();
     type DbWeight = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = u32;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = SS58Prefix;
-    type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type Nonce = u64;
+    type OnKilledAccount = ();
+    type OnNewAccount = ();
+    type OnSetCode = ();
+    type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeTask = ();
+    type SS58Prefix = SS58Prefix;
+    type SystemWeightInfo = ();
+    type Version = ();
 }
 
 parameter_types! {
@@ -88,9 +83,9 @@ parameter_types! {
 }
 
 impl pallet_timestamp::Config for Test {
+    type MinimumPeriod = MinimumPeriod;
     type Moment = u64;
     type OnTimestampSet = UniversalDividend;
-    type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
 
@@ -100,19 +95,20 @@ parameter_types! {
 }
 
 impl pallet_balances::Config for Test {
+    type AccountStore = System;
     type Balance = Balance;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<0>;
+    type MaxHolds = ConstU32<0>;
     type MaxLocks = MaxLocks;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type RuntimeEvent = RuntimeEvent;
-    type HoldIdentifier = ();
-    type FreezeIdentifier = ();
-    type MaxHolds = ConstU32<0>;
-    type MaxFreezes = ConstU32<0>;
+    type RuntimeFreezeReason = ();
+    type RuntimeHoldReason = ();
+    type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
 }
 
 parameter_types! {
@@ -127,6 +123,7 @@ impl frame_support::traits::StoredMap<u32, FirstEligibleUd> for TestMembersStora
     fn get(key: &u32) -> FirstEligibleUd {
         crate::TestMembers::<Test>::get(key)
     }
+
     fn try_mutate_exists<R, E: From<sp_runtime::DispatchError>>(
         key: &u32,
         f: impl FnOnce(&mut Option<FirstEligibleUd>) -> Result<R, E>,
@@ -141,26 +138,26 @@ impl frame_support::traits::StoredMap<u32, FirstEligibleUd> for TestMembersStora
 }
 
 impl pallet_universal_dividend::Config for Test {
-    type MomentIntoBalance = sp_runtime::traits::ConvertInto;
+    #[cfg(feature = "runtime-benchmarks")]
+    type AccountIdOf = ConvertInto;
     type Currency = pallet_balances::Pallet<Test>;
     type MaxPastReeval = frame_support::traits::ConstU32<2>;
     type MembersCount = MembersCount;
     type MembersStorage = TestMembersStorage;
+    type MomentIntoBalance = sp_runtime::traits::ConvertInto;
     type RuntimeEvent = RuntimeEvent;
     type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
     type UdCreationPeriod = UdCreationPeriod;
     type UdReevalPeriod = UdReevalPeriod;
     type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
     type WeightInfo = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type AccountIdOf = ConvertInto;
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext(
     gen_conf: pallet_universal_dividend::GenesisConfig<Test>,
 ) -> sp_io::TestExternalities {
-    GenesisConfig {
+    RuntimeGenesisConfig {
         system: SystemConfig::default(),
         balances: BalancesConfig {
             total_issuance: gen_conf.initial_monetary_mass,

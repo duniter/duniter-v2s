@@ -18,6 +18,7 @@
 #![allow(unused_parens)]
 #![allow(unused_imports)]
 #![allow(clippy::unnecessary_cast)]
+#![allow(unused_doc_comments)]
 
 pub mod block_weights;
 pub mod extrinsic_weights;
@@ -46,5 +47,6 @@ pub mod pallet_oneshot_account;
 pub mod pallet_certification;
 pub mod pallet_membership;
 pub mod pallet_smith_members;
+pub mod pallet_sudo;
 pub mod pallet_authority_members;
 pub mod paritydb_weights;

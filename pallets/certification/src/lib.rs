@@ -29,6 +29,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+use frame_system::pallet_prelude::BlockNumberFor;
 pub use pallet::*;
 pub use types::*;
 pub use weights::WeightInfo;
@@ -60,7 +61,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         #[pallet::constant]
         /// Minimum duration between two certifications issued by the same issuer.
-        type CertPeriod: Get<Self::BlockNumber>;
+        type CertPeriod: Get<BlockNumberFor<Self>>;
         /// A short identity index.
         type IdtyIndex: Parameter
             + Member
@@ -91,7 +92,7 @@ pub mod pallet {
         type WeightInfo: WeightInfo;
         #[pallet::constant]
         /// Duration of validity of a certification.
-        type ValidityPeriod: Get<Self::BlockNumber>;
+        type ValidityPeriod: Get<BlockNumberFor<Self>>;
     }
 
     // GENESIS STUFF //
@@ -101,10 +102,9 @@ pub mod pallet {
     pub struct GenesisConfig<T: Config> {
         pub apply_cert_period_at_genesis: bool,
         pub certs_by_receiver:
-            BTreeMap<T::IdtyIndex, BTreeMap<T::IdtyIndex, Option<T::BlockNumber>>>,
+            BTreeMap<T::IdtyIndex, BTreeMap<T::IdtyIndex, Option<BlockNumberFor<T>>>>,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
@@ -115,12 +115,12 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             let mut cert_meta_by_issuer =
-                BTreeMap::<T::IdtyIndex, IdtyCertMeta<T::BlockNumber>>::new();
+                BTreeMap::<T::IdtyIndex, IdtyCertMeta<BlockNumberFor<T>>>::new();
             let mut certs_removable_on =
-                BTreeMap::<T::BlockNumber, Vec<(T::IdtyIndex, T::IdtyIndex)>>::new();
+                BTreeMap::<BlockNumberFor<T>, Vec<(T::IdtyIndex, T::IdtyIndex)>>::new();
             for (receiver, issuers) in &self.certs_by_receiver {
                 // Forbid self-cert
                 assert!(
@@ -204,19 +204,29 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn idty_cert_meta)]
     pub type StorageIdtyCertMeta<T: Config> =
-        StorageMap<_, Twox64Concat, T::IdtyIndex, IdtyCertMeta<T::BlockNumber>, ValueQuery>;
+        StorageMap<_, Twox64Concat, T::IdtyIndex, IdtyCertMeta<BlockNumberFor<T>>, ValueQuery>;
 
     /// Certifications by receiver.
     #[pallet::storage]
     #[pallet::getter(fn certs_by_receiver)]
-    pub type CertsByReceiver<T: Config> =
-        StorageMap<_, Twox64Concat, T::IdtyIndex, Vec<(T::IdtyIndex, T::BlockNumber)>, ValueQuery>;
+    pub type CertsByReceiver<T: Config> = StorageMap<
+        _,
+        Twox64Concat,
+        T::IdtyIndex,
+        Vec<(T::IdtyIndex, BlockNumberFor<T>)>,
+        ValueQuery,
+    >;
 
     /// Certifications removable on.
     #[pallet::storage]
     #[pallet::getter(fn certs_removable_on)]
-    pub type CertsRemovableOn<T: Config> =
-        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(T::IdtyIndex, T::IdtyIndex)>, OptionQuery>;
+    pub type CertsRemovableOn<T: Config> = StorageMap<
+        _,
+        Twox64Concat,
+        BlockNumberFor<T>,
+        Vec<(T::IdtyIndex, T::IdtyIndex)>,
+        OptionQuery,
+    >;
 
     // EVENTS //
 
@@ -263,7 +273,7 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(n: T::BlockNumber) -> Weight {
+        fn on_initialize(n: BlockNumberFor<T>) -> Weight {
             Self::prune_certifications(n).saturating_add(T::WeightInfo::on_initialize())
         }
     }
@@ -359,7 +369,7 @@ pub mod pallet {
         /// perform cert addition if not existing, else CertAlreadyExists
         // must be transactional
         fn try_add_cert(
-            block_number: T::BlockNumber,
+            block_number: BlockNumberFor<T>,
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
@@ -412,7 +422,7 @@ pub mod pallet {
         // must be used in transactional context
         // (it can fail if certification does not exist after having modified state)
         fn try_renew_cert(
-            block_number: T::BlockNumber,
+            block_number: BlockNumberFor<T>,
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
@@ -442,7 +452,7 @@ pub mod pallet {
 
         /// remove the certifications due to expire on the given block
         // (run at on_initialize step)
-        fn prune_certifications(block_number: T::BlockNumber) -> Weight {
+        fn prune_certifications(block_number: BlockNumberFor<T>) -> Weight {
             // See on initialize for the overhead weight accounting
             let mut total_weight = Weight::zero();
 
@@ -461,7 +471,7 @@ pub mod pallet {
         pub fn do_remove_cert(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
-            block_number_opt: Option<T::BlockNumber>,
+            block_number_opt: Option<BlockNumberFor<T>>,
         ) -> Weight {
             let mut total_weight = Weight::zero();
             let mut removed = false;
@@ -526,7 +536,7 @@ pub mod pallet {
         fn check_add_cert_internal(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
-            block_number: T::BlockNumber,
+            block_number: BlockNumberFor<T>,
         ) -> DispatchResult {
             // 1. Forbid self cert
             ensure!(issuer != receiver, Error::<T>::CannotCertifySelf);
@@ -561,7 +571,7 @@ pub mod pallet {
         fn check_add_cert(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
-            block_number: T::BlockNumber,
+            block_number: BlockNumberFor<T>,
         ) -> DispatchResult {
             // internal checks
             Self::check_add_cert_internal(issuer, receiver, block_number)?;
@@ -579,7 +589,7 @@ pub mod pallet {
         fn check_renew_cert(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
-            block_number: T::BlockNumber,
+            block_number: BlockNumberFor<T>,
         ) -> DispatchResult {
             Self::check_add_cert_internal(issuer, receiver, block_number)?;
             T::CheckCertAllowed::check_cert_allowed(issuer, receiver)?;
@@ -589,8 +599,8 @@ pub mod pallet {
 }
 
 // implement setting next_issuable_on for certification period
-impl<T: Config> SetNextIssuableOn<T::BlockNumber, T::IdtyIndex> for Pallet<T> {
-    fn set_next_issuable_on(idty_index: T::IdtyIndex, next_issuable_on: T::BlockNumber) {
+impl<T: Config> SetNextIssuableOn<BlockNumberFor<T>, T::IdtyIndex> for Pallet<T> {
+    fn set_next_issuable_on(idty_index: T::IdtyIndex, next_issuable_on: BlockNumberFor<T>) {
         <StorageIdtyCertMeta<T>>::mutate_exists(idty_index, |cert_meta_opt| {
             let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());
             cert_meta.next_issuable_on = next_issuable_on;

@@ -28,6 +28,7 @@ and the new runtime.
 Failed to extract the runtime version from the new runtime.
 
 Either calling `Core_version` or decoding `RuntimeVersion` failed.
+
 </details>
 </li>
 <li>
@@ -49,6 +50,20 @@ There is a non-zero reference count preventing the account from being purged.
 <summary>
 <code>CallFiltered</code> - 5</summary>
 The origin filter prevent the call to be dispatched.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>NothingAuthorized</code> - 6</summary>
+No upgrade authorized.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>Unauthorized</code> - 7</summary>
+The submitted code is not authorized.
 </details>
 </li>
 </ul>
@@ -210,11 +225,11 @@ Number of freezes exceed `MaxFreezes`.
 </li>
 </ul>
 </li>
-<li>TransactionPayment - 32
+<li>TransactionPayment - 7
 <ul>
 </ul>
 </li>
-<li>OneshotAccount - 7
+<li>OneshotAccount - 8
 <ul>
 <li>
 <details>
@@ -267,7 +282,7 @@ Source oneshot account does not exist.
 </li>
 </ul>
 </li>
-<li>Quota - 66
+<li>Quota - 9
 <ul>
 </ul>
 </li>
@@ -589,22 +604,22 @@ Duplicated heartbeat.
 <ul>
 </ul>
 </li>
-<li>Sudo - 20
+<li>Sudo - 19
 <ul>
 <li>
 <details>
 <summary>
 <code>RequireSudo</code> - 0</summary>
-Sender must be the Sudo account
+Sender must be the Sudo account.
 </details>
 </li>
 </ul>
 </li>
-<li>UpgradeOrigin - 21
+<li>UpgradeOrigin - 20
 <ul>
 </ul>
 </li>
-<li>Preimage - 22
+<li>Preimage - 21
 <ul>
 <li>
 <details>
@@ -648,9 +663,23 @@ A preimage may not be removed when there are outstanding requests.
 The preimage request cannot be removed since no outstanding requests exist.
 </details>
 </li>
+<li>
+<details>
+<summary>
+<code>TooMany</code> - 6</summary>
+More than `MAX_HASH_UPGRADE_BULK_COUNT` hashes were requested to be upgraded at once.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>TooFew</code> - 7</summary>
+Too few hashes were requested to be upgraded (i.e. zero).
+</details>
+</li>
 </ul>
 </li>
-<li>TechnicalCommittee - 23
+<li>TechnicalCommittee - 22
 <ul>
 <li>
 <details>
@@ -722,9 +751,16 @@ The given weight bound for the proposal was too low.
 The given length bound for the proposal was too low.
 </details>
 </li>
+<li>
+<details>
+<summary>
+<code>PrimeAccountNotMember</code> - 10</summary>
+Prime account is not a member
+</details>
+</li>
 </ul>
 </li>
-<li>UniversalDividend - 30
+<li>UniversalDividend - 23
 <ul>
 <li>
 <details>
@@ -735,7 +771,7 @@ This account is not allowed to claim UDs.
 </li>
 </ul>
 </li>
-<li>Wot - 40
+<li>Wot - 24
 <ul>
 <li>
 <details>
@@ -795,7 +831,7 @@ Membership can only be renewed after an antispam delay.
 </li>
 </ul>
 </li>
-<li>Identity - 41
+<li>Identity - 25
 <ul>
 <li>
 <details>
@@ -918,7 +954,7 @@ Cannot link to an inexisting account.
 </li>
 </ul>
 </li>
-<li>Membership - 42
+<li>Membership - 26
 <ul>
 <li>
 <details>
@@ -936,7 +972,7 @@ Already member, can not add membership.
 </li>
 </ul>
 </li>
-<li>Certification - 43
+<li>Certification - 27
 <ul>
 <li>
 <details>
@@ -989,7 +1025,7 @@ Can not renew a non-existing cert
 </li>
 </ul>
 </li>
-<li>Distance - 44
+<li>Distance - 28
 <ul>
 <li>
 <details>
@@ -1084,7 +1120,7 @@ Targeted distance evaluation request is only possible for an unvalidated identit
 </li>
 </ul>
 </li>
-<li>AtomicSwap - 50
+<li>AtomicSwap - 29
 <ul>
 <li>
 <details>
@@ -1144,7 +1180,7 @@ Duration has not yet passed for the swap to be cancelled.
 </li>
 </ul>
 </li>
-<li>Multisig - 51
+<li>Multisig - 30
 <ul>
 <li>
 <details>
@@ -1246,7 +1282,7 @@ The data to be stored is already stored.
 </li>
 </ul>
 </li>
-<li>ProvideRandomness - 52
+<li>ProvideRandomness - 31
 <ul>
 <li>
 <details>
@@ -1257,7 +1293,7 @@ Request randomness queue is full.
 </li>
 </ul>
 </li>
-<li>Proxy - 53
+<li>Proxy - 32
 <ul>
 <li>
 <details>
@@ -1317,7 +1353,7 @@ Cannot add self as proxy.
 </li>
 </ul>
 </li>
-<li>Utility - 54
+<li>Utility - 33
 <ul>
 <li>
 <details>
@@ -1328,7 +1364,7 @@ Too many calls batched.
 </li>
 </ul>
 </li>
-<li>Treasury - 55
+<li>Treasury - 34
 <ul>
 <li>
 <details>
@@ -1341,7 +1377,7 @@ Proposer's balance is too low.
 <details>
 <summary>
 <code>InvalidIndex</code> - 1</summary>
-No proposal or bounty at that index.
+No proposal, bounty or spend at that index.
 </details>
 </li>
 <li>
@@ -1364,6 +1400,55 @@ amount to be spent.
 <summary>
 <code>ProposalNotApproved</code> - 4</summary>
 Proposal has not been approved.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>FailedToConvertBalance</code> - 5</summary>
+The balance of the asset kind is not convertible to the balance of the native asset.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>SpendExpired</code> - 6</summary>
+The spend has expired and cannot be claimed.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>EarlyPayout</code> - 7</summary>
+The spend is not yet eligible for payout.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>AlreadyAttempted</code> - 8</summary>
+The payment has already been attempted.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>PayoutError</code> - 9</summary>
+There was some issue with the mechanism of payment.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>NotAttempted</code> - 10</summary>
+The payout was not yet attempted/claimed.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>Inconclusive</code> - 11</summary>
+The payment has neither failed nor succeeded yet.
 </details>
 </li>
 </ul>

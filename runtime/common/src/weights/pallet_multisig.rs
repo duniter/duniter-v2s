@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -59,8 +58,8 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 			// Standard Error: 947
 			.saturating_add(Weight::from_parts(221, 0).saturating_mul(z.into()))
 	}
-	/// Storage: Multisig Multisigs (r:1 w:1)
-	/// Proof: Multisig Multisigs (max_values: None, max_size: Some(457), added: 2932, mode: MaxEncodedLen)
+	/// Storage: `Multisig::Multisigs` (r:1 w:1)
+	/// Proof: `Multisig::Multisigs` (`max_values`: None, `max_size`: Some(457), added: 2932, mode: `MaxEncodedLen`)
 	/// The range of component `s` is `[2, 10]`.
 	/// The range of component `z` is `[0, 10000]`.
 	fn as_multi_create(s: u32, z: u32, ) -> Weight {
@@ -77,8 +76,8 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Multisig Multisigs (r:1 w:1)
-	/// Proof: Multisig Multisigs (max_values: None, max_size: Some(457), added: 2932, mode: MaxEncodedLen)
+	/// Storage: `Multisig::Multisigs` (r:1 w:1)
+	/// Proof: `Multisig::Multisigs` (`max_values`: None, `max_size`: Some(457), added: 2932, mode: `MaxEncodedLen`)
 	/// The range of component `s` is `[3, 10]`.
 	/// The range of component `z` is `[0, 10000]`.
 	fn as_multi_approve(s: u32, z: u32, ) -> Weight {
@@ -95,10 +94,10 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Multisig Multisigs (r:1 w:1)
-	/// Proof: Multisig Multisigs (max_values: None, max_size: Some(457), added: 2932, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
+	/// Storage: `Multisig::Multisigs` (r:1 w:1)
+	/// Proof: `Multisig::Multisigs` (`max_values`: None, `max_size`: Some(457), added: 2932, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	/// The range of component `s` is `[2, 10]`.
 	/// The range of component `z` is `[0, 10000]`.
 	fn as_multi_complete(s: u32, z: u32, ) -> Weight {
@@ -115,8 +114,8 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: Multisig Multisigs (r:1 w:1)
-	/// Proof: Multisig Multisigs (max_values: None, max_size: Some(457), added: 2932, mode: MaxEncodedLen)
+	/// Storage: `Multisig::Multisigs` (r:1 w:1)
+	/// Proof: `Multisig::Multisigs` (`max_values`: None, `max_size`: Some(457), added: 2932, mode: `MaxEncodedLen`)
 	/// The range of component `s` is `[2, 10]`.
 	fn approve_as_multi_create(s: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -130,8 +129,8 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Multisig Multisigs (r:1 w:1)
-	/// Proof: Multisig Multisigs (max_values: None, max_size: Some(457), added: 2932, mode: MaxEncodedLen)
+	/// Storage: `Multisig::Multisigs` (r:1 w:1)
+	/// Proof: `Multisig::Multisigs` (`max_values`: None, `max_size`: Some(457), added: 2932, mode: `MaxEncodedLen`)
 	/// The range of component `s` is `[2, 10]`.
 	fn approve_as_multi_approve(s: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -145,8 +144,8 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Multisig Multisigs (r:1 w:1)
-	/// Proof: Multisig Multisigs (max_values: None, max_size: Some(457), added: 2932, mode: MaxEncodedLen)
+	/// Storage: `Multisig::Multisigs` (r:1 w:1)
+	/// Proof: `Multisig::Multisigs` (`max_values`: None, `max_size`: Some(457), added: 2932, mode: `MaxEncodedLen`)
 	/// The range of component `s` is `[2, 10]`.
 	fn cancel_as_multi(_s: u32, ) -> Weight {
 		// Proof Size summary in bytes:

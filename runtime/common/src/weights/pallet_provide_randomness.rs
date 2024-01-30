@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -48,18 +47,20 @@ use core::marker::PhantomData;
 /// Weight functions for `pallet_provide_randomness`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_provide_randomness::WeightInfo for WeightInfo<T> {
-	/// Storage: ProvideRandomness CounterForRequestsIds (r:1 w:1)
-	/// Proof: ProvideRandomness CounterForRequestsIds (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	/// Storage: ProvideRandomness RequestIdProvider (r:1 w:1)
-	/// Proof Skipped: ProvideRandomness RequestIdProvider (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ProvideRandomness RequestsIds (r:1 w:1)
-	/// Proof Skipped: ProvideRandomness RequestsIds (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Babe EpochIndex (r:1 w:0)
-	/// Proof: Babe EpochIndex (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
-	/// Storage: ProvideRandomness NexEpochHookIn (r:1 w:0)
-	/// Proof Skipped: ProvideRandomness NexEpochHookIn (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ProvideRandomness RequestsReadyAtEpoch (r:1 w:1)
-	/// Proof Skipped: ProvideRandomness RequestsReadyAtEpoch (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `ProvideRandomness::CounterForRequestsIds` (r:1 w:1)
+	/// Proof: `ProvideRandomness::CounterForRequestsIds` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
+	/// Storage: `ProvideRandomness::RequestIdProvider` (r:1 w:1)
+	/// Proof: `ProvideRandomness::RequestIdProvider` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `ProvideRandomness::RequestsIds` (r:1 w:1)
+	/// Proof: `ProvideRandomness::RequestsIds` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Babe::EpochIndex` (r:1 w:0)
+	/// Proof: `Babe::EpochIndex` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
+	/// Storage: `ProvideRandomness::NexEpochHookIn` (r:1 w:0)
+	/// Proof: `ProvideRandomness::NexEpochHookIn` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `ProvideRandomness::RequestsReadyAtEpoch` (r:1 w:1)
+	/// Proof: `ProvideRandomness::RequestsReadyAtEpoch` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn request() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `235`
@@ -70,18 +71,18 @@ impl<T: frame_system::Config> pallet_provide_randomness::WeightInfo for WeightIn
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(4))
 	}
-	/// Storage: ProvideRandomness RequestsReadyAtNextBlock (r:1 w:1)
-	/// Proof Skipped: ProvideRandomness RequestsReadyAtNextBlock (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: Babe AuthorVrfRandomness (r:1 w:0)
-	/// Proof: Babe AuthorVrfRandomness (max_values: Some(1), max_size: Some(33), added: 528, mode: MaxEncodedLen)
-	/// Storage: ProvideRandomness RequestsIds (r:100 w:100)
-	/// Proof Skipped: ProvideRandomness RequestsIds (max_values: None, max_size: None, mode: Measured)
-	/// Storage: ProvideRandomness CounterForRequestsIds (r:1 w:1)
-	/// Proof: ProvideRandomness CounterForRequestsIds (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	/// Storage: Account PendingRandomIdAssignments (r:100 w:0)
-	/// Proof Skipped: Account PendingRandomIdAssignments (max_values: None, max_size: None, mode: Measured)
-	/// Storage: ProvideRandomness NexEpochHookIn (r:1 w:1)
-	/// Proof Skipped: ProvideRandomness NexEpochHookIn (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `ProvideRandomness::RequestsReadyAtNextBlock` (r:1 w:1)
+	/// Proof: `ProvideRandomness::RequestsReadyAtNextBlock` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Babe::AuthorVrfRandomness` (r:1 w:0)
+	/// Proof: `Babe::AuthorVrfRandomness` (`max_values`: Some(1), `max_size`: Some(33), added: 528, mode: `MaxEncodedLen`)
+	/// Storage: `ProvideRandomness::RequestsIds` (r:100 w:100)
+	/// Proof: `ProvideRandomness::RequestsIds` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `ProvideRandomness::CounterForRequestsIds` (r:1 w:1)
+	/// Proof: `ProvideRandomness::CounterForRequestsIds` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `Account::PendingRandomIdAssignments` (r:100 w:0)
+	/// Proof: `Account::PendingRandomIdAssignments` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `ProvideRandomness::NexEpochHookIn` (r:1 w:1)
+	/// Proof: `ProvideRandomness::NexEpochHookIn` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// The range of component `i` is `[1, 100]`.
 	fn on_initialize(i: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -98,24 +99,24 @@ impl<T: frame_system::Config> pallet_provide_randomness::WeightInfo for WeightIn
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i.into())))
 			.saturating_add(Weight::from_parts(0, 2535).saturating_mul(i.into()))
 	}
-	/// Storage: ProvideRandomness RequestsReadyAtNextBlock (r:1 w:0)
-	/// Proof Skipped: ProvideRandomness RequestsReadyAtNextBlock (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ProvideRandomness NexEpochHookIn (r:1 w:1)
-	/// Proof Skipped: ProvideRandomness NexEpochHookIn (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: Babe EpochIndex (r:1 w:0)
-	/// Proof: Babe EpochIndex (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
-	/// Storage: ProvideRandomness RequestsReadyAtEpoch (r:1 w:1)
-	/// Proof Skipped: ProvideRandomness RequestsReadyAtEpoch (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Babe NextRandomness (r:1 w:0)
-	/// Proof: Babe NextRandomness (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
-	/// Storage: Babe EpochStart (r:1 w:0)
-	/// Proof: Babe EpochStart (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
-	/// Storage: ProvideRandomness RequestsIds (r:100 w:100)
-	/// Proof Skipped: ProvideRandomness RequestsIds (max_values: None, max_size: None, mode: Measured)
-	/// Storage: ProvideRandomness CounterForRequestsIds (r:1 w:1)
-	/// Proof: ProvideRandomness CounterForRequestsIds (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	/// Storage: Account PendingRandomIdAssignments (r:100 w:0)
-	/// Proof Skipped: Account PendingRandomIdAssignments (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `ProvideRandomness::RequestsReadyAtNextBlock` (r:1 w:0)
+	/// Proof: `ProvideRandomness::RequestsReadyAtNextBlock` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `ProvideRandomness::NexEpochHookIn` (r:1 w:1)
+	/// Proof: `ProvideRandomness::NexEpochHookIn` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Babe::EpochIndex` (r:1 w:0)
+	/// Proof: `Babe::EpochIndex` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
+	/// Storage: `ProvideRandomness::RequestsReadyAtEpoch` (r:1 w:1)
+	/// Proof: `ProvideRandomness::RequestsReadyAtEpoch` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Babe::NextRandomness` (r:1 w:0)
+	/// Proof: `Babe::NextRandomness` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
+	/// Storage: `Babe::EpochStart` (r:1 w:0)
+	/// Proof: `Babe::EpochStart` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
+	/// Storage: `ProvideRandomness::RequestsIds` (r:100 w:100)
+	/// Proof: `ProvideRandomness::RequestsIds` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `ProvideRandomness::CounterForRequestsIds` (r:1 w:1)
+	/// Proof: `ProvideRandomness::CounterForRequestsIds` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `Account::PendingRandomIdAssignments` (r:100 w:0)
+	/// Proof: `Account::PendingRandomIdAssignments` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `i` is `[1, 100]`.
 	fn on_initialize_epoch(i: u32, ) -> Weight {
 		// Proof Size summary in bytes:

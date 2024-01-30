@@ -14,18 +14,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+#![allow(deprecated)]
+
 use super::*;
 use crate::chain_spec::gen_genesis_data::{CommonParameters, GenesisIdentity, SessionKeysProvider};
 use common_runtime::constants::*;
 use common_runtime::entities::IdtyData;
 use common_runtime::*;
-use frame_benchmarking::frame_support::traits::Get;
 use gtest_runtime::SmithMembersConfig;
 use gtest_runtime::{
     opaque::SessionKeys, pallet_universal_dividend, parameters, AccountConfig, AccountId,
     AuthorityMembersConfig, BabeConfig, BalancesConfig, CertificationConfig, GenesisConfig,
     IdentityConfig, ImOnlineId, MembershipConfig, Perbill, QuotaConfig, Runtime, SessionConfig,
-    SudoConfig, SystemConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
+    SudoConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_consensus_grandpa::AuthorityId as GrandpaId;
@@ -35,6 +36,7 @@ use sc_telemetry::TelemetryEndpoints;
 use serde::Deserialize;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
+use sp_core::Get;
 use std::{env, fs};
 
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -149,7 +151,7 @@ pub fn development_chainspecs(config_file_path: String) -> Result<ChainSpec, Str
                     Some("Alice".to_owned()),
                 )
                 .expect("Genesis Data must be buildable");
-            genesis_data_to_gtest_genesis_conf(genesis_data, wasm_binary.to_vec())
+            genesis_data_to_gtest_genesis_conf(genesis_data)
         },
         // Bootnodes
         vec![],
@@ -171,6 +173,7 @@ pub fn development_chainspecs(config_file_path: String) -> Result<ChainSpec, Str
         ),
         // Extensions
         None,
+        &wasm_binary.clone(), // TODO upgrade to builder
     ))
 }
 
@@ -199,7 +202,7 @@ pub fn live_chainspecs(
                     None,
                 )
                 .expect("Genesis Data must be buildable");
-            genesis_data_to_gtest_genesis_conf(genesis_data, wasm_binary.to_vec())
+            genesis_data_to_gtest_genesis_conf(genesis_data)
         },
         // Bootnodes
         client_spec.boot_nodes,
@@ -213,13 +216,13 @@ pub fn live_chainspecs(
         client_spec.properties,
         // Extensions
         None,
+        &wasm_binary.clone(), // TODO upgrade to builder
     ))
 }
 
 /// custom genesis
 fn genesis_data_to_gtest_genesis_conf(
     genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
-    wasm_binary: Vec<u8>,
 ) -> gtest_runtime::GenesisConfig {
     let super::gen_genesis_data::GenesisData {
         accounts,
@@ -241,10 +244,7 @@ fn genesis_data_to_gtest_genesis_conf(
     } = genesis_data;
 
     gtest_runtime::GenesisConfig {
-        system: SystemConfig {
-            // Add Wasm runtime to storage.
-            code: wasm_binary,
-        },
+        system: Default::default(),
         account: AccountConfig {
             accounts,
             treasury_balance,
@@ -260,6 +260,7 @@ fn genesis_data_to_gtest_genesis_conf(
         babe: BabeConfig {
             authorities: Vec::with_capacity(0),
             epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
+            _config: Default::default(),
         },
         grandpa: Default::default(),
         im_online: Default::default(),
@@ -327,6 +328,7 @@ fn genesis_data_to_gtest_genesis_conf(
             initial_members: vec![],
         },
         treasury: Default::default(),
+        transaction_payment: Default::default(),
     }
 }
 

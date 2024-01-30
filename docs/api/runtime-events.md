@@ -79,6 +79,19 @@ hash: T::Hash
 
 </details>
 </li>
+<li>
+<details>
+<summary>
+<code>UpgradeAuthorized(code_hash, check_version)</code> - 6</summary>
+An upgrade was authorized.
+
+```rust
+code_hash: T::Hash
+check_version: bool
+```
+
+</details>
+</li>
 </ul>
 </li>
 <li>Account - 1
@@ -145,7 +158,7 @@ The account was unlinked from its identity.
 Scheduled some task.
 
 ```rust
-when: T::BlockNumber
+when: BlockNumberFor<T>
 index: u32
 ```
 
@@ -158,7 +171,7 @@ index: u32
 Canceled some task.
 
 ```rust
-when: T::BlockNumber
+when: BlockNumberFor<T>
 index: u32
 ```
 
@@ -171,7 +184,7 @@ index: u32
 Dispatched some task.
 
 ```rust
-task: TaskAddress<T::BlockNumber>
+task: TaskAddress<BlockNumberFor<T>>
 id: Option<TaskName>
 result: DispatchResult
 ```
@@ -185,7 +198,7 @@ result: DispatchResult
 The call for the provided hash was not found so the task has been aborted.
 
 ```rust
-task: TaskAddress<T::BlockNumber>
+task: TaskAddress<BlockNumberFor<T>>
 id: Option<TaskName>
 ```
 
@@ -198,7 +211,7 @@ id: Option<TaskName>
 The given task was unable to be renewed since the agenda is full at that block.
 
 ```rust
-task: TaskAddress<T::BlockNumber>
+task: TaskAddress<BlockNumberFor<T>>
 id: Option<TaskName>
 ```
 
@@ -211,7 +224,7 @@ id: Option<TaskName>
 The given task can never be executed since it is overweight.
 
 ```rust
-task: TaskAddress<T::BlockNumber>
+task: TaskAddress<BlockNumberFor<T>>
 id: Option<TaskName>
 ```
 
@@ -510,7 +523,7 @@ amount: T::Balance
 </li>
 </ul>
 </li>
-<li>TransactionPayment - 32
+<li>TransactionPayment - 7
 <ul>
 <li>
 <details>
@@ -529,7 +542,7 @@ tip: BalanceOf<T>
 </li>
 </ul>
 </li>
-<li>OneshotAccount - 7
+<li>OneshotAccount - 8
 <ul>
 <li>
 <details>
@@ -576,7 +589,7 @@ balance: <T::Currency as Currency<T::AccountId>>::Balance
 </li>
 </ul>
 </li>
-<li>Quota - 66
+<li>Quota - 9
 <ul>
 <li>
 <details>
@@ -937,13 +950,13 @@ offline: Vec<IdentificationTuple<T>>
 <ul>
 </ul>
 </li>
-<li>Sudo - 20
+<li>Sudo - 19
 <ul>
 <li>
 <details>
 <summary>
 <code>Sudid(sudo_result)</code> - 0</summary>
-A sudo just took place. \[result\]
+A sudo call just took place.
 
 ```rust
 sudo_result: DispatchResult
@@ -954,11 +967,12 @@ sudo_result: DispatchResult
 <li>
 <details>
 <summary>
-<code>KeyChanged(old_sudoer)</code> - 1</summary>
-The \[sudoer\] just switched identity; the old key is supplied if one existed.
+<code>KeyChanged(old, new)</code> - 1</summary>
+The sudo key has been updated.
 
 ```rust
-old_sudoer: Option<T::AccountId>
+old: Option<T::AccountId>
+new: T::AccountId
 ```
 
 </details>
@@ -966,8 +980,20 @@ old_sudoer: Option<T::AccountId>
 <li>
 <details>
 <summary>
-<code>SudoAsDone(sudo_result)</code> - 2</summary>
-A sudo just took place. \[result\]
+<code>KeyRemoved()</code> - 2</summary>
+The key was permanently removed.
+
+```rust
+no args
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>SudoAsDone(sudo_result)</code> - 3</summary>
+A [sudo_as](Pallet::sudo_as) call just took place.
 
 ```rust
 sudo_result: DispatchResult
@@ -977,7 +1003,7 @@ sudo_result: DispatchResult
 </li>
 </ul>
 </li>
-<li>UpgradeOrigin - 21
+<li>UpgradeOrigin - 20
 <ul>
 <li>
 <details>
@@ -993,7 +1019,7 @@ result: DispatchResult
 </li>
 </ul>
 </li>
-<li>Preimage - 22
+<li>Preimage - 21
 <ul>
 <li>
 <details>
@@ -1033,7 +1059,7 @@ hash: T::Hash
 </li>
 </ul>
 </li>
-<li>TechnicalCommittee - 23
+<li>TechnicalCommittee - 22
 <ul>
 <li>
 <details>
@@ -1134,7 +1160,7 @@ no: MemberCount
 </li>
 </ul>
 </li>
-<li>UniversalDividend - 30
+<li>UniversalDividend - 23
 <ul>
 <li>
 <details>
@@ -1195,11 +1221,11 @@ who: T::AccountId
 </li>
 </ul>
 </li>
-<li>Wot - 40
+<li>Wot - 24
 <ul>
 </ul>
 </li>
-<li>Identity - 41
+<li>Identity - 25
 <ul>
 <li>
 <details>
@@ -1245,7 +1271,6 @@ idty_index: T::IdtyIndex
 <summary>
 <code>IdtyChangedOwnerKey(idty_index, new_owner_key)</code> - 3</summary>
 
-
 ```rust
 idty_index: T::IdtyIndex
 new_owner_key: T::AccountId
@@ -1281,7 +1306,7 @@ reason: RemovalReason
 </li>
 </ul>
 </li>
-<li>Membership - 42
+<li>Membership - 26
 <ul>
 <li>
 <details>
@@ -1324,7 +1349,7 @@ reason: MembershipRemovalReason
 </li>
 </ul>
 </li>
-<li>Certification - 43
+<li>Certification - 27
 <ul>
 <li>
 <details>
@@ -1368,7 +1393,7 @@ receiver: T::IdtyIndex
 </li>
 </ul>
 </li>
-<li>Distance - 44
+<li>Distance - 28
 <ul>
 <li>
 <details>
@@ -1409,7 +1434,7 @@ idty_index: T::IdtyIndex
 </li>
 </ul>
 </li>
-<li>AtomicSwap - 50
+<li>AtomicSwap - 29
 <ul>
 <li>
 <details>
@@ -1454,7 +1479,7 @@ proof: HashedProof
 </li>
 </ul>
 </li>
-<li>Multisig - 51
+<li>Multisig - 30
 <ul>
 <li>
 <details>
@@ -1478,7 +1503,7 @@ A multisig operation has been approved by someone.
 
 ```rust
 approving: T::AccountId
-timepoint: Timepoint<T::BlockNumber>
+timepoint: Timepoint<BlockNumberFor<T>>
 multisig: T::AccountId
 call_hash: CallHash
 ```
@@ -1493,7 +1518,7 @@ A multisig operation has been executed.
 
 ```rust
 approving: T::AccountId
-timepoint: Timepoint<T::BlockNumber>
+timepoint: Timepoint<BlockNumberFor<T>>
 multisig: T::AccountId
 call_hash: CallHash
 result: DispatchResult
@@ -1509,7 +1534,7 @@ A multisig operation has been cancelled.
 
 ```rust
 cancelling: T::AccountId
-timepoint: Timepoint<T::BlockNumber>
+timepoint: Timepoint<BlockNumberFor<T>>
 multisig: T::AccountId
 call_hash: CallHash
 ```
@@ -1518,7 +1543,7 @@ call_hash: CallHash
 </li>
 </ul>
 </li>
-<li>ProvideRandomness - 52
+<li>ProvideRandomness - 31
 <ul>
 <li>
 <details>
@@ -1549,7 +1574,7 @@ r#type: RandomnessType
 </li>
 </ul>
 </li>
-<li>Proxy - 53
+<li>Proxy - 32
 <ul>
 <li>
 <details>
@@ -1603,7 +1628,7 @@ A proxy was added.
 delegator: T::AccountId
 delegatee: T::AccountId
 proxy_type: T::ProxyType
-delay: T::BlockNumber
+delay: BlockNumberFor<T>
 ```
 
 </details>
@@ -1618,14 +1643,14 @@ A proxy was removed.
 delegator: T::AccountId
 delegatee: T::AccountId
 proxy_type: T::ProxyType
-delay: T::BlockNumber
+delay: BlockNumberFor<T>
 ```
 
 </details>
 </li>
 </ul>
 </li>
-<li>Utility - 54
+<li>Utility - 33
 <ul>
 <li>
 <details>
@@ -1703,7 +1728,7 @@ result: DispatchResult
 </li>
 </ul>
 </li>
-<li>Treasury - 55
+<li>Treasury - 34
 <ul>
 <li>
 <details>
@@ -1815,6 +1840,74 @@ The inactive funds of the pallet have been updated.
 ```rust
 reactivated: BalanceOf<T, I>
 deactivated: BalanceOf<T, I>
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>AssetSpendApproved(index, asset_kind, amount, beneficiary, valid_from, expire_at)</code> - 9</summary>
+A new asset spend proposal has been approved.
+
+```rust
+index: SpendIndex
+asset_kind: T::AssetKind
+amount: AssetBalanceOf<T, I>
+beneficiary: T::Beneficiary
+valid_from: BlockNumberFor<T>
+expire_at: BlockNumberFor<T>
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>AssetSpendVoided(index)</code> - 10</summary>
+An approved spend was voided.
+
+```rust
+index: SpendIndex
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>Paid(index, payment_id)</code> - 11</summary>
+A payment happened.
+
+```rust
+index: SpendIndex
+payment_id: <T::Paymaster as Pay>::Id
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>PaymentFailed(index, payment_id)</code> - 12</summary>
+A payment failed and can be retried.
+
+```rust
+index: SpendIndex
+payment_id: <T::Paymaster as Pay>::Id
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>SpendProcessed(index)</code> - 13</summary>
+A spend was processed and removed from the storage. It might have been successfully
+paid or it may have expired.
+
+```rust
+index: SpendIndex
 ```
 
 </details>

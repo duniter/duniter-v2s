@@ -42,6 +42,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(7 as u64))
             .saturating_add(RocksDbWeight::get().writes(2 as u64))
     }
+
     // Storage: Identity IdentityIndexOf (r:1 w:0)
     // Storage: SmithMembership Membership (r:1 w:0)
     // Storage: AuthorityMembers Members (r:1 w:0)
@@ -56,6 +57,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(8 as u64))
             .saturating_add(RocksDbWeight::get().writes(2 as u64))
     }
+
     // Storage: Identity IdentityIndexOf (r:1 w:0)
     // Storage: SmithMembership Membership (r:1 w:0)
     // Storage: System Account (r:1 w:0)
@@ -70,6 +72,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(11 as u64))
             .saturating_add(RocksDbWeight::get().writes(3 as u64))
     }
+
     // Storage: AuthorityMembers Members (r:1 w:1)
     // Storage: AuthorityMembers OnlineAuthorities (r:1 w:1)
     // Storage: AuthorityMembers OutgoingAuthorities (r:1 w:1)
@@ -86,6 +89,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(9 as u64))
             .saturating_add(RocksDbWeight::get().writes(13 as u64))
     }
+
     // Storage: AuthorityMembers BlackList (r:1 w:1)
     fn remove_member_from_blacklist() -> Weight {
         // Minimum execution time: 60_023 nanoseconds.

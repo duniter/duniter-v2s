@@ -16,8 +16,6 @@
 
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
 
 #[macro_export]
 macro_rules! declare_session_keys {
@@ -37,8 +35,19 @@ macro_rules! declare_session_keys {
     }
 }
 
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
-#[derive(Clone, Encode, Decode, Default, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+    Clone,
+    Encode,
+    Decode,
+    Default,
+    Eq,
+    PartialEq,
+    RuntimeDebug,
+    TypeInfo,
+    MaxEncodedLen,
+    serde::Deserialize,
+    serde::Serialize,
+)]
 pub struct IdtyData {
     /// number of the first claimable UD
     pub first_eligible_ud: pallet_universal_dividend::FirstEligibleUd,
@@ -59,8 +68,19 @@ impl From<IdtyData> for pallet_universal_dividend::FirstEligibleUd {
     }
 }
 
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(
-    Encode, Decode, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, RuntimeDebug, TypeInfo,
+    Encode,
+    Decode,
+    Default,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    RuntimeDebug,
+    TypeInfo,
+    serde::Deserialize,
+    serde::Serialize,
 )]
 pub struct ValidatorFullIdentification;

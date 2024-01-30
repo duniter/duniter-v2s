@@ -19,20 +19,22 @@ use super::gdev::runtime_types::pallet_identity;
 use super::*;
 use crate::DuniterWorld;
 use sp_keyring::AccountKeyring;
+use subxt::backend::rpc::RpcClient;
 use subxt::tx::{PairSigner, Signer};
 use subxt::utils::AccountId32;
 
-pub async fn request_evaluation(client: &Client, origin: AccountKeyring) -> Result<()> {
+pub async fn request_evaluation(client: &FullClient, origin: AccountKeyring) -> Result<()> {
     let origin = PairSigner::new(origin.pair());
 
     let _events = create_block_with_extrinsic(
-        client,
+        &client.rpc,
         client
+            .client
             .tx()
             .create_signed(
                 &gdev::tx().distance().request_distance_evaluation(),
                 &origin,
-                BaseExtrinsicParamsBuilder::new(),
+                SubstrateExtrinsicParamsBuilder::new().build(),
             )
             .await?,
     )
@@ -41,7 +43,11 @@ pub async fn request_evaluation(client: &Client, origin: AccountKeyring) -> Resu
     Ok(())
 }
 
-pub async fn run_oracle(client: &Client, origin: AccountKeyring, rpc_url: String) -> Result<()> {
+pub async fn run_oracle(
+    client: &FullClient,
+    origin: AccountKeyring,
+    rpc_url: String,
+) -> Result<()> {
     let origin = PairSigner::new(origin.pair());
     let account_id: &AccountId32 = origin.account_id();
 
@@ -56,12 +62,12 @@ pub async fn run_oracle(client: &Client, origin: AccountKeyring, rpc_url: String
     .await
     {
         for _ in 0..30 {
-            super::create_empty_block(client).await?;
+            super::create_empty_block(&client.rpc).await?;
         }
 
         let _events = create_block_with_extrinsic(
-            client,
-            client
+        &client.rpc,
+        client.client
                 .tx()
                 .create_signed(
                     &gdev::tx().sudo().sudo(gdev::runtime_types::gdev_runtime::RuntimeCall::Distance(
@@ -75,7 +81,7 @@ pub async fn run_oracle(client: &Client, origin: AccountKeyring, rpc_url: String
                         )
                     ),
                     &origin,
-                    BaseExtrinsicParamsBuilder::new(),
+                SubstrateExtrinsicParamsBuilder::new().build(),
                 )
                 .await?,
         )

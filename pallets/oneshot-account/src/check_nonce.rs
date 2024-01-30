@@ -53,9 +53,10 @@ where
     T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<crate::Call<T>>,
 {
     type AccountId = <T as frame_system::Config>::AccountId;
-    type Call = <T as frame_system::Config>::RuntimeCall;
     type AdditionalSigned = ();
+    type Call = <T as frame_system::Config>::RuntimeCall;
     type Pre = ();
+
     const IDENTIFIER: &'static str = "CheckNonce";
 
     fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {

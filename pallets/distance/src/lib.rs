@@ -332,6 +332,7 @@ pub mod pallet {
                 _ => unreachable!("index % 3 < 3"),
             }
         }
+
         /// Mutate the evaluation pool containing the results sent by evaluators on this session.
         fn mutate_next_pool<
             R,
@@ -581,6 +582,7 @@ pub mod pallet {
                     computation_result: inherent_data,
                 })
         }
+
         fn is_inherent(call: &Self::Call) -> bool {
             matches!(call, Self::Call::update_evaluation { .. })
         }

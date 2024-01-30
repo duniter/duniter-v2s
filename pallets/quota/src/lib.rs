@@ -36,6 +36,7 @@ pub use pallet::*;
 use pallet_identity::IdtyEvent;
 use sp_runtime::traits::Zero;
 use sp_std::fmt::Debug;
+use sp_std::vec::Vec;
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]
@@ -63,7 +64,7 @@ pub mod pallet {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// number of blocks in which max quota is replenished
-        type ReloadRate: Get<Self::BlockNumber>;
+        type ReloadRate: Get<BlockNumberFor<Self>>;
         /// maximum amount of quota an identity can get
         type MaxQuota: Get<BalanceOf<Self>>;
         /// Account used to refund fee
@@ -97,7 +98,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn quota)]
     pub type IdtyQuota<T: Config> =
-        StorageMap<_, Twox64Concat, IdtyId<T>, Quota<T::BlockNumber, BalanceOf<T>>, OptionQuery>;
+        StorageMap<_, Twox64Concat, IdtyId<T>, Quota<BlockNumberFor<T>, BalanceOf<T>>, OptionQuery>;
 
     /// fees waiting for refund
     #[pallet::storage]
@@ -246,7 +247,7 @@ pub mod pallet {
         }
 
         /// update quota according to the growth rate, max value, and last use
-        fn update_quota(quota: &mut Quota<T::BlockNumber, BalanceOf<T>>) {
+        fn update_quota(quota: &mut Quota<BlockNumberFor<T>, BalanceOf<T>>) {
             let current_block = frame_system::pallet::Pallet::<T>::block_number();
             let quota_growth = sp_runtime::Perbill::from_rational(
                 current_block - quota.last_use,
@@ -257,9 +258,10 @@ pub mod pallet {
             quota.last_use = current_block;
             quota.amount = core::cmp::min(quota.amount + quota_growth, T::MaxQuota::get());
         }
+
         /// spend a certain amount of quota and return what was spent
         fn do_spend_quota(
-            quota: &mut Quota<T::BlockNumber, BalanceOf<T>>,
+            quota: &mut Quota<BlockNumberFor<T>, BalanceOf<T>>,
             amount: BalanceOf<T>,
         ) -> BalanceOf<T> {
             let old_amount = quota.amount;
@@ -282,7 +284,6 @@ pub mod pallet {
         pub identities: Vec<IdtyId<T>>,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
@@ -292,13 +293,13 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             for idty in self.identities.iter() {
                 IdtyQuota::<T>::insert(
                     idty,
                     Quota {
-                        last_use: T::BlockNumber::zero(),
+                        last_use: BlockNumberFor::<T>::zero(),
                         amount: BalanceOf::<T>::zero(),
                     },
                 );
@@ -310,7 +311,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         // process refund queue if space left on block
-        fn on_idle(_block: T::BlockNumber, remaining_weight: Weight) -> Weight {
+        fn on_idle(_block: BlockNumberFor<T>, remaining_weight: Weight) -> Weight {
             Self::process_refund_queue(remaining_weight)
         }
     }

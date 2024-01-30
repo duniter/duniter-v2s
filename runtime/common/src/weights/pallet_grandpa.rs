@@ -29,7 +29,7 @@ use sp_std::marker::PhantomData;
 /// Weight functions for `pallet_grandpa`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_grandpa::WeightInfo for WeightInfo<T> {
-    fn report_equivocation(validator_count: u32) -> Weight {
+    fn report_equivocation(validator_count: u32, _p: u32) -> Weight {
         // we take the validator set count from the membership proof to
         // calculate the weight but we set a floor of 100 validators.
         let validator_count = validator_count.max(100) as u64;

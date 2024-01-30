@@ -31,7 +31,6 @@
 // --repeat=2
 // --pallet=*
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --header=./file_header.txt
@@ -48,18 +47,18 @@ use core::marker::PhantomData;
 /// Weight functions for `pallet_authority_members`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_authority_members::WeightInfo for WeightInfo<T> {
-	/// Storage: Identity IdentityIndexOf (r:1 w:0)
-	/// Proof Skipped: Identity IdentityIndexOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: SmithMembers Smiths (r:1 w:0)
-	/// Proof Skipped: SmithMembers Smiths (max_values: None, max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers Members (r:1 w:0)
-	/// Proof Skipped: AuthorityMembers Members (max_values: None, max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers OutgoingAuthorities (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers OutgoingAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers IncomingAuthorities (r:1 w:0)
-	/// Proof Skipped: AuthorityMembers IncomingAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers OnlineAuthorities (r:1 w:0)
-	/// Proof Skipped: AuthorityMembers OnlineAuthorities (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `Identity::IdentityIndexOf` (r:1 w:0)
+	/// Proof: `Identity::IdentityIndexOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `SmithMembers::Smiths` (r:1 w:0)
+	/// Proof: `SmithMembers::Smiths` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::Members` (r:1 w:0)
+	/// Proof: `AuthorityMembers::Members` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::OutgoingAuthorities` (r:1 w:1)
+	/// Proof: `AuthorityMembers::OutgoingAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::IncomingAuthorities` (r:1 w:0)
+	/// Proof: `AuthorityMembers::IncomingAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::OnlineAuthorities` (r:1 w:0)
+	/// Proof: `AuthorityMembers::OnlineAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn go_offline() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `717`
@@ -70,22 +69,22 @@ impl<T: frame_system::Config> pallet_authority_members::WeightInfo for WeightInf
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Identity IdentityIndexOf (r:1 w:0)
-	/// Proof Skipped: Identity IdentityIndexOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: SmithMembers Smiths (r:1 w:0)
-	/// Proof Skipped: SmithMembers Smiths (max_values: None, max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers Blacklist (r:1 w:0)
-	/// Proof Skipped: AuthorityMembers Blacklist (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers Members (r:1 w:0)
-	/// Proof Skipped: AuthorityMembers Members (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Session NextKeys (r:1 w:0)
-	/// Proof Skipped: Session NextKeys (max_values: None, max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers IncomingAuthorities (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers IncomingAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers OutgoingAuthorities (r:1 w:0)
-	/// Proof Skipped: AuthorityMembers OutgoingAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers OnlineAuthorities (r:1 w:0)
-	/// Proof Skipped: AuthorityMembers OnlineAuthorities (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `Identity::IdentityIndexOf` (r:1 w:0)
+	/// Proof: `Identity::IdentityIndexOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `SmithMembers::Smiths` (r:1 w:0)
+	/// Proof: `SmithMembers::Smiths` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::Blacklist` (r:1 w:0)
+	/// Proof: `AuthorityMembers::Blacklist` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::Members` (r:1 w:0)
+	/// Proof: `AuthorityMembers::Members` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::NextKeys` (r:1 w:0)
+	/// Proof: `Session::NextKeys` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::IncomingAuthorities` (r:1 w:1)
+	/// Proof: `AuthorityMembers::IncomingAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::OutgoingAuthorities` (r:1 w:0)
+	/// Proof: `AuthorityMembers::OutgoingAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::OnlineAuthorities` (r:1 w:0)
+	/// Proof: `AuthorityMembers::OnlineAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn go_online() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `1108`
@@ -96,18 +95,18 @@ impl<T: frame_system::Config> pallet_authority_members::WeightInfo for WeightInf
 			.saturating_add(T::DbWeight::get().reads(8))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: Identity IdentityIndexOf (r:1 w:0)
-	/// Proof Skipped: Identity IdentityIndexOf (max_values: None, max_size: None, mode: Measured)
-	/// Storage: SmithMembers Smiths (r:1 w:0)
-	/// Proof Skipped: SmithMembers Smiths (max_values: None, max_size: None, mode: Measured)
-	/// Storage: System Account (r:1 w:0)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
-	/// Storage: Session NextKeys (r:1 w:1)
-	/// Proof Skipped: Session NextKeys (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Session KeyOwner (r:4 w:0)
-	/// Proof Skipped: Session KeyOwner (max_values: None, max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers Members (r:0 w:1)
-	/// Proof Skipped: AuthorityMembers Members (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `Identity::IdentityIndexOf` (r:1 w:0)
+	/// Proof: `Identity::IdentityIndexOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `SmithMembers::Smiths` (r:1 w:0)
+	/// Proof: `SmithMembers::Smiths` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `System::Account` (r:1 w:0)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
+	/// Storage: `Session::NextKeys` (r:1 w:1)
+	/// Proof: `Session::NextKeys` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::KeyOwner` (r:4 w:0)
+	/// Proof: `Session::KeyOwner` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::Members` (r:0 w:1)
+	/// Proof: `AuthorityMembers::Members` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn set_session_keys() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `1512`
@@ -118,20 +117,20 @@ impl<T: frame_system::Config> pallet_authority_members::WeightInfo for WeightInf
 			.saturating_add(T::DbWeight::get().reads(8))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: AuthorityMembers Members (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers Members (max_values: None, max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers OnlineAuthorities (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers OnlineAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers OutgoingAuthorities (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers OutgoingAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: AuthorityMembers IncomingAuthorities (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers IncomingAuthorities (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: Session NextKeys (r:1 w:1)
-	/// Proof Skipped: Session NextKeys (max_values: None, max_size: None, mode: Measured)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
-	/// Storage: Session KeyOwner (r:0 w:4)
-	/// Proof Skipped: Session KeyOwner (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `AuthorityMembers::Members` (r:1 w:1)
+	/// Proof: `AuthorityMembers::Members` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::OnlineAuthorities` (r:1 w:1)
+	/// Proof: `AuthorityMembers::OnlineAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::OutgoingAuthorities` (r:1 w:1)
+	/// Proof: `AuthorityMembers::OutgoingAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `AuthorityMembers::IncomingAuthorities` (r:1 w:1)
+	/// Proof: `AuthorityMembers::IncomingAuthorities` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::NextKeys` (r:1 w:1)
+	/// Proof: `Session::NextKeys` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
+	/// Storage: `Session::KeyOwner` (r:0 w:4)
+	/// Proof: `Session::KeyOwner` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn remove_member() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `750`
@@ -142,8 +141,8 @@ impl<T: frame_system::Config> pallet_authority_members::WeightInfo for WeightInf
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(10))
 	}
-	/// Storage: AuthorityMembers Blacklist (r:1 w:1)
-	/// Proof Skipped: AuthorityMembers Blacklist (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: `AuthorityMembers::Blacklist` (r:1 w:1)
+	/// Proof: `AuthorityMembers::Blacklist` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn remove_member_from_blacklist() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `199`

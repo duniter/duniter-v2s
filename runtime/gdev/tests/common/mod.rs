@@ -14,18 +14,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-#![allow(dead_code, unused_imports)] // TODO remove this line when we will have more tests
+#![allow(dead_code, unused_imports)]
 
 use common_runtime::constants::*;
 use common_runtime::*;
-use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
+use frame_support::traits::{OnFinalize, OnInitialize};
 use gdev_runtime::opaque::SessionKeys;
 use gdev_runtime::*;
 use pallet_authority_members::OnNewSession;
 use pallet_smith_members::SmithMeta;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::{AuthorityId as BabeId, Slot};
-use sp_consensus_babe::{VrfOutput, VrfProof};
+use sp_consensus_babe::{VrfInput, VrfProof};
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::IsWrappedBy;
 use sp_core::sr25519;
@@ -155,8 +155,8 @@ impl ExtBuilder {
             parameters,
         } = self;
 
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
+        let mut t = frame_system::GenesisConfig::<Runtime>::default()
+            .build_storage()
             .unwrap();
 
         // compute total monetary mass
@@ -196,9 +196,11 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .unwrap();
 
-        pallet_duniter_test_parameters::GenesisConfig::<Runtime> { parameters }
-            .assimilate_storage(&mut t)
-            .unwrap();
+        pallet_duniter_test_parameters::GenesisConfig::<Runtime> {
+            parameters: parameters.clone(),
+        }
+        .assimilate_storage(&mut t)
+        .unwrap();
 
         pallet_session::GenesisConfig::<Runtime> {
             keys: initial_smiths

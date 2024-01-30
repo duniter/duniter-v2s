@@ -33,6 +33,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(1))
             .saturating_add(RocksDbWeight::get().writes(1))
     }
+
     // Storage: OneshotAccount OneshotAccounts (r:1 w:1)
     // Storage: System BlockHash (r:1 w:0)
     // Storage: System Account (r:1 w:1)
@@ -41,6 +42,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(3))
             .saturating_add(RocksDbWeight::get().writes(2))
     }
+
     // Storage: OneshotAccount OneshotAccounts (r:1 w:1)
     // Storage: System BlockHash (r:1 w:0)
     // Storage: System Account (r:2 w:2)

@@ -39,6 +39,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(6 as u64))
             .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
+
     // Storage: ProvideRandomness RequestsReadyAtNextBlock (r:1 w:1)
     // Storage: Babe AuthorVrfRandomness (r:1 w:0)
     // Storage: ProvideRandomness RequestsIds (r:1 w:1)
@@ -56,6 +57,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().writes(3 as u64))
             .saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
     }
+
     fn on_initialize_epoch(i: u32) -> Weight {
         // Minimum execution time: 175_645 nanoseconds.
         Weight::from_parts(461_442_906 as u64, 0)

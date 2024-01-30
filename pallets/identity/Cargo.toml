@@ -11,70 +11,86 @@ version = '3.0.0'
 
 [features]
 default = ['std']
-runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
+runtime-benchmarks = [
+    'frame-benchmarking/runtime-benchmarks',
+    'frame-support/runtime-benchmarks',
+    'frame-system/runtime-benchmarks',
+    'sp-runtime/runtime-benchmarks',
+]
 std = [
     'codec/std',
     'frame-support/std',
+    'scale-info/std',
+    'serde/std',
+    'frame-benchmarking?/std',
+    'frame-support/std',
     'frame-system/std',
-    'frame-benchmarking/std',
-    'serde',
     'sp-core/std',
+    'sp-io/std',
     'sp-runtime/std',
     'sp-std/std',
+    'sp-keystore/std',
+    'sp-state-machine/std',
 ]
-try-runtime = ['frame-support/try-runtime']
+try-runtime = [
+    'frame-support/try-runtime',
+    'frame-system/try-runtime',
+    'sp-runtime/try-runtime',
+]
 
 [package.metadata.docs.rs]
+default-features = false
 targets = ['x86_64-unknown-linux-gnu']
+
+[build-dependencies]
+substrate-wasm-builder = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0" }
 
 [dependencies]
 duniter-primitives = { path = "../../primitives/duniter", default-features = false }
 
 # crates.io
-codec = { package = 'parity-scale-codec', version = "3.1.5", features = ['derive'], default-features = false }
-impl-trait-for-tuples = "0.2.1"
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-serde = { version = "1.0.101", features = ["derive"], optional = true }
-
+codec = { package = 'parity-scale-codec', version = "3.6.9", features = ['derive'], default-features = false }
+impl-trait-for-tuples = { version = "0.2.2", default-features = false }
+scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
+serde = { version = "1.0.195", features = ["derive"], default-features = false }
 # substrate
 
 [dependencies.frame-benchmarking]
 default-features = false
-git = 'https://github.com/duniter/substrate'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
 optional = true
-branch = 'duniter-substrate-v0.9.42'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.frame-support]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.frame-system]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.sp-core]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
-
-[dependencies.sp-std]
-default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dependencies.sp-io]
 default-features = false
-git = 'https://github.com/duniter/substrate'
-branch = 'duniter-substrate-v0.9.42'
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/duniter/duniter-polkadot-sdk'
+branch = 'duniter-substrate-v1.6.0'
 
 [dev-dependencies]
-serde = '1.0.119'
-sp-io = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42' }
-sp-keystore = { git = 'https://github.com/duniter/substrate', branch = 'duniter-substrate-v0.9.42' }
+sp-keystore = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
+sp-state-machine = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }

@@ -229,12 +229,15 @@ impl CallCategory {
             _ => Self::User,
         }
     }
+
     fn is_root(pallet_name: &str, call_name: &str) -> bool {
         matches!(Self::is(pallet_name, call_name), Self::Root)
     }
+
     fn is_user(pallet_name: &str, call_name: &str) -> bool {
         matches!(Self::is(pallet_name, call_name), Self::User)
     }
+
     fn is_disabled(pallet_name: &str, call_name: &str) -> bool {
         matches!(Self::is(pallet_name, call_name), Self::Disabled)
     }
@@ -256,10 +259,10 @@ pub(super) fn gen_doc() -> Result<()> {
     println!("Metadata successfully loaded!");
 
     let (mut runtime, max_weight) =
-        if let frame_metadata::RuntimeMetadata::V14(ref metadata_v14) = metadata.1 {
+        if let frame_metadata::RuntimeMetadata::V15(ref metadata_v15) = metadata.1 {
             (
-                get_from_metadata_v14(metadata_v14.clone())?,
-                get_max_weight_from_metadata_v14(metadata_v14.clone())?,
+                get_from_metadata_v15(metadata_v15.clone())?,
+                get_max_weight_from_metadata_v15(metadata_v15.clone())?,
             )
         } else {
             bail!("unsuported metadata version")
@@ -280,7 +283,6 @@ pub(super) fn gen_doc() -> Result<()> {
     // For pallets with manual or no weight, we define a default value.
     weights.insert("Babe".to_string(), Default::default()); // Manual
     weights.insert("Grandpa".to_string(), Default::default()); // Manual
-    weights.insert("Sudo".to_string(), Default::default()); // Only > v1.0 has WeightInfo TODO at update
     weights.insert("AtomicSwap".to_string(), Default::default()); // No weight
 
     // Insert weights for each call of each pallet.
@@ -320,12 +322,12 @@ pub(super) fn gen_doc() -> Result<()> {
     Ok(())
 }
 
-fn get_max_weight_from_metadata_v14(
-    metadata_v14: frame_metadata::v14::RuntimeMetadataV14,
+fn get_max_weight_from_metadata_v15(
+    metadata_v15: frame_metadata::v15::RuntimeMetadataV15,
 ) -> Result<u128> {
     // Extract the maximal weight available in one block
     // from the metadata.
-    let block_weights = metadata_v14
+    let block_weights = metadata_v15
         .pallets
         .iter()
         .find(|pallet| pallet.name == "System")
@@ -338,29 +340,31 @@ fn get_max_weight_from_metadata_v14(
     let block_weights = scale_value::scale::decode_as_type(
         &mut &*block_weights.value,
         block_weights.ty.id,
-        &metadata_v14.types,
+        &metadata_v15.types,
     )
     .expect("Can't decode max_weight")
     .value;
 
     if let scale_value::ValueDef::Composite(scale_value::Composite::Named(i)) = block_weights
-            && let scale_value::ValueDef::Composite(scale_value::Composite::Named(j)) = &i.iter().find(|name| name.0 == "max_block").unwrap().1.value
-            && let scale_value::ValueDef::Primitive(scale_value::Primitive::U128(k)) = &j.iter().find(|name| name.0 == "ref_time").unwrap().1.value
-        {
-            Ok(*k)
-        } else {
-            bail!("Invalid max_weight")
-        }
+        && let scale_value::ValueDef::Composite(scale_value::Composite::Named(j)) =
+            &i.iter().find(|name| name.0 == "max_block").unwrap().1.value
+        && let scale_value::ValueDef::Primitive(scale_value::Primitive::U128(k)) =
+            &j.iter().find(|name| name.0 == "ref_time").unwrap().1.value
+    {
+        Ok(*k)
+    } else {
+        bail!("Invalid max_weight")
+    }
 }
 
-fn get_from_metadata_v14(
-    metadata_v14: frame_metadata::v14::RuntimeMetadataV14,
+fn get_from_metadata_v15(
+    metadata_v15: frame_metadata::v15::RuntimeMetadataV15,
 ) -> Result<RuntimePallets> {
-    println!("Number of pallets: {}", metadata_v14.pallets.len());
+    println!("Number of pallets: {}", metadata_v15.pallets.len());
     let mut pallets = Vec::new();
-    for pallet in metadata_v14.pallets {
+    for pallet in metadata_v15.pallets {
         let calls_type_def = if let Some(calls) = pallet.calls {
-            let Some(calls_type) = metadata_v14.types.resolve(calls.ty.id) else {
+            let Some(calls_type) = metadata_v15.types.resolve(calls.ty.id) else {
                 bail!("Invalid metadata")
             };
             Some(calls_type.type_def.clone())
@@ -369,7 +373,7 @@ fn get_from_metadata_v14(
             None
         };
         let events_type_def = if let Some(events) = pallet.event {
-            let Some(events_type) = metadata_v14.types.resolve(events.ty.id) else {
+            let Some(events_type) = metadata_v15.types.resolve(events.ty.id) else {
                 bail!("Invalid metadata")
             };
             Some(events_type.type_def.clone())
@@ -378,7 +382,7 @@ fn get_from_metadata_v14(
             None
         };
         let errors_type_def = if let Some(errors) = pallet.error {
-            let Some(errors_type) = metadata_v14.types.resolve(errors.ty.id) else {
+            let Some(errors_type) = metadata_v15.types.resolve(errors.ty.id) else {
                 bail!("Invalid metadata")
             };
             Some(errors_type.type_def.clone())
