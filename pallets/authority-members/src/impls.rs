@@ -55,8 +55,8 @@ where
                 for offender in offenders {
                     if let Some(member_id) = T::MemberIdOf::convert(offender.offender.0.clone()) {
                         Blacklist::<T>::mutate(|blacklist| {
-                            if !blacklist.contains(&member_id) {
-                                blacklist.push(member_id);
+                            if let Err(index) = blacklist.binary_search(&member_id) {
+                                blacklist.insert(index, member_id);
                                 Self::deposit_event(Event::MemberAddedToBlacklist {
                                     member: member_id,
                                 });
