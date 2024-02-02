@@ -17,15 +17,11 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
-use sp_core::H256;
 use sp_runtime::traits::Zero;
 
 // see `struct AccountData` for details in substrate code
 #[derive(Clone, Decode, Encode, Eq, MaxEncodedLen, PartialEq, RuntimeDebug, TypeInfo)] // Default,
 pub struct AccountData<Balance, IdtyId> {
-    /// A random identifier that can not be chosen by the user
-    // this intends to be used as a robust identification system
-    pub(super) random_id: Option<H256>,
     // see Substrate AccountData
     pub(super) free: Balance,
     // see Substrate AccountData
@@ -43,7 +39,6 @@ impl<Balance: Zero, IdtyId> Default for AccountData<Balance, IdtyId> {
     fn default() -> Self {
         Self {
             linked_idty: None,
-            random_id: None,
             free: Balance::zero(),
             reserved: Balance::zero(),
             fee_frozen: Balance::zero(),
@@ -89,7 +84,6 @@ impl<Balance: Zero, IdtyId> From<AccountData<Balance, IdtyId>>
 )]
 #[serde(deny_unknown_fields)]
 pub struct GenesisAccountData<Balance, IdtyId> {
-    pub random_id: H256,
     pub balance: Balance,
     pub idty_id: Option<IdtyId>,
 }

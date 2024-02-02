@@ -235,10 +235,10 @@ mod verifier {
 
                 if account_id.as_slice() != TREASURY_ACCOUNT_ID {
                     // Rule 4: If the account is not a "special account",
-                    // it should have a random id or a consumer
+                    // it should have a consumer
                     self.assert(
-                        account_info.data.random_id.is_some() || account_info.consumers > 0,
-                        format!("Account {} has no random_id nor consumer.", account_id),
+                        account_info.consumers > 0,
+                        format!("Account {} has no consumer.", account_id),
                     );
                 }
             }

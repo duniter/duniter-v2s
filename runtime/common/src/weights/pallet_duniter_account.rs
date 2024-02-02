@@ -61,20 +61,8 @@ impl<T: frame_system::Config> pallet_duniter_account::WeightInfo for WeightInfo<
 	}
 	/// Storage: `Account::PendingNewAccounts` (r:1 w:1)
 	/// Proof: `Account::PendingNewAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	/// Storage: `ProvideRandomness::RequestIdProvider` (r:1 w:1)
-	/// Proof: `ProvideRandomness::RequestIdProvider` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	/// Storage: `ProvideRandomness::RequestsIds` (r:1 w:1)
-	/// Proof: `ProvideRandomness::RequestsIds` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	/// Storage: `ProvideRandomness::CounterForRequestsIds` (r:1 w:1)
-	/// Proof: `ProvideRandomness::CounterForRequestsIds` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	/// Storage: `Babe::EpochIndex` (r:1 w:0)
 	/// Proof: `Babe::EpochIndex` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
-	/// Storage: `ProvideRandomness::NexEpochHookIn` (r:1 w:0)
-	/// Proof: `ProvideRandomness::NexEpochHookIn` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	/// Storage: `ProvideRandomness::RequestsReadyAtEpoch` (r:1 w:1)
-	/// Proof: `ProvideRandomness::RequestsReadyAtEpoch` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	/// Storage: `Account::PendingRandomIdAssignments` (r:0 w:1)
-	/// Proof: `Account::PendingRandomIdAssignments` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `i` is `[0, 1]`.
 	fn on_initialize_sufficient(i: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -94,20 +82,8 @@ impl<T: frame_system::Config> pallet_duniter_account::WeightInfo for WeightInfo<
 	/// Proof: `Account::PendingNewAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
-	/// Storage: `ProvideRandomness::RequestIdProvider` (r:1 w:1)
-	/// Proof: `ProvideRandomness::RequestIdProvider` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	/// Storage: `ProvideRandomness::RequestsIds` (r:1 w:1)
-	/// Proof: `ProvideRandomness::RequestsIds` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	/// Storage: `ProvideRandomness::CounterForRequestsIds` (r:1 w:1)
-	/// Proof: `ProvideRandomness::CounterForRequestsIds` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	/// Storage: `Babe::EpochIndex` (r:1 w:0)
 	/// Proof: `Babe::EpochIndex` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
-	/// Storage: `ProvideRandomness::NexEpochHookIn` (r:1 w:0)
-	/// Proof: `ProvideRandomness::NexEpochHookIn` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	/// Storage: `ProvideRandomness::RequestsReadyAtEpoch` (r:1 w:1)
-	/// Proof: `ProvideRandomness::RequestsReadyAtEpoch` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	/// Storage: `Account::PendingRandomIdAssignments` (r:0 w:1)
-	/// Proof: `Account::PendingRandomIdAssignments` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `i` is `[0, 1]`.
 	fn on_initialize_with_balance(i: u32, ) -> Weight {
 		// Proof Size summary in bytes:
@@ -138,28 +114,5 @@ impl<T: frame_system::Config> pallet_duniter_account::WeightInfo for WeightInfo<
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i.into())))
 			.saturating_add(Weight::from_parts(0, 74).saturating_mul(i.into()))
-	}
-	/// Storage: `Account::PendingRandomIdAssignments` (r:1 w:1)
-	/// Proof: `Account::PendingRandomIdAssignments` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	fn on_filled_randomness_pending() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `116`
-		//  Estimated: `3581`
-		// Minimum execution time: 20_089_000 picoseconds.
-		Weight::from_parts(21_261_000, 0)
-			.saturating_add(Weight::from_parts(0, 3581))
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	/// Storage: `Account::PendingRandomIdAssignments` (r:1 w:0)
-	/// Proof: `Account::PendingRandomIdAssignments` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	fn on_filled_randomness_no_pending() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `42`
-		//  Estimated: `3507`
-		// Minimum execution time: 4_511_000 picoseconds.
-		Weight::from_parts(4_829_000, 0)
-			.saturating_add(Weight::from_parts(0, 3507))
-			.saturating_add(T::DbWeight::get().reads(1))
 	}
 }

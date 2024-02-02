@@ -25,7 +25,7 @@ use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::AccountId32;
-use sp_core::{blake2_256, ed25519, sr25519, Decode, Encode, H256};
+use sp_core::{ed25519, sr25519, Decode, Encode};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_runtime::{MultiSignature, Perbill};
 use std::collections::{BTreeMap, HashMap};
@@ -1162,7 +1162,6 @@ fn v1_wallets_to_v2_accounts(
             accounts.insert(
                 owner_key.clone(),
                 GenesisAccountData {
-                    random_id: H256(blake2_256(&(balance, &owner_key).encode())),
                     balance,
                     idty_id: None,
                 },
@@ -1425,7 +1424,6 @@ fn feed_identities(
         accounts.insert(
             identity.owner_key.clone(),
             GenesisAccountData {
-                random_id: H256(blake2_256(&(identity.index, &identity.owner_key).encode())),
                 balance: identity.balance,
                 idty_id: Some(identity.index),
             },
@@ -1747,9 +1745,6 @@ where
             (
                 owner_key.clone(),
                 GenesisAccountData {
-                    random_id: H256(blake2_256(
-                        &(i as u32 + idty_index_start, owner_key).encode(),
-                    )),
                     // Should be sufficient for the overhead benchmark
                     balance: initial_idty_balance,
                     idty_id: Some(i as u32 + idty_index_start),

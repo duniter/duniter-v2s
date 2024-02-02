@@ -6603,7 +6603,6 @@ dependencies = [
  "maplit",
  "pallet-balances",
  "pallet-identity",
- "pallet-provide-randomness",
  "pallet-quota",
  "pallet-transaction-payment",
  "pallet-treasury",

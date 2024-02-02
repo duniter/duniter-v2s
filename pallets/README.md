@@ -8,7 +8,7 @@ These pallets are at the core of Duniter/Ğ1 currency
 
 - **`authority-members`** Duniter authorities are not selected with staking but through a smith web of trust.
 - **`certification`** Certifications are the "edges" of Duniter's dynamic directed graph. They mean the acceptation of a Licence.
-- **`duniter-account`** Duniter customized the `AccountData` defined in the `Balances` pallet to introduce a `RandomId`.
+- **`duniter-account`** Duniter customized the `AccountData` defined in the `Balances` pallet to introduce a `linked_idty`.
 - **`duniter-wot`** Merges identities, membership, certifications and distance pallets to implement Duniter Web of Trust.
 - **`distance`** Publishes median of distance computation results provided by inherents coming from `distance-oracle` workers.
 - **`identity`** Identities are the "nodes" of Duniter's dynamic directed graph. They are one-to-one mapping to human being.

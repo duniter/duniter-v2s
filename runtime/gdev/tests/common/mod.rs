@@ -73,7 +73,6 @@ impl ExtBuilder {
                     get_account_id_from_seed::<sr25519::Public>(NAMES[i]),
                     GenesisAccountData {
                         balance: 0,
-                        random_id: H256([i as u8; 32]),
                         idty_id: Some(i as u32 + 1),
                     },
                 )
@@ -123,7 +122,6 @@ impl ExtBuilder {
             self.initial_accounts
                 .entry(account_id.clone())
                 .or_insert(GenesisAccountData {
-                    random_id: H256(account_id.into()),
                     ..Default::default()
                 })
                 .balance = balance;

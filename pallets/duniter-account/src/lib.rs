@@ -32,10 +32,8 @@ use frame_support::pallet_prelude::*;
 use frame_support::traits::{Currency, ExistenceRequirement, StorageVersion};
 use frame_support::traits::{OnUnbalanced, StoredMap};
 use frame_system::pallet_prelude::*;
-use pallet_provide_randomness::RequestId;
 use pallet_quota::traits::RefundFee;
 use pallet_transaction_payment::OnChargeTransaction;
-use sp_core::H256;
 use sp_runtime::traits::{Convert, DispatchInfoOf, PostDispatchInfoOf, Saturating};
 use sp_std::fmt::Debug;
 
@@ -61,7 +59,6 @@ pub mod pallet {
     pub trait Config:
         frame_system::Config<AccountData = AccountData<Self::Balance, IdtyIdOf<Self>>>
         + pallet_balances::Config
-        + pallet_provide_randomness::Config<Currency = pallet_balances::Pallet<Self>>
         + pallet_transaction_payment::Config
         + pallet_treasury::Config<Currency = pallet_balances::Pallet<Self>>
         + pallet_quota::Config
@@ -75,6 +72,8 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
+        /// Handler for the unbalanced reduction when the requestor pays fees.
+        type OnUnbalanced: OnUnbalanced<pallet_balances::NegativeImbalance<Self>>;
         /// wrapped type
         type InnerOnChargeTransaction: OnChargeTransaction<Self>;
         /// type implementing refund behavior
@@ -82,11 +81,6 @@ pub mod pallet {
     }
 
     // STORAGE //
-
-    #[pallet::storage]
-    #[pallet::getter(fn pending_random_id_assignments)]
-    pub type PendingRandomIdAssignments<T: Config> =
-        StorageMap<_, Twox64Concat, RequestId, T::AccountId, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn pending_new_accounts)]
@@ -120,7 +114,6 @@ pub mod pallet {
             frame_system::Account::<T>::mutate(
                 pallet_treasury::Pallet::<T>::account_id(),
                 |account| {
-                    account.data.random_id = None;
                     account.data.free = self.treasury_balance;
                     account.providers = 1;
                 },
@@ -139,20 +132,11 @@ pub mod pallet {
             );
 
             // Classic accounts
-            for (
-                account_id,
-                GenesisAccountData {
-                    random_id,
-                    balance,
-                    idty_id,
-                },
-            ) in &self.accounts
-            {
+            for (account_id, GenesisAccountData { balance, idty_id }) in &self.accounts {
                 // if the balance is below existential deposit, the account must be an identity
                 assert!(balance >= &T::ExistentialDeposit::get() || idty_id.is_some());
                 // mutate account
                 frame_system::Account::<T>::mutate(account_id, |account| {
-                    account.data.random_id = Some(*random_id);
                     account.data.free = *balance;
                     if idty_id.is_some() {
                         account.data.linked_idty = *idty_id;
@@ -179,8 +163,6 @@ pub mod pallet {
             who: T::AccountId,
             balance: T::Balance,
         },
-        /// A random ID has been assigned to the account.
-        RandomIdAssigned { who: T::AccountId, random_id: H256 },
         /// account linked to identity
         AccountLinked {
             who: T::AccountId,
@@ -243,11 +225,6 @@ pub mod pallet {
             {
                 if frame_system::Pallet::<T>::sufficients(&account_id) > 0 {
                     // If the account is self-sufficient, it is exempt from account creation fees
-                    let request_id = pallet_provide_randomness::Pallet::<T>::force_request(
-                        pallet_provide_randomness::RandomnessType::RandomnessFromTwoEpochsAgo,
-                        H256(T::AccountIdToSalt::convert(account_id.clone())),
-                    );
-                    PendingRandomIdAssignments::<T>::insert(request_id, account_id);
                     total_weight += <T as pallet::Config>::WeightInfo::on_initialize_sufficient(
                         T::MaxNewAccountsPerBlock::get(),
                     );
@@ -258,11 +235,7 @@ pub mod pallet {
                     if account_data.free >= T::ExistentialDeposit::get() + price {
                         // The account can pay the new account price, we should:
                         // 1. Withdraw the "new account price" amount
-                        // 2. Increment consumers to prevent the destruction of the account before
-                        // the random id is assigned
-                        // 3. Manage the funds collected
-                        // 4. Submit random id generation request
-                        // 5. Save the id of the random generation request.
+                        // 2. Manage the funds collected
                         let res = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::withdraw(
                             &account_id,
                             price,
@@ -274,18 +247,7 @@ pub mod pallet {
                             "Cannot fail because we checked that the free balance was sufficient"
                         );
                         if let Ok(imbalance) = res {
-                            let res =
-                                frame_system::Pallet::<T>::inc_consumers_without_limit(&account_id);
-                            debug_assert!(
-                                res.is_ok(),
-                                "Cannot fail because any account with funds should have providers"
-                            );
                             T::OnUnbalanced::on_unbalanced(imbalance);
-                            let request_id = pallet_provide_randomness::Pallet::<T>::force_request(
-                                pallet_provide_randomness::RandomnessType::RandomnessFromTwoEpochsAgo,
-                                H256(T::AccountIdToSalt::convert(account_id.clone())),
-                            );
-                            PendingRandomIdAssignments::<T>::insert(request_id, account_id);
                             total_weight +=
                                 <T as pallet::Config>::WeightInfo::on_initialize_with_balance(
                                     T::MaxNewAccountsPerBlock::get(),
@@ -332,28 +294,6 @@ where
     }
 }
 
-// implement on filled randomness
-impl<T> pallet_provide_randomness::OnFilledRandomness for Pallet<T>
-where
-    T: Config,
-{
-    fn on_filled_randomness(request_id: RequestId, randomness: H256) -> Weight {
-        if let Some(account_id) = PendingRandomIdAssignments::<T>::take(request_id) {
-            frame_system::Account::<T>::mutate(&account_id, |account| {
-                account.consumers = account.consumers.saturating_sub(1);
-                account.data.random_id = Some(randomness);
-            });
-            Self::deposit_event(Event::RandomIdAssigned {
-                who: account_id,
-                random_id: randomness,
-            });
-            <T as pallet::Config>::WeightInfo::on_filled_randomness_pending()
-        } else {
-            <T as pallet::Config>::WeightInfo::on_filled_randomness_no_pending()
-        }
-    }
-}
-
 // implement accountdata storedmap
 impl<T, AccountId, Balance>
     frame_support::traits::StoredMap<AccountId, pallet_balances::AccountData<Balance>> for Pallet<T>
@@ -378,8 +318,7 @@ where
         + scale_info::TypeInfo,
     T: Config
         + frame_system::Config<AccountId = AccountId, AccountData = AccountData<Balance, IdtyIdOf<T>>>
-        + pallet_balances::Config<Balance = Balance>
-        + pallet_provide_randomness::Config,
+        + pallet_balances::Config<Balance = Balance>,
 {
     fn get(k: &AccountId) -> pallet_balances::AccountData<Balance> {
         frame_system::Account::<T>::get(k).data.into()
@@ -399,7 +338,7 @@ where
         let result = f(&mut some_data)?;
         let is_providing = some_data.is_some();
         match (was_providing, is_providing) {
-            // the account has just been created, increment its provider and request a random_id
+            // the account has just been created, increment its provider
             (false, true) => {
                 frame_system::Pallet::<T>::inc_providers(account_id);
                 PendingNewAccounts::<T>::insert(account_id, ());

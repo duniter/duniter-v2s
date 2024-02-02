@@ -108,6 +108,7 @@ type RuntimeTask = ();
             // does currency adapter in any case, but adds "refund with quota" feature
             type InnerOnChargeTransaction = CurrencyAdapter<Balances, HandleFees>;
             type Refund = Quota;
+            type OnUnbalanced = Treasury;
         }
 
         // QUOTA //
@@ -347,7 +348,7 @@ type RuntimeFreezeReason = ();
             type GetCurrentEpochIndex = GetCurrentEpochIndex<Self>;
             type MaxRequests = frame_support::traits::ConstU32<100>;
             type RequestPrice = frame_support::traits::ConstU64<2_000>;
-            type OnFilledRandomness = Account;
+            type OnFilledRandomness = ();
             type OnUnbalanced = Treasury;
             type ParentBlockRandomness = pallet_babe::ParentBlockRandomness<Self>;
             type RandomnessFromOneEpochAgo = pallet_babe::RandomnessFromOneEpochAgo<Self>;

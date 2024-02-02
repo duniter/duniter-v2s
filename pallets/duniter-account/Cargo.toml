@@ -17,7 +17,6 @@ runtime-benchmarks = [
     'frame-system/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
     'pallet-identity/runtime-benchmarks',
-    'pallet-provide-randomness/runtime-benchmarks',
     'pallet-treasury/runtime-benchmarks',
     'pallet-quota/runtime-benchmarks',
     'pallet-balances/runtime-benchmarks',
@@ -30,7 +29,6 @@ std = [
     'pallet-balances/std',
     'pallet-transaction-payment/std',
     'pallet-identity/std',
-    'pallet-provide-randomness/std',
     'pallet-treasury/std',
     'pallet-quota/std',
     'serde/std',
@@ -46,7 +44,6 @@ try-runtime = [
     'frame-system/try-runtime',
     'sp-runtime/try-runtime',
     'pallet-identity/try-runtime',
-    'pallet-provide-randomness/try-runtime',
     'pallet-treasury/try-runtime',
     'pallet-quota/try-runtime',
     'pallet-balances/try-runtime',
@@ -57,7 +54,6 @@ try-runtime = [
 # local
 pallet-quota = { path = "../quota", default-features = false }
 pallet-identity = { path = "../identity", default-features = false }
-pallet-provide-randomness = { path = "../provide-randomness", default-features = false }
 
 # crates.io
 codec = { package = 'parity-scale-codec', version = "3.6.9", default-features = false, features = ["derive"] }

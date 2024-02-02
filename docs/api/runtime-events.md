@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **129** events from **35** pallets.
+There are **128** events from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -112,20 +112,7 @@ balance: T::Balance
 <li>
 <details>
 <summary>
-<code>RandomIdAssigned(who, random_id)</code> - 1</summary>
-A random ID has been assigned to the account.
-
-```rust
-who: T::AccountId
-random_id: H256
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>AccountLinked(who, identity)</code> - 2</summary>
+<code>AccountLinked(who, identity)</code> - 1</summary>
 account linked to identity
 
 ```rust
@@ -138,7 +125,7 @@ identity: IdtyIdOf<T>
 <li>
 <details>
 <summary>
-<code>AccountUnlinked()</code> - 3</summary>
+<code>AccountUnlinked()</code> - 2</summary>
 The account was unlinked from its identity.
 
 ```rust

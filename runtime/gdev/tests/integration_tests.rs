@@ -1056,42 +1056,25 @@ fn test_create_new_account() {
             // 100 initial + 300 deposit
             assert_eq!(Balances::free_balance(Treasury::account_id()), 400);
 
-            // A random id request should be registered
-            assert_eq!(
-                Account::pending_random_id_assignments(0),
-                Some(AccountKeyring::Eve.to_account_id())
-            );
-
-            // We can't remove the account until the random id is assigned
             run_to_block(4);
-            // can not remove using transfer
-            assert_noop!(
-                Balances::transfer_allow_death(
-                    frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
-                    MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
-                    200
-                ),
-                sp_runtime::DispatchError::ConsumerRemaining,
-            );
+            // can remove an account using transfer
+            assert_ok!(Balances::transfer_allow_death(
+                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
+                200
+            ));
+            // Account reaped
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                200
+                0
             );
-            // can not remove using transfer_all either
-            assert_noop!(
-                Balances::transfer_all(
-                    frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
-                    MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
-                    false
-                ),
-                sp_runtime::DispatchError::ConsumerRemaining,
-            );
-            // Transfer failed, so free_balance remains the same
             assert_eq!(
-                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                200
+                frame_system::Pallet::<Runtime>::get(&AccountKeyring::Eve.to_account_id()),
+                pallet_duniter_account::AccountData::default()
             );
-            // TODO detail account removal
+            System::assert_has_event(RuntimeEvent::System(frame_system::Event::KilledAccount {
+                account: AccountKeyring::Eve.to_account_id(),
+            }));
         });
 }
 
@@ -1118,12 +1101,6 @@ fn test_create_new_idty() {
             run_to_block(3);
             let events = System::events();
             assert_eq!(events.len(), 0);
-
-            // A random id request should be registered
-            assert_eq!(
-                Account::pending_random_id_assignments(0),
-                Some(AccountKeyring::Eve.to_account_id())
-            );
         });
 }
 
@@ -1156,24 +1133,18 @@ fn test_create_new_idty_without_founds() {
             let events = System::events();
             assert_eq!(events.len(), 0);
 
-            // Deposit some founds on the identity account,
-            // this should trigger the random id assignemt
+            // Deposit some founds on the identity account
             assert_ok!(Balances::transfer_allow_death(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 200
             ));
 
-            // At next block, nothing should be preleved,
-            // and a random id request should be registered
+            // At next block, nothing should be preleved
             run_to_block(4);
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 200
-            );
-            assert_eq!(
-                Account::pending_random_id_assignments(0),
-                Some(AccountKeyring::Eve.to_account_id())
             );
         });
 }

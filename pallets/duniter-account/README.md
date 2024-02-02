@@ -1,12 +1,6 @@
 # Duniter account pallet
 
-Duniter customizes the `AccountData` of the `Balances` Substrate pallet. In particular, it adds the fields `random_id` and `linked_idty`. 
-
-## RandomID
-
-The RandomId field was added with the idea to provide a unique id that can not be controlled by user to serve as a basis for robust identification. The discussion is available on the forum.
-
-https://forum.duniter.org/t/la-solution-pour-des-identicones-securisees-le-random-id/9126
+Duniter customizes the `AccountData` of the `Balances` Substrate pallet. In particular, it adds the field `linked_idty`. 
 
 ## Account creation fee
 

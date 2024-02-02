@@ -21,13 +21,8 @@ use super::*;
 use frame_benchmarking::{account, benchmarks, whitelisted_caller};
 use frame_support::sp_runtime::{traits::One, Saturating};
 use frame_support::traits::{Currency, Get};
-use pallet_provide_randomness::OnFilledRandomness;
 
 use crate::Pallet;
-
-fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
-    frame_system::Pallet::<T>::assert_has_event(generic_event.into());
-}
 
 fn create_pending_accounts<T: Config>(
     i: u32,
@@ -72,19 +67,4 @@ benchmarks! {
     on_initialize_no_balance {
         let i in 0 .. T::MaxNewAccountsPerBlock::get() => create_pending_accounts::<T>(i, false, false)?;
     }: { Pallet::<T>::on_initialize(BlockNumberFor::<T>::one()); }
-    on_filled_randomness_pending {
-        let caller: T::AccountId = whitelisted_caller();
-        let randomness = H256(T::AccountIdToSalt::convert(caller.clone()));
-        let request_id = pallet_provide_randomness::Pallet::<T>::force_request(pallet_provide_randomness::RandomnessType::RandomnessFromTwoEpochsAgo, randomness);
-        PendingRandomIdAssignments::<T>::insert(request_id, caller.clone());
-    }: { Pallet::<T>::on_filled_randomness(request_id,  randomness); }
-    verify {
-        assert_has_event::<T>(Event::<T>::RandomIdAssigned { who: caller, random_id: randomness }.into());
-    }
-    on_filled_randomness_no_pending {
-        let caller: T::AccountId = whitelisted_caller();
-        let randomness = H256(T::AccountIdToSalt::convert(caller.clone()));
-        let request_id = pallet_provide_randomness::Pallet::<T>::force_request(pallet_provide_randomness::RandomnessType::RandomnessFromTwoEpochsAgo, randomness);
-        assert!(!PendingRandomIdAssignments::<T>::contains_key(request_id));
-    }: { Pallet::<T>::on_filled_randomness(request_id,  randomness); }
 }
