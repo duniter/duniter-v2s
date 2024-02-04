@@ -101,14 +101,10 @@ type RuntimeTask = ();
 
         impl pallet_duniter_account::Config for Runtime {
             type RuntimeEvent = RuntimeEvent;
-            type AccountIdToSalt = sp_runtime::traits::ConvertInto;
-            type MaxNewAccountsPerBlock = frame_support::pallet_prelude::ConstU32<1>;
-            type NewAccountPrice = frame_support::traits::ConstU64<300>;
             type WeightInfo = common_runtime::weights::pallet_duniter_account::WeightInfo<Runtime>;
             // does currency adapter in any case, but adds "refund with quota" feature
             type InnerOnChargeTransaction = CurrencyAdapter<Balances, HandleFees>;
             type Refund = Quota;
-            type OnUnbalanced = Treasury;
         }
 
         // QUOTA //

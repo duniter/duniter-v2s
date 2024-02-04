@@ -943,66 +943,6 @@ fn test_smith_process() {
         })
 }
 
-/// test create new account with balance lower than existential deposit
-// the treasury gets the dust
-#[test]
-fn test_create_new_account_with_insufficient_balance() {
-    ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 1_000)])
-        .build()
-        .execute_with(|| {
-            run_to_block(2);
-            // Treasury should start empty
-            // FIXME it actually starts with ED
-            assert_eq!(Balances::free_balance(Treasury::account_id()), 100);
-
-            // Should be able to transfer 4 units to a new account
-            assert_ok!(Balances::transfer_allow_death(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
-                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
-                300
-            ));
-
-            System::assert_has_event(RuntimeEvent::System(frame_system::Event::NewAccount {
-                account: AccountKeyring::Eve.to_account_id(),
-            }));
-            System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Endowed {
-                account: AccountKeyring::Eve.to_account_id(),
-                free_balance: 300,
-            }));
-            System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Transfer {
-                from: AccountKeyring::Alice.to_account_id(),
-                to: AccountKeyring::Eve.to_account_id(),
-                amount: 300,
-            }));
-
-            // At next block, the new account must be reaped because its balance is not sufficient
-            // to pay the "new account tax"
-            run_to_block(3);
-
-            System::assert_has_event(RuntimeEvent::Account(
-                pallet_duniter_account::Event::ForceDestroy {
-                    who: AccountKeyring::Eve.to_account_id(),
-                    balance: 300,
-                },
-            ));
-            System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Deposit {
-                who: Treasury::account_id(),
-                amount: 300,
-            }));
-            System::assert_has_event(RuntimeEvent::Treasury(pallet_treasury::Event::Deposit {
-                value: 300,
-            }));
-
-            assert_eq!(
-                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                0
-            );
-            // 100 initial + 300 recycled from Eve account's destruction
-            assert_eq!(Balances::free_balance(Treasury::account_id()), 400);
-        });
-}
-
 /// test new account creation
 #[test]
 fn test_create_new_account() {
@@ -1033,35 +973,19 @@ fn test_create_new_account() {
                 amount: 500,
             }));
 
-            // At next block, the new account must be created,
-            // and new account tax should be collected and deposited in the treasury
-            run_to_block(3);
-
-            System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Withdraw {
-                who: AccountKeyring::Eve.to_account_id(),
-                amount: 300,
-            }));
-            System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Deposit {
-                who: Treasury::account_id(),
-                amount: 300,
-            }));
-            System::assert_has_event(RuntimeEvent::Treasury(pallet_treasury::Event::Deposit {
-                value: 300,
-            }));
-
+            // The new account must be created immediately
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                200
+                500
             );
-            // 100 initial + 300 deposit
-            assert_eq!(Balances::free_balance(Treasury::account_id()), 400);
+            // 100 initial + no deposit (there is no account creation fee)
+            assert_eq!(Balances::free_balance(Treasury::account_id()), 100);
 
-            run_to_block(4);
             // can remove an account using transfer
             assert_ok!(Balances::transfer_allow_death(
                 frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
                 MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
-                200
+                500
             ));
             // Account reaped
             assert_eq!(

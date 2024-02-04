@@ -40,7 +40,6 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(1))
     }
 
-    // Storage: Account PendingNewAccounts (r:1 w:0)
     // Storage: Babe EpochIndex (r:1 w:0)
     /// The range of component `i` is `[0, 1]`.
     fn on_initialize_sufficient(i: u32) -> Weight {
@@ -53,7 +52,6 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().writes((6 as u64).saturating_mul(i as u64)))
     }
 
-    // Storage: Account PendingNewAccounts (r:1 w:0)
     // Storage: Babe EpochIndex (r:1 w:0)
     /// The range of component `i` is `[0, 1]`.
     fn on_initialize_with_balance(i: u32) -> Weight {
@@ -66,7 +64,6 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().writes((6 as u64).saturating_mul(i as u64)))
     }
 
-    // Storage: Account PendingNewAccounts (r:1 w:0)
     /// The range of component `i` is `[0, 1]`.
     fn on_initialize_no_balance(i: u32) -> Weight {
         // Minimum execution time: 12_912 nanoseconds.

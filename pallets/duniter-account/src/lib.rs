@@ -29,12 +29,12 @@ pub use types::*;
 pub use weights::WeightInfo;
 
 use frame_support::pallet_prelude::*;
-use frame_support::traits::{Currency, ExistenceRequirement, StorageVersion};
-use frame_support::traits::{OnUnbalanced, StoredMap};
+use frame_support::traits::StoredMap;
+use frame_support::traits::{Currency, StorageVersion};
 use frame_system::pallet_prelude::*;
 use pallet_quota::traits::RefundFee;
 use pallet_transaction_payment::OnChargeTransaction;
-use sp_runtime::traits::{Convert, DispatchInfoOf, PostDispatchInfoOf, Saturating};
+use sp_runtime::traits::{DispatchInfoOf, PostDispatchInfoOf, Saturating};
 use sp_std::fmt::Debug;
 
 #[frame_support::pallet]
@@ -63,29 +63,15 @@ pub mod pallet {
         + pallet_treasury::Config<Currency = pallet_balances::Pallet<Self>>
         + pallet_quota::Config
     {
-        type AccountIdToSalt: Convert<Self::AccountId, [u8; 32]>;
-        #[pallet::constant]
-        type MaxNewAccountsPerBlock: Get<u32>;
-        #[pallet::constant]
-        type NewAccountPrice: Get<Self::Balance>;
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
-        /// Handler for the unbalanced reduction when the requestor pays fees.
-        type OnUnbalanced: OnUnbalanced<pallet_balances::NegativeImbalance<Self>>;
         /// wrapped type
         type InnerOnChargeTransaction: OnChargeTransaction<Self>;
         /// type implementing refund behavior
         type Refund: pallet_quota::traits::RefundFee<Self>;
     }
-
-    // STORAGE //
-
-    #[pallet::storage]
-    #[pallet::getter(fn pending_new_accounts)]
-    pub type PendingNewAccounts<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, (), OptionQuery>;
 
     // GENESIS STUFF //
 
@@ -158,11 +144,6 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Forced destruction of an account due to insufficient free balance to cover the account creation price.
-        ForceDestroy {
-            who: T::AccountId,
-            balance: T::Balance,
-        },
         /// account linked to identity
         AccountLinked {
             who: T::AccountId,
@@ -210,69 +191,6 @@ pub mod pallet {
                     });
                 })
             };
-        }
-    }
-
-    // HOOKS //
-    #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        // on initialize, withdraw account creation tax
-        fn on_initialize(_: BlockNumberFor<T>) -> Weight {
-            let mut total_weight = Weight::zero();
-            for account_id in PendingNewAccounts::<T>::iter_keys()
-                .drain()
-                .take(T::MaxNewAccountsPerBlock::get() as usize)
-            {
-                if frame_system::Pallet::<T>::sufficients(&account_id) > 0 {
-                    // If the account is self-sufficient, it is exempt from account creation fees
-                    total_weight += <T as pallet::Config>::WeightInfo::on_initialize_sufficient(
-                        T::MaxNewAccountsPerBlock::get(),
-                    );
-                } else {
-                    // If the account is not self-sufficient, it must pay the account creation fees
-                    let account_data = frame_system::Pallet::<T>::get(&account_id);
-                    let price = T::NewAccountPrice::get();
-                    if account_data.free >= T::ExistentialDeposit::get() + price {
-                        // The account can pay the new account price, we should:
-                        // 1. Withdraw the "new account price" amount
-                        // 2. Manage the funds collected
-                        let res = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::withdraw(
-                            &account_id,
-                            price,
-                            frame_support::traits::WithdrawReasons::FEE,
-                            ExistenceRequirement::KeepAlive,
-                        );
-                        debug_assert!(
-                            res.is_ok(),
-                            "Cannot fail because we checked that the free balance was sufficient"
-                        );
-                        if let Ok(imbalance) = res {
-                            T::OnUnbalanced::on_unbalanced(imbalance);
-                            total_weight +=
-                                <T as pallet::Config>::WeightInfo::on_initialize_with_balance(
-                                    T::MaxNewAccountsPerBlock::get(),
-                                );
-                        }
-                    } else {
-                        // The charges could not be deducted, we must destroy the account
-                        let balance_to_suppr =
-                            account_data.free.saturating_add(account_data.reserved);
-                        // Force account data supression
-                        frame_system::Account::<T>::remove(&account_id);
-                        Self::deposit_event(Event::ForceDestroy {
-                            who: account_id,
-                            balance: balance_to_suppr,
-                        });
-                        T::OnUnbalanced::on_unbalanced(pallet_balances::NegativeImbalance::new(
-                            balance_to_suppr,
-                        ));
-                        total_weight += <T as pallet::Config>::WeightInfo::on_initialize_no_balance(
-                            T::MaxNewAccountsPerBlock::get(),
-                        );
-                    }
-                }
-            }
-            total_weight
         }
     }
 }
@@ -341,7 +259,6 @@ where
             // the account has just been created, increment its provider
             (false, true) => {
                 frame_system::Pallet::<T>::inc_providers(account_id);
-                PendingNewAccounts::<T>::insert(account_id, ());
             }
             // the account was existing but is not anymore, decrement the provider
             (true, false) => {

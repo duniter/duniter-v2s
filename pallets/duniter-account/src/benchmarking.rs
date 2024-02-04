@@ -18,53 +18,13 @@
 
 use super::*;
 
-use frame_benchmarking::{account, benchmarks, whitelisted_caller};
-use frame_support::sp_runtime::{traits::One, Saturating};
-use frame_support::traits::{Currency, Get};
+use frame_benchmarking::{account, benchmarks};
 
 use crate::Pallet;
-
-fn create_pending_accounts<T: Config>(
-    i: u32,
-    is_balance: bool,
-    is_sufficient: bool,
-) -> Result<(), &'static str> {
-    for _ in 0..i {
-        let caller: T::AccountId = whitelisted_caller();
-        if is_balance {
-            let existential_deposit = T::ExistentialDeposit::get();
-            let balance = existential_deposit.saturating_mul((200u32).into());
-            let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::make_free_balance_be(
-                &caller, balance,
-            );
-        } else {
-            assert!(
-                frame_system::Pallet::<T>::get(&caller).free
-                    < T::NewAccountPrice::get() + T::ExistentialDeposit::get()
-            );
-        }
-        if is_sufficient {
-            frame_system::Pallet::<T>::inc_sufficients(&caller);
-        } else {
-            assert!(frame_system::Pallet::<T>::sufficients(&caller) == 0);
-        }
-        PendingNewAccounts::<T>::insert(caller, ());
-    }
-    Ok(())
-}
 
 benchmarks! {
     unlink_identity {
         let account = account("Alice", 1, 1);
         let origin = frame_system::RawOrigin::Signed(account);
     }: _<T::RuntimeOrigin>(origin.into())
-    on_initialize_sufficient  {
-        let i in 0 .. T::MaxNewAccountsPerBlock::get() => create_pending_accounts::<T>(i, false, true)?;
-    }: { Pallet::<T>::on_initialize(BlockNumberFor::<T>::one()); }
-    on_initialize_with_balance {
-        let i in 0 .. T::MaxNewAccountsPerBlock::get() => create_pending_accounts::<T>(i, true, false)?;
-    }: { Pallet::<T>::on_initialize(BlockNumberFor::<T>::one()); }
-    on_initialize_no_balance {
-        let i in 0 .. T::MaxNewAccountsPerBlock::get() => create_pending_accounts::<T>(i, false, false)?;
-    }: { Pallet::<T>::on_initialize(BlockNumberFor::<T>::one()); }
 }

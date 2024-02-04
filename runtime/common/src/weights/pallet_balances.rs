@@ -49,8 +49,6 @@ pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 	/// Storage: `System::Account` (r:2 w:2)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
-	/// Storage: `Account::PendingNewAccounts` (r:0 w:1)
-	/// Proof: `Account::PendingNewAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn transfer_allow_death() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
@@ -63,8 +61,6 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 	}
 	/// Storage: System Account (r:1 w:1)
 	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
-	/// Storage: Account PendingNewAccounts (r:0 w:1)
-	/// Proof Skipped: Account PendingNewAccounts (max_values: None, max_size: None, mode: Measured)
 	fn transfer_keep_alive() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
@@ -77,8 +73,6 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 	}
 	/// Storage: System Account (r:2 w:2)
 	/// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
-	/// Storage: Account PendingNewAccounts (r:0 w:1)
-	/// Proof Skipped: Account PendingNewAccounts (max_values: None, max_size: None, mode: Measured)
 	fn force_transfer() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `64`
@@ -115,8 +109,6 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 	}
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
-	/// Storage: `Account::PendingNewAccounts` (r:0 w:1)
-	/// Proof: `Account::PendingNewAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn transfer_all() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`

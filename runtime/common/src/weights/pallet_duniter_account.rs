@@ -59,8 +59,6 @@ impl<T: frame_system::Config> pallet_duniter_account::WeightInfo for WeightInfo<
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: `Account::PendingNewAccounts` (r:1 w:1)
-	/// Proof: `Account::PendingNewAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `Babe::EpochIndex` (r:1 w:0)
 	/// Proof: `Babe::EpochIndex` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
 	/// The range of component `i` is `[0, 1]`.
@@ -78,8 +76,6 @@ impl<T: frame_system::Config> pallet_duniter_account::WeightInfo for WeightInfo<
 			.saturating_add(T::DbWeight::get().writes((6_u64).saturating_mul(i.into())))
 			.saturating_add(Weight::from_parts(0, 309).saturating_mul(i.into()))
 	}
-	/// Storage: `Account::PendingNewAccounts` (r:1 w:1)
-	/// Proof: `Account::PendingNewAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
 	/// Storage: `Babe::EpochIndex` (r:1 w:0)
@@ -99,8 +95,6 @@ impl<T: frame_system::Config> pallet_duniter_account::WeightInfo for WeightInfo<
 			.saturating_add(T::DbWeight::get().writes((6_u64).saturating_mul(i.into())))
 			.saturating_add(Weight::from_parts(0, 309).saturating_mul(i.into()))
 	}
-	/// Storage: `Account::PendingNewAccounts` (r:1 w:1)
-	/// Proof: `Account::PendingNewAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `i` is `[0, 1]`.
 	fn on_initialize_no_balance(i: u32, ) -> Weight {
 		// Proof Size summary in bytes:

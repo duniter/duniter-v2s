@@ -38,7 +38,6 @@ impl WeightInfo for () {
 
     // Storage: UniversalDividend CurrentUd (r:1 w:0)
     // Storage: System Account (r:1 w:1)
-    // Storage: Account PendingNewAccounts (r:0 w:1)
     fn transfer_ud() -> Weight {
         Weight::from_parts(53_401_000, 0)
             .saturating_add(RocksDbWeight::get().reads(2))
@@ -47,7 +46,6 @@ impl WeightInfo for () {
 
     // Storage: UniversalDividend CurrentUd (r:1 w:0)
     // Storage: System Account (r:1 w:1)
-    // Storage: Account PendingNewAccounts (r:0 w:1)
     fn transfer_ud_keep_alive() -> Weight {
         Weight::from_parts(33_420_000, 0)
             .saturating_add(RocksDbWeight::get().reads(2))

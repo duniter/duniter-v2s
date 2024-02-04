@@ -72,8 +72,6 @@ impl<T: frame_system::Config> pallet_universal_dividend::WeightInfo for WeightIn
 	/// Proof: `UniversalDividend::CurrentUd` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:2 w:2)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
-	/// Storage: `Account::PendingNewAccounts` (r:0 w:1)
-	/// Proof: `Account::PendingNewAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn transfer_ud() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `157`
@@ -88,8 +86,6 @@ impl<T: frame_system::Config> pallet_universal_dividend::WeightInfo for WeightIn
 	/// Proof: `UniversalDividend::CurrentUd` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(126), added: 2601, mode: `MaxEncodedLen`)
-	/// Storage: `Account::PendingNewAccounts` (r:0 w:1)
-	/// Proof: `Account::PendingNewAccounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn transfer_ud_keep_alive() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `93`
