@@ -91,7 +91,7 @@ esac
 
 set -- "$@" \
   "${chain[@]}" \
-  -d /var/lib/duniter --unsafe-rpc-external --unsafe-ws-external
+  -d /var/lib/duniter --unsafe-rpc-external
 
 echo "Starting duniter with parameters:" "$@"
 exec duniter "$@"
