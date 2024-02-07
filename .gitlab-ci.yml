@@ -393,7 +393,7 @@ create_release:
   tags:
     - kepler
 
-release_gdev_6_specs:
+release_gdev_specs:
   extends: .release_specs
   needs:
     - create_release
