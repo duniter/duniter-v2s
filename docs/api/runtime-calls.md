@@ -3,16 +3,17 @@
 Calls are categorized according to the dispatch origin they require:
 
 1. **User calls**: the dispatch origin for this kind of call must be signed by
-   the transactor. This is the only call category that can be submitted with an extrinsic.
+the transactor. This is the only call category that can be submitted with an extrinsic.
 1. **Root calls**: This kind of call requires a special origin that can only be invoked
-   through on-chain governance mechanisms.
+through on-chain governance mechanisms.
 1. **Inherent calls**: This kind of call is invoked by the author of the block itself
-   (usually automatically by the node).
+(usually automatically by the node).
 1. **Disabled calls**: These calls can not be called directly, they are reserved for internal use by other runtime calls.
+
 
 ## User calls
 
-There are **78** user calls from **21** pallets.
+There are **81** user calls from **21** pallets.
 
 ### Account - 1
 
@@ -20,13 +21,12 @@ There are **78** user calls from **21** pallets.
 
 <details><summary><code>unlink_identity()</code></summary>
 
-Taking 0.0082 % of a block.
+Taking 0.0113 % of a block.
 
 ```rust
-
 ```
-
 </details>
+
 
 See [`Pallet::unlink_identity`].
 
@@ -36,7 +36,7 @@ See [`Pallet::unlink_identity`].
 
 <details><summary><code>schedule(when, maybe_periodic, priority, call)</code></summary>
 
-Taking 0.0098 % of a block.
+Taking 0.013 % of a block.
 
 ```rust
 when: BlockNumberFor<T>
@@ -44,8 +44,8 @@ maybe_periodic: Option<schedule::Period<BlockNumberFor<T>>>
 priority: schedule::Priority
 call: Box<<T as Config>::RuntimeCall>
 ```
-
 </details>
+
 
 See [`Pallet::schedule`].
 
@@ -53,14 +53,14 @@ See [`Pallet::schedule`].
 
 <details><summary><code>cancel(when, index)</code></summary>
 
-Taking 0.0131 % of a block.
+Taking 0.0195 % of a block.
 
 ```rust
 when: BlockNumberFor<T>
 index: u32
 ```
-
 </details>
+
 
 See [`Pallet::cancel`].
 
@@ -68,7 +68,7 @@ See [`Pallet::cancel`].
 
 <details><summary><code>schedule_named(id, when, maybe_periodic, priority, call)</code></summary>
 
-Taking 0.0131 % of a block.
+Taking 0.0203 % of a block.
 
 ```rust
 id: TaskName
@@ -77,8 +77,8 @@ maybe_periodic: Option<schedule::Period<BlockNumberFor<T>>>
 priority: schedule::Priority
 call: Box<<T as Config>::RuntimeCall>
 ```
-
 </details>
+
 
 See [`Pallet::schedule_named`].
 
@@ -86,13 +86,13 @@ See [`Pallet::schedule_named`].
 
 <details><summary><code>cancel_named(id)</code></summary>
 
-Taking 0.0137 % of a block.
+Taking 0.0209 % of a block.
 
 ```rust
 id: TaskName
 ```
-
 </details>
+
 
 See [`Pallet::cancel_named`].
 
@@ -108,8 +108,8 @@ maybe_periodic: Option<schedule::Period<BlockNumberFor<T>>>
 priority: schedule::Priority
 call: Box<<T as Config>::RuntimeCall>
 ```
-
 </details>
+
 
 See [`Pallet::schedule_after`].
 
@@ -126,8 +126,8 @@ maybe_periodic: Option<schedule::Period<BlockNumberFor<T>>>
 priority: schedule::Priority
 call: Box<<T as Config>::RuntimeCall>
 ```
-
 </details>
+
 
 See [`Pallet::schedule_named_after`].
 
@@ -143,8 +143,8 @@ No weight available.
 equivocation_proof: Box<EquivocationProof<HeaderFor<T>>>
 key_owner_proof: T::KeyOwnerProof
 ```
-
 </details>
+
 
 See [`Pallet::report_equivocation`].
 
@@ -154,14 +154,14 @@ See [`Pallet::report_equivocation`].
 
 <details><summary><code>transfer_allow_death(dest, value)</code></summary>
 
-Taking 0.0152 % of a block.
+Taking 0.0216 % of a block.
 
 ```rust
 dest: AccountIdLookupOf<T>
 value: T::Balance
 ```
-
 </details>
+
 
 See [`Pallet::transfer_allow_death`].
 
@@ -169,14 +169,14 @@ See [`Pallet::transfer_allow_death`].
 
 <details><summary><code>transfer_keep_alive(dest, value)</code></summary>
 
-Taking 0.0168 % of a block.
+Taking 0.0232 % of a block.
 
 ```rust
 dest: AccountIdLookupOf<T>
 value: T::Balance
 ```
-
 </details>
+
 
 See [`Pallet::transfer_keep_alive`].
 
@@ -184,14 +184,14 @@ See [`Pallet::transfer_keep_alive`].
 
 <details><summary><code>transfer_all(dest, keep_alive)</code></summary>
 
-Taking 0.0142 % of a block.
+Taking 0.0184 % of a block.
 
 ```rust
 dest: AccountIdLookupOf<T>
 keep_alive: bool
 ```
-
 </details>
+
 
 See [`Pallet::transfer_all`].
 
@@ -205,25 +205,25 @@ No weight available.
 who: AccountIdLookupOf<T>
 new_free: T::Balance
 ```
-
 </details>
+
 
 See [`Pallet::force_set_balance`].
 
-### OneshotAccount - 8
+### OneshotAccount - 7
 
 #### create_oneshot_account - 0
 
 <details><summary><code>create_oneshot_account(dest, value)</code></summary>
 
-Taking 0.0095 % of a block.
+Taking 0.0126 % of a block.
 
 ```rust
 dest: <T::Lookup as StaticLookup>::Source
 value: <T::Currency as Currency<T::AccountId>>::Balance
 ```
-
 </details>
+
 
 See [`Pallet::create_oneshot_account`].
 
@@ -231,14 +231,14 @@ See [`Pallet::create_oneshot_account`].
 
 <details><summary><code>consume_oneshot_account(block_height, dest)</code></summary>
 
-Taking 0.0134 % of a block.
+Taking 0.0214 % of a block.
 
 ```rust
 block_height: BlockNumberFor<T>
 dest: Account<<T::Lookup as StaticLookup>::Source>
 ```
-
 </details>
+
 
 See [`Pallet::consume_oneshot_account`].
 
@@ -246,7 +246,7 @@ See [`Pallet::consume_oneshot_account`].
 
 <details><summary><code>consume_oneshot_account_with_remaining(block_height, dest, remaining_to, balance)</code></summary>
 
-Taking 0.0175 % of a block.
+Taking 0.0295 % of a block.
 
 ```rust
 block_height: BlockNumberFor<T>
@@ -254,8 +254,8 @@ dest: Account<<T::Lookup as StaticLookup>::Source>
 remaining_to: Account<<T::Lookup as StaticLookup>::Source>
 balance: <T::Currency as Currency<T::AccountId>>::Balance
 ```
-
 </details>
+
 
 See [`Pallet::consume_oneshot_account_with_remaining`].
 
@@ -265,43 +265,42 @@ See [`Pallet::consume_oneshot_account_with_remaining`].
 
 <details><summary><code>invite_smith(receiver)</code></summary>
 
-Taking 0.0153 % of a block.
+Taking 0.0265 % of a block.
 
 ```rust
 receiver: T::IdtyIndex
 ```
-
 </details>
 
-Invite a WoT member to try becoming a Smith
+
+See [`Pallet::invite_smith`].
 
 #### accept_invitation - 1
 
 <details><summary><code>accept_invitation()</code></summary>
 
-Taking 0.0094 % of a block.
+Taking 0.0133 % of a block.
 
 ```rust
-
 ```
-
 </details>
 
-Accept an invitation (must have been invited first)
+
+See [`Pallet::accept_invitation`].
 
 #### certify_smith - 2
 
 <details><summary><code>certify_smith(receiver)</code></summary>
 
-Taking 0.0139 % of a block.
+Taking 0.0234 % of a block.
 
 ```rust
 receiver: T::IdtyIndex
 ```
-
 </details>
 
-Certify an invited smith which can lead the certified to become a Smith
+
+See [`Pallet::certify_smith`].
 
 ### AuthorityMembers - 11
 
@@ -309,13 +308,12 @@ Certify an invited smith which can lead the certified to become a Smith
 
 <details><summary><code>go_offline()</code></summary>
 
-Taking 0.0117 % of a block.
+Taking 0.0188 % of a block.
 
 ```rust
-
 ```
-
 </details>
+
 
 See [`Pallet::go_offline`].
 
@@ -323,13 +321,12 @@ See [`Pallet::go_offline`].
 
 <details><summary><code>go_online()</code></summary>
 
-Taking 0.0138 % of a block.
+Taking 0.0225 % of a block.
 
 ```rust
-
 ```
-
 </details>
+
 
 See [`Pallet::go_online`].
 
@@ -337,13 +334,13 @@ See [`Pallet::go_online`].
 
 <details><summary><code>set_session_keys(keys)</code></summary>
 
-Taking 0.0177 % of a block.
+Taking 0.0296 % of a block.
 
 ```rust
 keys: T::Keys
 ```
-
 </details>
+
 
 See [`Pallet::set_session_keys`].
 
@@ -351,13 +348,13 @@ See [`Pallet::set_session_keys`].
 
 <details><summary><code>remove_member_from_blacklist(member_id)</code></summary>
 
-Taking 0.0094 % of a block.
+Taking 0.0125 % of a block.
 
 ```rust
 member_id: T::MemberId
 ```
-
 </details>
+
 
 See [`Pallet::remove_member_from_blacklist`].
 
@@ -373,12 +370,12 @@ No weight available.
 equivocation_proof: Box<EquivocationProof<T::Hash, BlockNumberFor<T>>>
 key_owner_proof: T::KeyOwnerProof
 ```
-
 </details>
+
 
 See [`Pallet::report_equivocation`].
 
-### UpgradeOrigin - 20
+### UpgradeOrigin - 21
 
 #### dispatch_as_root_unchecked_weight - 1
 
@@ -390,24 +387,24 @@ No weight available.
 call: Box<<T as Config>::Call>
 weight: Weight
 ```
-
 </details>
+
 
 See [`Pallet::dispatch_as_root_unchecked_weight`].
 
-### Preimage - 21
+### Preimage - 22
 
 #### note_preimage - 0
 
 <details><summary><code>note_preimage(bytes)</code></summary>
 
-Taking 0.5042 % of a block.
+Taking 0.5106 % of a block.
 
 ```rust
 bytes: Vec<u8>
 ```
-
 </details>
+
 
 See [`Pallet::note_preimage`].
 
@@ -415,13 +412,13 @@ See [`Pallet::note_preimage`].
 
 <details><summary><code>unnote_preimage(hash)</code></summary>
 
-Taking 0.0135 % of a block.
+Taking 0.0211 % of a block.
 
 ```rust
 hash: T::Hash
 ```
-
 </details>
+
 
 See [`Pallet::unnote_preimage`].
 
@@ -429,13 +426,13 @@ See [`Pallet::unnote_preimage`].
 
 <details><summary><code>request_preimage(hash)</code></summary>
 
-Taking 0.0092 % of a block.
+Taking 0.0136 % of a block.
 
 ```rust
 hash: T::Hash
 ```
-
 </details>
+
 
 See [`Pallet::request_preimage`].
 
@@ -443,13 +440,13 @@ See [`Pallet::request_preimage`].
 
 <details><summary><code>unrequest_preimage(hash)</code></summary>
 
-Taking 0.0119 % of a block.
+Taking 0.0195 % of a block.
 
 ```rust
 hash: T::Hash
 ```
-
 </details>
+
 
 See [`Pallet::unrequest_preimage`].
 
@@ -462,25 +459,25 @@ Taking 21.0381 % of a block.
 ```rust
 hashes: Vec<T::Hash>
 ```
-
 </details>
+
 
 See [`Pallet::ensure_updated`].
 
-### TechnicalCommittee - 22
+### TechnicalCommittee - 23
 
 #### execute - 1
 
 <details><summary><code>execute(proposal, length_bound)</code></summary>
 
-Taking 0.0061 % of a block.
+Taking 0.006 % of a block.
 
 ```rust
 proposal: Box<<T as Config<I>>::Proposal>
 length_bound: u32
 ```
-
 </details>
+
 
 See [`Pallet::execute`].
 
@@ -495,8 +492,8 @@ threshold: MemberCount
 proposal: Box<<T as Config<I>>::Proposal>
 length_bound: u32
 ```
-
 </details>
+
 
 See [`Pallet::propose`].
 
@@ -504,15 +501,15 @@ See [`Pallet::propose`].
 
 <details><summary><code>vote(proposal, index, approve)</code></summary>
 
-Taking 0.0104 % of a block.
+Taking 0.0144 % of a block.
 
 ```rust
 proposal: T::Hash
 index: ProposalIndex
 approve: bool
 ```
-
 </details>
+
 
 See [`Pallet::vote`].
 
@@ -528,24 +525,23 @@ index: ProposalIndex
 proposal_weight_bound: Weight
 length_bound: u32
 ```
-
 </details>
+
 
 See [`Pallet::close`].
 
-### UniversalDividend - 23
+### UniversalDividend - 30
 
 #### claim_uds - 0
 
 <details><summary><code>claim_uds()</code></summary>
 
-Taking 0.0146 % of a block.
+Taking 0.0224 % of a block.
 
 ```rust
-
 ```
-
 </details>
+
 
 See [`Pallet::claim_uds`].
 
@@ -553,14 +549,14 @@ See [`Pallet::claim_uds`].
 
 <details><summary><code>transfer_ud(dest, value)</code></summary>
 
-Taking 0.0158 % of a block.
+Taking 0.027 % of a block.
 
 ```rust
 dest: <T::Lookup as StaticLookup>::Source
 value: BalanceOf<T>
 ```
-
 </details>
+
 
 See [`Pallet::transfer_ud`].
 
@@ -568,30 +564,30 @@ See [`Pallet::transfer_ud`].
 
 <details><summary><code>transfer_ud_keep_alive(dest, value)</code></summary>
 
-Taking 0.0144 % of a block.
+Taking 0.0193 % of a block.
 
 ```rust
 dest: <T::Lookup as StaticLookup>::Source
 value: BalanceOf<T>
 ```
-
 </details>
+
 
 See [`Pallet::transfer_ud_keep_alive`].
 
-### Identity - 25
+### Identity - 41
 
 #### create_identity - 0
 
 <details><summary><code>create_identity(owner_key)</code></summary>
 
-Taking 0.0484 % of a block.
+Taking 0.0969 % of a block.
 
 ```rust
 owner_key: T::AccountId
 ```
-
 </details>
+
 
 See [`Pallet::create_identity`].
 
@@ -599,13 +595,13 @@ See [`Pallet::create_identity`].
 
 <details><summary><code>confirm_identity(idty_name)</code></summary>
 
-Taking 0.0204 % of a block.
+Taking 0.0365 % of a block.
 
 ```rust
 idty_name: IdtyName
 ```
-
 </details>
+
 
 See [`Pallet::confirm_identity`].
 
@@ -613,14 +609,14 @@ See [`Pallet::confirm_identity`].
 
 <details><summary><code>change_owner_key(new_key, new_key_sig)</code></summary>
 
-Taking 0.0306 % of a block.
+Taking 0.0507 % of a block.
 
 ```rust
 new_key: T::AccountId
 new_key_sig: T::Signature
 ```
-
 </details>
+
 
 See [`Pallet::change_owner_key`].
 
@@ -628,15 +624,15 @@ See [`Pallet::change_owner_key`].
 
 <details><summary><code>revoke_identity(idty_index, revocation_key, revocation_sig)</code></summary>
 
-Taking 0.0293 % of a block.
+Taking 0.0487 % of a block.
 
 ```rust
 idty_index: T::IdtyIndex
 revocation_key: T::AccountId
 revocation_sig: T::Signature
 ```
-
 </details>
+
 
 See [`Pallet::revoke_identity`].
 
@@ -644,14 +640,14 @@ See [`Pallet::revoke_identity`].
 
 <details><summary><code>fix_sufficients(owner_key, inc)</code></summary>
 
-Taking 0.0081 % of a block.
+Taking 0.0113 % of a block.
 
 ```rust
 owner_key: T::AccountId
 inc: bool
 ```
-
 </details>
+
 
 See [`Pallet::fix_sufficients`].
 
@@ -659,59 +655,59 @@ See [`Pallet::fix_sufficients`].
 
 <details><summary><code>link_account(account_id, payload_sig)</code></summary>
 
-Taking 0.0135 % of a block.
+Taking 0.0182 % of a block.
 
 ```rust
 account_id: T::AccountId
 payload_sig: T::Signature
 ```
-
 </details>
+
 
 See [`Pallet::link_account`].
 
-### Certification - 27
+### Certification - 43
 
 #### add_cert - 0
 
 <details><summary><code>add_cert(receiver)</code></summary>
 
-Taking 0.0214 % of a block.
+Taking 0.0398 % of a block.
 
 ```rust
 receiver: T::IdtyIndex
 ```
-
 </details>
 
-Add a new certification.
+
+See [`Pallet::add_cert`].
 
 #### renew_cert - 3
 
 <details><summary><code>renew_cert(receiver)</code></summary>
 
-Taking 0.018 % of a block.
+Taking 0.0324 % of a block.
 
 ```rust
 receiver: T::IdtyIndex
 ```
-
 </details>
 
-Renew an existing certification.
+
+See [`Pallet::renew_cert`].
 
 #### del_cert - 1
 
 <details><summary><code>del_cert(issuer, receiver)</code></summary>
 
-Taking 0.0155 % of a block.
+Taking 0.0276 % of a block.
 
 ```rust
 issuer: T::IdtyIndex
 receiver: T::IdtyIndex
 ```
-
 </details>
+
 
 See [`Pallet::del_cert`].
 
@@ -719,29 +715,28 @@ See [`Pallet::del_cert`].
 
 <details><summary><code>remove_all_certs_received_by(idty_index)</code></summary>
 
-Taking 3.7485 % of a block.
+Taking 7.8043 % of a block.
 
 ```rust
 idty_index: T::IdtyIndex
 ```
-
 </details>
+
 
 See [`Pallet::remove_all_certs_received_by`].
 
-### Distance - 28
+### Distance - 44
 
 #### request_distance_evaluation - 0
 
 <details><summary><code>request_distance_evaluation()</code></summary>
 
-Taking 0.0194 % of a block.
+Taking 0.0354 % of a block.
 
 ```rust
-
 ```
-
 </details>
+
 
 See [`Pallet::request_distance_evaluation`].
 
@@ -749,13 +744,13 @@ See [`Pallet::request_distance_evaluation`].
 
 <details><summary><code>request_distance_evaluation_for(target)</code></summary>
 
-Taking 0.0199 % of a block.
+Taking 0.0367 % of a block.
 
 ```rust
 target: T::IdtyIndex
 ```
-
 </details>
+
 
 See [`Pallet::request_distance_evaluation_for`].
 
@@ -763,13 +758,13 @@ See [`Pallet::request_distance_evaluation_for`].
 
 <details><summary><code>update_evaluation(computation_result)</code></summary>
 
-Taking 0.0214 % of a block.
+Taking 0.0351 % of a block.
 
 ```rust
 computation_result: ComputationResult
 ```
-
 </details>
+
 
 See [`Pallet::update_evaluation`].
 
@@ -777,14 +772,14 @@ See [`Pallet::update_evaluation`].
 
 <details><summary><code>force_update_evaluation(evaluator, computation_result)</code></summary>
 
-Taking 0.014 % of a block.
+Taking 0.018 % of a block.
 
 ```rust
 evaluator: <T as frame_system::Config>::AccountId
 computation_result: ComputationResult
 ```
-
 </details>
+
 
 See [`Pallet::force_update_evaluation`].
 
@@ -792,17 +787,17 @@ See [`Pallet::force_update_evaluation`].
 
 <details><summary><code>force_valid_distance_status(identity)</code></summary>
 
-Taking 0.0173 % of a block.
+Taking 0.0301 % of a block.
 
 ```rust
 identity: <T as pallet_identity::Config>::IdtyIndex
 ```
-
 </details>
+
 
 See [`Pallet::force_valid_distance_status`].
 
-### AtomicSwap - 29
+### AtomicSwap - 50
 
 #### create_swap - 0
 
@@ -816,8 +811,8 @@ hashed_proof: HashedProof
 action: T::SwapAction
 duration: BlockNumberFor<T>
 ```
-
 </details>
+
 
 See [`Pallet::create_swap`].
 
@@ -831,8 +826,8 @@ No weight available.
 proof: Vec<u8>
 action: T::SwapAction
 ```
-
 </details>
+
 
 See [`Pallet::claim_swap`].
 
@@ -846,25 +841,25 @@ No weight available.
 target: T::AccountId
 hashed_proof: HashedProof
 ```
-
 </details>
+
 
 See [`Pallet::cancel_swap`].
 
-### Multisig - 30
+### Multisig - 51
 
 #### as_multi_threshold_1 - 0
 
 <details><summary><code>as_multi_threshold_1(other_signatories, call)</code></summary>
 
-Taking 0.0054 % of a block.
+Taking 0.0045 % of a block.
 
 ```rust
 other_signatories: Vec<T::AccountId>
 call: Box<<T as Config>::RuntimeCall>
 ```
-
 </details>
+
 
 See [`Pallet::as_multi_threshold_1`].
 
@@ -881,8 +876,8 @@ maybe_timepoint: Option<Timepoint<BlockNumberFor<T>>>
 call: Box<<T as Config>::RuntimeCall>
 max_weight: Weight
 ```
-
 </details>
+
 
 See [`Pallet::as_multi`].
 
@@ -899,8 +894,8 @@ maybe_timepoint: Option<Timepoint<BlockNumberFor<T>>>
 call_hash: [u8; 32]
 max_weight: Weight
 ```
-
 </details>
+
 
 See [`Pallet::approve_as_multi`].
 
@@ -908,7 +903,7 @@ See [`Pallet::approve_as_multi`].
 
 <details><summary><code>cancel_as_multi(threshold, other_signatories, timepoint, call_hash)</code></summary>
 
-Taking 0.0103 % of a block.
+Taking 0.0135 % of a block.
 
 ```rust
 threshold: u16
@@ -916,43 +911,43 @@ other_signatories: Vec<T::AccountId>
 timepoint: Timepoint<BlockNumberFor<T>>
 call_hash: [u8; 32]
 ```
-
 </details>
+
 
 See [`Pallet::cancel_as_multi`].
 
-### ProvideRandomness - 31
+### ProvideRandomness - 52
 
 #### request - 0
 
 <details><summary><code>request(randomness_type, salt)</code></summary>
 
-Taking 0.0224 % of a block.
+Taking 0.0393 % of a block.
 
 ```rust
 randomness_type: RandomnessType
 salt: H256
 ```
-
 </details>
+
 
 See [`Pallet::request`].
 
-### Proxy - 32
+### Proxy - 53
 
 #### proxy - 0
 
 <details><summary><code>proxy(real, force_proxy_type, call)</code></summary>
 
-Taking 0.0064 % of a block.
+Taking 0.0063 % of a block.
 
 ```rust
 real: AccountIdLookupOf<T>
 force_proxy_type: Option<T::ProxyType>
 call: Box<<T as Config>::RuntimeCall>
 ```
-
 </details>
+
 
 See [`Pallet::proxy`].
 
@@ -960,15 +955,15 @@ See [`Pallet::proxy`].
 
 <details><summary><code>add_proxy(delegate, proxy_type, delay)</code></summary>
 
-Taking 0.0098 % of a block.
+Taking 0.0129 % of a block.
 
 ```rust
 delegate: AccountIdLookupOf<T>
 proxy_type: T::ProxyType
 delay: BlockNumberFor<T>
 ```
-
 </details>
+
 
 See [`Pallet::add_proxy`].
 
@@ -976,15 +971,15 @@ See [`Pallet::add_proxy`].
 
 <details><summary><code>remove_proxy(delegate, proxy_type, delay)</code></summary>
 
-Taking 0.0101 % of a block.
+Taking 0.0133 % of a block.
 
 ```rust
 delegate: AccountIdLookupOf<T>
 proxy_type: T::ProxyType
 delay: BlockNumberFor<T>
 ```
-
 </details>
+
 
 See [`Pallet::remove_proxy`].
 
@@ -992,13 +987,12 @@ See [`Pallet::remove_proxy`].
 
 <details><summary><code>remove_proxies()</code></summary>
 
-Taking 0.0098 % of a block.
+Taking 0.0129 % of a block.
 
 ```rust
-
 ```
-
 </details>
+
 
 See [`Pallet::remove_proxies`].
 
@@ -1006,15 +1000,15 @@ See [`Pallet::remove_proxies`].
 
 <details><summary><code>create_pure(proxy_type, delay, index)</code></summary>
 
-Taking 0.0109 % of a block.
+Taking 0.0141 % of a block.
 
 ```rust
 proxy_type: T::ProxyType
 delay: BlockNumberFor<T>
 index: u16
 ```
-
 </details>
+
 
 See [`Pallet::create_pure`].
 
@@ -1022,7 +1016,7 @@ See [`Pallet::create_pure`].
 
 <details><summary><code>kill_pure(spawner, proxy_type, index, height, ext_index)</code></summary>
 
-Taking 0.0094 % of a block.
+Taking 0.0125 % of a block.
 
 ```rust
 spawner: AccountIdLookupOf<T>
@@ -1031,8 +1025,8 @@ index: u16
 height: BlockNumberFor<T>
 ext_index: u32
 ```
-
 </details>
+
 
 See [`Pallet::kill_pure`].
 
@@ -1040,14 +1034,14 @@ See [`Pallet::kill_pure`].
 
 <details><summary><code>announce(real, call_hash)</code></summary>
 
-Taking 0.0138 % of a block.
+Taking 0.0218 % of a block.
 
 ```rust
 real: AccountIdLookupOf<T>
 call_hash: CallHashOf<T>
 ```
-
 </details>
+
 
 See [`Pallet::announce`].
 
@@ -1055,14 +1049,14 @@ See [`Pallet::announce`].
 
 <details><summary><code>remove_announcement(real, call_hash)</code></summary>
 
-Taking 0.0126 % of a block.
+Taking 0.0198 % of a block.
 
 ```rust
 real: AccountIdLookupOf<T>
 call_hash: CallHashOf<T>
 ```
-
 </details>
+
 
 See [`Pallet::remove_announcement`].
 
@@ -1070,14 +1064,14 @@ See [`Pallet::remove_announcement`].
 
 <details><summary><code>reject_announcement(delegate, call_hash)</code></summary>
 
-Taking 0.0128 % of a block.
+Taking 0.02 % of a block.
 
 ```rust
 delegate: AccountIdLookupOf<T>
 call_hash: CallHashOf<T>
 ```
-
 </details>
+
 
 See [`Pallet::reject_announcement`].
 
@@ -1085,7 +1079,7 @@ See [`Pallet::reject_announcement`].
 
 <details><summary><code>proxy_announced(delegate, real, force_proxy_type, call)</code></summary>
 
-Taking 0.0155 % of a block.
+Taking 0.0235 % of a block.
 
 ```rust
 delegate: AccountIdLookupOf<T>
@@ -1093,24 +1087,24 @@ real: AccountIdLookupOf<T>
 force_proxy_type: Option<T::ProxyType>
 call: Box<<T as Config>::RuntimeCall>
 ```
-
 </details>
+
 
 See [`Pallet::proxy_announced`].
 
-### Utility - 33
+### Utility - 54
 
 #### batch - 0
 
 <details><summary><code>batch(calls)</code></summary>
 
-Taking 0.2737 % of a block.
+Taking 0.2728 % of a block.
 
 ```rust
 calls: Vec<<T as Config>::RuntimeCall>
 ```
-
 </details>
+
 
 See [`Pallet::batch`].
 
@@ -1118,14 +1112,14 @@ See [`Pallet::batch`].
 
 <details><summary><code>as_derivative(index, call)</code></summary>
 
-Taking 0.0049 % of a block.
+Taking 0.004 % of a block.
 
 ```rust
 index: u16
 call: Box<<T as Config>::RuntimeCall>
 ```
-
 </details>
+
 
 See [`Pallet::as_derivative`].
 
@@ -1133,13 +1127,13 @@ See [`Pallet::as_derivative`].
 
 <details><summary><code>batch_all(calls)</code></summary>
 
-Taking 0.2944 % of a block.
+Taking 0.2935 % of a block.
 
 ```rust
 calls: Vec<<T as Config>::RuntimeCall>
 ```
-
 </details>
+
 
 See [`Pallet::batch_all`].
 
@@ -1147,13 +1141,13 @@ See [`Pallet::batch_all`].
 
 <details><summary><code>force_batch(calls)</code></summary>
 
-Taking 0.3113 % of a block.
+Taking 0.3104 % of a block.
 
 ```rust
 calls: Vec<<T as Config>::RuntimeCall>
 ```
-
 </details>
+
 
 See [`Pallet::force_batch`].
 
@@ -1167,25 +1161,25 @@ No weight available.
 call: Box<<T as Config>::RuntimeCall>
 weight: Weight
 ```
-
 </details>
+
 
 See [`Pallet::with_weight`].
 
-### Treasury - 34
+### Treasury - 55
 
 #### propose_spend - 0
 
 <details><summary><code>propose_spend(value, beneficiary)</code></summary>
 
-Taking 0.0119 % of a block.
+Taking 0.0183 % of a block.
 
 ```rust
 value: BalanceOf<T, I>
 beneficiary: AccountIdLookupOf<T>
 ```
-
 </details>
+
 
 See [`Pallet::propose_spend`].
 
@@ -1193,14 +1187,14 @@ See [`Pallet::propose_spend`].
 
 <details><summary><code>spend_local(amount, beneficiary)</code></summary>
 
-Taking 0.0035 % of a block.
+Taking 0.0036 % of a block.
 
 ```rust
 amount: BalanceOf<T, I>
 beneficiary: AccountIdLookupOf<T>
 ```
-
 </details>
+
 
 See [`Pallet::spend_local`].
 
@@ -1208,13 +1202,13 @@ See [`Pallet::spend_local`].
 
 <details><summary><code>remove_approval(proposal_id)</code></summary>
 
-Taking 0.0079 % of a block.
+Taking 0.0111 % of a block.
 
 ```rust
 proposal_id: ProposalIndex
 ```
-
 </details>
+
 
 See [`Pallet::remove_approval`].
 
@@ -1230,8 +1224,8 @@ amount: AssetBalanceOf<T, I>
 beneficiary: Box<BeneficiaryLookupOf<T, I>>
 valid_from: Option<BlockNumberFor<T>>
 ```
-
 </details>
+
 
 See [`Pallet::spend`].
 
@@ -1239,13 +1233,13 @@ See [`Pallet::spend`].
 
 <details><summary><code>payout(index)</code></summary>
 
-Taking 0.0035 % of a block.
+Taking 0.0326 % of a block.
 
 ```rust
 index: SpendIndex
 ```
-
 </details>
+
 
 See [`Pallet::payout`].
 
@@ -1253,13 +1247,13 @@ See [`Pallet::payout`].
 
 <details><summary><code>check_status(index)</code></summary>
 
-Taking 0.0035 % of a block.
+Taking 0.011 % of a block.
 
 ```rust
 index: SpendIndex
 ```
-
 </details>
+
 
 See [`Pallet::check_status`].
 
@@ -1267,15 +1261,17 @@ See [`Pallet::check_status`].
 
 <details><summary><code>void_spend(index)</code></summary>
 
-Taking 0.0035 % of a block.
+Taking 0.011 % of a block.
 
 ```rust
 index: SpendIndex
 ```
-
 </details>
 
+
 See [`Pallet::void_spend`].
+
+
 
 ## Root calls
 
@@ -1287,13 +1283,13 @@ There are **18** root calls from **8** pallets.
 
 <details><summary><code>set_heap_pages(pages)</code></summary>
 
-Taking 0.0105 % of a block.
+Taking 0.0169 % of a block.
 
 ```rust
 pages: u64
 ```
-
 </details>
+
 
 See [`Pallet::set_heap_pages`].
 
@@ -1306,8 +1302,8 @@ Taking 3.9604 % of a block.
 ```rust
 code: Vec<u8>
 ```
-
 </details>
+
 
 See [`Pallet::set_code`].
 
@@ -1320,8 +1316,8 @@ No weight available.
 ```rust
 code: Vec<u8>
 ```
-
 </details>
+
 
 See [`Pallet::set_code_without_checks`].
 
@@ -1329,13 +1325,13 @@ See [`Pallet::set_code_without_checks`].
 
 <details><summary><code>set_storage(items)</code></summary>
 
-Taking 2.6599 % of a block.
+Taking 5.9169 % of a block.
 
 ```rust
 items: Vec<KeyValue>
 ```
-
 </details>
+
 
 See [`Pallet::set_storage`].
 
@@ -1343,13 +1339,13 @@ See [`Pallet::set_storage`].
 
 <details><summary><code>kill_storage(keys)</code></summary>
 
-Taking 2.6329 % of a block.
+Taking 5.8899 % of a block.
 
 ```rust
 keys: Vec<Key>
 ```
-
 </details>
+
 
 See [`Pallet::kill_storage`].
 
@@ -1357,14 +1353,14 @@ See [`Pallet::kill_storage`].
 
 <details><summary><code>kill_prefix(prefix, subkeys)</code></summary>
 
-Taking 3.0283 % of a block.
+Taking 7.0785 % of a block.
 
 ```rust
 prefix: Key
 subkeys: u32
 ```
-
 </details>
+
 
 See [`Pallet::kill_prefix`].
 
@@ -1377,8 +1373,8 @@ Taking 0.0098 % of a block.
 ```rust
 code_hash: T::Hash
 ```
-
 </details>
+
 
 See [`Pallet::authorize_upgrade`].
 
@@ -1391,8 +1387,8 @@ No weight available.
 ```rust
 code_hash: T::Hash
 ```
-
 </details>
+
 
 See [`Pallet::authorize_upgrade_without_checks`].
 
@@ -1405,8 +1401,8 @@ Taking 4.1178 % of a block.
 ```rust
 code: Vec<u8>
 ```
-
 </details>
+
 
 See [`Pallet::apply_authorized_upgrade`].
 
@@ -1421,8 +1417,8 @@ No weight available.
 ```rust
 config: NextConfigDescriptor
 ```
-
 </details>
+
 
 See [`Pallet::plan_config_change`].
 
@@ -1432,15 +1428,15 @@ See [`Pallet::plan_config_change`].
 
 <details><summary><code>force_transfer(source, dest, value)</code></summary>
 
-Taking 0.0242 % of a block.
+Taking 0.0347 % of a block.
 
 ```rust
 source: AccountIdLookupOf<T>
 dest: AccountIdLookupOf<T>
 value: T::Balance
 ```
-
 </details>
+
 
 See [`Pallet::force_transfer`].
 
@@ -1448,14 +1444,14 @@ See [`Pallet::force_transfer`].
 
 <details><summary><code>force_unreserve(who, amount)</code></summary>
 
-Taking 0.0096 % of a block.
+Taking 0.0128 % of a block.
 
 ```rust
 who: AccountIdLookupOf<T>
 amount: T::Balance
 ```
-
 </details>
+
 
 See [`Pallet::force_unreserve`].
 
@@ -1465,13 +1461,13 @@ See [`Pallet::force_unreserve`].
 
 <details><summary><code>remove_member(member_id)</code></summary>
 
-Taking 0.0366 % of a block.
+Taking 0.073 % of a block.
 
 ```rust
 member_id: T::MemberId
 ```
-
 </details>
+
 
 See [`Pallet::remove_member`].
 
@@ -1487,26 +1483,26 @@ No weight available.
 delay: BlockNumberFor<T>
 best_finalized_block_number: BlockNumberFor<T>
 ```
-
 </details>
+
 
 See [`Pallet::note_stalled`].
 
-### TechnicalCommittee - 22
+### TechnicalCommittee - 23
 
 #### set_members - 0
 
 <details><summary><code>set_members(new_members, prime, old_count)</code></summary>
 
-Taking 0.0868 % of a block.
+Taking 0.175 % of a block.
 
 ```rust
 new_members: Vec<T::AccountId>
 prime: Option<T::AccountId>
 old_count: MemberCount
 ```
-
 </details>
+
 
 See [`Pallet::set_members`].
 
@@ -1514,48 +1510,53 @@ See [`Pallet::set_members`].
 
 <details><summary><code>disapprove_proposal(proposal_hash)</code></summary>
 
-Taking 0.014 % of a block.
+Taking 0.0236 % of a block.
 
 ```rust
 proposal_hash: T::Hash
 ```
-
 </details>
+
 
 See [`Pallet::disapprove_proposal`].
 
-### Identity - 25
+### Identity - 41
 
 #### prune_item_identities_names - 6
 
 <details><summary><code>prune_item_identities_names(names)</code></summary>
 
-Taking 2.6984 % of a block.
+Taking 5.9553 % of a block.
 
 ```rust
 names: Vec<IdtyName>
 ```
-
 </details>
+
 
 See [`Pallet::prune_item_identities_names`].
 
-### Utility - 33
+### Utility - 54
 
 #### dispatch_as - 3
 
 <details><summary><code>dispatch_as(as_origin, call)</code></summary>
 
-Taking 0.0059 % of a block.
+Taking 0.005 % of a block.
 
 ```rust
 as_origin: Box<T::PalletsOrigin>
 call: Box<<T as Config>::RuntimeCall>
 ```
-
 </details>
 
+
 See [`Pallet::dispatch_as`].
+
+
+
+
+
 
 ## Disabled calls
 
@@ -1567,13 +1568,13 @@ There are **4** disabled calls from **2** pallets.
 
 <details><summary><code>remark(remark)</code></summary>
 
-Taking 0.0955 % of a block.
+Taking 0.0946 % of a block.
 
 ```rust
 remark: Vec<u8>
 ```
-
 </details>
+
 
 See [`Pallet::remark`].
 
@@ -1581,13 +1582,13 @@ See [`Pallet::remark`].
 
 <details><summary><code>remark_with_event(remark)</code></summary>
 
-Taking 0.3514 % of a block.
+Taking 0.3505 % of a block.
 
 ```rust
 remark: Vec<u8>
 ```
-
 </details>
+
 
 See [`Pallet::remark_with_event`].
 
@@ -1597,14 +1598,14 @@ See [`Pallet::remark_with_event`].
 
 <details><summary><code>set_keys(keys, proof)</code></summary>
 
-Taking 0.0212 % of a block.
+Taking 0.0406 % of a block.
 
 ```rust
 keys: T::Keys
 proof: Vec<u8>
 ```
-
 </details>
+
 
 See [`Pallet::set_keys`].
 
@@ -1612,12 +1613,12 @@ See [`Pallet::set_keys`].
 
 <details><summary><code>purge_keys()</code></summary>
 
-Taking 0.0189 % of a block.
+Taking 0.0351 % of a block.
 
 ```rust
-
 ```
-
 </details>
 
+
 See [`Pallet::purge_keys`].
+
