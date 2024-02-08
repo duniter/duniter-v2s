@@ -1,41 +1,58 @@
-# Release a new runtime
+# Release a new Runtime
 
-Here you will learn how to release a new runtime using `gitlab ci` and `cargo xtask`.
+![](img/release-pipeline.png)
+
+> The following instructions have been described in french at: [Créer une release](https://forum.duniter.org/t/industrialiser-le-demarrage-dune-nouvelle-gx/11535/41).
+
+## Process
+
+Example for `runtime-800`.
+
+### New release with new Runtime
+
+* create a `release/runtime-800` branch locally
+* update the values:
+  * update spec version (in `runtime/<currency>/src/lib.rs`)
+  * eventually update `gdev.yml` (smiths, tech. committee, ...)
+* push the `release/runtime-800` branch
+  * in the CI/CD, wait for `Create release` button to be available and click on it (see above screenshot)
+
+The Runtime is now available on the release page [runtime-800](https://git.duniter.org/nodes/rust/duniter-v2s/-/releases/runtime-800).
+
+### New Client
+
+The Client is published as a Docker image.
+
+You may want to publish a new Client version along with a Runtime update.
+
+#### New raw specs (optional)
+
+For a reboot, you will likely want to update the raw specs:
+
+* in the CI/CD, wait for `release_gdev_specs` button to be available and click on it
+* in the CI/CD, wait for `release_gtest_specs` button to be available and click on it
+* wait for both jobs to finish
+* update the Client raw specs with `cargo xtask update-raw-specs runtime-800`
+
+#### New version (mandatory)
+
+Update Client values:
+
+* update Client version (in `Cargo.toml`)
+* update `Cargo.lock` with `cargo build`
+  
+#### Publish Docker image
+
+Commit everything and push the branch:
+
+* in the CI/CD, a new pipeline has been launched
+* you can stop jobs `create_g1_data`, `gdev_srtool`, `gtest_srtool` (won't be used)
+* click on `gdev_docker_deploy` and `gtest_docker_deploy`
+
+The Docker images should now be available at: https://hub.docker.com/r/duniter/duniter-v2s-gdev/tags.
 
 ## Runtime tag and spec version
 
 Our runtime tags use `xxyy` version numbers where `x` corresponds to major change and `y` hotfix.
 
-1. Make sure to move any issue or merge request assigned to the choosen milestone `runtime-xxyy` to the next one. This prevents from forgetting unfinished work.
-1. Check that the [CI on release/runtime-XX00](https://git.duniter.org/nodes/rust/duniter-v2s/-/pipelines?scope=all&page=1&ref=runtime-400) (runtime major release branch) is passing. This is necessary to build the docker images.
-1. Increment the `spec_version` in the code. Example `spec_version: 300` -> `spec_version: 400`.
-
-Publish the `runtime-400` branch. Go to the pipelines and run the manual tasks as shown on the screenshot below.
-
-- `build_release_manual`
-- `deploy_docker_release_sha`
-
-![pipeline screenshot](./img/pipeline_screenshot.png)
-
-## Release runtime
-
-We choose [`xtask`](https://github.com/matklad/cargo-xtask/) to run Rust scripts using `cargo`. To build these scripts, just run:
-
-```bash
-cargo xtask -h # this will build the scripts and show the available commands
-```
-
-To interact with GitLab, the `release_runtime` script uses the environment variable `GITLAB_TOKEN` which must contain a token with write permission on the repository. Go to your [personal access token preferences](https://git.duniter.org/-/profile/personal_access_tokens) to generate one and `export` it (you might want to add it to your `.bashrc`). You can then run this command:
-
-```bash
-cargo xtask release-runtime 400 # requires to run docker as non-root user
-```
-
-This command does the following things (use your system monitor to track the progress as it produces not log):
-
-1. Download the [`paritytech/srtool`](https://docs.substrate.io/reference/command-line-tools/srtool/) (Substrate Runtime TOOLbox) docker image (about 2 minutes with a good connection). It is a docker container enabling to build the Substrate WebAssembly runtime in a deterministic way (machine-independant).
-1. Build gdev runtime in release mode using `srtool` (about 5 minutes depending on your computing power). The target is put in the `runtime/gdev/target` folder (about 2GB).
-1. Generate release notes using the template in `xtask/res`
-1. Publish the release with the notes on GitLab using your `GITLAB_TOKEN`
-
-This release will trigger a GitLab CI publishing a docker image of the Substrate client with embeded runtime. 
+Make sure to move any issue or merge request assigned to the choosen milestone `runtime-xxyy` to the next one. This prevents from forgetting unfinished work.

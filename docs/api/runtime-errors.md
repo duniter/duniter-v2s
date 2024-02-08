@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **174** errors from **35** pallets.
+There are **186** errors from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -28,7 +28,6 @@ and the new runtime.
 Failed to extract the runtime version from the new runtime.
 
 Either calling `Core_version` or decoding `RuntimeVersion` failed.
-
 </details>
 </li>
 <li>
@@ -225,11 +224,11 @@ Number of freezes exceed `MaxFreezes`.
 </li>
 </ul>
 </li>
-<li>TransactionPayment - 7
+<li>TransactionPayment - 32
 <ul>
 </ul>
 </li>
-<li>OneshotAccount - 8
+<li>OneshotAccount - 7
 <ul>
 <li>
 <details>
@@ -282,7 +281,7 @@ Source oneshot account does not exist.
 </li>
 </ul>
 </li>
-<li>Quota - 9
+<li>Quota - 66
 <ul>
 </ul>
 </li>
@@ -604,7 +603,7 @@ Duplicated heartbeat.
 <ul>
 </ul>
 </li>
-<li>Sudo - 19
+<li>Sudo - 20
 <ul>
 <li>
 <details>
@@ -615,11 +614,11 @@ Sender must be the Sudo account.
 </li>
 </ul>
 </li>
-<li>UpgradeOrigin - 20
+<li>UpgradeOrigin - 21
 <ul>
 </ul>
 </li>
-<li>Preimage - 21
+<li>Preimage - 22
 <ul>
 <li>
 <details>
@@ -679,7 +678,7 @@ Too few hashes were requested to be upgraded (i.e. zero).
 </li>
 </ul>
 </li>
-<li>TechnicalCommittee - 22
+<li>TechnicalCommittee - 23
 <ul>
 <li>
 <details>
@@ -760,7 +759,7 @@ Prime account is not a member
 </li>
 </ul>
 </li>
-<li>UniversalDividend - 23
+<li>UniversalDividend - 30
 <ul>
 <li>
 <details>
@@ -771,7 +770,7 @@ This account is not allowed to claim UDs.
 </li>
 </ul>
 </li>
-<li>Wot - 24
+<li>Wot - 40
 <ul>
 <li>
 <details>
@@ -831,7 +830,7 @@ Membership can only be renewed after an antispam delay.
 </li>
 </ul>
 </li>
-<li>Identity - 25
+<li>Identity - 41
 <ul>
 <li>
 <details>
@@ -954,7 +953,7 @@ Cannot link to an inexisting account.
 </li>
 </ul>
 </li>
-<li>Membership - 26
+<li>Membership - 42
 <ul>
 <li>
 <details>
@@ -972,7 +971,7 @@ Already member, can not add membership.
 </li>
 </ul>
 </li>
-<li>Certification - 27
+<li>Certification - 43
 <ul>
 <li>
 <details>
@@ -1025,7 +1024,7 @@ Can not renew a non-existing cert
 </li>
 </ul>
 </li>
-<li>Distance - 28
+<li>Distance - 44
 <ul>
 <li>
 <details>
@@ -1120,7 +1119,7 @@ Targeted distance evaluation request is only possible for an unvalidated identit
 </li>
 </ul>
 </li>
-<li>AtomicSwap - 29
+<li>AtomicSwap - 50
 <ul>
 <li>
 <details>
@@ -1180,7 +1179,7 @@ Duration has not yet passed for the swap to be cancelled.
 </li>
 </ul>
 </li>
-<li>Multisig - 30
+<li>Multisig - 51
 <ul>
 <li>
 <details>
@@ -1282,7 +1281,7 @@ The data to be stored is already stored.
 </li>
 </ul>
 </li>
-<li>ProvideRandomness - 31
+<li>ProvideRandomness - 52
 <ul>
 <li>
 <details>
@@ -1293,7 +1292,7 @@ Request randomness queue is full.
 </li>
 </ul>
 </li>
-<li>Proxy - 32
+<li>Proxy - 53
 <ul>
 <li>
 <details>
@@ -1353,7 +1352,7 @@ Cannot add self as proxy.
 </li>
 </ul>
 </li>
-<li>Utility - 33
+<li>Utility - 54
 <ul>
 <li>
 <details>
@@ -1364,7 +1363,7 @@ Too many calls batched.
 </li>
 </ul>
 </li>
-<li>Treasury - 34
+<li>Treasury - 55
 <ul>
 <li>
 <details>

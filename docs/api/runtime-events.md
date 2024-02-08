@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **128** events from **35** pallets.
+There are **134** events from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -99,20 +99,7 @@ check_version: bool
 <li>
 <details>
 <summary>
-<code>ForceDestroy(who, balance)</code> - 0</summary>
-Forced destruction of an account due to insufficient free balance to cover the account creation price.
-
-```rust
-who: T::AccountId
-balance: T::Balance
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>AccountLinked(who, identity)</code> - 1</summary>
+<code>AccountLinked(who, identity)</code> - 0</summary>
 account linked to identity
 
 ```rust
@@ -125,7 +112,7 @@ identity: IdtyIdOf<T>
 <li>
 <details>
 <summary>
-<code>AccountUnlinked()</code> - 2</summary>
+<code>AccountUnlinked()</code> - 1</summary>
 The account was unlinked from its identity.
 
 ```rust
@@ -510,7 +497,7 @@ amount: T::Balance
 </li>
 </ul>
 </li>
-<li>TransactionPayment - 7
+<li>TransactionPayment - 32
 <ul>
 <li>
 <details>
@@ -529,7 +516,7 @@ tip: BalanceOf<T>
 </li>
 </ul>
 </li>
-<li>OneshotAccount - 8
+<li>OneshotAccount - 7
 <ul>
 <li>
 <details>
@@ -576,7 +563,7 @@ balance: <T::Currency as Currency<T::AccountId>>::Balance
 </li>
 </ul>
 </li>
-<li>Quota - 9
+<li>Quota - 66
 <ul>
 <li>
 <details>
@@ -937,7 +924,7 @@ offline: Vec<IdentificationTuple<T>>
 <ul>
 </ul>
 </li>
-<li>Sudo - 19
+<li>Sudo - 20
 <ul>
 <li>
 <details>
@@ -990,7 +977,7 @@ sudo_result: DispatchResult
 </li>
 </ul>
 </li>
-<li>UpgradeOrigin - 20
+<li>UpgradeOrigin - 21
 <ul>
 <li>
 <details>
@@ -1006,7 +993,7 @@ result: DispatchResult
 </li>
 </ul>
 </li>
-<li>Preimage - 21
+<li>Preimage - 22
 <ul>
 <li>
 <details>
@@ -1046,7 +1033,7 @@ hash: T::Hash
 </li>
 </ul>
 </li>
-<li>TechnicalCommittee - 22
+<li>TechnicalCommittee - 23
 <ul>
 <li>
 <details>
@@ -1147,7 +1134,7 @@ no: MemberCount
 </li>
 </ul>
 </li>
-<li>UniversalDividend - 23
+<li>UniversalDividend - 30
 <ul>
 <li>
 <details>
@@ -1208,11 +1195,11 @@ who: T::AccountId
 </li>
 </ul>
 </li>
-<li>Wot - 24
+<li>Wot - 40
 <ul>
 </ul>
 </li>
-<li>Identity - 25
+<li>Identity - 41
 <ul>
 <li>
 <details>
@@ -1258,6 +1245,7 @@ idty_index: T::IdtyIndex
 <summary>
 <code>IdtyChangedOwnerKey(idty_index, new_owner_key)</code> - 3</summary>
 
+
 ```rust
 idty_index: T::IdtyIndex
 new_owner_key: T::AccountId
@@ -1293,7 +1281,7 @@ reason: RemovalReason
 </li>
 </ul>
 </li>
-<li>Membership - 26
+<li>Membership - 42
 <ul>
 <li>
 <details>
@@ -1336,7 +1324,7 @@ reason: MembershipRemovalReason
 </li>
 </ul>
 </li>
-<li>Certification - 27
+<li>Certification - 43
 <ul>
 <li>
 <details>
@@ -1380,7 +1368,7 @@ receiver: T::IdtyIndex
 </li>
 </ul>
 </li>
-<li>Distance - 28
+<li>Distance - 44
 <ul>
 <li>
 <details>
@@ -1421,7 +1409,7 @@ idty_index: T::IdtyIndex
 </li>
 </ul>
 </li>
-<li>AtomicSwap - 29
+<li>AtomicSwap - 50
 <ul>
 <li>
 <details>
@@ -1466,7 +1454,7 @@ proof: HashedProof
 </li>
 </ul>
 </li>
-<li>Multisig - 30
+<li>Multisig - 51
 <ul>
 <li>
 <details>
@@ -1530,7 +1518,7 @@ call_hash: CallHash
 </li>
 </ul>
 </li>
-<li>ProvideRandomness - 31
+<li>ProvideRandomness - 52
 <ul>
 <li>
 <details>
@@ -1561,7 +1549,7 @@ r#type: RandomnessType
 </li>
 </ul>
 </li>
-<li>Proxy - 32
+<li>Proxy - 53
 <ul>
 <li>
 <details>
@@ -1637,7 +1625,7 @@ delay: BlockNumberFor<T>
 </li>
 </ul>
 </li>
-<li>Utility - 33
+<li>Utility - 54
 <ul>
 <li>
 <details>
@@ -1715,7 +1703,7 @@ result: DispatchResult
 </li>
 </ul>
 </li>
-<li>Treasury - 34
+<li>Treasury - 55
 <ul>
 <li>
 <details>
