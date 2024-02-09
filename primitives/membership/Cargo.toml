@@ -1,64 +1,37 @@
 [package]
-authors = ['librelois <c@elo.tf>']
-description = 'primitives for pallet membership.'
-edition = "2021"
-homepage = 'https://duniter.org'
-license = 'AGPL-3.0'
-name = 'sp-membership'
-readme = 'README.md'
-repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
-version = '3.0.0'
-
-[features]
-default = ['std']
-std = [
-    'scale-info/std',
-    'codec/std',
-    'frame-support/std',
-    'serde/std',
-    'sp-runtime/std',
-    'sp-std/std',
-]
-try-runtime = [
-    'frame-support/try-runtime',
-    'sp-runtime/try-runtime',
-]
-
-[dependencies]
-
-# crates.io
-impl-trait-for-tuples = { version = "0.2.2", default-features = false }
-
-# substrate
-scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
-
-[dependencies.codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = "3.6.9"
-
-[dependencies.frame-support]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.serde]
-default-features = false
-version = "1.0.195"
-features = ["derive"]
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-### DOC ###
+authors.workspace = true
+description = "primitives for pallet membership"
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "sp-membership"
+readme = "README.md"
+repository.workspace = true
+version.workspace = true
 
 [package.metadata.docs.rs]
 default-features = false
-targets = ['x86_64-unknown-linux-gnu']
+targets = ["x86_64-unknown-linux-gnu"]
 
-[dependencies.sp-std]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"frame-support/std",
+	"scale-info/std",
+	"serde/std",
+	"sp-runtime/std",
+	"sp-std/std",
+]
+try-runtime = ["frame-support/try-runtime", "sp-runtime/try-runtime"]
+runtime-benchmarks = []
+
+[dependencies]
+
+codec = { workspace = true, features = ["derive"] }
+frame-support = { workspace = true }
+impl-trait-for-tuples = { workspace = true }
+scale-info = { workspace = true, features = ["derive"] }
+serde = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }

@@ -18,83 +18,88 @@
 
 use super::*;
 
-use frame_benchmarking::benchmarks;
+use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
 use sp_runtime::traits::Convert;
 
-#[cfg(test)]
-use maplit::btreemap;
-
 use crate::Pallet;
 
-fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
-    frame_system::Pallet::<T>::assert_has_event(generic_event.into());
-}
-
-benchmarks! {
-    where_clause {
+#[benchmarks(
         where
             T::IdtyIndex: From<u32>
+)]
+mod benchmarks {
+    use super::*;
+
+    fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+        frame_system::Pallet::<T>::assert_has_event(generic_event.into());
     }
-    invite_smith {
+
+    #[benchmark]
+    fn invite_smith() {
         let issuer: T::IdtyIndex = 1.into();
         let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
         Pallet::<T>::on_smith_goes_online(1.into());
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         let receiver: T::IdtyIndex = 4.into();
-    }: _<T::RuntimeOrigin>(caller_origin, receiver)
-    verify {
-        assert_has_event::<T>(Event::<T>::InvitationSent{
-            receiver,
-            issuer,
-        }.into());
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(caller), receiver);
+
+        assert_has_event::<T>(Event::<T>::InvitationSent { receiver, issuer }.into());
     }
-    accept_invitation {
-        // Worst case preparation
+
+    #[benchmark]
+    fn accept_invitation() -> Result<(), BenchmarkError> {
         let issuer: T::IdtyIndex = 1.into();
         let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
         Pallet::<T>::on_smith_goes_online(1.into());
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
+        let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
+            RawOrigin::Signed(caller.clone()).into();
         let receiver: T::IdtyIndex = 4.into();
         Pallet::<T>::invite_smith(caller_origin, receiver)?;
-        // test
         let issuer: T::IdtyIndex = 4.into();
         let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-    }: _<T::RuntimeOrigin>(caller_origin)
-    verify {
-        assert_has_event::<T>(Event::<T>::InvitationAccepted{
-            idty_index: receiver,
-        }.into());
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(caller));
+
+        assert_has_event::<T>(
+            Event::<T>::InvitationAccepted {
+                idty_index: receiver,
+            }
+            .into(),
+        );
+        Ok(())
     }
-    certify_smith {
-        // Worst case preparation
+
+    #[benchmark]
+    fn certify_smith() -> Result<(), BenchmarkError> {
         let issuer: T::IdtyIndex = 1.into();
         let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
         Pallet::<T>::on_smith_goes_online(1.into());
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
+        let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
+            RawOrigin::Signed(caller.clone()).into();
         let receiver: T::IdtyIndex = 4.into();
         Pallet::<T>::invite_smith(caller_origin, receiver)?;
         let issuer: T::IdtyIndex = receiver;
         let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
+        let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
+            RawOrigin::Signed(caller.clone()).into();
         Pallet::<T>::accept_invitation(caller_origin)?;
-        // test
         let issuer: T::IdtyIndex = 1.into();
         let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-    }: _<T::RuntimeOrigin>(caller_origin, receiver)
-    verify {
-        assert_has_event::<T>(Event::<T>::SmithCertAdded{
-            receiver,
-            issuer,
-        }.into());
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(caller), receiver);
+
+        assert_has_event::<T>(Event::<T>::SmithCertAdded { receiver, issuer }.into());
+        Ok(())
     }
 
     impl_benchmark_test_suite!(
         Pallet,
-        crate::mock::new_test_ext(GenesisConfig {
-            initial_smiths: btreemap![
+        crate::mock::new_test_ext(crate::GenesisConfig {
+            initial_smiths: maplit::btreemap![
                 1 => (false, vec![2, 3]),
                 2 => (false, vec![1, 3]),
                 3 => (false, vec![1, 2]),

@@ -29,7 +29,8 @@ pub mod oneshot;
 pub mod gdev {}
 
 use anyhow::anyhow;
-use parity_scale_codec::Encode;
+use codec::Encode;
+use notify_debouncer_mini::new_debouncer;
 use serde_json::Value;
 use sp_keyring::AccountKeyring;
 use std::io::prelude::*;
@@ -274,16 +275,19 @@ fn wait_until_log_line(expected_log_line: &str, log_file_path: &str, timeout: Du
         }
     } else {
         let (tx, rx) = std::sync::mpsc::channel();
-        let mut watcher = notify::watcher(tx, std::time::Duration::from_millis(100)).unwrap();
-        use notify::Watcher as _;
-        watcher
-            .watch(log_file_path, notify::RecursiveMode::NonRecursive)
+        let mut debouncer = new_debouncer(std::time::Duration::from_millis(100), tx).unwrap();
+        debouncer
+            .watcher()
+            .watch(
+                Path::new(log_file_path),
+                notify::RecursiveMode::NonRecursive,
+            )
             .unwrap();
 
         let mut pos = 0;
         loop {
             match rx.recv_timeout(timeout) {
-                Ok(notify::DebouncedEvent::Write(_)) => {
+                Ok(_) => {
                     let mut file = std::fs::File::open(log_file_path).unwrap();
                     file.seek(std::io::SeekFrom::Start(pos)).unwrap();
                     pos = file.metadata().unwrap().len();
@@ -295,7 +299,6 @@ fn wait_until_log_line(expected_log_line: &str, log_file_path: &str, timeout: Du
                         }
                     }
                 }
-                Ok(_) => {}
                 Err(err) => {
                     eprintln!("Error: {:?}", err);
                     std::process::exit(1);

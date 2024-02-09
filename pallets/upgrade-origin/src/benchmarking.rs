@@ -19,12 +19,19 @@
 use super::*;
 
 use crate::Pallet;
-use frame_benchmarking::benchmarks;
+use frame_benchmarking::v2::*;
 use frame_support::traits::Get;
 
-benchmarks! {
-    dispatch_as_root {
+#[benchmarks]
+mod benchmarks {
+    use super::*;
+
+    #[benchmark]
+    fn dispatch_as_root() {
         let call = Box::new(frame_system::Call::remark { remark: vec![] }.into());
         let origin: T::WorstCaseOriginType = T::WorstCaseOrigin::get();
-    }: dispatch_as_root (origin, call)
+
+        #[extrinsic_call]
+        _(origin, call);
+    }
 }

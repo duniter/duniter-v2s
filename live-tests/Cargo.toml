@@ -1,19 +1,28 @@
 [package]
-authors = ['Axiom-Team Developers <https://axiom-team.fr>']
-description = 'duniter live tests.'
-edition = "2021"
-homepage = 'https://duniter.org'
-license = 'AGPL-3.0'
-name = 'duniter-live-tests'
-repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
-version = '3.0.0'
+authors.workspace = true
+description = "duniter live tests"
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "duniter-live-tests"
+repository.workspace = true
+version.workspace = true
 
 [dev-dependencies]
-anyhow = "1.0"
-countmap = "0.2.0"
-hex-literal = "0.4"
-parity-scale-codec = "3.4.0"
-sp-core = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-runtime = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false, features = ["std"] } # https://github.com/paritytech/subxt/issues/437
-subxt = { git = 'https://github.com/duniter/subxt', branch = 'subxt-v0.34.0-duniter-substrate-v1.6.0', default-features = false, features = ["substrate-compat", "native", "jsonrpsee"] }
-tokio = { version = "1.28", features = ["macros", "time", "rt-multi-thread"], default-features = false }
+anyhow = { workspace = true }
+codec = { workspace = true }
+countmap = { workspace = true }
+hex-literal = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+subxt = { workspace = true, features = [
+    "substrate-compat",
+    "native",
+    "jsonrpsee",
+] }
+tokio = { workspace = true, features = ["macros", "time", "rt-multi-thread"] }
+
+[features]
+runtime-benchmarks = []
+std = []
+try-runtime = []

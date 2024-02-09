@@ -1,120 +1,67 @@
 [package]
-authors = ['librelois <c@elo.tf>']
-description = 'duniter pallet authority members.'
-edition = "2021"
-homepage = 'https://duniter.org'
-license = 'AGPL-3.0'
-name = 'pallet-authority-members'
-readme = 'README.md'
-repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
-version = '3.0.0'
+authors.workspace = true
+description = "duniter pallet authority members"
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "pallet-authority-members"
+readme = "README.md"
+repository.workspace = true
+version.workspace = true
 
 [features]
-default = ['std']
+default = ["std"]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-offences/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"sp-staking/runtime-benchmarks",
 ]
 std = [
-    'codec/std',
-    'frame-support/std',
-    'frame-system/std',
-    'frame-benchmarking?/std',
-    'pallet-session/std',
-    'pallet-offences/std',
-    'serde/std',
-    'scale-info/std',
-    'sp-core/std',
-    'sp-runtime/std',
-    'sp-staking/std',
-    'sp-std/std',
-    'sp-io/std',
-    'sp-state-machine/std',
-    'log/std',
+	"codec/std",
+	"frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"log/std",
+	"pallet-offences/std",
+	"pallet-session/std",
+	"scale-info/std",
+	"serde/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-staking/std",
+	"sp-state-machine/std",
+	"sp-std/std",
 ]
 try-runtime = [
-    'frame-support/try-runtime',
-    'frame-system/try-runtime',
-    'sp-runtime/try-runtime',
-    'pallet-session/try-runtime',
-    'pallet-offences/try-runtime',
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-offences/try-runtime",
+	"pallet-session/try-runtime",
+	"sp-runtime/try-runtime",
 ]
 
-[dependencies]
-
-# crates.io
-log = { version = "0.4.20", default-features = false }
-# local
-pallet-offences = { path = "../offences", default-features = false }
-scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
-
-[dependencies.codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = "3.6.9"
-
-# substrate
-[dependencies.frame-benchmarking]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-optional = true
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.frame-support]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.frame-system]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.pallet-session]
-default-features = false
-features = ["historical"]
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.serde]
-optional = true
-default-features = false
-version = "1.0.195"
-features = ["derive"]
-
-[dependencies.sp-core]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.sp-staking]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
 [package.metadata.docs.rs]
-targets = ['x86_64-unknown-linux-gnu']
+targets = ["x86_64-unknown-linux-gnu"]
 
-[dependencies.sp-std]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
+[dependencies]
+codec = { workspace = true, features = ["derive"] }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+log = { workspace = true }
+pallet-offences = { workspace = true }
+pallet-session = { workspace = true, features = ["historical"] }
+scale-info = { workspace = true, features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-staking = { workspace = true }
+sp-std = { workspace = true }
 
-[dev-dependencies.maplit]
-default-features = false
-version = '1.0.2'
-
-[dev-dependencies.sp-io]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dev-dependencies.sp-state-machine]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
+[dev-dependencies]
+sp-io = { workspace = true }
+sp-state-machine = { workspace = true }

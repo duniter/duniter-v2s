@@ -16,11 +16,10 @@
 
 mod common;
 
-use async_trait::async_trait;
 use common::*;
-use cucumber::{given, then, when, FailureWriter, World, WorldInit};
+use cucumber::StatsWriter;
+use cucumber::{given, then, when, World};
 use sp_keyring::AccountKeyring;
-use std::convert::Infallible;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::{
@@ -31,7 +30,7 @@ use subxt::backend::rpc::RpcClient;
 
 // ===== world =====
 
-#[derive(WorldInit)]
+#[derive(cucumber::World, Default)]
 pub struct DuniterWorld {
     ignore_errors: bool,
     inner: Option<DuniterWorldInner>,
@@ -127,19 +126,6 @@ impl DuniterWorld {
 impl std::fmt::Debug for DuniterWorld {
     fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         Ok(())
-    }
-}
-
-#[async_trait(?Send)]
-impl World for DuniterWorld {
-    // We do require some error type.
-    type Error = Infallible;
-
-    async fn new() -> std::result::Result<Self, Infallible> {
-        Ok(Self {
-            ignore_errors: false,
-            inner: None,
-        })
     }
 }
 
@@ -594,19 +580,19 @@ async fn identity_status_should_be(
 #[derive(clap::Args)]
 struct CustomOpts {
     /// Keep running
-    #[clap(short, long)]
+    #[arg(short, long)]
     keep_running: bool,
     /// Do not spawn a node, reuse expected node on port 9944
-    #[clap(long)]
+    #[arg(long)]
     no_spawn: bool,
 
     /// For compliance with Jetbrains IDE which pushes extra args.
     /// https://youtrack.jetbrains.com/issue/CPP-33071/cargo-test-adds-extra-options-which-conflict-with-Cucumber
-    #[clap(short, long)]
+    #[arg(short, long)]
     format: Option<String>,
-    #[clap(short, long = "show-output")]
+    #[arg(short, long = "show-output")]
     show_output: bool,
-    #[clap(short = 'Z', long)]
+    #[arg(short = 'Z', long)]
     z: Option<String>,
 }
 
@@ -650,7 +636,7 @@ async fn main() {
             world.set_ignore_errors(ignore_errors(&scenario.tags));
             Box::pin(world.init(Some(genesis_conf_file_path), no_spawn))
         })
-        .after(move |_feature, _rule, _scenario, maybe_world| {
+        .after(move |_feature, _rule, _scenario, _ev, maybe_world| {
             if keep_running {
                 while running.load(Ordering::SeqCst) {}
             }

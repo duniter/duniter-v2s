@@ -76,10 +76,8 @@ fmt_and_clippy:
     - cargo clippy --features runtime-benchmarks --all --tests -- -D warnings
 
 run_benchmarks:
+  extends: .env
   stage: tests
-  script:
-    - echo podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
-    - podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
@@ -87,13 +85,11 @@ run_benchmarks:
       when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
-  variables:
-    IMAGE_NAME: "duniter/duniter-v2s-test"
-    IMAGE_TAG: "debug-sha-$CI_COMMIT_SHORT_SHA"
-    PODMAN_BUILD_OPTIONS: "--target build --build-arg benchmarks=1"
-  tags:
-    - podman
-
+  script:
+    - cargo build --release --features runtime-benchmarks
+    - target/release/duniter benchmark storage --chain=dev --mul=2 --state-version=1
+    - target/release/duniter benchmark overhead --chain=dev --wasm-execution=compiled --warmup=1 --repeat=100
+    - target/release/duniter benchmark pallet --chain=dev --steps=5 --repeat=2 --pallet="*" --extrinsic="*" --wasm-execution=compiled
 # FIXME: "gtest_build"
 gdev_build:
   stage: build

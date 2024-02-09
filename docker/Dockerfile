@@ -33,11 +33,6 @@ RUN if [ "$debug" = 0 ]; then \
         echo "TARGET_FOLDER=debug" >>/root/dynenv; \
     fi
 
-ARG benchmarks=0
-RUN if [ "$benchmarks" != 0 ]; then \
-        echo "BENCH_OPTIONS=--features\ runtime-benchmarks" >>/root/dynenv; \
-    fi
-
 # Configure cross-build environment if need be
 RUN set -x && \
     if [ "$TARGETPLATFORM" != "$BUILDPLATFORM" ]; then \
@@ -67,11 +62,6 @@ RUN if [ "$cucumber" != 0 ] && [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then \
         cd target/debug/deps/ && \
         rm cucumber_tests-*.d && \
         mv cucumber_tests* ../../../build/duniter-cucumber; \
-    fi
-
-# Run runtime benchmarks
-RUN if [ "$benchmarks" != 0 ]; then \
-      build/duniter benchmark pallet --chain dev --execution=wasm --wasm-execution=compiled --pallet "*" --extrinsic "*" --steps 2 --repeat 1; \
     fi
 
 # ------------------------------------------------------------------------------

@@ -1,56 +1,19 @@
 [package]
-authors = ['librelois <c@elo.tf>']
-description = 'primitives for duniter runtime.'
-edition = "2021"
-homepage = 'https://duniter.org'
-license = 'AGPL-3.0'
-name = 'duniter-primitives'
-readme = 'README.md'
-repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
-version = '3.0.0'
-
-[features]
-default = ['std']
-std = [
-    'scale-info/std',
-    'codec/std',
-    'frame-support/std',
-    'sp-runtime/std',
-    'sp-std/std',
-]
-try-runtime = [
-    'frame-support/try-runtime',
-    'sp-runtime/try-runtime',
-]
-
-[dependencies]
-
-# substrate
-scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
-
-[dependencies.codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = "3.6.9"
-
-[dependencies.frame-support]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.sp-std]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-### DOC ###
+authors.workspace = true
+description = "primitives for duniter runtime"
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "duniter-primitives"
+readme = "README.md"
+repository.workspace = true
+version.workspace = true
 
 [package.metadata.docs.rs]
 default-features = false
-targets = ['x86_64-unknown-linux-gnu']
+targets = ["x86_64-unknown-linux-gnu"]
+
+[features]
+default = ["std"]
+std = []
+try-runtime = []

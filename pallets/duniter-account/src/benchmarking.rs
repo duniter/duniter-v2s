@@ -18,13 +18,20 @@
 
 use super::*;
 
-use frame_benchmarking::{account, benchmarks};
+use frame_benchmarking::v2::*;
+use frame_system::RawOrigin;
 
 use crate::Pallet;
 
-benchmarks! {
-    unlink_identity {
+#[benchmarks]
+mod benchmarks {
+    use super::*;
+
+    #[benchmark]
+    fn unlink_identity() {
         let account = account("Alice", 1, 1);
-        let origin = frame_system::RawOrigin::Signed(account);
-    }: _<T::RuntimeOrigin>(origin.into())
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(account));
+    }
 }

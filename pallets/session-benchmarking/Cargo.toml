@@ -1,113 +1,42 @@
 [package]
 name = "pallet-session-benchmarking"
-version = "4.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
-license = "Apache-2.0"
-homepage = "https://substrate.io"
-repository = "https://github.com/paritytech/substrate/"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
 description = "FRAME sessions pallet benchmarking"
 readme = "README.md"
+version.workspace = true
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
-
-pallet-authority-members = { path = "../authority-members", default-features = false }
-
-[dependencies.frame-benchmarking]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-optional = true
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.frame-support]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.frame-system]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.pallet-session]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.sp-session]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.sp-std]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.parity-scale-codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = "3.1.5"
-
-[dev-dependencies.pallet-balances]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dev-dependencies.pallet-timestamp]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dev-dependencies.sp-core]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dev-dependencies.sp-io]
-default-features = false
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
+frame-benchmarking = { workspace = true, optional = true }
+frame-system = { workspace = true }
+pallet-session = { workspace = true }
+sp-std = { workspace = true }
+sp-runtime = { workspace = true }
+codec = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	"parity-scale-codec/std",
+	"codec/std",
 	"frame-benchmarking?/std",
-	"frame-support/std",
 	"frame-system/std",
 	"pallet-session/std",
-	"pallet-balances/std",
-	"pallet-timestamp/std",
 	"sp-runtime/std",
-	"sp-session/std",
 	"sp-std/std",
-	"sp-core/std",
-	"sp-io/std",
 ]
 try-runtime = [
-    'frame-support/try-runtime',
-    'frame-system/try-runtime',
-    'pallet-balances/runtime-benchmarks',
-    'pallet-timestamp/runtime-benchmarks',
-    'sp-runtime/try-runtime',
+	"frame-system/try-runtime",
+	"pallet-session/try-runtime",
+	"sp-runtime/try-runtime",
 ]
 runtime-benchmarks = [
-    'frame-benchmarking/runtime-benchmarks',
-    'frame-support/runtime-benchmarks',
-    'frame-system/runtime-benchmarks',
-    'pallet-balances/runtime-benchmarks',
-    'pallet-timestamp/runtime-benchmarks',
-    'sp-runtime/runtime-benchmarks',
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
 ]
-

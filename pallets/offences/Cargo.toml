@@ -1,31 +1,30 @@
 [package]
 name = "pallet-offences"
-authors = ["Parity Technologies <admin@parity.io>", "Axiom-Team Developers <https://axiom-team.fr>"]
-description = 'duniter pallet to handle offences.'
-edition = "2021"
-homepage = 'https://duniter.org'
-license = 'AGPL-3.0'
-repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
-version = '3.0.0'
+authors.workspace = true
+description = "duniter pallet to handle offences. fork from paritytechnologies offences pallet"
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
 readme = "README.md"
+version.workspace = true
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.9", features = ["derive"], default-features = false }
-log = { version = "0.4.20", default-features = false }
-scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
-frame-support = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-frame-system = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-balances = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-runtime = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-staking = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-std = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
+codec = { workspace = true, features = ["derive"] }
+log = { workspace = true }
+scale-info = { workspace = true, features = ["derive"] }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+sp-runtime = { workspace = true }
+sp-staking = { workspace = true }
+sp-std = { workspace = true }
 
 [dev-dependencies]
-sp-core = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-io = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
 
 [features]
 default = ["std"]
@@ -34,24 +33,21 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"log/std",
-	"pallet-balances/std",
 	"scale-info/std",
+	"sp-core/std",
+	"sp-io/std",
 	"sp-runtime/std",
 	"sp-staking/std",
 	"sp-std/std",
-	"sp-io/std",
-	"sp-core/std",
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"pallet-balances/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"sp-staking/runtime-benchmarks",
 ]
 try-runtime = [
-    'frame-support/try-runtime',
-    'frame-system/try-runtime',
-    'pallet-balances/runtime-benchmarks',
-    'sp-runtime/try-runtime',
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"sp-runtime/try-runtime",
 ]
