@@ -101,6 +101,7 @@ mod benchmarks {
         };
         let name = i.to_le_bytes();
         let idty_name = IdtyName(name.into());
+        frame_system::Pallet::<T>::inc_sufficients(&owner_key);
         <Identities<T>>::insert(idty_index, value);
         IdentityChangeSchedule::<T>::append(next_scheduled, idty_index);
         IdentityIndexOf::<T>::insert(owner_key.clone(), idty_index);
@@ -403,6 +404,7 @@ mod benchmarks {
         let idty_index: T::IdtyIndex = 1u32.into();
         let new_identity: T::AccountId = account("Bob", 2, 1);
         assert!(Identities::<T>::get(idty_index).is_some());
+        frame_system::Pallet::<T>::inc_sufficients(&new_identity);
         Identities::<T>::mutate(idty_index, |id| {
             if let Some(id) = id {
                 id.old_owner_key = Some((new_identity, BlockNumberFor::<T>::zero()));
