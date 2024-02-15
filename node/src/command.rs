@@ -15,6 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![allow(unused_imports)]
+
 pub mod key;
 pub mod utils;
 
@@ -24,10 +26,8 @@ use crate::cli::{Cli, Subcommand};
 #[cfg(feature = "g1")]
 use crate::service::g1_executor::G1Executor;
 #[cfg(feature = "gdev")]
-#[cfg(feature = "runtime-benchmarks")]
 use crate::service::gdev_executor::GDevExecutor;
 #[cfg(feature = "gtest")]
-#[cfg(feature = "runtime-benchmarks")]
 use crate::service::gtest_executor::GTestExecutor;
 use crate::service::{IdentifyRuntimeType, RuntimeType};
 use crate::{chain_spec, service};
