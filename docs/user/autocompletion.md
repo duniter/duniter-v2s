@@ -1,6 +1,6 @@
 # Autocompletion
 
-One can generate autocompletion for its favorite shell using the following option:
+You can generate autocompletion for your favorite shell using the following option:
 
 ```sh
 cargo run -- completion --generator <GENERATOR>

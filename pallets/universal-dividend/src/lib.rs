@@ -303,7 +303,7 @@ pub mod pallet {
                         let _ = core::mem::replace(
                             first_ud_index,
                             core::num::NonZeroU16::new(current_ud_index)
-                                .expect("unrechable because current_ud_index is never zero."),
+                                .expect("unreachable because current_ud_index is never zero."),
                         );
                         T::Currency::deposit_creating(who, uds_total);
                         Self::deposit_event(Event::UdsClaimed {

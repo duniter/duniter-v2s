@@ -96,7 +96,7 @@ impl SubstrateCli for Cli {
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         Ok(match id {
             // === GDEV ===
-            // developement chainspec with generated genesis and Alice validator
+            // development chainspec with generated genesis and Alice validator
             #[cfg(feature = "gdev")]
             "dev" => Box::new(chain_spec::gdev::local_testnet_config(1, 3, 4)?),
             // local testnet with g1 data, gdev configuration (parameters & smiths) and Alice validator
