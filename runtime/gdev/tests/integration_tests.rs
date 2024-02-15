@@ -246,6 +246,7 @@ fn test_session_change() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         assert_eq!(<Runtime as pallet_babe::Config>::EpochDuration::get(), 25);
         assert_eq!(Session::current_index(), 0);
+        assert_eq!(SmithMembers::current_session(), 0);
         assert_eq!(Babe::epoch_index(), 0);
         assert_eq!(Babe::current_epoch_start(), 0u64);
         run_to_block(2);
@@ -253,33 +254,42 @@ fn test_session_change() {
         assert_eq!(Babe::epoch_index(), 0);
         run_to_block(24);
         assert_eq!(Session::current_index(), 0);
+        assert_eq!(SmithMembers::current_session(), 0);
         assert_eq!(Babe::epoch_index(), 0);
         run_to_block(25);
         assert_eq!(Session::current_index(), 1);
+        assert_eq!(SmithMembers::current_session(), 1);
         assert_eq!(Babe::epoch_index(), 1);
         assert_eq!(Babe::current_epoch_start(), 25u64);
         run_to_block(26);
         assert_eq!(Session::current_index(), 1);
+        assert_eq!(SmithMembers::current_session(), 1);
         assert_eq!(Babe::epoch_index(), 1);
         run_to_block(50);
         assert_eq!(Session::current_index(), 2);
+        assert_eq!(SmithMembers::current_session(), 2);
         assert_eq!(Babe::epoch_index(), 2);
         assert_eq!(Babe::current_epoch_start(), 50u64);
         run_to_block(51);
         assert_eq!(Session::current_index(), 2);
+        assert_eq!(SmithMembers::current_session(), 2);
         assert_eq!(Babe::epoch_index(), 2);
         run_to_block(52);
         assert_eq!(Session::current_index(), 2);
+        assert_eq!(SmithMembers::current_session(), 2);
         assert_eq!(Babe::epoch_index(), 2);
         run_to_block(60);
         assert_eq!(Session::current_index(), 2);
+        assert_eq!(SmithMembers::current_session(), 2);
         assert_eq!(Babe::epoch_index(), 2);
         assert_eq!(Babe::current_epoch_start(), 50u64);
         run_to_block(75);
         assert_eq!(Session::current_index(), 3);
+        assert_eq!(SmithMembers::current_session(), 3);
         assert_eq!(Babe::epoch_index(), 3);
         run_to_block(100);
         assert_eq!(Session::current_index(), 4);
+        assert_eq!(SmithMembers::current_session(), 4);
         assert_eq!(Babe::epoch_index(), 4);
     })
 }
