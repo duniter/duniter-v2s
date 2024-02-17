@@ -2,7 +2,11 @@
 
 When voting for a runtime upgrade, you should check that the proposed hash actually corresponds to the published code you reviewed. Otherwise, a malicious runtime upgrade could be advertised as a legitimate one.
 
-```docker
+```sh
+mkdir runtime/gdev/target
+chmod o+w runtime/gdev/target
+# Workaround see !239
+echo -e "[toolchain]\nchannel = \"1.74.0\"\ncomponents = [ \"rust-std\", \"rust-src\" ]" > runtime/gdev/rust-toolchain.toml
 docker run \
   -i \
   --rm \
