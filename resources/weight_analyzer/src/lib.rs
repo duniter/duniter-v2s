@@ -187,8 +187,8 @@ mod tests {
                 .get("Balances")
                 .unwrap()
                 .len()
-                == 7
-        ); // 7 extrinsics in pallet
+                == 8
+        ); // 8 extrinsics in pallet
         println!("{:?}", weight_by_pallet); // cargo test  -- --nocapture
     }
     #[test]

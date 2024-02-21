@@ -172,7 +172,6 @@ type RuntimeFreezeReason = ();
             type ExistentialDeposit = ExistentialDeposit;
             type AccountStore = Account;
 			type FreezeIdentifier = ();
-			type MaxHolds = frame_support::pallet_prelude::ConstU32<0>;
 			type MaxFreezes = frame_support::pallet_prelude::ConstU32<0>;
             type WeightInfo = common_runtime::weights::pallet_balances::WeightInfo<Runtime>;
         }
