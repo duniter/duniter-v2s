@@ -26,7 +26,7 @@ pub type AccountId = subxt::utils::AccountId32;
 pub type IdtyIndex = u32;
 
 pub async fn client(rpc_url: String) -> Client {
-    Client::from_url(rpc_url)
+    Client::from_insecure_url(rpc_url)
         .await
         .expect("Cannot create RPC client")
 }
