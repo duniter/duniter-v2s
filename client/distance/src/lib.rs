@@ -43,7 +43,7 @@ where
     IdtyIndex: Decode + Encode + PartialEq + TypeInfo,
 {
     let &[owner_key] = owner_keys else {
-        log::error!("🧙 [distance oracle] More than one Babe owner key: oracle cannot work");
+        log::error!("🧙 [distance oracle] Expected exactly one Babe owner key, found {}: oracle cannot work", owner_keys.len());
         return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
     };
     let owner_key = sp_runtime::AccountId32::new(owner_key.0);
