@@ -40,38 +40,38 @@ pub async fn parent_hash(client: &Client) -> H256 {
         .hash()
 }
 
-pub async fn current_session(client: &Client, parent_hash: H256) -> u32 {
+pub async fn current_pool_index(client: &Client, parent_hash: H256) -> u32 {
     client
         .storage()
         .at(parent_hash)
-        .fetch(&runtime::storage().session().current_index())
+        .fetch(&runtime::storage().distance().current_pool_index())
         .await
-        .expect("Cannot fetch current session")
+        .expect("Cannot fetch current pool index")
         .unwrap_or_default()
 }
 
 pub async fn current_pool(
     client: &Client,
     parent_hash: H256,
-    current_session: u32,
+    current_pool_index: u32,
 ) -> Option<runtime::runtime_types::pallet_distance::types::EvaluationPool<AccountId, IdtyIndex>> {
     client
         .storage()
         .at(parent_hash)
-        .fetch(&match current_session % 3 {
+        .fetch(&match current_pool_index {
             0 => {
-                debug!("Looking at Pool1 for session {}", current_session);
+                debug!("Looking at Pool1 for pool index {}", current_pool_index);
                 runtime::storage().distance().evaluation_pool1()
             }
             1 => {
-                debug!("Looking at Pool2 for session {}", current_session);
+                debug!("Looking at Pool2 for pool index {}", current_pool_index);
                 runtime::storage().distance().evaluation_pool2()
             }
             2 => {
-                debug!("Looking at Pool0 for session {}", current_session);
+                debug!("Looking at Pool0 for pool index {}", current_pool_index);
                 runtime::storage().distance().evaluation_pool0()
             }
-            _ => unreachable!("n%3<3"),
+            _ => unreachable!("n<3"),
         })
         .await
         .expect("Cannot fetch current pool")

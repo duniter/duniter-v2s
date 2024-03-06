@@ -250,6 +250,7 @@ parameter_types! {
 impl pallet_distance::Config for Test {
     type CheckRequestDistanceEvaluation = ();
     type Currency = Balances;
+    type EvaluationPeriod = frame_support::traits::ConstU32<300>;
     type EvaluationPrice = frame_support::traits::ConstU64<1000>;
     type MaxRefereeDistance = frame_support::traits::ConstU32<5>;
     type MinAccessibleReferees = MinAccessibleReferees;

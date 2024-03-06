@@ -46,7 +46,7 @@ pub async fn parent_hash(_client: &Client) -> H256 {
     Default::default()
 }
 
-pub async fn current_session(_client: &Client, _parent_hash: H256) -> u32 {
+pub async fn current_pool_index(_client: &Client, _parent_hash: H256) -> u32 {
     0
 }
 

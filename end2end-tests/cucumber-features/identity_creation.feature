@@ -24,9 +24,9 @@ Feature: Identity creation
     Then dave should be certified by bob
     Then dave should be certified by charlie
     When dave requests distance evaluation
-    Then dave should have distance result in 2 sessions
-    When 30 blocks later
-    Then dave should have distance result in 1 session
+    Then dave should have distance result in 2 periods
+    When 14 blocks later
+    Then dave should have distance result in 1 period
     When alice runs distance oracle
-    When 30 blocks later
+    When 7 blocks later
     Then dave identity should be member

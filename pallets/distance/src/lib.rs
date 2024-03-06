@@ -35,17 +35,19 @@ pub use types::*;
 pub use weights::WeightInfo;
 
 use frame_support::traits::StorageVersion;
-use pallet_authority_members::SessionIndex;
 use sp_distance::{InherentError, INHERENT_IDENTIFIER};
 use sp_inherents::{InherentData, InherentIdentifier};
+use sp_runtime::traits::One;
+use sp_runtime::traits::Zero;
+use sp_runtime::Saturating;
 use sp_std::convert::TryInto;
 use sp_std::prelude::*;
 
 type IdtyIndex = u32;
 
-/// Maximum number of identities to be evaluated in a session
-pub const MAX_EVALUATIONS_PER_SESSION: u32 = 600;
-/// Maximum number of evaluators in a session
+/// Maximum number of identities to be evaluated in an evaluation period.
+pub const MAX_EVALUATIONS_PER_SESSION: u32 = 1_300; // See https://git.duniter.org/nodes/rust/duniter-v2s/-/merge_requests/252
+/// Maximum number of evaluators in an evaluation period.
 pub const MAX_EVALUATORS_PER_SESSION: u32 = 100;
 
 #[frame_support::pallet()]
@@ -67,7 +69,6 @@ pub mod pallet {
         frame_system::Config
         + pallet_authorship::Config
         + pallet_identity::Config<IdtyIndex = IdtyIndex>
-        + pallet_session::Config
     {
         /// Currency type used in this pallet (used for reserve/slash)
         type Currency: ReservableCurrency<Self::AccountId>;
@@ -76,6 +77,11 @@ pub mod pallet {
         type EvaluationPrice: Get<
             <Self::Currency as frame_support::traits::Currency<Self::AccountId>>::Balance,
         >;
+        /// Evaluation period number of blocks.
+        /// As the evaluation is done using 3 pools,
+        /// the evaluation will take 3 * EvaluationPeriod.
+        #[pallet::constant]
+        type EvaluationPeriod: Get<u32>;
         /// Maximum distance used to define referee's accessibility
         /// Unused by runtime but needed by client distance oracle
         #[pallet::constant]
@@ -152,12 +158,10 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type DidUpdate<T: Config> = StorageValue<_, bool, ValueQuery>;
 
-    // session_index % 3:
-    //   storage_id + 0 => pending
-    //   storage_id + 1 => receives results
-    //   storage_id + 2 => receives new identities
-    // (this avoids problems for session_index < 3)
-    //
+    /// Current evaluation pool.
+    #[pallet::storage]
+    #[pallet::getter(fn current_pool_index)]
+    pub(super) type CurrentPoolIndex<T: Config> = StorageValue<_, u32, ValueQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -207,16 +211,23 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        /// dummy `on_initialize` to return the weight used in `on_finalize`.
-        fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-            // weight of `on_finalize`
-            <T as pallet::Config>::WeightInfo::on_finalize()
+        fn on_initialize(block: BlockNumberFor<T>) -> Weight
+        where
+            BlockNumberFor<T>: From<u32>,
+        {
+            let mut weight = <T as pallet::Config>::WeightInfo::on_initialize_overhead();
+            if block % BlockNumberFor::<T>::one().saturating_mul(T::EvaluationPeriod::get().into())
+                == BlockNumberFor::<T>::zero()
+            {
+                let index = (CurrentPoolIndex::<T>::get() + 1) % 3;
+                CurrentPoolIndex::<T>::put(index);
+                weight = weight
+                    .saturating_add(Self::do_evaluation(index))
+                    .saturating_add(T::DbWeight::get().reads_writes(1, 1));
+            }
+            weight.saturating_add(<T as pallet::Config>::WeightInfo::on_finalize())
         }
 
-        /// # <weight>
-        /// - `O(1)`
-        /// - 1 storage deletion (codec `O(1)`).
-        /// # </weight>
         fn on_finalize(_n: BlockNumberFor<T>) {
             DidUpdate::<T>::take();
         }
@@ -311,8 +322,8 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         /// Mutate the evaluation pool containing:
-        /// * when this session begins: the evaluation results to be applied
-        /// * when this session ends: the evaluation requests
+        /// * when this period begins: the evaluation results to be applied.
+        /// * when this period ends: the evaluation requests.
         fn mutate_current_pool<
             R,
             F: FnOnce(
@@ -322,18 +333,18 @@ pub mod pallet {
                 >,
             ) -> R,
         >(
-            index: SessionIndex,
+            index: u32,
             f: F,
         ) -> R {
-            match index % 3 {
+            match index {
                 0 => EvaluationPool2::<T>::mutate(f),
                 1 => EvaluationPool0::<T>::mutate(f),
                 2 => EvaluationPool1::<T>::mutate(f),
-                _ => unreachable!("index % 3 < 3"),
+                _ => unreachable!("index < 3"),
             }
         }
 
-        /// Mutate the evaluation pool containing the results sent by evaluators on this session.
+        /// Mutate the evaluation pool containing the results sent by evaluators on this period.
         fn mutate_next_pool<
             R,
             F: FnOnce(
@@ -343,28 +354,28 @@ pub mod pallet {
                 >,
             ) -> R,
         >(
-            index: SessionIndex,
+            index: u32,
             f: F,
         ) -> R {
-            match index % 3 {
+            match index {
                 0 => EvaluationPool0::<T>::mutate(f),
                 1 => EvaluationPool1::<T>::mutate(f),
                 2 => EvaluationPool2::<T>::mutate(f),
-                _ => unreachable!("index % 3 < 3"),
+                _ => unreachable!("index < 3"),
             }
         }
 
         /// Take (and leave empty) the evaluation pool containing:
-        /// * when this session begins: the evaluation results to be applied
-        /// * when this session ends: the evaluation requests
+        /// * when this period begins: the evaluation results to be applied.
+        /// * when this period ends: the evaluation requests.
         #[allow(clippy::type_complexity)]
         fn take_current_pool(
-            index: SessionIndex,
+            index: u32,
         ) -> EvaluationPool<
             <T as frame_system::Config>::AccountId,
             <T as pallet_identity::Config>::IdtyIndex,
         > {
-            match index % 3 {
+            match index {
                 0 => EvaluationPool2::<T>::take(),
                 1 => EvaluationPool0::<T>::take(),
                 2 => EvaluationPool1::<T>::take(),
@@ -439,31 +450,28 @@ pub mod pallet {
             who: &T::AccountId,
             idty_index: <T as pallet_identity::Config>::IdtyIndex,
         ) -> Result<(), DispatchError> {
-            Pallet::<T>::mutate_current_pool(
-                pallet_session::CurrentIndex::<T>::get(),
-                |current_pool| {
-                    // extrinsics are transactional by default, this check might not be needed
-                    ensure!(
-                        current_pool.evaluations.len() < (MAX_EVALUATIONS_PER_SESSION as usize),
-                        Error::<T>::QueueFull
-                    );
+            Pallet::<T>::mutate_current_pool(CurrentPoolIndex::<T>::get(), |current_pool| {
+                // extrinsics are transactional by default, this check might not be needed
+                ensure!(
+                    current_pool.evaluations.len() < (MAX_EVALUATIONS_PER_SESSION as usize),
+                    Error::<T>::QueueFull
+                );
 
-                    T::Currency::reserve(who, <T as Config>::EvaluationPrice::get())?;
+                T::Currency::reserve(who, <T as Config>::EvaluationPrice::get())?;
 
-                    current_pool
-                        .evaluations
-                        .try_push((idty_index, median::MedianAcc::new()))
-                        .map_err(|_| Error::<T>::QueueFull)?;
+                current_pool
+                    .evaluations
+                    .try_push((idty_index, median::MedianAcc::new()))
+                    .map_err(|_| Error::<T>::QueueFull)?;
 
-                    PendingEvaluationRequest::<T>::insert(idty_index, who);
+                PendingEvaluationRequest::<T>::insert(idty_index, who);
 
-                    Self::deposit_event(Event::EvaluationRequested {
-                        idty_index,
-                        who: who.clone(),
-                    });
-                    Ok(())
-                },
-            )
+                Self::deposit_event(Event::EvaluationRequested {
+                    idty_index,
+                    who: who.clone(),
+                });
+                Ok(())
+            })
         }
 
         /// update distance evaluation in next pool
@@ -471,7 +479,7 @@ pub mod pallet {
             evaluator: <T as frame_system::Config>::AccountId,
             computation_result: ComputationResult,
         ) -> DispatchResult {
-            Pallet::<T>::mutate_next_pool(pallet_session::CurrentIndex::<T>::get(), |result_pool| {
+            Pallet::<T>::mutate_next_pool(CurrentPoolIndex::<T>::get(), |result_pool| {
                 // evaluation must be provided for all identities (no more, no less)
                 ensure!(
                     computation_result.distances.len() == result_pool.evaluations.len(),
@@ -507,20 +515,20 @@ pub mod pallet {
             // deposit event
             Self::deposit_event(Event::EvaluatedValid { idty_index: idty });
         }
-    }
 
-    impl<T: Config> pallet_authority_members::OnNewSession for Pallet<T> {
-        fn on_new_session(index: SessionIndex) {
+        pub fn do_evaluation(index: u32) -> Weight {
+            let mut weight = <T as pallet::Config>::WeightInfo::do_evaluation_overhead();
             // set evaluation block
             EvaluationBlock::<T>::set(frame_system::Pallet::<T>::parent_hash());
 
-            // Apply the results from the current pool (which was previous session's result pool)
-            // We take the results so the pool is left empty for the new session.
+            // Apply the results from the current pool (which was previous period's result pool)
+            // We take the results so the pool is left empty for the new period.
             #[allow(clippy::type_complexity)]
             let current_pool: EvaluationPool<
                 <T as frame_system::Config>::AccountId,
                 <T as pallet_identity::Config>::IdtyIndex,
             > = Pallet::<T>::take_current_pool(index);
+
             for (idty, median_acc) in current_pool.evaluations.into_iter() {
                 // distance result
                 let mut distance_result: Option<bool> = None;
@@ -536,6 +544,7 @@ pub mod pallet {
                 }
 
                 // take requester and perform unreserve or slash
+
                 if let Some(requester) = PendingEvaluationRequest::<T>::take(idty) {
                     match distance_result {
                         None => {
@@ -543,6 +552,12 @@ pub mod pallet {
                             T::Currency::unreserve(
                                 &requester,
                                 <T as Config>::EvaluationPrice::get(),
+                            );
+                            weight = weight.saturating_add(
+                                <T as pallet::Config>::WeightInfo::do_evaluation_failure()
+                                    .saturating_sub(
+                                        <T as pallet::Config>::WeightInfo::do_evaluation_overhead(),
+                                    ),
                             );
                         }
                         Some(true) => {
@@ -552,6 +567,12 @@ pub mod pallet {
                                 <T as Config>::EvaluationPrice::get(),
                             );
                             Self::do_valid_distance_status(idty);
+                            weight = weight.saturating_add(
+                                <T as pallet::Config>::WeightInfo::do_evaluation_success()
+                                    .saturating_sub(
+                                        <T as pallet::Config>::WeightInfo::do_evaluation_overhead(),
+                                    ),
+                            );
                         }
                         Some(false) => {
                             // negative result, slash and deposit event
@@ -560,11 +581,18 @@ pub mod pallet {
                                 <T as Config>::EvaluationPrice::get(),
                             );
                             Self::deposit_event(Event::EvaluatedInvalid { idty_index: idty });
+                            weight = weight.saturating_add(
+                                <T as pallet::Config>::WeightInfo::do_evaluation_failure()
+                                    .saturating_sub(
+                                        <T as pallet::Config>::WeightInfo::do_evaluation_overhead(),
+                                    ),
+                            );
                         }
                     }
                 }
                 // if evaluation happened without request, it's ok to do nothing
             }
+            weight
         }
     }
 

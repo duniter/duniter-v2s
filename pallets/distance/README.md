@@ -6,14 +6,14 @@ The pallet then selects the median of the results (reach perbill) of an evaluati
 The status of an identity can be:
 
 - inexistant: distance evaluation has not been requested or has expired
-- pending: distance evaluation for this identity has been requested and is waiting two sessions for results
+- pending: distance evaluation for this identity has been requested and is waiting two evaluation periods for results
 - valid: distance has been evaluated positively for this identity
 
-The result of the evaluation is used by `duniter-wot` pallet to determine if an identity can get / should loose membership to the web of trust. 
+The result of the evaluation is used by `duniter-wot` pallet to determine if an identity can get / should loose membership to the web of trust.
 
 ## Process
 
-Any account can request a distance evaluation for a given identity provided it has enough currency to be reserved. In this case, the distance status is marked as pending and in the next session, inherents can start to publish results. 
+Any account can request a distance evaluation for a given identity provided it has enough currency to be reserved. In this case, the distance status is marked as pending and in the next evaluation period, inherents can start to publish results.
 
 This is how a result is published:
 
@@ -23,10 +23,10 @@ This is how a result is published:
 1. the result is added to the current evaluation pool
 1. a flag is set to prevent other distance evaluation in the same block
 
-On each new session:
+On each new evaluation period:
 
-1. old results set to expire at this session do expire
-1. results from the current pool (previous session's result pool) are taken and for each identity
+1. old results set to expire at this period do expire
+1. results from the current pool (previous period's result pool) are taken and for each identity
     - the median of the distance results for this identity is chosen
     - if the distance is ok, the distance is marked as valid
     - if the distance is ko, the result for this identity is removed and reserved currency is slashed (from the account which requested the evaluation)
@@ -40,8 +40,8 @@ Evaluation pools are made of two components:
 - a set of evaluators
 - a vec of results
 
-The evaluation are separated in three pools (N - 2 is the session index):
+The evaluation are separated in three pools:
 
-- pool number N - 1 % 3: results from the previous session used in the current one (let empty for next session)
+- pool number N - 1 % 3: results from the previous evaluation period used in the current one (let empty for next evaluation period)
 - pool number N + 0 % 3: inherent results are added there
 - pool number N + 1 % 3: identities are added there for evaluation

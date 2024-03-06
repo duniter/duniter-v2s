@@ -48,11 +48,11 @@ where
     };
     let owner_key = sp_runtime::AccountId32::new(owner_key.0);
 
-    let session_index = client
+    let pool_index = client
         .storage(
             parent,
             &StorageKey(
-                frame_support::storage::storage_prefix(b"Session", b"CurrentIndex").to_vec(),
+                frame_support::storage::storage_prefix(b"Distance", b"CurrentPoolIndex").to_vec(),
             ),
         )
         .expect("CurrentIndex is Err")
@@ -66,11 +66,11 @@ where
             &StorageKey(
                 frame_support::storage::storage_prefix(
                     b"Distance",
-                    match session_index % 3 {
-                        0 => b"StoragePublishedResults1",
-                        1 => b"StoragePublishedResults2",
-                        2 => b"StoragePublishedResults0",
-                        _ => unreachable!("n%3<3"),
+                    match pool_index {
+                        0 => b"EvaluationPool0",
+                        1 => b"EvaluationPool1",
+                        2 => b"EvaluationPool2",
+                        _ => unreachable!("n<3"),
                     },
                 )
                 .to_vec(),
@@ -81,18 +81,18 @@ where
                 .expect("cannot decode EvaluationPool")
         });
 
-    // Have we already published a result for this session?
+    // Have we already published a result for this period?
     if published_results.evaluators.contains(&owner_key) {
-        log::debug!("🧙 [distance oracle] Already published a result for this session");
+        log::debug!("🧙 [distance oracle] Already published a result for this period");
         return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
     }
 
     // Read evaluation result from file, if it exists
     log::debug!(
         "🧙 [distance oracle] Reading evaluation result from file {:?}",
-        distance_dir.clone().join(session_index.to_string())
+        distance_dir.clone().join(pool_index.to_string())
     );
-    let evaluation_result = match std::fs::read(distance_dir.join(session_index.to_string())) {
+    let evaluation_result = match std::fs::read(distance_dir.join(pool_index.to_string())) {
         Ok(data) => data,
         Err(e) => {
             match e.kind() {

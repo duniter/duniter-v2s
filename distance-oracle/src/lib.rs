@@ -84,7 +84,7 @@ impl Default for Settings {
 }
 
 pub async fn run_and_save(client: &api::Client, settings: Settings) {
-    let Some((evaluation, current_session, evaluation_result_path)) =
+    let Some((evaluation, current_pool_index, evaluation_result_path)) =
         run(client, &settings, true).await
     else {
         return;
@@ -127,8 +127,8 @@ pub async fn run_and_save(client: &api::Client, settings: Settings) {
         .flatten()
     {
         if let Ok(entry_name) = entry.file_name().into_string() {
-            if let Ok(entry_session) = entry_name.parse::<isize>() {
-                if current_session as isize - entry_session > 3 {
+            if let Ok(entry_pool) = entry_name.parse::<isize>() {
+                if current_pool_index as isize - entry_pool > 3 {
                     files_to_remove.push(entry.path());
                 }
             }
@@ -140,7 +140,7 @@ pub async fn run_and_save(client: &api::Client, settings: Settings) {
     });
 }
 
-/// Returns `Option<(evaluation, current_session, evaluation_result_path)>`
+/// Returns `Option<(evaluation, current_pool_index, evaluation_result_path)>`
 pub async fn run(
     client: &api::Client,
     settings: &Settings,
@@ -150,10 +150,10 @@ pub async fn run(
 
     let max_depth = api::max_referee_distance(client).await;
 
-    let current_session = api::current_session(client, parent_hash).await;
+    let current_pool_index = api::current_pool_index(client, parent_hash).await;
 
     // Fetch the pending identities
-    let Some(evaluation_pool) = api::current_pool(client, parent_hash, current_session).await
+    let Some(evaluation_pool) = api::current_pool(client, parent_hash, current_pool_index).await
     else {
         info!("Nothing to do: Pool does not exist");
         return None;
@@ -167,7 +167,7 @@ pub async fn run(
 
     let evaluation_result_path = settings
         .evaluation_result_dir
-        .join((current_session + 1).to_string());
+        .join((current_pool_index + 1).to_string());
 
     if handle_fs {
         // Stop if already evaluated
@@ -187,7 +187,7 @@ pub async fn run(
         });
     }
 
-    info!("Evaluating distance for session {}", current_session);
+    info!("Evaluating distance for pool {}", current_pool_index);
     let evaluation_block = api::evaluation_block(client, parent_hash).await;
 
     // member idty -> issued certs
@@ -243,7 +243,7 @@ pub async fn run(
         .map(|(idty, _)| distance_rule(&received_certs, &referees, max_depth, *idty))
         .collect();
 
-    Some((evaluation, current_session, evaluation_result_path))
+    Some((evaluation, current_pool_index, evaluation_result_path))
 }
 
 fn distance_rule_recursive(

@@ -24,12 +24,10 @@ use pallet_smith_members::SmithRemovalReason;
 pub struct OnNewSessionHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_authority_members::traits::OnNewSession for OnNewSessionHandler<Runtime>
 where
-    Runtime:
-        pallet_provide_randomness::Config + pallet_distance::Config + pallet_smith_members::Config,
+    Runtime: pallet_provide_randomness::Config + pallet_smith_members::Config,
 {
     fn on_new_session(index: sp_staking::SessionIndex) {
         pallet_provide_randomness::Pallet::<Runtime>::on_new_epoch();
-        pallet_distance::Pallet::<Runtime>::on_new_session(index);
         pallet_smith_members::Pallet::<Runtime>::on_new_session(index);
     }
 }

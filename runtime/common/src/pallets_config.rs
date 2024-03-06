@@ -524,6 +524,7 @@ type RuntimeFreezeReason = ();
         }
         impl pallet_distance::Config for Runtime {
             type Currency = Balances;
+            type EvaluationPeriod = frame_support::traits::ConstU32<7>;
             type EvaluationPrice = frame_support::traits::ConstU64<1000>;
             type MaxRefereeDistance = frame_support::traits::ConstU32<5>;
             type MinAccessibleReferees = MinAccessibleReferees;
