@@ -22,6 +22,7 @@ mod common;
 use common::*;
 use frame_support::assert_ok;
 use frame_support::traits::OnIdle;
+use frame_support::traits::StoredMap;
 use gdev_runtime::*;
 use sp_core::Encode;
 use sp_core::Pair;
@@ -189,5 +190,51 @@ fn test_no_refund() {
             // check that refund queue is empty
             assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
             assert_eq!(Balances::free_balance(Treasury::account_id()), 100 + 3);
+        })
+}
+
+/// test refund on_idle when linked account is reaped
+#[test]
+fn test_refund_reaped_linked_account() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (AccountKeyring::Alice.to_account_id(), 10_000),
+            (AccountKeyring::Ferdie.to_account_id(), 10_000),
+        ])
+        .build()
+        .execute_with(|| {
+            let genesis_hash = System::block_hash(0);
+            let alice = AccountKeyring::Alice.to_account_id();
+            let ferdie = AccountKeyring::Ferdie.to_account_id();
+            let payload = (b"link", genesis_hash, 1u32, ferdie.clone()).encode();
+            let signature = AccountKeyring::Ferdie.sign(&payload);
+
+            // Ferdie's account can be linked to Alice identity
+            assert_ok!(Identity::link_account(
+                frame_system::RawOrigin::Signed(alice.clone()).into(),
+                ferdie.clone(),
+                signature.into()
+            ));
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
+                Some(1)
+            );
+
+            // transfer_all call to extrinsic
+            let call = RuntimeCall::Balances(BalancesCall::transfer_all {
+                dest: AccountKeyring::Alice.to_account_id().into(),
+                keep_alive: false,
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Ferdie, 0u64);
+            assert_ok!(Executive::apply_extrinsic(xt));
+
+            assert_eq!(Balances::free_balance(ferdie.clone()), 0);
+            // During reaping the account is unlinked
+            assert!(frame_system::Pallet::<Runtime>::get(&ferdie)
+                .linked_idty
+                .is_none());
+
+            // since the account is reaped, it is not linked anymore and no refund is added to queue
+            assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
         })
 }
