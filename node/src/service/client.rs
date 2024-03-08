@@ -146,11 +146,11 @@ impl<Api> RuntimeApiCollection for Api where
 #[derive(Clone)]
 pub enum Client {
     #[cfg(feature = "g1")]
-    G1(Arc<super::FullClient<g1_runtime::RuntimeApi>>),
+    G1(Arc<super::FullClient<g1_runtime::RuntimeApi, super::g1_executor::G1Executor>>),
     #[cfg(feature = "gtest")]
-    GTest(Arc<super::FullClient<gtest_runtime::RuntimeApi>>),
+    GTest(Arc<super::FullClient<gtest_runtime::RuntimeApi, super::gtest_executor::GTestExecutor>>),
     #[cfg(feature = "gdev")]
-    GDev(Arc<super::FullClient<gdev_runtime::RuntimeApi>>),
+    GDev(Arc<super::FullClient<gdev_runtime::RuntimeApi, super::gdev_executor::GDevExecutor>>),
 }
 
 macro_rules! with_client {
@@ -197,22 +197,38 @@ impl ClientHandle for Client {
 }
 
 #[cfg(feature = "g1")]
-impl From<Arc<super::FullClient<g1_runtime::RuntimeApi>>> for Client {
-    fn from(client: Arc<super::FullClient<g1_runtime::RuntimeApi>>) -> Self {
+impl From<Arc<super::FullClient<g1_runtime::RuntimeApi, super::g1_executor::G1Executor>>>
+    for Client
+{
+    fn from(
+        client: Arc<super::FullClient<g1_runtime::RuntimeApi, super::g1_executor::G1Executor>>,
+    ) -> Self {
         Self::G1(client)
     }
 }
 
 #[cfg(feature = "gtest")]
-impl From<Arc<super::FullClient<gtest_runtime::RuntimeApi>>> for Client {
-    fn from(client: Arc<super::FullClient<gtest_runtime::RuntimeApi>>) -> Self {
+impl From<Arc<super::FullClient<gtest_runtime::RuntimeApi, super::gtest_executor::GTestExecutor>>>
+    for Client
+{
+    fn from(
+        client: Arc<
+            super::FullClient<gtest_runtime::RuntimeApi, super::gtest_executor::GTestExecutor>,
+        >,
+    ) -> Self {
         Self::GTest(client)
     }
 }
 
 #[cfg(feature = "gdev")]
-impl From<Arc<super::FullClient<gdev_runtime::RuntimeApi>>> for Client {
-    fn from(client: Arc<super::FullClient<gdev_runtime::RuntimeApi>>) -> Self {
+impl From<Arc<super::FullClient<gdev_runtime::RuntimeApi, super::gdev_executor::GDevExecutor>>>
+    for Client
+{
+    fn from(
+        client: Arc<
+            super::FullClient<gdev_runtime::RuntimeApi, super::gdev_executor::GDevExecutor>,
+        >,
+    ) -> Self {
         Self::GDev(client)
     }
 }
@@ -311,14 +327,16 @@ trait BenchmarkCallSigner<RuntimeCall: Encode + Clone, Signer: Pair> {
 
 #[cfg(feature = "g1")]
 use g1_runtime as runtime;
+#[cfg(feature = "g1")]
+type FullClient = super::FullClient<runtime::RuntimeApi, super::g1_executor::G1Executor>;
 #[cfg(feature = "gdev")]
 use gdev_runtime as runtime;
 #[cfg(feature = "gdev")]
-type FullClient = super::FullClient<runtime::RuntimeApi>;
+type FullClient = super::FullClient<runtime::RuntimeApi, super::gdev_executor::GDevExecutor>;
 #[cfg(feature = "gtest")]
 use gtest_runtime as runtime;
 #[cfg(feature = "gtest")]
-type FullClient = super::FullClient<runtime::RuntimeApi>;
+type FullClient = super::FullClient<runtime::RuntimeApi, super::gtest_executor::GTestExecutor>;
 
 #[cfg(any(feature = "gdev", feature = "gtest"))]
 impl BenchmarkCallSigner<runtime::RuntimeCall, sp_core::sr25519::Pair> for FullClient {

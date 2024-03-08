@@ -26,7 +26,6 @@ use sc_client_api::client::BlockBackend;
 use sc_client_api::Backend;
 use sc_consensus_grandpa::SharedVoterState;
 use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
-pub use sc_executor::WasmExecutor;
 use sc_service::WarpSyncParams;
 use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
@@ -43,15 +42,23 @@ type HostFunctions = (
     frame_benchmarking::benchmarking::HostFunctions,
 );
 
-type FullClient<RuntimeApi> =
-    sc_service::TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>;
+// Allow to use native Runtime for debugging/development purposes
+#[cfg(feature = "native")]
+type FullClient<RuntimeApi, Executor> =
+    sc_service::TFullClient<Block, RuntimeApi, sc_executor::NativeElseWasmExecutor<Executor>>;
+// By default, WASM only Runtime
+#[cfg(not(feature = "native"))]
+type FullClient<RuntimeApi, Executor> =
+    sc_service::TFullClient<Block, RuntimeApi, sc_executor::WasmExecutor<Executor>>;
+
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
-#[allow(dead_code)]
 #[cfg(feature = "gdev")]
 pub mod gdev_executor {
+    use crate::service::HostFunctions;
     pub use gdev_runtime;
+    use sc_executor::sp_wasm_interface::{Function, HostFunctionRegistry};
 
     pub struct GDevExecutor;
     impl sc_executor::NativeExecutionDispatch for GDevExecutor {
@@ -65,12 +72,26 @@ pub mod gdev_executor {
             gdev_runtime::native_version()
         }
     }
+    impl sc_executor::sp_wasm_interface::HostFunctions for GDevExecutor {
+        fn host_functions() -> Vec<&'static dyn Function> {
+            HostFunctions::host_functions()
+        }
+
+        fn register_static<T>(registry: &mut T) -> Result<(), T::Error>
+        where
+            T: HostFunctionRegistry,
+        {
+            HostFunctions::register_static(registry)
+        }
+    }
 }
 
 #[allow(dead_code)]
 #[cfg(feature = "g1")]
 pub mod g1_executor {
+    use crate::service::HostFunctions;
     pub use g1_runtime;
+    use sc_executor::sp_wasm_interface::{Function, HostFunctionRegistry};
 
     pub struct G1Executor;
     impl sc_executor::NativeExecutionDispatch for G1Executor {
@@ -84,12 +105,26 @@ pub mod g1_executor {
             g1_runtime::native_version()
         }
     }
+    impl sc_executor::sp_wasm_interface::HostFunctions for G1Executor {
+        fn host_functions() -> Vec<&'static dyn Function> {
+            HostFunctions::host_functions()
+        }
+
+        fn register_static<T>(registry: &mut T) -> Result<(), T::Error>
+        where
+            T: HostFunctionRegistry,
+        {
+            HostFunctions::register_static(registry)
+        }
+    }
 }
 
 #[allow(dead_code)]
 #[cfg(feature = "gtest")]
 pub mod gtest_executor {
+    use crate::service::HostFunctions;
     pub use gtest_runtime;
+    use sc_executor::sp_wasm_interface::{Function, HostFunctionRegistry};
 
     pub struct GTestExecutor;
     impl sc_executor::NativeExecutionDispatch for GTestExecutor {
@@ -101,6 +136,18 @@ pub mod gtest_executor {
 
         fn native_version() -> sc_executor::NativeVersion {
             gtest_runtime::native_version()
+        }
+    }
+    impl sc_executor::sp_wasm_interface::HostFunctions for GTestExecutor {
+        fn host_functions() -> Vec<&'static dyn Function> {
+            HostFunctions::host_functions()
+        }
+
+        fn register_static<T>(registry: &mut T) -> Result<(), T::Error>
+        where
+            T: HostFunctionRegistry,
+        {
+            HostFunctions::register_static(registry)
         }
     }
 }
@@ -160,7 +207,10 @@ pub fn new_chain_ops(
                 import_queue,
                 task_manager,
                 ..
-            } = new_partial::<g1_runtime::RuntimeApi>(config, manual_consensus)?;
+            } = new_partial::<g1_runtime::RuntimeApi, g1_executor::G1Executor>(
+                config,
+                manual_consensus,
+            )?;
             Ok((
                 Arc::new(Client::G1(client)),
                 backend,
@@ -176,7 +226,10 @@ pub fn new_chain_ops(
                 import_queue,
                 task_manager,
                 ..
-            } = new_partial::<gtest_runtime::RuntimeApi>(config, manual_consensus)?;
+            } = new_partial::<gtest_runtime::RuntimeApi, gtest_executor::GTestExecutor>(
+                config,
+                manual_consensus,
+            )?;
             Ok((
                 Arc::new(Client::GTest(client)),
                 backend,
@@ -192,7 +245,10 @@ pub fn new_chain_ops(
                 import_queue,
                 task_manager,
                 ..
-            } = new_partial::<gdev_runtime::RuntimeApi>(config, manual_consensus)?;
+            } = new_partial::<gdev_runtime::RuntimeApi, gdev_executor::GDevExecutor>(
+                config,
+                manual_consensus,
+            )?;
             Ok((
                 Arc::new(Client::GDev(client)),
                 backend,
@@ -204,41 +260,50 @@ pub fn new_chain_ops(
     }
 }
 
-type FullGrandpaBlockImport<RuntimeApi> = sc_consensus_grandpa::GrandpaBlockImport<
+type FullGrandpaBlockImport<RuntimeApi, Executor> = sc_consensus_grandpa::GrandpaBlockImport<
     FullBackend,
     Block,
-    FullClient<RuntimeApi>,
+    FullClient<RuntimeApi, Executor>,
     FullSelectChain,
 >;
 
 #[allow(clippy::type_complexity)]
-pub fn new_partial<RuntimeApi>(
+pub fn new_partial<RuntimeApi, Executor>(
     config: &Configuration,
     consensus_manual: bool,
 ) -> Result<
     sc_service::PartialComponents<
-        FullClient<RuntimeApi>,
+        FullClient<RuntimeApi, Executor>,
         FullBackend,
         FullSelectChain,
         sc_consensus::DefaultImportQueue<Block>,
-        sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi>>,
+        sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>,
         (
             sc_consensus_babe::BabeBlockImport<
                 Block,
-                FullClient<RuntimeApi>,
-                FullGrandpaBlockImport<RuntimeApi>,
+                FullClient<RuntimeApi, Executor>,
+                FullGrandpaBlockImport<RuntimeApi, Executor>,
             >,
             sc_consensus_babe::BabeLink<Block>,
             Option<sc_consensus_babe::BabeWorkerHandle<Block>>,
-            sc_consensus_grandpa::LinkHalf<Block, FullClient<RuntimeApi>, FullSelectChain>,
+            sc_consensus_grandpa::LinkHalf<
+                Block,
+                FullClient<RuntimeApi, Executor>,
+                FullSelectChain,
+            >,
             Option<Telemetry>,
         ),
     >,
     ServiceError,
 >
 where
-    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
+        + Send
+        + Sync
+        + 'static,
     RuntimeApi::RuntimeApi: RuntimeApiCollection,
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    Executor: sc_executor::sp_wasm_interface::HostFunctions + 'static,
 {
     let telemetry = config
         .telemetry_endpoints
@@ -251,6 +316,9 @@ where
         })
         .transpose()?;
 
+    #[cfg(feature = "native")]
+    let executor = sc_service::new_native_or_wasm_executor(config);
+    #[cfg(not(feature = "native"))]
     let executor = sc_service::new_wasm_executor(config);
 
     let (client, backend, keystore_container, task_manager) =
@@ -353,13 +421,18 @@ where
 }
 
 /// Builds a new service for a full client.
-pub fn new_full<RuntimeApi>(
+pub fn new_full<RuntimeApi, Executor>(
     config: Configuration,
     sealing: crate::cli::Sealing,
 ) -> Result<TaskManager, ServiceError>
 where
-    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
+        + Send
+        + Sync
+        + 'static,
     RuntimeApi::RuntimeApi: RuntimeApiCollection,
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    Executor: sc_executor::sp_wasm_interface::HostFunctions + 'static,
 {
     let sc_service::PartialComponents {
         client,
@@ -370,7 +443,7 @@ where
         select_chain,
         transaction_pool,
         other: (block_import, babe_link, babe_worker_handle, grandpa_link, mut telemetry),
-    } = new_partial::<RuntimeApi>(&config, sealing.is_manual_consensus())?;
+    } = new_partial::<RuntimeApi, Executor>(&config, sealing.is_manual_consensus())?;
 
     let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
         &client
@@ -536,7 +609,7 @@ where
                             let distance =
                                 dc_distance::create_distance_inherent_data_provider::<
                                     Block,
-                                    FullClient<RuntimeApi>,
+                                    FullClient<RuntimeApi, Executor>,
                                     FullBackend,
                                 >(
                                     &*client, parent, distance_dir, &babe_owner_keys.clone()
@@ -583,7 +656,7 @@ where
 
                         let distance = dc_distance::create_distance_inherent_data_provider::<
                             Block,
-                            FullClient<RuntimeApi>,
+                            FullClient<RuntimeApi, Executor>,
                             FullBackend,
                         >(
                             &*client, parent, distance_dir, &babe_owner_keys.clone()

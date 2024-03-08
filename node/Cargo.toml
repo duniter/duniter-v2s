@@ -30,6 +30,7 @@ constant-fees = [
 ]
 gtest = ["gtest-runtime", "std"]
 embed = []
+native = []
 runtime-benchmarks = [
 	"common-runtime/runtime-benchmarks",
 	"dc-distance/runtime-benchmarks",

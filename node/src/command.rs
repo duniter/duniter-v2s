@@ -444,18 +444,22 @@ pub fn run() -> sc_cli::Result<()> {
                 match config.chain_spec.runtime_type() {
                     #[cfg(feature = "g1")]
                     RuntimeType::G1 => {
-                        service::new_full::<g1_runtime::RuntimeApi>(config, cli.sealing)
+                        service::new_full::<g1_runtime::RuntimeApi, G1Executor>(config, cli.sealing)
                             .map_err(sc_cli::Error::Service)
                     }
                     #[cfg(feature = "gtest")]
-                    RuntimeType::GTest => {
-                        service::new_full::<gtest_runtime::RuntimeApi>(config, cli.sealing)
-                            .map_err(sc_cli::Error::Service)
-                    }
+                    RuntimeType::GTest => service::new_full::<
+                        gtest_runtime::RuntimeApi,
+                        GTestExecutor,
+                    >(config, cli.sealing)
+                    .map_err(sc_cli::Error::Service),
                     #[cfg(feature = "gdev")]
                     RuntimeType::GDev => {
-                        service::new_full::<gdev_runtime::RuntimeApi>(config, cli.sealing)
-                            .map_err(sc_cli::Error::Service)
+                        service::new_full::<gdev_runtime::RuntimeApi, GDevExecutor>(
+                            config,
+                            cli.sealing,
+                        )
+                        .map_err(sc_cli::Error::Service)
                     }
                     _ => Err(sc_cli::Error::Application("unknown runtime".into())),
                 }
