@@ -29,6 +29,7 @@ use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams}
 use sc_service::WarpSyncParams;
 use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
+use sp_consensus_babe::inherents::InherentDataProvider;
 use sp_core::H256;
 use sp_runtime::traits::BlakeTwo256;
 use std::{sync::Arc, time::Duration};
@@ -54,91 +55,30 @@ type FullClient<RuntimeApi, Executor> =
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
-#[cfg(feature = "gdev")]
-pub mod gdev_executor {
+pub mod runtime_executor {
     use crate::service::HostFunctions;
-    pub use gdev_runtime;
+    #[cfg(feature = "g1")]
+    pub use g1_runtime as runtime;
+    #[cfg(feature = "gdev")]
+    pub use gdev_runtime as runtime;
+    #[cfg(feature = "gtest")]
+    pub use gtest_runtime as runtime;
+
     use sc_executor::sp_wasm_interface::{Function, HostFunctionRegistry};
 
-    pub struct GDevExecutor;
-    impl sc_executor::NativeExecutionDispatch for GDevExecutor {
+    pub struct Executor;
+    impl sc_executor::NativeExecutionDispatch for Executor {
         type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
         fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-            gdev_runtime::api::dispatch(method, data)
+            runtime::api::dispatch(method, data)
         }
 
         fn native_version() -> sc_executor::NativeVersion {
-            gdev_runtime::native_version()
+            runtime::native_version()
         }
     }
-    impl sc_executor::sp_wasm_interface::HostFunctions for GDevExecutor {
-        fn host_functions() -> Vec<&'static dyn Function> {
-            HostFunctions::host_functions()
-        }
-
-        fn register_static<T>(registry: &mut T) -> Result<(), T::Error>
-        where
-            T: HostFunctionRegistry,
-        {
-            HostFunctions::register_static(registry)
-        }
-    }
-}
-
-#[allow(dead_code)]
-#[cfg(feature = "g1")]
-pub mod g1_executor {
-    use crate::service::HostFunctions;
-    pub use g1_runtime;
-    use sc_executor::sp_wasm_interface::{Function, HostFunctionRegistry};
-
-    pub struct G1Executor;
-    impl sc_executor::NativeExecutionDispatch for G1Executor {
-        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-        fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-            g1_runtime::api::dispatch(method, data)
-        }
-
-        fn native_version() -> sc_executor::NativeVersion {
-            g1_runtime::native_version()
-        }
-    }
-    impl sc_executor::sp_wasm_interface::HostFunctions for G1Executor {
-        fn host_functions() -> Vec<&'static dyn Function> {
-            HostFunctions::host_functions()
-        }
-
-        fn register_static<T>(registry: &mut T) -> Result<(), T::Error>
-        where
-            T: HostFunctionRegistry,
-        {
-            HostFunctions::register_static(registry)
-        }
-    }
-}
-
-#[allow(dead_code)]
-#[cfg(feature = "gtest")]
-pub mod gtest_executor {
-    use crate::service::HostFunctions;
-    pub use gtest_runtime;
-    use sc_executor::sp_wasm_interface::{Function, HostFunctionRegistry};
-
-    pub struct GTestExecutor;
-    impl sc_executor::NativeExecutionDispatch for GTestExecutor {
-        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-        fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-            gtest_runtime::api::dispatch(method, data)
-        }
-
-        fn native_version() -> sc_executor::NativeVersion {
-            gtest_runtime::native_version()
-        }
-    }
-    impl sc_executor::sp_wasm_interface::HostFunctions for GTestExecutor {
+    impl sc_executor::sp_wasm_interface::HostFunctions for Executor {
         fn host_functions() -> Vec<&'static dyn Function> {
             HostFunctions::host_functions()
         }
@@ -163,27 +103,6 @@ pub enum RuntimeType {
     GTest,
 }
 
-/// Can be called for a `Configuration` to check if it is a configuration for
-/// a particular runtime type.
-pub trait IdentifyRuntimeType {
-    /// Returns the runtime type
-    fn runtime_type(&self) -> RuntimeType;
-}
-
-impl IdentifyRuntimeType for Box<dyn sc_chain_spec::ChainSpec> {
-    fn runtime_type(&self) -> RuntimeType {
-        if self.id().starts_with("g1") {
-            RuntimeType::G1
-        } else if self.id().starts_with("dev") || self.id().starts_with("gdev") {
-            RuntimeType::GDev
-        } else if self.id().starts_with("gtest") {
-            RuntimeType::GTest
-        } else {
-            panic!("unknown runtime")
-        }
-    }
-}
-
 /// Builds a new object suitable for chain operations.
 #[allow(clippy::type_complexity)]
 pub fn new_chain_ops(
@@ -198,66 +117,22 @@ pub fn new_chain_ops(
     ),
     ServiceError,
 > {
-    match config.chain_spec.runtime_type() {
-        #[cfg(feature = "g1")]
-        RuntimeType::G1::G1 => {
-            let PartialComponents {
-                client,
-                backend,
-                import_queue,
-                task_manager,
-                ..
-            } = new_partial::<g1_runtime::RuntimeApi, g1_executor::G1Executor>(
-                config,
-                manual_consensus,
-            )?;
-            Ok((
-                Arc::new(Client::G1(client)),
-                backend,
-                import_queue,
-                task_manager,
-            ))
-        }
-        #[cfg(feature = "gtest")]
-        RuntimeType::GTest => {
-            let PartialComponents {
-                client,
-                backend,
-                import_queue,
-                task_manager,
-                ..
-            } = new_partial::<gtest_runtime::RuntimeApi, gtest_executor::GTestExecutor>(
-                config,
-                manual_consensus,
-            )?;
-            Ok((
-                Arc::new(Client::GTest(client)),
-                backend,
-                import_queue,
-                task_manager,
-            ))
-        }
-        #[cfg(feature = "gdev")]
-        RuntimeType::GDev => {
-            let PartialComponents {
-                client,
-                backend,
-                import_queue,
-                task_manager,
-                ..
-            } = new_partial::<gdev_runtime::RuntimeApi, gdev_executor::GDevExecutor>(
-                config,
-                manual_consensus,
-            )?;
-            Ok((
-                Arc::new(Client::GDev(client)),
-                backend,
-                import_queue,
-                task_manager,
-            ))
-        }
-        _ => panic!("unknown runtime"),
-    }
+    let PartialComponents {
+        client,
+        backend,
+        import_queue,
+        task_manager,
+        ..
+    } = new_partial::<runtime_executor::runtime::RuntimeApi, runtime_executor::Executor>(
+        config,
+        manual_consensus,
+    )?;
+    Ok((
+        Arc::new(Client::Client(client)),
+        backend,
+        import_queue,
+        task_manager,
+    ))
 }
 
 type FullGrandpaBlockImport<RuntimeApi, Executor> = sc_consensus_grandpa::GrandpaBlockImport<
@@ -382,11 +257,10 @@ where
                 create_inherent_data_providers: move |_, ()| async move {
                     let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-                    let slot =
-				sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-					*timestamp,
-					slot_duration,
-				);
+                    let slot = InherentDataProvider::from_timestamp_and_slot_duration(
+                        *timestamp,
+                        slot_duration,
+                    );
 
                     Ok((slot, timestamp))
                 },
@@ -603,7 +477,7 @@ where
                                     client.clone(),
                                 )
                                 .map_err(|err| format!("{:?}", err))?;
-                            let babe = sp_consensus_babe::inherents::InherentDataProvider::new(
+                            let babe = InherentDataProvider::new(
                                 timestamp.slot(),
                             );
                             let distance =
@@ -643,11 +517,10 @@ where
                     async move {
                         let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-                        let slot =
-						sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-							*timestamp,
-							slot_duration,
-						);
+                        let slot = InherentDataProvider::from_timestamp_and_slot_duration(
+                            *timestamp,
+                            slot_duration,
+                        );
 
                         let storage_proof =
                             sp_transaction_storage_proof::registration::new_data_provider(

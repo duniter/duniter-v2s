@@ -60,6 +60,7 @@ std = [
 	"frame-system-benchmarking/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
+	"frame-try-runtime/std",
 	"log/std",
 	"node-primitives/std",
 	"pallet-atomic-swap/std",
@@ -126,6 +127,7 @@ try-runtime = [
 	"frame-executive/try-runtime",
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
+	"frame-try-runtime/try-runtime",
 	"pallet-atomic-swap/try-runtime",
 	"pallet-authority-discovery/try-runtime",
 	"pallet-authority-members/try-runtime",
@@ -182,6 +184,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 frame-system-benchmarking = { workspace = true, optional = true }
 frame-system-rpc-runtime-api = { workspace = true }
+frame-try-runtime = { workspace = true, optional = true }
 hex-literal = { workspace = true, optional = true }
 log = { workspace = true }
 node-primitives = { workspace = true }

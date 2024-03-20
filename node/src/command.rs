@@ -20,16 +20,9 @@
 pub mod key;
 pub mod utils;
 
-#[cfg(feature = "gtest")]
-use crate::chain_spec::gtest;
 use crate::cli::{Cli, Subcommand};
-#[cfg(feature = "g1")]
-use crate::service::g1_executor::G1Executor;
-#[cfg(feature = "gdev")]
-use crate::service::gdev_executor::GDevExecutor;
-#[cfg(feature = "gtest")]
-use crate::service::gtest_executor::GTestExecutor;
-use crate::service::{IdentifyRuntimeType, RuntimeType};
+use crate::service::runtime_executor::Executor;
+use crate::service::RuntimeType;
 use crate::{chain_spec, service};
 use clap::CommandFactory;
 #[cfg(feature = "runtime-benchmarks")]
@@ -56,14 +49,7 @@ macro_rules! unwrap_client {
 		$code:expr
 	) => {
         match $client.as_ref() {
-            #[cfg(feature = "g1")]
-            crate::service::client::Client::G1($client) => $code,
-            #[cfg(feature = "gtest")]
-            crate::service::client::Client::GTest($client) => $code,
-            #[cfg(feature = "gdev")]
-            crate::service::client::Client::GDev($client) => $code,
-            #[allow(unreachable_patterns)]
-            _ => panic!("unknown runtime"),
+            crate::service::client::Client::Client($client) => $code,
         }
     };
 }
@@ -95,19 +81,20 @@ impl SubstrateCli for Cli {
 
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         Ok(match id {
-            // === GDEV ===
-            // development chainspec with generated genesis and Alice validator
+            // Development chainspec with generated genesis and Alice as a validator
             #[cfg(feature = "gdev")]
             "dev" => Box::new(chain_spec::gdev::local_testnet_config(1, 3, 4)?),
-            // local testnet with g1 data, gdev configuration (parameters & smiths) and Alice validator
-            // > optionally from DUNITER_GENESIS_CONFIG file to override default gdev configuration
+
+            // Local testnet with G1 data, Gdev configuration (parameters & Smiths), and Alice as a validator.
+            // Optionally, load configuration from DUNITER_GENESIS_CONFIG file to override default Gdev configuration.
             #[cfg(feature = "gdev")]
             "gdev_dev" => Box::new(chain_spec::gdev::gdev_development_chain_spec(
                 "resources/gdev.yaml".to_string(),
             )?),
-            // chainspecs for live network with g1 data, gdev configuration (parameters & smiths)
-            // but must have a smith with declared session keys
-            // > optionally from DUNITER_GENESIS_CONFIG file to override default gdev configuration
+
+            // Chainspecs for live network with G1 data, Gdev configuration (parameters & Smiths).
+            // A Smith with declared session keys is required.
+            // Optionally load configuration from DUNITER_GENESIS_CONFIG file to override default Gdev configuration.
             #[cfg(feature = "gdev")]
             "gdev_live" => {
                 const CLIENT_SPEC: &str = "./node/specs/gdev_client-specs.yaml";
@@ -119,34 +106,33 @@ impl SubstrateCli for Cli {
                     .map_err(|e| format!("failed to read {CLIENT_SPEC} {e}"))?[..],
                 )
                 .map_err(|e| format!("failed to parse {e}"))?;
-                // rebuild chainspecs from these files
                 Box::new(chain_spec::gdev::gen_live_conf(
                     client_spec,
                     "resources/gdev.yaml".to_string(),
                 )?)
             }
-            // hardcoded previously generated raw chainspecs
-            // yields a pointlessly heavy binary because of hexadecimal-text-encoded values
+
+            // Hardcoded raw chainspecs with previously generated values, resulting in a needlessly heavy binary due to hexadecimal-text-encoded values.
             #[cfg(feature = "gdev")]
             "gdev" => Box::new(chain_spec::gdev::ChainSpec::from_json_bytes(
                 &include_bytes!("../specs/gdev-raw.json")[..],
             )?),
-            // === GTEST ===
-            // generate dev chainspecs with Alice validator
-            // provide DUNITER_GTEST_GENESIS env var if you want to build genesis from json
-            // otherwise you get a local testnet with generated genesis
+
+            // Generate development chainspecs with Alice as a validator.
+            // Provide the DUNITER_GTEST_GENESIS environment variable to build genesis from JSON; otherwise, a local testnet with generated genesis will be used.
             #[cfg(feature = "gtest")]
             "gtest_dev" => Box::new(chain_spec::gtest::development_chainspecs(
                 "resources/gtest.yaml".to_string(),
             )?),
-            // chainspecs for live network
-            // must have following files in ./node/specs folder or overwrite with env var:
+
+            // Chainspecs for the live network.
+            // Required files in the ./node/specs folder or override with environment variables:
             // - gtest.json / DUNITER_GTEST_GENESIS
             // - gtest_client-specs.json / DUNITER_GTEST_CLIENT_SPEC
             #[cfg(feature = "gtest")]
             "gtest_live" => {
                 const JSON_CLIENT_SPEC: &str = "./node/specs/gtest_client-specs.yaml";
-                let client_spec: gtest::ClientSpec = serde_yaml::from_slice(
+                let client_spec: chain_spec::gtest::ClientSpec = serde_yaml::from_slice(
                     &std::fs::read(
                         std::env::var("DUNITER_CLIENT_SPEC")
                             .unwrap_or_else(|_| JSON_CLIENT_SPEC.to_string()),
@@ -154,31 +140,27 @@ impl SubstrateCli for Cli {
                     .map_err(|e| format!("failed to read {JSON_CLIENT_SPEC} {e}"))?[..],
                 )
                 .map_err(|e| format!("failed to parse {e}"))?;
-                // rebuild chainspecs from these files
                 Box::new(chain_spec::gtest::live_chainspecs(
                     client_spec,
                     "resources/gtest.yaml".to_string(),
                 )?)
             }
-            // return hardcoded live chainspecs, only with embed feature
-            // embed client spec and genesis to avoid embeding hexadecimal runtime
-            // and having hexadecimal runtime in git history
-            // will only build on a branch that has a file
-            // ./node/specs/gtest-raw.json
+
+            // Return hardcoded live chainspecs, only with the embed feature enabled.
+            // Embed client spec and genesis to avoid embedding hexadecimal runtime
+            // and having hexadecimal runtime in the git history.
+            // This will only build on a branch that has a file named ./node/specs/gtest-raw.json.
             #[cfg(all(feature = "gtest", feature = "embed"))]
             "gtest" => Box::new(chain_spec::gtest::ChainSpec::from_json_bytes(
                 &include_bytes!("../specs/gtest-raw.json")[..],
             )?),
 
-            // === G1 ===
             #[cfg(feature = "g1")]
             "g1" => {
                 unimplemented!()
                 //Box::new(chain_spec::g1::ChainSpec::from_json_file(file_path)?)
             }
-            // Specs provided as json specify which runtime to use in their file name. For example,
-            // `g1-custom.json` uses the g1 runtime.
-            // `gdev-workshop.json` uses the gdev runtime.
+
             path => {
                 let path = std::path::PathBuf::from(path);
 
@@ -311,7 +293,7 @@ pub fn run() -> sc_cli::Result<()> {
         #[cfg(feature = "runtime-benchmarks")]
         Some(Subcommand::Benchmark(cmd)) => {
             let runner = cli.create_runner(&**cmd)?;
-            let chain_spec = &runner.config().chain_spec;
+            let _chain_spec = &runner.config().chain_spec;
 
             match &**cmd {
                 BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
@@ -346,30 +328,12 @@ pub fn run() -> sc_cli::Result<()> {
                 }),
                 BenchmarkCmd::Pallet(cmd) => {
                     if cfg!(feature = "runtime-benchmarks") {
-                        match chain_spec.runtime_type() {
-                            #[cfg(feature = "g1")]
-                            RuntimeType::G1 => runner.sync_run(|config| {
-                                cmd.run::<g1_runtime::Block, ExtendedHostFunctions<
+                        runner.sync_run(|config| {
+                                cmd.run::<service::runtime_executor::runtime::Block, ExtendedHostFunctions<
                                     sp_io::SubstrateHostFunctions,
-                                    <G1Executor as NativeExecutionDispatch>::ExtendHostFunctions,
+                                    <Executor as NativeExecutionDispatch>::ExtendHostFunctions,
                                 >>(config)
-                            }),
-                            #[cfg(feature = "gtest")]
-                            RuntimeType::GTest => runner.sync_run(|config| {
-                                cmd.run::<gtest_runtime::Block, ExtendedHostFunctions<
-                                    sp_io::SubstrateHostFunctions,
-                                    <GTestExecutor as NativeExecutionDispatch>::ExtendHostFunctions,
-                                >>(config)
-                            }),
-                            #[cfg(feature = "gdev")]
-                            RuntimeType::GDev => runner.sync_run(|config| {
-                                cmd.run::<gdev_runtime::Block, ExtendedHostFunctions<
-                                    sp_io::SubstrateHostFunctions,
-                                    <GDevExecutor as NativeExecutionDispatch>::ExtendHostFunctions,
-                                >>(config)
-                            }),
-                            _ => Err(sc_cli::Error::Application("unknown runtime type".into())),
-                        }
+                            })
                     } else {
                         Err("Benchmarking wasn't enabled when building the node. \
 								You can enable it with `--features runtime-benchmarks`."
@@ -392,42 +356,7 @@ pub fn run() -> sc_cli::Result<()> {
                 .into())
         }
         #[cfg(feature = "try-runtime")]
-        Some(Subcommand::TryRuntime(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            let chain_spec = &runner.config().chain_spec;
-
-            use sc_service::TaskManager;
-            let registry = &runner
-                .config()
-                .prometheus_config
-                .as_ref()
-                .map(|cfg| &cfg.registry);
-            let task_manager = TaskManager::new(runner.config().tokio_handle.clone(), *registry)
-                .map_err(|e| {
-                    sc_cli::Error::Application(format!("Fail to create TaskManager: {}", e).into())
-                })?;
-
-            // Ensure dev spec
-            if !chain_spec.id().ends_with("dev") {
-                return Err(sc_cli::Error::Application(
-                    "try-runtime only support dev specs".into(),
-                ));
-            }
-
-            match chain_spec.runtime_type() {
-                #[cfg(feature = "gdev")]
-                RuntimeType::GDev => {
-                    //sp_core::crypto::set_default_ss58_version(Ss58AddressFormatRegistry::GDev);
-                    runner.async_run(|config| {
-                        Ok((
-                            cmd.run::<gdev_runtime::Block, GDevExecutor>(config),
-                            task_manager,
-                        ))
-                    })
-                }
-                _ => Err(sc_cli::Error::Application("unknown runtime type".into())),
-            }
-        }
+        Some(Subcommand::TryRuntime) => Err(try_runtime_cli::DEPRECATION_NOTICE.into()),
         #[cfg(not(feature = "try-runtime"))]
         Some(Subcommand::TryRuntime) => Err("TryRuntime wasn't enabled when building the node. \
 				You can enable it with `--features try-runtime`."
@@ -441,27 +370,12 @@ pub fn run() -> sc_cli::Result<()> {
                     config.offchain_worker.indexing_enabled = true;
                 }
 
-                match config.chain_spec.runtime_type() {
-                    #[cfg(feature = "g1")]
-                    RuntimeType::G1 => {
-                        service::new_full::<g1_runtime::RuntimeApi, G1Executor>(config, cli.sealing)
-                            .map_err(sc_cli::Error::Service)
-                    }
-                    #[cfg(feature = "gtest")]
-                    RuntimeType::GTest => service::new_full::<
-                        gtest_runtime::RuntimeApi,
-                        GTestExecutor,
-                    >(config, cli.sealing)
-                    .map_err(sc_cli::Error::Service),
-                    #[cfg(feature = "gdev")]
-                    RuntimeType::GDev => {
-                        service::new_full::<gdev_runtime::RuntimeApi, GDevExecutor>(
-                            config,
-                            cli.sealing,
-                        )
-                        .map_err(sc_cli::Error::Service)
-                    }
-                    _ => Err(sc_cli::Error::Application("unknown runtime".into())),
+                {
+                    service::new_full::<service::runtime_executor::runtime::RuntimeApi, Executor>(
+                        config,
+                        cli.sealing,
+                    )
+                    .map_err(sc_cli::Error::Service)
                 }
             })
         }

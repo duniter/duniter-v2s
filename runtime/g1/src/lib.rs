@@ -33,6 +33,7 @@ pub use common_runtime::{
     constants::*, entities::*, handlers::*, AccountId, Address, Balance, BlockNumber,
     FullIdentificationOfImpl, GetCurrentEpochIndex, Hash, Header, IdtyIndex, Index, Signature,
 };
+pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_identity::{IdtyStatus, IdtyValue};
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;

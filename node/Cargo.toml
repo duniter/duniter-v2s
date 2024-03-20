@@ -48,6 +48,7 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
+  "runtime-benchmarks",
 	"common-runtime/try-runtime",
 	"dc-distance/try-runtime",
 	"distance-oracle?/try-runtime",

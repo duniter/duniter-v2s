@@ -27,6 +27,7 @@
     - [git-conventions](./docs/dev/git-conventions.md)
     - [launch-a-live-network](./docs/dev/launch-a-live-network.md)
     - [setup](./docs/dev/setup.md)
+    - [compilation features](./docs/dev/compilation.md)
     - [verify-runtime-code](./docs/dev/verify-runtime-code.md)
     - [weights-benchmarking](./docs/dev/weights-benchmarking.md)
     - [upgrade-substrate](./docs/dev/upgrade-substrate.md)
