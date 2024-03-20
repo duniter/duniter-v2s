@@ -30,7 +30,6 @@ runtime-benchmarks = []
 
 codec = { workspace = true, features = ["derive"] }
 frame-support = { workspace = true }
-impl-trait-for-tuples = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 serde = { workspace = true }
 sp-runtime = { workspace = true }

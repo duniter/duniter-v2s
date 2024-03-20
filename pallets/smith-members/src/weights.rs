@@ -23,6 +23,8 @@ pub trait WeightInfo {
     fn invite_smith() -> Weight;
     fn accept_invitation() -> Weight;
     fn certify_smith() -> Weight;
+    fn on_removed_wot_member() -> Weight;
+    fn on_removed_wot_member_empty() -> Weight;
 }
 
 impl WeightInfo for () {
@@ -35,6 +37,14 @@ impl WeightInfo for () {
     }
 
     fn certify_smith() -> Weight {
+        Weight::zero()
+    }
+
+    fn on_removed_wot_member() -> Weight {
+        Weight::zero()
+    }
+
+    fn on_removed_wot_member_empty() -> Weight {
         Weight::zero()
     }
 }

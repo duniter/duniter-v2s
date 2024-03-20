@@ -109,7 +109,8 @@ impl pallet_identity::Config for Test {
     type IdtyData = ();
     type IdtyIndex = u64;
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
-    type OnIdtyChange = ();
+    type OnNewIdty = ();
+    type OnRemoveIdty = ();
     type RuntimeEvent = RuntimeEvent;
     type Signature = Signature;
     type Signer = AccountPublic;

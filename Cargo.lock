@@ -1472,6 +1472,7 @@ dependencies = [
  "pallet-collective",
  "pallet-distance",
  "pallet-duniter-account",
+ "pallet-duniter-wot",
  "pallet-grandpa",
  "pallet-identity",
  "pallet-im-online",
@@ -6412,7 +6413,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -10365,7 +10365,6 @@ name = "sp-membership"
 version = "1.0.0"
 dependencies = [
  "frame-support",
- "impl-trait-for-tuples",
  "parity-scale-codec",
  "scale-info",
  "serde",

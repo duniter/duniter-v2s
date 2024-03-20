@@ -25,6 +25,7 @@ runtime-benchmarks = [
 	"pallet-collective/runtime-benchmarks",
 	"pallet-distance/runtime-benchmarks",
 	"pallet-duniter-account/runtime-benchmarks",
+	"pallet-duniter-wot/runtime-benchmarks",
 	"pallet-grandpa/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
 	"pallet-im-online/runtime-benchmarks",
@@ -61,6 +62,7 @@ std = [
 	"pallet-collective/std",
 	"pallet-distance/std",
 	"pallet-duniter-account/std",
+	"pallet-duniter-wot/std",
 	"pallet-grandpa/std",
 	"pallet-identity/std",
 	"pallet-im-online/std",
@@ -103,6 +105,7 @@ try-runtime = [
 	"pallet-collective/try-runtime",
 	"pallet-distance/try-runtime",
 	"pallet-duniter-account/try-runtime",
+	"pallet-duniter-wot/try-runtime",
 	"pallet-grandpa/try-runtime",
 	"pallet-identity/try-runtime",
 	"pallet-im-online/try-runtime",
@@ -141,6 +144,7 @@ pallet-certification = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-distance = { workspace = true }
 pallet-duniter-account = { workspace = true }
+pallet-duniter-wot = { workspace = true }
 pallet-grandpa = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-im-online = { workspace = true }

@@ -16,40 +16,62 @@
 
 use crate::*;
 use frame_support::pallet_prelude::*;
-use impl_trait_for_tuples::impl_for_tuples;
+use frame_support::weights::Weight;
 
+/// A trait defining operations for checking if identity-related calls are allowed.
 pub trait CheckIdtyCallAllowed<T: Config> {
+    /// Checks if creating an identity is allowed.
     fn check_create_identity(creator: T::IdtyIndex) -> Result<(), DispatchError>;
 }
 
-#[impl_for_tuples(5)]
-impl<T: Config> CheckIdtyCallAllowed<T> for Tuple {
-    fn check_create_identity(creator: T::IdtyIndex) -> Result<(), DispatchError> {
-        for_tuples!( #( Tuple::check_create_identity(creator)?; )* );
+impl<T: Config> CheckIdtyCallAllowed<T> for () {
+    fn check_create_identity(_creator: T::IdtyIndex) -> Result<(), DispatchError> {
         Ok(())
     }
 }
 
+/// A trait defining operations for validating identity names.
 pub trait IdtyNameValidator {
+    /// Validates an identity name.
     fn validate(idty_name: &IdtyName) -> bool;
 }
 
-pub trait OnIdtyChange<T: Config> {
-    fn on_idty_change(idty_index: T::IdtyIndex, idty_event: &IdtyEvent<T>);
+/// A trait defining behavior for handling new identities creation.
+pub trait OnNewIdty<T: Config> {
+    /// Called when a new identity is created.
+    fn on_created(idty_index: &T::IdtyIndex, creator: &T::IdtyIndex);
 }
 
-#[impl_for_tuples(5)]
-#[allow(clippy::let_and_return)]
-impl<T: Config> OnIdtyChange<T> for Tuple {
-    fn on_idty_change(idty_index: T::IdtyIndex, idty_event: &IdtyEvent<T>) {
-        for_tuples!( #( Tuple::on_idty_change(idty_index, idty_event); )* );
+/// A trait defining behavior for handling removed identities.
+/// As the weight accounting can be complicated it should be done
+/// at the handler level.
+pub trait OnRemoveIdty<T: Config> {
+    /// Called when an identity is removed.
+    fn on_removed(idty_index: &T::IdtyIndex) -> Weight;
+    /// Called when an identity is revoked.
+    fn on_revoked(idty_index: &T::IdtyIndex) -> Weight;
+}
+
+impl<T: Config> OnNewIdty<T> for () {
+    fn on_created(_idty_index: &T::IdtyIndex, _creator: &T::IdtyIndex) {}
+}
+
+impl<T: Config> OnRemoveIdty<T> for () {
+    fn on_removed(_idty_index: &T::IdtyIndex) -> Weight {
+        Weight::zero()
+    }
+
+    fn on_revoked(_idty_index: &T::IdtyIndex) -> Weight {
+        Weight::zero()
     }
 }
 
-/// trait used to link an account to an identity
+/// A trait defining operations for linking identities to accounts.
 pub trait LinkIdty<AccountId, IdtyIndex> {
+    /// Links an identity to an account.
     fn link_identity(account_id: &AccountId, idty_index: IdtyIndex) -> Result<(), DispatchError>;
 }
+
 impl<AccountId, IdtyIndex> LinkIdty<AccountId, IdtyIndex> for () {
     fn link_identity(_: &AccountId, _: IdtyIndex) -> Result<(), DispatchError> {
         Ok(())

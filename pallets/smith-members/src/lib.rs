@@ -35,6 +35,7 @@ use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_support::ensure;
 use frame_support::pallet_prelude::Get;
 use frame_support::pallet_prelude::RuntimeDebug;
+use frame_support::pallet_prelude::Weight;
 use frame_system::ensure_signed;
 use frame_system::pallet_prelude::OriginFor;
 use scale_info::TypeInfo;
@@ -491,10 +492,13 @@ impl<T: Config> Pallet<T> {
         }
     }
 
-    pub fn on_removed_wot_member(idty_index: T::IdtyIndex) {
+    pub fn on_removed_wot_member(idty_index: T::IdtyIndex) -> Weight {
+        let mut weight = T::WeightInfo::on_removed_wot_member_empty();
         if Smiths::<T>::get(idty_index).is_some() {
             Self::_do_exclude_smith(idty_index, SmithRemovalReason::LostMembership);
+            weight = weight.saturating_add(T::WeightInfo::on_removed_wot_member());
         }
+        weight
     }
 
     fn _do_exclude_smith(receiver: T::IdtyIndex, reason: SmithRemovalReason) {

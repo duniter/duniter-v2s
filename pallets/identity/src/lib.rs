@@ -115,8 +115,10 @@ pub mod pallet {
         type AccountLinker: LinkIdty<Self::AccountId, Self::IdtyIndex>;
         /// Handle logic to validate an identity name
         type IdtyNameValidator: IdtyNameValidator;
-        /// On identity confirmed by its owner
-        type OnIdtyChange: OnIdtyChange<Self>;
+        /// On identity created.
+        type OnNewIdty: OnNewIdty<Self>;
+        /// On identity removed.
+        type OnRemoveIdty: OnRemoveIdty<Self>;
         /// Signing key of a payload
         type Signer: IdentifyAccount<AccountId = Self::AccountId>;
         /// Signature of a payload
@@ -325,13 +327,7 @@ pub mod pallet {
                 owner_key: owner_key.clone(),
             });
             T::AccountLinker::link_identity(&owner_key, idty_index)?;
-            T::OnIdtyChange::on_idty_change(
-                idty_index,
-                &IdtyEvent::Created {
-                    creator: creator_index,
-                    owner_key,
-                },
-            );
+            T::OnNewIdty::on_created(&idty_index, &creator_index);
             Ok(().into())
         }
 
@@ -656,7 +652,7 @@ pub mod pallet {
         // only does something if identity is actually member
         // a membership can be removed when the identity is revoked
         // in this case, this does nothing
-        pub fn membership_removed(idty_index: T::IdtyIndex) {
+        pub fn membership_removed(idty_index: T::IdtyIndex) -> Weight {
             if let Some(idty_value) = Identities::<T>::get(idty_index) {
                 if idty_value.status == IdtyStatus::Member {
                     Self::update_identity_status(
@@ -667,6 +663,7 @@ pub mod pallet {
                     );
                 }
             }
+            T::WeightInfo::membership_removed()
             // else should not happen
         }
 
@@ -685,13 +682,11 @@ pub mod pallet {
                     frame_system::Pallet::<T>::dec_sufficients(&old_owner_key);
                 }
                 Self::deposit_event(Event::IdtyRemoved { idty_index, reason });
-                T::OnIdtyChange::on_idty_change(
-                    idty_index,
-                    &IdtyEvent::Removed {
-                        status: idty_value.status,
-                    },
+                let weight = T::OnRemoveIdty::on_removed(&idty_index);
+                return weight.saturating_add(
+                    T::WeightInfo::do_remove_identity()
+                        .saturating_sub(T::WeightInfo::do_remove_identity_handler()),
                 );
-                return T::WeightInfo::do_remove_identity();
             }
             T::WeightInfo::do_remove_identity_noop()
         }
@@ -707,12 +702,7 @@ pub mod pallet {
                 );
 
                 Self::deposit_event(Event::IdtyRevoked { idty_index, reason });
-                T::OnIdtyChange::on_idty_change(
-                    idty_index,
-                    &IdtyEvent::Removed {
-                        status: IdtyStatus::Revoked,
-                    },
-                );
+                T::OnRemoveIdty::on_revoked(&idty_index);
                 return T::WeightInfo::do_revoke_identity();
             }
             T::WeightInfo::do_revoke_identity_noop()
@@ -738,35 +728,46 @@ pub mod pallet {
                     if idty_val.next_scheduled == block_number {
                         match idty_val.status {
                             IdtyStatus::Unconfirmed => {
-                                total_weight +=
-                                    Self::do_remove_identity(idty_index, RemovalReason::Unconfirmed)
+                                total_weight =
+                                    total_weight.saturating_add(Self::do_remove_identity(
+                                        idty_index,
+                                        RemovalReason::Unconfirmed,
+                                    ));
                             }
                             IdtyStatus::Unvalidated => {
-                                total_weight +=
-                                    Self::do_remove_identity(idty_index, RemovalReason::Unvalidated)
+                                total_weight =
+                                    total_weight.saturating_add(Self::do_remove_identity(
+                                        idty_index,
+                                        RemovalReason::Unvalidated,
+                                    ));
                             }
                             IdtyStatus::Revoked => {
-                                total_weight +=
-                                    Self::do_remove_identity(idty_index, RemovalReason::Revoked)
+                                total_weight = total_weight.saturating_add(
+                                    Self::do_remove_identity(idty_index, RemovalReason::Revoked),
+                                );
                             }
                             IdtyStatus::NotMember => {
-                                total_weight +=
-                                    Self::do_revoke_identity(idty_index, RevocationReason::Expired)
+                                total_weight = total_weight.saturating_add(
+                                    Self::do_revoke_identity(idty_index, RevocationReason::Expired),
+                                );
                             }
                             IdtyStatus::Member => { // do not touch identities of member accounts
                                  // this should not happen
                             }
                         }
                     } else {
-                        total_weight += T::WeightInfo::prune_identities_err()
-                            .saturating_sub(T::WeightInfo::prune_identities_none())
+                        total_weight = total_weight.saturating_add(
+                            T::WeightInfo::prune_identities_err()
+                                .saturating_sub(T::WeightInfo::prune_identities_none()),
+                        );
                     }
                 } else {
-                    total_weight += T::WeightInfo::prune_identities_none()
-                        .saturating_sub(T::WeightInfo::prune_identities_noop())
+                    total_weight = total_weight.saturating_add(
+                        T::WeightInfo::prune_identities_none()
+                            .saturating_sub(T::WeightInfo::prune_identities_noop()),
+                    );
                 }
             }
-
             total_weight.saturating_add(T::WeightInfo::prune_identities_noop())
         }
 

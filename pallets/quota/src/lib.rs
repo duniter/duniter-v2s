@@ -33,7 +33,6 @@ use frame_support::pallet_prelude::*;
 use frame_support::traits::{Currency, ExistenceRequirement};
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
-use pallet_identity::IdtyEvent;
 use sp_runtime::traits::Zero;
 use sp_std::fmt::Debug;
 use sp_std::vec::Vec;
@@ -317,8 +316,9 @@ pub mod pallet {
     }
 }
 
-// implement quota traits
+/// Implementing the refund fee trait for the pallet.
 impl<T: Config> RefundFee<T> for Pallet<T> {
+    /// This implementation checks if the identity is eligible for a refund and queues the refund if so.
     fn request_refund(account: T::AccountId, identity: IdtyId<T>, amount: BalanceOf<T>) {
         if is_eligible_for_refund::<T>(identity) {
             Self::queue_refund(Refund {
@@ -330,31 +330,45 @@ impl<T: Config> RefundFee<T> for Pallet<T> {
     }
 }
 
-/// tells whether an identity is eligible for refund
+/// Checks if an identity is eligible for a refund.
+///
+/// This function returns `true` for all identities, regardless of their status.
+/// If the identity has no quotas or has been deleted, the refund request is still queued,
+/// but when handled, no refund will be issued (and `NoQuotaForIdty` may be raised).
 fn is_eligible_for_refund<T: pallet_identity::Config>(_identity: IdtyId<T>) -> bool {
-    // all identities are eligible for refund, no matter their status
-    // if the identity has no quotas or has been deleted, the refund request is still queued
-    // but when handeled, no refund will be issued (and `NoQuotaForIdty` may be raised)
     true
 }
 
-// implement identity event handler
-impl<T: Config> pallet_identity::traits::OnIdtyChange<T> for Pallet<T> {
-    fn on_idty_change(idty_id: IdtyId<T>, idty_event: &IdtyEvent<T>) {
-        match idty_event {
-            // initialize quota on identity creation
-            IdtyEvent::Created { .. } => {
-                IdtyQuota::<T>::insert(
-                    idty_id,
-                    Quota {
-                        last_use: frame_system::pallet::Pallet::<T>::block_number(),
-                        amount: BalanceOf::<T>::zero(),
-                    },
-                );
-            }
-            IdtyEvent::Removed { .. } => {
-                IdtyQuota::<T>::remove(idty_id);
-            }
-        }
+/// Implementing the on new identity event handler for the pallet.
+impl<T: Config> pallet_identity::traits::OnNewIdty<T> for Pallet<T> {
+    /// This implementation initializes the identity quota for the newly created identity.
+    fn on_created(idty_index: &IdtyId<T>, _creator: &T::IdtyIndex) {
+        IdtyQuota::<T>::insert(
+            idty_index,
+            Quota {
+                last_use: frame_system::pallet::Pallet::<T>::block_number(),
+                amount: BalanceOf::<T>::zero(),
+            },
+        );
+    }
+}
+
+/// Implementing the on remove identity event handler for the pallet.
+impl<T: Config> pallet_identity::traits::OnRemoveIdty<T> for Pallet<T> {
+    /// This implementation removes the identity quota associated with the removed identity.
+    fn on_removed(idty_id: &IdtyId<T>) -> Weight {
+        let mut weight = Weight::zero();
+        let mut add_db_reads_writes = |reads, writes| {
+            weight = weight.saturating_add(T::DbWeight::get().reads_writes(reads, writes));
+        };
+
+        IdtyQuota::<T>::remove(idty_id);
+        add_db_reads_writes(1, 1);
+        weight
+    }
+
+    /// This implementation removes the identity quota associated with the removed identity.
+    fn on_revoked(idty_id: &IdtyId<T>) -> Weight {
+        Self::on_removed(idty_id)
     }
 }

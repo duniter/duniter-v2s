@@ -124,7 +124,8 @@ impl pallet_identity::Config for Test {
     type IdtyData = ();
     type IdtyIndex = IdtyIndex;
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
-    type OnIdtyChange = DuniterWot;
+    type OnNewIdty = DuniterWot;
+    type OnRemoveIdty = DuniterWot;
     type RuntimeEvent = RuntimeEvent;
     type Signature = TestSignature;
     type Signer = UintAuthorityId;
@@ -147,7 +148,8 @@ impl pallet_membership::Config for Test {
     type IdtyIdOf = IdentityIndexOf<Self>;
     type MembershipPeriod = MembershipPeriod;
     type MembershipRenewalPeriod = MembershipRenewalPeriod;
-    type OnEvent = DuniterWot;
+    type OnNewMembership = DuniterWot;
+    type OnRemoveMembership = DuniterWot;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }

@@ -16,8 +16,11 @@
 
 use frame_support::pallet_prelude::*;
 
+/// A trait defining operations for checking if membership-related operations are allowed.
 pub trait CheckMembershipOpAllowed<IdtyId> {
+    /// Checks if adding a membership is allowed.
     fn check_add_membership(idty_id: IdtyId) -> Result<(), DispatchError>;
+    /// Checks if renewing a membership is allowed.
     fn check_renew_membership(idty_id: IdtyId) -> Result<(), DispatchError>;
 }
 
@@ -31,14 +34,22 @@ impl<IdtyId> CheckMembershipOpAllowed<IdtyId> for () {
     }
 }
 
-pub trait OnEvent<IdtyId> {
-    fn on_event(event: &crate::Event<IdtyId>);
+/// A trait defining behavior for handling new memberships and membership renewals.
+pub trait OnNewMembership<IdtyId> {
+    /// Called when a new membership is created.
+    fn on_created(idty_index: &IdtyId);
+    /// Called when a membership is renewed.
+    fn on_renewed(idty_index: &IdtyId);
 }
 
-// impl<IdtyId> OnEvent<IdtyId> for () {
-//     fn on_event(_: &crate::Event<IdtyId>) {}
-// }
+/// A trait defining operations for handling the removal of memberships.
+pub trait OnRemoveMembership<IdtyId> {
+    /// Called when a membership is removed.
+    fn on_removed(idty_index: &IdtyId) -> Weight;
+}
 
+/// A trait defining an operation to retrieve the count of members.
 pub trait MembersCount {
+    /// The count of members.
     fn members_count() -> u32;
 }

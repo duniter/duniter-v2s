@@ -85,7 +85,8 @@ impl pallet_membership::Config for Test {
     type IdtyIdOf = ConvertInto;
     type MembershipPeriod = MembershipPeriod;
     type MembershipRenewalPeriod = MembershipRenewalPeriod;
-    type OnEvent = ();
+    type OnNewMembership = ();
+    type OnRemoveMembership = ();
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }

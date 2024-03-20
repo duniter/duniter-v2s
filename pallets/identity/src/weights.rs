@@ -30,10 +30,12 @@ pub trait WeightInfo {
     fn do_revoke_identity_noop() -> Weight;
     fn do_revoke_identity() -> Weight;
     fn do_remove_identity_noop() -> Weight;
+    fn do_remove_identity_handler() -> Weight;
     fn do_remove_identity() -> Weight;
     fn prune_identities_noop() -> Weight;
     fn prune_identities_none() -> Weight;
     fn prune_identities_err() -> Weight;
+    fn membership_removed() -> Weight;
 }
 
 // Insecure weights implementation, use it for tests only!
@@ -155,6 +157,16 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(1))
     }
 
+    fn do_remove_identity_handler() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `269`
+        //  Estimated: `3734`
+        // Minimum execution time: 104_296_000 picoseconds.
+        Weight::from_parts(115_316_000, 0)
+            .saturating_add(Weight::from_parts(0, 3734))
+            .saturating_add(RocksDbWeight::get().reads(1))
+    }
+
     fn do_remove_identity() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `1432`
@@ -188,6 +200,17 @@ impl WeightInfo for () {
     }
 
     fn prune_identities_err() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `1177`
+        //  Estimated: `4642`
+        // Minimum execution time: 1_427_848_000 picoseconds.
+        Weight::from_parts(2_637_229_000, 0)
+            .saturating_add(Weight::from_parts(0, 4642))
+            .saturating_add(RocksDbWeight::get().reads(8))
+            .saturating_add(RocksDbWeight::get().writes(8))
+    }
+
+    fn membership_removed() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `1177`
         //  Estimated: `4642`

@@ -96,6 +96,28 @@ mod benchmarks {
         Ok(())
     }
 
+    #[benchmark]
+    fn on_removed_wot_member() {
+        let idty: T::IdtyIndex = 1.into();
+        assert!(Smiths::<T>::get(idty).is_some());
+
+        #[block]
+        {
+            Pallet::<T>::on_removed_wot_member(idty);
+        }
+    }
+
+    #[benchmark]
+    fn on_removed_wot_member_empty() {
+        let idty: T::IdtyIndex = 100.into();
+        assert!(Smiths::<T>::get(idty).is_none());
+
+        #[block]
+        {
+            Pallet::<T>::on_removed_wot_member(idty);
+        }
+    }
+
     impl_benchmark_test_suite!(
         Pallet,
         crate::mock::new_test_ext(crate::GenesisConfig {

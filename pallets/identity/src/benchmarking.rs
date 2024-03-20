@@ -430,6 +430,81 @@ mod benchmarks {
     }
 
     #[benchmark]
+    fn do_remove_identity_handler() {
+        let idty_index: T::IdtyIndex = 1u32.into();
+        let new_identity: T::AccountId = account("Bob", 2, 1);
+        assert!(Identities::<T>::get(idty_index).is_some());
+        frame_system::Pallet::<T>::inc_sufficients(&new_identity);
+        Identities::<T>::mutate(idty_index, |id| {
+            if let Some(id) = id {
+                id.old_owner_key = Some((new_identity, BlockNumberFor::<T>::zero()));
+            }
+        });
+        assert!(Identities::<T>::get(idty_index)
+            .unwrap()
+            .old_owner_key
+            .is_some());
+
+        #[block]
+        {
+            T::OnRemoveIdty::on_removed(&idty_index);
+        }
+    }
+
+    #[benchmark]
+    fn membership_added() -> Result<(), BenchmarkError> {
+        let caller: T::AccountId = Identities::<T>::get(T::IdtyIndex::from(1u32))
+            .unwrap()
+            .owner_key;
+        let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
+            RawOrigin::Signed(caller.clone()).into();
+        let owner_key: T::AccountId = account("new_identity", 2, 1);
+        let owner_key_origin: <T as frame_system::Config>::RuntimeOrigin =
+            RawOrigin::Signed(owner_key.clone()).into();
+        Pallet::<T>::create_identity(caller_origin.clone(), owner_key.clone())?;
+        let name = IdtyName("new_identity".into());
+        Pallet::<T>::confirm_identity(owner_key_origin.clone(), name.clone())?;
+        let idty_index = IdentityIndexOf::<T>::get(&owner_key).unwrap();
+        assert_ne!(
+            Identities::<T>::get(idty_index).unwrap().status,
+            IdtyStatus::Member
+        );
+
+        #[block]
+        {
+            Pallet::<T>::membership_added(idty_index);
+        }
+
+        assert_has_event::<T>(Event::<T>::IdtyValidated { idty_index }.into());
+        assert_eq!(
+            Identities::<T>::get(idty_index).unwrap().status,
+            IdtyStatus::Member
+        );
+        Ok(())
+    }
+
+    #[benchmark]
+    fn membership_removed() -> Result<(), BenchmarkError> {
+        let key: T::AccountId = account("new_identity", 2, 1);
+        let account: Account<T> = create_one_identity(key)?;
+        assert_eq!(
+            Identities::<T>::get(account.index).unwrap().status,
+            IdtyStatus::Member
+        );
+
+        #[block]
+        {
+            Pallet::<T>::membership_removed(account.index);
+        }
+
+        assert_eq!(
+            Identities::<T>::get(account.index).unwrap().status,
+            IdtyStatus::NotMember
+        );
+        Ok(())
+    }
+
+    #[benchmark]
     fn prune_identities_noop() {
         assert!(IdentityChangeSchedule::<T>::try_get(BlockNumberFor::<T>::zero()).is_err());
 

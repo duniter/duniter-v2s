@@ -331,9 +331,7 @@ pub mod pallet {
             idty_index: T::IdtyIndex,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            for (issuer, _) in CertsByReceiver::<T>::get(idty_index) {
-                Self::do_remove_cert(issuer, idty_index, None);
-            }
+            let _ = Self::do_remove_all_certs_received_by(idty_index);
             Ok(().into())
         }
     }
@@ -341,6 +339,14 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
+        pub fn do_remove_all_certs_received_by(idty_index: T::IdtyIndex) -> Weight {
+            let mut weight = T::DbWeight::get().reads_writes(1, 0);
+            for (issuer, _) in CertsByReceiver::<T>::get(idty_index) {
+                weight = weight.saturating_add(Self::do_remove_cert(issuer, idty_index, None));
+            }
+            weight
+        }
+
         /// get issuer index from origin
         pub fn origin_to_index(origin: OriginFor<T>) -> Result<T::IdtyIndex, DispatchError> {
             let who = ensure_signed(origin)?;
@@ -349,6 +355,7 @@ pub mod pallet {
 
         /// add a certification without checks
         // this is used on identity creation to add the first certification
+        // The weight is approximated on the worst path.
         pub fn do_add_cert_checked(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
@@ -362,7 +369,6 @@ pub mod pallet {
             };
 
             Self::try_add_cert(block_number, issuer, receiver)?;
-
             Ok(().into())
         }
 
@@ -454,15 +460,18 @@ pub mod pallet {
         // (run at on_initialize step)
         fn prune_certifications(block_number: BlockNumberFor<T>) -> Weight {
             // See on initialize for the overhead weight accounting
-            let mut total_weight = Weight::zero();
+            let mut weight = Weight::zero();
 
             if let Some(certs) = CertsRemovableOn::<T>::take(block_number) {
                 for (issuer, receiver) in certs {
-                    total_weight += Self::do_remove_cert(issuer, receiver, Some(block_number));
+                    weight = weight.saturating_add(Self::do_remove_cert(
+                        issuer,
+                        receiver,
+                        Some(block_number),
+                    ));
                 }
             }
-
-            total_weight
+            weight
         }
 
         /// perform the certification removal
@@ -512,7 +521,6 @@ pub mod pallet {
                     receiver,
                     expiration: block_number_opt.is_some(),
                 });
-                // Should always return Weight::zero
                 T::OnRemovedCert::on_removed_cert(
                     issuer,
                     issuer_issued_count,

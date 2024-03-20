@@ -99,8 +99,10 @@ pub mod pallet {
         // i.e. asking for distance evaluation
         #[pallet::constant]
         type MembershipRenewalPeriod: Get<BlockNumberFor<Self>>;
-        /// On event handler
-        type OnEvent: OnEvent<Self::IdtyId>;
+        /// On new and renew membership handler.
+        type OnNewMembership: OnNewMembership<Self::IdtyId>;
+        /// On revoked and removed membership handler.
+        type OnRemoveMembership: OnRemoveMembership<Self::IdtyId>;
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type WeightInfo: WeightInfo;
@@ -272,7 +274,7 @@ pub mod pallet {
                 member: idty_id,
                 expire_on,
             });
-            T::OnEvent::on_event(&sp_membership::Event::MembershipAdded(idty_id));
+            T::OnNewMembership::on_created(&idty_id);
         }
 
         /// perform membership renewal
@@ -286,19 +288,21 @@ pub mod pallet {
                 member: idty_id,
                 expire_on,
             });
-            T::OnEvent::on_event(&sp_membership::Event::MembershipRenewed(idty_id));
+            T::OnNewMembership::on_renewed(&idty_id);
         }
 
         /// perform membership removal
-        pub fn do_remove_membership(idty_id: T::IdtyId, reason: MembershipRemovalReason) {
+        pub fn do_remove_membership(idty_id: T::IdtyId, reason: MembershipRemovalReason) -> Weight {
+            let mut weight = T::DbWeight::get().reads_writes(2, 3);
             if let Some(membership_data) = Membership::<T>::take(idty_id) {
                 Self::unschedule_membership_expiry(idty_id, membership_data.expire_on);
                 Self::deposit_event(Event::MembershipRemoved {
                     member: idty_id,
                     reason,
                 });
-                T::OnEvent::on_event(&sp_membership::Event::MembershipRemoved(idty_id));
+                weight += T::OnRemoveMembership::on_removed(&idty_id);
             }
+            weight
         }
 
         /// perform the membership expiry scheduled at given block
