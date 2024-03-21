@@ -172,9 +172,15 @@ pub mod pallet {
             who: T::AccountId,
         },
         /// Distance rule was found valid.
-        EvaluatedValid { idty_index: T::IdtyIndex },
+        EvaluatedValid {
+            idty_index: T::IdtyIndex,
+            distance: Perbill,
+        },
         /// Distance rule was found invalid.
-        EvaluatedInvalid { idty_index: T::IdtyIndex },
+        EvaluatedInvalid {
+            idty_index: T::IdtyIndex,
+            distance: Perbill,
+        },
     }
 
     // ERRORS //
@@ -313,7 +319,7 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            Self::do_valid_distance_status(identity);
+            Self::do_valid_distance_status(identity, Perbill::one());
             Ok(())
         }
     }
@@ -509,11 +515,17 @@ pub mod pallet {
         }
 
         /// Set the distance status using IdtyIndex and AccountId
-        pub fn do_valid_distance_status(idty: <T as pallet_identity::Config>::IdtyIndex) {
+        pub fn do_valid_distance_status(
+            idty: <T as pallet_identity::Config>::IdtyIndex,
+            distance: Perbill,
+        ) {
             // callback
             T::OnValidDistanceStatus::on_valid_distance_status(idty);
             // deposit event
-            Self::deposit_event(Event::EvaluatedValid { idty_index: idty });
+            Self::deposit_event(Event::EvaluatedValid {
+                idty_index: idty,
+                distance,
+            });
         }
 
         pub fn do_evaluation(index: u32) -> Weight {
@@ -530,57 +542,44 @@ pub mod pallet {
             > = Pallet::<T>::take_current_pool(index);
 
             for (idty, median_acc) in current_pool.evaluations.into_iter() {
-                // distance result
-                let mut distance_result: Option<bool> = None;
-
-                // get result of the computation
+                let mut distance_result: Option<Perbill> = None;
+                // Retrieve the result of the computation from the median accumulator
                 if let Some(median_result) = median_acc.get_median() {
-                    let median = match median_result {
+                    let distance = match median_result {
                         MedianResult::One(m) => m,
                         MedianResult::Two(m1, m2) => m1 + (m2 - m1) / 2, // Avoid overflow (since max is 1)
                     };
-                    // update distance result
-                    distance_result = Some(median >= T::MinAccessibleReferees::get());
+                    // Update distance result
+                    distance_result = Some(distance);
                 }
 
-                // take requester and perform unreserve or slash
-
+                // If there's a pending evaluation request with the provided identity
                 if let Some(requester) = PendingEvaluationRequest::<T>::take(idty) {
-                    match distance_result {
-                        None => {
-                            // no result, unreserve
+                    // If distance_result is available
+                    if let Some(distance) = distance_result {
+                        if distance >= T::MinAccessibleReferees::get() {
+                            // Positive result, unreserve and apply
                             T::Currency::unreserve(
                                 &requester,
                                 <T as Config>::EvaluationPrice::get(),
                             );
-                            weight = weight.saturating_add(
-                                <T as pallet::Config>::WeightInfo::do_evaluation_failure()
-                                    .saturating_sub(
-                                        <T as pallet::Config>::WeightInfo::do_evaluation_overhead(),
-                                    ),
-                            );
-                        }
-                        Some(true) => {
-                            // positive result, unreserve and apply
-                            T::Currency::unreserve(
-                                &requester,
-                                <T as Config>::EvaluationPrice::get(),
-                            );
-                            Self::do_valid_distance_status(idty);
+                            Self::do_valid_distance_status(idty, distance);
                             weight = weight.saturating_add(
                                 <T as pallet::Config>::WeightInfo::do_evaluation_success()
                                     .saturating_sub(
                                         <T as pallet::Config>::WeightInfo::do_evaluation_overhead(),
                                     ),
                             );
-                        }
-                        Some(false) => {
-                            // negative result, slash and deposit event
+                        } else {
+                            // Negative result, slash and deposit event
                             let _ = T::Currency::slash_reserved(
                                 &requester,
                                 <T as Config>::EvaluationPrice::get(),
                             );
-                            Self::deposit_event(Event::EvaluatedInvalid { idty_index: idty });
+                            Self::deposit_event(Event::EvaluatedInvalid {
+                                idty_index: idty,
+                                distance,
+                            });
                             weight = weight.saturating_add(
                                 <T as pallet::Config>::WeightInfo::do_evaluation_failure()
                                     .saturating_sub(
@@ -588,9 +587,18 @@ pub mod pallet {
                                     ),
                             );
                         }
+                    } else {
+                        // No result, unreserve
+                        T::Currency::unreserve(&requester, <T as Config>::EvaluationPrice::get());
+                        weight = weight.saturating_add(
+                            <T as pallet::Config>::WeightInfo::do_evaluation_failure()
+                                .saturating_sub(
+                                    <T as pallet::Config>::WeightInfo::do_evaluation_overhead(),
+                                ),
+                        );
                     }
                 }
-                // if evaluation happened without request, it's ok to do nothing
+                // If evaluation happened without request, it's ok to do nothing
             }
             weight
         }

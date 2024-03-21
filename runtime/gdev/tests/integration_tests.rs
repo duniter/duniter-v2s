@@ -373,7 +373,10 @@ fn test_validate_identity_when_claim() {
             // Pass 3rd evaluation period
             run_to_block(3 * eval_period);
             System::assert_has_event(RuntimeEvent::Distance(
-                pallet_distance::Event::EvaluatedValid { idty_index: 5 },
+                pallet_distance::Event::EvaluatedValid {
+                    idty_index: 5,
+                    distance: Perbill::one(),
+                },
             ));
 
             // eve can not claim her membership manually because it is done automatically

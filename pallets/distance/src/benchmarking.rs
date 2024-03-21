@@ -163,7 +163,13 @@ mod benchmarks {
         #[extrinsic_call]
         _(RawOrigin::Root, idty);
 
-        assert_has_event::<T>(Event::<T>::EvaluatedValid { idty_index: idty }.into());
+        assert_has_event::<T>(
+            Event::<T>::EvaluatedValid {
+                idty_index: idty,
+                distance: Perbill::one(),
+            }
+            .into(),
+        );
     }
 
     #[benchmark]
@@ -211,7 +217,13 @@ mod benchmarks {
             Pallet::<T>::do_evaluation(0);
         }
 
-        assert_has_event::<T>(Event::<T>::EvaluatedValid { idty_index: idty }.into());
+        assert_has_event::<T>(
+            Event::<T>::EvaluatedValid {
+                idty_index: idty,
+                distance: Perbill::one(),
+            }
+            .into(),
+        );
         Ok(())
     }
 
@@ -249,7 +261,13 @@ mod benchmarks {
             Pallet::<T>::do_evaluation(0);
         }
 
-        assert_has_event::<T>(Event::<T>::EvaluatedInvalid { idty_index: idty }.into());
+        assert_has_event::<T>(
+            Event::<T>::EvaluatedInvalid {
+                idty_index: idty,
+                distance: Perbill::zero(),
+            }
+            .into(),
+        );
         Ok(())
     }
 

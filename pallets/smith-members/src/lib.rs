@@ -133,20 +133,20 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// An identity is being inivited to become a smith.
         InvitationSent {
-            receiver: T::IdtyIndex,
             issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
         },
         /// The invitation has been accepted.
         InvitationAccepted { idty_index: T::IdtyIndex },
         /// Certification received
         SmithCertAdded {
-            receiver: T::IdtyIndex,
             issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
         },
         /// Certification lost
         SmithCertRemoved {
-            receiver: T::IdtyIndex,
             issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
         },
         /// A smith gathered enough certifications to become an authority (can call `go_online()`).
         SmithMembershipAdded { idty_index: T::IdtyIndex },
@@ -362,7 +362,7 @@ impl<T: Config> Pallet<T> {
         existing.received_certs = vec![];
         Smiths::<T>::insert(receiver, existing);
         ExpiresOn::<T>::append(new_expires_on, receiver);
-        Self::deposit_event(Event::<T>::InvitationSent { receiver, issuer });
+        Self::deposit_event(Event::<T>::InvitationSent { issuer, receiver });
     }
 
     fn check_accept_invitation(receiver: T::IdtyIndex) -> DispatchResultWithPostInfo {
@@ -444,7 +444,7 @@ impl<T: Config> Pallet<T> {
                 // - adds a certification in receiver received list
                 smith_meta.received_certs.push(issuer);
                 smith_meta.received_certs.sort();
-                Self::deposit_event(Event::<T>::SmithCertAdded { receiver, issuer });
+                Self::deposit_event(Event::<T>::SmithCertAdded { issuer, receiver });
 
                 // - receiving a certification either lead us to Pending or Smith status
                 let previous_status = smith_meta.status;
@@ -521,8 +521,8 @@ impl<T: Config> Pallet<T> {
                     if let Ok(index) = smith_meta.issued_certs.binary_search(&receiver) {
                         smith_meta.issued_certs.remove(index);
                         Self::deposit_event(Event::<T>::SmithCertRemoved {
-                            receiver,
                             issuer: lost_cert_issuer,
+                            receiver,
                         });
                     }
                 }
