@@ -236,6 +236,7 @@ readme_docker_release_tag:
     - /srtool/build --app --json -cM | tee -a $SRTOOL_OUTPUT
     - mv /build/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/${RUNTIME}_runtime.compact.compressed.wasm $CI_PROJECT_DIR/release/
   artifacts:
+    expire_in: never
     name: "runtime"
     paths:
       - $CI_PROJECT_DIR/release
@@ -296,6 +297,7 @@ create_g1_data:
     - mkdir -p $CI_PROJECT_DIR/release/
     - cp output/g1-data.json $CI_PROJECT_DIR/release/
   artifacts:
+    expire_in: never
     paths:
       - $CI_PROJECT_DIR/release/
   tags:
@@ -318,6 +320,7 @@ create_g1_data:
     - cargo run ${FEATURES} -- build-spec --chain=release/${RUNTIME}.json --disable-default-bootnode --raw > release/${RUNTIME}-raw.json
     - cp node/specs/${RUNTIME}_client-specs.yaml release/
   artifacts:
+    expire_in: never
     name: "runtime"
     paths:
       - $CI_PROJECT_DIR/release
@@ -365,6 +368,7 @@ create_release:
     - cargo xtask create-asset-link $MILESTONE gdev_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gdev_client-specs.yaml
     - cargo xtask create-asset-link $MILESTONE gtest_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gtest_client-specs.yaml
   artifacts:
+    expire_in: never
     paths:
       - $CI_PROJECT_DIR/release/
   tags:
@@ -384,6 +388,7 @@ create_release:
     - cargo xtask create-asset-link $MILESTONE ${RUNTIME}-indexer.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/${RUNTIME}-indexer.json
     - echo "Release Docker file..."
   artifacts:
+    expire_in: never
     paths:
       - $CI_PROJECT_DIR/release/
   tags:
