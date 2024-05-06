@@ -57,6 +57,7 @@ std = [
 	"frame-system/std",
 	"frame-try-runtime/std",
 	"pallet-authority-members/std",
+	"pallet-atomic-swap/std",
 	"pallet-babe/std",
 	"pallet-balances/std",
 	"pallet-certification/std",
@@ -101,6 +102,7 @@ try-runtime = [
 	"frame-system/try-runtime",
 	"frame-try-runtime/try-runtime",
 	"pallet-authority-members/try-runtime",
+	"pallet-atomic-swap/try-runtime",
 	"pallet-babe/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-certification/try-runtime",
@@ -141,6 +143,7 @@ frame-system = { workspace = true }
 frame-system-benchmarking = { workspace = true, optional = true }
 frame-try-runtime = { workspace = true, optional = true }
 pallet-authority-members = { workspace = true }
+pallet-atomic-swap = { workspace = true }
 pallet-babe = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-certification = { workspace = true }

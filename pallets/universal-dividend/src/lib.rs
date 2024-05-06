@@ -181,7 +181,7 @@ pub mod pallet {
                 initial_monetary_mass: Default::default(),
                 #[cfg(test)]
                 initial_members: Default::default(),
-                ud: Default::default(),
+                ud: BalanceOf::<T>::one(),
             }
         }
     }

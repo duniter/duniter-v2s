@@ -329,11 +329,13 @@ pub fn run() -> sc_cli::Result<()> {
                 BenchmarkCmd::Pallet(cmd) => {
                     if cfg!(feature = "runtime-benchmarks") {
                         runner.sync_run(|config| {
-                                cmd.run::<service::runtime_executor::runtime::Block, ExtendedHostFunctions<
-                                    sp_io::SubstrateHostFunctions,
-                                    <Executor as NativeExecutionDispatch>::ExtendHostFunctions,
-                                >>(config)
-                            })
+                            cmd.run::<sp_runtime::traits::HashingFor<
+                                service::runtime_executor::runtime::Block,
+                            >, ExtendedHostFunctions<
+                                sp_io::SubstrateHostFunctions,
+                                <Executor as NativeExecutionDispatch>::ExtendHostFunctions,
+                            >>(config)
+                        })
                     } else {
                         Err("Benchmarking wasn't enabled when building the node. \
 								You can enable it with `--features runtime-benchmarks`."

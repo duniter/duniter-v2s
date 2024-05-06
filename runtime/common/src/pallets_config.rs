@@ -69,11 +69,16 @@ macro_rules! pallets_config {
             /// The set code logic, just the default since we're not a parachain.
             type OnSetCode = ();
             type MaxConsumers = frame_support::traits::ConstU32<16>;
-	/// The type for storing how many extrinsics an account has signed.
-	type Nonce = node_primitives::Nonce;
-	/// The block type for the runtime.
-	type Block = Block;
-type RuntimeTask = ();
+            /// The type for storing how many extrinsics an account has signed.
+            type Nonce = node_primitives::Nonce;
+            /// The block type for the runtime.
+            type Block = Block;
+            type RuntimeTask = ();
+            type SingleBlockMigrations = ();
+            type MultiBlockMigrator = ();
+            type PreInherents = ();
+            type PostInherents = ();
+            type PostTransactions = ();
         }
 
         // SCHEDULER //

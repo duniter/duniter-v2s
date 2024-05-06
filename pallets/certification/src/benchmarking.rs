@@ -48,22 +48,6 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn do_add_cert_checked() -> Result<(), BenchmarkError> {
-        let issuer: T::IdtyIndex = 1.into();
-        let receiver: T::IdtyIndex = 2.into();
-        Pallet::<T>::del_cert(RawOrigin::Root.into(), issuer, receiver)?;
-        frame_system::pallet::Pallet::<T>::set_block_number(T::CertPeriod::get());
-
-        #[block]
-        {
-            Pallet::<T>::do_add_cert_checked(issuer, receiver, true)?;
-        }
-
-        assert_has_event::<T>(Event::<T>::CertAdded { issuer, receiver }.into());
-        Ok(())
-    }
-
-    #[benchmark]
     fn add_cert() -> Result<(), BenchmarkError> {
         let issuer: T::IdtyIndex = 1.into();
         let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();

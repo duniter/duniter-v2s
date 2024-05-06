@@ -70,10 +70,10 @@ fmt_and_clippy:
     - when: manual
   stage: quality
   script:
-    - cargo fmt -- --version
-    - cargo fmt -- --check
-    - cargo clippy -- -V
-    - cargo clippy --features runtime-benchmarks --all --tests -- -D warnings
+  - cargo fmt -- --version
+  - cargo fmt -- --check
+  - cargo clippy -- -V
+  - cargo clippy -Zgit=shallow-deps --features runtime-benchmarks --all --tests -- -D warnings
 
 run_benchmarks:
   extends: .env
@@ -86,7 +86,7 @@ run_benchmarks:
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
   script:
-    - cargo build --release --features runtime-benchmarks
+    - cargo build -Zgit=shallow-deps --release --features runtime-benchmarks
     - target/release/duniter benchmark storage --chain=dev --mul=2 --state-version=1
     - target/release/duniter benchmark overhead --chain=dev --wasm-execution=compiled --warmup=1 --repeat=100
     - target/release/duniter benchmark pallet --chain=dev --steps=5 --repeat=2 --pallet="*" --extrinsic="*" --wasm-execution=compiled
@@ -108,7 +108,7 @@ gdev_build:
   script:
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
-    - cargo build --no-default-features --features gtest
+    - cargo build -Zgit=shallow-deps --no-default-features --features gtest
 
 gdev_srtool_build:
   stage: build
@@ -316,8 +316,8 @@ create_g1_data:
   script:
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
-    - cargo run ${FEATURES} -- build-spec --chain=${RUNTIME}_live > release/${RUNTIME}.json
-    - cargo run ${FEATURES} -- build-spec --chain=release/${RUNTIME}.json --disable-default-bootnode --raw > release/${RUNTIME}-raw.json
+    - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}_live > release/${RUNTIME}.json
+    - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=release/${RUNTIME}.json --disable-default-bootnode --raw > release/${RUNTIME}-raw.json
     - cp node/specs/${RUNTIME}_client-specs.yaml release/
   artifacts:
     expire_in: never

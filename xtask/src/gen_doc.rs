@@ -339,7 +339,7 @@ fn get_max_weight_from_metadata_v15(
 
     let block_weights = scale_value::scale::decode_as_type(
         &mut &*block_weights.value,
-        block_weights.ty.id,
+        &block_weights.ty.id,
         &metadata_v15.types,
     )
     .expect("Can't decode max_weight")

@@ -44,7 +44,7 @@ fn test_imonline_offence() {
                 .map(|full_id| (id, full_id))
             })
             .collect::<Vec<IdentificationTuple<Runtime>>>();
-        let keys = ImOnline::keys();
+        let keys = pallet_im_online::Keys::<Runtime>::get();
         let validator_set_count = keys.len() as u32;
         let offence = UnresponsivenessOffence {
             session_index,
@@ -86,7 +86,7 @@ fn test_grandpa_offence() {
                 .map(|full_id| (id, full_id))
             })
             .collect::<Vec<IdentificationTuple<Runtime>>>();
-        let keys = ImOnline::keys();
+        let keys = pallet_im_online::Keys::<Runtime>::get();
         let validator_set_count = keys.len() as u32;
         let time_slot = pallet_grandpa::TimeSlot {
             set_id: 0,
@@ -131,7 +131,7 @@ fn test_babe_offence() {
                 .map(|full_id| (id, full_id))
             })
             .collect::<Vec<IdentificationTuple<Runtime>>>();
-        let keys = ImOnline::keys();
+        let keys = pallet_im_online::Keys::<Runtime>::get();
         let validator_set_count = keys.len() as u32;
         let offence = pallet_babe::EquivocationOffence {
             slot: 0u64.into(),
