@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **186** errors from **35** pallets.
+There are **189** errors from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -54,14 +54,21 @@ The origin filter prevent the call to be dispatched.
 <li>
 <details>
 <summary>
-<code>NothingAuthorized</code> - 6</summary>
+<code>MultiBlockMigrationsOngoing</code> - 6</summary>
+A multi-block migration is ongoing and prevents the current code from being replaced.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>NothingAuthorized</code> - 7</summary>
 No upgrade authorized.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>Unauthorized</code> - 7</summary>
+<code>Unauthorized</code> - 8</summary>
 The submitted code is not authorized.
 </details>
 </li>
@@ -212,7 +219,7 @@ Number of named reserves exceed `MaxReserves`.
 <details>
 <summary>
 <code>TooManyHolds</code> - 8</summary>
-Number of holds exceed `MaxHolds`.
+Number of holds exceed `VariantCountOf<T::RuntimeHoldReason>`.
 </details>
 </li>
 <li>
@@ -220,6 +227,20 @@ Number of holds exceed `MaxHolds`.
 <summary>
 <code>TooManyFreezes</code> - 9</summary>
 Number of freezes exceed `MaxFreezes`.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>IssuanceDeactivated</code> - 10</summary>
+The issuance cannot be modified since it is already deactivated.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>DeltaZero</code> - 11</summary>
+The delta cannot be zero.
 </details>
 </li>
 </ul>

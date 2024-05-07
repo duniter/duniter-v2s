@@ -21,6 +21,7 @@ use scale_info::form::PortableForm;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::Path;
+use std::process::Command;
 use std::{
     fs::File,
     io::{Read, Write},
@@ -55,6 +56,7 @@ type RuntimePallets = Vec<Pallet>;
 struct Pallet {
     index: u8,
     name: String,
+    type_name: String,
     calls: Vec<Call>,
     events: Vec<Event>,
     errors: Vec<ErroR>,
@@ -95,6 +97,7 @@ impl Pallet {
     fn new(
         index: u8,
         name: String,
+        type_name: String,
         call_scale_type_def: &Option<scale_info::TypeDef<PortableForm>>,
         event_scale_type_def: &Option<scale_info::TypeDef<PortableForm>>,
         error_scale_type_def: &Option<scale_info::TypeDef<PortableForm>>,
@@ -129,6 +132,7 @@ impl Pallet {
         Ok(Self {
             index,
             name,
+            type_name,
             calls,
             events,
             errors,
@@ -156,8 +160,8 @@ impl From<&scale_info::Variant<PortableForm>> for Call {
 impl From<&scale_info::Field<PortableForm>> for CallParam {
     fn from(field: &scale_info::Field<PortableForm>) -> Self {
         Self {
-            name: field.clone().name.unwrap_or_default(),
-            type_name: field.clone().type_name.unwrap_or_default(),
+            name: field.clone().name.unwrap_or_default().to_string(),
+            type_name: field.clone().type_name.unwrap_or_default().to_string(),
         }
     }
 }
@@ -175,8 +179,8 @@ impl From<&scale_info::Variant<PortableForm>> for Event {
 impl From<&scale_info::Field<PortableForm>> for EventParam {
     fn from(field: &scale_info::Field<PortableForm>) -> Self {
         Self {
-            name: field.clone().name.unwrap_or_default(),
-            type_name: field.clone().type_name.unwrap_or_default(),
+            name: field.clone().name.unwrap_or_default().to_string(),
+            type_name: field.clone().type_name.unwrap_or_default().to_string(),
         }
     }
 }
@@ -306,6 +310,34 @@ pub(super) fn gen_doc() -> Result<()> {
 
     let (call_doc, event_doc, error_doc) = print_runtime(runtime);
 
+    // Generate docs from rust code
+    Command::new("cargo")
+        .args([
+            "doc",
+            "--package=pallet-*",
+            "--package=*-runtime",
+            "--package=*distance*",
+            "--package=*membership*",
+            "--no-deps",
+            "--document-private-items",
+            "--features=runtime-benchmarks",
+            "--package=pallet-atomic-swap",
+            "--package=pallet-authority-discovery",
+            "--package=pallet-balances",
+            "--package=pallet-collective",
+            "--package=pallet-im-online",
+            "--package=pallet-preimage",
+            "--package=pallet-proxy",
+            "--package=pallet-scheduler",
+            "--package=pallet-session",
+            "--package=pallet-sudo",
+            "--package=pallet-timestamp",
+            "--package=pallet-treasury",
+            "--package=pallet-utility",
+        ])
+        .status()
+        .expect("cargo doc failed to execute");
+
     let mut file = File::create(CALLS_DOC_FILEPATH)
         .with_context(|| format!("Failed to create file '{}'", CALLS_DOC_FILEPATH))?;
     file.write_all(call_doc.as_bytes())
@@ -363,10 +395,17 @@ fn get_from_metadata_v15(
     println!("Number of pallets: {}", metadata_v15.pallets.len());
     let mut pallets = Vec::new();
     for pallet in metadata_v15.pallets {
+        let mut type_name: String = Default::default();
         let calls_type_def = if let Some(calls) = pallet.calls {
             let Some(calls_type) = metadata_v15.types.resolve(calls.ty.id) else {
                 bail!("Invalid metadata")
             };
+            type_name = calls_type
+                .path
+                .segments
+                .first()
+                .expect("cannot decode pallet type")
+                .to_string();
             Some(calls_type.type_def.clone())
         } else {
             println!("{}: {} (0 calls)", pallet.index, pallet.name);
@@ -394,6 +433,7 @@ fn get_from_metadata_v15(
         let pallet = Pallet::new(
             pallet.index,
             pallet.name.clone(),
+            type_name,
             &calls_type_def,
             &events_type_def,
             &errors_type_def,

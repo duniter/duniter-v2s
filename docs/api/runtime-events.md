@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **134** events from **35** pallets.
+There are **138** events from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -168,7 +168,35 @@ result: DispatchResult
 <li>
 <details>
 <summary>
-<code>CallUnavailable(task, id)</code> - 3</summary>
+<code>RetrySet(task, id, period, retries)</code> - 3</summary>
+Set a retry configuration for some task.
+
+```rust
+task: TaskAddress<BlockNumberFor<T>>
+id: Option<TaskName>
+period: BlockNumberFor<T>
+retries: u8
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>RetryCancelled(task, id)</code> - 4</summary>
+Cancel a retry configuration for some task.
+
+```rust
+task: TaskAddress<BlockNumberFor<T>>
+id: Option<TaskName>
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CallUnavailable(task, id)</code> - 5</summary>
 The call for the provided hash was not found so the task has been aborted.
 
 ```rust
@@ -181,7 +209,7 @@ id: Option<TaskName>
 <li>
 <details>
 <summary>
-<code>PeriodicFailed(task, id)</code> - 4</summary>
+<code>PeriodicFailed(task, id)</code> - 6</summary>
 The given task was unable to be renewed since the agenda is full at that block.
 
 ```rust
@@ -194,7 +222,21 @@ id: Option<TaskName>
 <li>
 <details>
 <summary>
-<code>PermanentlyOverweight(task, id)</code> - 5</summary>
+<code>RetryFailed(task, id)</code> - 7</summary>
+The given task was unable to be retried since the agenda is full at that block or there
+was not enough weight to reschedule it.
+
+```rust
+task: TaskAddress<BlockNumberFor<T>>
+id: Option<TaskName>
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>PermanentlyOverweight(task, id)</code> - 8</summary>
 The given task can never be executed since it is overweight.
 
 ```rust
@@ -495,6 +537,19 @@ amount: T::Balance
 
 </details>
 </li>
+<li>
+<details>
+<summary>
+<code>TotalIssuanceForced(old, new)</code> - 21</summary>
+The `TotalIssuance` was forcefully changed.
+
+```rust
+old: T::Balance
+new: T::Balance
+```
+
+</details>
+</li>
 </ul>
 </li>
 <li>TransactionPayment - 32
@@ -636,12 +691,12 @@ no args
 <li>
 <details>
 <summary>
-<code>InvitationSent(receiver, issuer)</code> - 0</summary>
+<code>InvitationSent(issuer, receiver)</code> - 0</summary>
 An identity is being inivited to become a smith.
 
 ```rust
-receiver: T::IdtyIndex
 issuer: T::IdtyIndex
+receiver: T::IdtyIndex
 ```
 
 </details>
@@ -661,12 +716,12 @@ idty_index: T::IdtyIndex
 <li>
 <details>
 <summary>
-<code>SmithCertAdded(receiver, issuer)</code> - 2</summary>
+<code>SmithCertAdded(issuer, receiver)</code> - 2</summary>
 Certification received
 
 ```rust
-receiver: T::IdtyIndex
 issuer: T::IdtyIndex
+receiver: T::IdtyIndex
 ```
 
 </details>
@@ -674,12 +729,12 @@ issuer: T::IdtyIndex
 <li>
 <details>
 <summary>
-<code>SmithCertRemoved(receiver, issuer)</code> - 3</summary>
+<code>SmithCertRemoved(issuer, receiver)</code> - 3</summary>
 Certification lost
 
 ```rust
-receiver: T::IdtyIndex
 issuer: T::IdtyIndex
+receiver: T::IdtyIndex
 ```
 
 </details>
@@ -1386,11 +1441,12 @@ who: T::AccountId
 <li>
 <details>
 <summary>
-<code>EvaluatedValid(idty_index)</code> - 1</summary>
+<code>EvaluatedValid(idty_index, distance)</code> - 1</summary>
 Distance rule was found valid.
 
 ```rust
 idty_index: T::IdtyIndex
+distance: Perbill
 ```
 
 </details>
@@ -1398,11 +1454,12 @@ idty_index: T::IdtyIndex
 <li>
 <details>
 <summary>
-<code>EvaluatedInvalid(idty_index)</code> - 2</summary>
+<code>EvaluatedInvalid(idty_index, distance)</code> - 2</summary>
 Distance rule was found invalid.
 
 ```rust
 idty_index: T::IdtyIndex
+distance: Perbill
 ```
 
 </details>

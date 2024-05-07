@@ -22,6 +22,8 @@
   - [api](./docs/api/)
     - [manual](./docs/api/manual.md)
     - [runtime-calls](./docs/api/runtime-calls.md) the calls you can submit through the RPC API
+    - [runtime-errors](./docs/api/runtime-errors.md) the errors you can get submitting a call
+    - [runtime-events](./docs/api/runtime-events.md) the events you can get submitting a call
   - [dev](./docs/dev/)
     - [beginner-walkthrough](./docs/dev/beginner-walkthrough.md)
     - [git-conventions](./docs/dev/git-conventions.md)

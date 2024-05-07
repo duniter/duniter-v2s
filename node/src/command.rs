@@ -41,7 +41,7 @@ lazy_static! {
     };
 }*/
 
-/// Unwraps a [`crate::client::Client`] into the concrete runtime client.
+/// Unwraps a [`crate::service::client::Client`] into the concrete runtime client.
 #[cfg(feature = "runtime-benchmarks")]
 macro_rules! unwrap_client {
     (
