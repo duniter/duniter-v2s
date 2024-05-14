@@ -83,8 +83,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN adduser --home /var/lib/duniter duniter
 
 # Configuration
-# rpc, rpc-ws, p2p, telemetry
-EXPOSE 9933 9944 30333 9615
+# rpc, p2p, telemetry
+EXPOSE 9944 30333 9615
 VOLUME /var/lib/duniter
 ENTRYPOINT ["docker-entrypoint"]
 USER duniter

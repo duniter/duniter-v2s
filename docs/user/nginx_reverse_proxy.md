@@ -1,9 +1,14 @@
-
 # Nginx reverse proxy example
 
 In `/etc/nginx/sites-enabled/gdev.YOUR_DOMAIN` put (you can probably do simpler):
 
 ```nginx
+# see http://nginx.org/en/docs/http/websocket.html
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
 server {
   server_name gdev.YOUR_DOMAIN.fr;
 
@@ -25,15 +30,12 @@ server {
   proxy_set_header X-Forwarded-Port $server_port;
   proxy_read_timeout 90;
 
-  location /http {
-    proxy_pass http://localhost:9933;
-    proxy_http_version 1.1;
-  }
-  location /ws {
+
+  location / {
     proxy_pass http://localhost:9944;
 
     proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
+    proxy_set_header Connection $connection_upgrade;
     proxy_http_version 1.1;
 
     proxy_read_timeout 1200s;

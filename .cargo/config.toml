@@ -9,4 +9,4 @@ ta = "test -Zgit=shallow-deps --workspace --exclude duniter-live-tests --feature
 tb = "test -Zgit=shallow-deps --features runtime-benchmarks -p"
 rbp = "run -Zgit=shallow-deps --release --features runtime-benchmarks -- benchmark pallet --chain=dev --steps=50 --repeat=20 --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=. --pallet"
 xtask = "run -Zgit=shallow-deps --package xtask --"
-cucumber-node = "run -Zgit=shallow-deps -- --chain=gdev_dev --execution=Native --sealing=manual --force-authoring --rpc-cors=all --tmp --ws-port 9944 --alice --features constant-fees"
+cucumber-node = "run -Zgit=shallow-deps -- --chain=gdev_dev --execution=Native --sealing=manual --force-authoring --rpc-cors=all --tmp --rpc-port 9944 --alice --features constant-fees"

@@ -172,8 +172,7 @@ If you want to see the multi-node consensus algorithm in action, refer to
   --chain local \
   --alice \
   --port 30333 \
-  --ws-port 9945 \
-  --rpc-port 9933 \
+  --rpc-port 9944 \
   --node-key 0000000000000000000000000000000000000000000000000000000000000001 \
   --validator
 ```
@@ -186,8 +185,7 @@ If you want to see the multi-node consensus algorithm in action, refer to
   --chain local \
   --bob \
   --port 30334 \
-  --ws-port 9946 \
-  --rpc-port 9934 \
+  --rpc-port 9945 \
   --validator \
   --bootnodes /ip4/127.0.0.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp
 ```
