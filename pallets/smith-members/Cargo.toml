@@ -13,6 +13,7 @@ version.workspace = true
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+duniter-primitives = { workspace = true }
 codec = { workspace = true, features = ["derive"] }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }

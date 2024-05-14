@@ -29,6 +29,7 @@ pub fn validate_idty_name(idty_name: &[u8]) -> bool {
 }
 
 /// trait used to go from index to owner key and reverse
+// replaces less explicit "Convert" implementations
 pub trait Idty<IdtyIndex, AccountId> {
     fn owner_key(index: IdtyIndex) -> Option<AccountId>;
     fn idty_index(owner_key: AccountId) -> Option<IdtyIndex>;

@@ -6532,6 +6532,7 @@ dependencies = [
 name = "pallet-membership"
 version = "1.0.0"
 dependencies = [
+ "duniter-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6716,6 +6717,7 @@ dependencies = [
 name = "pallet-smith-members"
 version = "1.0.0"
 dependencies = [
+ "duniter-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6834,6 +6836,7 @@ dependencies = [
 name = "pallet-universal-dividend"
 version = "1.0.0"
 dependencies = [
+ "duniter-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

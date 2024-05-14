@@ -22,7 +22,7 @@ use frame_support::{
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, ConvertInto, IdentityLookup},
+    traits::{BlakeTwo256, IdentityLookup},
     BuildStorage,
 };
 
@@ -82,12 +82,11 @@ parameter_types! {
 }
 
 impl pallet_membership::Config for Test {
-    type AccountIdOf = ConvertInto;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkSetupHandler = ();
     type CheckMembershipOpAllowed = ();
+    type IdtyAttr = ();
     type IdtyId = IdtyId;
-    type IdtyIdOf = ConvertInto;
     type MembershipPeriod = MembershipPeriod;
     type MembershipRenewalPeriod = MembershipRenewalPeriod;
     type OnNewMembership = ();

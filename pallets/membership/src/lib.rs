@@ -69,7 +69,6 @@ pub mod pallet {
     use super::*;
     use frame_support::traits::StorageVersion;
     use frame_system::pallet_prelude::*;
-    use sp_runtime::traits::Convert;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -87,10 +86,8 @@ pub mod pallet {
         type CheckMembershipOpAllowed: CheckMembershipOpAllowed<Self::IdtyId>;
         /// Something that identifies an identity
         type IdtyId: Copy + MaybeSerializeDeserialize + Parameter + Ord;
-        /// Something that gives the IdtyId of an AccountId
-        type IdtyIdOf: Convert<Self::AccountId, Option<Self::IdtyId>>;
-        /// Something that gives the AccountId of an IdtyId
-        type AccountIdOf: Convert<Self::IdtyId, Option<Self::AccountId>>;
+        /// Something that gives the IdtyId of an AccountId and reverse
+        type IdtyAttr: duniter_primitives::Idty<Self::IdtyId, Self::AccountId>;
         /// Maximum life span of a single membership (in number of blocks)
         // (this could be renamed "validity" or "duration")
         #[pallet::constant]

@@ -84,7 +84,7 @@ impl IsMember<u64> for EveryoneExceptIdZero {
 }
 
 impl pallet_smith_members::Config for Runtime {
-    type IdtyIdOf = ConvertInto;
+    type IdtyAttr = ();
     type IdtyIdOfAuthorityId = ConvertInto;
     type IdtyIndex = u64;
     type IsWoTMember = EveryoneExceptIdZero;
@@ -92,7 +92,6 @@ impl pallet_smith_members::Config for Runtime {
     type MemberId = u64;
     type MinCertForMembership = ConstU32<2>;
     type OnSmithDelete = ();
-    type OwnerKeyOf = ConvertInto;
     type RuntimeEvent = RuntimeEvent;
     type SmithInactivityMaxDuration = ConstU32<5>;
     type WeightInfo = ();

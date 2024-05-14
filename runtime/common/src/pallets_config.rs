@@ -457,7 +457,7 @@ type RuntimeFreezeReason = ();
             type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
 			type WeightInfo = common_runtime::weights::pallet_universal_dividend::WeightInfo<Runtime>;
             #[cfg(feature = "runtime-benchmarks")]
-            type AccountIdOf = common_runtime::providers::IdentityAccountIdProvider<Self>;
+            type IdtyAttr = Identity;
         }
 
         // WEB OF TRUST //
@@ -501,8 +501,7 @@ type RuntimeFreezeReason = ();
         impl pallet_membership::Config for Runtime {
             type CheckMembershipOpAllowed = Wot;
             type IdtyId = IdtyIndex;
-            type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
-            type AccountIdOf = common_runtime::providers::IdentityAccountIdProvider<Self>;
+            type IdtyAttr = Identity;
             type MembershipPeriod = MembershipPeriod;
             type MembershipRenewalPeriod = MembershipRenewalPeriod;
             type OnNewMembership = OnNewMembershipHandler<Runtime>;
@@ -546,7 +545,7 @@ type RuntimeFreezeReason = ();
             type RuntimeEvent = RuntimeEvent;
             type IdtyIndex = IdtyIndex;
             type IsWoTMember = common_runtime::providers::IsWoTMemberProvider<Runtime>;
-            type IdtyIdOf = common_runtime::providers::IdentityIndexOf<Self>;
+            type IdtyAttr = Identity;
             type MinCertForMembership = SmithWotMinCertForMembership;
             type MaxByIssuer = SmithMaxByIssuer;
             type SmithInactivityMaxDuration = SmithInactivityMaxDuration;
@@ -554,8 +553,6 @@ type RuntimeFreezeReason = ();
             type IdtyIdOfAuthorityId = sp_runtime::traits::ConvertInto;
             type MemberId = IdtyIndex;
             type WeightInfo = common_runtime::weights::pallet_smith_members::WeightInfo<Runtime>;
-            // TODO: remove as it is only used for benchmarking
-            type OwnerKeyOf = Identity;
         }
 
         pub struct TechnicalCommitteeDefaultVote;

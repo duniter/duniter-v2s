@@ -49,6 +49,7 @@ default-features = false
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+duniter-primitives = { workspace = true }
 codec = { workspace = true, features = ["derive", "max-encoded-len"] }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }

@@ -27,7 +27,6 @@ use frame_support::traits::StoredMap;
 use frame_system::RawOrigin;
 use pallet_balances::Pallet as Balances;
 use sp_runtime::traits::Bounded;
-use sp_runtime::traits::Convert;
 
 use crate::Pallet;
 
@@ -50,7 +49,7 @@ mod benchmarks {
         // Benchmark `transfer_ud` extrinsic with the worst possible conditions:
         // * Transfer will kill the sender account.
         // * Transfer will create the recipient account.
-        let caller: T::AccountId = T::AccountIdOf::convert(1).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(1).unwrap();
         CurrentUdIndex::<T>::put(2054u16);
         T::MembersStorage::insert(
             &caller,
@@ -135,7 +134,7 @@ mod benchmarks {
 
     #[benchmark]
     fn on_removed_member(i: Linear<1, { T::MaxPastReeval::get() }>) -> Result<(), BenchmarkError> {
-        let caller: T::AccountId = T::AccountIdOf::convert(1).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(1).unwrap();
         CurrentUdIndex::<T>::put(2054u16);
         T::MembersStorage::insert(
             &caller,

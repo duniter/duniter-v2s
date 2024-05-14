@@ -30,15 +30,6 @@ use std::collections::BTreeMap;
 type AccountId = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
 
-pub struct IdentityIndexOf<T: pallet_identity::Config>(PhantomData<T>);
-impl<T: pallet_identity::Config> sp_runtime::traits::Convert<T::AccountId, Option<T::IdtyIndex>>
-    for IdentityIndexOf<T>
-{
-    fn convert(account_id: T::AccountId) -> Option<T::IdtyIndex> {
-        pallet_identity::Pallet::<T>::identity_index_of(account_id)
-    }
-}
-
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
     pub enum Test {
@@ -145,12 +136,11 @@ parameter_types! {
 }
 
 impl pallet_membership::Config for Test {
-    type AccountIdOf = ();
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkSetupHandler = ();
     type CheckMembershipOpAllowed = DuniterWot;
+    type IdtyAttr = Identity;
     type IdtyId = IdtyIndex;
-    type IdtyIdOf = IdentityIndexOf<Self>;
     type MembershipPeriod = MembershipPeriod;
     type MembershipRenewalPeriod = MembershipRenewalPeriod;
     type OnNewMembership = DuniterWot;

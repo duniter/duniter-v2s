@@ -20,7 +20,6 @@ use super::*;
 
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
-use sp_runtime::traits::Convert;
 
 use crate::Pallet;
 
@@ -38,7 +37,7 @@ mod benchmarks {
     #[benchmark]
     fn invite_smith() {
         let issuer: T::IdtyIndex = 1.into();
-        let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
         Pallet::<T>::on_smith_goes_online(1.into());
         let receiver: T::IdtyIndex = 4.into();
 
@@ -51,14 +50,14 @@ mod benchmarks {
     #[benchmark]
     fn accept_invitation() -> Result<(), BenchmarkError> {
         let issuer: T::IdtyIndex = 1.into();
-        let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
         Pallet::<T>::on_smith_goes_online(1.into());
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
             RawOrigin::Signed(caller.clone()).into();
         let receiver: T::IdtyIndex = 4.into();
         Pallet::<T>::invite_smith(caller_origin, receiver)?;
         let issuer: T::IdtyIndex = 4.into();
-        let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller));
@@ -75,19 +74,19 @@ mod benchmarks {
     #[benchmark]
     fn certify_smith() -> Result<(), BenchmarkError> {
         let issuer: T::IdtyIndex = 1.into();
-        let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
         Pallet::<T>::on_smith_goes_online(1.into());
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
             RawOrigin::Signed(caller.clone()).into();
         let receiver: T::IdtyIndex = 4.into();
         Pallet::<T>::invite_smith(caller_origin, receiver)?;
         let issuer: T::IdtyIndex = receiver;
-        let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
             RawOrigin::Signed(caller.clone()).into();
         Pallet::<T>::accept_invitation(caller_origin)?;
         let issuer: T::IdtyIndex = 1.into();
-        let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller), receiver);

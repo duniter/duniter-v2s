@@ -31,6 +31,7 @@ pub mod weights;
 mod benchmarking;
 
 use codec::{Codec, Decode, Encode};
+use duniter_primitives::Idty;
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_support::ensure;
 use frame_support::pallet_prelude::Get;
@@ -108,11 +109,9 @@ pub mod pallet {
             + MaxEncodedLen;
         /// Identifier for an authority-member
         type MemberId: Copy + Ord + MaybeSerializeDeserialize + Parameter;
-        /// Something that gives the IdtyId of an AccountId
-        type IdtyIdOf: Convert<Self::AccountId, Option<Self::IdtyIndex>>;
-        /// Something that give the owner key of an identity
-        type OwnerKeyOf: Convert<Self::IdtyIndex, Option<Self::AccountId>>;
-        /// Something that gives the IdtyId of an AccountId
+        /// Something that gives the IdtyId of an AccountId and reverse
+        type IdtyAttr: duniter_primitives::Idty<Self::IdtyIndex, Self::AccountId>;
+        // /// Something that give the owner key of an identity
         type IdtyIdOfAuthorityId: Convert<Self::MemberId, Option<Self::IdtyIndex>>;
         /// Maximum number of active certifications by issuer
         #[pallet::constant]
@@ -291,7 +290,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin.clone())?;
             let issuer =
-                T::IdtyIdOf::convert(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
+                T::IdtyAttr::idty_index(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
             Self::check_invite_smith(issuer, receiver)?;
             Self::do_invite_smith(issuer, receiver);
             Ok(().into())
@@ -303,7 +302,7 @@ pub mod pallet {
         pub fn accept_invitation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin.clone())?;
             let receiver =
-                T::IdtyIdOf::convert(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
+                T::IdtyAttr::idty_index(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
             Self::check_accept_invitation(receiver)?;
             Self::do_accept_invitation(receiver)?;
             Ok(().into())
@@ -318,7 +317,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let issuer =
-                T::IdtyIdOf::convert(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
+                T::IdtyAttr::idty_index(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
             Self::check_certify_smith(issuer, receiver)?;
             Self::do_certify_smith(receiver, issuer);
             Ok(().into())

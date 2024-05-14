@@ -27,9 +27,6 @@ use sp_runtime::{
     BuildStorage,
 };
 
-#[cfg(feature = "runtime-benchmarks")]
-use sp_runtime::traits::ConvertInto;
-
 pub const BLOCK_TIME: u64 = 6_000;
 
 type Balance = u64;
@@ -142,9 +139,9 @@ impl frame_support::traits::StoredMap<u32, FirstEligibleUd> for TestMembersStora
 }
 
 impl pallet_universal_dividend::Config for Test {
-    #[cfg(feature = "runtime-benchmarks")]
-    type AccountIdOf = ConvertInto;
     type Currency = pallet_balances::Pallet<Test>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type IdtyAttr = ();
     type MaxPastReeval = frame_support::traits::ConstU32<2>;
     type MembersCount = MembersCount;
     type MembersStorage = TestMembersStorage;

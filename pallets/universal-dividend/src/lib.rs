@@ -18,12 +18,16 @@
 
 mod benchmarking;
 mod compute_claim_uds;
+mod types;
+mod weights;
+
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
-mod types;
-mod weights;
+
+#[cfg(feature = "runtime-benchmarks")]
+use duniter_primitives::Idty;
 
 pub use pallet::*;
 pub use types::*;
@@ -86,8 +90,9 @@ pub mod pallet {
         type UnitsPerUd: Get<BalanceOf<Self>>;
         /// Pallet weights info
         type WeightInfo: WeightInfo;
+        /// Something that gives the IdtyId of an AccountId and reverse
         #[cfg(feature = "runtime-benchmarks")]
-        type AccountIdOf: Convert<u32, Option<Self::AccountId>>;
+        type IdtyAttr: duniter_primitives::Idty<u32, Self::AccountId>;
     }
 
     // STORAGE //
