@@ -42,12 +42,6 @@ where
     Backend: sc_client_api::Backend<B>,
     IdtyIndex: Decode + Encode + PartialEq + TypeInfo,
 {
-    let &[owner_key] = owner_keys else {
-        log::error!("🧙 [distance oracle] Expected exactly one Babe owner key, found {}: oracle cannot work", owner_keys.len());
-        return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
-    };
-    let owner_key = sp_runtime::AccountId32::new(owner_key.0);
-
     let pool_index = client
         .storage(
             parent,
@@ -82,7 +76,13 @@ where
         });
 
     // Have we already published a result for this period?
-    if published_results.evaluators.contains(&owner_key) {
+    // The block author is guaranteed to be in the owner_keys.
+    let owner_keys = owner_keys
+        .iter()
+        .map(|&key| sp_runtime::AccountId32::new(key.0))
+        .any(|key| published_results.evaluators.contains(&key));
+
+    if owner_keys {
         log::debug!("🧙 [distance oracle] Already published a result for this period");
         return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
     }
