@@ -19,7 +19,6 @@ impl<T: Config> pallet_authority_members::OnIncomingMember<T::MemberId> for Pall
     }
 }
 
-///
 impl<T: Config> pallet_authority_members::OnNewSession for Pallet<T> {
     fn on_new_session(index: SessionIndex) {
         CurrentSession::<T>::put(index);

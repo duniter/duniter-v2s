@@ -15,9 +15,9 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use common_runtime::{AccountId, Balance, Block, BlockNumber, Hash, Header, Index};
-use sc_client_api::MerkleValue;
 use sc_client_api::{
-    AuxStore, Backend as BackendT, BlockchainEvents, KeysIter, PairsIter, UsageProvider,
+    AuxStore, Backend as BackendT, BlockchainEvents, KeysIter, MerkleValue, PairsIter,
+    UsageProvider,
 };
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{HeaderBackend, HeaderMetadata};

@@ -31,13 +31,10 @@ pub mod weights;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
-use frame_support::pallet_prelude::Weight;
-use frame_support::pallet_prelude::*;
-use sp_membership::traits::*;
-use sp_membership::MembershipData;
+use frame_support::pallet_prelude::{Weight, *};
+use sp_membership::{traits::*, MembershipData};
 use sp_runtime::traits::Zero;
-use sp_std::collections::btree_map::BTreeMap;
-use sp_std::prelude::*;
+use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 #[cfg(feature = "runtime-benchmarks")]
 pub trait SetupBenchmark<IdtyId, AccountId> {

@@ -19,11 +19,9 @@
 use super::*;
 
 use codec::Encode;
-use frame_benchmarking::account;
-use frame_benchmarking::v2::*;
+use frame_benchmarking::{account, v2::*};
 use frame_support::traits::OnInitialize;
-use frame_system::pallet_prelude::BlockNumberFor;
-use frame_system::RawOrigin;
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_core::Get;
 use sp_io::crypto::{sr25519_generate, sr25519_sign};
 use sp_runtime::{AccountId32, MultiSigner};

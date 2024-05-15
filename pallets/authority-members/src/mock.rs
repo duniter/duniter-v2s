@@ -18,16 +18,14 @@ use super::*;
 use crate::{self as pallet_authority_members};
 use frame_support::{pallet_prelude::*, parameter_types, traits::Everything};
 use frame_system as system;
-use pallet_offences::traits::OnOffenceHandler;
-use pallet_offences::SlashStrategy;
+use pallet_offences::{traits::OnOffenceHandler, SlashStrategy};
 use pallet_session::ShouldEndSession;
 use sp_core::{crypto::key_types::DUMMY, H256};
-use sp_runtime::BuildStorage;
 use sp_runtime::{
     impl_opaque_keys,
     testing::UintAuthorityId,
     traits::{BlakeTwo256, ConvertInto, IdentityLookup, IsMember, OpaqueKeys},
-    KeyTypeId,
+    BuildStorage, KeyTypeId,
 };
 use sp_staking::offence::OffenceDetails;
 use sp_state_machine::BasicExternalities;

@@ -20,10 +20,12 @@
 pub mod key;
 pub mod utils;
 
-use crate::cli::{Cli, Subcommand};
-use crate::service::runtime_executor::Executor;
-use crate::service::RuntimeType;
-use crate::{chain_spec, service};
+use crate::{
+    chain_spec,
+    cli::{Cli, Subcommand},
+    service,
+    service::{runtime_executor::Executor, RuntimeType},
+};
 use clap::CommandFactory;
 #[cfg(feature = "runtime-benchmarks")]
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
@@ -329,12 +331,12 @@ pub fn run() -> sc_cli::Result<()> {
                 BenchmarkCmd::Pallet(cmd) => {
                     if cfg!(feature = "runtime-benchmarks") {
                         runner.sync_run(|config| {
-                            cmd.run::<sp_runtime::traits::HashingFor<
+                            cmd.run_with_spec::<sp_runtime::traits::HashingFor<
                                 service::runtime_executor::runtime::Block,
                             >, ExtendedHostFunctions<
                                 sp_io::SubstrateHostFunctions,
                                 <Executor as NativeExecutionDispatch>::ExtendHostFunctions,
-                            >>(config)
+                            >>(Some(config.chain_spec))
                         })
                     } else {
                         Err("Benchmarking wasn't enabled when building the node. \
@@ -373,10 +375,11 @@ pub fn run() -> sc_cli::Result<()> {
                 }
 
                 {
-                    service::new_full::<service::runtime_executor::runtime::RuntimeApi, Executor>(
-                        config,
-                        cli.sealing,
-                    )
+                    service::new_full::<
+                        service::runtime_executor::runtime::RuntimeApi,
+                        Executor,
+                        sc_network::Litep2pNetworkBackend,
+                    >(config, cli.sealing)
                     .map_err(sc_cli::Error::Service)
                 }
             })

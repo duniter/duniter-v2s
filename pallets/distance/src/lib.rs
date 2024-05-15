@@ -34,14 +34,18 @@ pub use traits::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
-use frame_support::traits::StorageVersion;
+use frame_support::traits::{
+    fungible::{self, hold::Balanced, Mutate, MutateHold},
+    tokens::Precision,
+    StorageVersion,
+};
 use sp_distance::{InherentError, INHERENT_IDENTIFIER};
 use sp_inherents::{InherentData, InherentIdentifier};
-use sp_runtime::traits::One;
-use sp_runtime::traits::Zero;
-use sp_runtime::Saturating;
-use sp_std::convert::TryInto;
-use sp_std::prelude::*;
+use sp_runtime::{
+    traits::{One, Zero},
+    Saturating,
+};
+use sp_std::{convert::TryInto, prelude::*};
 
 type IdtyIndex = u32;
 
@@ -53,9 +57,17 @@ pub const MAX_EVALUATORS_PER_SESSION: u32 = 100;
 #[frame_support::pallet()]
 pub mod pallet {
     use super::*;
-    use frame_support::{pallet_prelude::*, traits::ReservableCurrency};
+    use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_runtime::Perbill;
+    pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+    pub type BalanceOf<T> = <<T as Config>::Currency as fungible::Inspect<AccountIdOf<T>>>::Balance;
+
+    #[pallet::composite_enum]
+    pub enum HoldReason {
+        /// The funds are held as deposit for the distance evaluation.
+        DistanceHold,
+    }
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -71,12 +83,14 @@ pub mod pallet {
         + pallet_identity::Config<IdtyIndex = IdtyIndex>
     {
         /// Currency type used in this pallet (used for reserve/slash)
-        type Currency: ReservableCurrency<Self::AccountId>;
+        type Currency: Mutate<Self::AccountId>
+            + MutateHold<Self::AccountId, Reason = Self::RuntimeHoldReason>
+            + Balanced<Self::AccountId>;
+        /// Overarching hold reason.
+        type RuntimeHoldReason: From<HoldReason>;
         /// Amount reserved during evaluation
         #[pallet::constant]
-        type EvaluationPrice: Get<
-            <Self::Currency as frame_support::traits::Currency<Self::AccountId>>::Balance,
-        >;
+        type EvaluationPrice: Get<BalanceOf<Self>>;
         /// Evaluation period number of blocks.
         /// As the evaluation is done using 3 pools,
         /// the evaluation will take 3 * EvaluationPeriod.
@@ -463,7 +477,11 @@ pub mod pallet {
                     Error::<T>::QueueFull
                 );
 
-                T::Currency::reserve(who, <T as Config>::EvaluationPrice::get())?;
+                T::Currency::hold(
+                    &HoldReason::DistanceHold.into(),
+                    who,
+                    <T as Config>::EvaluationPrice::get(),
+                )?;
 
                 current_pool
                     .evaluations
@@ -559,9 +577,11 @@ pub mod pallet {
                     if let Some(distance) = distance_result {
                         if distance >= T::MinAccessibleReferees::get() {
                             // Positive result, unreserve and apply
-                            T::Currency::unreserve(
+                            let _ = T::Currency::release(
+                                &HoldReason::DistanceHold.into(),
                                 &requester,
                                 <T as Config>::EvaluationPrice::get(),
+                                Precision::Exact,
                             );
                             Self::do_valid_distance_status(idty, distance);
                             weight = weight.saturating_add(
@@ -572,7 +592,8 @@ pub mod pallet {
                             );
                         } else {
                             // Negative result, slash and deposit event
-                            let _ = T::Currency::slash_reserved(
+                            let _ = T::Currency::slash(
+                                &HoldReason::DistanceHold.into(),
                                 &requester,
                                 <T as Config>::EvaluationPrice::get(),
                             );
@@ -589,7 +610,12 @@ pub mod pallet {
                         }
                     } else {
                         // No result, unreserve
-                        T::Currency::unreserve(&requester, <T as Config>::EvaluationPrice::get());
+                        let _ = T::Currency::release(
+                            &HoldReason::DistanceHold.into(),
+                            &requester,
+                            <T as Config>::EvaluationPrice::get(),
+                            Precision::Exact,
+                        );
                         weight = weight.saturating_add(
                             <T as pallet::Config>::WeightInfo::do_evaluation_failure()
                                 .saturating_sub(

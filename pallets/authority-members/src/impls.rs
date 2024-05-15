@@ -23,13 +23,10 @@
 #![allow(clippy::type_complexity)]
 
 use super::pallet::*;
-use frame_support::pallet_prelude::Weight;
-use frame_support::traits::Get;
-use pallet_offences::traits::OnOffenceHandler;
-use pallet_offences::SlashStrategy;
+use frame_support::{pallet_prelude::Weight, traits::Get};
+use pallet_offences::{traits::OnOffenceHandler, SlashStrategy};
 use sp_runtime::traits::Convert;
-use sp_staking::offence::OffenceDetails;
-use sp_staking::SessionIndex;
+use sp_staking::{offence::OffenceDetails, SessionIndex};
 
 impl<T: Config>
     OnOffenceHandler<T::AccountId, pallet_session::historical::IdentificationTuple<T>, Weight>

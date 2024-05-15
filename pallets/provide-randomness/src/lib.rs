@@ -23,7 +23,13 @@ mod benchmarking;
 mod types;
 pub mod weights;
 
-use frame_support::pallet_prelude::Weight;
+use frame_support::{
+    pallet_prelude::Weight,
+    traits::{
+        fungible::{self, Balanced, Credit},
+        tokens::{Fortitude, Precision, Preservation},
+    },
+};
 use sp_core::H256;
 use sp_std::prelude::*;
 
@@ -45,18 +51,15 @@ impl OnFilledRandomness for () {
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::{
-        Currency, ExistenceRequirement, OnUnbalanced, Randomness, StorageVersion, WithdrawReasons,
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{OnUnbalanced, Randomness, StorageVersion},
     };
     use frame_system::pallet_prelude::*;
     use sp_core::H256;
 
-    pub type BalanceOf<T> =
-        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-    pub type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
-        <T as frame_system::Config>::AccountId,
-    >>::NegativeImbalance;
+    type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+    pub type BalanceOf<T> = <<T as Config>::Currency as fungible::Inspect<AccountIdOf<T>>>::Balance;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -70,7 +73,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config<Hash = H256> {
         // The currency
-        type Currency: Currency<Self::AccountId>;
+        type Currency: fungible::Balanced<Self::AccountId> + fungible::Mutate<Self::AccountId>;
         /// Get the current epoch index
         type GetCurrentEpochIndex: Get<u64>;
         /// Maximum number of not yet filled requests
@@ -82,7 +85,7 @@ pub mod pallet {
         /// On filled randomness
         type OnFilledRandomness: OnFilledRandomness;
         /// Handler for the unbalanced reduction when the requestor pays fees.
-        type OnUnbalanced: OnUnbalanced<NegativeImbalanceOf<Self>>;
+        type OnUnbalanced: OnUnbalanced<Credit<Self::AccountId, Self::Currency>>;
         /// A safe source of randomness from the parent block
         type ParentBlockRandomness: Randomness<Option<H256>, BlockNumberFor<Self>>;
         /// A safe source of randomness from one epoch ago
@@ -251,8 +254,9 @@ pub mod pallet {
             let imbalance = T::Currency::withdraw(
                 requestor,
                 T::RequestPrice::get(),
-                WithdrawReasons::FEE,
-                ExistenceRequirement::KeepAlive,
+                Precision::Exact,
+                Preservation::Preserve,
+                Fortitude::Polite,
             )?;
             T::OnUnbalanced::on_unbalanced(imbalance);
             Ok(())

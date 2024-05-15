@@ -16,11 +16,9 @@
 
 use super::*;
 use crate::mock::*;
-use crate::MemberData;
 use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::RawOrigin;
-use sp_runtime::testing::UintAuthorityId;
-use sp_runtime::traits::BadOrigin;
+use sp_runtime::{testing::UintAuthorityId, traits::BadOrigin};
 use sp_staking::offence::OffenceDetails;
 
 const EMPTY: Vec<u64> = Vec::new();

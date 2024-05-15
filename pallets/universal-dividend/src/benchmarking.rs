@@ -15,18 +15,14 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 #![cfg(feature = "runtime-benchmarks")]
+#![allow(clippy::multiple_bound_locations)]
 
 use super::*;
-
 use core::num::NonZeroU16;
-use frame_benchmarking::v2::*;
-use frame_benchmarking::{account, whitelisted_caller};
-use frame_support::pallet_prelude::IsType;
-use frame_support::traits::Get;
-use frame_support::traits::StoredMap;
+use frame_benchmarking::{account, v2::*, whitelisted_caller};
+use frame_support::{pallet_prelude::IsType, traits::StoredMap};
 use frame_system::RawOrigin;
 use pallet_balances::Pallet as Balances;
-use sp_runtime::traits::Bounded;
 
 use crate::Pallet;
 
@@ -35,7 +31,7 @@ const ED_MULTIPLIER: u32 = 10;
 #[benchmarks(
         where
         T: pallet_balances::Config, T::Balance: From<u64>,
-        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>
+        BalanceOf<T>: IsType<T::Balance>
 )]
 mod benchmarks {
     use super::*;
@@ -82,7 +78,7 @@ mod benchmarks {
         let existential_deposit = T::ExistentialDeposit::get();
         let caller = whitelisted_caller();
         let balance = existential_deposit.saturating_mul(ED_MULTIPLIER.into());
-        let _ = T::Currency::make_free_balance_be(&caller, balance.into());
+        let _ = T::Currency::set_balance(&caller, balance.into());
         // Transfer `e - 1` existential deposits + 1 unit, which guarantees to create one account and reap this user.
         let recipient: T::AccountId = account("recipient", 0, 1);
         let recipient_lookup: <T::Lookup as StaticLookup>::Source =
@@ -112,10 +108,7 @@ mod benchmarks {
         let recipient_lookup: <T::Lookup as StaticLookup>::Source =
             T::Lookup::unlookup(recipient.clone());
         // Give the sender account max funds, thus a transfer will not kill account.
-        let _ = T::Currency::make_free_balance_be(
-            &caller,
-            <T::Currency as Currency<T::AccountId>>::Balance::max_value(),
-        );
+        let _ = T::Currency::set_balance(&caller, u32::MAX.into());
         let existential_deposit = T::ExistentialDeposit::get();
         let transfer_amount = existential_deposit.saturating_mul(ED_MULTIPLIER.into());
         let transfer_amount_ud =

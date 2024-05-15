@@ -24,12 +24,9 @@ use frame_support::{
 };
 use frame_system as system;
 use sp_core::{Pair, H256};
-use sp_runtime::traits::IdentifyAccount;
-use sp_runtime::traits::Verify;
-use sp_runtime::BuildStorage;
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
-    MultiSignature, MultiSigner,
+    traits::{BlakeTwo256, IdentifyAccount, IdentityLookup, Verify},
+    BuildStorage, MultiSignature, MultiSigner,
 };
 
 type BlockNumber = u64;

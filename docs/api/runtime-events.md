@@ -581,7 +581,7 @@ A oneshot account was created.
 
 ```rust
 account: T::AccountId
-balance: <T::Currency as Currency<T::AccountId>>::Balance
+balance: BalanceOf<T>
 creator: T::AccountId
 ```
 
@@ -595,10 +595,8 @@ A oneshot account was consumed.
 
 ```rust
 account: T::AccountId
-dest1: (T::AccountId,<T::Currency as Currency<T::AccountId>>::Balance,)
-dest2: Option<
-(T::AccountId,<T::Currency as Currency<T::AccountId>>::Balance,)
->
+dest1: (T::AccountId, BalanceOf<T>)
+dest2: Option<(T::AccountId, BalanceOf<T>)>
 ```
 
 </details>
@@ -611,7 +609,7 @@ A withdrawal was executed on a oneshot account.
 
 ```rust
 account: T::AccountId
-balance: <T::Currency as Currency<T::AccountId>>::Balance
+balance: BalanceOf<T>
 ```
 
 </details>

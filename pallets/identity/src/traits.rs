@@ -16,7 +16,6 @@
 
 use crate::*;
 use frame_support::pallet_prelude::*;
-use frame_support::weights::Weight;
 
 /// A trait defining operations for checking if identity-related calls are allowed.
 pub trait CheckIdtyCallAllowed<T: Config> {

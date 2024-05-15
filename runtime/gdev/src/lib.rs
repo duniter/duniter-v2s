@@ -33,31 +33,30 @@ pub use common_runtime::{
     constants::*, entities::*, handlers::*, AccountId, Address, Balance, BlockNumber,
     FullIdentificationOfImpl, GetCurrentEpochIndex, Hash, Header, IdtyIndex, Index, Signature,
 };
+use frame_support::traits::{fungible::Balanced, Imbalance};
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_duniter_test_parameters::Parameters as GenesisParameters;
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as session_historical;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::CurrencyAdapter;
+use pallet_transaction_payment::FungibleAdapter;
 pub use pallet_universal_dividend;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 
 use common_runtime::IdtyNameValidatorImpl;
-use frame_support::traits::Contains;
-use frame_support::PalletId;
+use frame_support::{traits::Contains, PalletId};
 use frame_system::EnsureRoot;
-use pallet_grandpa::fg_primitives;
-use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
+use pallet_grandpa::{
+    fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
+};
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
-use sp_runtime::traits::{
-    AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, One, OpaqueKeys,
-};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
+    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, One, OpaqueKeys},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult,
 };
@@ -72,9 +71,7 @@ pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{EqualPrivilegeOnly, KeyOwnerProofSystem, Randomness},
     weights::{
-        constants::{
-            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
-        },
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
         Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
     },
     StorageValue,

@@ -22,8 +22,7 @@
 pub mod traits;
 
 use codec::{Decode, Encode};
-use frame_support::pallet_prelude::RuntimeDebug;
-use frame_support::pallet_prelude::Weight;
+use frame_support::pallet_prelude::{RuntimeDebug, Weight};
 
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};

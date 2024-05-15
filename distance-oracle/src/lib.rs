@@ -29,10 +29,8 @@ use api::{AccountId, IdtyIndex};
 use codec::Encode;
 use fnv::{FnvHashMap, FnvHashSet};
 use log::{debug, error, info, warn};
-use rayon::iter::IntoParallelRefIterator;
-use rayon::iter::ParallelIterator;
-use std::io::Write;
-use std::path::PathBuf;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use std::{io::Write, path::PathBuf};
 
 // TODO select metadata file using features
 #[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]

@@ -33,7 +33,11 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
-use frame_support::traits::{tokens::ExistenceRequirement, Currency, OnTimestampSet};
+use frame_support::traits::{
+    fungible::{self, Balanced, Mutate},
+    tokens::{Precision, Preservation},
+    OnTimestampSet,
+};
 use sp_arithmetic::{
     per_things::Perbill,
     traits::{One, Saturating, Zero},
@@ -43,13 +47,15 @@ use sp_runtime::traits::{Get, MaybeSerializeDeserialize, StaticLookup};
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::{StorageVersion, StoredMap};
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{StorageVersion, StoredMap},
+    };
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::Convert;
 
-    pub type BalanceOf<T> =
-        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+    type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+    pub type BalanceOf<T> = <<T as Config>::Currency as fungible::Inspect<AccountIdOf<T>>>::Balance;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -64,7 +70,7 @@ pub mod pallet {
         // Moment into Balance converter
         type MomentIntoBalance: Convert<Self::Moment, BalanceOf<Self>>;
         // The currency
-        type Currency: Currency<Self::AccountId>;
+        type Currency: fungible::Balanced<Self::AccountId> + fungible::Mutate<Self::AccountId>;
         /// Maximum number of past UD revaluations to keep in storage.
         #[pallet::constant]
         type MaxPastReeval: Get<u32>;
@@ -310,7 +316,7 @@ pub mod pallet {
                             core::num::NonZeroU16::new(current_ud_index)
                                 .expect("unreachable because current_ud_index is never zero."),
                         );
-                        let _ = T::Currency::deposit_creating(who, uds_total);
+                        let _ = T::Currency::deposit(who, uds_total, Precision::Exact);
                         Self::deposit_event(Event::UdsClaimed {
                             count: uds_count,
                             total: uds_total,
@@ -329,7 +335,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
             value: BalanceOf<T>,
-            existence_requirement: ExistenceRequirement,
+            preservation: Preservation,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let dest = T::Lookup::lookup(dest)?;
@@ -338,7 +344,7 @@ pub mod pallet {
                 &who,
                 &dest,
                 value.saturating_mul(ud_amount) / T::UnitsPerUd::get(),
-                existence_requirement,
+                preservation,
             )?;
             Ok(().into())
         }
@@ -416,7 +422,7 @@ pub mod pallet {
             dest: <T::Lookup as StaticLookup>::Source,
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
-            Self::do_transfer_ud(origin, dest, value, ExistenceRequirement::AllowDeath)
+            Self::do_transfer_ud(origin, dest, value, Preservation::Expendable)
         }
 
         /// Transfer some liquid free balance to another account, in milliUD.
@@ -427,7 +433,7 @@ pub mod pallet {
             dest: <T::Lookup as StaticLookup>::Source,
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
-            Self::do_transfer_ud(origin, dest, value, ExistenceRequirement::KeepAlive)
+            Self::do_transfer_ud(origin, dest, value, Preservation::Preserve)
         }
     }
 
@@ -448,7 +454,7 @@ pub mod pallet {
                     first_ud_index,
                     PastReevals::<T>::get().into_iter(),
                 );
-                let _ = T::Currency::deposit_creating(who, uds_total);
+                let _ = T::Currency::deposit(who, uds_total, Precision::Exact);
                 Self::deposit_event(Event::UdsAutoPaid {
                     count: uds_count,
                     total: uds_total,

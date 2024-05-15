@@ -22,12 +22,12 @@ use self::client::{Client, ClientHandle, RuntimeApiCollection};
 use async_io::Timer;
 use common_runtime::Block;
 use futures::{Stream, StreamExt};
-use sc_client_api::client::BlockBackend;
-use sc_client_api::Backend;
+use sc_client_api::{client::BlockBackend, Backend};
 use sc_consensus_grandpa::SharedVoterState;
 use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
-use sc_service::WarpSyncParams;
-use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TaskManager};
+use sc_service::{
+    error::Error as ServiceError, Configuration, PartialComponents, TaskManager, WarpSyncParams,
+};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_consensus_babe::inherents::InherentDataProvider;
 use sp_core::H256;
@@ -295,7 +295,11 @@ where
 }
 
 /// Builds a new service for a full client.
-pub fn new_full<RuntimeApi, Executor>(
+pub fn new_full<
+    RuntimeApi,
+    Executor,
+    N: sc_network::NetworkBackend<Block, <Block as sp_runtime::traits::Block>::Hash>,
+>(
     config: Configuration,
     sealing: crate::cli::Sealing,
 ) -> Result<TaskManager, ServiceError>
@@ -328,9 +332,19 @@ where
         &config.chain_spec,
     );
 
-    let mut net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
+    let mut net_config = sc_network::config::FullNetworkConfiguration::<
+        Block,
+        <Block as sp_runtime::traits::Block>::Hash,
+        N,
+    >::new(&config.network);
+    let metrics = N::register_notification_metrics(config.prometheus_registry());
+    let peer_store_handle = net_config.peer_store_handle();
     let (grandpa_protocol_config, grandpa_notification_service) =
-        sc_consensus_grandpa::grandpa_peers_set_config(grandpa_protocol_name.clone());
+        sc_consensus_grandpa::grandpa_peers_set_config::<_, N>(
+            grandpa_protocol_name.clone(),
+            metrics.clone(),
+            peer_store_handle,
+        );
     net_config.add_notification_protocol(grandpa_protocol_config);
 
     let warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
@@ -350,6 +364,7 @@ where
             block_announce_validator_builder: None,
             warp_sync_params: Some(WarpSyncParams::WithProvider(warp_sync)),
             block_relay: None,
+            metrics,
         })?;
 
     let role = config.role.clone();
@@ -374,7 +389,7 @@ where
                         transaction_pool.clone(),
                     ),
                 ),
-                network_provider: network.clone(),
+                network_provider: Arc::new(network.clone()),
                 is_validator: role.is_authority(),
                 enable_http_requests: false,
                 custom_extensions: move |_| vec![],

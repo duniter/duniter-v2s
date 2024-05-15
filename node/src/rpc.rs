@@ -23,11 +23,9 @@
 
 pub use sc_rpc_api::DenyUnsafe;
 
-use common_runtime::Block;
-use common_runtime::{AccountId, Balance, Index};
+use common_runtime::{AccountId, Balance, Block, Index};
 use jsonrpsee::RpcModule;
-use sc_consensus_babe::BabeApi;
-use sc_consensus_babe::BabeWorkerHandle;
+use sc_consensus_babe::{BabeApi, BabeWorkerHandle};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;

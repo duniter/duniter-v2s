@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use super::entities::*;
-use super::{AccountId, IdtyIndex};
-use frame_support::pallet_prelude::Weight;
-use frame_support::traits::UnfilteredDispatchable;
+use super::{entities::*, AccountId, IdtyIndex};
+use frame_support::{pallet_prelude::Weight, traits::UnfilteredDispatchable};
 use pallet_smith_members::SmithRemovalReason;
 
 /// OnNewSession handler for the runtime calling all the implementation

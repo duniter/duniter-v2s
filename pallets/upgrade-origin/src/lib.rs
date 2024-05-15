@@ -24,8 +24,7 @@ pub use pallet::*;
 pub use weights::WeightInfo;
 
 use frame_support::{
-    dispatch::GetDispatchInfo,
-    dispatch::PostDispatchInfo,
+    dispatch::{GetDispatchInfo, PostDispatchInfo},
     traits::{IsSubType, UnfilteredDispatchable},
 };
 use sp_runtime::traits::Dispatchable;

@@ -19,10 +19,10 @@ use crate::{self as pallet_duniter_wot};
 use frame_support::{parameter_types, traits::Everything};
 use frame_system as system;
 use sp_core::H256;
-use sp_runtime::BuildStorage;
 use sp_runtime::{
     testing::{TestSignature, UintAuthorityId},
     traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
 };
 use sp_state_machine::BasicExternalities;
 use std::collections::BTreeMap;

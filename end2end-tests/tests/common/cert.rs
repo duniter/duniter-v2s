@@ -14,9 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use super::gdev;
-use super::gdev::runtime_types::pallet_certification;
-use super::*;
+use super::{gdev, gdev::runtime_types::pallet_certification, *};
 use sp_keyring::AccountKeyring;
 use subxt::{tx::PairSigner, utils::MultiAddress};
 

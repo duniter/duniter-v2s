@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use super::gdev;
-use super::gdev::runtime_types::pallet_identity;
-use super::*;
+use super::{gdev, gdev::runtime_types::pallet_identity, *};
 use crate::DuniterWorld;
 use sp_keyring::AccountKeyring;
-use subxt::backend::rpc::RpcClient;
-use subxt::tx::{PairSigner, Signer};
-use subxt::utils::AccountId32;
+use subxt::{
+    backend::rpc::RpcClient,
+    tx::{PairSigner, Signer},
+    utils::AccountId32,
+};
 
 pub async fn request_evaluation(client: &FullClient, origin: AccountKeyring) -> Result<()> {
     let origin = PairSigner::new(origin.pair());

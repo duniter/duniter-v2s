@@ -38,8 +38,7 @@ use crate::traits::*;
 use codec::Codec;
 use frame_support::pallet_prelude::Weight;
 use sp_runtime::traits::{AtLeast32BitUnsigned, IdentifyAccount, One, Saturating, Verify, Zero};
-use sp_std::fmt::Debug;
-use sp_std::prelude::*;
+use sp_std::{fmt::Debug, prelude::*};
 
 // icok = identity change owner key
 pub const NEW_OWNER_KEY_PAYLOAD_PREFIX: [u8; 4] = [b'i', b'c', b'o', b'k'];
@@ -51,8 +50,7 @@ pub const LINK_IDTY_PAYLOAD_PREFIX: [u8; 4] = [b'l', b'i', b'n', b'k'];
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::StorageVersion;
+    use frame_support::{pallet_prelude::*, traits::StorageVersion};
     use frame_system::pallet_prelude::*;
 
     /// The current storage version.

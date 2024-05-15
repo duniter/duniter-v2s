@@ -18,7 +18,7 @@ pub use crate::{median::*, MAX_EVALUATIONS_PER_SESSION, MAX_EVALUATORS_PER_SESSI
 pub use sp_distance::ComputationResult;
 
 use codec::{Decode, Encode};
-use frame_support::{pallet_prelude::*, BoundedBTreeSet};
+use frame_support::pallet_prelude::*;
 use sp_runtime::Perbill;
 
 /// Status of the distance evaluation of an identity

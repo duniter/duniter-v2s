@@ -15,11 +15,8 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use common_runtime::constants::*;
-use common_runtime::{Balance, BlockNumber, Moment};
-use frame_support::parameter_types;
-use frame_support::weights::constants::WEIGHT_REF_TIME_PER_SECOND;
-use sp_arithmetic::Perbill;
+use common_runtime::{constants::*, Moment};
+use frame_support::{parameter_types, weights::constants::WEIGHT_REF_TIME_PER_SECOND};
 use sp_runtime::transaction_validity::TransactionPriority;
 
 parameter_types! {

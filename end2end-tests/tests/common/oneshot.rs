@@ -14,13 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use super::gdev;
-use super::gdev::runtime_types::pallet_balances;
-use super::gdev::runtime_types::pallet_oneshot_account;
-use super::*;
+use super::{
+    gdev,
+    gdev::runtime_types::{pallet_balances, pallet_oneshot_account},
+    *,
+};
 use sp_keyring::AccountKeyring;
-use subxt::utils::AccountId32;
-use subxt::{tx::PairSigner, utils::MultiAddress};
+use subxt::{
+    tx::PairSigner,
+    utils::{AccountId32, MultiAddress},
+};
 
 pub enum Account {
     Normal(AccountKeyring),

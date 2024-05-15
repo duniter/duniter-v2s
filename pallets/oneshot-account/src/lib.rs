@@ -28,14 +28,22 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
-use frame_support::pallet_prelude::*;
-use frame_support::traits::{
-    Currency, ExistenceRequirement, Imbalance, IsSubType, WithdrawReasons,
+use frame_support::{
+    pallet_prelude::*,
+    traits::{
+        fungible,
+        fungible::{Balanced, Credit, Inspect},
+        tokens::{Fortitude, Precision, Preservation},
+        Imbalance, IsSubType,
+    },
 };
 use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::OnChargeTransaction;
 use sp_runtime::traits::{DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup, Zero};
 use sp_std::convert::TryInto;
+
+type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+type BalanceOf<T> = <<T as Config>::Currency as fungible::Inspect<AccountIdOf<T>>>::Balance;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -49,7 +57,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
-        type Currency: Currency<Self::AccountId>;
+        type Currency: fungible::Balanced<Self::AccountId> + fungible::Mutate<Self::AccountId>;
         type InnerOnChargeTransaction: OnChargeTransaction<Self>;
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Type representing the weight of this pallet
@@ -60,13 +68,8 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn oneshot_account)]
-    pub type OneshotAccounts<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        T::AccountId,
-        <T::Currency as Currency<T::AccountId>>::Balance,
-        OptionQuery,
-    >;
+    pub type OneshotAccounts<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, OptionQuery>;
 
     // EVENTS //
 
@@ -77,25 +80,19 @@ pub mod pallet {
         /// A oneshot account was created.
         OneshotAccountCreated {
             account: T::AccountId,
-            balance: <T::Currency as Currency<T::AccountId>>::Balance,
+            balance: BalanceOf<T>,
             creator: T::AccountId,
         },
         /// A oneshot account was consumed.
         OneshotAccountConsumed {
             account: T::AccountId,
-            dest1: (
-                T::AccountId,
-                <T::Currency as Currency<T::AccountId>>::Balance,
-            ),
-            dest2: Option<(
-                T::AccountId,
-                <T::Currency as Currency<T::AccountId>>::Balance,
-            )>,
+            dest1: (T::AccountId, BalanceOf<T>),
+            dest2: Option<(T::AccountId, BalanceOf<T>)>,
         },
         /// A withdrawal was executed on a oneshot account.
         Withdraw {
             account: T::AccountId,
-            balance: <T::Currency as Currency<T::AccountId>>::Balance,
+            balance: BalanceOf<T>,
         },
     }
 
@@ -133,13 +130,13 @@ pub mod pallet {
         pub fn create_oneshot_account(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
-            #[pallet::compact] value: <T::Currency as Currency<T::AccountId>>::Balance,
+            #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResult {
             let transactor = ensure_signed(origin)?;
             let dest = T::Lookup::lookup(dest)?;
 
             ensure!(
-                value >= <T::Currency as Currency<T::AccountId>>::minimum_balance(),
+                value >= T::Currency::minimum_balance(),
                 Error::<T>::ExistentialDeposit
             );
             ensure!(
@@ -147,11 +144,12 @@ pub mod pallet {
                 Error::<T>::OneshotAccountAlreadyCreated
             );
 
-            let _ = <T::Currency as Currency<T::AccountId>>::withdraw(
+            let _ = T::Currency::withdraw(
                 &transactor,
                 value,
-                WithdrawReasons::TRANSFER,
-                ExistenceRequirement::KeepAlive,
+                Precision::Exact,
+                Preservation::Preserve,
+                Fortitude::Polite,
             )?;
             OneshotAccounts::<T>::insert(&dest, value);
             Self::deposit_event(Event::OneshotAccountCreated {
@@ -205,9 +203,8 @@ pub mod pallet {
                     balance: value,
                     creator: transactor.clone(),
                 });
-            } else {
-                let _ =
-                    <T::Currency as Currency<T::AccountId>>::deposit_into_existing(&dest, value)?;
+            } else if frame_system::Pallet::<T>::providers(&dest) > 0 {
+                let _ = T::Currency::deposit(&dest, value, Precision::Exact)?;
             }
             OneshotAccounts::<T>::remove(&transactor);
             Self::deposit_event(Event::OneshotAccountConsumed {
@@ -236,7 +233,7 @@ pub mod pallet {
             block_height: BlockNumberFor<T>,
             dest: Account<<T::Lookup as StaticLookup>::Source>,
             remaining_to: Account<<T::Lookup as StaticLookup>::Source>,
-            #[pallet::compact] balance: <T::Currency as Currency<T::AccountId>>::Balance,
+            #[pallet::compact] balance: BalanceOf<T>,
         ) -> DispatchResult {
             let transactor = ensure_signed(origin)?;
 
@@ -271,12 +268,12 @@ pub mod pallet {
                     Error::<T>::OneshotAccountAlreadyCreated
                 );
                 ensure!(
-                    balance1 >= <T::Currency as Currency<T::AccountId>>::minimum_balance(),
+                    balance1 >= T::Currency::minimum_balance(),
                     Error::<T>::ExistentialDeposit
                 );
             } else {
                 ensure!(
-                    !<T::Currency as Currency<T::AccountId>>::free_balance(&dest1).is_zero(),
+                    !T::Currency::balance(&dest1).is_zero(),
                     Error::<T>::DestAccountNotExist
                 );
             }
@@ -286,7 +283,7 @@ pub mod pallet {
                     Error::<T>::OneshotAccountAlreadyCreated
                 );
                 ensure!(
-                    balance2 >= <T::Currency as Currency<T::AccountId>>::minimum_balance(),
+                    balance2 >= T::Currency::minimum_balance(),
                     Error::<T>::ExistentialDeposit
                 );
                 OneshotAccounts::<T>::insert(&dest2, balance2);
@@ -295,10 +292,8 @@ pub mod pallet {
                     balance: balance2,
                     creator: transactor.clone(),
                 });
-            } else {
-                let _ = <T::Currency as Currency<T::AccountId>>::deposit_into_existing(
-                    &dest2, balance2,
-                )?;
+            } else if frame_system::Pallet::<T>::providers(&dest2) > 0 {
+                let _ = T::Currency::deposit(&dest2, balance2, Precision::Exact)?;
             }
             if dest1_is_oneshot {
                 OneshotAccounts::<T>::insert(&dest1, balance1);
@@ -307,10 +302,8 @@ pub mod pallet {
                     balance: balance1,
                     creator: transactor.clone(),
                 });
-            } else {
-                let _ = <T::Currency as Currency<T::AccountId>>::deposit_into_existing(
-                    &dest1, balance1,
-                )?;
+            } else if frame_system::Pallet::<T>::providers(&dest1) > 0 {
+                let _ = T::Currency::deposit(&dest1, balance1, Precision::Exact)?;
             }
             OneshotAccounts::<T>::remove(&transactor);
             Self::deposit_event(Event::OneshotAccountConsumed {
@@ -329,12 +322,12 @@ where
     T::RuntimeCall: IsSubType<Call<T>>,
     T::InnerOnChargeTransaction: OnChargeTransaction<
         T,
-        Balance = <T::Currency as Currency<T::AccountId>>::Balance,
-        LiquidityInfo = Option<<T::Currency as Currency<T::AccountId>>::NegativeImbalance>,
+        Balance = BalanceOf<T>,
+        LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>,
     >,
 {
-    type Balance = <T::Currency as Currency<T::AccountId>>::Balance;
-    type LiquidityInfo = Option<<T::Currency as Currency<T::AccountId>>::NegativeImbalance>;
+    type Balance = BalanceOf<T>;
+    type LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>;
 
     fn withdraw_fee(
         who: &T::AccountId,
@@ -359,10 +352,7 @@ where
                         account: who.clone(),
                         balance: fee,
                     });
-                    // TODO
-                    return Ok(Some(
-                        <T::Currency as Currency<T::AccountId>>::NegativeImbalance::zero(),
-                    ));
+                    return Ok(Some(Imbalance::zero()));
                 }
             }
             Err(TransactionValidityError::Invalid(

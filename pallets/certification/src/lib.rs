@@ -37,8 +37,7 @@ pub use weights::WeightInfo;
 use crate::traits::*;
 use codec::Codec;
 use duniter_primitives::Idty;
-use frame_support::pallet_prelude::*;
-use frame_support::traits::StorageVersion;
+use frame_support::{pallet_prelude::*, traits::StorageVersion};
 use sp_runtime::traits::AtLeast32BitUnsigned;
 use sp_std::{fmt::Debug, vec::Vec};
 

@@ -17,7 +17,6 @@
 use codec::{Decode, Encode, Error, Input, MaxEncodedLen, Output};
 use core::num::NonZeroU16;
 use sp_runtime::RuntimeDebug;
-use sp_std::vec::Vec;
 
 pub type UdIndex = u16;
 
@@ -53,7 +52,7 @@ impl Encode for FirstEligibleUd {
         self.as_u16().encode_to(dest)
     }
 
-    fn encode(&self) -> Vec<u8> {
+    fn encode(&self) -> sp_std::vec::Vec<u8> {
         self.as_u16().encode()
     }
 

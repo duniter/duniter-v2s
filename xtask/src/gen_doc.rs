@@ -19,17 +19,15 @@ use codec::Decode;
 use core::hash::Hash;
 use scale_info::form::PortableForm;
 use serde::Serialize;
-use std::collections::HashMap;
-use std::path::Path;
-use std::process::Command;
 use std::{
+    collections::HashMap,
     fs::File,
     io::{Read, Write},
+    path::Path,
+    process::Command,
 };
 use tera::Tera;
-use weightanalyzer::analyze_weight;
-use weightanalyzer::MaxBlockWeight;
-use weightanalyzer::WeightInfo;
+use weightanalyzer::{analyze_weight, MaxBlockWeight, WeightInfo};
 
 fn rename_key<K, V>(h: &mut HashMap<K, V>, old_key: &K, new_key: K)
 where

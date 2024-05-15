@@ -17,11 +17,9 @@
 //! Various basic types for use in the identity pallet.
 
 use codec::{Decode, Encode};
-use core::primitive::str;
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sp_std::vec::Vec;
 
 /// internal events related to identity
 pub enum IdtyEvent<T: crate::Config> {
@@ -80,7 +78,7 @@ pub enum RemovalReason {
     Deserialize,
     TypeInfo,
 )]
-pub struct IdtyName(pub Vec<u8>);
+pub struct IdtyName(pub sp_std::vec::Vec<u8>);
 
 impl From<&str> for IdtyName {
     fn from(s: &str) -> Self {

@@ -17,13 +17,12 @@
 use crate::{self as pallet_oneshot_account};
 use frame_support::{parameter_types, traits::Everything, weights::IdentityFee};
 use frame_system as system;
-use pallet_transaction_payment::CurrencyAdapter;
+use pallet_transaction_payment::FungibleAdapter;
 use sp_core::{ConstU32, H256};
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     BuildStorage,
 };
-use sp_std::convert::{TryFrom, TryInto};
 
 type Balance = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -106,16 +105,15 @@ impl pallet_transaction_payment::Config for Test {
 }
 impl pallet_oneshot_account::Config for Test {
     type Currency = Balances;
-    type InnerOnChargeTransaction = CurrencyAdapter<Balances, HandleFees>;
+    type InnerOnChargeTransaction = FungibleAdapter<Balances, HandleFees>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 pub struct HandleFees;
-type NegativeImbalance = <Balances as frame_support::traits::Currency<u64>>::NegativeImbalance;
-impl frame_support::traits::OnUnbalanced<NegativeImbalance> for HandleFees {
-    fn on_nonzero_unbalanced(_amount: NegativeImbalance) {}
-}
+type Imbalance =
+    frame_support::traits::fungible::Credit<<Test as frame_system::Config>::AccountId, Balances>;
+impl frame_support::traits::OnUnbalanced<Imbalance> for HandleFees {}
 
 // Build genesis storage according to the mock runtime.
 #[allow(dead_code)]

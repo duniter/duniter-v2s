@@ -16,14 +16,10 @@
 
 use super::*;
 use crate::chain_spec::gen_genesis_data::{CommonParameters, GenesisIdentity, SessionKeysProvider};
-use common_runtime::constants::*;
-use common_runtime::entities::IdtyData;
-use common_runtime::GenesisIdty;
-use common_runtime::IdtyStatus;
-use gtest_runtime::ImOnlineId;
+use common_runtime::{constants::*, entities::IdtyData, GenesisIdty, IdtyStatus};
 use gtest_runtime::{
-    opaque::SessionKeys, pallet_universal_dividend, parameters, AccountId, Perbill, Runtime,
-    RuntimeGenesisConfig, WASM_BINARY,
+    opaque::SessionKeys, pallet_universal_dividend, parameters, AccountId, ImOnlineId, Perbill,
+    Runtime, RuntimeGenesisConfig, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_consensus_grandpa::AuthorityId as GrandpaId;

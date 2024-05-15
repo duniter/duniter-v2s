@@ -21,9 +21,11 @@ mod release_runtime;
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use std::io::{BufReader, BufWriter};
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::{
+    io::{BufReader, BufWriter},
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 const MIN_RUST_VERSION: &str = "1.58.0";
 

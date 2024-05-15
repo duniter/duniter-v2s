@@ -15,8 +15,10 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::chain_spec::{get_account_id_from_seed, get_from_seed, AccountPublic};
-use common_runtime::constants::{DAYS, MILLISECS_PER_BLOCK};
-use common_runtime::*;
+use common_runtime::{
+    constants::{DAYS, MILLISECS_PER_BLOCK},
+    *,
+};
 use log::{error, warn};
 use num_format::{Locale, ToFormattedString};
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
@@ -24,14 +26,17 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-use sp_core::crypto::AccountId32;
-use sp_core::{ed25519, sr25519, Decode, Encode};
-use sp_runtime::traits::{IdentifyAccount, Verify};
-use sp_runtime::{MultiSignature, Perbill};
-use std::collections::{BTreeMap, HashMap};
-use std::fmt::{Display, Formatter};
-use std::fs;
-use std::ops::{Add, Sub};
+use sp_core::{crypto::AccountId32, ed25519, sr25519, Decode, Encode};
+use sp_runtime::{
+    traits::{IdentifyAccount, Verify},
+    MultiSignature, Perbill,
+};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt::{Display, Formatter},
+    fs,
+    ops::{Add, Sub},
+};
 
 static G1_DUNITER_V1_EXISTENTIAL_DEPOSIT: u64 = 100;
 static G1_DUNITER_V1_DECIMALS: usize = 2;
@@ -2064,8 +2069,10 @@ fn seconds_to_blocs(seconds: u32) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
-    use sp_core::ByteArray;
+    use sp_core::{
+        crypto::{Ss58AddressFormat, Ss58Codec},
+        ByteArray,
+    };
     use std::str::FromStr;
 
     #[test]

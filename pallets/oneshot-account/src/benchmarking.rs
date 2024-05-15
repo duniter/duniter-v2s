@@ -15,23 +15,24 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 #![cfg(feature = "runtime-benchmarks")]
+#![allow(clippy::multiple_bound_locations)]
 
 use super::*;
 
-use frame_benchmarking::v2::*;
-use frame_benchmarking::{account, whitelisted_caller};
-use frame_support::pallet_prelude::IsType;
-use frame_support::traits::Get;
+use frame_benchmarking::{account, v2::*, whitelisted_caller};
+use frame_support::{pallet_prelude::IsType, traits::fungible::Mutate};
 use frame_system::RawOrigin;
 use pallet_balances::Pallet as Balances;
 
 use crate::Pallet;
 
+type BalanceOf<T> = <<T as Config>::Currency as fungible::Inspect<AccountIdOf<T>>>::Balance;
+
 #[benchmarks(
         where
         T: pallet_balances::Config,
         T::Balance: From<u64>,
-        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>+From<T::Balance>
+        BalanceOf<T>: IsType<T::Balance>+From<T::Balance>
 )]
 mod benchmarks {
     use super::*;
@@ -41,7 +42,10 @@ mod benchmarks {
         let existential_deposit = T::ExistentialDeposit::get();
         let caller = whitelisted_caller();
         let balance = existential_deposit.saturating_mul((2).into());
-        let _ = T::Currency::make_free_balance_be(&caller, balance.into());
+        let _ = <<T as pallet::Config>::Currency as Mutate<T::AccountId>>::set_balance(
+            &caller,
+            balance.into(),
+        );
         let recipient: T::AccountId = account("recipient", 0, 1);
         let recipient_lookup: <T::Lookup as StaticLookup>::Source =
             T::Lookup::unlookup(recipient.clone());
@@ -66,16 +70,16 @@ mod benchmarks {
         let existential_deposit = T::ExistentialDeposit::get();
         let caller: T::AccountId = whitelisted_caller();
         let balance = existential_deposit.saturating_mul((2).into());
-        OneshotAccounts::<T>::insert(
-            caller.clone(),
-            Into::<<T::Currency as Currency<T::AccountId>>::Balance>::into(balance),
-        );
+        OneshotAccounts::<T>::insert(caller.clone(), Into::<BalanceOf<T>>::into(balance));
         // Deposit into a normal account is more expensive than into a oneshot account
         // so we create the recipient account with an existential deposit.
         let recipient: T::AccountId = account("recipient", 0, 1);
         let recipient_lookup: <T::Lookup as StaticLookup>::Source =
             T::Lookup::unlookup(recipient.clone());
-        let _ = T::Currency::make_free_balance_be(&recipient, existential_deposit.into());
+        let _ = <<T as pallet::Config>::Currency as Mutate<T::AccountId>>::set_balance(
+            &recipient,
+            existential_deposit.into(),
+        );
 
         #[extrinsic_call]
         _(
@@ -96,20 +100,23 @@ mod benchmarks {
         let existential_deposit = T::ExistentialDeposit::get();
         let caller: T::AccountId = whitelisted_caller();
         let balance = existential_deposit.saturating_mul((2).into());
-        OneshotAccounts::<T>::insert(
-            caller.clone(),
-            Into::<<T::Currency as Currency<T::AccountId>>::Balance>::into(balance),
-        );
+        OneshotAccounts::<T>::insert(caller.clone(), Into::<BalanceOf<T>>::into(balance));
         // Deposit into a normal account is more expensive than into a oneshot account
         // so we create the recipient accounts with an existential deposits.
         let recipient1: T::AccountId = account("recipient1", 0, 1);
         let recipient1_lookup: <T::Lookup as StaticLookup>::Source =
             T::Lookup::unlookup(recipient1.clone());
-        let _ = T::Currency::make_free_balance_be(&recipient1, existential_deposit.into());
+        let _ = <<T as pallet::Config>::Currency as Mutate<T::AccountId>>::set_balance(
+            &recipient1,
+            existential_deposit.into(),
+        );
         let recipient2: T::AccountId = account("recipient2", 1, 1);
         let recipient2_lookup: <T::Lookup as StaticLookup>::Source =
             T::Lookup::unlookup(recipient2.clone());
-        let _ = T::Currency::make_free_balance_be(&recipient2, existential_deposit.into());
+        let _ = <<T as pallet::Config>::Currency as Mutate<T::AccountId>>::set_balance(
+            &recipient2,
+            existential_deposit.into(),
+        );
 
         #[extrinsic_call]
         _(

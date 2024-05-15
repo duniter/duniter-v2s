@@ -63,8 +63,6 @@ try-runtime = [
 	"sp-distance/try-runtime",
 	"sp-membership/try-runtime",
 	"sp-runtime/try-runtime",
-	"try-runtime-cli",
-	"try-runtime-cli?/try-runtime",
 ]
 std = [
 	"bs58/std",
@@ -178,7 +176,6 @@ sp-timestamp = { workspace = true }
 sp-transaction-pool = { workspace = true }
 sp-transaction-storage-proof = { workspace = true }
 substrate-frame-rpc-system = { workspace = true }
-try-runtime-cli = { workspace = true, optional = true }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }

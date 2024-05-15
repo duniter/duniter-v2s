@@ -17,14 +17,15 @@
 mod common;
 
 use common::*;
-use cucumber::StatsWriter;
-use cucumber::{given, then, when, World};
+use cucumber::{given, then, when, StatsWriter, World};
 use sp_keyring::AccountKeyring;
-use std::path::PathBuf;
-use std::str::FromStr;
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
+use std::{
+    path::PathBuf,
+    str::FromStr,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
 };
 use subxt::backend::rpc::RpcClient;
 

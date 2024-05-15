@@ -25,13 +25,12 @@ use frame_system as system;
 use pallet_balances::AccountData;
 use pallet_session::ShouldEndSession;
 use sp_core::{ConstU32, H256};
-use sp_runtime::BuildStorage;
 use sp_runtime::{
     impl_opaque_keys,
     key_types::DUMMY,
     testing::{TestSignature, UintAuthorityId},
     traits::{BlakeTwo256, ConvertInto, IdentityLookup, IsMember, OpaqueKeys},
-    KeyTypeId, Perbill,
+    BuildStorage, KeyTypeId, Perbill,
 };
 
 type Balance = u64;
@@ -210,7 +209,7 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = [u8; 8];
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = ();
-    type RuntimeHoldReason = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
 }
 
@@ -262,6 +261,7 @@ impl pallet_distance::Config for Test {
     type MinAccessibleReferees = MinAccessibleReferees;
     type OnValidDistanceStatus = ();
     type RuntimeEvent = RuntimeEvent;
+    type RuntimeHoldReason = RuntimeHoldReason;
     type WeightInfo = ();
 }
 

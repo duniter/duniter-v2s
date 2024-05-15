@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::mock::*;
-use crate::pallet as pallet_duniter_wot;
+use crate::{mock::*, pallet as pallet_duniter_wot};
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
 use pallet_identity::{

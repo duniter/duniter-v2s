@@ -17,16 +17,15 @@
 #![cfg(test)]
 
 use crate::{self as pallet_smith_members};
-use frame_support::pallet_prelude::Hooks;
 use frame_support::{
+    pallet_prelude::Hooks,
     parameter_types,
     traits::{ConstU32, ConstU64},
     weights::{constants::RocksDbWeight, Weight},
 };
 use sp_core::H256;
-use sp_runtime::traits::{ConvertInto, IsMember};
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, ConvertInto, IdentityLookup, IsMember},
     BuildStorage, Perbill,
 };
 

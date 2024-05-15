@@ -17,9 +17,10 @@
 mod common;
 
 use common::*;
-use frame_support::assert_ok;
-use frame_support::traits::ValidatorSet;
-use frame_support::traits::ValidatorSetWithIdentification;
+use frame_support::{
+    assert_ok,
+    traits::{ValidatorSet, ValidatorSetWithIdentification},
+};
 use gdev_runtime::*;
 use pallet_im_online as im_online;
 use pallet_im_online::UnresponsivenessOffence;

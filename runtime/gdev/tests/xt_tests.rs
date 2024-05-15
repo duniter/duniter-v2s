@@ -20,15 +20,14 @@
 mod common;
 
 use common::*;
-use frame_support::assert_ok;
-use frame_support::traits::OnIdle;
-use frame_support::traits::StoredMap;
+use frame_support::{
+    assert_ok,
+    traits::{OnIdle, StoredMap},
+};
 use gdev_runtime::*;
-use sp_core::Encode;
-use sp_core::Pair;
+use sp_core::{Encode, Pair};
 use sp_keyring::AccountKeyring;
-use sp_runtime::generic::SignedPayload;
-use sp_runtime::traits::Extrinsic;
+use sp_runtime::{generic::SignedPayload, traits::Extrinsic};
 
 /// get extrinsic for given call
 fn get_unchecked_extrinsic(

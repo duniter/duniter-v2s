@@ -28,9 +28,10 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
-use frame_support::pallet_prelude::*;
-use frame_support::traits::StoredMap;
-use frame_support::traits::{Currency, StorageVersion};
+use frame_support::{
+    pallet_prelude::*,
+    traits::{fungible, fungible::Credit, IsSubType, StorageVersion, StoredMap},
+};
 use frame_system::pallet_prelude::*;
 use pallet_quota::traits::RefundFee;
 use pallet_transaction_payment::OnChargeTransaction;
@@ -42,8 +43,8 @@ pub mod pallet {
     use super::*;
     pub type IdtyIdOf<T> = <T as pallet_identity::Config>::IdtyIndex;
     pub type CurrencyOf<T> = pallet_balances::Pallet<T>;
-    pub type BalanceOf<T> =
-        <CurrencyOf<T> as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+    type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+    pub type BalanceOf<T> = <CurrencyOf<T> as fungible::Inspect<AccountIdOf<T>>>::Balance;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -290,14 +291,15 @@ where
 // allows pay fees with quota instead of currency if available
 impl<T: Config> OnChargeTransaction<T> for Pallet<T>
 where
+    T::RuntimeCall: IsSubType<Call<T>>,
     T::InnerOnChargeTransaction: OnChargeTransaction<
         T,
-        Balance = <CurrencyOf<T> as Currency<T::AccountId>>::Balance,
-        LiquidityInfo = Option<<CurrencyOf<T> as Currency<T::AccountId>>::NegativeImbalance>,
+        Balance = BalanceOf<T>,
+        LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>,
     >,
 {
     type Balance = BalanceOf<T>;
-    type LiquidityInfo = Option<<CurrencyOf<T> as Currency<T::AccountId>>::NegativeImbalance>;
+    type LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>;
 
     fn withdraw_fee(
         who: &T::AccountId,

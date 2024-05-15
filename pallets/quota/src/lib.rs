@@ -29,13 +29,14 @@ mod tests;
 pub mod benchmarking;
 
 use crate::traits::*;
-use frame_support::pallet_prelude::*;
-use frame_support::traits::{Currency, ExistenceRequirement};
+use frame_support::{
+    pallet_prelude::*,
+    traits::{Currency, ExistenceRequirement},
+};
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use sp_runtime::traits::Zero;
-use sp_std::fmt::Debug;
-use sp_std::vec::Vec;
+use sp_std::{fmt::Debug, vec::Vec};
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]

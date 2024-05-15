@@ -14,11 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use super::gdev;
-use super::gdev::runtime_types::pallet_identity;
-use super::*;
-use crate::gdev::runtime_types::pallet_identity::types::IdtyName;
-use crate::DuniterWorld;
+use super::{gdev, gdev::runtime_types::pallet_identity, *};
+use crate::{gdev::runtime_types::pallet_identity::types::IdtyName, DuniterWorld};
 use sp_keyring::AccountKeyring;
 use subxt::tx::PairSigner;
 

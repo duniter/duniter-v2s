@@ -16,23 +16,20 @@
 
 #![allow(dead_code, unused_imports)]
 
-use common_runtime::constants::*;
-use common_runtime::*;
+use common_runtime::{constants::*, *};
 use frame_support::traits::{OnFinalize, OnInitialize};
-use gdev_runtime::opaque::SessionKeys;
-use gdev_runtime::*;
+use gdev_runtime::{opaque::SessionKeys, *};
 use pallet_authority_members::OnNewSession;
 use pallet_smith_members::SmithMeta;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
-use sp_consensus_babe::{AuthorityId as BabeId, Slot};
-use sp_consensus_babe::{VrfInput, VrfProof};
+use sp_consensus_babe::{AuthorityId as BabeId, Slot, VrfInput, VrfProof};
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-use sp_core::crypto::IsWrappedBy;
-use sp_core::sr25519;
-use sp_core::{Encode, Pair, Public, H256};
+use sp_core::{crypto::IsWrappedBy, sr25519, Encode, Pair, Public, H256};
 use sp_membership::MembershipData;
-use sp_runtime::testing::{Digest, DigestItem};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{
+    testing::{Digest, DigestItem},
+    traits::{IdentifyAccount, Verify},
+};
 use std::collections::BTreeMap;
 
 pub type AccountPublic = <Signature as Verify>::Signer;

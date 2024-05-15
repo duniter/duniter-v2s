@@ -18,10 +18,7 @@ use super::*;
 use crate::chain_spec::gen_genesis_data::{
     AuthorityKeys, CommonParameters, GenesisIdentity, SessionKeysProvider,
 };
-use common_runtime::constants::*;
-use common_runtime::entities::IdtyData;
-use common_runtime::GenesisIdty;
-use common_runtime::IdtyStatus;
+use common_runtime::{constants::*, entities::IdtyData, GenesisIdty, IdtyStatus};
 use gdev_runtime::{
     opaque::SessionKeys, pallet_universal_dividend, parameters, Runtime, RuntimeGenesisConfig,
     WASM_BINARY,

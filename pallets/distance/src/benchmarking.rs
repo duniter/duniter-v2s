@@ -15,18 +15,14 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 #![cfg(feature = "runtime-benchmarks")]
+#![allow(clippy::multiple_bound_locations)]
 
 use super::*;
 
 use codec::Encode;
 use frame_benchmarking::v2::*;
-use frame_support::traits::Get;
-use frame_support::traits::OnInitialize;
-use frame_support::traits::{Currency, OnFinalize};
-use frame_system::pallet_prelude::BlockNumberFor;
-use frame_system::RawOrigin;
-use pallet_balances::Pallet as Balances;
-use sp_runtime::traits::{Bounded, One};
+use frame_support::traits::{Get, OnFinalize, OnInitialize};
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_runtime::Perbill;
 
 use crate::Pallet;
@@ -34,7 +30,7 @@ use crate::Pallet;
 #[benchmarks(
         where
         T: pallet_balances::Config,
-		T::Balance: From<u64>,
+		BalanceOf<T>: From<u32>,
         BlockNumberFor<T>: From<u32>,
 )]
 mod benchmarks {
@@ -62,8 +58,7 @@ mod benchmarks {
         let caller: T::AccountId = pallet_identity::Identities::<T>::get(idty)
             .unwrap()
             .owner_key;
-        let _ =
-            <Balances<T> as Currency<_>>::make_free_balance_be(&caller, T::Balance::max_value());
+        let _ = T::Currency::set_balance(&caller, u32::MAX.into());
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller.clone()));
@@ -87,7 +82,7 @@ mod benchmarks {
         let caller: T::AccountId = pallet_identity::Identities::<T>::get(idty)
             .unwrap()
             .owner_key;
-        <Balances<T> as Currency<_>>::make_free_balance_be(&caller, T::Balance::max_value());
+        T::Currency::set_balance(&caller, u32::MAX.into());
         let target: T::IdtyIndex = 2u32;
         // set target status since targeted distance evaluation only allowed for unvalidated
         pallet_identity::Identities::<T>::mutate(target, |idty_val| {
@@ -192,8 +187,7 @@ mod benchmarks {
         let caller: T::AccountId = pallet_identity::Identities::<T>::get(idty)
             .unwrap()
             .owner_key;
-        let _ =
-            <Balances<T> as Currency<_>>::make_free_balance_be(&caller, T::Balance::max_value());
+        let _ = T::Currency::set_balance(&caller, u32::MAX.into());
         Pallet::<T>::request_distance_evaluation(RawOrigin::Signed(caller.clone()).into())?;
         assert_has_event::<T>(
             Event::<T>::EvaluationRequested {
@@ -236,8 +230,7 @@ mod benchmarks {
         let caller: T::AccountId = pallet_identity::Identities::<T>::get(idty)
             .unwrap()
             .owner_key;
-        let _ =
-            <Balances<T> as Currency<_>>::make_free_balance_be(&caller, T::Balance::max_value());
+        let _ = T::Currency::set_balance(&caller, u32::MAX.into());
         Pallet::<T>::request_distance_evaluation(RawOrigin::Signed(caller.clone()).into())?;
         assert_has_event::<T>(
             Event::<T>::EvaluationRequested {

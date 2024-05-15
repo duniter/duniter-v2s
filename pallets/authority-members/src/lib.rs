@@ -45,13 +45,13 @@ use sp_std::prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::ValidatorRegistration;
-    use frame_support::traits::{StorageVersion, UnfilteredDispatchable};
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{StorageVersion, UnfilteredDispatchable, ValidatorRegistration},
+    };
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::{Convert, IsMember};
-    use sp_std::collections::btree_map::BTreeMap;
-    use sp_std::vec;
+    use sp_std::{collections::btree_map::BTreeMap, vec};
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);

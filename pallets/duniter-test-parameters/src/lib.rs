@@ -65,8 +65,7 @@ pub mod types {
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::StorageVersion;
+    use frame_support::{pallet_prelude::*, traits::StorageVersion};
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);

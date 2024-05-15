@@ -32,18 +32,15 @@ mod benchmarking;
 
 use codec::{Codec, Decode, Encode};
 use duniter_primitives::Idty;
-use frame_support::dispatch::DispatchResultWithPostInfo;
-use frame_support::ensure;
-use frame_support::pallet_prelude::Get;
-use frame_support::pallet_prelude::RuntimeDebug;
-use frame_support::pallet_prelude::Weight;
-use frame_system::ensure_signed;
-use frame_system::pallet_prelude::OriginFor;
+use frame_support::{
+    dispatch::DispatchResultWithPostInfo,
+    ensure,
+    pallet_prelude::{Get, RuntimeDebug, Weight},
+};
+use frame_system::{ensure_signed, pallet_prelude::OriginFor};
 use scale_info::TypeInfo;
-use sp_runtime::traits::AtLeast32BitUnsigned;
-use sp_runtime::traits::IsMember;
-use sp_std::fmt::Debug;
-use sp_std::prelude::*;
+use sp_runtime::traits::{AtLeast32BitUnsigned, IsMember};
+use sp_std::{fmt::Debug, prelude::*};
 
 use crate::traits::OnSmithDelete;
 pub use crate::weights::WeightInfo;
@@ -73,13 +70,10 @@ pub enum SmithStatus {
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::StorageVersion;
+    use frame_support::{pallet_prelude::*, traits::StorageVersion};
     use pallet_authority_members::SessionIndex;
     use sp_runtime::traits::{Convert, IsMember};
-    use sp_std::collections::btree_map::BTreeMap;
-    use sp_std::vec;
-    use sp_std::vec::Vec;
+    use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 

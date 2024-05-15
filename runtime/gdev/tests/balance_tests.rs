@@ -19,8 +19,7 @@
 mod common;
 
 use common::*;
-use frame_support::traits::StoredMap;
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::StoredMap};
 use gdev_runtime::*;
 use sp_core::Encode;
 use sp_keyring::AccountKeyring;

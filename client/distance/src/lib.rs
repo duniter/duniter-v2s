@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;
 use sc_client_api::{ProvideUncles, StorageKey, StorageProvider};
-use scale_info::TypeInfo;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT, AccountId32};
 use std::path::PathBuf;
 

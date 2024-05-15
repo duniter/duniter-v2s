@@ -108,7 +108,7 @@ macro_rules! pallets_config {
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_duniter_account::WeightInfo<Runtime>;
             // does currency adapter in any case, but adds "refund with quota" feature
-            type InnerOnChargeTransaction = CurrencyAdapter<Balances, HandleFees>;
+            type InnerOnChargeTransaction = FungibleAdapter<Balances, HandleFees>;
             type Refund = Quota;
         }
 
@@ -165,43 +165,27 @@ type MaxNominators = MaxNominators;
         // MONEY MANAGEMENT //
 
         impl pallet_balances::Config for Runtime {
-type RuntimeHoldReason = ();
-type RuntimeFreezeReason = ();
+            type RuntimeHoldReason = RuntimeHoldReason;
+            type RuntimeFreezeReason = ();
             type RuntimeEvent = RuntimeEvent;
             type MaxLocks = MaxLocks;
             type MaxReserves = frame_support::pallet_prelude::ConstU32<5>;
             type ReserveIdentifier = [u8; 8];
-            /// The type for recording an account's balance.
             type Balance = Balance;
-            type DustRemoval = HandleDust;
+            type DustRemoval = HandleFees;
             type ExistentialDeposit = ExistentialDeposit;
             type AccountStore = Account;
-			type FreezeIdentifier = ();
-			type MaxFreezes = frame_support::pallet_prelude::ConstU32<0>;
+            type FreezeIdentifier = ();
+            type MaxFreezes = frame_support::pallet_prelude::ConstU32<0>;
             type WeightInfo = common_runtime::weights::pallet_balances::WeightInfo<Runtime>;
         }
 
-        // Take Dust from Balances and put it in the Treasury pot
-        pub struct HandleDust;
         type CreditOf = frame_support::traits::tokens::fungible::Credit<AccountId, Balances>;
-        impl frame_support::traits::OnUnbalanced<CreditOf> for HandleDust {
-            fn on_nonzero_unbalanced(amount: CreditOf) {
-                use frame_support::traits::Currency as _;
-                use frame_support::traits::Imbalance as _;
-                let imbalance = NegativeImbalance::new(amount.peek());
-                Balances::resolve_creating(&Treasury::account_id(), imbalance);
-            }
-        }
-
-        // fees are moved to the treasury
         pub struct HandleFees;
-        type NegativeImbalance = <Balances as frame_support::traits::Currency<AccountId>>::NegativeImbalance;
-        impl frame_support::traits::OnUnbalanced<NegativeImbalance> for HandleFees {
-            fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-                use frame_support::traits::Currency as _;
-
+        impl frame_support::traits::OnUnbalanced<CreditOf> for HandleFees {
+            fn on_nonzero_unbalanced(amount: CreditOf) {
                 // fee is moved to treasury
-                Balances::resolve_creating(&Treasury::account_id(), amount);
+                let _ = Balances::deposit(&Treasury::account_id(), amount.peek(),  frame_support::traits::tokens::Precision::Exact);
                 // should move the tip to author
                 // if let Some(author) = Authorship::author() {
                 //     Balances::resolve_creating(&author, amount);
@@ -349,7 +333,7 @@ type RuntimeFreezeReason = ();
             type MaxRequests = frame_support::traits::ConstU32<100>;
             type RequestPrice = frame_support::traits::ConstU64<2_000>;
             type OnFilledRandomness = ();
-            type OnUnbalanced = Treasury;
+            type OnUnbalanced = HandleFees;
             type ParentBlockRandomness = pallet_babe::ParentBlockRandomness<Self>;
             type RandomnessFromOneEpochAgo = pallet_babe::RandomnessFromOneEpochAgo<Self>;
 			type WeightInfo = common_runtime::weights::pallet_provide_randomness::WeightInfo<Runtime>;
@@ -534,6 +518,7 @@ type RuntimeFreezeReason = ();
             type EvaluationPrice = frame_support::traits::ConstU64<1000>;
             type MaxRefereeDistance = frame_support::traits::ConstU32<5>;
             type MinAccessibleReferees = MinAccessibleReferees;
+            type RuntimeHoldReason = RuntimeHoldReason;
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = common_runtime::weights::pallet_distance::WeightInfo<Runtime>;
             type OnValidDistanceStatus = Wot;

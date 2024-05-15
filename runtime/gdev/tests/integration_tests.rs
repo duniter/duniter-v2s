@@ -17,15 +17,16 @@
 mod common;
 
 use common::*;
-use frame_support::traits::StoredMap;
-use frame_support::traits::{Get, PalletInfo, StorageInfo, StorageInfoTrait};
-use frame_support::{assert_err, assert_noop, assert_ok};
-use frame_support::{StorageHasher, Twox128};
+use frame_support::{
+    assert_err, assert_noop, assert_ok,
+    traits::{Get, PalletInfo, StorageInfo, StorageInfoTrait, StoredMap},
+    StorageHasher, Twox128,
+};
 use gdev_runtime::*;
 use pallet_identity::{RevocationPayload, REVOCATION_PAYLOAD_PREFIX};
 use pallet_membership::MembershipRemovalReason;
 use pallet_smith_members::{SmithMeta, SmithStatus};
-use sp_core::Encode;
+use sp_core::{Encode, Pair};
 use sp_keyring::AccountKeyring;
 use sp_runtime::MultiAddress;
 
@@ -883,10 +884,10 @@ fn test_smith_certification() {
 
 fn create_dummy_session_keys() -> gdev_runtime::opaque::SessionKeys {
     gdev_runtime::opaque::SessionKeys {
-        grandpa: sp_core::ed25519::Public([0u8; 32]).into(),
-        babe: sp_core::sr25519::Public([0u8; 32]).into(),
-        im_online: sp_core::sr25519::Public([0u8; 32]).into(),
-        authority_discovery: sp_core::sr25519::Public([0u8; 32]).into(),
+        grandpa: sp_core::ed25519::Pair::generate().0.public().into(),
+        babe: sp_core::sr25519::Pair::generate().0.public().into(),
+        im_online: sp_core::sr25519::Pair::generate().0.public().into(),
+        authority_discovery: sp_core::sr25519::Pair::generate().0.public().into(),
     }
 }
 
@@ -1318,7 +1319,7 @@ fn test_link_account() {
                 Identity::link_account(
                     frame_system::RawOrigin::Signed(alice.clone()).into(),
                     ferdie.clone(),
-                    signature.clone().into()
+                    signature.into()
                 ),
                 pallet_identity::Error::<gdev_runtime::Runtime>::AccountNotExist
             );

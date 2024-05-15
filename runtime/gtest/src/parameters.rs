@@ -16,10 +16,7 @@
 
 use crate::*;
 use common_runtime::constants::*;
-use common_runtime::{Balance, BlockNumber};
-use frame_support::parameter_types;
-use frame_support::weights::constants::WEIGHT_REF_TIME_PER_SECOND;
-use sp_arithmetic::Perbill;
+use frame_support::{parameter_types, weights::constants::WEIGHT_REF_TIME_PER_SECOND};
 use sp_runtime::transaction_validity::TransactionPriority;
 
 parameter_types! {

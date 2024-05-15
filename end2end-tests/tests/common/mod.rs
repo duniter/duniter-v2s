@@ -33,17 +33,19 @@ use codec::Encode;
 use notify_debouncer_mini::new_debouncer;
 use serde_json::Value;
 use sp_keyring::AccountKeyring;
-use std::io::prelude::*;
-use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::str::FromStr;
-use std::time::{Duration, Instant};
-use subxt::backend::rpc::RpcClient;
-use subxt::backend::rpc::RpcParams;
-use subxt::config::substrate::SubstrateExtrinsicParamsBuilder;
-use subxt::config::SubstrateExtrinsicParams;
-use subxt::ext::{sp_core, sp_runtime};
-use subxt::rpc_params;
+use std::{
+    io::prelude::*,
+    path::{Path, PathBuf},
+    process::Command,
+    str::FromStr,
+    time::{Duration, Instant},
+};
+use subxt::{
+    backend::rpc::{RpcClient, RpcParams},
+    config::{substrate::SubstrateExtrinsicParamsBuilder, SubstrateExtrinsicParams},
+    ext::{sp_core, sp_runtime},
+    rpc_params,
+};
 
 pub type Client = subxt::OnlineClient<GdevConfig>;
 pub type Event = gdev::Event;
@@ -144,6 +146,7 @@ pub async fn spawn_node(
                 "--rpc-cors=all",
                 "--alice",
                 "--tmp",
+                "--unsafe-force-node-key-generation",
                 // Fix: End2End test may fail due to network discovery. This option disables automatic peer discovery.π
                 "--reserved-only",
                 // prevent local network discovery (even it does not connect due to above flag)

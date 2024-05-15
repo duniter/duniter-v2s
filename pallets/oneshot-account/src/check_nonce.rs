@@ -17,8 +17,7 @@
 use crate::Config;
 
 use codec::{Decode, Encode};
-use frame_support::dispatch::DispatchInfo;
-use frame_support::traits::IsSubType;
+use frame_support::{dispatch::DispatchInfo, traits::IsSubType};
 //use frame_system::Config;
 use scale_info::TypeInfo;
 use sp_runtime::{

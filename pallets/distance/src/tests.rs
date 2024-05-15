@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::mock::*;
-use crate::*;
-use frame_support::traits::Currency;
-use frame_support::{assert_noop, assert_ok};
+use crate::{mock::*, *};
+use frame_support::{assert_noop, assert_ok, traits::Currency};
 
 // allow request distance evaluation for oneself
 #[test]

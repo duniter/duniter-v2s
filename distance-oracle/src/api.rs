@@ -106,17 +106,26 @@ pub async fn member_iter(client: &Client, evaluation_block: H256) -> MemberIter 
 }
 
 pub struct MemberIter(
-    subxt::backend::StreamOfResults<(
-        Vec<u8>,
-        runtime::runtime_types::sp_membership::MembershipData<u32>,
-    )>,
+    subxt::backend::StreamOfResults<
+        subxt::storage::StorageKeyValuePair<
+            subxt::storage::Address<
+                (),
+                runtime::runtime_types::sp_membership::MembershipData<u32>,
+                (),
+                (),
+                subxt::storage::address::Yes,
+            >,
+        >,
+    >,
 );
 
 impl MemberIter {
     pub async fn next(&mut self) -> Result<Option<IdtyIndex>, subxt::error::Error> {
-        self.0.next().await.transpose().map(|i| {
-            i.map(|(storage_key, _membership_data)| idty_id_from_storage_key(&storage_key))
-        })
+        self.0
+            .next()
+            .await
+            .transpose()
+            .map(|i| i.map(|j| idty_id_from_storage_key(&j.key_bytes)))
     }
 }
 
@@ -131,15 +140,29 @@ pub async fn cert_iter(client: &Client, evaluation_block: H256) -> CertIter {
     )
 }
 
-pub struct CertIter(subxt::backend::StreamOfResults<(Vec<u8>, Vec<(IdtyIndex, u32)>)>);
+pub struct CertIter(
+    subxt::backend::StreamOfResults<
+        subxt::storage::StorageKeyValuePair<
+            subxt::storage::Address<
+                (),
+                Vec<(u32, u32)>,
+                (),
+                subxt::storage::address::Yes,
+                subxt::storage::address::Yes,
+            >,
+        >,
+    >,
+);
 
 impl CertIter {
     pub async fn next(
         &mut self,
     ) -> Result<Option<(IdtyIndex, Vec<(IdtyIndex, u32)>)>, subxt::error::Error> {
-        self.0.next().await.transpose().map(|i| {
-            i.map(|(storage_key, issuers)| (idty_id_from_storage_key(&storage_key), issuers))
-        })
+        self.0
+            .next()
+            .await
+            .transpose()
+            .map(|i| i.map(|j| (idty_id_from_storage_key(&j.key_bytes), j.value)))
     }
 }
 
