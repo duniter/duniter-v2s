@@ -1041,6 +1041,20 @@ fn test_create_new_idty() {
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 200
             ));
+            assert_noop!(
+                Identity::create_identity(
+                    frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                    AccountKeyring::Eve.to_account_id(),
+                ),
+                pallet_identity::Error::<Runtime>::InsufficientBalance
+            );
+
+            assert_ok!(Balances::transfer_allow_death(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                200
+            ));
+
             assert_ok!(Identity::create_identity(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                 AccountKeyring::Eve.to_account_id(),
@@ -1065,7 +1079,22 @@ fn test_create_new_idty_without_founds() {
                 0
             );
 
-            // Should be able to create an identity without founds
+            // Should not be able to create an identity without founds
+            assert_noop!(
+                Identity::create_identity(
+                    frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                    AccountKeyring::Eve.to_account_id(),
+                ),
+                pallet_identity::Error::<Runtime>::AccountNotExist
+            );
+
+            // Deposit some founds on the account
+            assert_ok!(Balances::transfer_allow_death(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                500
+            ));
+
             assert_ok!(Identity::create_identity(
                 frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
                 AccountKeyring::Eve.to_account_id(),
@@ -1082,18 +1111,11 @@ fn test_create_new_idty_without_founds() {
             let events = System::events();
             assert_eq!(events.len(), 0);
 
-            // Deposit some founds on the identity account
-            assert_ok!(Balances::transfer_allow_death(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
-                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
-                200
-            ));
-
             // At next block, nothing should be preleved
             run_to_block(4);
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                200
+                500
             );
         });
 }
@@ -1171,6 +1193,7 @@ fn test_claim_memberhsip_after_few_uds() {
             (AccountKeyring::Alice.to_account_id(), 1_000),
             (AccountKeyring::Bob.to_account_id(), 1_000),
             (AccountKeyring::Charlie.to_account_id(), 1_000),
+            (AccountKeyring::Eve.to_account_id(), 1_000),
         ])
         .build()
         .execute_with(|| {
@@ -1547,23 +1570,29 @@ fn test_unlink_identity() {
 /// test that the account of a newly created identity is linked to the identity
 #[test]
 fn test_new_account_linked() {
-    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
-        let eve_account = AccountKeyring::Eve.to_account_id();
-        assert_eq!(
-            frame_system::Pallet::<Runtime>::get(&eve_account).linked_idty,
-            None
-        );
-        // Alice creates identity for Eve
-        assert_ok!(Identity::create_identity(
-            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
-            eve_account.clone(),
-        ));
-        // then eve account should be linked to her identity
-        assert_eq!(
-            frame_system::Pallet::<Runtime>::get(&eve_account).linked_idty,
-            Some(5)
-        );
-    })
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (AccountKeyring::Alice.to_account_id(), 1_000),
+            (AccountKeyring::Eve.to_account_id(), 1_000),
+        ])
+        .build()
+        .execute_with(|| {
+            let eve_account = AccountKeyring::Eve.to_account_id();
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&eve_account).linked_idty,
+                None
+            );
+            // Alice creates identity for Eve
+            assert_ok!(Identity::create_identity(
+                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                eve_account.clone(),
+            ));
+            // then eve account should be linked to her identity
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&eve_account).linked_idty,
+                Some(5)
+            );
+        })
 }
 
 /// test killed account

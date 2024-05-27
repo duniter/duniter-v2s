@@ -91,6 +91,8 @@ pub mod pallet {
         /// Management of the authorizations of the different calls.
         /// The default implementation allows everything.
         type CheckIdtyCallAllowed: CheckIdtyCallAllowed<Self>;
+        /// The type used to check account worthiness.
+        type CheckAccountWorthiness: CheckAccountWorthiness<Self>;
         /// Custom data to store in each identity.
         type IdtyData: Clone
             + Codec
@@ -109,7 +111,7 @@ pub mod pallet {
             + MaybeSerializeDeserialize
             + Debug
             + MaxEncodedLen;
-        /// custom type for account data
+        /// Custom type for account data.
         type AccountLinker: LinkIdty<Self::AccountId, Self::IdtyIndex>;
         /// Handle logic to validate an identity name
         type IdtyNameValidator: IdtyNameValidator;
@@ -618,6 +620,8 @@ pub mod pallet {
         CanNotRevokeUnvalidated,
         /// Cannot link to an inexisting account.
         AccountNotExist,
+        /// Insufficient balance to create an identity.
+        InsufficientBalance,
     }
 
     // INTERNAL FUNCTIONS //
@@ -838,6 +842,7 @@ pub mod pallet {
             // --- other checks depend on other pallets
             // run checks for identity creation
             T::CheckIdtyCallAllowed::check_create_identity(creator_index)?;
+            T::CheckAccountWorthiness::check_account_worthiness(receiver_key)?;
 
             Ok(creator_index)
         }

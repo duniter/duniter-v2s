@@ -29,36 +29,39 @@ extern crate frame_benchmarking;
 pub mod parameters;
 
 pub use self::parameters::*;
+use common_runtime::IdtyNameValidatorImpl;
 pub use common_runtime::{
     constants::*, entities::*, handlers::*, AccountId, Address, Balance, BlockNumber,
     FullIdentificationOfImpl, GetCurrentEpochIndex, Hash, Header, IdtyIndex, Index, Signature,
 };
-use frame_support::traits::{fungible::Balanced, Imbalance};
+use frame_support::{
+    traits::{fungible::Balanced, Contains, Imbalance},
+    PalletId,
+};
 pub use frame_system::Call as SystemCall;
-pub use pallet_balances::Call as BalancesCall;
-pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use pallet_session::historical as session_historical;
-pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::FungibleAdapter;
-pub use pallet_universal_dividend;
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{KeyTypeId, Perbill, Permill};
-
-use common_runtime::IdtyNameValidatorImpl;
-use frame_support::{traits::Contains, PalletId};
 use frame_system::EnsureRoot;
+pub use pallet_balances::Call as BalancesCall;
+#[cfg(feature = "runtime-benchmarks")]
+pub use pallet_collective::RawOrigin;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
+pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
+use pallet_session::historical as session_historical;
+pub use pallet_timestamp::Call as TimestampCall;
+use pallet_transaction_payment::{FungibleAdapter, Multiplier};
+pub use pallet_universal_dividend;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, One, OpaqueKeys},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult,
 };
+pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -237,7 +240,9 @@ impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
 }
 
 // Configure pallets to include in runtime.
-common_runtime::pallets_config! {}
+#[cfg(feature = "runtime-benchmarks")]
+type WorstOrigin = RawOrigin<AccountId, TechnicalCommitteeInstance>;
+common_runtime::pallets_config!();
 
 // Create the runtime by composing the pallets that were previously configured.
 construct_runtime!(

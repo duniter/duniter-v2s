@@ -16,13 +16,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Rules for valid identity names are defined below
-/// - Bound length to 42
-/// - accept only ascii alphanumeric or - or _
+/// Checks rules for valid identity names
+/// - Limit length to 42
+/// - Accept only ascii alphanumeric or `-` or `_`
 pub fn validate_idty_name(idty_name: &[u8]) -> bool {
     idty_name.len() >= 3
-        && idty_name.len() <= 42 // length smaller than 42
-        // all characters are alphanumeric or - or _
+        && idty_name.len() <= 42
         && idty_name
             .iter()
             .all(|c| c.is_ascii_alphanumeric() || *c == b'-' || *c == b'_')

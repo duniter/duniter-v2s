@@ -28,9 +28,17 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
+use core::cmp;
+#[cfg(feature = "runtime-benchmarks")]
+use frame_support::traits::tokens::fungible::Mutate;
 use frame_support::{
     pallet_prelude::*,
-    traits::{fungible, fungible::Credit, IsSubType, StorageVersion, StoredMap},
+    traits::{
+        fungible,
+        fungible::{Credit, Inspect},
+        tokens::WithdrawConsequence,
+        IsSubType, StorageVersion, StoredMap,
+    },
 };
 use frame_system::pallet_prelude::*;
 use pallet_quota::traits::RefundFee;
@@ -335,5 +343,35 @@ where
             T::Refund::request_refund(who.clone(), idty_index, corrected_fee.saturating_sub(tip));
         }
         Ok(())
+    }
+}
+
+/// Implementation of the CheckAccountWorthiness trait for the Pallet.
+/// This trait is used to verify the worthiness of an account in terms
+/// of existence and sufficient balance to handle identity creation.
+impl<AccountId, T: Config> pallet_identity::traits::CheckAccountWorthiness<T> for Pallet<T>
+where
+    T: frame_system::Config<AccountId = AccountId>,
+    AccountId: cmp::Eq,
+{
+    /// Checks that the account exists and has the balance to handle the
+    /// identity creation process.
+    fn check_account_worthiness(account: &AccountId) -> Result<(), DispatchError> {
+        ensure!(
+            frame_system::Pallet::<T>::providers(account) > 0,
+            pallet_identity::Error::<T>::AccountNotExist
+        );
+        // This check verifies that the account can withdraw at least twice the minimum balance.
+        ensure!(
+            T::Currency::can_withdraw(account, T::Currency::minimum_balance() * 2u32.into())
+                == WithdrawConsequence::Success,
+            pallet_identity::Error::<T>::InsufficientBalance
+        );
+        Ok(())
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn set_worthy(account: &AccountId) {
+        T::Currency::set_balance(account, T::Currency::minimum_balance() * 4u32.into());
     }
 }

@@ -106,6 +106,7 @@ impl pallet_identity::Config for Test {
     type AccountLinker = ();
     type AutorevocationPeriod = AutorevocationPeriod;
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
+    type CheckAccountWorthiness = ();
     type CheckIdtyCallAllowed = ();
     type ConfirmPeriod = ConfirmPeriod;
     type DeletionPeriod = DeletionPeriod;

@@ -60,6 +60,7 @@ mod benchmarks {
             RawOrigin::Signed(caller.clone()).into();
         let owner_key_origin: <T as frame_system::Config>::RuntimeOrigin =
             RawOrigin::Signed(owner_key.clone()).into();
+        T::CheckAccountWorthiness::set_worthy(&owner_key);
         Pallet::<T>::create_identity(caller_origin.clone(), owner_key.clone())?;
         let name = IdtyName("new_identity".into());
         Pallet::<T>::confirm_identity(owner_key_origin.clone(), name.clone())?;
@@ -124,6 +125,7 @@ mod benchmarks {
     fn create_identity() {
         let caller: T::AccountId = Identities::<T>::get(T::IdtyIndex::one()).unwrap().owner_key; // Alice
         let owner_key: T::AccountId = account("new_identity", 2, 1);
+        T::CheckAccountWorthiness::set_worthy(&owner_key);
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller), owner_key.clone());
@@ -145,6 +147,7 @@ mod benchmarks {
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
             RawOrigin::Signed(caller.clone()).into();
         let owner_key: T::AccountId = account("new_identity", 2, 1);
+        T::CheckAccountWorthiness::set_worthy(&owner_key);
         Pallet::<T>::create_identity(caller_origin.clone(), owner_key.clone())?;
 
         #[extrinsic_call]

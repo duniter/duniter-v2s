@@ -29,6 +29,24 @@ impl<T: Config> CheckIdtyCallAllowed<T> for () {
     }
 }
 
+/// Trait to check the worthiness of an account.
+pub trait CheckAccountWorthiness<T: Config> {
+    /// Checks the worthiness of an account.
+    fn check_account_worthiness(account: &T::AccountId) -> Result<(), DispatchError>;
+    #[cfg(feature = "runtime-benchmarks")]
+    fn set_worthy(account: &T::AccountId);
+}
+
+impl<T: Config> CheckAccountWorthiness<T> for () {
+    /// Default no-op check for account worthiness.
+    fn check_account_worthiness(_account: &T::AccountId) -> Result<(), DispatchError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn set_worthy(_account: &T::AccountId) {}
+}
+
 /// A trait defining operations for validating identity names.
 pub trait IdtyNameValidator {
     /// Validates an identity name.
