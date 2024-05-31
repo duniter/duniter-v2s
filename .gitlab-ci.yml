@@ -185,6 +185,7 @@ docker_deploy:
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$MILESTONE"
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:latest"
   after_script:
+    - echo $MANIFEST
     - podman manifest rm "$MANIFEST"
   tags:
     - podman
