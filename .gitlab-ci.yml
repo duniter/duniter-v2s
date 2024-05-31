@@ -180,7 +180,7 @@ docker_deploy:
     - export MANIFEST=localhost/manifest-$IMAGE_NAME:$MILESTONE
     - echo $MANIFEST
     - podman manifest rm "$MANIFEST" 2>/dev/null || true
-    - podman build --layers --platform linux/amd64,linux/arm64 --manifest "$MANIFEST" -f docker/Dockerfile "--build-arg chain=$CHAIN" .
+    - podman build --layers --platform linux/amd64,linux/arm64 --manifest "$MANIFEST" -f docker/Dockerfile --build-arg chain=$CHAIN .
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$MILESTONE"
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:latest"
   after_script:
