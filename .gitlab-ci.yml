@@ -159,43 +159,31 @@ tests:
     - cargo cucumber-build
     - cargo cucumber
 
-.deploy_docker_multiplatform:
+docker_deploy:
   stage: build
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
       when: manual
-    #      changes:
-    #        - node/specs/$CHAIN-raw.json
     - when: never
   before_script:
     - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
     - podman login -u "duniterteam" -p "$DUNITERTEAM_PASSWD" docker.io
   script:
-    - export MILESTONE=$(echo $CI_COMMIT_BRANCH | sed -e "s/release\///g")
-    - echo $MILESTONE
+    - export CHAIN=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
+    - echo $CHAIN
+    - export CLIENT_VERSION=$(cat node/Cargo.toml | grep version | sed "s/version = \"//g" | sed "s/\"//")
+    - export RUNTIME_VERSION=$(cat runtime/gdev/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version: //g" | sed "s/,//g")
+    - export IMAGE_NAME="duniter/duniter-v2s-$CHAIN-$RUNTIME_VERSION-$CLIENT_VERSION"
     - export MANIFEST=localhost/manifest-$IMAGE_NAME:$MILESTONE
     - echo $MANIFEST
     - podman manifest rm "$MANIFEST" 2>/dev/null || true
-    - podman build --layers --platform linux/amd64,linux/arm64 --manifest "$MANIFEST" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
+    - podman build --layers --platform linux/amd64,linux/arm64 --manifest "$MANIFEST" -f docker/Dockerfile "--build-arg chain=$CHAIN" .
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$MILESTONE"
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:latest"
   after_script:
     - podman manifest rm "$MANIFEST"
-  variables:
-    IMAGE_NAME: "duniter/duniter-v2s-$CHAIN"
-    PODMAN_BUILD_OPTIONS: "--build-arg chain=$CHAIN"
   tags:
     - podman
-
-gdev_docker_deploy:
-  extends: .deploy_docker_multiplatform
-  variables:
-    CHAIN: gdev
-
-gtest_docker_deploy:
-  extends: .deploy_docker_multiplatform
-  variables:
-    CHAIN: gtest
 
 readme_docker_release_tag:
   stage: deploy_readme
@@ -311,12 +299,14 @@ create_g1_data:
   variables:
     WASM_FILE: $CI_PROJECT_DIR/release/${RUNTIME}_runtime.compact.compressed.wasm
     DUNITER_GENESIS_DATA: $CI_PROJECT_DIR/release/g1-data.json
-    DUNITER_GENESIS_EXPORT: $CI_PROJECT_DIR/release/${RUNTIME}-indexer.json
+    DUNITER_GENESIS_EXPORT: $CI_PROJECT_DIR/release/${RUNTIME}-indexer.json # TODO: à supprimer
     DEBIAN_FRONTEND: noninteractive
   script:
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
+    # Build the spec file (including the G1 data), e.g.: "release/gdev.json"
     - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}_live > release/${RUNTIME}.json
+    # Build the RAW spec file based on the spec file
     - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=release/${RUNTIME}.json --disable-default-bootnode --raw > release/${RUNTIME}-raw.json
     - cp node/specs/${RUNTIME}_client-specs.yaml release/
   artifacts:
