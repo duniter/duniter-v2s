@@ -164,9 +164,9 @@ docker_deploy:
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
     - when: never
-#  before_script:
-#    - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
-#    - podman login -u "duniterteam" -p "$DUNITERTEAM_PASSWD" docker.io
+  before_script:
+    - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
+    - podman login -u "duniterteam" -p "$DUNITERTEAM_PASSWD" docker.io
   script:
     - export CHAIN=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
     - echo $CHAIN
