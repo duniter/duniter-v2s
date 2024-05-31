@@ -172,7 +172,7 @@ docker_deploy:
     - export CHAIN=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
     - echo $CHAIN
     - export CLIENT_VERSION=$(cat node/Cargo.toml | grep version | sed "s/version = \"//g" | sed "s/\"//")
-    - export RUNTIME_VERSION=$(cat runtime/gdev/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version: //g" | sed "s/,//g")
+    - export RUNTIME_VERSION=$(cat runtime/gdev/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
     - export IMAGE_NAME="duniter/duniter-v2s-$CHAIN-$RUNTIME_VERSION-$CLIENT_VERSION"
     - export MANIFEST=localhost/manifest-$IMAGE_NAME:$MILESTONE
     - echo $MANIFEST
