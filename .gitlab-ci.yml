@@ -166,7 +166,7 @@ docker_deploy:
     - when: never
   before_script:
     - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
-    - docker login -u "duniterteam" -p "$DUNITERTEAM_PASSWD" docker.io
+    - podman login -u "duniterteam" -p "$DUNITERTEAM_PASSWD" docker.io
   script:
     - export CHAIN=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
     - echo $CHAIN
@@ -181,12 +181,12 @@ docker_deploy:
     - export MANIFEST=localhost/manifest-$IMAGE_NAME:$MILESTONE
     - echo $MANIFEST
     - podman manifest rm "$MANIFEST" 2>/dev/null || true
-    - podman docker --layers --manifest "$MANIFEST" -f docker/Dockerfile --build-arg chain=$CHAIN .
+    - podman build --layers --platform linux/amd64,linux/arm64 --manifest "$MANIFEST" -f docker/Dockerfile --build-arg chain=$CHAIN .
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$MILESTONE"
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:latest"
   after_script:
     - echo $MANIFEST
-    - docker manifest rm "$MANIFEST"
+    - podman manifest rm "$MANIFEST"
   tags:
     - podman
 
