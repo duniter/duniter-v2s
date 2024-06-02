@@ -167,7 +167,6 @@ specs:
     - when: never
   script:
     - echo "Specs"
-  allow_failure: true
 
 no_specs:
   stage: build
@@ -177,18 +176,12 @@ no_specs:
     - when: never
   script:
     - echo "NO Specs"
-  allow_failure: true
 
-fake_docker_deploy:
+.docker_deploy:
   stage: build
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
     - when: never
-  needs:
-    - job: specs
-      optional: true
-    - job: no_specs
-      optional: true
   script:
     - export CHAIN=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
     - echo $CHAIN
@@ -205,7 +198,17 @@ fake_docker_deploy:
   tags:
     - podman
 
-docker_deploy:
+no_specs_docker_deploy:
+  extends: .docker_deploy
+  needs:
+    - no_specs
+
+with_specs_docker_deploy:
+  extends: .docker_deploy
+  needs:
+    - specs
+
+.real_docker_deploy:
   stage: build
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
