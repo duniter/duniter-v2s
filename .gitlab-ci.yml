@@ -167,6 +167,7 @@ specs:
     - when: never
   script:
     - echo "Specs"
+  allow_failure: true
 
 no_specs:
   stage: build
@@ -176,6 +177,7 @@ no_specs:
     - when: never
   script:
     - echo "NO Specs"
+  allow_failure: true
 
 fake_docker_deploy:
   stage: build
