@@ -123,7 +123,7 @@ gdev_srtool_build:
       when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
-  image: paritytech/srtool:1.74.0-0.13.0
+  image: paritytech/srtool:1.77.0-0.15.0
   variables:
     PACKAGE: gdev-runtime
     RUNTIME_DIR: runtime/gdev
