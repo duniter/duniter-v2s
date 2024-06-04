@@ -291,7 +291,7 @@ build_runtime:
   script:
     - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
     - echo "NETWORK = $NETWORK"
-    - export RUNTIME=$(echo $NETWORK | grep -po "gdev\|gtest\|g1")
+    - export RUNTIME=$(echo $NETWORK | grep -Po "gdev|gtest|g1")
     - echo "RUNTIME = $RUNTIME"
     - export PACKAGE=$RUNTIME-runtime
     - echo "PACKAGE = $PACKAGE"
@@ -378,7 +378,7 @@ build_specs:
   script:
     - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
     - echo "NETWORK = $NETWORK"
-    - export RUNTIME=$(echo $NETWORK | grep -po "gdev\|gtest\|g1")
+    - export RUNTIME=$(echo $NETWORK | grep -Po "gdev|gtest|g1")
     - echo "RUNTIME = $RUNTIME"
     - export FEATURES="--features $RUNTIME --no-default-features"
     - echo "FEATURES = $FEATURES"
