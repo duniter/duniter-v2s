@@ -666,6 +666,7 @@ where
         panic!();
     }
 
+    // TODO: supprimer
     // Indexer output
     if let Ok(path) = std::env::var("DUNITER_GENESIS_EXPORT") {
         // genesis_certs_min_received => min_cert

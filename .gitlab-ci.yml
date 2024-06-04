@@ -101,7 +101,7 @@ gdev_build:
       when: manual
     - if: $CI_COMMIT_TAG
       when: never
-    - if: $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - if: $CI_COMMIT_BRANCH =~ /^(network\/).+/
       when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
@@ -119,7 +119,7 @@ gdev_srtool_build:
       when: manual
     - if: $CI_COMMIT_TAG
       when: never
-    - if: $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - if: $CI_COMMIT_BRANCH =~ /^(network\/).+/
       when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
@@ -202,14 +202,25 @@ no_specs:
 
 # ----------------- WIP #195 -----------------
 
-check_genesis_release:
+check_genesis_release_absent:
   stage: build
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
   script:
     - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
-    - curl -s https://git.duniter.org/api/v4/projects/520/releases/$NETWORK --fail 1>/dev/null && echo "Release présente" || (echo "Release absente" && exit 1)
-#    - export RELEASE=$(curl -s https://git.duniter.org/api/v4/projects/520/releases/runtime-801 | jq '.assets.links[] | select(.name == "g1-data.json")' 2>/dev/null || (echo "KO" && exit 1))
+    - echo "Vérification de la présence de la release $NETWORK"
+    - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK"
+    - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) && echo "Release absente"
+
+check_genesis_release_exist:
+  stage: build
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
+  script:
+    - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
+    - echo "Vérification de la présence de la release $NETWORK"
+    - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK"
+    - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && echo "Release présente" || (echo "Release absente" && exit 1)
 
 no_specs_docker_deploy:
   extends: .docker_deploy
@@ -272,18 +283,22 @@ readme_docker_release_tag:
 
 ############## SRTOOL ##############
 
-.srtool:
+build_runtime:
   stage: build
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
   image: paritytech/srtool:1.74.0-0.13.0
-  variables:
-    PACKAGE: $RUNTIME-runtime
-    RUNTIME_DIR: runtime/$RUNTIME
-    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/srtool_output_$RUNTIME.json
   script:
-    - echo "Building runtime for $RUNTIME"
-    - echo $CI_COMMIT_BRANCH | sed -e "s/release\///g"
+    - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
+    - echo "NETWORK = $NETWORK"
+    - export RUNTIME=$(echo $NETWORK | grep -po "gdev\|gtest\|g1")
+    - echo "RUNTIME = $RUNTIME"
+    - export PACKAGE=$RUNTIME-runtime
+    - echo "PACKAGE = $PACKAGE"
+    - export RUNTIME_DIR=runtime/$RUNTIME
+    - echo "RUNTIME_DIR = $RUNTIME_DIR"
+    - export SRTOOL_OUTPUT=$CI_PROJECT_DIR/release/srtool_output_$RUNTIME.json
+    - echo "SRTOOL_OUTPUT = $SRTOOL_OUTPUT"
     - mkdir -p $CI_PROJECT_DIR/release
     - echo -e "[toolchain]\nchannel = \"`curl -s https://raw.githubusercontent.com/paritytech/srtool/master/RUSTC_VERSION`\"\ncomponents = [ \"rust-std\", \"rust-src\" ]" > $RUNTIME_DIR/rust-toolchain.toml # Workaround see !239
     # Copy sources to the expected directory of srtool
@@ -299,22 +314,13 @@ readme_docker_release_tag:
   tags:
     - kepler
 
-gdev_srtool:
-  extends: .srtool
-  variables:
-    RUNTIME: gdev
-
-gtest_srtool:
-  extends: .srtool
-  variables:
-    RUNTIME: gtest
-
 ############## SPECS ##############
 
-create_g1_data:
+g1_data:
   stage: build
+  needs: ["check_genesis_release_absent"]
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
   image: python:3.9.18
   variables:
     DEBIAN_FRONTEND: noninteractive
@@ -359,24 +365,27 @@ create_g1_data:
   tags:
     - kepler
 
-.build_specs:
+build_specs:
   stage: build
+  needs: ["build_runtime", "g1_data"]
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
   image: rust:1-bullseye
   variables:
     WASM_FILE: $CI_PROJECT_DIR/release/${RUNTIME}_runtime.compact.compressed.wasm
     DUNITER_GENESIS_DATA: $CI_PROJECT_DIR/release/g1-data.json
-    DUNITER_GENESIS_EXPORT: $CI_PROJECT_DIR/release/${RUNTIME}-indexer.json # TODO: à supprimer
     DEBIAN_FRONTEND: noninteractive
   script:
+    - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
+    - echo "NETWORK = $NETWORK"
+    - export RUNTIME=$(echo $NETWORK | grep -po "gdev\|gtest\|g1")
+    - echo "RUNTIME = $RUNTIME"
+    - export FEATURES="--features $RUNTIME --no-default-features"
+    - echo "FEATURES = $FEATURES"
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
     # Build the spec file (including the G1 data), e.g.: "release/gdev.json"
     - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}_live > release/${RUNTIME}.json
-    # Build the RAW spec file based on the spec file
-    - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=release/${RUNTIME}.json --disable-default-bootnode --raw > release/${RUNTIME}-raw.json
-    - cp node/specs/${RUNTIME}_client-specs.yaml release/
   artifacts:
     expire_in: never
     name: "runtime"
@@ -385,30 +394,13 @@ create_g1_data:
   tags:
     - kepler
 
-gdev_specs:
-  extends: .build_specs
-  needs:
-    - gdev_srtool
-    - create_g1_data
-  variables:
-    RUNTIME: gdev
-
-gtest_specs:
-  extends: .build_specs
-  needs:
-    - gtest_srtool
-    - create_g1_data
-  variables:
-    RUNTIME: gtest
-    FEATURES: --features gtest --no-default-features
-
 ############## RELEASE ##############
 
 create_release:
   stage: release
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
-      needs: ["create_g1_data", "gdev_srtool", "gtest_srtool"]
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
+      needs: ["g1_data", "srtool"]
       when: manual
   image: rust:1-bullseye
   variables:
@@ -434,16 +426,18 @@ create_release:
 
 # ------ RELEASE: ADD SPECS ------
 
-.release_specs:
+release_specs:
   stage: release
+  needs:
+    - create_release
+    - specs
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
   image: rust:1-bullseye
   script:
     - export MILESTONE=$(echo $CI_COMMIT_BRANCH | sed -e "s/release\///g")
     - cargo xtask create-asset-link $MILESTONE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/${RUNTIME}.json
     - cargo xtask create-asset-link $MILESTONE ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/${RUNTIME}-raw.json
-    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}-indexer.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/${RUNTIME}-indexer.json
     - echo "Release Docker file..."
   artifacts:
     expire_in: never
@@ -451,19 +445,3 @@ create_release:
       - $CI_PROJECT_DIR/release/
   tags:
     - kepler
-
-release_gdev_specs:
-  extends: .release_specs
-  needs:
-    - create_release
-    - gdev_specs
-  variables:
-    RUNTIME: gdev
-
-release_gtest_specs:
-  extends: .release_specs
-  needs:
-    - create_release
-    - gtest_specs
-  variables:
-    RUNTIME: gtest
