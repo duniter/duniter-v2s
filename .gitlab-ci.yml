@@ -79,6 +79,8 @@ run_benchmarks:
   extends: .env
   stage: tests
   rules:
+    - if: $CI_COMMIT_BRANCH =~ /^(network\/).+/
+      when: never
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
     - if: $CI_COMMIT_TAG
@@ -146,7 +148,7 @@ tests:
       when: manual
     - if: $CI_COMMIT_TAG
       when: never
-    - if: $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - if: $CI_COMMIT_BRANCH =~ /^(network\/).+/
       when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
@@ -197,6 +199,15 @@ no_specs:
     - echo $MANIFEST
   tags:
     - podman
+
+# ----------------- WIP #195 -----------------
+
+check_genesis_release:
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
+  script:
+    - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
+    - export RELEASE=(curl -s https://git.duniter.org/api/v4/projects/520/releases/runtime-801 | jq '.assets.links[] | select(.name == "g1-data.json")' 2>/dev/null || (echo "KO" && exit 1))
 
 no_specs_docker_deploy:
   extends: .docker_deploy
