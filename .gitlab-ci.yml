@@ -400,7 +400,7 @@ create_release:
   stage: release
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
-      needs: ["g1_data", "srtool"]
+      needs: ["g1_data", "build_runtime"]
       when: manual
   image: rust:1-bullseye
   variables:
