@@ -343,7 +343,7 @@ g1_data:
     - rm g1-dump.tgz
     - mv tmp/backup-g1-duniter-1.8.7 duniter_default
     # py-g1-migrator conversion
-    - git clone https://git.duniter.org/tools/py-g1-migrator.git -b import_identities_from_leveldb /py-g1-migrator
+    - git clone https://git.duniter.org/tools/py-g1-migrator.git /py-g1-migrator
     - cd /py-g1-migrator
     - rm -rf inputs/*
     - apt-get update
