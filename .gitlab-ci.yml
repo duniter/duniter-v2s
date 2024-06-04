@@ -210,7 +210,7 @@ check_genesis_release_absent:
     - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
     - echo "Vérification de la présence de la release $NETWORK"
     - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK"
-    - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) && echo "Release absente"
+    - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
 
 check_genesis_release_exist:
   stage: build
