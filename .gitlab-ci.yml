@@ -203,6 +203,7 @@ no_specs:
 # ----------------- WIP #195 -----------------
 
 check_genesis_release:
+  stage: build
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
   script:
