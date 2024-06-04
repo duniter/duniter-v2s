@@ -207,7 +207,8 @@ check_genesis_release:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
   script:
     - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
-    - export RELEASE=(curl -s https://git.duniter.org/api/v4/projects/520/releases/runtime-801 | jq '.assets.links[] | select(.name == "g1-data.json")' 2>/dev/null || (echo "KO" && exit 1))
+    - curl -s https://git.duniter.org/api/v4/projects/520/releases/$NETWORK --fail
+#    - export RELEASE=$(curl -s https://git.duniter.org/api/v4/projects/520/releases/runtime-801 | jq '.assets.links[] | select(.name == "g1-data.json")' 2>/dev/null || (echo "KO" && exit 1))
 
 no_specs_docker_deploy:
   extends: .docker_deploy
