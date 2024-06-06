@@ -353,12 +353,12 @@ g1_data:
     - ./main.py
     # Export transaction history
     - sqlite3 /dump/duniter_default/txs.db --json "select time,comment,issuers,outputs from txs;" > inputs/transactions_history.json 2>> inputs/txs.err
-#    - ./generate_transactions_history.py
+#    - ./generate_transactions_history.py TODO: OK?
     # Merge in one file
     #- 'jq -s "{ identities: .[0].identities, wallets: .[0].wallets, initial_monetary_mass: .[0].initial_monetary_mass, current_block: .[0].current_block, transactions_history: .[1] }" output/gtest_genesis.json output/history.json > output/g1-data.json'
     # Make the exported file available for next jobs
     - mkdir -p $CI_PROJECT_DIR/release/
-    - cp output/g1-data.json $CI_PROJECT_DIR/release/
+    - cp output/genesis.json $CI_PROJECT_DIR/release/g1-data.json
   artifacts:
     expire_in: never
     paths:
