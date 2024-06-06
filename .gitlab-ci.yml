@@ -143,17 +143,18 @@ tests:
   - echo "RUNTIME = $RUNTIME"
   - export PACKAGE=$RUNTIME-runtime
   - echo "PACKAGE = $PACKAGE"
-  # GitLab milestone : used for both GitLab and Docker releases
+  # GitLab milestone : used for both GitLab and Docker releases. Milestone must match source code's runtime version to fetch the git changes for release notes.
   - export CLIENT_VERSION=$(cat node/Cargo.toml | grep version | sed "s/version = \"//g" | sed "s/\"//")
   - echo $CLIENT_VERSION
   - export RUNTIME_VERSION=$(cat runtime/gdev/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
   - echo $RUNTIME_VERSION
-  - export MILESTONE="$RUNTIME_VERSION-$CLIENT_VERSION"
+  - export MILESTONE="$RUNTIME_VERSION"
   - echo $MILESTONE
+  - export DOCKER_TAG="$RUNTIME_VERSION-$CLIENT_VERSION"
   # Tags for Docker images
   - export IMAGE_NAME="duniter/duniter-v2s-$NETWORK"
   - echo $IMAGE_NAME
-  - export MANIFEST=localhost/manifest-$IMAGE_NAME:$MILESTONE
+  - export MANIFEST=localhost/manifest-$IMAGE_NAME:$DOCKER_TAG
   - echo $MANIFEST
   # Files to be pushed in a release
   - export RELEASE_FILE_G1_DATA=release/g1-data.json
@@ -241,7 +242,7 @@ with_specs_docker_deploy:
     - *define_network_branch_vars
     - podman manifest rm "$MANIFEST" 2>/dev/null || true
     - podman build --layers --platform linux/amd64 --manifest "$MANIFEST" -f docker/Dockerfile --build-arg chain=$RUNTIME .
-    - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$MILESTONE"
+    - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$DOCKER_TAG"
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:latest"
   after_script:
     - echo $MANIFEST
@@ -356,7 +357,6 @@ build_specs:
     - <<: *is_network_branch
   image: rust:1-bullseye
   variables:
-    DUNITER_GENESIS_DATA: $CI_PROJECT_DIR/$RELEASE_FILE_G1_DATA
     DEBIAN_FRONTEND: noninteractive
   script:
     - *define_network_branch_vars
@@ -364,6 +364,7 @@ build_specs:
     - echo "FEATURES = $FEATURES"
     - export WASM_FILE="$CI_PROJECT_DIR/$RELEASE_FILE_WASM"
     - echo "WASM_FILE = $WASM_FILE"
+    - export DUNITER_GENESIS_DATA=$CI_PROJECT_DIR/$RELEASE_FILE_G1_DATA
     - echo "DUNITER_GENESIS_DATA = $DUNITER_GENESIS_DATA"
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
