@@ -373,7 +373,6 @@ build_specs:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
   image: rust:1-bullseye
   variables:
-    WASM_FILE: $CI_PROJECT_DIR/release/${RUNTIME}_runtime.compact.compressed.wasm
     DUNITER_GENESIS_DATA: $CI_PROJECT_DIR/release/g1-data.json
     DEBIAN_FRONTEND: noninteractive
   script:
@@ -383,6 +382,8 @@ build_specs:
     - echo "RUNTIME = $RUNTIME"
     - export FEATURES="--features $RUNTIME --no-default-features"
     - echo "FEATURES = $FEATURES"
+    - export WASM_FILE="$CI_PROJECT_DIR/release/${RUNTIME}_runtime.compact.compressed.wasm"
+    - echo "WASM_FILE = $WASM_FILE"
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
     # Build the spec file (including the G1 data), e.g.: "release/gdev.json"
