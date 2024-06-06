@@ -161,7 +161,7 @@ tests:
   - export RELEASE_FILE_SPEC_CONFIG=release/${RUNTIME}.yaml
   - echo $RELEASE_FILE_SPEC_CONFIG
   - export RELEASE_FILE_GENESIS=release/${RUNTIME}.json
-  - echo $RELEASE_FILE_SPEC_CONFIG
+  - echo $RELEASE_FILE_GENESIS
   - export RELEASE_FILE_WASM=release/${RUNTIME}_runtime.compact.compressed.wasm
   - echo $RELEASE_FILE_WASM
   - export RELEASE_FILE_SPEC=release/${RUNTIME}-raw.json
