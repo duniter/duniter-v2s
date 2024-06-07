@@ -169,6 +169,8 @@ tests:
   - echo $RELEASE_FILE_WASM
   - export RELEASE_FILE_SPEC=release/${RUNTIME}-raw.json
   - echo $RELEASE_FILE_SPEC
+  - export RELEASE_FILE_CLIENT_SPEC=release/gdev_client-specs.yaml
+  - echo $RELEASE_FILE_CLIENT_SPEC
 
 specs:
   stage: build
@@ -370,7 +372,7 @@ build_specs:
     - export DUNITER_GENESIS_DATA=$CI_PROJECT_DIR/$RELEASE_FILE_G1_DATA
     - echo "DUNITER_GENESIS_DATA = $DUNITER_GENESIS_DATA"
     - apt-get update
-    - apt-get install -y clang cmake protobuf-compiler
+    - apt-get install -y clang cmake protobuf-compiler # TODO: commonize
     # Build the spec file (including the G1 data), e.g.: "release/gdev.json"
     - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}_live > $RELEASE_FILE_GENESIS
     # Save spec configuration file for release
@@ -385,6 +387,7 @@ build_specs:
 
 build_client_specs:
   stage: build
+  needs: ["build_specs"] # TODO: remove
   rules:
     - <<: *is_network_branch
   image: rust:1-bullseye
@@ -394,8 +397,7 @@ build_client_specs:
     - echo "FEATURES = $FEATURES"
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
-    # Build the spec file (including the G1 data), e.g.: "release/gdev.json"
-    - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}_live > $RELEASE_FILE_GENESIS
+    - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=$RELEASE_FILE_GENESIS --disable-default-bootnode --raw > $RELEASE_FILE_SPEC
   artifacts:
     expire_in: never
     name: "runtime"
@@ -434,70 +436,21 @@ create_network_release:
   tags:
     - kepler
 
-#create_release:
-#  stage: release
-#  needs: ["build__client_specs"]
-#  rules:
-#    - <<: *is_network_branch
-#      when: manual
-#  image: rust:1-bullseye
-#  variables:
-#    SRTOOL_OUTPUT_GDEV: $CI_PROJECT_DIR/release/srtool_output_gdev.json
-#    SRTOOL_OUTPUT_GTEST: $CI_PROJECT_DIR/release/srtool_output_gtest.json
-#    SRTOOL_OUTPUT_G1: $CI_PROJECT_DIR/release/srtool_output_g1.json
-#  script:
-#    # Release creation
-#    - export MILESTONE=$(echo $CI_COMMIT_BRANCH | sed -e "s/release\///g")
-#    - cargo xtask release-runtime $MILESTONE $CI_COMMIT_BRANCH
-#    # We always ship runtimes: this is both a proof and a convenience
-#    - cargo xtask create-asset-link $MILESTONE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/g1-data.json
-#    - cargo xtask create-asset-link $MILESTONE gdev_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gdev_runtime.compact.compressed.wasm
-#    - cargo xtask create-asset-link $MILESTONE gtest_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gtest_runtime.compact.compressed.wasm
-#    - cargo xtask create-asset-link $MILESTONE gdev_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gdev_client-specs.yaml
-#    - cargo xtask create-asset-link $MILESTONE gtest_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gtest_client-specs.yaml
-#  artifacts:
-#    expire_in: never
-#    paths:
-#      - $CI_PROJECT_DIR/release/
-#  tags:
-#    - kepler
-
-# ------ RELEASE: ADD SPECS ------
-
-release_genesis:
-  needs: ["build_specs"]
+create_client_release:
   stage: release
+  needs: ["build_client_specs"]
   rules:
     - <<: *is_network_branch
+      when: manual
   image: rust:1-bullseye
   script:
     - *define_network_branch_vars
-    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_GENESIS
-    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC
-    - echo "Release Docker file..."
+    - cargo xtask release-runtime $RUNTIME_MILESTONE $CI_COMMIT_BRANCH
+    - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
+    - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_CLIENT_SPEC
   artifacts:
     expire_in: never
     paths:
       - $CI_PROJECT_DIR/release/
   tags:
     - kepler
-
-#release_specs:
-#  stage: release
-#  needs:
-#    - create_release
-#    - specs
-#  rules:
-#    - <<: *is_network_branch
-#  image: rust:1-bullseye
-#  script:
-#    - *define_network_branch_vars
-#    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/${RUNTIME}.json
-#    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC
-#    - echo "Release Docker file..."
-#  artifacts:
-#    expire_in: never
-#    paths:
-#      - $CI_PROJECT_DIR/release/
-#  tags:
-#    - kepler
