@@ -190,17 +190,18 @@ macro_rules! pallets_config {
         pub struct OnChargeTransaction;
 
         parameter_types! {
-              pub FeeMultiplier: Multiplier = Multiplier::one();
+        pub Target: Perquintill = Perquintill::from_percent(25);
+        pub MaxMultiplier: sp_runtime::FixedU128 = 10.into();
         }
         impl pallet_transaction_payment::Config for Runtime {
             type FeeMultiplierUpdate =
-                pallet_transaction_payment::ConstFeeMultiplier<FeeMultiplier>;
-            type LengthToFee = common_runtime::fees::LengthToFeeImpl<Balance>;
+                common_runtime::fees::FeeMultiplier<Self, Target, MaxMultiplier>;
+            type LengthToFee = common_runtime::fees::LengthToFeeImpl<Balance, Self, Target>;
             // does a filter on the call
             type OnChargeTransaction = OneshotAccount;
             type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
             type RuntimeEvent = RuntimeEvent;
-            type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance>;
+            type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance, Self, Target>;
         }
         impl pallet_oneshot_account::Config for Runtime {
             type Currency = Balances;

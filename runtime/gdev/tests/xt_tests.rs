@@ -17,6 +17,8 @@
 // these integration tests aim to test fees and extrinsic-related externalities
 // they need constant-fees feature to work
 
+#![cfg(feature = "constant-fees")]
+
 mod common;
 
 use common::*;
@@ -25,40 +27,8 @@ use frame_support::{
     traits::{OnIdle, StoredMap},
 };
 use gdev_runtime::*;
-use sp_core::{Encode, Pair};
+use sp_core::Encode;
 use sp_keyring::AccountKeyring;
-use sp_runtime::{generic::SignedPayload, traits::Extrinsic};
-
-/// get extrinsic for given call
-fn get_unchecked_extrinsic(
-    call: RuntimeCall,
-    era: u64,
-    block: u64,
-    signer: AccountKeyring,
-    tip: Balance,
-) -> UncheckedExtrinsic {
-    let extra: gdev_runtime::SignedExtra = (
-        frame_system::CheckNonZeroSender::<gdev_runtime::Runtime>::new(),
-        frame_system::CheckSpecVersion::<gdev_runtime::Runtime>::new(),
-        frame_system::CheckTxVersion::<gdev_runtime::Runtime>::new(),
-        frame_system::CheckGenesis::<gdev_runtime::Runtime>::new(),
-        frame_system::CheckMortality::<gdev_runtime::Runtime>::from(
-            sp_runtime::generic::Era::mortal(era, block),
-        ),
-        frame_system::CheckNonce::<gdev_runtime::Runtime>::from(0u32).into(),
-        frame_system::CheckWeight::<gdev_runtime::Runtime>::new(),
-        pallet_transaction_payment::ChargeTransactionPayment::<gdev_runtime::Runtime>::from(tip),
-    );
-    let payload = SignedPayload::new(call.clone(), extra.clone()).unwrap();
-    let origin = signer;
-    let sig = payload.using_encoded(|payload| origin.pair().sign(payload));
-
-    UncheckedExtrinsic::new(
-        call,
-        Some((origin.to_account_id().into(), sig.into(), extra)),
-    )
-    .unwrap()
-}
 
 /// test currency transfer with extrinsic
 // the signer account should pay fees and a tip
@@ -78,7 +48,7 @@ fn test_transfer_xt() {
             });
 
             // 1 cĞD of tip
-            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 1u64);
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 1u64, 0);
             // let info = xt.get_dispatch_info();
             // println!("dispatch info:\n\t {:?}\n", info);
 
@@ -114,7 +84,7 @@ fn test_refund_queue() {
             });
 
             // 1 cĞD of tip
-            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 1u64);
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 1u64, 0);
             assert_ok!(Executive::apply_extrinsic(xt));
 
             // check that refund was added to the queue
@@ -147,7 +117,7 @@ fn test_refund_on_idle() {
             });
 
             // 1 cĞD of tip
-            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 1u64);
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 1u64, 0);
             assert_ok!(Executive::apply_extrinsic(xt));
 
             // call on_idle to activate refund
@@ -184,7 +154,7 @@ fn test_no_refund() {
                 dest: AccountKeyring::Alice.to_account_id().into(),
                 value: 500,
             });
-            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Eve, 1u64);
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Eve, 1u64, 0);
             assert_ok!(Executive::apply_extrinsic(xt));
             // check that refund queue is empty
             assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
@@ -224,7 +194,7 @@ fn test_refund_reaped_linked_account() {
                 dest: AccountKeyring::Alice.to_account_id().into(),
                 keep_alive: false,
             });
-            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Ferdie, 0u64);
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Ferdie, 0u64, 0);
             assert_ok!(Executive::apply_extrinsic(xt));
 
             assert_eq!(Balances::free_balance(ferdie.clone()), 0);

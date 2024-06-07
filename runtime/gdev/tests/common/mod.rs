@@ -25,10 +25,12 @@ use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::{AuthorityId as BabeId, Slot, VrfInput, VrfProof};
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{crypto::IsWrappedBy, sr25519, Encode, Pair, Public, H256};
+use sp_keyring::AccountKeyring;
 use sp_membership::MembershipData;
 use sp_runtime::{
+    generic::SignedPayload,
     testing::{Digest, DigestItem},
-    traits::{IdentifyAccount, Verify},
+    traits::{Extrinsic, IdentifyAccount, Verify},
 };
 use std::collections::BTreeMap;
 
@@ -342,6 +344,8 @@ pub fn run_to_block(n: u32) {
         // Set the new block number and author
         System::reset_events();
         System::set_block_number(System::block_number() + 1);
+        // Reset the block weight
+        System::set_block_consumed_resources(Weight::zero(), 0_usize);
 
         // Current slot is not incremented by BABE
         pallet_babe::CurrentSlot::<Runtime>::put(pallet_babe::CurrentSlot::<Runtime>::get() + 1);
@@ -474,4 +478,36 @@ fn session_keys(
         im_online,
         authority_discovery,
     }
+}
+
+/// get extrinsic for given call
+pub fn get_unchecked_extrinsic(
+    call: RuntimeCall,
+    era: u64,
+    block: u64,
+    signer: AccountKeyring,
+    tip: Balance,
+    nonce: u32,
+) -> gdev_runtime::UncheckedExtrinsic {
+    let extra: gdev_runtime::SignedExtra = (
+        frame_system::CheckNonZeroSender::<gdev_runtime::Runtime>::new(),
+        frame_system::CheckSpecVersion::<gdev_runtime::Runtime>::new(),
+        frame_system::CheckTxVersion::<gdev_runtime::Runtime>::new(),
+        frame_system::CheckGenesis::<gdev_runtime::Runtime>::new(),
+        frame_system::CheckMortality::<gdev_runtime::Runtime>::from(
+            sp_runtime::generic::Era::mortal(era, block),
+        ),
+        frame_system::CheckNonce::<gdev_runtime::Runtime>::from(nonce).into(),
+        frame_system::CheckWeight::<gdev_runtime::Runtime>::new(),
+        pallet_transaction_payment::ChargeTransactionPayment::<gdev_runtime::Runtime>::from(tip),
+    );
+    let payload = SignedPayload::new(call.clone(), extra.clone()).unwrap();
+    let origin = signer;
+    let sig = payload.using_encoded(|payload| origin.pair().sign(payload));
+
+    gdev_runtime::UncheckedExtrinsic::new(
+        call,
+        Some((origin.to_account_id().into(), sig.into(), extra)),
+    )
+    .unwrap()
 }

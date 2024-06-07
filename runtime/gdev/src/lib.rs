@@ -50,7 +50,7 @@ use pallet_grandpa::{
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as session_historical;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::{FungibleAdapter, Multiplier};
+use pallet_transaction_payment::FungibleAdapter;
 pub use pallet_universal_dividend;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
@@ -58,9 +58,9 @@ use sp_core::OpaqueMetadata;
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, One, OpaqueKeys},
+    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult,
+    ApplyExtrinsicResult, Perquintill,
 };
 pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 use sp_std::prelude::*;

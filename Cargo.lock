@@ -1460,6 +1460,7 @@ dependencies = [
  "pallet-smith-members",
  "pallet-sudo",
  "pallet-timestamp",
+ "pallet-transaction-payment",
  "pallet-treasury",
  "pallet-universal-dividend",
  "pallet-upgrade-origin",

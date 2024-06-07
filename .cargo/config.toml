@@ -1,6 +1,7 @@
 [alias]
 sanity-gdev = "test -Zgit=shallow-deps -p duniter-live-tests --test sanity_gdev -- --nocapture"
-tu = "test -Zgit=shallow-deps --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features constant-fees"
+tu = "test -Zgit=shallow-deps --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features constant-fees" # Unit tests with constant-fees
+tf = "test -Zgit=shallow-deps --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests test_fee" # Custom fee model tests
 # `te` and `cucumber` are synonyms
 te = "test -p duniter-end2end-tests --test cucumber_tests --features constant-fees --"
 cucumber-build = "build -Zgit=shallow-deps --features constant-fees"

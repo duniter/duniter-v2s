@@ -126,6 +126,7 @@ try-runtime = [
 	"pallet-smith-members/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
+	"pallet-transaction-payment/try-runtime",
 	"pallet-treasury/try-runtime",
 	"pallet-universal-dividend/try-runtime",
 	"pallet-upgrade-origin/try-runtime",
@@ -167,6 +168,7 @@ pallet-session = { workspace = true }
 pallet-smith-members = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
+pallet-transaction-payment = { workspace = true }
 pallet-treasury = { workspace = true }
 pallet-universal-dividend = { workspace = true }
 pallet-upgrade-origin = { workspace = true }
