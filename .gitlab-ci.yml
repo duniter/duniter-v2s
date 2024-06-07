@@ -148,8 +148,10 @@ tests:
   - echo $CLIENT_VERSION
   - export RUNTIME_VERSION=$(cat runtime/gdev/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
   - echo $RUNTIME_VERSION
-  - export MILESTONE="runtime-$RUNTIME_VERSION"
-  - echo $MILESTONE
+  - export RUNTIME_MILESTONE="runtime-$RUNTIME_VERSION"
+  - echo $RUNTIME_MILESTONE
+  - export NETWORK_RELEASE="$NETWORK"
+  - echo $NETWORK_RELEASE
   - export DOCKER_TAG="$RUNTIME_VERSION-$CLIENT_VERSION"
   # Tags for Docker images
   - export IMAGE_NAME="duniter/duniter-v2s-$NETWORK"
@@ -416,15 +418,15 @@ create_network_release:
   script:
     - *define_network_branch_vars
     # Release creation
-    - cargo xtask release-runtime $MILESTONE $CI_COMMIT_BRANCH
+    - cargo xtask release-runtime $NETWORK_RELEASE $CI_COMMIT_BRANCH
     # g1-data (initial data)
-    - cargo xtask create-asset-link $MILESTONE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_G1_DATA
+    - cargo xtask create-asset-link $NETWORK_RELEASE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_G1_DATA
     # gdev.yaml (spec configuration)
-    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC_CONFIG
+    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC_CONFIG
     # initial runtime
-    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
+    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
     # the result: gdev.json (genesis)
-    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_GENESIS
+    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_GENESIS
   artifacts:
     expire_in: never
     paths:
@@ -470,8 +472,8 @@ release_genesis:
   image: rust:1-bullseye
   script:
     - *define_network_branch_vars
-    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_GENESIS
-    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC
+    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_GENESIS
+    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC
     - echo "Release Docker file..."
   artifacts:
     expire_in: never
