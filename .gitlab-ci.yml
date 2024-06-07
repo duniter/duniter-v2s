@@ -418,7 +418,7 @@ create_network_release:
   script:
     - *define_network_branch_vars
     # Release creation
-    - cargo xtask release-runtime $NETWORK_RELEASE $CI_COMMIT_BRANCH
+    - cargo xtask release-network $NETWORK_RELEASE $CI_COMMIT_BRANCH
     # g1-data (initial data)
     - cargo xtask create-asset-link $NETWORK_RELEASE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_G1_DATA
     # gdev.yaml (spec configuration)

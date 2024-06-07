@@ -53,6 +53,8 @@ enum DuniterXTaskCommand {
         /// Raw spec filepath
         raw_spec: PathBuf,
     },
+    /// Release a new network
+    ReleaseNetwork { network: String, branch: String },
     /// Release a new runtime
     ReleaseRuntime { milestone: String, branch: String },
     /// Update raw specs locally with the files published on a Release
@@ -89,6 +91,9 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::GenDoc => gen_doc::gen_doc(),
         DuniterXTaskCommand::InjectRuntimeCode { runtime, raw_spec } => {
             inject_runtime_code(&raw_spec, &runtime)
+        }
+        DuniterXTaskCommand::ReleaseNetwork { network, branch } => {
+            release_runtime::release_network(network, branch).await
         }
         DuniterXTaskCommand::ReleaseRuntime { milestone, branch } => {
             release_runtime::release_runtime(milestone, branch).await

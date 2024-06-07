@@ -15,6 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 mod create_asset_link;
+mod create_network_release;
 mod create_release;
 mod get_changes;
 mod get_issues;
@@ -59,6 +60,50 @@ struct CoreVersion {
     spec_name: String,
     spec_version: u32,
     //transaction_version: u32,
+}
+
+pub(super) async fn release_network(network: String, branch: String) -> Result<()> {
+    let mut release_notes = String::from(
+        "
+# Runtime
+
+",
+    );
+
+    // Generate release notes
+    let currency = network.clone();
+    let env_var = "SRTOOL_OUTPUT".to_string();
+
+    if let Ok(sr_tool_output_file) = std::env::var(env_var) {
+        let read = fs::read_to_string(sr_tool_output_file);
+        match read {
+            Ok(sr_tool_output) => {
+                release_notes.push_str(
+                    gen_release_notes(currency.to_string(), sr_tool_output)
+                        .with_context(|| {
+                            format!("Fail to generate release notes for {}", currency)
+                        })?
+                        .as_str(),
+                );
+            }
+            Err(e) => {
+                eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
+            }
+        }
+    }
+
+    println!("{}", release_notes);
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    create_network_release::create_network_release(
+        gitlab_token,
+        branch,
+        network,
+        release_notes.to_string(),
+    )
+    .await?;
+
+    Ok(())
 }
 
 pub(super) async fn release_runtime(milestone: String, branch: String) -> Result<()> {
