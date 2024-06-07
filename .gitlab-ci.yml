@@ -148,7 +148,7 @@ tests:
   - echo $CLIENT_VERSION
   - export RUNTIME_VERSION=$(cat runtime/gdev/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
   - echo $RUNTIME_VERSION
-  - export MILESTONE="$RUNTIME_VERSION"
+  - export MILESTONE="runtime-$RUNTIME_VERSION"
   - echo $MILESTONE
   - export DOCKER_TAG="$RUNTIME_VERSION-$CLIENT_VERSION"
   # Tags for Docker images
