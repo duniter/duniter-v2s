@@ -167,8 +167,8 @@ tests:
   - echo $RELEASE_FILE_SPEC
   - export RELEASE_FILE_WASM=release/${RUNTIME}_runtime.compact.compressed.wasm
   - echo $RELEASE_FILE_WASM
-  - export RELEASE_FILE_SPEC=release/${RUNTIME}-raw.json
-  - echo $RELEASE_FILE_SPEC
+  - export RELEASE_FILE_RAW_SPEC=release/${RUNTIME}-raw.json
+  - echo RELEASE_FILE_RAW_SPEC
   - export RELEASE_FILE_CLIENT_SPEC=release/gdev_client-specs.yaml
   - echo $RELEASE_FILE_CLIENT_SPEC
 
@@ -202,17 +202,18 @@ no_specs:
 
 # ----------------- WIP #195 -----------------
 
-check_genesis_release_absent:
+start_network_release:
   stage: build
   rules:
     - <<: *is_network_branch
+      when: manual
   script:
     - *define_network_branch_vars
     - echo "Vérification de la présence de la release $NETWORK"
     - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK"
     - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
 
-check_genesis_release_exists:
+start_client_release:
   stage: build
   rules:
     - <<: *is_network_branch
@@ -307,7 +308,7 @@ build_runtime:
 
 g1_data:
   stage: build
-  needs: ["check_genesis_release_absent"]
+  needs: ["start_network_release"]
   rules:
     - <<: *is_network_branch
   image: python:3.9.18
@@ -387,7 +388,7 @@ build_specs:
 
 build_client_specs:
   stage: build
-  needs: ["check_genesis_release_exists"]
+  needs: ["start_client_release"]
   rules:
     - <<: *is_network_branch
   image: rust:1-bullseye
