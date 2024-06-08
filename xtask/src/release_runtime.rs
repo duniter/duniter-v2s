@@ -179,18 +179,23 @@ pub(super) async fn release_runtime(milestone: String, branch: String) -> Result
     Ok(())
 }
 
-pub(super) async fn update_raw_specs(milestone: String) -> Result<()> {
-    let specs = vec!["gdev-raw.json", "gtest-raw.json", "g1-raw.json"];
-    println!("Fetching release info…");
-    let assets = get_release::get_release(milestone).await?;
-    for spec in specs {
-        if let Some(gdev_raw_specs) = assets.iter().find(|asset| asset.ends_with(spec)) {
-            println!("Downloading {}…", spec);
-            let client = reqwest::Client::new();
-            let res = client.get(gdev_raw_specs).send().await?;
-            let write_to = format!("./node/specs/{}", spec);
-            fs::write(write_to, res.bytes().await?)?;
+pub(super) async fn update_spec(network: String) -> Result<()> {
+    let spec_file = match network.clone() {
+        network if network.starts_with("g1") => "g1.json",
+        network if network.starts_with("gtest") => "gtest.json",
+        network if network.starts_with("gdev") => "gdev.json",
+        _ => {
+            return Err(anyhow!("Invalid network"));
         }
+    };
+    println!("Fetching release info…");
+    let assets = get_release::get_release(network).await?;
+    if let Some(gdev_spec) = assets.iter().find(|asset| asset.ends_with(spec_file)) {
+        println!("Downloading {}…", spec_file);
+        let client = reqwest::Client::new();
+        let res = client.get(gdev_spec).send().await?;
+        let write_to = format!("./node/specs/{}", spec_file);
+        fs::write(write_to, res.bytes().await?)?;
     }
     println!("Done.");
     Ok(())

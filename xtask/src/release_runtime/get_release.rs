@@ -25,12 +25,10 @@ use graphql_client::{GraphQLQuery, Response};
 )]
 pub struct GetReleaseOfProjectQuery;
 
-pub(super) async fn get_release(milestone: String) -> Result<Vec<String>> {
+pub(super) async fn get_release(tag: String) -> Result<Vec<String>> {
     // this is the important line
     let request_body =
-        GetReleaseOfProjectQuery::build_query(get_release_of_project_query::Variables {
-            milestone,
-        });
+        GetReleaseOfProjectQuery::build_query(get_release_of_project_query::Variables { tag });
 
     let client = reqwest::Client::new();
     let res = client
