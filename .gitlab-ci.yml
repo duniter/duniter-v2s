@@ -163,8 +163,8 @@ tests:
   - echo $RELEASE_FILE_G1_DATA
   - export RELEASE_FILE_SPEC_CONFIG=release/${RUNTIME}.yaml
   - echo $RELEASE_FILE_SPEC_CONFIG
-  - export RELEASE_FILE_GENESIS=release/${RUNTIME}.json
-  - echo $RELEASE_FILE_GENESIS
+  - export RELEASE_FILE_SPEC=release/${RUNTIME}.json
+  - echo $RELEASE_FILE_SPEC
   - export RELEASE_FILE_WASM=release/${RUNTIME}_runtime.compact.compressed.wasm
   - echo $RELEASE_FILE_WASM
   - export RELEASE_FILE_SPEC=release/${RUNTIME}-raw.json
@@ -374,7 +374,7 @@ build_specs:
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler # TODO: commonize
     # Build the spec file (including the G1 data), e.g.: "release/gdev.json"
-    - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}_live > $RELEASE_FILE_GENESIS
+    - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}_live > $RELEASE_FILE_SPEC
     # Save spec configuration file for release
     - cp resources/${RUNTIME}.yaml $RELEASE_FILE_SPEC_CONFIG
   artifacts:
@@ -428,7 +428,7 @@ create_network_release:
     # initial runtime
     - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
     # the result: gdev.json (genesis)
-    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_GENESIS
+    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC
   artifacts:
     expire_in: never
     paths:
