@@ -271,7 +271,7 @@ build_runtime:
 
 g1_data:
   stage: build
-  needs: ["start_network_release"]
+  needs: ["trigger_network_release"]
   rules:
     - <<: *is_network_branch
   image: python:3.9.18
@@ -351,7 +351,7 @@ build_specs:
 
 build_raw_specs:
   stage: build
-  needs: ["start_client_release"]
+  needs: ["trigger_client_release"]
   rules:
     - <<: *is_network_branch
   image: rust:1-bullseye
