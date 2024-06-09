@@ -364,6 +364,7 @@ build_raw_specs:
     # Print chainspec to file
     - cargo xtask print-spec $NETWORK_RELEASE > ${RUNTIME}.json
     # Produce raw spec file
+    - mkdir -p $CI_PROJECT_DIR/release
     - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}.json --disable-default-bootnode --raw > $RELEASE_FILE_RAW_SPEC
   artifacts:
     expire_in: never
