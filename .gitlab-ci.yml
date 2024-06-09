@@ -174,8 +174,8 @@ tests:
 
 # ----------------- WIP #195 -----------------
 
-start_network_release:
-  stage: build
+trigger_network_release:
+  stage: schedule
   rules:
     - <<: *is_network_branch
       when: manual
@@ -185,8 +185,8 @@ start_network_release:
     - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK"
     - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
 
-start_client_release:
-  stage: build
+trigger_client_release:
+  stage: schedule
   rules:
     - <<: *is_network_branch
       when: manual
@@ -197,7 +197,7 @@ start_client_release:
     - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && echo "Release présente" || (echo "Release absente" && exit 1)
 
 docker_deploy:
-  stage: build
+  stage: release
   needs: ["build_raw_specs"]
   rules:
     - <<: *is_network_branch
@@ -409,7 +409,6 @@ create_client_release:
   needs: ["build_runtime", "build_raw_specs"]
   rules:
     - <<: *is_network_branch
-      when: manual
   image: rust:1-bullseye
   script:
     - *define_network_branch_vars
