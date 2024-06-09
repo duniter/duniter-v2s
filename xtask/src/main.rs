@@ -57,8 +57,8 @@ enum DuniterXTaskCommand {
     ReleaseNetwork { network: String, branch: String },
     /// Release a new runtime
     ReleaseRuntime { milestone: String, branch: String },
-    /// Update genesis spec locally with the file published on a network Release
-    UpdateSpec { network: String },
+    /// Print the chainSpec published on given Network Release
+    PrintSpec { network: String },
     /// Create asset in a release
     CreateAssetLink {
         tag: String,
@@ -83,8 +83,14 @@ async fn main() -> Result<()> {
             );
         std::process::exit(1);
     }
-    Command::new("rustc").arg("--version").status()?;
-    Command::new("cargo").arg("--version").status()?;
+
+    match &args.command {
+        DuniterXTaskCommand::PrintSpec { .. } => { /* no print */ }
+        _ => {
+            Command::new("rustc").arg("--version").status()?;
+            Command::new("cargo").arg("--version").status()?;
+        }
+    }
 
     match args.command {
         DuniterXTaskCommand::Build { production } => build(production),
@@ -98,7 +104,7 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::ReleaseRuntime { milestone, branch } => {
             release_runtime::release_runtime(milestone, branch).await
         }
-        DuniterXTaskCommand::UpdateSpec { network } => release_runtime::update_spec(network).await,
+        DuniterXTaskCommand::PrintSpec { network } => release_runtime::print_spec(network).await,
         DuniterXTaskCommand::CreateAssetLink {
             tag,
             asset_name,

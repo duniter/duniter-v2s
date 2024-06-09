@@ -398,9 +398,10 @@ build_client_specs:
     - echo "FEATURES = $FEATURES"
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
-    # Creates a spec file node/specs/${RUNTIME}.json
-    - cargo xtask update-spec $NETWORK_RELEASE
-    - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=node/specs/${RUNTIME}.json --disable-default-bootnode --raw > $RELEASE_FILE_SPEC
+    # Print chainspec to file
+    - cargo xtask print-spec $NETWORK_RELEASE > ${RUNTIME}.json
+    # Produce raw spec file
+    - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}.json --disable-default-bootnode --raw > $RELEASE_FILE_SPEC
   artifacts:
     expire_in: never
     name: "runtime"

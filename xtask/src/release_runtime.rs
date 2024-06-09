@@ -179,7 +179,7 @@ pub(super) async fn release_runtime(milestone: String, branch: String) -> Result
     Ok(())
 }
 
-pub(super) async fn update_spec(network: String) -> Result<()> {
+pub(super) async fn print_spec(network: String) -> Result<()> {
     let spec_file = match network.clone() {
         network if network.starts_with("g1") => "g1.json",
         network if network.starts_with("gtest") => "gtest.json",
@@ -188,16 +188,13 @@ pub(super) async fn update_spec(network: String) -> Result<()> {
             return Err(anyhow!("Invalid network"));
         }
     };
-    println!("Fetching release info…");
     let assets = get_release::get_release(network).await?;
     if let Some(gdev_spec) = assets.iter().find(|asset| asset.ends_with(spec_file)) {
-        println!("Downloading {}…", spec_file);
         let client = reqwest::Client::new();
         let res = client.get(gdev_spec).send().await?;
-        let write_to = format!("./node/specs/{}", spec_file);
-        fs::write(write_to, res.bytes().await?)?;
+        let spec = String::from_utf8(res.bytes().await?.to_vec())?;
+        println!("{}", spec);
     }
-    println!("Done.");
     Ok(())
 }
 
