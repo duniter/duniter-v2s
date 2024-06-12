@@ -175,7 +175,7 @@ tests:
 # ----------------- WIP #195 -----------------
 
 trigger_network_release:
-  stage: schedule
+  stage: build
   rules:
     - <<: *is_network_branch
       when: manual
@@ -186,7 +186,7 @@ trigger_network_release:
     - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
 
 trigger_client_release:
-  stage: schedule
+  stage: build
   rules:
     - <<: *is_network_branch
       when: manual
