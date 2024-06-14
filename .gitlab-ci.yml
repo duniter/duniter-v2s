@@ -23,6 +23,9 @@ workflow:
         - Cargo.toml
         - Cargo.lock
 
+.is_network_branch: &is_network_branch
+  if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
+
 sanity_tests:
   extends: .env
   rules:
@@ -63,7 +66,7 @@ fmt_and_clippy:
       when: manual
     - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH == "master"'
       when: never
-    - if: '$CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/'
+    - <<: *is_network_branch
       when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: always
@@ -81,6 +84,8 @@ run_benchmarks:
     - echo podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
     - podman build --layers --tag "$IMAGE_NAME:$IMAGE_TAG" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
   rules:
+    - <<: *is_network_branch
+      when: never
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
     - if: $CI_COMMIT_TAG
@@ -103,7 +108,7 @@ gdev_build:
       when: manual
     - if: $CI_COMMIT_TAG
       when: never
-    - if: $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - <<: *is_network_branch
       when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
@@ -122,7 +127,7 @@ tests:
       when: manual
     - if: $CI_COMMIT_TAG
       when: never
-    - if: $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - <<: *is_network_branch
       when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
@@ -135,75 +140,103 @@ tests:
     - cargo cucumber-build
     - cargo cucumber
 
-.deploy_docker_multiplatform:
+.network_branch_vars: &define_network_branch_vars
+  - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
+  - echo "NETWORK = $NETWORK"
+  - export RUNTIME=$(echo $NETWORK | grep -Po "gdev|gtest|g1")
+  - echo "RUNTIME = $RUNTIME"
+  - export PACKAGE=$RUNTIME-runtime
+  - echo "PACKAGE = $PACKAGE"
+  # GitLab milestone : used for both GitLab and Docker releases. Milestone must match source code's runtime version to fetch the git changes for release notes.
+  - export CLIENT_VERSION=$(cat node/Cargo.toml | grep version | sed "s/version = \"//g" | sed "s/\"//")
+  - echo $CLIENT_VERSION
+  - export RUNTIME_VERSION=$(cat runtime/gdev/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
+  - echo $RUNTIME_VERSION
+  - export RUNTIME_MILESTONE="runtime-$RUNTIME_VERSION"
+  - echo $RUNTIME_MILESTONE
+  - export NETWORK_RELEASE="$NETWORK"
+  - echo $NETWORK_RELEASE
+  - export DOCKER_TAG="$RUNTIME_VERSION-$CLIENT_VERSION"
+  # Tags for Docker images
+  - export IMAGE_NAME="duniter/duniter-v2s-$NETWORK"
+  - echo $IMAGE_NAME
+  - export MANIFEST=localhost/manifest-$IMAGE_NAME:$DOCKER_TAG
+  - echo $MANIFEST
+  # Files to be pushed in a release
+  - export RELEASE_FILE_G1_DATA=release/g1-data.json
+  - echo $RELEASE_FILE_G1_DATA
+  - export RELEASE_FILE_SPEC_CONFIG=release/${RUNTIME}.yaml
+  - echo $RELEASE_FILE_SPEC_CONFIG
+  - export RELEASE_FILE_SPEC=release/${RUNTIME}.json
+  - echo $RELEASE_FILE_SPEC
+  - export RELEASE_FILE_WASM=release/${RUNTIME}_runtime.compact.compressed.wasm
+  - echo $RELEASE_FILE_WASM
+  - export RELEASE_FILE_RAW_SPEC=release/${RUNTIME}-raw.json
+  - echo $RELEASE_FILE_RAW_SPEC
+  - export RELEASE_FILE_CLIENT_SPEC=release/gdev_client-specs.yaml
+  - echo $RELEASE_FILE_CLIENT_SPEC
+
+trigger_network_release:
   stage: build
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - <<: *is_network_branch
       when: manual
-    #      changes:
-    #        - node/specs/$CHAIN-raw.json
+  script:
+    - *define_network_branch_vars
+    - echo "Vérification de la présence de la release $NETWORK"
+    - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK"
+    - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
+
+trigger_client_release:
+  stage: build
+  rules:
+    - <<: *is_network_branch
+      when: manual
+  script:
+    - *define_network_branch_vars
+    - echo "Vérification de la présence de la release $NETWORK"
+    - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK"
+    - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && echo "Release présente" || (echo "Release absente" && exit 1)
+
+docker_deploy:
+  stage: release
+  needs: ["build_raw_specs"]
+  rules:
+    - <<: *is_network_branch
     - when: never
   before_script:
     - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
     - podman login -u "duniterteam" -p "$DUNITERTEAM_PASSWD" docker.io
   script:
-    - export MILESTONE=$(echo $CI_COMMIT_BRANCH | sed -e "s/release\///g")
-    - echo $MILESTONE
-    - export MANIFEST=localhost/manifest-$IMAGE_NAME:$MILESTONE
-    - echo $MANIFEST
+    - *define_network_branch_vars
     - podman manifest rm "$MANIFEST" 2>/dev/null || true
-    - podman build --layers --platform linux/amd64,linux/arm64 --manifest "$MANIFEST" -f docker/Dockerfile $PODMAN_BUILD_OPTIONS .
-    - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$MILESTONE"
+    - podman build --layers --platform linux/amd64 --manifest "$MANIFEST" -f docker/Dockerfile --build-arg chain=$RUNTIME .
+    - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$DOCKER_TAG"
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:latest"
   after_script:
+    - *define_network_branch_vars
+    - echo $MANIFEST
     - podman manifest rm "$MANIFEST"
-  variables:
-    IMAGE_NAME: "duniter/duniter-v2s-$CHAIN"
-    PODMAN_BUILD_OPTIONS: "--build-arg chain=$CHAIN"
   tags:
     - podman
 
-gdev_docker_deploy:
-  extends: .deploy_docker_multiplatform
-  variables:
-    CHAIN: gdev
-
-gtest_docker_deploy:
-  extends: .deploy_docker_multiplatform
-  variables:
-    CHAIN: gtest
-
-readme_docker_release_tag:
-  stage: deploy_readme
-  rules:
-    - if: "$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^(v|runtime-)[0-9].*/"
-    - when: never
-  image:
-    name: chko/docker-pushrm
-    entrypoint: ["/bin/sh", "-c", "/docker-pushrm"]
-  variables:
-    DOCKER_USER: duniterteam
-    DOCKER_PASS: "$DUNITERTEAM_PASSWD"
-    PUSHRM_SHORT: "Duniter v2 based on Substrate framework"
-    PUSHRM_TARGET: "docker.io/duniter/duniter-v2s"
-    PUSHRM_DEBUG: 1
-    PUSHRM_FILE: "$CI_PROJECT_DIR/docker/README.md"
-  script: "/bin/true"
-
 ############## SRTOOL ##############
 
-.srtool:
+# We always build the runtime on a network/ branch, either it is for:
+# - creating a network release (i.e.: genesis)
+# - creating a client release (i.e.: which also includes the runtime)
+build_runtime:
   stage: build
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
-  image: paritytech/srtool:1.73.0-0.12.0
+    - <<: *is_network_branch
+  image: paritytech/srtool:1.77.0-0.15.0
   variables:
-    PACKAGE: $RUNTIME-runtime
-    RUNTIME_DIR: runtime/$RUNTIME
-    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/srtool_output_$RUNTIME.json
+    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/srtool_output.json
   script:
-    - echo "Building runtime for $RUNTIME"
-    - echo $CI_COMMIT_BRANCH | sed -e "s/release\///g"
+    - *define_network_branch_vars
+    - export RUNTIME_DIR=runtime/$RUNTIME
+    - echo "RUNTIME_DIR = $RUNTIME_DIR"
+    - echo "SRTOOL_OUTPUT = $SRTOOL_OUTPUT"
     - mkdir -p $CI_PROJECT_DIR/release
     # Copy sources to the expected directory of srtool
     - cp -R * /build/
@@ -217,27 +250,19 @@ readme_docker_release_tag:
   tags:
     - kepler
 
-gdev_srtool:
-  extends: .srtool
-  variables:
-    RUNTIME: gdev
-
-gtest_srtool:
-  extends: .srtool
-  variables:
-    RUNTIME: gtest
-
 ############## SPECS ##############
 
-create_g1_data:
+g1_data:
   stage: build
+  needs: ["trigger_network_release"]
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - <<: *is_network_branch
   image: python:3.9.18
   variables:
     DEBIAN_FRONTEND: noninteractive
     LEVELDB_PATH: /dump/duniter_default/data/leveldb
   script:
+    - *define_network_branch_vars
     # Duniter 1.8.7 dump
     - mkdir /dump
     - cd /dump
@@ -254,7 +279,7 @@ create_g1_data:
     - rm g1-dump.tgz
     - mv tmp/backup-g1-duniter-1.8.7 duniter_default
     # py-g1-migrator conversion
-    - git clone https://git.duniter.org/tools/py-g1-migrator.git -b import_identities_from_leveldb /py-g1-migrator
+    - git clone https://git.duniter.org/tools/py-g1-migrator.git /py-g1-migrator
     - cd /py-g1-migrator
     - rm -rf inputs/*
     - apt-get update
@@ -264,34 +289,37 @@ create_g1_data:
     - ./main.py
     # Export transaction history
     - sqlite3 /dump/duniter_default/txs.db --json "select time,comment,issuers,outputs from txs;" > inputs/transactions_history.json 2>> inputs/txs.err
-    - ./generate_transactions_history.py
-    # Merge in one file
-    - 'jq -s "{ identities: .[0].identities, wallets: .[0].wallets, initial_monetary_mass: .[0].initial_monetary_mass, current_block: .[0].current_block, transactions_history: .[1] }" output/gtest_genesis.json output/history.json > output/g1-data.json'
     # Make the exported file available for next jobs
     - mkdir -p $CI_PROJECT_DIR/release/
-    - cp output/g1-data.json $CI_PROJECT_DIR/release/
+    - cp output/genesis.json $CI_PROJECT_DIR/$RELEASE_FILE_G1_DATA
   artifacts:
     paths:
       - $CI_PROJECT_DIR/release/
   tags:
     - kepler
 
-.build_specs:
+build_specs:
   stage: build
+  needs: ["build_runtime", "g1_data"]
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - <<: *is_network_branch
   image: rust:1-bullseye
   variables:
-    WASM_FILE: $CI_PROJECT_DIR/release/${RUNTIME}_runtime.compact.compressed.wasm
-    DUNITER_GENESIS_DATA: $CI_PROJECT_DIR/release/g1-data.json
-    DUNITER_GENESIS_EXPORT: $CI_PROJECT_DIR/release/${RUNTIME}-indexer.json
     DEBIAN_FRONTEND: noninteractive
   script:
+    - *define_network_branch_vars
+    - export FEATURES="--features $RUNTIME --no-default-features"
+    - echo "FEATURES = $FEATURES"
+    - export WASM_FILE="$CI_PROJECT_DIR/$RELEASE_FILE_WASM"
+    - echo "WASM_FILE = $WASM_FILE"
+    - export DUNITER_GENESIS_DATA=$CI_PROJECT_DIR/$RELEASE_FILE_G1_DATA
+    - echo "DUNITER_GENESIS_DATA = $DUNITER_GENESIS_DATA"
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
-    - cargo run ${FEATURES} -- build-spec --chain=${RUNTIME}_live > release/${RUNTIME}.json
-    - cargo run ${FEATURES} -- build-spec --chain=release/${RUNTIME}.json --disable-default-bootnode --raw > release/${RUNTIME}-raw.json
-    - cp node/specs/${RUNTIME}_client-specs.yaml release/
+    # Build the spec file (including the G1 data), e.g.: "release/gdev.json"
+    - cargo run ${FEATURES} -- build-spec --chain=${RUNTIME}_live > $RELEASE_FILE_SPEC
+    # Save spec configuration file for release
+    - cp resources/${RUNTIME}.yaml $RELEASE_FILE_SPEC_CONFIG
   artifacts:
     name: "runtime"
     paths:
@@ -299,83 +327,74 @@ create_g1_data:
   tags:
     - kepler
 
-gdev_specs:
-  extends: .build_specs
-  needs:
-    - gdev_srtool
-    - create_g1_data
-  variables:
-    RUNTIME: gdev
-
-gtest_specs:
-  extends: .build_specs
-  needs:
-    - gtest_srtool
-    - create_g1_data
-  variables:
-    RUNTIME: gtest
-    FEATURES: --features gtest --no-default-features
+build_raw_specs:
+  stage: build
+  needs: ["trigger_client_release"]
+  rules:
+    - <<: *is_network_branch
+  image: rust:1-bullseye
+  script:
+    - *define_network_branch_vars
+    - export FEATURES="--features $RUNTIME --no-default-features"
+    - echo "FEATURES = $FEATURES"
+    - apt-get update
+    - apt-get install -y clang cmake protobuf-compiler
+    # Print chainspec to file
+    - cargo xtask print-spec $NETWORK_RELEASE > ${RUNTIME}.json
+    # Produce raw spec file
+    - mkdir -p $CI_PROJECT_DIR/release
+    - cargo run ${FEATURES} -- build-spec --chain=${RUNTIME}.json --disable-default-bootnode --raw > $RELEASE_FILE_RAW_SPEC
+  artifacts:
+    expire_in: never
+    name: "runtime"
+    paths:
+      - $CI_PROJECT_DIR/release
+  tags:
+    - kepler
 
 ############## RELEASE ##############
 
-create_release:
+create_network_release:
   stage: release
+  needs: ["build_specs"]
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
-      needs: ["create_g1_data", "gdev_srtool", "gtest_srtool"]
-      when: manual
+    - <<: *is_network_branch
   image: rust:1-bullseye
   variables:
-    SRTOOL_OUTPUT_GDEV: $CI_PROJECT_DIR/release/srtool_output_gdev.json
-    SRTOOL_OUTPUT_GTEST: $CI_PROJECT_DIR/release/srtool_output_gtest.json
-    SRTOOL_OUTPUT_G1: $CI_PROJECT_DIR/release/srtool_output_g1.json
+    # Used by `release-runtime` command
+    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/srtool_output.json
   script:
+    - *define_network_branch_vars
     # Release creation
-    - export MILESTONE=$(echo $CI_COMMIT_BRANCH | sed -e "s/release\///g")
-    - cargo xtask release-runtime $MILESTONE $CI_COMMIT_BRANCH
-    # We always ship runtimes: this is both a proof and a convenience
-    - cargo xtask create-asset-link $MILESTONE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/g1-data.json
-    - cargo xtask create-asset-link $MILESTONE gdev_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gdev_runtime.compact.compressed.wasm
-    - cargo xtask create-asset-link $MILESTONE gtest_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gtest_runtime.compact.compressed.wasm
-    - cargo xtask create-asset-link $MILESTONE gdev_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gdev_client-specs.yaml
-    - cargo xtask create-asset-link $MILESTONE gtest_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/gtest_client-specs.yaml
+    - cargo xtask release-network $NETWORK_RELEASE $CI_COMMIT_BRANCH
+    # g1-data (initial data)
+    - cargo xtask create-asset-link $NETWORK_RELEASE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_G1_DATA
+    # gdev.yaml (spec configuration)
+    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC_CONFIG
+    # initial runtime
+    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
+    # the result: gdev.json (genesis)
+    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC
   artifacts:
     paths:
       - $CI_PROJECT_DIR/release/
   tags:
     - kepler
 
-# ------ RELEASE: ADD SPECS ------
-
-.release_specs:
+create_client_release:
   stage: release
+  needs: ["build_runtime", "build_raw_specs"]
   rules:
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+    - <<: *is_network_branch
   image: rust:1-bullseye
   script:
-    - export MILESTONE=$(echo $CI_COMMIT_BRANCH | sed -e "s/release\///g")
-    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/${RUNTIME}.json
-    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/${RUNTIME}-raw.json
-    - cargo xtask create-asset-link $MILESTONE ${RUNTIME}-indexer.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/release/${RUNTIME}-indexer.json
-    - echo "Release Docker file..."
+    - *define_network_branch_vars
+    - cargo xtask release-runtime $RUNTIME_MILESTONE $CI_COMMIT_BRANCH
+    - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
+    - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_CLIENT_SPEC
+    - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_RAW_SPEC
   artifacts:
     paths:
       - $CI_PROJECT_DIR/release/
   tags:
     - kepler
-
-release_gdev_6_specs:
-  extends: .release_specs
-  needs:
-    - create_release
-    - gdev_specs
-  variables:
-    RUNTIME: gdev
-
-release_gtest_specs:
-  extends: .release_specs
-  needs:
-    - create_release
-    - gtest_specs
-  variables:
-    RUNTIME: gtest
