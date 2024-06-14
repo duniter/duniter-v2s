@@ -57,6 +57,7 @@ substrate-build-script-utils = { git = 'https://github.com/duniter/duniter-polka
 
 [dev-dependencies]
 rusty-hook = "^0.11.2"
+reqwest = { version = "0.12.0", default-features = false, features = ["rustls-tls"] }
 
 # Dependencies for specific targets
 [target.'cfg(any(target_arch="x86_64", target_arch="aarch64"))'.dependencies]
