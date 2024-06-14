@@ -34,7 +34,6 @@ use sp_runtime::{
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{Display, Formatter},
-    fs,
     ops::{Add, Sub},
 };
 
@@ -129,7 +128,6 @@ pub struct GenesisIndexerExport {
     technical_committee: Vec<String>,
     ud: u64,
     wallets: BTreeMap<AccountId, u64>,
-    transactions_history: Option<BTreeMap<AccountId, Vec<TransactionV2>>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -155,7 +153,6 @@ struct GenesisMigrationData {
     identities: BTreeMap<String, IdentityV1>,
     #[serde(default)]
     wallets: BTreeMap<PubkeyV1, u64>,
-    transactions_history: Option<BTreeMap<PubkeyV1, Vec<TransactionV1>>>,
 }
 
 // Base58 encoded Ed25519 public key
@@ -667,68 +664,7 @@ where
     }
 
     // Indexer output
-    if let Ok(path) = std::env::var("DUNITER_GENESIS_EXPORT") {
-        // genesis_certs_min_received => min_cert
-        // genesis_memberships_expire_on => membership_period
-        // genesis_smith_certs_min_received => smith_min_cert
-        let export = GenesisIndexerExport {
-            first_ud,
-            first_ud_reeval,
-            genesis_parameters: common_parameters.clone(),
-            identities: identities_v2,
-            sudo_key: sudo_key.clone(),
-            technical_committee,
-            ud,
-            wallets: accounts
-                .iter()
-                .map(|(account_id, data)| (account_id.clone(), data.balance))
-                .collect(),
-            smiths: (smiths)
-                .iter()
-                .map(|smith| {
-                    (
-                        smith.name.clone(),
-                        SmithData {
-                            idty_index: smith.idty_index,
-                            name: smith.name.clone(),
-                            account: smith.account.clone(),
-                            session_keys: smith.session_keys.clone(),
-                            certs_received: smith.certs_received.clone(),
-                        },
-                    )
-                })
-                .collect::<BTreeMap<String, SmithData>>(),
-            transactions_history: genesis_data.transactions_history.map(|history| {
-                history
-                    .iter()
-                    // Avoid wrong pubkeys in tx history
-                    .filter(|(pubkey, _)| v1_pubkey_to_account_id((*pubkey).clone()).is_ok())
-                    .map(|(pubkey, txs)| {
-                        (
-                            v1_pubkey_to_account_id(pubkey.clone())
-                                .expect("already checked account"),
-                            txs.iter()
-                                // Avoid wrong pubkeys in tx history
-                                .filter(|tx| v1_pubkey_to_account_id(tx.issuer.clone()).is_ok())
-                                .map(|tx| TransactionV2 {
-                                    issuer: v1_pubkey_to_account_id(tx.issuer.clone())
-                                        .expect("already checked tx.issuer"),
-                                    amount: tx.amount.clone(),
-                                    written_time: tx.written_time,
-                                    comment: tx.comment.clone(),
-                                })
-                                .collect::<Vec<TransactionV2>>(),
-                        )
-                    })
-                    .collect::<BTreeMap<AccountId, Vec<TransactionV2>>>()
-            }),
-        };
-        fs::write(
-            &path,
-            serde_json::to_string_pretty(&export).expect("should be serializable"),
-        )
-        .unwrap_or_else(|_| panic!("Could not export genesis data to {}", &path));
-    }
+    // handled by indexer directly from py-g1-migrator output
 
     let genesis_data = GenesisData {
         accounts,
