@@ -53,10 +53,12 @@ enum DuniterXTaskCommand {
         /// Raw spec filepath
         raw_spec: PathBuf,
     },
+    /// Release a new network
+    ReleaseNetwork { network: String, branch: String },
     /// Release a new runtime
     ReleaseRuntime { milestone: String, branch: String },
-    /// Update raw specs locally with the files published on a Release
-    UpdateRawSpecs { milestone: String },
+    /// Print the chainSpec published on given Network Release
+    PrintSpec { network: String },
     /// Create asset in a release
     CreateAssetLink {
         tag: String,
@@ -81,8 +83,14 @@ async fn main() -> Result<()> {
             );
         std::process::exit(1);
     }
-    Command::new("rustc").arg("--version").status()?;
-    Command::new("cargo").arg("--version").status()?;
+
+    match &args.command {
+        DuniterXTaskCommand::PrintSpec { .. } => { /* no print */ }
+        _ => {
+            Command::new("rustc").arg("--version").status()?;
+            Command::new("cargo").arg("--version").status()?;
+        }
+    }
 
     match args.command {
         DuniterXTaskCommand::Build { production } => build(production),
@@ -90,12 +98,13 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::InjectRuntimeCode { runtime, raw_spec } => {
             inject_runtime_code(&raw_spec, &runtime)
         }
+        DuniterXTaskCommand::ReleaseNetwork { network, branch } => {
+            release_runtime::release_network(network, branch).await
+        }
         DuniterXTaskCommand::ReleaseRuntime { milestone, branch } => {
             release_runtime::release_runtime(milestone, branch).await
         }
-        DuniterXTaskCommand::UpdateRawSpecs { milestone } => {
-            release_runtime::update_raw_specs(milestone).await
-        }
+        DuniterXTaskCommand::PrintSpec { network } => release_runtime::print_spec(network).await,
         DuniterXTaskCommand::CreateAssetLink {
             tag,
             asset_name,
