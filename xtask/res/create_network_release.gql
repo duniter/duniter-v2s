@@ -1,0 +1,16 @@
+mutation CreateReleaseMutation($branch: String!, $description: String!, $network: String! $links: [ReleaseAssetLinkInput!]!) {
+  releaseCreate(input: {
+    clientMutationId: "duniter-v2s-xtask"
+    description: $description
+    milestones: []
+    name: $network
+    projectPath: "nodes/rust/duniter-v2s"
+    ref: $branch
+    tagName: $network
+    assets: {
+      links: $links
+    }
+  }) {
+    errors
+  }
+}

@@ -20,45 +20,50 @@ use graphql_client::{GraphQLQuery, Response};
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "res/schema.gql",
-    query_path = "res/get_release.gql",
+    query_path = "res/create_network_release.gql",
     response_derives = "Debug"
 )]
-pub struct GetReleaseOfProjectQuery;
+pub struct CreateReleaseMutation;
 
-pub(super) async fn get_release(tag: String) -> Result<Vec<String>> {
+pub(super) async fn create_network_release(
+    gitlab_token: String,
+    branch: String,
+    network: String,
+    release_notes: String,
+) -> Result<()> {
     // this is the important line
-    let request_body =
-        GetReleaseOfProjectQuery::build_query(get_release_of_project_query::Variables { tag });
+    let request_body = CreateReleaseMutation::build_query(create_release_mutation::Variables {
+        branch,
+        description: release_notes,
+        network,
+        links: vec![],
+    });
 
     let client = reqwest::Client::new();
     let res = client
         .post("https://git.duniter.org/api/graphql")
+        .header("PRIVATE-TOKEN", gitlab_token)
         .json(&request_body)
         .send()
         .await?;
-    let response_body: Response<get_release_of_project_query::ResponseData> = res.json().await?;
+    let response_body: Response<create_release_mutation::ResponseData> = res.json().await?;
 
     if let Some(data) = response_body.data {
-        Ok(data
-            .project
-            .expect("should have project")
-            .release
-            .expect("should have release")
-            .assets
-            .expect("should have assets")
-            .links
-            .expect("should have links")
-            .edges
-            .expect("should have edges")
-            .into_iter()
-            .map(|edge| {
-                edge.expect("should have edge")
-                    .node
-                    .expect("should have node")
-                    .direct_asset_url
-                    .expect("should have directAssetUrl")
-            })
-            .collect())
+        if let Some(release_create) = data.release_create {
+            if release_create.errors.is_empty() {
+                Ok(())
+            } else {
+                println!("{} errors:", release_create.errors.len());
+                for error in release_create.errors {
+                    println!("{}", error);
+                }
+                Err(anyhow!("Logic errors"))
+            }
+        } else if let Some(errors) = response_body.errors {
+            Err(anyhow!("Errors: {:?}", errors))
+        } else {
+            Err(anyhow!("Invalid response: no release_create"))
+        }
     } else if let Some(errors) = response_body.errors {
         println!("{} errors:", errors.len());
         for error in errors {

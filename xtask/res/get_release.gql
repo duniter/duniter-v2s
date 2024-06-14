@@ -1,6 +1,6 @@
-query GetReleaseOfProjectQuery($milestone: String!) {
+query GetReleaseOfProjectQuery($tag: String!) {
     project(fullPath: "nodes/rust/duniter-v2s") {
-        release(tagName: $milestone) {
+        release(tagName: $tag) {
             id
             tagName
             assets {
