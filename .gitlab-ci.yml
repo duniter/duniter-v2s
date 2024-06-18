@@ -318,7 +318,7 @@ build_specs:
     - apt-get update
     - apt-get install -y clang cmake protobuf-compiler
     # Build the spec file (including the G1 data), e.g.: "release/gdev.json"
-    - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}_live > $RELEASE_FILE_SPEC
+    - cargo run ${FEATURES} -- build-spec --chain=${RUNTIME}_live > $RELEASE_FILE_SPEC
     # Save spec configuration file for release
     - cp resources/${RUNTIME}.yaml $RELEASE_FILE_SPEC_CONFIG
   artifacts:
