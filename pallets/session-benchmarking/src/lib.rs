@@ -19,7 +19,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg(feature = "runtime-benchmarks")]
-use parity_scale_codec::Decode;
+use codec::Decode;
 use sp_std::{prelude::*, vec};
 
 use frame_benchmarking::{benchmarks, whitelisted_caller};

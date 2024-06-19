@@ -1,33 +1,53 @@
 [package]
-authors = ['Axiom-Team Developers <https://axiom-team.fr>']
-description = 'duniter end2end tests.'
-edition = "2021"
-homepage = 'https://duniter.org'
-license = 'AGPL-3.0'
-name = 'duniter-end2end-tests'
-repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
-version = '3.0.0'
-
-[dev-dependencies]
-anyhow = "1.0"
-async-trait = "0.1.74"
-clap = { version = "3.2.23", features = ["derive", "cargo"] } # end2end cli refactoring need to upgrade to 4
-ctrlc = "3.2.2"
-cucumber = "0.11"
-distance-oracle = { path = "../distance-oracle", default_features = false }
-env_logger = "0.9.0"
-hex = "0.4.3"
-notify = "4.0"
-parity-scale-codec = "3.4.0"
-portpicker = "0.1.1"
-serde_json = "1.0.96"
-sp-core = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
-sp-core-hashing = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0", default-features = false }
-sp-runtime = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0" }
-sp-keyring = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0" }
-subxt = { git = 'https://github.com/duniter/subxt', branch = 'subxt-v0.34.0-duniter-substrate-v1.6.0', default-features = false, features = ["substrate-compat", "native", "jsonrpsee"] }
-tokio = { version = "1.28", features = ["macros", "time", "rt-multi-thread"], default-features = false }
+authors.workspace = true
+description = "duniter end2end tests"
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "duniter-end2end-tests"
+repository.workspace = true
+version.workspace = true
 
 [[test]]
 name = "cucumber_tests"
 harness = false         # allows Cucumber to print output instead of libtest
+
+[features]
+default = ["std"]
+std = [
+	"anyhow/std",
+	"codec/std",
+	"distance-oracle/std",
+	"hex/std",
+	"serde_json/std",
+	"sp-core-hashing/std",
+	"sp-core/std",
+	"sp-runtime/std",
+]
+standalone = ["distance-oracle/standalone"]
+try-runtime = ["distance-oracle/try-runtime", "sp-runtime/try-runtime"]
+runtime-benchmarks = []
+
+[dev-dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true, features = ["derive", "cargo"] }
+codec = { workspace = true }
+ctrlc = { workspace = true }
+cucumber = { workspace = true, features = ["macros"] }
+distance-oracle = { workspace = true }
+env_logger = { workspace = true }
+hex = { workspace = true }
+notify = { workspace = true }
+notify-debouncer-mini = { workspace = true }
+portpicker = { workspace = true }
+serde_json = { workspace = true }
+sp-core = { workspace = true }
+sp-core-hashing = { workspace = true }
+sp-keyring = { workspace = true }
+sp-runtime = { workspace = true }
+subxt = { workspace = true, features = [
+	"substrate-compat",
+	"native",
+	"jsonrpsee",
+] }
+tokio = { workspace = true, features = ["macros", "time", "rt-multi-thread"] }

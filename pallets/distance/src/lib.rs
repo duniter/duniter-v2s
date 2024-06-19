@@ -555,7 +555,7 @@ pub mod pallet {
                         }
                         Some(false) => {
                             // negative result, slash and deposit event
-                            T::Currency::slash_reserved(
+                            let _ = T::Currency::slash_reserved(
                                 &requester,
                                 <T as Config>::EvaluationPrice::get(),
                             );

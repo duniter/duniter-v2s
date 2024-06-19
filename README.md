@@ -56,8 +56,7 @@ To go further, read [How to deploy a permanent mirror node on ĞDev network](./d
 
 ### Create your local blockchain
 
-It can be useful to deploy your local blockchain, for instance to have a controlled environement
-to develop/test an application that interacts with the blockchain.
+It can be useful to deploy your local blockchain, for instance to have a controlled environment to develop/test an application that interacts with the blockchain.
 
 ```docker
 docker run -it -p9944:9944 duniter/duniter-v2s:v0.4.0 --tmp

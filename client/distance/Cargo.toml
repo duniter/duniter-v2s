@@ -1,50 +1,49 @@
 [package]
-authors = ['tuxmain <tuxmain@zettascript.org>']
-description = 'Duniter client distance'
-edition = '2021'
-homepage = 'https://duniter.org'
-license = 'AGPL-3.0'
-name = 'dc-distance'
-readme = 'README.md'
-repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
-version = '1.0.0'
-
-[dependencies]
-
-log = "0.4"
-
-pallet-distance = { path = "../../pallets/distance" }
-
-# substrate
-scale-info = { version = "2.1.1", features = ["derive"] }
-sp-distance = { path = "../../primitives/distance" }
-thiserror = "1.0.30"
-
-[dependencies.codec]
-features = ['derive']
-package = 'parity-scale-codec'
-version = '3.1.5'
-
-[dependencies.frame-support]
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.sc-client-api]
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.sp-core]
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-
-[dependencies.sp-keystore]
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
-### DOC ###
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+description = "Duniter client distance"
+name = "dc-distance"
+readme = "README.md"
+version = "1.0.0"
+repository.workspace = true
 
 [package.metadata.docs.rs]
-targets = ['x86_64-unknown-linux-gnu']
+targets = ["x86_64-unknown-linux-gnu"]
 
-[dependencies.sp-runtime]
-git = 'https://github.com/duniter/duniter-polkadot-sdk'
-branch = 'duniter-substrate-v1.6.0'
+[features]
+std = [
+	"codec/std",
+	"frame-support/std",
+	"log/std",
+	"pallet-distance/std",
+	"scale-info/std",
+	"sp-core/std",
+	"sp-distance/std",
+	"sp-keystore/std",
+	"sp-runtime/std",
+]
+runtime-benchmarks = [
+	"frame-support/runtime-benchmarks",
+	"pallet-distance/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"pallet-distance/try-runtime",
+	"sp-distance/try-runtime",
+	"sp-runtime/try-runtime",
+]
+
+[dependencies]
+codec = { workspace = true, features = ["derive"] }
+frame-support = { workspace = true }
+log = { workspace = true }
+pallet-distance = { workspace = true }
+sc-client-api = { workspace = true }
+scale-info = { workspace = true, features = ["derive"] }
+sp-core = { workspace = true }
+sp-distance = { workspace = true }
+sp-keystore = { workspace = true }
+sp-runtime = { workspace = true }
+thiserror = { workspace = true }

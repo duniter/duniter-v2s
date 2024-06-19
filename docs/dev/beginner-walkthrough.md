@@ -2,7 +2,7 @@
 
 This is a beginner tutorial for those who do not have a previous experience with Rust ecosystem or need guidance to get familiar with Duniter v2s project. You'll need a development machine with an internet connection, at least **20 GB of free storage**, and **an hour or two** depending on your computing power.
 
-This walkthrough is based on the following video (french), don't hesitate to record an english voicecover if you feel so.
+This walkthrough is based on the following video (french), don't hesitate to record an english voiceover if you feel so.
 
 [![preview](https://tube.p2p.legal/lazy-static/previews/654006dc-66c0-4e37-a32f-b7b5a1c13213.jpg)](https://tube.p2p.legal/w/n4TXxQ4SqxzpHPY4TNMXFu)
 

@@ -14,19 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-#![allow(deprecated)]
-
 use super::*;
 use crate::chain_spec::gen_genesis_data::{CommonParameters, GenesisIdentity, SessionKeysProvider};
 use common_runtime::constants::*;
 use common_runtime::entities::IdtyData;
-use common_runtime::*;
-use gtest_runtime::SmithMembersConfig;
+use common_runtime::GenesisIdty;
+use common_runtime::IdtyStatus;
+use gtest_runtime::ImOnlineId;
 use gtest_runtime::{
-    opaque::SessionKeys, pallet_universal_dividend, parameters, AccountConfig, AccountId,
-    AuthorityMembersConfig, BabeConfig, BalancesConfig, CertificationConfig, GenesisConfig,
-    IdentityConfig, ImOnlineId, MembershipConfig, Perbill, QuotaConfig, Runtime, SessionConfig,
-    SudoConfig, TechnicalCommitteeConfig, UniversalDividendConfig, WASM_BINARY,
+    opaque::SessionKeys, pallet_universal_dividend, parameters, AccountId, Perbill, Runtime,
+    RuntimeGenesisConfig, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_consensus_grandpa::AuthorityId as GrandpaId;
@@ -39,7 +36,7 @@ use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::Get;
 use std::{env, fs};
 
-pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
+pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig>;
 pub type AuthorityKeys = (
     AccountId,
     GrandpaId,
@@ -134,47 +131,32 @@ pub struct ClientSpec {
 /// generate development chainspec with Alice validator
 // there is some code duplication because we can not use ClientSpec
 pub fn development_chainspecs(config_file_path: String) -> Result<ChainSpec, String> {
-    let wasm_binary = get_wasm_binary().ok_or_else(|| "wasm not available".to_string())?;
-    Ok(ChainSpec::from_genesis(
-        // Name
-        "ĞTest Development",
-        // ID
-        "gtest_dev",
-        // chain type
-        sc_service::ChainType::Development,
-        // constructor
-        move || {
-            let genesis_data =
-                gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
-                    config_file_path.clone(),
-                    get_parameters,
-                    Some("Alice".to_owned()),
-                )
-                .expect("Genesis Data must be buildable");
-            genesis_data_to_gtest_genesis_conf(genesis_data)
-        },
-        // Bootnodes
-        vec![],
-        // Telemetry
+    Ok(ChainSpec::builder(
+        &get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?,
         None,
-        // Protocol ID
-        None,
-        //Fork ID
-        None,
-        // Properties
-        Some(
-            serde_json::json!({
-                "tokenDecimals": TOKEN_DECIMALS,
-                "tokenSymbol": TOKEN_SYMBOL,
-            })
-            .as_object()
-            .expect("must be a map")
-            .clone(),
-        ),
-        // Extensions
-        None,
-        &wasm_binary.clone(), // TODO upgrade to builder
-    ))
+    )
+    .with_name("ĞTest Development")
+    .with_id("gtest_dev")
+    .with_chain_type(ChainType::Development)
+    .with_genesis_config_patch({
+        let genesis_data = gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
+            config_file_path.clone(),
+            get_parameters,
+            Some("Alice".to_owned()),
+        )
+        .expect("Genesis Data must be buildable");
+        genesis_data_to_gtest_genesis_conf(genesis_data)
+    })
+    .with_properties(
+        serde_json::json!({
+            "tokenDecimals": TOKEN_DECIMALS,
+            "tokenSymbol": TOKEN_SYMBOL,
+        })
+        .as_object()
+        .expect("must be a map")
+        .clone(),
+    )
+    .build())
 }
 
 // === live chainspecs ===
@@ -185,45 +167,32 @@ pub fn live_chainspecs(
     client_spec: ClientSpec,
     config_file_path: String,
 ) -> Result<ChainSpec, String> {
-    let wasm_binary = get_wasm_binary().ok_or_else(|| "wasm not available".to_string())?;
-    Ok(ChainSpec::from_genesis(
-        // Name
-        client_spec.name.as_str(),
-        // ID
-        client_spec.id.as_str(),
-        // chain type
-        client_spec.chain_type,
-        // genesis config constructor
-        move || {
-            let genesis_data =
-                gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
-                    config_file_path.clone(),
-                    get_parameters,
-                    None,
-                )
-                .expect("Genesis Data must be buildable");
-            genesis_data_to_gtest_genesis_conf(genesis_data)
-        },
-        // Bootnodes
-        client_spec.boot_nodes,
-        // Telemetry (by default, enable telemetry, can be disabled with argument)
-        client_spec.telemetry_endpoints,
-        // Protocol ID
+    Ok(ChainSpec::builder(
+        &get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?,
         None,
-        // Fork ID
-        None,
-        // Properties
-        client_spec.properties,
-        // Extensions
-        None,
-        &wasm_binary.clone(), // TODO upgrade to builder
-    ))
+    )
+    .with_name(client_spec.name.as_str())
+    .with_id(client_spec.id.as_str())
+    .with_chain_type(client_spec.chain_type)
+    .with_genesis_config_patch({
+        let genesis_data = gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, GTestSKP>(
+            config_file_path.clone(),
+            get_parameters,
+            None,
+        )
+        .expect("Genesis Data must be buildable");
+        genesis_data_to_gtest_genesis_conf(genesis_data)
+    })
+    .with_telemetry_endpoints(client_spec.telemetry_endpoints.unwrap())
+    .with_properties(client_spec.properties.unwrap())
+    .with_boot_nodes(client_spec.boot_nodes)
+    .build())
 }
 
 /// custom genesis
 fn genesis_data_to_gtest_genesis_conf(
     genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
-) -> gtest_runtime::GenesisConfig {
+) -> serde_json::Value {
     let super::gen_genesis_data::GenesisData {
         accounts,
         treasury_balance,
@@ -243,43 +212,35 @@ fn genesis_data_to_gtest_genesis_conf(
         ud,
     } = genesis_data;
 
-    gtest_runtime::GenesisConfig {
-        system: Default::default(),
-        account: AccountConfig {
-            accounts,
-            treasury_balance,
+    serde_json::json!({
+        "account": {
+            "accounts": accounts,
+            "treasuryBalance": treasury_balance,
         },
-        authority_discovery: Default::default(),
-        authority_members: AuthorityMembersConfig {
-            initial_authorities,
+        "authorityMembers": {
+            "initialAuthorities": initial_authorities,
         },
-        // Necessary to initialize TotalIssuence
-        balances: BalancesConfig {
-            total_issuance: initial_monetary_mass,
+        "balances": {
+            "totalIssuance": initial_monetary_mass,
         },
-        babe: BabeConfig {
-            authorities: Vec::with_capacity(0),
-            epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
-            _config: Default::default(),
+        "babe": {
+            "epochConfig": Some(BABE_GENESIS_EPOCH_CONFIG),
         },
-        grandpa: Default::default(),
-        im_online: Default::default(),
-        session: SessionConfig {
-            keys: session_keys_map
+        "session": {
+            "keys": session_keys_map
                 .into_iter()
                 .map(|(account_id, session_keys)| (account_id.clone(), account_id, session_keys))
                 .collect::<Vec<_>>(),
         },
-        sudo: SudoConfig { key: sudo_key },
-        technical_committee: TechnicalCommitteeConfig {
-            members: technical_committee_members,
-            ..Default::default()
+        "sudo": { "key": sudo_key },
+        "technicalCommittee": {
+            "members": technical_committee_members,
         },
-        quota: QuotaConfig {
-            identities: identities.iter().map(|i| i.idty_index).collect(),
+        "quota": {
+            "identities": identities.iter().map(|i| i.idty_index).collect::<Vec<_>>(),
         },
-        identity: IdentityConfig {
-            identities: identities
+        "identity": {
+            "identities": identities
                 .into_iter()
                 .map(
                     |GenesisIdentity {
@@ -311,25 +272,21 @@ fn genesis_data_to_gtest_genesis_conf(
                         },
                     },
                 )
-                .collect(),
+                .collect::<Vec<GenesisIdty<gtest_runtime::Runtime>>>(),
         },
-        certification: CertificationConfig {
-            apply_cert_period_at_genesis: true,
-            certs_by_receiver,
+        "certification": {
+            "applyCertPeriodAtGenesis": false,
+            "certsByReceiver": certs_by_receiver,
         },
-        membership: MembershipConfig { memberships },
-        smith_members: SmithMembersConfig { initial_smiths },
-        universal_dividend: UniversalDividendConfig {
-            first_reeval: first_ud_reeval,
-            first_ud,
-            initial_monetary_mass,
-            ud,
-            #[cfg(test)]
-            initial_members: vec![],
+        "membership": { "memberships": memberships },
+        "smithMembers": { "initialSmiths": initial_smiths},
+        "universalDividend": {
+            "firstReeval": first_ud_reeval,
+            "firstUd": first_ud,
+            "initialMonetaryMass": initial_monetary_mass,
+            "ud": ud,
         },
-        treasury: Default::default(),
-        transaction_payment: Default::default(),
-    }
+    })
 }
 
 /// Get the WASM bytes either from filesytem (`WASM_FILE` env variable giving the path to the wasm blob)

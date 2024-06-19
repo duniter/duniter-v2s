@@ -48,6 +48,7 @@ type FullClient<RuntimeApi> =
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
+#[allow(dead_code)]
 #[cfg(feature = "gdev")]
 pub mod gdev_executor {
     pub use gdev_runtime;
@@ -66,6 +67,7 @@ pub mod gdev_executor {
     }
 }
 
+#[allow(dead_code)]
 #[cfg(feature = "g1")]
 pub mod g1_executor {
     pub use g1_runtime;
@@ -84,6 +86,7 @@ pub mod g1_executor {
     }
 }
 
+#[allow(dead_code)]
 #[cfg(feature = "gtest")]
 pub mod gtest_executor {
     pub use gtest_runtime;

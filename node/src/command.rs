@@ -15,6 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![allow(unused_imports)]
+
 pub mod key;
 pub mod utils;
 
@@ -24,10 +26,8 @@ use crate::cli::{Cli, Subcommand};
 #[cfg(feature = "g1")]
 use crate::service::g1_executor::G1Executor;
 #[cfg(feature = "gdev")]
-#[cfg(feature = "runtime-benchmarks")]
 use crate::service::gdev_executor::GDevExecutor;
 #[cfg(feature = "gtest")]
-#[cfg(feature = "runtime-benchmarks")]
 use crate::service::gtest_executor::GTestExecutor;
 use crate::service::{IdentifyRuntimeType, RuntimeType};
 use crate::{chain_spec, service};
@@ -96,7 +96,7 @@ impl SubstrateCli for Cli {
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         Ok(match id {
             // === GDEV ===
-            // developement chainspec with generated genesis and Alice validator
+            // development chainspec with generated genesis and Alice validator
             #[cfg(feature = "gdev")]
             "dev" => Box::new(chain_spec::gdev::local_testnet_config(1, 3, 4)?),
             // local testnet with g1 data, gdev configuration (parameters & smiths) and Alice validator

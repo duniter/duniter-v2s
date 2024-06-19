@@ -134,7 +134,7 @@ To run all the scenarios (there are many) use the command: `cargo cucumber`
 You can filter the `.feature` files to run with the option `i`, for instance:
 
 ```
-cargo cucumber -i monetary*
+cargo cucumber -i 'monetary*'
 ```
 
 will only run `.feature` files that start with `"monetary"`.

@@ -147,7 +147,7 @@ pub mod pallet {
                 Error::<T>::OneshotAccountAlreadyCreated
             );
 
-            <T::Currency as Currency<T::AccountId>>::withdraw(
+            let _ = <T::Currency as Currency<T::AccountId>>::withdraw(
                 &transactor,
                 value,
                 WithdrawReasons::TRANSFER,
@@ -206,7 +206,8 @@ pub mod pallet {
                     creator: transactor.clone(),
                 });
             } else {
-                <T::Currency as Currency<T::AccountId>>::deposit_into_existing(&dest, value)?;
+                let _ =
+                    <T::Currency as Currency<T::AccountId>>::deposit_into_existing(&dest, value)?;
             }
             OneshotAccounts::<T>::remove(&transactor);
             Self::deposit_event(Event::OneshotAccountConsumed {
@@ -295,7 +296,9 @@ pub mod pallet {
                     creator: transactor.clone(),
                 });
             } else {
-                <T::Currency as Currency<T::AccountId>>::deposit_into_existing(&dest2, balance2)?;
+                let _ = <T::Currency as Currency<T::AccountId>>::deposit_into_existing(
+                    &dest2, balance2,
+                )?;
             }
             if dest1_is_oneshot {
                 OneshotAccounts::<T>::insert(&dest1, balance1);
@@ -305,7 +308,9 @@ pub mod pallet {
                     creator: transactor.clone(),
                 });
             } else {
-                <T::Currency as Currency<T::AccountId>>::deposit_into_existing(&dest1, balance1)?;
+                let _ = <T::Currency as Currency<T::AccountId>>::deposit_into_existing(
+                    &dest1, balance1,
+                )?;
             }
             OneshotAccounts::<T>::remove(&transactor);
             Self::deposit_event(Event::OneshotAccountConsumed {

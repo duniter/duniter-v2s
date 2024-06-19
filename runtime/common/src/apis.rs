@@ -220,6 +220,15 @@ macro_rules! runtime_apis {
 			TransactionPayment::length_to_fee(length)
 		}
             }
+	impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
+		fn create_default_config() -> Vec<u8> {
+			frame_support::genesis_builder_helper::create_default_config::<RuntimeGenesisConfig>()
+		}
+
+		fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
+			frame_support::genesis_builder_helper::build_config::<RuntimeGenesisConfig>(config)
+		}
+	}
 
             #[cfg(feature = "try-runtime")]
             impl frame_try_runtime::TryRuntime<Block> for Runtime where <Runtime as frame_system::Config>::BlockNumber: Clone + sp_std::fmt::Debug + sp_runtime::traits::AtLeast32BitUnsigned {

@@ -1,46 +1,54 @@
 [package]
 name = "distance-oracle"
 version = "0.1.0"
-authors = ["tuxmain <tuxmain@zettascript.org>"]
-repository = "https://git.duniter.org/nodes/rust/duniter-v2s"
-license = "AGPL-3.0-only"
-edition = "2021"
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "distance-oracle"
+required-features = ["standalone"]
+
+[features]
+default = ["standalone", "std"]
+standalone = ["clap", "tokio"]
+std = [
+	"codec/std",
+	"fnv/std",
+	"hex/std",
+	"log/std",
+	"num-traits/std",
+	"sp-core/std",
+	"sp-distance/std",
+	"sp-runtime/std",
+]
+try-runtime = ["sp-distance/try-runtime", "sp-runtime/try-runtime"]
+runtime-benchmarks = []
 
 [dependencies]
-
-# standalone only
-clap = { version = "4.4.18", features = ["derive"], optional = true }
-
-codec = { package = "parity-scale-codec", version = "3.6.9" }
-fnv = "1.0.7"
-log = "0.4.20"
-num-traits = "0.2.17"
-rayon = "1.8.1"
-simple_logger = "4.3.3"
-hex = "0.4.3"
-
-sp-core = { git = "https://github.com/duniter/duniter-polkadot-sdk.git", branch = "duniter-substrate-v1.6.0" }
-sp-distance = { path = "../primitives/distance" }
-sp-runtime = { git = "https://github.com/duniter/duniter-polkadot-sdk.git", branch = "duniter-substrate-v1.6.0" }
-subxt = { git = 'https://github.com/duniter/subxt', branch = 'subxt-v0.34.0-duniter-substrate-v1.6.0', default-features = false, features = ["substrate-compat", "native", "jsonrpsee"] }
-time = "0.3.31"
-time-macros = "0.2.16"
-tokio = { version = "1.35.1", features = [
+clap = { workspace = true, features = ["derive"], optional = true }
+codec = { workspace = true }
+fnv = { workspace = true }
+hex = { workspace = true }
+log = { workspace = true }
+num-traits = { workspace = true }
+rayon = { workspace = true }
+simple_logger = { workspace = true }
+sp-core = { workspace = true }
+sp-distance = { workspace = true }
+sp-runtime = { workspace = true }
+subxt = { workspace = true, features = [
+	"substrate-compat",
+	"native",
+	"jsonrpsee",
+] }
+tokio = { workspace = true, features = [
 	"rt-multi-thread",
 	"macros",
 ], optional = true }
 
 [dev-dependencies]
-bincode = "1.3.3"
-dubp-wot = "0.11.1"
-flate2 = { version = "1.0.28", features = [
-	"zlib-ng-compat",
-], default-features = false }
-
-[features]
-default = ["standalone"]
-standalone = ["clap", "tokio"]
-
-[[bin]]
-name = "distance-oracle"
-required-features = ["standalone"]
+bincode = { workspace = true }
+dubp-wot = { workspace = true }
+flate2 = { workspace = true, features = ["zlib-ng-compat"] }

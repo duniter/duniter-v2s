@@ -2,8 +2,8 @@
 
 cargo install subxt-cli
 cargo build
-cargo run -- --dev&
-sleep 15
+target/debug/duniter --dev&
+sleep 20
 subxt metadata -f bytes > resources/new_metadata.scale
 kill $!
 

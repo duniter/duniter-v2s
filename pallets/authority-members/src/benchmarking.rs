@@ -17,70 +17,83 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-
-use frame_benchmarking::benchmarks;
-use frame_system::RawOrigin;
-
 use crate::Pallet;
 
-fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
-    frame_system::Pallet::<T>::assert_has_event(generic_event.into());
-}
+use frame_benchmarking::v2::*;
+use frame_system::RawOrigin;
 
-benchmarks! {
-    where_clause {
+#[benchmarks(
         where
-            T::MemberId: From<u32>,
+            <T as Config>::MemberId: From<u32>,
+)]
+mod benchmarks {
+    use super::*;
+
+    fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+        frame_system::Pallet::<T>::assert_has_event(generic_event.into());
     }
-    go_offline {
+
+    #[benchmark]
+    fn go_offline() {
         let id: T::MemberId = OnlineAuthorities::<T>::get()[0];
         let caller: T::AccountId = Members::<T>::get(id).unwrap().owner_key;
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-    }: _<T::RuntimeOrigin>(caller_origin)
-    verify {
-        assert_has_event::<T>(Event::<T>::MemberGoOffline{member: id}.into());
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(caller));
+
+        assert_has_event::<T>(Event::<T>::MemberGoOffline { member: id }.into());
     }
-     go_online {
+
+    #[benchmark]
+    fn go_online() {
         let id: T::MemberId = OnlineAuthorities::<T>::get()[0];
         let caller: T::AccountId = Members::<T>::get(id).unwrap().owner_key;
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
         OnlineAuthorities::<T>::mutate(|ids| {
             ids.retain(|&x| x != id);
         });
         OutgoingAuthorities::<T>::mutate(|ids| {
             ids.retain(|&x| x != id);
         });
-    }: _<T::RuntimeOrigin>(caller_origin)
-    verify {
-        assert_has_event::<T>(Event::<T>::MemberGoOnline{member: id}.into());
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(caller));
+
+        assert_has_event::<T>(Event::<T>::MemberGoOnline { member: id }.into());
     }
-     set_session_keys {
+
+    #[benchmark]
+    fn set_session_keys() {
         let id: T::MemberId = OnlineAuthorities::<T>::get()[0];
         let caller: T::AccountId = Members::<T>::get(id).unwrap().owner_key;
-        let caller_origin: <T as frame_system::Config>::RuntimeOrigin = RawOrigin::Signed(caller.clone()).into();
-            let validator_id = T::ValidatorIdOf::convert(caller.clone()).unwrap();
-            let session_keys: T::Keys = pallet_session::NextKeys::<T>::get(validator_id).unwrap();
-        }: _<T::RuntimeOrigin>(caller_origin, session_keys)
-     remove_member {
-        let id: T::MemberId = OnlineAuthorities::<T>::get()[0];
-        let caller_origin = RawOrigin::Root.into();
-        }: _<T::RuntimeOrigin>(caller_origin, id)
-    verify {
-        assert_has_event::<T>(Event::<T>::MemberRemoved{member: id}.into());
+        let validator_id = T::ValidatorIdOf::convert(caller.clone()).unwrap();
+        let session_keys: T::Keys = pallet_session::NextKeys::<T>::get(validator_id).unwrap();
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(caller), session_keys);
     }
-     remove_member_from_blacklist {
+
+    #[benchmark]
+    fn remove_member() {
+        let id: T::MemberId = OnlineAuthorities::<T>::get()[0];
+
+        #[extrinsic_call]
+        _(RawOrigin::Root, id);
+
+        assert_has_event::<T>(Event::<T>::MemberRemoved { member: id }.into());
+    }
+
+    #[benchmark]
+    fn remove_member_from_blacklist() {
         let id: T::MemberId = OnlineAuthorities::<T>::get()[0];
         Blacklist::<T>::mutate(|blacklist| {
             blacklist.push(id);
         });
-    }: _<T::RuntimeOrigin>(RawOrigin::Root.into(), id)
-    verify {
-        assert_has_event::<T>(Event::<T>::MemberRemovedFromBlacklist{member: id}.into());
+
+        #[extrinsic_call]
+        _(RawOrigin::Root, id);
+
+        assert_has_event::<T>(Event::<T>::MemberRemovedFromBlacklist { member: id }.into());
     }
 
-     impl_benchmark_test_suite!(
-            Pallet,
-            crate::mock::new_test_ext(2),
-            crate::mock::Test
-        );
+    impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(2), crate::mock::Test);
 }

@@ -5,7 +5,7 @@ Duniter identity system allows to allocate quota and refund transaction fees whe
 ## General behavior
 
 Quota system is plugged to transactions fees which is a rather critical aspect of substrate.
-That's why in `duniter-account` pallet `OnChargeTransaction` implementation, the default behavior is preserved, and refunds are added to a queue handeled in `on_idle`.
+That's why in `duniter-account` pallet `OnChargeTransaction` implementation, the default behavior is preserved, and refunds are added to a queue handled in `on_idle`.
 
 ## Path for a refund
 

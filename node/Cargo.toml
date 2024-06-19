@@ -1,0 +1,188 @@
+[package]
+authors.workspace = true
+build = "build.rs"
+description = "Crypto-currency software (based on Substrate framework) to operate Ğ1 libre currency"
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "duniter"
+repository.workspace = true
+version = "0.8.0"
+default-run = "duniter"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[[bin]]
+bench = false
+name = "duniter"
+path = "src/main.rs"
+
+[features]
+default = ["distance-oracle", "gdev"]
+gdev = ["gdev-runtime", "std"]
+g1 = ["g1-runtime", "std"]
+constant-fees = [
+	"common-runtime/constant-fees",
+	"g1-runtime/constant-fees",
+	"gdev-runtime/constant-fees",
+	"gtest-runtime/constant-fees",
+]
+gtest = ["gtest-runtime", "std"]
+embed = []
+runtime-benchmarks = [
+	"common-runtime/runtime-benchmarks",
+	"dc-distance/runtime-benchmarks",
+	"frame-benchmarking-cli/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"g1-runtime/runtime-benchmarks",
+	"gdev-runtime/runtime-benchmarks",
+	"gtest-runtime/runtime-benchmarks",
+	"pallet-grandpa/runtime-benchmarks",
+	"pallet-im-online/runtime-benchmarks",
+	"pallet-treasury/runtime-benchmarks",
+	"sc-client-db/runtime-benchmarks",
+	"sc-service/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+]
+try-runtime = [
+	"common-runtime/try-runtime",
+	"dc-distance/try-runtime",
+	"distance-oracle?/try-runtime",
+	"frame-system/try-runtime",
+	"g1-runtime/try-runtime",
+	"gdev-runtime/try-runtime",
+	"gtest-runtime/try-runtime",
+	"pallet-grandpa/try-runtime",
+	"pallet-im-online/try-runtime",
+	"pallet-transaction-payment/try-runtime",
+	"pallet-treasury/try-runtime",
+	"sp-distance/try-runtime",
+	"sp-membership/try-runtime",
+	"sp-runtime/try-runtime",
+	"try-runtime-cli",
+	"try-runtime-cli?/try-runtime",
+]
+std = [
+	"bs58/std",
+	"common-runtime/std",
+	"dc-distance/std",
+	"distance-oracle?/std",
+	"frame-benchmarking/std",
+	"frame-system/std",
+	"futures/std",
+	"g1-runtime/std",
+	"gdev-runtime/std",
+	"gtest-runtime/std",
+	"hex/std",
+	"log/std",
+	"num-format/std",
+	"pallet-grandpa/std",
+	"pallet-im-online/std",
+	"pallet-transaction-payment-rpc-runtime-api/std",
+	"pallet-transaction-payment/std",
+	"pallet-treasury/std",
+	"sc-executor/std",
+	"serde/std",
+	"serde_json/std",
+	"sp-api/std",
+	"sp-authority-discovery/std",
+	"sp-block-builder/std",
+	"sp-consensus-babe/std",
+	"sp-consensus-grandpa/std",
+	"sp-core/std",
+	"sp-distance/std",
+	"sp-inherents/std",
+	"sp-io/std",
+	"sp-keystore/std",
+	"sp-membership/std",
+	"sp-offchain/std",
+	"sp-runtime/std",
+	"sp-session/std",
+	"sp-storage/std",
+	"sp-timestamp/std",
+	"sp-transaction-pool/std",
+	"sp-transaction-storage-proof/std",
+	"sp-trie/std",
+]
+standalone = ["distance-oracle?/standalone"]
+
+[dependencies]
+async-io = { workspace = true }
+bs58 = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+clap_complete = { workspace = true }
+common-runtime = { workspace = true }
+dc-distance = { workspace = true }
+distance-oracle = { workspace = true, optional = true }
+frame-benchmarking = { workspace = true }
+frame-benchmarking-cli = { workspace = true }
+frame-system = { workspace = true }
+futures = { workspace = true, features = ["compat"] }
+g1-runtime = { workspace = true, optional = true }
+gdev-runtime = { workspace = true, optional = true }
+gtest-runtime = { workspace = true, optional = true }
+hex = { workspace = true }
+jsonrpsee = { workspace = true, features = ["server"] }
+log = { workspace = true }
+memmap2 = { workspace = true }
+num-format = { workspace = true }
+pallet-grandpa = { workspace = true }
+pallet-im-online = { workspace = true }
+pallet-transaction-payment = { workspace = true }
+pallet-transaction-payment-rpc = { workspace = true }
+pallet-transaction-payment-rpc-runtime-api = { workspace = true }
+pallet-treasury = { workspace = true }
+sc-basic-authorship = { workspace = true }
+sc-chain-spec = { workspace = true }
+sc-client-api = { workspace = true }
+sc-client-db = { workspace = true }
+sc-consensus = { workspace = true }
+sc-consensus-babe = { workspace = true }
+sc-consensus-babe-rpc = { workspace = true }
+sc-consensus-grandpa = { workspace = true }
+sc-consensus-manual-seal = { workspace = true }
+sc-executor = { workspace = true }
+sc-keystore = { workspace = true }
+sc-network = { workspace = true }
+sc-offchain = { workspace = true }
+sc-rpc-api = { workspace = true }
+sc-telemetry = { workspace = true }
+sc-transaction-pool = { workspace = true }
+sc-transaction-pool-api = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+sp-api = { workspace = true }
+sp-authority-discovery = { workspace = true }
+sp-block-builder = { workspace = true }
+sp-blockchain = { workspace = true }
+sp-consensus = { workspace = true }
+sp-consensus-babe = { workspace = true }
+sp-consensus-grandpa = { workspace = true }
+sp-core = { workspace = true }
+sp-distance = { workspace = true }
+sp-inherents = { workspace = true }
+sp-io = { workspace = true }
+sp-keyring = { workspace = true }
+sp-keystore = { workspace = true }
+sp-membership = { workspace = true }
+sp-offchain = { workspace = true }
+sp-runtime = { workspace = true }
+sp-session = { workspace = true }
+sp-storage = { workspace = true }
+sp-timestamp = { workspace = true }
+sp-transaction-pool = { workspace = true }
+sp-transaction-storage-proof = { workspace = true }
+substrate-frame-rpc-system = { workspace = true }
+try-runtime-cli = { workspace = true, optional = true }
+
+[build-dependencies]
+substrate-build-script-utils = { workspace = true }
+
+# Dependencies for specific targets
+[target.'cfg(any(target_arch="x86_64", target_arch="aarch64"))'.dependencies]
+sc-cli = { workspace = true }
+sc-service = { workspace = true }
+sp-trie = { workspace = true }

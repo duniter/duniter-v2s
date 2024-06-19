@@ -1,247 +1,242 @@
 [package]
-authors = ['Axiom-Team Developers <https://axiom-team.fr>']
-edition = "2021"
-homepage = 'https://duniter.org'
-license = 'AGPL-3.0'
-name = 'gdev-runtime'
-repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
-version = '3.0.0'
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "gdev-runtime"
+repository.workspace = true
+version.workspace = true
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [features]
-default = ['std']
-constant-fees = ['common-runtime/constant-fees']
+default = ["std"]
+constant-fees = ["common-runtime/constant-fees"]
 runtime-benchmarks = [
-    'common-runtime/runtime-benchmarks',
-    'frame-benchmarking/runtime-benchmarks',
-    'frame-support/runtime-benchmarks',
-    'frame-system-benchmarking/runtime-benchmarks',
-    'frame-system/runtime-benchmarks',
-    'pallet-authority-members/runtime-benchmarks',
-    'pallet-smith-members/runtime-benchmarks',
-    'pallet-babe/runtime-benchmarks',
-    'pallet-balances/runtime-benchmarks',
-    'pallet-certification/runtime-benchmarks',
-    'pallet-collective/runtime-benchmarks',
-    'pallet-distance/runtime-benchmarks',
-    'pallet-duniter-test-parameters/runtime-benchmarks',
-    'pallet-duniter-account/runtime-benchmarks',
-    'pallet-quota/runtime-benchmarks',
-    'pallet-duniter-wot/runtime-benchmarks',
-    'pallet-grandpa/runtime-benchmarks',
-    'pallet-identity/runtime-benchmarks',
-    'pallet-membership/runtime-benchmarks',
-    'pallet-provide-randomness/runtime-benchmarks',
-    'pallet-im-online/runtime-benchmarks',
-    'pallet-multisig/runtime-benchmarks',
-    'pallet-oneshot-account/runtime-benchmarks',
-    'pallet-preimage/runtime-benchmarks',
-    'pallet-session-benchmarking/runtime-benchmarks',
-    'pallet-proxy/runtime-benchmarks',
-    'pallet-scheduler/runtime-benchmarks',
-    'pallet-sudo/runtime-benchmarks',
-    'pallet-timestamp/runtime-benchmarks',
-    'pallet-treasury/runtime-benchmarks',
-    'pallet-universal-dividend/runtime-benchmarks',
-    'pallet-upgrade-origin/runtime-benchmarks',
-    'pallet-utility/runtime-benchmarks',
-    'sp-runtime/runtime-benchmarks',
+	"common-runtime/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system-benchmarking/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-authority-members/runtime-benchmarks",
+	"pallet-babe/runtime-benchmarks",
+	"pallet-balances/runtime-benchmarks",
+	"pallet-certification/runtime-benchmarks",
+	"pallet-collective/runtime-benchmarks",
+	"pallet-distance/runtime-benchmarks",
+	"pallet-duniter-account/runtime-benchmarks",
+	"pallet-duniter-test-parameters/runtime-benchmarks",
+	"pallet-duniter-wot/runtime-benchmarks",
+	"pallet-grandpa/runtime-benchmarks",
+	"pallet-identity/runtime-benchmarks",
+	"pallet-im-online/runtime-benchmarks",
+	"pallet-membership/runtime-benchmarks",
+	"pallet-multisig/runtime-benchmarks",
+	"pallet-offences/runtime-benchmarks",
+	"pallet-oneshot-account/runtime-benchmarks",
+	"pallet-preimage/runtime-benchmarks",
+	"pallet-provide-randomness/runtime-benchmarks",
+	"pallet-proxy/runtime-benchmarks",
+	"pallet-quota/runtime-benchmarks",
+	"pallet-scheduler/runtime-benchmarks",
+	"pallet-session-benchmarking/runtime-benchmarks",
+	"pallet-smith-members/runtime-benchmarks",
+	"pallet-sudo/runtime-benchmarks",
+	"pallet-timestamp/runtime-benchmarks",
+	"pallet-treasury/runtime-benchmarks",
+	"pallet-universal-dividend/runtime-benchmarks",
+	"pallet-upgrade-origin/runtime-benchmarks",
+	"pallet-utility/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"sp-staking/runtime-benchmarks",
 ]
 std = [
-    'codec/std',
-    'frame-try-runtime?/std',
-    'common-runtime/std',
-    'frame-benchmarking?/std',
-    'frame-executive/std',
-    'frame-support/std',
-    'frame-system/std',
-    'frame-system-benchmarking?/std',
-    'frame-system-rpc-runtime-api/std',
-    "frame-try-runtime/std",
-    'log/std',
-    'pallet-atomic-swap/std',
-    'pallet-authority-discovery/std',
-    'pallet-authority-members/std',
-    "pallet-authorship/std",
-    'pallet-babe/std',
-    'pallet-balances/std',
-    'pallet-certification/std',
-    'pallet-collective/std',
-    'pallet-distance/std',
-    'pallet-duniter-account/std',
-    'pallet-duniter-test-parameters/std',
-    'pallet-duniter-wot/std',
-    'pallet-grandpa/std',
-    'pallet-identity/std',
-    'pallet-im-online/std',
-    'pallet-membership/std',
-    'pallet-multisig/std',
-    "pallet-offences/std",
-    'pallet-oneshot-account/std',
-    'pallet-preimage/std',
-    'pallet-provide-randomness/std',
-    'pallet-proxy/std',
-    'pallet-quota/std',
-    'pallet-multisig/std',
-    "pallet-scheduler/std",
-    'pallet-session/std',
-    'pallet-session-benchmarking/std',
-    'pallet-smith-members/std',
-    'pallet-sudo/std',
-    'pallet-timestamp/std',
-    'pallet-transaction-payment/std',
-    'pallet-transaction-payment-rpc-runtime-api/std',
-    'pallet-treasury/std',
-    'pallet-universal-dividend/std',
-    'pallet-upgrade-origin/std',
-    'pallet-utility/std',
-    'scale-info/std',
-    "serde/std",
-    "serde_derive",
-    'sp-api/std',
-    'sp-arithmetic/std',
-    'sp-authority-discovery/std',
-    'sp-block-builder/std',
-    'sp-consensus-babe/std',
-    'sp-consensus-grandpa/std',
-    'sp-core/std',
-    'sp-distance/std',
-    'sp-inherents/std',
-    'sp-membership/std',
-    'sp-offchain/std',
-    'sp-runtime/std',
-    'sp-session/std',
-    'sp-std/std',
-    'sp-transaction-pool/std',
-    'sp-version/std',
-    'sp-staking/std',
-    'sp-io/std',
-    'node-primitives/std',
-    'substrate-wasm-builder',
+	"codec/std",
+	"common-runtime/std",
+	"frame-benchmarking?/std",
+	"frame-executive/std",
+	"frame-support/std",
+	"frame-system-benchmarking/std",
+	"frame-system-rpc-runtime-api/std",
+	"frame-system/std",
+	"log/std",
+	"node-primitives/std",
+	"pallet-atomic-swap/std",
+	"pallet-authority-discovery/std",
+	"pallet-authority-members/std",
+	"pallet-authorship/std",
+	"pallet-babe/std",
+	"pallet-balances/std",
+	"pallet-certification/std",
+	"pallet-collective/std",
+	"pallet-distance/std",
+	"pallet-duniter-account/std",
+	"pallet-duniter-test-parameters/std",
+	"pallet-duniter-wot/std",
+	"pallet-grandpa/std",
+	"pallet-identity/std",
+	"pallet-im-online/std",
+	"pallet-membership/std",
+	"pallet-multisig/std",
+	"pallet-offences/std",
+	"pallet-oneshot-account/std",
+	"pallet-preimage/std",
+	"pallet-provide-randomness/std",
+	"pallet-proxy/std",
+	"pallet-quota/std",
+	"pallet-scheduler/std",
+	"pallet-session-benchmarking/std",
+	"pallet-session/std",
+	"pallet-smith-members/std",
+	"pallet-sudo/std",
+	"pallet-timestamp/std",
+	"pallet-transaction-payment-rpc-runtime-api/std",
+	"pallet-transaction-payment/std",
+	"pallet-treasury/std",
+	"pallet-universal-dividend/std",
+	"pallet-upgrade-origin/std",
+	"pallet-utility/std",
+	"scale-info/std",
+	"serde/std",
+	"serde_derive",
+	"sp-api/std",
+	"sp-arithmetic/std",
+	"sp-authority-discovery/std",
+	"sp-block-builder/std",
+	"sp-consensus-babe/std",
+	"sp-consensus-grandpa/std",
+	"sp-core/std",
+	"sp-distance/std",
+	"sp-genesis-builder/std",
+	"sp-inherents/std",
+	"sp-io/std",
+	"sp-membership/std",
+	"sp-offchain/std",
+	"sp-runtime/std",
+	"sp-session/std",
+	"sp-staking/std",
+	"sp-std/std",
+	"sp-transaction-pool/std",
+	"sp-version/std",
+	"substrate-wasm-builder",
 ]
 try-runtime = [
-    'common-runtime/try-runtime',
-    'frame-executive/try-runtime',
-    'frame-support/try-runtime',
-    'frame-system/try-runtime',
-    'frame-try-runtime/try-runtime',
-    'pallet-atomic-swap/try-runtime',
-    'pallet-authority-discovery/try-runtime',
-    'pallet-authority-members/try-runtime',
-    "pallet-authorship/try-runtime",
-    'pallet-babe/try-runtime',
-    'pallet-balances/try-runtime',
-    'pallet-certification/try-runtime',
-    'pallet-collective/try-runtime',
-    'pallet-distance/try-runtime',
-    'pallet-duniter-account/try-runtime',
-    'pallet-duniter-test-parameters/try-runtime',
-    'pallet-duniter-wot/try-runtime',
-    'pallet-grandpa/try-runtime',
-    'pallet-identity/try-runtime',
-    'pallet-im-online/try-runtime',
-    'pallet-membership/try-runtime',
-    'pallet-multisig/try-runtime',
-    "pallet-offences/try-runtime",
-    'pallet-oneshot-account/try-runtime',
-    'pallet-preimage/try-runtime',
-    'pallet-provide-randomness/try-runtime',
-    'pallet-proxy/try-runtime',
-    'pallet-quota/try-runtime',
-    'pallet-multisig/try-runtime',
-    "pallet-scheduler/try-runtime",
-    'pallet-session/try-runtime',
-    'pallet-smith-members/try-runtime',
-    'pallet-sudo/try-runtime',
-    'pallet-timestamp/try-runtime',
-    'pallet-transaction-payment/try-runtime',
-    'pallet-treasury/try-runtime',
-    'pallet-universal-dividend/try-runtime',
-    'pallet-upgrade-origin/try-runtime',
-    'pallet-utility/try-runtime',
+	"common-runtime/try-runtime",
+	"frame-executive/try-runtime",
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-atomic-swap/try-runtime",
+	"pallet-authority-discovery/try-runtime",
+	"pallet-authority-members/try-runtime",
+	"pallet-authorship/try-runtime",
+	"pallet-babe/try-runtime",
+	"pallet-balances/try-runtime",
+	"pallet-certification/try-runtime",
+	"pallet-collective/try-runtime",
+	"pallet-distance/try-runtime",
+	"pallet-duniter-account/try-runtime",
+	"pallet-duniter-test-parameters/try-runtime",
+	"pallet-duniter-wot/try-runtime",
+	"pallet-grandpa/try-runtime",
+	"pallet-identity/try-runtime",
+	"pallet-im-online/try-runtime",
+	"pallet-membership/try-runtime",
+	"pallet-multisig/try-runtime",
+	"pallet-offences/try-runtime",
+	"pallet-oneshot-account/try-runtime",
+	"pallet-preimage/try-runtime",
+	"pallet-provide-randomness/try-runtime",
+	"pallet-proxy/try-runtime",
+	"pallet-quota/try-runtime",
+	"pallet-scheduler/try-runtime",
+	"pallet-session-benchmarking/try-runtime",
+	"pallet-session/try-runtime",
+	"pallet-smith-members/try-runtime",
+	"pallet-sudo/try-runtime",
+	"pallet-timestamp/try-runtime",
+	"pallet-transaction-payment/try-runtime",
+	"pallet-treasury/try-runtime",
+	"pallet-universal-dividend/try-runtime",
+	"pallet-upgrade-origin/try-runtime",
+	"pallet-utility/try-runtime",
+	"sp-distance/try-runtime",
+	"sp-membership/try-runtime",
+	"sp-runtime/try-runtime",
 ]
 
 [dev-dependencies]
-sp-keyring = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-staking = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-io = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
+sp-io = { workspace = true }
+sp-keyring = { workspace = true }
+sp-staking = { workspace = true }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/duniter/duniter-polkadot-sdk", optional = true , branch = "duniter-substrate-v1.6.0" }
+substrate-wasm-builder = { workspace = true, optional = true }
 
 [dependencies]
-
-# crates.io
-codec = { package = "parity-scale-codec", version = "3.6.9", features = ["derive"], default-features = false }
-# local
-common-runtime = { path = "../common", default-features = false }
-
-# substrate benchmarking
-frame-benchmarking = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false, optional = true }
-frame-executive = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-frame-support = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-frame-system = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-frame-system-benchmarking = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false, optional = true }
-frame-system-rpc-runtime-api = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-
-# substrate
-frame-try-runtime = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false, optional = true }
-hex-literal = { version = '0.4.1', default-features = false, optional = true }
-log = { version = "0.4.20", default-features = false }
-pallet-atomic-swap = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-authority-discovery = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-authority-members = { path = '../../pallets/authority-members', default-features = false }
-pallet-authorship = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-babe = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-balances = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-certification = { path = '../../pallets/certification', default-features = false }
-pallet-collective = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-distance = { path = "../../pallets/distance", default-features = false }
-pallet-duniter-account = { path = '../../pallets/duniter-account', default-features = false }
-pallet-duniter-test-parameters = { path = '../../pallets/duniter-test-parameters', default-features = false }
-pallet-duniter-wot = { path = '../../pallets/duniter-wot', default-features = false }
-pallet-grandpa = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-identity = { path = '../../pallets/identity', default-features = false }
-pallet-im-online = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-membership = { path = '../../pallets/membership', default-features = false }
-pallet-multisig = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-offences = { path = '../../pallets/offences', default-features = false }
-pallet-oneshot-account = { path = '../../pallets/oneshot-account', default-features = false }
-pallet-preimage = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-provide-randomness = { path = '../../pallets/provide-randomness', default-features = false }
-pallet-proxy = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-quota = { path = '../../pallets/quota', default-features = false }
-pallet-scheduler = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-session = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-session-benchmarking = { path = '../../pallets/session-benchmarking', default-features = false }
-pallet-smith-members = { path = '../../pallets/smith-members', default-features = false }
-pallet-sudo = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-timestamp = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-transaction-payment = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-treasury = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-pallet-universal-dividend = { path = '../../pallets/universal-dividend', default-features = false }
-pallet-upgrade-origin = { path = '../../pallets/upgrade-origin', default-features = false }
-pallet-utility = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
-serde = { version = "1.0.195", default-features = false }
-serde_derive = { version = "1.0.195", default-features = false, optional = true }
-sp-api = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-arithmetic = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-authority-discovery = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-block-builder = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-consensus-babe = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-consensus-grandpa = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-core = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-distance = { path = '../../primitives/distance', default-features = false }
-sp-inherents = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-membership = { path = '../../primitives/membership', default-features = false }
-sp-offchain = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-runtime = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-session = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-std = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-transaction-pool = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-sp-version = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-node-primitives = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.6.0', default-features = false }
-
-[package.metadata.docs.rs]
-targets = ['x86_64-unknown-linux-gnu']
+codec = { workspace = true, features = ["derive"] }
+common-runtime = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
+frame-executive = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+frame-system-benchmarking = { workspace = true, optional = true }
+frame-system-rpc-runtime-api = { workspace = true }
+hex-literal = { workspace = true, optional = true }
+log = { workspace = true }
+node-primitives = { workspace = true }
+pallet-atomic-swap = { workspace = true }
+pallet-authority-discovery = { workspace = true }
+pallet-authority-members = { workspace = true }
+pallet-authorship = { workspace = true }
+pallet-babe = { workspace = true }
+pallet-balances = { workspace = true }
+pallet-certification = { workspace = true }
+pallet-collective = { workspace = true }
+pallet-distance = { workspace = true }
+pallet-duniter-account = { workspace = true }
+pallet-duniter-test-parameters = { workspace = true }
+pallet-duniter-wot = { workspace = true }
+pallet-grandpa = { workspace = true }
+pallet-identity = { workspace = true }
+pallet-im-online = { workspace = true }
+pallet-membership = { workspace = true }
+pallet-multisig = { workspace = true }
+pallet-offences = { workspace = true }
+pallet-oneshot-account = { workspace = true }
+pallet-preimage = { workspace = true }
+pallet-provide-randomness = { workspace = true }
+pallet-proxy = { workspace = true }
+pallet-quota = { workspace = true }
+pallet-scheduler = { workspace = true }
+pallet-session = { workspace = true }
+pallet-session-benchmarking = { workspace = true }
+pallet-smith-members = { workspace = true }
+pallet-sudo = { workspace = true }
+pallet-timestamp = { workspace = true }
+pallet-transaction-payment = { workspace = true }
+pallet-transaction-payment-rpc-runtime-api = { workspace = true }
+pallet-treasury = { workspace = true }
+pallet-universal-dividend = { workspace = true }
+pallet-upgrade-origin = { workspace = true }
+pallet-utility = { workspace = true }
+scale-info = { workspace = true, features = ["derive"] }
+serde = { workspace = true }
+serde_derive = { workspace = true, optional = true }
+sp-api = { workspace = true }
+sp-arithmetic = { workspace = true }
+sp-authority-discovery = { workspace = true }
+sp-block-builder = { workspace = true }
+sp-consensus-babe = { workspace = true }
+sp-consensus-grandpa = { workspace = true }
+sp-core = { workspace = true }
+sp-distance = { workspace = true }
+sp-genesis-builder = { workspace = true }
+sp-inherents = { workspace = true }
+sp-membership = { workspace = true }
+sp-offchain = { workspace = true }
+sp-runtime = { workspace = true }
+sp-session = { workspace = true }
+sp-std = { workspace = true }
+sp-transaction-pool = { workspace = true }
+sp-version = { workspace = true }

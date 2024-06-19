@@ -303,9 +303,9 @@ pub mod pallet {
                         let _ = core::mem::replace(
                             first_ud_index,
                             core::num::NonZeroU16::new(current_ud_index)
-                                .expect("unrechable because current_ud_index is never zero."),
+                                .expect("unreachable because current_ud_index is never zero."),
                         );
-                        T::Currency::deposit_creating(who, uds_total);
+                        let _ = T::Currency::deposit_creating(who, uds_total);
                         Self::deposit_event(Event::UdsClaimed {
                             count: uds_count,
                             total: uds_total,
@@ -443,7 +443,7 @@ pub mod pallet {
                     first_ud_index,
                     PastReevals::<T>::get().into_iter(),
                 );
-                T::Currency::deposit_creating(who, uds_total);
+                let _ = T::Currency::deposit_creating(who, uds_total);
                 Self::deposit_event(Event::UdsAutoPaid {
                     count: uds_count,
                     total: uds_total,

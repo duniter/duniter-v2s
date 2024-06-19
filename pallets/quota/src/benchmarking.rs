@@ -17,21 +17,25 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use frame_benchmarking::{account, benchmarks};
+use frame_benchmarking::account;
+use frame_benchmarking::v2::*;
 use sp_runtime::traits::One;
 
 fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     frame_system::Pallet::<T>::assert_has_event(generic_event.into());
 }
 
-benchmarks! {
-    where_clause {
+#[benchmarks(
         where
             IdtyId<T>: From<u32>,
             BalanceOf<T>: From<u64>,
             T::AccountId: From<[u8; 32]>,
-    }
-    queue_refund {
+)]
+mod benchmarks {
+    use super::*;
+
+    #[benchmark]
+    fn queue_refund() {
         let account: T::AccountId = account("Alice", 1, 1);
         let dummy_refund = Refund {
             account: account.clone(),
@@ -44,15 +48,21 @@ benchmarks! {
             amount: 10u64.into(),
         };
         // Complexity is bound to MAX_QUEUD_REFUNDS where an insertion is O(n-1)
-        for i in 0..MAX_QUEUED_REFUNDS-1 {
+        for _ in 0..MAX_QUEUED_REFUNDS - 1 {
             Pallet::<T>::queue_refund(dummy_refund.clone())
         }
-    }: { Pallet::<T>::queue_refund(refund.clone()) }
-    verify {
+
+        #[block]
+        {
+            Pallet::<T>::queue_refund(refund.clone());
+        }
+
         assert_eq!(RefundQueue::<T>::get().last(), Some(refund).as_ref());
         assert_eq!(RefundQueue::<T>::get().len() as u32, MAX_QUEUED_REFUNDS);
     }
-    spend_quota {
+
+    #[benchmark]
+    fn spend_quota() {
         let idty_id: IdtyId<T> = 1u32.into();
         let amount = 2u64;
         let quota_amount = 10u64;
@@ -63,15 +73,23 @@ benchmarks! {
                 amount: quota_amount.into(),
             },
         );
-    }: { Pallet::<T>::spend_quota(idty_id, amount.into()) }
-    verify {
-        let quota_growth = sp_runtime::Perbill::from_rational(
-            BlockNumberFor::<T>::one(),
-            T::ReloadRate::get(),
-        ).mul_floor(T::MaxQuota::get());
-        assert_eq!(IdtyQuota::<T>::get(idty_id).unwrap().amount,  quota_growth +quota_amount.into() - amount.into());
+
+        #[block]
+        {
+            Pallet::<T>::spend_quota(idty_id, amount.into());
+        }
+
+        let quota_growth =
+            sp_runtime::Perbill::from_rational(BlockNumberFor::<T>::one(), T::ReloadRate::get())
+                .mul_floor(T::MaxQuota::get());
+        assert_eq!(
+            IdtyQuota::<T>::get(idty_id).unwrap().amount,
+            quota_growth + quota_amount.into() - amount.into()
+        );
     }
-    try_refund {
+
+    #[benchmark]
+    fn try_refund() {
         let account: T::AccountId = account("Alice", 1, 1);
         let idty_id: IdtyId<T> = 1u32.into();
         IdtyQuota::<T>::insert(
@@ -81,9 +99,7 @@ benchmarks! {
                 amount: 10u64.into(),
             },
         );
-        let _ = CurrencyOf::<T>:: make_free_balance_be(
-                &T::RefundAccount::get(),u32::MAX.into(),
-            );
+        let _ = CurrencyOf::<T>::make_free_balance_be(&T::RefundAccount::get(), u32::MAX.into());
         // The worst-case scenario is when the refund fails
         // and can only be triggered if the account is dead,
         // in this case by having no balance in the account.
@@ -92,15 +108,19 @@ benchmarks! {
             identity: 1u32.into(),
             amount: 10u64.into(),
         };
-    }: { Pallet::<T>::try_refund(refund) }
-    verify {
-        assert_has_event::<T>(Event::<T>::RefundFailed ( account ).into());
+
+        #[block]
+        {
+            Pallet::<T>::try_refund(refund);
+        }
+
+        assert_has_event::<T>(Event::<T>::RefundFailed(account).into());
     }
-    do_refund {
+
+    #[benchmark]
+    fn do_refund() {
         let account: T::AccountId = account("Alice", 1, 1);
-        let _ = CurrencyOf::<T>:: make_free_balance_be(
-                &T::RefundAccount::get(),u32::MAX.into(),
-            );
+        let _ = CurrencyOf::<T>::make_free_balance_be(&T::RefundAccount::get(), u32::MAX.into());
         // The worst-case scenario is when the refund fails
         // and can only be triggered if the account is dead,
         // in this case by having no balance in the account.
@@ -109,19 +129,30 @@ benchmarks! {
             identity: 1u32.into(),
             amount: 10u64.into(),
         };
-    }: { Pallet::<T>::try_refund(refund) }
-    verify {
-        assert_has_event::<T>(Event::<T>::RefundFailed ( account ).into());
+
+        #[block]
+        {
+            Pallet::<T>::try_refund(refund);
+        }
+
+        assert_has_event::<T>(Event::<T>::RefundFailed(account).into());
     }
-    // The base weight consumed on processing refund queue when empty.
-    on_process_refund_queue {
+
+    #[benchmark]
+    fn on_process_refund_queue() {
+        // The base weight consumed on processing refund queue when empty.
         assert_eq!(RefundQueue::<T>::get().len() as u32, 0);
-    }: { Pallet::<T>::process_refund_queue(Weight::MAX) }
-    // The weight consumed on processing refund queue with one element.
-    // Can deduce the process_refund_queue overhead by subtracting try_refund weight.
-    #[pov_mode = Measured]
-    on_process_refund_queue_elements {
-        let i in 1..MAX_QUEUED_REFUNDS;
+
+        #[block]
+        {
+            Pallet::<T>::process_refund_queue(Weight::MAX);
+        }
+    }
+
+    #[benchmark]
+    fn on_process_refund_queue_elements(i: Linear<1, MAX_QUEUED_REFUNDS>) {
+        // The weight consumed on processing refund queue with one element.
+        // Can deduce the process_refund_queue overhead by subtracting try_refund weight.
         let account: T::AccountId = account("Alice", 1, 1);
         let idty_id: IdtyId<T> = 1u32.into();
         IdtyQuota::<T>::insert(
@@ -131,9 +162,7 @@ benchmarks! {
                 amount: 10u64.into(),
             },
         );
-        let _ = CurrencyOf::<T>:: make_free_balance_be(
-                &T::RefundAccount::get(),u32::MAX.into(),
-            );
+        let _ = CurrencyOf::<T>::make_free_balance_be(&T::RefundAccount::get(), u32::MAX.into());
         // The worst-case scenario is when the refund fails
         // and can only be triggered if the account is dead,
         // in this case by having no balance in the account.
@@ -146,10 +175,21 @@ benchmarks! {
             Pallet::<T>::queue_refund(refund.clone());
         }
         assert_eq!(RefundQueue::<T>::get().len() as u32, i);
-    }: { Pallet::<T>::process_refund_queue(Weight::MAX) }
-    verify {
+
+        #[block]
+        {
+            Pallet::<T>::process_refund_queue(Weight::MAX);
+        }
+
         assert_eq!(RefundQueue::<T>::get().len() as u32, 0);
-        assert_has_event::<T>(Event::<T>::RefundFailed ( account ).into());
+        assert_has_event::<T>(Event::<T>::RefundFailed(account).into());
     }
-    impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(crate::mock::QuotaConfig{identities: vec![1, 2]}), crate::mock::Test);
+
+    impl_benchmark_test_suite!(
+        Pallet,
+        crate::mock::new_test_ext(crate::mock::QuotaConfig {
+            identities: vec![1, 2]
+        }),
+        crate::mock::Test
+    );
 }

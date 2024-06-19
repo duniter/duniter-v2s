@@ -20,9 +20,6 @@ use frame_support::weights::{constants::RocksDbWeight, Weight};
 
 /// Weight functions needed for pallet_universal_dividend.
 pub trait WeightInfo {
-    fn on_initialize_sufficient(i: u32) -> Weight;
-    fn on_initialize_with_balance(i: u32) -> Weight;
-    fn on_initialize_no_balance(i: u32) -> Weight;
     fn unlink_identity() -> Weight;
 }
 
@@ -38,39 +35,5 @@ impl WeightInfo for () {
         Weight::from_parts(110_501_000, 0)
             .saturating_add(Weight::from_parts(0, 3591))
             .saturating_add(RocksDbWeight::get().reads(1))
-    }
-
-    // Storage: Babe EpochIndex (r:1 w:0)
-    /// The range of component `i` is `[0, 1]`.
-    fn on_initialize_sufficient(i: u32) -> Weight {
-        // Minimum execution time: 12_958 nanoseconds.
-        Weight::from_parts(14_907_902 as u64, 0)
-            // Standard Error: 550_025
-            .saturating_add(Weight::from_parts(79_482_297 as u64, 0).saturating_mul(i as u64))
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().reads((6 as u64).saturating_mul(i as u64)))
-            .saturating_add(RocksDbWeight::get().writes((6 as u64).saturating_mul(i as u64)))
-    }
-
-    // Storage: Babe EpochIndex (r:1 w:0)
-    /// The range of component `i` is `[0, 1]`.
-    fn on_initialize_with_balance(i: u32) -> Weight {
-        // Minimum execution time: 12_965 nanoseconds.
-        Weight::from_parts(16_754_718 as u64, 0)
-            // Standard Error: 1_790_537
-            .saturating_add(Weight::from_parts(164_043_481 as u64, 0).saturating_mul(i as u64))
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().reads((6 as u64).saturating_mul(i as u64)))
-            .saturating_add(RocksDbWeight::get().writes((6 as u64).saturating_mul(i as u64)))
-    }
-
-    /// The range of component `i` is `[0, 1]`.
-    fn on_initialize_no_balance(i: u32) -> Weight {
-        // Minimum execution time: 12_912 nanoseconds.
-        Weight::from_parts(13_846_469 as u64, 0)
-            // Standard Error: 115_598
-            .saturating_add(Weight::from_parts(67_524_530 as u64, 0).saturating_mul(i as u64))
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
     }
 }

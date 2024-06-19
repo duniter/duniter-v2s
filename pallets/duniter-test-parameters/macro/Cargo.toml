@@ -1,18 +1,17 @@
 [package]
-authors = ['librelois <c@elo.tf>']
-description = 'Duniter test parameters macro.'
-edition = "2021"
-homepage = 'https://duniter.org'
-license = 'AGPL-3.0'
-name = 'pallet-duniter-test-parameters-macro'
-repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
-version = '3.0.0'
+authors.workspace = true
+description = "duniter test parameters macro"
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "pallet-duniter-test-parameters-macro"
+repository.workspace = true
+version.workspace = true
 
 [lib]
 proc-macro = true
 
 [dependencies]
-num_enum = { version = "0.7.2", default-features = false }
-proc-macro2 = { version = "1.0.76", default-features = false }
-quote = { version = "1.0.35", default-features = false }
-syn = { version = "2.0.48", features = [ "extra-traits", "fold", "full", "visit" ] }
+proc-macro2 = { workspace = true, default-features = false }
+quote = { workspace = true, default-features = false }
+syn = { workspace = true, features = ["extra-traits", "fold", "full", "visit"] }
