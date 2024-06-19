@@ -13,12 +13,12 @@ path = "src/main.rs"
 name = "xtask"
 
 [dependencies]
-anyhow = { workspace = true }
+anyhow = { workspace = true, features = ["std"] }
 clap = { workspace = true, features = ["derive"] }
 codec = { workspace = true, features = ["derive", "full", "bit-vec"] }
-frame-metadata = { workspace = true }
+frame-metadata = { workspace = true, features = ["current", "std"] }
 graphql_client = { workspace = true }
-hex = { workspace = true }
+hex = { workspace = true, features = ["alloc"] }
 memmap2 = { workspace = true }
 placeholder = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
