@@ -1,0 +1,10 @@
+[Unit]
+Description=Duniter distance oracle timer.
+
+[Timer]
+EnvironmentFile=/etc/duniter/env_file
+OnBootSec=1min
+OnUnitActiveSec=2min
+
+[Install]
+WantedBy=multi-user.target

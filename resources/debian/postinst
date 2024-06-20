@@ -1,0 +1,23 @@
+#!/bin/sh
+
+set -e
+
+action="$1"
+config_file="/etc/duniter/env_file"
+
+if [ "$action" = "configure" ]; then
+  # Make user and group
+  getent group duniter >/dev/null 2>&1 || addgroup --system duniter
+  getent passwd duniter >/dev/null 2>&1 ||
+    adduser --system --disabled-password \
+    --ingroup duniter duniter
+
+  # Create user home dir
+  if [ ! -d "/home/duniter/" ]; then
+      mkdir /home/duniter
+      chown -R duniter:duniter /home/duniter
+      chmod 700 /home/duniter
+  fi
+fi
+
+#DEBHELPER#

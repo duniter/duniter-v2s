@@ -37,9 +37,12 @@
     - [replay-block](./docs/test/replay-block.md)
   - [user](./docs/user/)
     - [autocompletion](./docs/user/autocompletion.md)
-    - [build-for-arm](./docs/user/build-for-arm.md)
     - [mirror](./docs/user/mirror.md) deploy a permanent ǦDev mirror node
     - [smith](./docs/user/smith.md) deploy a permanent ǦDev validator node
+    - [debian installation](./docs/user/installation_debian.md)
+  - [packaging](./docs/packaging/)
+    - [build-for-arm](./docs/packaging/build-for-arm.md)
+    - [build-debian](./docs/packaging/build-deb.md) build a native Debian package
 - [end2end-tests](./end2end-tests/) automated end to end tests written with cucumber
 - [live-tests](./live-tests/) sanity checks to test the storage of a live chain
 

@@ -89,10 +89,10 @@ run_benchmarks:
     - target/release/duniter benchmark storage --chain=dev --mul=2 --state-version=1
     - target/release/duniter benchmark overhead --chain=dev --wasm-execution=compiled --warmup=1 --repeat=100
     - target/release/duniter benchmark pallet --chain=dev --steps=5 --repeat=2 --pallet="*" --extrinsic="*" --wasm-execution=compiled
-# FIXME: "gtest_build"
-gdev_build:
+
+gtest_build:
   stage: build
-  image: rust:1-bullseye
+  extends: .env
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
@@ -105,9 +105,29 @@ gdev_build:
   variables:
     DEBIAN_FRONTEND: noninteractive
   script:
-    - apt-get update
-    - apt-get install -y clang cmake protobuf-compiler
     - cargo build -Zgit=shallow-deps --no-default-features --features gtest
+
+build_deb:
+  stage: deploy
+  extends: .env
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
+      when: manual
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
+      when: never
+    - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
+    - when: manual
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+  script:
+    - cargo install cargo-deb
+    - cargo build -Zgit=shallow-deps --release
+    - cargo deb --no-build -p duniter
+  artifacts:
+    paths:
+      - target/debian/duniter*.deb
 
 gdev_srtool_build:
   stage: build
@@ -139,7 +159,7 @@ gdev_srtool_build:
 
 tests:
   stage: tests
-  image: rust:1-bullseye
+  extends: .env
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
@@ -152,8 +172,6 @@ tests:
   variables:
     DEBIAN_FRONTEND: noninteractive
   script:
-    - apt-get update
-    - apt-get install -y clang cmake protobuf-compiler
     - cargo tu
     - cargo tf
     - cargo cucumber-build
@@ -303,14 +321,12 @@ create_g1_data:
   stage: build
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(release\/runtime-)[0-9].*/
-  image: rust:1-bullseye
+  extends: .env
   variables:
     WASM_FILE: $CI_PROJECT_DIR/release/${RUNTIME}_runtime.compact.compressed.wasm
     DUNITER_GENESIS_DATA: $CI_PROJECT_DIR/release/genesis.json # py-g1-migrator outputs this file with `./main.py`
     DEBIAN_FRONTEND: noninteractive
   script:
-    - apt-get update
-    - apt-get install -y clang cmake protobuf-compiler
     - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}_live > release/${RUNTIME}.json
     - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=release/${RUNTIME}.json --disable-default-bootnode --raw > release/${RUNTIME}-raw.json
     - cp node/specs/${RUNTIME}_client-specs.yaml release/

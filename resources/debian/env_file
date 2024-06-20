@@ -1,0 +1,43 @@
+# Sets the name of the node.
+# This should be a unique identifier for your node within the network.
+DUNITER_NODE_NAME=My Node
+
+# Specifies the blockchain network to connect to.
+DUNITER_CHAIN_NAME=gdev
+
+# Defines the address and port for node communication.
+# The format is /ip4/[IP address]/tcp/[port]/[protocol].
+# If SMITH NODE: `/ip4/0.0.0.0/tcp/<port>` and `/ip6/[::]/tcp/<port>`. Otherwise: `/ip4/0.0.0.0/tcp/<port>/ws` and `/ip6/[::]/tcp/<port>/ws`.
+DUNITER_LISTEN_ADDR=/ip4/0.0.0.0/tcp/30333
+
+# Specify browser origins allowed to access the HTTP & WS RPC servers.
+# A comma-separated list with no space of origins.
+# Value of `all` will disable origin validation. Default is to allow localhost and
+#<https://polkadot.js.org> origins.
+# Default: "http://localhost:*,http://127.0.0.1:*,https://localhost:*,https://127.0.0.1:*,https://polkadot.js.org"
+DUNITER_RPC_CORS=http://localhost:*,http://127.0.0.1:*,https://localhost:*,https://127.0.0.1:*,https://polkadot.js.org
+
+# Configures the pruning profile to manage how old blockchain data is stored.
+# This setting can only be set on the first creation of the database.
+# Options:
+# - 'archive': Keep the state of all blocks.
+# - 'archive-canonical': Keep only the state of finalized blocks.
+# - [number]: Keep the state of the last specified number of finalized blocks.
+# Default: 256 for a balanced pruning strategy.
+DUNITER_PRUNING_PROFILE=256
+
+# Sets the directory for storing Duniter data.
+# This should be a writable path on your system by the duniter user where the node can store its data.
+# Default: /home/duniter/.local/share/duniter
+BASE_PATH=/home/duniter/.local/share/duniter
+
+# URL for the Oracle RPC server.
+# This should point to the RPC endpoint that the oracle will use to communicate with the blockchain.
+# Default: ws://127.0.0.1:9944 for a local WebSocket RPC server.
+ORACLE_RPC_URL=ws://127.0.0.1:9944
+
+# Determines the log level for the Oracle.
+# Options include 'error', 'warn', 'info', 'debug', 'trace'.
+# 'info' is a good default that provides useful runtime information without too much detail.
+# Default: info
+ORACLE_LOG_LEVEL=info
