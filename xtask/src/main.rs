@@ -54,7 +54,11 @@ enum DuniterXTaskCommand {
     /// Release a new network
     ReleaseNetwork { network: String, branch: String },
     /// Release a new runtime
-    ReleaseRuntime { milestone: String, branch: String },
+    ReleaseRuntime {
+        network: String,
+        branch: String,
+        milestone: String,
+    },
     /// Print the chainSpec published on given Network Release
     PrintSpec { network: String },
     /// Create asset in a release
@@ -99,9 +103,11 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::ReleaseNetwork { network, branch } => {
             release_runtime::release_network(network, branch).await
         }
-        DuniterXTaskCommand::ReleaseRuntime { milestone, branch } => {
-            release_runtime::release_runtime(milestone, branch).await
-        }
+        DuniterXTaskCommand::ReleaseRuntime {
+            network,
+            branch,
+            milestone,
+        } => release_runtime::release_runtime(network, branch, milestone).await,
         DuniterXTaskCommand::PrintSpec { network } => release_runtime::print_spec(network).await,
         DuniterXTaskCommand::CreateAssetLink {
             tag,

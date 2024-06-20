@@ -69,28 +69,7 @@ pub(super) async fn release_network(network: String, branch: String) -> Result<(
 
 ",
     );
-
-    // Generate release notes
-    let currency = network.clone();
-    let env_var = "SRTOOL_OUTPUT".to_string();
-
-    if let Ok(sr_tool_output_file) = std::env::var(env_var) {
-        let read = fs::read_to_string(sr_tool_output_file);
-        match read {
-            Ok(sr_tool_output) => {
-                release_notes.push_str(
-                    gen_release_notes(currency.to_string(), sr_tool_output)
-                        .with_context(|| {
-                            format!("Fail to generate release notes for {}", currency)
-                        })?
-                        .as_str(),
-                );
-            }
-            Err(e) => {
-                eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
-            }
-        }
-    }
+    add_srtool_notes(network.clone(), &mut release_notes)?;
 
     println!("{}", release_notes);
     let gitlab_token =
@@ -106,42 +85,19 @@ pub(super) async fn release_network(network: String, branch: String) -> Result<(
     Ok(())
 }
 
-pub(super) async fn release_runtime(milestone: String, branch: String) -> Result<()> {
-    // TODO: check spec_version in the code and bump if necessary (with a commit)
-    // TODO: create and push a git tag runtime-{spec_version}
-
+pub(super) async fn release_runtime(
+    network: String,
+    branch: String,
+    milestone: String,
+) -> Result<()> {
     let mut release_notes = String::from(
         "
-# Runtimes
+# Runtime
 
 ",
     );
 
-    // Generate release notes
-    let runtimes = vec![
-        ("ĞDev", "SRTOOL_OUTPUT_GDEV"),
-        ("ĞTest", "SRTOOL_OUTPUT_GTEST"),
-        ("Ğ1", "SRTOOL_OUTPUT_G1"),
-    ];
-    for (currency, env_var) in runtimes {
-        if let Ok(sr_tool_output_file) = std::env::var(env_var) {
-            let read = fs::read_to_string(sr_tool_output_file);
-            match read {
-                Ok(sr_tool_output) => {
-                    release_notes.push_str(
-                        gen_release_notes(currency.to_string(), sr_tool_output)
-                            .with_context(|| {
-                                format!("Fail to generate release notes for {}", currency)
-                            })?
-                            .as_str(),
-                    );
-                }
-                Err(e) => {
-                    eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
-                }
-            }
-        }
-    }
+    add_srtool_notes(network, &mut release_notes)?;
 
     // Get changes (list of MRs) from gitlab API
     let changes = get_changes::get_changes(milestone.clone()).await?;
@@ -176,6 +132,31 @@ pub(super) async fn release_runtime(milestone: String, branch: String) -> Result
     create_release::create_release(gitlab_token, branch, milestone, release_notes.to_string())
         .await?;
 
+    Ok(())
+}
+
+fn add_srtool_notes(network: String, release_notes: &mut String) -> Result<()> {
+    // Generate release notes
+    let currency = network.clone();
+    let env_var = "SRTOOL_OUTPUT".to_string();
+
+    if let Ok(sr_tool_output_file) = std::env::var(env_var) {
+        let read = fs::read_to_string(sr_tool_output_file);
+        match read {
+            Ok(sr_tool_output) => {
+                release_notes.push_str(
+                    gen_release_notes(currency.to_string(), sr_tool_output)
+                        .with_context(|| {
+                            format!("Fail to generate release notes for {}", currency)
+                        })?
+                        .as_str(),
+                );
+            }
+            Err(e) => {
+                eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
+            }
+        }
+    }
     Ok(())
 }
 
