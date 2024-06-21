@@ -1,6 +1,3 @@
-# Workaround for https://github.com/containers/buildah/issues/4742
-FROM debian:bullseye-slim as target
-
 # ------------------------------------------------------------------------------
 # Build Stage
 # ------------------------------------------------------------------------------
@@ -68,7 +65,7 @@ RUN if [ "$cucumber" != 0 ] && [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then \
 # Final Stage
 # ------------------------------------------------------------------------------
 
-FROM target
+FROM debian:bullseye-slim
 
 LABEL maintainer="Gilles Filippini <gilles.filippini@pini.fr>"
 LABEL version="0.0.0"

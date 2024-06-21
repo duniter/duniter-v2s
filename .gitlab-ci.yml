@@ -224,7 +224,7 @@ docker_deploy:
   script:
     - *define_network_branch_vars
     - podman manifest rm "$MANIFEST" 2>/dev/null || true
-    - podman build --layers --platform linux/amd64 --manifest "$MANIFEST" -f docker/Dockerfile --build-arg chain=$RUNTIME .
+    - podman build --layers --platform linux/amd64,linux/arm64 --manifest "$MANIFEST" -f docker/Dockerfile --build-arg chain=$RUNTIME .
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$DOCKER_TAG"
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:latest"
   after_script:
