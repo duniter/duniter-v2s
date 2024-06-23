@@ -254,7 +254,6 @@ g1_data:
   needs: ["trigger_network_release"]
   rules:
     - <<: *is_network_branch
-      when: never
   image: python:3.9.18
   variables:
     DEBIAN_FRONTEND: noninteractive
@@ -301,7 +300,6 @@ build_specs:
   needs: ["build_runtime", "g1_data"]
   rules:
     - <<: *is_network_branch
-      when: never
   image: rust:1-bullseye
   variables:
     DEBIAN_FRONTEND: noninteractive
@@ -355,7 +353,7 @@ build_raw_specs:
 
 create_network_release:
   stage: release
-  needs: ["build_runtime"]
+  needs: ["build_specs"]
   rules:
     - <<: *is_network_branch
   image: rust:1-bullseye
@@ -366,14 +364,14 @@ create_network_release:
     - *define_network_branch_vars
     # Release creation
     - cargo xtask release-network $NETWORK_RELEASE $CI_COMMIT_BRANCH
-#    # g1-data (initial data)
-#    - cargo xtask create-asset-link $NETWORK_RELEASE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_G1_DATA
+    # g1-data (initial data)
+    - cargo xtask create-asset-link $NETWORK_RELEASE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_G1_DATA
     # gdev.yaml (spec configuration)
     - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC_CONFIG
     # initial runtime
     - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
-#    # the result: gdev.json (genesis)
-#    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC
+    # the result: gdev.json (genesis)
+    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC
   artifacts:
     paths:
       - $CI_PROJECT_DIR/release/
