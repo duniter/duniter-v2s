@@ -44,9 +44,9 @@ parameters:
   # Maximum quantity of currently valid certifications emitted by a same issuer. 15 certs.
   smith_cert_max_by_issuer: 15
   # Maximum duration a smith can be offline without being excluded
-  smith_inactivity_max_duration: 48
+  smith_inactivity_max_duration: 336
   # Number of required received smith certs to become a smith member
-  smith_wot_min_cert_for_membership: 3
+  smith_wot_min_cert_for_membership: 2
 
 # Clique Smith WoT: each smith will certify by each other smith automatically on Genesis
 clique_smiths:
@@ -67,4 +67,4 @@ treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"
 
 # The technical committee members, to act as sudo
 technical_committee:
-  ["Pini", "moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek"]
+  ["Pini", "moul", "HugoTrentesaux", "tuxmain", "Maaltir", "vit", "cgeek", "poka"]
