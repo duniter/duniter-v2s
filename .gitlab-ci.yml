@@ -303,6 +303,7 @@ g1_data:
     - ./squid-tx.py # ./output/tx_hist.json
     # Make the exported file available for next jobs
     - mkdir -p $CI_PROJECT_DIR/release/
+    - ls output/
     - cp output/genesis.json $RELEASE_FILE_G1_DATA
     - cp output/block_hist.json $CI_PROJECT_DIR/release/
     - cp output/cert_hist.json $CI_PROJECT_DIR/release/
