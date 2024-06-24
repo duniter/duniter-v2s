@@ -14,6 +14,35 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Duniter Web of Trust Pallet
+//!
+//! Duniter Web of Trust (WoT) lies at the heart of its identity system, representing a significant improvement over PGP Web of Trust. It functions as a dynamic directed graph where nodes are [identities](../identity/) and edges are [certifications](../certification/).
+//!
+//! ## Instances
+//!
+//! Duniter WoT consists of two distinct instances:
+//!
+//! - **Main WoT**: Designed for every human participant in the Duniter network.
+//! - **Smith Sub-WoT**: Intended for authorities.
+//!
+//! ## Rules
+//!
+//! The Duniter WoT operates under a set of static and dynamic rules that govern membership conditions.
+//!
+//! ### Static Rules
+//!
+//! - **Minimum Received Certifications (Min Indegree)**: Specifies the minimum number of certifications an identity must receive to join the WoT.
+//! - **Maximum Emitted Certifications (Max Outdegree)**: Limits the maximum number of certifications an identity can issue.
+//! - **Distance Criterion**: Governed by the distance pallet, it defines the permissible distance between identities within the WoT graph.
+//!
+//! ### Dynamic Rules
+//!
+//! - **Time Interval Between Certifications**: Sets the minimum time interval required between two consecutive certifications issued by the same identity.
+//! - **Certification Duration**: Managed by the certification pallet, it determines the validity duration of a certification.
+//! - **Membership Renewal**: Regulates the frequency and conditions under which an identity must renew its membership within the WoT.
+//!
+//! This pallet is responsible for enforcing and validating the rules of the Duniter Web of Trust. It ensures compliance with both static prerequisites for joining and dynamic conditions for ongoing participation.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
@@ -22,11 +51,6 @@ mod mock;
 
 #[cfg(test)]
 mod tests;
-
-pub mod traits;
-
-/*#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;*/
 
 pub use pallet::*;
 
@@ -59,10 +83,15 @@ pub mod pallet {
         + pallet_identity::Config<IdtyIndex = IdtyIndex>
         + pallet_membership::Config<IdtyId = IdtyIndex>
     {
+        /// The block number from which the first certification can be issued.
         #[pallet::constant]
         type FirstIssuableOn: Get<frame_system::pallet_prelude::BlockNumberFor<Self>>;
+
+        /// The minimum number of certifications required for membership eligibility.
         #[pallet::constant]
         type MinCertForMembership: Get<u32>;
+
+        /// The minimum number of certifications required to create an identity.
         #[pallet::constant]
         type MinCertForCreateIdtyRight: Get<u32>;
     }

@@ -14,6 +14,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Duniter Certification Pallet
+//!
+//! This pallet manages certification creation and deletion.
+//!
+//! Duniter certifications are the *edges* in the Duniter [Web of Trust](../duniter-wot/). They can have different meanings:
+//!
+//! - In the case of the main WoT, they mean "I have met this person in real life and trust them" (see Ğ1 Licence).
+//! - In the case of the smith sub-WoT, they mean "I trust this person to be able to run Duniter securely" (see smith Licence).
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -58,10 +67,11 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
+        /// The minimum duration (in blocks) between two certifications issued by the same issuer.
         #[pallet::constant]
-        /// Minimum duration between two certifications issued by the same issuer.
         type CertPeriod: Get<BlockNumberFor<Self>>;
-        /// A short identity index.
+
+        /// A short identity index type.
         type IdtyIndex: Parameter
             + Member
             + AtLeast32BitUnsigned
@@ -71,26 +81,36 @@ pub mod pallet {
             + MaybeSerializeDeserialize
             + Debug
             + MaxEncodedLen;
-        /// Something that gives the IdtyId of an AccountId and reverse
+
+        /// A type that provides methods to get the IdtyIndex of an AccountId and vice versa.
         type IdtyAttr: duniter_primitives::Idty<Self::IdtyIndex, Self::AccountId>;
-        /// Provide method to check that cert is allowed.
+
+        /// A type that provides a method to check if issuing a certification is allowed.
         type CheckCertAllowed: CheckCertAllowed<Self::IdtyIndex>;
+
+        /// The maximum number of active certifications that can be issued by a single issuer.
         #[pallet::constant]
-        /// Maximum number of active certifications by issuer.
         type MaxByIssuer: Get<u32>;
-        /// Minimum number of certifications received to be allowed to issue a certification.
+
+        /// The minimum number of certifications received that an identity must have
+        /// to be allowed to issue a certification.
         #[pallet::constant]
         type MinReceivedCertToBeAbleToIssueCert: Get<u32>;
-        /// Handler for NewCert event.
+
+        /// A handler that is called when a new certification event (`NewCert`) occurs.
         type OnNewcert: OnNewcert<Self::IdtyIndex>;
-        /// Handler for Removed event.
+
+        /// A handler that is called when a certification is removed (`RemovedCert`).
         type OnRemovedCert: OnRemovedCert<Self::IdtyIndex>;
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
+
+        /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        /// Type representing the weight of this pallet.
+
+        /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
+
+        /// The duration (in blocks) for which a certification remains valid.
         #[pallet::constant]
-        /// Duration of validity of a certification.
         type ValidityPeriod: Get<BlockNumberFor<Self>>;
     }
 
@@ -199,13 +219,13 @@ pub mod pallet {
 
     // STORAGE //
 
-    /// Certifications metada by issuer.
+    /// The certification metadata for each issuer.
     #[pallet::storage]
     #[pallet::getter(fn idty_cert_meta)]
     pub type StorageIdtyCertMeta<T: Config> =
         StorageMap<_, Twox64Concat, T::IdtyIndex, IdtyCertMeta<BlockNumberFor<T>>, ValueQuery>;
 
-    /// Certifications by receiver.
+    /// The certifications for each receiver.
     #[pallet::storage]
     #[pallet::getter(fn certs_by_receiver)]
     pub type CertsByReceiver<T: Config> = StorageMap<
@@ -216,7 +236,7 @@ pub mod pallet {
         ValueQuery,
     >;
 
-    /// Certifications removable on.
+    /// The certifications that should expire at a given block.
     #[pallet::storage]
     #[pallet::getter(fn certs_removable_on)]
     pub type CertsRemovableOn<T: Config> = StorageMap<
@@ -309,7 +329,9 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// remove a certification (only root)
+        /// Remove one certification given the issuer and the receiver.
+        ///
+        /// - `origin`: Must be `Root`.
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::del_cert())]
         pub fn del_cert(
@@ -322,7 +344,9 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// remove all certifications received by an identity (only root)
+        /// Remove all certifications received by an identity.
+        ///
+        /// - `origin`: Must be `Root`.
         #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::remove_all_certs_received_by(CertsByReceiver::<T>::get(idty_index).len() as u32))]
         pub fn remove_all_certs_received_by(
@@ -338,6 +362,7 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
+        /// Perform removal of all certifications received by an identity.
         pub fn do_remove_all_certs_received_by(idty_index: T::IdtyIndex) -> Weight {
             let mut weight = T::DbWeight::get().reads_writes(1, 0);
             for (issuer, _) in CertsByReceiver::<T>::get(idty_index) {
@@ -346,15 +371,17 @@ pub mod pallet {
             weight
         }
 
-        /// get issuer index from origin
+        /// Get the issuer index from the origin.
         pub fn origin_to_index(origin: OriginFor<T>) -> Result<T::IdtyIndex, DispatchError> {
             let who = ensure_signed(origin)?;
             T::IdtyAttr::idty_index(who).ok_or(Error::<T>::OriginMustHaveAnIdentity.into())
         }
 
-        /// add a certification without checks
-        // this is used on identity creation to add the first certification
-        // The weight is approximated on the worst path.
+        /// Add a certification without performing checks.
+        ///
+        /// This function is used during identity creation to add the first certification without
+        /// validation checks.
+        // The weight is approximated based on the worst-case scenario path.
         pub fn do_add_cert_checked(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
@@ -371,7 +398,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// perform cert addition if not existing, else CertAlreadyExists
+        /// Perform certification addition if it does not already exist, otherwise return `CertAlreadyExists`.
         // must be transactional
         fn try_add_cert(
             block_number: BlockNumberFor<T>,
@@ -423,7 +450,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// perform cert renewal if exisiting, else error with CertDoesNotExist
+        /// Perform certification renewal if it exists, otherwise return an error indicating `CertDoesNotExist`.
         // must be used in transactional context
         // (it can fail if certification does not exist after having modified state)
         fn try_renew_cert(
@@ -455,7 +482,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// remove the certifications due to expire on the given block
+        /// Remove certifications that are due to expire on the given block.
         // (run at on_initialize step)
         fn prune_certifications(block_number: BlockNumberFor<T>) -> Weight {
             // See on initialize for the overhead weight accounting
@@ -473,9 +500,11 @@ pub mod pallet {
             weight
         }
 
-        /// perform the certification removal
-        /// if block number is given only remove cert if still set to expire at this block number
-        // this is used because cert expiry unscheduling is not done (#110)
+        /// Perform the certification removal.
+        ///
+        /// If a block number is provided, this function removes certifications only if they are still
+        /// scheduled to expire at that block number.
+        // This function is used because the unscheduling of certification expiry (#110) is not yet implemented.
         pub fn do_remove_cert(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
@@ -535,7 +564,7 @@ pub mod pallet {
             total_weight
         }
 
-        /// check cert allowed
+        /// Check if adding a certification is allowed.
         // 1. no self cert
         // 2. issuer received cert count
         // 3. issuer max emitted cert
@@ -572,7 +601,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// check cert allowed
+        /// Check if adding a certification is allowed.
         // first internal checks
         // then external checks
         fn check_add_cert(
@@ -592,7 +621,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// check renew cert allowed
+        /// Check if renewing a certification is allowed based.
         fn check_renew_cert(
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,

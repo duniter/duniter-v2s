@@ -6,7 +6,6 @@ edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 repository.workspace = true
-readme = "README.md"
 version.workspace = true
 
 [package.metadata.docs.rs]

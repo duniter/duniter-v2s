@@ -14,6 +14,27 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Duniter Quota Pallet
+//!
+//! ## Overview
+//!
+//! This pallet is designed to manage transaction fee refunds based on quotas allocated to identities within the Duniter identity system. Quotas are linked to transaction fees, ensuring efficient handling of fee refunds when transactions occur.
+//!
+//! ## Refund Mechanism
+//!
+//! When a transaction is processed:
+//! - The `OnChargeTransaction` implementation in the `frame-executive` pallet is called.
+//! - The `OnChargeTransaction` implementation in the `duniter-account` pallet checks if the paying account is linked to an identity.
+//! - If linked, the `request_refund` function in the `quota` pallet evaluates the eligibility for fee refund based on the identity's quota.
+//! - Eligible refunds are added to the `RefundQueue`, managed by `process_refund_queue` during the `on_idle` phase.
+//! - Refunds are processed with `try_refund`, using quotas to refund fees via `spend_quota`, and then executing the refund through `do_refund` by transferring currency from the `RefundAccount` back to the paying account.
+//!
+//! ## Conditions for Refund
+//!
+//! Refunds are executed under the following conditions:
+//! 1. The paying account is linked to an identity.
+//! 2. Quotas are allocated to the identity and have a non-zero value after updates.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod traits;
@@ -61,46 +82,52 @@ pub mod pallet {
     pub trait Config:
         frame_system::Config + pallet_balances::Config + pallet_identity::Config
     {
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
+        /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        /// number of blocks in which max quota is replenished
+
+        /// Number of blocks after which the maximum quota is replenished.
         type ReloadRate: Get<BlockNumberFor<Self>>;
-        /// maximum amount of quota an identity can get
+
+        /// Maximum amount of quota an identity can receive.
         type MaxQuota: Get<BalanceOf<Self>>;
-        /// Account used to refund fee
+
+        /// Account used to refund fees.
         #[pallet::constant]
         type RefundAccount: Get<Self::AccountId>;
-        /// Weight
+
+        /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
     }
 
     // TYPES //
+    /// Represents a refund.
     #[derive(Encode, Decode, Clone, TypeInfo, Debug, PartialEq, MaxEncodedLen)]
     pub struct Refund<AccountId, IdtyId, Balance> {
-        /// account to refund
+        /// Account to refund.
         pub account: AccountId,
-        /// identity to use quota
+        /// Identity to use quota.
         pub identity: IdtyId,
-        /// amount of refund
+        /// Amount of refund.
         pub amount: Balance,
     }
 
+    /// Represents a quota.
     #[derive(Encode, Decode, Clone, TypeInfo, Debug, PartialEq, MaxEncodedLen)]
     pub struct Quota<BlockNumber, Balance> {
-        /// block number of last quota use
+        /// Block number of the last quota used.
         pub last_use: BlockNumber,
-        /// amount of remaining quota
+        /// Amount of remaining quota.
         pub amount: Balance,
     }
 
     // STORAGE //
-    /// maps identity index to quota
+    /// The quota for each identity.
     #[pallet::storage]
     #[pallet::getter(fn quota)]
     pub type IdtyQuota<T: Config> =
         StorageMap<_, Twox64Concat, IdtyId<T>, Quota<BlockNumberFor<T>, BalanceOf<T>>, OptionQuery>;
 
-    /// fees waiting for refund
+    /// The fees waiting to be refunded.
     #[pallet::storage]
     pub type RefundQueue<T: Config> = StorageValue<
         _,
@@ -137,14 +164,14 @@ pub mod pallet {
 
     // INTERNAL FUNCTIONS //
     impl<T: Config> Pallet<T> {
-        /// add a new refund to the queue
+        /// Adds a new refund request to the refund queue.
         pub fn queue_refund(refund: Refund<T::AccountId, IdtyId<T>, BalanceOf<T>>) {
             if RefundQueue::<T>::mutate(|v| v.try_push(refund)).is_err() {
                 Self::deposit_event(Event::RefundQueueFull);
             }
         }
 
-        /// try to refund using quota if available
+        /// Attempts to process a refund using available quota.
         pub fn try_refund(queued_refund: Refund<T::AccountId, IdtyId<T>, BalanceOf<T>>) -> Weight {
             // get the amount of quota that identity is able to spend
             let amount = Self::spend_quota(queued_refund.identity, queued_refund.amount);
@@ -159,7 +186,7 @@ pub mod pallet {
                 .saturating_add(<T as pallet::Config>::WeightInfo::do_refund())
         }
 
-        /// do refund a non-null amount
+        /// Performs a refund operation for a specified non-null amount from the refund account to the requester's account.
         // opti: more accurate estimation of consumed weight
         pub fn do_refund(
             queued_refund: Refund<T::AccountId, IdtyId<T>, BalanceOf<T>>,
@@ -199,7 +226,7 @@ pub mod pallet {
             }
         }
 
-        /// perform as many refunds as possible within the supplied weight limit
+        /// Processes as many refunds as possible from the refund queue within the supplied weight limit.
         pub fn process_refund_queue(weight_limit: Weight) -> Weight {
             RefundQueue::<T>::mutate(|queue| {
                 // The weight to process an empty queue
@@ -232,7 +259,7 @@ pub mod pallet {
             })
         }
 
-        /// spend quota of identity
+        /// Spends the quota of an identity by deducting the specified `amount` from its quota balance.
         pub fn spend_quota(idty_id: IdtyId<T>, amount: BalanceOf<T>) -> BalanceOf<T> {
             IdtyQuota::<T>::mutate_exists(idty_id, |quota| {
                 if let Some(ref mut quota) = quota {
@@ -246,7 +273,7 @@ pub mod pallet {
             })
         }
 
-        /// update quota according to the growth rate, max value, and last use
+        /// Update the quota according to the growth rate, maximum value, and last use.
         fn update_quota(quota: &mut Quota<BlockNumberFor<T>, BalanceOf<T>>) {
             let current_block = frame_system::pallet::Pallet::<T>::block_number();
             let quota_growth = sp_runtime::Perbill::from_rational(
@@ -259,7 +286,7 @@ pub mod pallet {
             quota.amount = core::cmp::min(quota.amount + quota_growth, T::MaxQuota::get());
         }
 
-        /// spend a certain amount of quota and return what was spent
+        /// Spend a certain amount of quota and return the amount that was spent.
         fn do_spend_quota(
             quota: &mut Quota<BlockNumberFor<T>, BalanceOf<T>>,
             amount: BalanceOf<T>,

@@ -749,11 +749,6 @@ fn dump_genesis_info(info: GenesisInfo) {
         get_best_unit_and_diviser_for_ms(p.universal_dividend_ud_creation_period as f32);
     let (universal_dividend_ud_reeval_period, universal_dividend_ud_reeval_period_unit) =
         get_best_unit_and_diviser_for_ms(p.universal_dividend_ud_reeval_period as f32);
-    let (universal_dividend_units_per_ud, universal_dividend_units_per_ud_unit) =
-        get_best_unit_and_diviser_for_currency_units(
-            p.universal_dividend_units_per_ud,
-            p.currency_name.clone(),
-        );
     let (wot_first_issuable_on, wot_first_issuable_on_unit) =
         get_best_unit_and_diviser_for_blocks(p.wot_first_issuable_on);
     let (wot_min_cert_for_membership, wot_min_cert_for_membership_unit) =
@@ -810,7 +805,6 @@ fn dump_genesis_info(info: GenesisInfo) {
         - universal_dividend.square_money_growth_rate: {} {}/equinox
         - universal_dividend.ud_creation_period: {} {}
         - universal_dividend.ud_reeval_period: {} {}
-        - universal_dividend.units_per_ud: {} {}
         - wot.first_issuable_on: {} {}
         - wot.min_cert_for_membership: {} {}
         - wot.min_cert_for_create_idty_right: {} {}
@@ -852,8 +846,6 @@ fn dump_genesis_info(info: GenesisInfo) {
         universal_dividend_ud_creation_period_unit,
         universal_dividend_ud_reeval_period,
         universal_dividend_ud_reeval_period_unit,
-        universal_dividend_units_per_ud,
-        universal_dividend_units_per_ud_unit,
         wot_first_issuable_on,
         wot_first_issuable_on_unit,
         wot_min_cert_for_membership,
@@ -1935,7 +1927,6 @@ pub struct CommonParameters {
     pub universal_dividend_square_money_growth_rate: Perbill,
     pub universal_dividend_ud_creation_period: u64,
     pub universal_dividend_ud_reeval_period: u64,
-    pub universal_dividend_units_per_ud: u64,
     pub wot_first_issuable_on: u32,
     pub wot_min_cert_for_membership: u32,
     pub wot_min_cert_for_create_idty_right: u32,

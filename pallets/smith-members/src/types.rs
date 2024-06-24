@@ -22,16 +22,16 @@ use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_staking::SessionIndex;
 
-/// certification metadata attached to an identity
+/// Represents a certification metadata attached to a Smith identity.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct SmithMeta<IdtyIndex> {
-    /// current status of the smith
+    /// Current status of the Smith.
     pub status: SmithStatus,
-    /// the session at which the smith will expire (for lack of validation activity)
+    /// The session at which the Smith will expire (for lack of validation activity).
     pub expires_on: Option<SessionIndex>,
-    /// the certifications issued to other smiths
+    /// Certifications issued to other Smiths.
     pub issued_certs: sp_std::vec::Vec<IdtyIndex>,
-    /// the certifications received from other smiths
+    /// Certifications received from other Smiths.
     pub received_certs: sp_std::vec::Vec<IdtyIndex>,
 }
 

@@ -14,6 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Provides Randomness Pallet
+//!
+//! The Provides Randomness Pallet facilitates the generation of randomness within the Duniter blockchain.
+//!
+//! This pallet manages randomness requests and emits events upon requesting and fulfilling randomness.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::boxed_local)]
 
@@ -72,47 +78,61 @@ pub mod pallet {
     /// Configuration trait.
     #[pallet::config]
     pub trait Config: frame_system::Config<Hash = H256> {
-        // The currency
+        // The currency type.
         type Currency: fungible::Balanced<Self::AccountId> + fungible::Mutate<Self::AccountId>;
-        /// Get the current epoch index
+
+        /// Type providing the current epoch index.
         type GetCurrentEpochIndex: Get<u64>;
-        /// Maximum number of not yet filled requests
+
+        /// Maximum number of not yet filled requests.
         #[pallet::constant]
         type MaxRequests: Get<u32>;
-        /// The price of a request
+
+        /// The price of a request.
         #[pallet::constant]
         type RequestPrice: Get<BalanceOf<Self>>;
-        /// On filled randomness
+
+        /// Handler called when randomness is filled.
         type OnFilledRandomness: OnFilledRandomness;
-        /// Handler for the unbalanced reduction when the requestor pays fees.
+
+        /// Handler for unbalanced reduction when the requestor pays fees.
         type OnUnbalanced: OnUnbalanced<Credit<Self::AccountId, Self::Currency>>;
-        /// A safe source of randomness from the parent block
+
+        /// A safe source of randomness from the parent block.
         type ParentBlockRandomness: Randomness<Option<H256>, BlockNumberFor<Self>>;
-        /// A safe source of randomness from one epoch ago
+
+        /// A safe source of randomness from one epoch ago.
         type RandomnessFromOneEpochAgo: Randomness<H256, BlockNumberFor<Self>>;
+
         /// The overarching event type.
         type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        /// Type representing the weight of this pallet
+
+        /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
     }
 
     // STORAGE //
 
+    /// The number of blocks before the next epoch.
     #[pallet::storage]
     pub(super) type NexEpochHookIn<T: Config> = StorageValue<_, u8, ValueQuery>;
 
+    /// The request ID.
     #[pallet::storage]
     pub(super) type RequestIdProvider<T: Config> = StorageValue<_, RequestId, ValueQuery>;
 
+    /// The requests that will be fulfilled at the next block.
     #[pallet::storage]
     #[pallet::getter(fn requests_ready_at_next_block)]
     pub type RequestsReadyAtNextBlock<T: Config> = StorageValue<_, Vec<Request>, ValueQuery>;
 
+    /// The requests that will be fulfilled at the next epoch.
     #[pallet::storage]
     #[pallet::getter(fn requests_ready_at_epoch)]
     pub type RequestsReadyAtEpoch<T: Config> =
         StorageMap<_, Twox64Concat, u64, Vec<Request>, ValueQuery>;
 
+    /// The requests being processed.
     #[pallet::storage]
     #[pallet::getter(fn requests_ids)]
     pub type RequestsIds<T: Config> =
@@ -148,7 +168,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Request a randomness
+        /// Request randomness.
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::request())]
         pub fn request(
@@ -221,6 +241,7 @@ pub mod pallet {
     // PUBLIC FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
+        /// Initiates a randomness request with specified parameters.
         pub fn do_request(
             requestor: &T::AccountId,
             randomness_type: RandomnessType,
@@ -238,10 +259,12 @@ pub mod pallet {
             Ok(Self::apply_request(randomness_type, salt))
         }
 
+        /// Forcefully initiates a randomness request using the specified parameters.
         pub fn force_request(randomness_type: RandomnessType, salt: H256) -> RequestId {
             Self::apply_request(randomness_type, salt)
         }
 
+        /// Set the next epoch hook value to 5.
         pub fn on_new_epoch() {
             NexEpochHookIn::<T>::put(5)
         }
@@ -250,6 +273,7 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
+        /// Withdraw funds from the requestor's account to pay for a request.
         fn pay_request(requestor: &T::AccountId) -> DispatchResult {
             let imbalance = T::Currency::withdraw(
                 requestor,
@@ -262,6 +286,7 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Apply a randomness request with the specified type and salt.
         fn apply_request(randomness_type: RandomnessType, salt: H256) -> RequestId {
             let request_id = RequestIdProvider::<T>::mutate(|next_request_id| {
                 core::mem::replace(next_request_id, next_request_id.saturating_add(1))

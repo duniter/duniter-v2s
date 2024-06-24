@@ -49,6 +49,7 @@ impl subxt::config::Config for RuntimeConfig {
     type Signature = subxt::ext::sp_runtime::MultiSignature;
 }
 
+/// Represents a tipping amount.
 #[derive(Copy, Clone, Debug, Default, Encode)]
 pub struct Tip {
     #[codec(compact)]
@@ -67,6 +68,7 @@ impl From<u64> for Tip {
     }
 }
 
+/// Represents configuration parameters.
 pub struct Settings {
     pub evaluation_result_dir: PathBuf,
     pub rpc_url: String,
@@ -81,6 +83,7 @@ impl Default for Settings {
     }
 }
 
+/// Asynchronously runs a computation using the provided client and saves the result to a file.
 pub async fn run_and_save(client: &api::Client, settings: Settings) {
     let Some((evaluation, current_pool_index, evaluation_result_path)) =
         run(client, &settings, true).await
@@ -138,7 +141,8 @@ pub async fn run_and_save(client: &api::Client, settings: Settings) {
     });
 }
 
-/// Returns `Option<(evaluation, current_pool_index, evaluation_result_path)>`
+/// Asynchronously runs a computation based on the provided client and settings.
+/// Returns `Option<(evaluation, current_pool_index, evaluation_result_path)>`.
 pub async fn run(
     client: &api::Client,
     settings: &Settings,

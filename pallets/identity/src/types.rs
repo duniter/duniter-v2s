@@ -21,49 +21,54 @@ use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 
-/// internal events related to identity
+/// Internal events related to identity.
 pub enum IdtyEvent<T: crate::Config> {
-    /// IdtyEvent::Created
-    /// creation of a new identity by an other
+    /// Creation of a new identity by another.
     // pallet account links account to identity
     // pallet wot adds certification
     // pallet quota adds storage item for this identity
     Created {
+        /// Identity of the creator.
         creator: T::IdtyIndex,
+        /// Account of the identity owner.
         owner_key: T::AccountId,
     },
-    /// IdtyEvent::Removed
-    /// removing an identity (unvalidated or revoked)
+    /// Removing an identity (unvalidated or revoked).
     // pallet wot removes associated certifications if status is not revoked
     // pallet quota removes associated quota
     // pallet smith-members exclude smith
-    Removed { status: IdtyStatus },
+    Removed {
+        /// Status of the identity.
+        status: IdtyStatus,
+    },
     // TODO add a way to unlink accounts corresponding to revoked or removed identities
 }
 
+/// Reasons for revocation.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum RevocationReason {
-    /// revoked by root (e.g. governance or migration)
+    /// Revoked by root (e.g., governance or migration).
     Root,
-    /// revoked by user action (revocation document)
+    /// Revoked by user action (revocation document).
     User,
-    /// revoked due to inactive period
+    /// Revoked due to inactive period.
     Expired,
 }
 
+/// Reasons for removal.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum RemovalReason {
-    /// removed by root
+    /// Removed by root.
     Root,
-    /// removed because unconfirmed
+    /// Removed because unconfirmed.
     Unconfirmed,
-    /// removed because unvalidated
+    /// Removed because unvalidated.
     Unvalidated,
-    /// removed automatically after revocation buffer
+    /// Removed automatically after revocation buffer.
     Revoked,
 }
 
-/// name of the identity, ascii encoded
+/// Represents the name of an identity, ASCII encoded.
 #[derive(
     Encode,
     Decode,
@@ -86,8 +91,7 @@ impl From<&str> for IdtyName {
     }
 }
 
-/// status of the identity
-// this is a kind of index to tell the state of the identity
+/// State of an identity.
 #[derive(
     Encode,
     Decode,
@@ -102,56 +106,60 @@ impl From<&str> for IdtyName {
     Serialize,
 )]
 pub enum IdtyStatus {
-    /// created through a first certification but unconfirmed
+    /// Created through a first certification but unconfirmed.
     #[default]
     Unconfirmed,
-    /// confirmed by key owner with a name published but unvalidated
+    /// Confirmed by key owner with a name published but unvalidated.
     Unvalidated,
-    /// member of the main web of trust
+    /// Member of the main web of trust.
     // (there must be a membership in membership pallet storage)
     Member,
-    /// not member of the main web of trust, auto-revocation planned
+    /// Not a member of the main web of trust, auto-revocation planned.
     NotMember,
-    /// revoked manually or automatically, deletion possible
+    /// Revoked manually or automatically, deletion possible.
     Revoked,
 }
 
-/// identity value (as in key/value)
+/// Identity value structure.
+///
+/// Represents the value associated with an identity, akin to key/value pairs.
 #[derive(Serialize, Deserialize, Debug, Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 pub struct IdtyValue<BlockNumber, AccountId, IdtyData> {
-    /// data shared between pallets defined by runtime
-    /// only contains first_eligible_ud in our case
+    /// Data shared between pallets defined by runtime.
+    /// Only contains `first_eligible_ud` in our case.
     pub data: IdtyData,
-    /// block before which creating a new identity is not allowed
+    /// Block before which creating a new identity is not allowed.
     pub next_creatable_identity_on: BlockNumber,
-    /// previous owner key of this identity (optional)
+    /// Previous owner key of this identity (optional).
     pub old_owner_key: Option<(AccountId, BlockNumber)>,
-    /// current owner key of this identity
+    /// Current owner key of this identity.
     pub owner_key: AccountId,
-    /// next action scheduled on identity
-    // 0 if no action scheduled
+    /// Next action scheduled on identity.
+    ///
+    /// `0` if no action is scheduled.
     pub next_scheduled: BlockNumber,
-    /// current status of the identity (until validation)
+    /// Current status of the identity (until validation).
     pub status: IdtyStatus,
 }
 
-/// payload to define a new owner key
+/// Reprensent the payload to define a new owner key.
 #[derive(Clone, Copy, Encode, RuntimeDebug)]
 pub struct IdtyIndexAccountIdPayload<'a, AccountId, IdtyIndex, Hash> {
-    /// hash of the genesis block
-    // Avoid replay attack across networks
+    /// Hash of the genesis block.
+    // Used to avoid replay attacks across networks.
     pub genesis_hash: &'a Hash,
-    /// identity index
+    /// Identity index.
     pub idty_index: IdtyIndex,
-    /// old owner key of the identity
+    /// Old owner key of the identity.
     pub old_owner_key: &'a AccountId,
 }
 
+/// Represents the payload for identity revocation.
 #[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, TypeInfo, RuntimeDebug)]
 pub struct RevocationPayload<IdtyIndex, Hash> {
-    /// hash of the genesis block
-    // Avoid replay attack across networks
+    /// Hash of the genesis block.
+    // Used to avoid replay attacks across networks.
     pub genesis_hash: Hash,
-    /// identity index
+    /// Identity index.
     pub idty_index: IdtyIndex,
 }

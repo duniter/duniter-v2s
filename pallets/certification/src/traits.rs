@@ -16,7 +16,9 @@
 
 use frame_support::pallet_prelude::*;
 
+/// Trait for checking if a certification is allowed between two identities.
 pub trait CheckCertAllowed<IdtyIndex> {
+    /// Check if the certification is allowed from the issuer to the receiver.
     fn check_cert_allowed(issuer: IdtyIndex, receiver: IdtyIndex) -> Result<(), DispatchError>;
 }
 
@@ -26,7 +28,9 @@ impl<IdtyIndex> CheckCertAllowed<IdtyIndex> for () {
     }
 }
 
+/// Trait for handling actions to take when a new certification is issued.
 pub trait OnNewcert<IdtyIndex> {
+    /// Called when a new certification is issued.
     fn on_new_cert(
         issuer: IdtyIndex,
         issuer_issued_count: u32,
@@ -34,6 +38,7 @@ pub trait OnNewcert<IdtyIndex> {
         receiver_received_count: u32,
     );
 }
+
 impl<IdtyIndex> OnNewcert<IdtyIndex> for () {
     fn on_new_cert(
         _issuer: IdtyIndex,
@@ -44,7 +49,9 @@ impl<IdtyIndex> OnNewcert<IdtyIndex> for () {
     }
 }
 
+/// Trait for handling actions to take when a certification is removed.
 pub trait OnRemovedCert<IdtyIndex> {
+    /// Called when a certification is removed.
     fn on_removed_cert(
         issuer: IdtyIndex,
         issuer_issued_count: u32,
@@ -53,6 +60,7 @@ pub trait OnRemovedCert<IdtyIndex> {
         expiration: bool,
     );
 }
+
 impl<IdtyIndex> OnRemovedCert<IdtyIndex> for () {
     fn on_removed_cert(
         _issuer: IdtyIndex,
@@ -64,6 +72,8 @@ impl<IdtyIndex> OnRemovedCert<IdtyIndex> for () {
     }
 }
 
+/// Trait for setting the next issuable block number for an identity.
 pub trait SetNextIssuableOn<BlockNumber, IdtyIndex> {
+    /// Set the next block number when the identity can issue a certification.
     fn set_next_issuable_on(idty_index: IdtyIndex, next_issuable_on: BlockNumber);
 }

@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Duniter Oneshot Account Pallet
+//!
+//! Duniter Oneshot Account Pallet introduces lightweight accounts that do not utilize `AccountInfo`, including fields like nonce, consumers, providers, sufficients, free, reserved. These accounts are designed for single-use scenarios, aiming to reduce transaction weight and associated fees. The primary use cases include anonymous transactions and physical support scenarios where lightweight and disposable accounts are beneficial.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod benchmarking;
@@ -57,15 +61,22 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
+        /// The currency type.
         type Currency: fungible::Balanced<Self::AccountId> + fungible::Mutate<Self::AccountId>;
+
+        /// A handler for charging transactions.
         type InnerOnChargeTransaction: OnChargeTransaction<Self>;
+
+        /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        /// Type representing the weight of this pallet
+
+        /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
     }
 
     // STORAGE //
 
+    /// The balance for each oneshot account.
     #[pallet::storage]
     #[pallet::getter(fn oneshot_account)]
     pub type OneshotAccounts<T: Config> =

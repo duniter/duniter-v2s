@@ -25,6 +25,7 @@ use sp_runtime::{
     transaction_validity::{TransactionValidity, TransactionValidityError},
 };
 
+/// Wrapper around `frame_system::CheckNonce<T>`.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(Runtime))]
 pub struct CheckNonce<T: Config>(pub frame_system::CheckNonce<T>);

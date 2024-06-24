@@ -5,7 +5,6 @@ edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 name = "pallet-oneshot-account"
-readme = "README.md"
 repository.workspace = true
 version.workspace = true
 

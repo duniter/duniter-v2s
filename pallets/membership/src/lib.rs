@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Duniter Membership Pallet
+//!
+//! The Duniter Membership Pallet is closely integrated with the Duniter Web of Trust (WoT) and is tailored specifically for Duniter, in contrast to the [Parity Membership Pallet](https://github.com/paritytech/substrate/tree/master/frame/membership). It operates exclusively within the Duniter ecosystem and is utilized internally by the Identity, Web of Trust, and Distance Pallets.
+//!
+//! ## Main Web of Trust (WoT)
+//!
+//! The Membership Pallet manages all aspects related to the membership of identities within the Duniter Web of Trust. Unlike traditional membership systems, it does not expose any external calls to users. Instead, its functionalities are accessible through distance evaluations provided by the Distance Oracle.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
@@ -49,15 +57,16 @@ impl<IdtyId, AccountId> SetupBenchmark<IdtyId, AccountId> for () {
     fn add_cert(_issuer: &IdtyId, _receiver: &IdtyId) {}
 }
 
+/// Represent reasons for the removal of membership.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum MembershipRemovalReason {
-    // reach end of life
+    /// Indicates membership was removed because it reached the end of its life.
     Expired,
-    // was explicitly revoked
+    /// Indicates membership was explicitly revoked.
     Revoked,
-    // received certs count passed below threshold
+    /// Indicates membership was removed because the received certifications count fell below the threshold.
     NotEnoughCerts,
-    // system reasons (consumers, authority members, or root)
+    /// Indicates membership was removed due to system reasons (e.g., consumers, authority members, or root).
     System,
 }
 
@@ -79,27 +88,36 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// Ask the runtime whether the identity can perform membership operations
+        /// Check if the identity can perform membership operations.
         type CheckMembershipOpAllowed: CheckMembershipOpAllowed<Self::IdtyId>;
-        /// Something that identifies an identity
+
+        /// Something that identifies an identity.
         type IdtyId: Copy + MaybeSerializeDeserialize + Parameter + Ord;
-        /// Something that gives the IdtyId of an AccountId and reverse
+
+        /// Something that gives the IdtyId of an AccountId and reverse.
         type IdtyAttr: duniter_primitives::Idty<Self::IdtyId, Self::AccountId>;
-        /// Maximum life span of a single membership (in number of blocks)
-        // (this could be renamed "validity" or "duration")
+
+        /// Maximum lifespan of a single membership (in number of blocks).
         #[pallet::constant]
         type MembershipPeriod: Get<BlockNumberFor<Self>>;
-        /// Minimum delay to wait before renewing membership
-        // i.e. asking for distance evaluation
+
+        /// Minimum delay to wait before renewing membership, i.e., asking for distance evaluation.
         #[pallet::constant]
         type MembershipRenewalPeriod: Get<BlockNumberFor<Self>>;
-        /// On new and renew membership handler.
+
+        /// Handler called when a new membership is created or renewed.
         type OnNewMembership: OnNewMembership<Self::IdtyId>;
-        /// On revoked and removed membership handler.
+
+        /// Handler called when a membership is revoked or removed.
         type OnRemoveMembership: OnRemoveMembership<Self::IdtyId>;
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
+
+        /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+        /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
+
+        /// Benchmark setup handler for runtime benchmarks (feature-dependent).
         #[cfg(feature = "runtime-benchmarks")]
         type BenchmarkSetupHandler: SetupBenchmark<Self::IdtyId, Self::AccountId>;
     }
@@ -131,8 +149,7 @@ pub mod pallet {
 
     // STORAGE //
 
-    /// maps identity id to membership data
-    // (expiration block for instance)
+    /// The membership data for each identity.
     #[pallet::storage]
     #[pallet::getter(fn membership)]
     pub type Membership<T: Config> = CountedStorageMap<
@@ -143,7 +160,7 @@ pub mod pallet {
         OptionQuery,
     >;
 
-    /// maps block number to the list of identity id set to expire at this block
+    /// The identities of memberships to expire at a given block.
     #[pallet::storage]
     #[pallet::getter(fn memberships_expire_on)]
     pub type MembershipsExpireOn<T: Config> =
@@ -202,7 +219,7 @@ pub mod pallet {
 
     // INTERNAL FUNCTIONS //
     impl<T: Config> Pallet<T> {
-        /// unschedule membership expiry
+        /// Unschedules membership expiry.
         fn unschedule_membership_expiry(idty_id: T::IdtyId, block_number: BlockNumberFor<T>) {
             let mut scheduled = MembershipsExpireOn::<T>::get(block_number);
 
@@ -212,7 +229,7 @@ pub mod pallet {
             }
         }
 
-        /// schedule membership expiry
+        /// Insert membership and schedule its expiry.
         fn insert_membership_and_schedule_expiry(idty_id: T::IdtyId) -> BlockNumberFor<T> {
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             let expire_on = block_number + T::MembershipPeriod::get();
@@ -222,7 +239,7 @@ pub mod pallet {
             expire_on
         }
 
-        /// check that membership can be claimed
+        /// Check if membership can be claimed.
         pub fn check_add_membership(idty_id: T::IdtyId) -> Result<(), DispatchError> {
             // no-op is error
             ensure!(
@@ -235,7 +252,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// check that membership can be renewed
+        /// Check if membership renewal is allowed.
         pub fn check_renew_membership(
             idty_id: T::IdtyId,
         ) -> Result<MembershipData<BlockNumberFor<T>>, DispatchError> {
@@ -247,21 +264,21 @@ pub mod pallet {
             Ok(membership_data)
         }
 
-        /// try claim membership
+        /// Attempt to add membership.
         pub fn try_add_membership(idty_id: T::IdtyId) -> Result<(), DispatchError> {
             Self::check_add_membership(idty_id)?;
             Self::do_add_membership(idty_id);
             Ok(())
         }
 
-        /// try renew membership
+        /// Attempt to renew membership.
         pub fn try_renew_membership(idty_id: T::IdtyId) -> Result<(), DispatchError> {
             let membership_data = Self::check_renew_membership(idty_id)?;
             Self::do_renew_membership(idty_id, membership_data);
             Ok(())
         }
 
-        /// perform membership addition
+        /// Perform membership addition.
         fn do_add_membership(idty_id: T::IdtyId) {
             let expire_on = Self::insert_membership_and_schedule_expiry(idty_id);
             Self::deposit_event(Event::MembershipAdded {
@@ -271,7 +288,7 @@ pub mod pallet {
             T::OnNewMembership::on_created(&idty_id);
         }
 
-        /// perform membership renewal
+        /// Perform membership renewal.
         fn do_renew_membership(
             idty_id: T::IdtyId,
             membership_data: MembershipData<BlockNumberFor<T>>,
@@ -285,7 +302,7 @@ pub mod pallet {
             T::OnNewMembership::on_renewed(&idty_id);
         }
 
-        /// perform membership removal
+        /// Perform membership removal.
         pub fn do_remove_membership(idty_id: T::IdtyId, reason: MembershipRemovalReason) -> Weight {
             let mut weight = T::DbWeight::get().reads_writes(2, 3);
             if let Some(membership_data) = Membership::<T>::take(idty_id) {
@@ -299,7 +316,7 @@ pub mod pallet {
             weight
         }
 
-        /// perform the membership expiry scheduled at given block
+        /// Perform membership expiry scheduled at the given block number.
         pub fn expire_memberships(block_number: BlockNumberFor<T>) -> Weight {
             let mut expired_idty_count = 0u32;
 
@@ -311,7 +328,7 @@ pub mod pallet {
             T::WeightInfo::expire_memberships(expired_idty_count)
         }
 
-        /// check if identity is member
+        /// Check if an identity is a member.
         pub fn is_member(idty_id: &T::IdtyId) -> bool {
             Membership::<T>::contains_key(idty_id)
         }

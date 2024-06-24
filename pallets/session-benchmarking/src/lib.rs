@@ -14,8 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-//! Benchmarks for the Session Pallet.
-// This is separated into its own crate due to cyclic dependency issues.
+//! # Duniter Session Benchmarking Pallet
+//!
+//! This crate provides benchmarks specifically for the `pallet-session` within Duniter. Unlike traditional setups, this implementation is decoupled from the `staking-pallet`, which is not utilized in Duniter's architecture. Instead, session management functionalities are integrated into the `authority-members` pallet.
+//!
+//! ## Note
+//!
+//! This crate is separated from the main codebase due to cyclic dependency issues, focusing solely on session-related benchmarking independent of staking-related functionalities.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg(feature = "runtime-benchmarks")]

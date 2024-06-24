@@ -150,7 +150,6 @@ impl pallet_universal_dividend::Config for Test {
     type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
     type UdCreationPeriod = UdCreationPeriod;
     type UdReevalPeriod = UdReevalPeriod;
-    type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
     type WeightInfo = ();
 }
 

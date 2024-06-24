@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **189** errors from **35** pallets.
+There are **190** errors from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -970,6 +970,13 @@ Can not revoke identity that never was member.
 <summary>
 <code>AccountNotExist</code> - 16</summary>
 Cannot link to an inexisting account.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>InsufficientBalance</code> - 17</summary>
+Insufficient balance to create an identity.
 </details>
 </li>
 </ul>

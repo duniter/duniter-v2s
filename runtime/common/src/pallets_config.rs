@@ -448,7 +448,6 @@ macro_rules! pallets_config {
             type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
             type UdCreationPeriod = UdCreationPeriod;
             type UdReevalPeriod = UdReevalPeriod;
-            type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
             type WeightInfo =
                 common_runtime::weights::pallet_universal_dividend::WeightInfo<Runtime>;
         }

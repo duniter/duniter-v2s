@@ -54,18 +54,18 @@ pub mod pallet {
         /// The overarching event type.
         type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-        /// The upgradable origin
+        /// The origin type required for performing upgradable operations.
         type UpgradableOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
-        /// Pallet weights info
+        /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
 
+        /// Type representing the worst case origin type used in weight benchmarks.
         #[cfg(feature = "runtime-benchmarks")]
-        /// The worst case origin type to use in weights benchmarking
         type WorstCaseOriginType: Into<Self::RuntimeOrigin>;
 
+        /// Retrieves the worst case origin for use in weight benchmarks.
         #[cfg(feature = "runtime-benchmarks")]
-        /// The worst case origin to use in weights benchmarking
         type WorstCaseOrigin: Get<Self::WorstCaseOriginType>;
     }
 

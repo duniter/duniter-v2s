@@ -74,8 +74,6 @@ fn get_parameters(parameters_from_file: &Option<GenesisParameters>) -> CommonPar
         universal_dividend_square_money_growth_rate: parameters::SquareMoneyGrowthRate::get(),
         universal_dividend_ud_creation_period: parameters_from_file.ud_creation_period,
         universal_dividend_ud_reeval_period: parameters_from_file.ud_reeval_period,
-        universal_dividend_units_per_ud:
-            <Runtime as pallet_universal_dividend::Config>::UnitsPerUd::get(),
         wot_first_issuable_on: parameters_from_file.wot_first_cert_issuable_on,
         wot_min_cert_for_membership: parameters_from_file.wot_min_cert_for_membership,
         wot_min_cert_for_create_idty_right: parameters_from_file.wot_min_cert_for_create_idty_right,

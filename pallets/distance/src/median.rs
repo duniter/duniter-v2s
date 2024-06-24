@@ -17,6 +17,7 @@
 use frame_support::pallet_prelude::*;
 use sp_std::cmp::Ordering;
 
+/// Represents a median accumulator.
 #[derive(Clone, Debug, Decode, Default, Encode, TypeInfo)]
 pub struct MedianAcc<
     T: Clone + Decode + Encode + Ord + TypeInfo,
@@ -35,6 +36,7 @@ pub struct MedianAcc<
     fn type_info() -> scale_info::Type<scale_info::form::MetaForm> {}
 }*/
 
+/// Represents the result of a median calculation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MedianResult<T: Clone + Ord> {
     One(T),

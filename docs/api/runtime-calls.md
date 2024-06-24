@@ -28,7 +28,7 @@ Taking 0.0107 % of a block.
 </details>
 
 
-unlink the identity associated with the account
+Unlink the identity associated with the account.
 
 ### Scheduler - 2
 
@@ -430,7 +430,7 @@ receiver: T::IdtyIndex
 </details>
 
 
-Invite a WoT member to try becoming a Smith
+Invite a member of the Web of Trust to attempt becoming a Smith.
 
 #### accept_invitation - 1
 
@@ -443,7 +443,7 @@ Taking 0.0122 % of a block.
 </details>
 
 
-Accept an invitation (must have been invited first)
+Accept an invitation to become a Smith (must have been invited first).
 
 #### certify_smith - 2
 
@@ -457,7 +457,7 @@ receiver: T::IdtyIndex
 </details>
 
 
-Certify an invited smith which can lead the certified to become a Smith
+Certify an invited Smith, which can lead the certified to become a Smith.
 
 ### AuthorityMembers - 11
 
@@ -472,7 +472,7 @@ Taking 0.0165 % of a block.
 </details>
 
 
-ask to leave the set of validators two sessions after
+Request to leave the set of validators two sessions later.
 
 #### go_online - 1
 
@@ -485,7 +485,7 @@ Taking 0.0188 % of a block.
 </details>
 
 
-ask to join the set of validators two sessions after
+Request to join the set of validators two sessions later.
 
 #### set_session_keys - 2
 
@@ -499,7 +499,7 @@ keys: T::Keys
 </details>
 
 
-declare new session keys to replace current ones
+Declare new session keys to replace current ones.
 
 #### remove_member_from_blacklist - 4
 
@@ -513,6 +513,7 @@ member_id: T::MemberId
 </details>
 
 
+Remove a member from the blacklist.
 remove an identity from the blacklist
 
 ### Grandpa - 16
@@ -774,7 +775,7 @@ Taking 0.0218 % of a block.
 </details>
 
 
-Claim Universal Dividends
+Claim Universal Dividends.
 
 #### transfer_ud - 1
 
@@ -804,7 +805,7 @@ value: BalanceOf<T>
 </details>
 
 
-Transfer some liquid free balance to another account, in milliUD.
+Transfer some liquid free balance to another account in milliUD and keep the account alive.
 
 ### Identity - 41
 
@@ -812,7 +813,7 @@ Transfer some liquid free balance to another account, in milliUD.
 
 <details><summary><code>create_identity(owner_key)</code></summary>
 
-Taking 0.0912 % of a block.
+Taking 0.0914 % of a block.
 
 ```rust
 owner_key: T::AccountId
@@ -830,7 +831,7 @@ The origin must be allowed to create an identity.
 
 <details><summary><code>confirm_identity(idty_name)</code></summary>
 
-Taking 0.0338 % of a block.
+Taking 0.0339 % of a block.
 
 ```rust
 idty_name: IdtyName
@@ -869,7 +870,7 @@ The origin should be the old identity owner key.
 
 <details><summary><code>revoke_identity(idty_index, revocation_key, revocation_sig)</code></summary>
 
-Taking 0.0416 % of a block.
+Taking 0.0417 % of a block.
 
 ```rust
 idty_index: T::IdtyIndex
@@ -901,7 +902,15 @@ inc: bool
 </details>
 
 
-change sufficient ref count for given key
+Change sufficient reference count for a given key.
+
+This function allows a privileged root origin to increment or decrement the sufficient
+reference count associated with a specified owner key.
+
+- `origin` - The origin of the call. It must be root.
+- `owner_key` - The account whose sufficient reference count will be modified.
+- `inc` - A boolean indicating whether to increment (`true`) or decrement (`false`) the count.
+
 
 #### link_account - 8
 
@@ -916,7 +925,14 @@ payload_sig: T::Signature
 </details>
 
 
-Link an account to an identity
+Link an account to an identity.
+
+This function links a specified account to an identity, requiring both the account and the
+identity to sign the operation.
+
+- `origin` - The origin of the call, which must have an associated identity index.
+- `account_id` - The account ID to link, which must sign the payload.
+- `payload_sig` - The signature with the linked identity.
 
 ### Certification - 43
 
@@ -961,7 +977,9 @@ receiver: T::IdtyIndex
 </details>
 
 
-remove a certification (only root)
+Remove one certification given the issuer and the receiver.
+
+- `origin`: Must be `Root`.
 
 #### remove_all_certs_received_by - 2
 
@@ -975,7 +993,9 @@ idty_index: T::IdtyIndex
 </details>
 
 
-remove all certifications received by an identity (only root)
+Remove all certifications received by an identity.
+
+- `origin`: Must be `Root`.
 
 ### Distance - 44
 
@@ -990,9 +1010,11 @@ Taking 0.0325 % of a block.
 </details>
 
 
-Request caller identity to be evaluated
-positive evaluation will result in claim/renew membership
-negative evaluation will result in slash for caller
+Request evaluation of the caller's identity distance.
+
+This function allows the caller to request an evaluation of their distance.
+A positive evaluation will lead to claiming or renewing membership, while a negative
+evaluation will result in slashing for the caller.
 
 #### request_distance_evaluation_for - 4
 
@@ -1006,8 +1028,10 @@ target: T::IdtyIndex
 </details>
 
 
-Request target identity to be evaluated
-only possible for unvalidated identity
+Request evaluation of a target identity's distance.
+
+This function allows the caller to request an evaluation of a specific target identity's distance.
+This action is only permitted for unvalidated identities.
 
 #### update_evaluation - 1
 
@@ -1021,8 +1045,10 @@ computation_result: ComputationResult
 </details>
 
 
-(Inherent) Push an evaluation result to the pool
-this is called internally by validators (= inherent)
+Push an evaluation result to the pool.
+
+This inherent function is called internally by validators to push an evaluation result
+to the evaluation pool.
 
 #### force_update_evaluation - 2
 
@@ -1037,7 +1063,11 @@ computation_result: ComputationResult
 </details>
 
 
-Force push an evaluation result to the pool
+Force push an evaluation result to the pool.
+
+It is primarily used for testing purposes.
+
+- `origin`: Must be `Root`.
 
 #### force_valid_distance_status - 3
 
@@ -1051,7 +1081,11 @@ identity: <T as pallet_identity::Config>::IdtyIndex
 </details>
 
 
-Force set the distance evaluation status of an identity
+Force set the distance evaluation status of an identity.
+
+It is primarily used for testing purposes.
+
+- `origin`: Must be `Root`.
 
 ### AtomicSwap - 50
 
@@ -1307,7 +1341,7 @@ salt: H256
 </details>
 
 
-Request a randomness
+Request randomness.
 
 ### Proxy - 53
 
@@ -2161,7 +2195,7 @@ member_id: T::MemberId
 </details>
 
 
-remove an identity from the set of authorities
+Remove a member from the set of validators.
 
 ### Grandpa - 16
 
@@ -2261,7 +2295,7 @@ O(P) where P is the number of max proposals
 
 <details><summary><code>prune_item_identities_names(names)</code></summary>
 
-Taking 6.0421 % of a block.
+Taking 6.0424 % of a block.
 
 ```rust
 names: Vec<IdtyName>
@@ -2269,7 +2303,13 @@ names: Vec<IdtyName>
 </details>
 
 
-remove identity names from storage
+Remove identity names from storage.
+
+This function allows a privileged root origin to remove multiple identity names from storage
+in bulk.
+
+- `origin` - The origin of the call. It must be root.
+- `names` - A vector containing the identity names to be removed from storage.
 
 ### Utility - 54
 

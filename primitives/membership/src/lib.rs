@@ -27,7 +27,7 @@ use frame_support::pallet_prelude::{RuntimeDebug, Weight};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 
-/// membership events
+/// Represent membership-related events.
 pub enum Event<IdtyId> {
     /// A membership was acquired.
     MembershipAdded(IdtyId),
@@ -37,6 +37,7 @@ pub enum Event<IdtyId> {
     MembershipRenewed(IdtyId),
 }
 
+/// Represent membership data.
 #[derive(
     Encode,
     Decode,

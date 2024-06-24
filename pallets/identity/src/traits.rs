@@ -17,9 +17,9 @@
 use crate::*;
 use frame_support::pallet_prelude::*;
 
-/// A trait defining operations for checking if identity-related calls are allowed.
+/// Trait defining operations for checking if identity-related calls are allowed.
 pub trait CheckIdtyCallAllowed<T: Config> {
-    /// Checks if creating an identity is allowed.
+    /// Check if creating an identity is allowed.
     fn check_create_identity(creator: T::IdtyIndex) -> Result<(), DispatchError>;
 }
 
@@ -31,14 +31,14 @@ impl<T: Config> CheckIdtyCallAllowed<T> for () {
 
 /// Trait to check the worthiness of an account.
 pub trait CheckAccountWorthiness<T: Config> {
-    /// Checks the worthiness of an account.
+    /// Check the worthiness of an account.
     fn check_account_worthiness(account: &T::AccountId) -> Result<(), DispatchError>;
+    /// Set an account as worthy. Only available for runtime benchmarks.
     #[cfg(feature = "runtime-benchmarks")]
     fn set_worthy(account: &T::AccountId);
 }
 
 impl<T: Config> CheckAccountWorthiness<T> for () {
-    /// Default no-op check for account worthiness.
     fn check_account_worthiness(_account: &T::AccountId) -> Result<(), DispatchError> {
         Ok(())
     }
@@ -47,19 +47,19 @@ impl<T: Config> CheckAccountWorthiness<T> for () {
     fn set_worthy(_account: &T::AccountId) {}
 }
 
-/// A trait defining operations for validating identity names.
+/// Trait defining operations for validating identity names.
 pub trait IdtyNameValidator {
-    /// Validates an identity name.
+    /// Validate an identity name.
     fn validate(idty_name: &IdtyName) -> bool;
 }
 
-/// A trait defining behavior for handling new identities creation.
+/// Trait defining behavior for handling new identities creation.
 pub trait OnNewIdty<T: Config> {
     /// Called when a new identity is created.
     fn on_created(idty_index: &T::IdtyIndex, creator: &T::IdtyIndex);
 }
 
-/// A trait defining behavior for handling removed identities.
+/// Trait defining behavior for handling removed identities.
 /// As the weight accounting can be complicated it should be done
 /// at the handler level.
 pub trait OnRemoveIdty<T: Config> {
@@ -83,7 +83,7 @@ impl<T: Config> OnRemoveIdty<T> for () {
     }
 }
 
-/// A trait defining operations for linking identities to accounts.
+/// Trait defining operations for linking identities to accounts.
 pub trait LinkIdty<AccountId, IdtyIndex> {
     /// Links an identity to an account.
     fn link_identity(account_id: &AccountId, idty_index: IdtyIndex) -> Result<(), DispatchError>;

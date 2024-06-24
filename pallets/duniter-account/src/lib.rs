@@ -14,7 +14,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-// Note: refund queue mechanism is inspired from frame contract
+//! # Duniter Account Pallet
+//!
+//! Duniter customizes the `AccountData` of the `Balances` Substrate pallet to include additional fields
+//! such as `linked_idty`.
+//!
+//! ## Sufficiency
+//!
+//! DuniterAccount adjusts the Substrate `AccountInfo` to accommodate identity-linked accounts without requiring
+//! an existential deposit. This flexibility helps reduce barriers to account creation.
+//!
+//! ## Linked Identity
+//!
+//! Duniter allows accounts to be linked to identities using the `linked_idty` field. This linkage facilitates
+//! transaction fee refunds through the `OnChargeTransaction` mechanism.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -74,11 +87,14 @@ pub mod pallet {
     {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        /// Type representing the weight of this pallet
+
+        /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
-        /// wrapped type
+
+        /// A wrapped type that handles the charging of transaction fees.
         type InnerOnChargeTransaction: OnChargeTransaction<Self>;
-        /// type implementing refund behavior
+
+        /// A type that implements the refund behavior for transaction fees.
         type Refund: pallet_quota::traits::RefundFee<Self>;
     }
 
@@ -165,7 +181,7 @@ pub mod pallet {
     // CALLS //
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// unlink the identity associated with the account
+        /// Unlink the identity associated with the account.
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::unlink_identity())]
         pub fn unlink_identity(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -177,7 +193,7 @@ pub mod pallet {
 
     // INTERNAL FUNCTIONS //
     impl<T: Config> Pallet<T> {
-        /// unlink account
+        /// Unlink the account from its associated identity.
         pub fn do_unlink_identity(account_id: T::AccountId) {
             // no-op if account already linked to nothing
             frame_system::Account::<T>::mutate(&account_id, |account| {
@@ -188,7 +204,7 @@ pub mod pallet {
             })
         }
 
-        /// link account to identity
+        /// Link an account to an identity.
         pub fn do_link_identity(account_id: &T::AccountId, idty_id: IdtyIdOf<T>) {
             // no-op if identity does not change
             if frame_system::Account::<T>::get(account_id).data.linked_idty != Some(idty_id) {

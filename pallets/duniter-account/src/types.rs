@@ -19,18 +19,18 @@ use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::traits::Zero;
 
-// see `struct AccountData` for details in substrate code
+/// Account data structure.
+///
+/// For details, refer to `struct AccountData` in Substrate code.
 #[derive(Clone, Decode, Encode, Eq, MaxEncodedLen, PartialEq, RuntimeDebug, TypeInfo)] // Default,
 pub struct AccountData<Balance, IdtyId> {
-    // see Substrate AccountData
+    /// Free balance of the account.
     pub(super) free: Balance,
-    // see Substrate AccountData
+    /// Reserved balance of the account.
     pub(super) reserved: Balance,
-    // see Substrate AccountData
+    /// Frozen fee balance of the account.
     fee_frozen: Balance,
-    /// an optional pointer to an identity
-    // used to know if this account is linked to a member
-    // used in quota system to refund fees
+    /// Optional pointer to an identity used to determine if this account is linked to a member and in the quota system for fee refunds.
     pub linked_idty: Option<IdtyId>,
 }
 

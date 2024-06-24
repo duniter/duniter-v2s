@@ -18,8 +18,9 @@ use sp_staking::{offence::OffenceDetails, SessionIndex};
 
 use crate::SlashStrategy;
 
+/// Trait for handling offences.
 pub trait OnOffenceHandler<Reporter, Offender, Res> {
-    // Required method
+    /// Handle an offence committed by one or more offenders.
     fn on_offence(
         offenders: &[OffenceDetails<Reporter, Offender>],
         slash_strategy: SlashStrategy,

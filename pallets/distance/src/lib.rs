@@ -14,6 +14,54 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Distance Pallet
+//!
+//! The distance pallet utilizes results provided in a file by the `distance-oracle` offchain worker.
+//! At a some point, an inherent is called to submit the results of this file to the blockchain.
+//! The pallet then selects the median of the results (reach perbill) from an evaluation pool and fills the storage with the result status.
+//! The status of an identity can be:
+//!
+//! - **Non-existent**: Distance evaluation has not been requested or has expired.
+//! - **Pending**: Distance evaluation for this identity has been requested and is awaiting results after two evaluation periods.
+//! - **Valid**: Distance has been evaluated positively for this identity.
+//!
+//! The evaluation result is used by the `duniter-wot` pallet to determine if an identity can gain or should lose membership in the web of trust.
+//!
+//! ## Process
+//!
+//! Any account can request a distance evaluation for a given identity provided it has enough currency to reserve. In this case, the distance status is marked as pending, and in the next evaluation period, inherents can start to publish results.
+//!
+//! This is the process for publishing a result:
+//!
+//! 1. A local worker creates a file containing the computation result.
+//! 2. An inherent is created with the data from this file.
+//! 3. The author is registered as an evaluator.
+//! 4. The result is added to the current evaluation pool.
+//! 5. A flag is set to prevent other distance evaluations in the same block.
+//!
+//! At the start of each new evaluation period:
+//!
+//! 1. Old results set to expire at this period are removed.
+//! 2. Results from the current pool (results from the previous period's pool) are processed, and for each identity:
+//!     - The median of the distance results for this identity is chosen.
+//!     - If the distance is acceptable, it is marked as valid.
+//!     - If the distance is not acceptable, the result for this identity is discarded, and reserved currency is slashed (from the account which requested the evaluation).
+//!
+//! Then, in other pallets, when a membership is claimed, it is possible to check if there is a valid distance evaluation for this identity.
+//!
+//! ## Pools
+//!
+//! Evaluation pools consist of two components:
+//!
+//! - A set of evaluators.
+//! - A vector of results.
+//!
+//! The evaluations are divided into three pools:
+//!
+//! - Pool number N - 1 % 3: Results from the previous evaluation period used in the current one (emptied for the next evaluation period).
+//! - Pool number N + 0 % 3: Inherent results are added here.
+//! - Pool number N + 1 % 3: Identities are added here for evaluation.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod median;
@@ -82,40 +130,49 @@ pub mod pallet {
         + pallet_authorship::Config
         + pallet_identity::Config<IdtyIndex = IdtyIndex>
     {
-        /// Currency type used in this pallet (used for reserve/slash)
+        /// Currency type used in this pallet for reserve and slash operations.
         type Currency: Mutate<Self::AccountId>
             + MutateHold<Self::AccountId, Reason = Self::RuntimeHoldReason>
             + Balanced<Self::AccountId>;
-        /// Overarching hold reason.
+
+        /// The overarching hold reason type.
         type RuntimeHoldReason: From<HoldReason>;
-        /// Amount reserved during evaluation
+
+        /// The amount reserved during evaluation.
         #[pallet::constant]
         type EvaluationPrice: Get<BalanceOf<Self>>;
-        /// Evaluation period number of blocks.
-        /// As the evaluation is done using 3 pools,
-        /// the evaluation will take 3 * EvaluationPeriod.
+
+        /// The evaluation period in blocks.
+        /// Since the evaluation uses 3 pools, the total evaluation time will be 3 * EvaluationPeriod.
         #[pallet::constant]
         type EvaluationPeriod: Get<u32>;
-        /// Maximum distance used to define referee's accessibility
-        /// Unused by runtime but needed by client distance oracle
+
+        /// The maximum distance used to define a referee's accessibility.
+        /// This value is not used by the runtime but is needed by the client distance oracle.
         #[pallet::constant]
         type MaxRefereeDistance: Get<u32>;
-        /// Minimum ratio of accessible referees
+
+        /// The minimum ratio of accessible referees required.
         #[pallet::constant]
         type MinAccessibleReferees: Get<Perbill>;
+
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
-        /// Handler for successful distance evaluation
+
+        /// A handler that is called when a distance evaluation is successfully validated.
         type OnValidDistanceStatus: OnValidDistanceStatus<Self>;
-        /// Trait to check that distance evaluation request is allowed
+
+        /// A trait that provides a method to check if a distance evaluation request is allowed.
         type CheckRequestDistanceEvaluation: CheckRequestDistanceEvaluation<Self>;
     }
 
     // STORAGE //
 
-    /// Identities queued for distance evaluation
+    /// The first evaluation pool for distance evaluation queuing identities to evaluate for a given
+    /// evaluator account.
     #[pallet::storage]
     #[pallet::getter(fn evaluation_pool_0)]
     pub type EvaluationPool0<T: Config> = StorageValue<
@@ -126,7 +183,9 @@ pub mod pallet {
         >,
         ValueQuery,
     >;
-    /// Identities queued for distance evaluation
+
+    /// The second evaluation pool for distance evaluation queuing identities to evaluate for a given
+    /// evaluator account.
     #[pallet::storage]
     #[pallet::getter(fn evaluation_pool_1)]
     pub type EvaluationPool1<T: Config> = StorageValue<
@@ -137,7 +196,9 @@ pub mod pallet {
         >,
         ValueQuery,
     >;
-    /// Identities queued for distance evaluation
+
+    /// The third evaluation pool for distance evaluation queuing identities to evaluate for a given
+    /// evaluator account.
     #[pallet::storage]
     #[pallet::getter(fn evaluation_pool_2)]
     pub type EvaluationPool2<T: Config> = StorageValue<
@@ -149,15 +210,12 @@ pub mod pallet {
         ValueQuery,
     >;
 
-    /// Block for which the distance rule must be checked
+    /// The block at which the distance is evaluated.
     #[pallet::storage]
     pub type EvaluationBlock<T: Config> =
         StorageValue<_, <T as frame_system::Config>::Hash, ValueQuery>;
 
-    /// Pending evaluation requesters
-    ///
-    /// account who requested an evaluation and reserved the price,
-    ///   for whom the price will be unreserved or slashed when the evaluation completes.
+    /// The pending evaluation requesters.
     #[pallet::storage]
     #[pallet::getter(fn pending_evaluation_request)]
     pub type PendingEvaluationRequest<T: Config> = StorageMap<
@@ -168,11 +226,11 @@ pub mod pallet {
         OptionQuery,
     >;
 
-    /// Did evaluation get updated in this block?
+    /// Store if the evaluation was updated in this block.
     #[pallet::storage]
     pub(super) type DidUpdate<T: Config> = StorageValue<_, bool, ValueQuery>;
 
-    /// Current evaluation pool.
+    /// The current evaluation pool index.
     #[pallet::storage]
     #[pallet::getter(fn current_pool_index)]
     pub(super) type CurrentPoolIndex<T: Config> = StorageValue<_, u32, ValueQuery>;
@@ -257,9 +315,11 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Request caller identity to be evaluated
-        /// positive evaluation will result in claim/renew membership
-        /// negative evaluation will result in slash for caller
+        /// Request evaluation of the caller's identity distance.
+        ///
+        /// This function allows the caller to request an evaluation of their distance.
+        /// A positive evaluation will lead to claiming or renewing membership, while a negative
+        /// evaluation will result in slashing for the caller.
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::request_distance_evaluation())]
         pub fn request_distance_evaluation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -271,8 +331,10 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Request target identity to be evaluated
-        /// only possible for unvalidated identity
+        /// Request evaluation of a target identity's distance.
+        ///
+        /// This function allows the caller to request an evaluation of a specific target identity's distance.
+        /// This action is only permitted for unvalidated identities.
         #[pallet::call_index(4)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::request_distance_evaluation_for())]
         pub fn request_distance_evaluation_for(
@@ -287,8 +349,10 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// (Inherent) Push an evaluation result to the pool
-        /// this is called internally by validators (= inherent)
+        /// Push an evaluation result to the pool.
+        ///
+        /// This inherent function is called internally by validators to push an evaluation result
+        /// to the evaluation pool.
         #[pallet::call_index(1)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::update_evaluation(MAX_EVALUATIONS_PER_SESSION))]
         pub fn update_evaluation(
@@ -309,8 +373,11 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Force push an evaluation result to the pool
-        // (it is convenient to have this call in end2end tests)
+        /// Force push an evaluation result to the pool.
+        ///
+        /// It is primarily used for testing purposes.
+        ///
+        /// - `origin`: Must be `Root`.
         #[pallet::call_index(2)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::force_update_evaluation(MAX_EVALUATIONS_PER_SESSION))]
         pub fn force_update_evaluation(
@@ -323,8 +390,11 @@ pub mod pallet {
             Pallet::<T>::do_update_evaluation(evaluator, computation_result)
         }
 
-        /// Force set the distance evaluation status of an identity
-        // (it is convenient to have this in test network)
+        /// Force set the distance evaluation status of an identity.
+        ///
+        /// It is primarily used for testing purposes.
+        ///
+        /// - `origin`: Must be `Root`.
         #[pallet::call_index(3)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::force_valid_distance_status())]
         pub fn force_valid_distance_status(
@@ -364,7 +434,7 @@ pub mod pallet {
             }
         }
 
-        /// Mutate the evaluation pool containing the results sent by evaluators on this period.
+        /// Mutate the evaluation pool containing the results sent by evaluators for this period.
         fn mutate_next_pool<
             R,
             F: FnOnce(
@@ -385,7 +455,7 @@ pub mod pallet {
             }
         }
 
-        /// Take (and leave empty) the evaluation pool containing:
+        /// Take (*and leave empty*) the evaluation pool containing:
         /// * when this period begins: the evaluation results to be applied.
         /// * when this period ends: the evaluation requests.
         #[allow(clippy::type_complexity)]
@@ -403,7 +473,7 @@ pub mod pallet {
             }
         }
 
-        /// check that request distance evaluation is allowed
+        /// Check if requested distance evaluation is allowed.
         fn check_request_distance_evaluation_self(
             who: &T::AccountId,
         ) -> Result<<T as pallet_identity::Config>::IdtyIndex, DispatchError> {
@@ -465,7 +535,7 @@ pub mod pallet {
             T::CheckRequestDistanceEvaluation::check_request_distance_evaluation(target)
         }
 
-        /// request distance evaluation in current pool
+        /// Request distance evaluation in the current pool.
         fn do_request_distance_evaluation(
             who: &T::AccountId,
             idty_index: <T as pallet_identity::Config>::IdtyIndex,
@@ -498,7 +568,7 @@ pub mod pallet {
             })
         }
 
-        /// update distance evaluation in next pool
+        /// Update distance evaluation in the next pool.
         fn do_update_evaluation(
             evaluator: <T as frame_system::Config>::AccountId,
             computation_result: ComputationResult,
@@ -532,7 +602,7 @@ pub mod pallet {
             })
         }
 
-        /// Set the distance status using IdtyIndex and AccountId
+        /// Set the distance status using for an identity.
         pub fn do_valid_distance_status(
             idty: <T as pallet_identity::Config>::IdtyIndex,
             distance: Perbill,
@@ -546,6 +616,13 @@ pub mod pallet {
             });
         }
 
+        /// Perform evaluation for a specified pool.
+        ///
+        /// This function executes evaluation logic based on the provided pool index. It retrieves the current
+        /// evaluation pool for the index, processes each evaluation, and handles the outcomes based on the
+        /// computed median distances. If a positive evaluation result is obtained, it releases reserved funds
+        /// and updates the distance status accordingly. For negative or inconclusive results, it slashes funds
+        /// or releases them, respectively.
         pub fn do_evaluation(index: u32) -> Weight {
             let mut weight = <T as pallet::Config>::WeightInfo::do_evaluation_overhead();
             // set evaluation block
