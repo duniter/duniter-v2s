@@ -191,6 +191,8 @@ tests:
   - echo $RELEASE_FILE_RAW_SPEC
   - export RELEASE_FILE_CLIENT_SPEC=release/gdev_client-specs.yaml
   - echo $RELEASE_FILE_CLIENT_SPEC
+  - export CLIENT_RELEASE_NAME=$RUNTIME-$RUNTIME_VERSION-$CLIENT_VERSION
+  - echo $CLIENT_RELEASE_NAME
 
 trigger_network_release:
   stage: build
@@ -413,7 +415,7 @@ create_client_release:
     SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/srtool_output.json
   script:
     - *define_network_branch_vars
-    - cargo xtask release-runtime $NETWORK_RELEASE $CI_COMMIT_BRANCH $RUNTIME_MILESTONE
+    - cargo xtask release-runtime $CLIENT_RELEASE_NAME $NETWORK_RELEASE $CI_COMMIT_BRANCH $RUNTIME_MILESTONE
     - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
     - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_CLIENT_SPEC
     - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_RAW_SPEC
