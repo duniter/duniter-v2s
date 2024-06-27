@@ -293,7 +293,7 @@ g1_data:
     - rm g1-dump.tgz
     - mv tmp/backup-g1-duniter-1.8.7 duniter_default
     # py-g1-migrator conversion
-    - git clone https://git.duniter.org/tools/py-g1-migrator.git --depth 1 --branch hugo/docker /py-g1-migrator
+    - git clone https://git.duniter.org/tools/py-g1-migrator.git --depth 1 /py-g1-migrator
     - cd /py-g1-migrator
     # Export genesis file
     - ./main.py # ./output/genesis.json
@@ -303,7 +303,7 @@ g1_data:
     - ./squid-tx.py # ./output/tx_hist.json
     # Make the exported file available for next jobs
     - mkdir -p $CI_PROJECT_DIR/release/
-    - cp output/genesis.json $RELEASE_FILE_G1_DATA
+    - cp output/genesis.json $CI_PROJECT_DIR/$RELEASE_FILE_G1_DATA
     - cp output/block_hist.json $CI_PROJECT_DIR/release/
     - cp output/cert_hist.json $CI_PROJECT_DIR/release/
     - cp output/tx_hist.json $CI_PROJECT_DIR/release/
