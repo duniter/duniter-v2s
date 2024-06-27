@@ -27,12 +27,14 @@ pub struct CreateReleaseMutation;
 
 pub(super) async fn create_release(
     gitlab_token: String,
+    name: String,
     branch: String,
     milestone: String,
     release_notes: String,
 ) -> Result<()> {
     // this is the important line
     let request_body = CreateReleaseMutation::build_query(create_release_mutation::Variables {
+        name,
         branch,
         description: release_notes,
         milestone,
