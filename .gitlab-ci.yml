@@ -415,9 +415,9 @@ create_client_release:
   script:
     - *define_network_branch_vars
     - cargo xtask release-runtime $CLIENT_RELEASE_NAME $NETWORK_RELEASE $CI_COMMIT_BRANCH $RUNTIME_MILESTONE
-    - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
-    - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_CLIENT_SPEC
-    - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_RAW_SPEC
+    - cargo xtask create-asset-link $CLIENT_RELEASE_NAME ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
+    - cargo xtask create-asset-link $CLIENT_RELEASE_NAME ${RUNTIME}_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_CLIENT_SPEC
+    - cargo xtask create-asset-link $CLIENT_RELEASE_NAME ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_RAW_SPEC
   artifacts:
     expire_in: never
     paths:
