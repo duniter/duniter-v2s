@@ -2480,7 +2480,7 @@ dependencies = [
 
 [[package]]
 name = "duniter"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "async-io",
  "bs58 0.5.1",
