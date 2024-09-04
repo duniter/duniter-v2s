@@ -37,8 +37,7 @@ fn test_imonline_offence() {
         // Construct an offence where all validators (member: 1) are offenders
         let offenders = current_validators
             .into_iter()
-            .enumerate()
-            .filter_map(|(_, id)| {
+            .filter_map(|id| {
                 <<Runtime as im_online::Config>::ValidatorSet as ValidatorSetWithIdentification<
                     sp_runtime::AccountId32,
                 >>::IdentificationOf::convert(id.clone())
@@ -79,8 +78,7 @@ fn test_grandpa_offence() {
         // Construct an offence where all validators (member: 1) are offenders
         let mut offenders = current_validators
             .into_iter()
-            .enumerate()
-            .filter_map(|(_, id)| {
+            .filter_map(|id| {
                 <Runtime as pallet_session::historical::Config>::FullIdentificationOf::convert(
                     id.clone(),
                 )
@@ -124,8 +122,7 @@ fn test_babe_offence() {
         // Construct an offence where all validators (member: 1) are offenders
         let mut offenders = current_validators
             .into_iter()
-            .enumerate()
-            .filter_map(|(_, id)| {
+            .filter_map(|id| {
                 <Runtime as pallet_session::historical::Config>::FullIdentificationOf::convert(
                     id.clone(),
                 )

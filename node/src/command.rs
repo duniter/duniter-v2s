@@ -84,8 +84,9 @@ impl SubstrateCli for Cli {
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         Ok(match id {
             // Development chainspec with generated genesis and Alice as a validator
+            // For benchmarking, the total length of identities should be at least MinReceivedCertToBeAbleToIssueCert + 1
             #[cfg(feature = "gdev")]
-            "dev" => Box::new(chain_spec::gdev::local_testnet_config(1, 3, 4)?),
+            "dev" => Box::new(chain_spec::gdev::local_testnet_config(1, 5, 6)?),
 
             // Local testnet with G1 data, Gdev configuration (parameters & Smiths), and Alice as a validator.
             // Optionally, load configuration from DUNITER_GENESIS_CONFIG file to override default Gdev configuration.
@@ -119,6 +120,10 @@ impl SubstrateCli for Cli {
             "gdev" => Box::new(chain_spec::gdev::ChainSpec::from_json_bytes(
                 &include_bytes!("../specs/gdev-raw.json")[..],
             )?),
+
+            // For benchmarking, the total length of identities should be at least MinReceivedCertToBeAbleToIssueCert + 1
+            #[cfg(feature = "gtest")]
+            "dev" => Box::new(chain_spec::gtest::local_testnet_config(1, 5, 6)?),
 
             // Generate development chainspecs with Alice as a validator.
             // Provide the DUNITER_GTEST_GENESIS environment variable to build genesis from JSON; otherwise, a local testnet with generated genesis will be used.
@@ -157,11 +162,9 @@ impl SubstrateCli for Cli {
                 &include_bytes!("../specs/gtest-raw.json")[..],
             )?),
 
+            // For benchmarking, the total length of identities should be at least MinReceivedCertToBeAbleToIssueCert + 1
             #[cfg(feature = "g1")]
-            "g1" => {
-                unimplemented!()
-                //Box::new(chain_spec::g1::ChainSpec::from_json_file(file_path)?)
-            }
+            "dev" => Box::new(chain_spec::g1::local_testnet_config(1, 5, 6)?),
 
             path => {
                 let path = std::path::PathBuf::from(path);

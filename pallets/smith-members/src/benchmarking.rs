@@ -39,7 +39,8 @@ mod benchmarks {
         let issuer: T::IdtyIndex = 1.into();
         let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
         Pallet::<T>::on_smith_goes_online(1.into());
-        let receiver: T::IdtyIndex = 4.into();
+        // Should be the last identities from the local_testnet_config
+        let receiver: T::IdtyIndex = 6.into();
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller), receiver);
@@ -54,9 +55,10 @@ mod benchmarks {
         Pallet::<T>::on_smith_goes_online(1.into());
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
             RawOrigin::Signed(caller.clone()).into();
-        let receiver: T::IdtyIndex = 4.into();
+        // Should be the last identities from the local_testnet_config
+        let receiver: T::IdtyIndex = 6.into();
         Pallet::<T>::invite_smith(caller_origin, receiver)?;
-        let issuer: T::IdtyIndex = 4.into();
+        let issuer: T::IdtyIndex = 6.into();
         let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
 
         #[extrinsic_call]
@@ -78,7 +80,8 @@ mod benchmarks {
         Pallet::<T>::on_smith_goes_online(1.into());
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
             RawOrigin::Signed(caller.clone()).into();
-        let receiver: T::IdtyIndex = 4.into();
+        // Should be the last identities from the local_testnet_config
+        let receiver: T::IdtyIndex = 6.into();
         Pallet::<T>::invite_smith(caller_origin, receiver)?;
         let issuer: T::IdtyIndex = receiver;
         let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();

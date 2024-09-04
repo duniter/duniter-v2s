@@ -27,6 +27,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 extern crate frame_benchmarking;
 
 pub mod parameters;
+pub mod weights;
 
 pub use self::parameters::*;
 use common_runtime::IdtyNameValidatorImpl;
@@ -67,6 +68,7 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+pub use weights::paritydb_weights::constants::ParityDbWeight as DbWeight;
 
 // A few exports that help ease life for downstream crates.
 use frame_support::instances::Instance2;
@@ -171,6 +173,7 @@ mod benches {
 
 pub struct BaseCallFilter;
 impl Contains<RuntimeCall> for BaseCallFilter {
+    #[cfg(not(feature = "runtime-benchmarks"))]
     fn contains(call: &RuntimeCall) -> bool {
         !matches!(
             call,
@@ -178,6 +181,11 @@ impl Contains<RuntimeCall> for BaseCallFilter {
                 frame_system::Call::remark { .. } | frame_system::Call::remark_with_event { .. }
             ) | RuntimeCall::Session(_)
         )
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn contains(call: &RuntimeCall) -> bool {
+        !matches!(call, RuntimeCall::Session(_))
     }
 }
 

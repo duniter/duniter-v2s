@@ -576,7 +576,6 @@ where
         let client = client.clone();
         let pool = transaction_pool.clone();
         let select_chain = select_chain;
-        let chain_spec = config.chain_spec.cloned_box();
         let keystore = keystore_container.keystore().clone();
         let babe_deps = babe_worker_handle.map(|babe_worker_handle| crate::rpc::BabeDeps {
             babe_worker_handle,
@@ -588,7 +587,6 @@ where
                 client: client.clone(),
                 pool: pool.clone(),
                 select_chain: select_chain.clone(),
-                chain_spec: chain_spec.cloned_box(),
                 deny_unsafe,
                 babe: babe_deps.clone(),
                 command_sink_opt: command_sink_opt.clone(),

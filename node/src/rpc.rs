@@ -51,8 +51,6 @@ pub struct FullDeps<C, P, SC> {
     pub pool: Arc<P>,
     /// The SelectChain Strategy
     pub select_chain: SC,
-    /// A copy of the chain spec.
-    pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
     /// Whether to deny unsafe calls
     pub deny_unsafe: DenyUnsafe,
     /// Manual seal command sink
@@ -88,7 +86,6 @@ where
         client,
         pool,
         select_chain,
-        chain_spec: _,
         deny_unsafe,
         command_sink_opt,
         babe,

@@ -17,8 +17,6 @@
 use crate::{Balance, BlockNumber};
 use sp_runtime::Perbill;
 
-pub use crate::weights::paritydb_weights::constants::ParityDbWeight as DbWeight;
-
 /// This determines the average expected block time that we are targeting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
 /// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked

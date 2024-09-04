@@ -27,6 +27,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 extern crate frame_benchmarking;
 
 pub mod parameters;
+pub mod weights;
 
 pub use self::parameters::*;
 use common_runtime::IdtyNameValidatorImpl;
@@ -66,6 +67,7 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+pub use weights::paritydb_weights::constants::ParityDbWeight as DbWeight;
 
 // A few exports that help ease life for downstream crates.
 use frame_support::instances::Instance2;

@@ -18,8 +18,8 @@ use super::*;
 use crate::chain_spec::gen_genesis_data::{CommonParameters, GenesisIdentity, SessionKeysProvider};
 use common_runtime::{constants::*, entities::IdtyData, GenesisIdty, IdtyStatus};
 use gtest_runtime::{
-    opaque::SessionKeys, pallet_universal_dividend, parameters, AccountId, ImOnlineId, Perbill,
-    Runtime, RuntimeGenesisConfig, WASM_BINARY,
+    opaque::SessionKeys, pallet_universal_dividend, parameters, ImOnlineId, Perbill, Runtime,
+    WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_consensus_grandpa::AuthorityId as GrandpaId;
@@ -29,10 +29,10 @@ use sc_telemetry::TelemetryEndpoints;
 use serde::Deserialize;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
-use sp_core::Get;
+use sp_core::{sr25519, Get};
 use std::{env, fs};
 
-pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig>;
+pub type ChainSpec = sc_service::GenericChainSpec;
 pub type AuthorityKeys = (
     AccountId,
     GrandpaId,
@@ -43,6 +43,7 @@ pub type AuthorityKeys = (
 
 const TOKEN_DECIMALS: usize = 2;
 const TOKEN_SYMBOL: &str = "ĞT";
+static EXISTENTIAL_DEPOSIT: u64 = parameters::ExistentialDeposit::get();
 
 #[derive(Default, Clone, Deserialize)]
 // No parameters for GTest (unlike GDev)
@@ -59,6 +60,49 @@ impl SessionKeysProvider<SessionKeys> for GTestSKP {
             authority_discovery: cloned.4,
         }
     }
+}
+
+/// generate local network chainspects
+pub fn local_testnet_config(
+    initial_authorities_len: usize,
+    initial_smiths_len: usize,
+    initial_identities_len: usize,
+) -> Result<ChainSpec, String> {
+    Ok(ChainSpec::builder(
+        &get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?,
+        None,
+    )
+    .with_name("ĞTest Local Testnet")
+    .with_id("gtest_local")
+    .with_chain_type(ChainType::Local)
+    .with_genesis_config_patch({
+        let genesis_data =
+            gen_genesis_data::generate_genesis_data_for_local_chain::<_, _, SessionKeys, GTestSKP>(
+                // Initial authorities len
+                initial_authorities_len,
+                // Initial smiths len,
+                initial_smiths_len,
+                // Initial identities len
+                initial_identities_len,
+                EXISTENTIAL_DEPOSIT,
+                None,
+                // Sudo account
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                get_parameters,
+            )
+            .expect("Genesis Data must be buildable");
+        genesis_data_to_gtest_genesis_conf(genesis_data)
+    })
+    .with_properties(
+        serde_json::json!({
+            "tokenDecimals": TOKEN_DECIMALS,
+            "tokenSymbol": TOKEN_SYMBOL,
+        })
+        .as_object()
+        .expect("must be a map")
+        .clone(),
+    )
+    .build())
 }
 
 fn get_parameters(_: &Option<GenesisParameters>) -> CommonParameters {

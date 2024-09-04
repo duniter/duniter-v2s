@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-#![cfg(test)]
-
 use crate::{self as pallet_offences, Config, SlashStrategy};
 use codec::Encode;
 use frame_support::{

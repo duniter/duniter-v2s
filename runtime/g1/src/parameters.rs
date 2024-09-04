@@ -57,7 +57,7 @@ parameter_types! {
 
 // ImOnline
 parameter_types! {
-    pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+    pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::MAX;
     pub const MaxPeerInHeartbeats: u32 = 10_000;
     pub const MaxPeerDataEncodingSize: u32 = 1_000;
 }
@@ -67,6 +67,15 @@ parameter_types! {
 /*********/
 
 // Balances
+// Why? Pallet treasury benchmarks are broken because the spend
+// value is hardcoded 100 in benchmark and the account is not provided enough funds
+// to exist if ED > 100.
+#[cfg(feature = "runtime-benchmarks")]
+frame_support::parameter_types! {
+    pub const ExistentialDeposit: Balance = 100;
+    pub const MaxLocks: u32 = 50;
+}
+#[cfg(not(feature = "runtime-benchmarks"))]
 frame_support::parameter_types! {
     pub const ExistentialDeposit: Balance = 200;
     pub const MaxLocks: u32 = 50;

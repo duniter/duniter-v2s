@@ -94,7 +94,7 @@ impl DuniterWorld {
         Output = std::result::Result<Option<Address::Target>, subxt::error::Error>,
     > + 'a
     where
-        Address: subxt::storage::StorageAddress<IsFetchable = subxt::storage::address::Yes> + 'a,
+        Address: subxt::storage::Address<IsFetchable = subxt::custom_values::Yes> + 'a,
     {
         self.client()
             .storage()
@@ -110,9 +110,9 @@ impl DuniterWorld {
         address: &'a Address,
     ) -> impl std::future::Future<Output = std::result::Result<Address::Target, subxt::error::Error>> + 'a
     where
-        Address: subxt::storage::StorageAddress<
-                IsFetchable = subxt::storage::address::Yes,
-                IsDefaultable = subxt::storage::address::Yes,
+        Address: subxt::storage::Address<
+                IsFetchable = subxt::custom_values::Yes,
+                IsDefaultable = subxt::custom_values::Yes,
             > + 'a,
     {
         self.client()
@@ -510,10 +510,13 @@ async fn should_have_distance_result_in_sessions(
 ) -> Result<()> {
     assert!(sessions < 3, "Session number must be < 3");
 
-    let who = AccountKeyring::from_str(&who).unwrap().to_account_id();
+    let who: subxt::utils::AccountId32 = AccountKeyring::from_str(&who)
+        .unwrap()
+        .to_account_id()
+        .into();
 
     let idty_id = world
-        .read(&gdev::storage().identity().identity_index_of(&who.into()))
+        .read(&gdev::storage().identity().identity_index_of(who))
         .await
         .await?
         .unwrap();

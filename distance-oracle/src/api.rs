@@ -108,12 +108,12 @@ pub async fn member_iter(client: &Client, evaluation_block: H256) -> MemberIter 
 pub struct MemberIter(
     subxt::backend::StreamOfResults<
         subxt::storage::StorageKeyValuePair<
-            subxt::storage::Address<
+            subxt::storage::StaticAddress<
                 (),
                 runtime::runtime_types::sp_membership::MembershipData<u32>,
                 (),
                 (),
-                subxt::storage::address::Yes,
+                subxt::utils::Yes,
             >,
         >,
     >,
@@ -143,12 +143,12 @@ pub async fn cert_iter(client: &Client, evaluation_block: H256) -> CertIter {
 pub struct CertIter(
     subxt::backend::StreamOfResults<
         subxt::storage::StorageKeyValuePair<
-            subxt::storage::Address<
+            subxt::storage::StaticAddress<
                 (),
                 Vec<(u32, u32)>,
                 (),
-                subxt::storage::address::Yes,
-                subxt::storage::address::Yes,
+                subxt::utils::Yes,
+                subxt::utils::Yes,
             >,
         >,
     >,

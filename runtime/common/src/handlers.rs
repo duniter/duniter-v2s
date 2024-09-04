@@ -17,6 +17,7 @@
 use super::{entities::*, AccountId, IdtyIndex};
 use frame_support::{pallet_prelude::Weight, traits::UnfilteredDispatchable};
 use pallet_smith_members::SmithRemovalReason;
+use sp_core::Get;
 
 /// OnNewSession handler for the runtime calling all the implementation
 /// of OnNewSession
@@ -108,7 +109,7 @@ impl<
         let mut weight = pallet_duniter_wot::Pallet::<Runtime>::on_removed(idty_index);
 
         let mut add_db_reads_writes = |reads, writes| {
-            weight += crate::constants::DbWeight::get().reads_writes(reads, writes);
+            weight += Runtime::DbWeight::get().reads_writes(reads, writes);
         };
 
         // When membership is removed, call on_removed_member handler which auto claims UD.

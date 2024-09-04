@@ -46,7 +46,6 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
 
 use crate::traits::*;

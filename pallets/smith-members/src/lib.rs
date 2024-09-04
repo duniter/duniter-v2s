@@ -50,7 +50,6 @@ pub mod traits;
 mod types;
 pub mod weights;
 
-#[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
 use codec::{Codec, Decode, Encode};

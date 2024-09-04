@@ -27,7 +27,6 @@ use sp_core::Get;
 use sp_runtime::{traits::Convert, Perquintill};
 #[cfg(not(feature = "constant-fees"))]
 use {
-    crate::weights::extrinsic_weights::ExtrinsicBaseWeight,
     frame_support::pallet_prelude::DispatchClass,
     frame_support::weights::{
         WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -154,7 +153,8 @@ where
         } else {
             // The extrinsic base weight (smallest non-zero weight) is mapped to 5 cents
             let p: Self::Balance = 5u64.into();
-            let q: Self::Balance = Self::Balance::from(ExtrinsicBaseWeight::get().ref_time());
+            let q: Self::Balance =
+                Self::Balance::from(weights.get(DispatchClass::Normal).base_extrinsic.ref_time());
             smallvec![WeightToFeeCoefficient {
                 degree: 1,
                 negative: false,

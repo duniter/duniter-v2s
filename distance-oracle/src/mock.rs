@@ -64,7 +64,10 @@ pub async fn current_pool(
             .zip(0..client.pool_len)
             .map(|(wot_id, _)| {
                 (wot_id.0 as IdtyIndex, unsafe {
-                    std::mem::transmute((Vec::<()>::new(), Option::<u32>::None, 0))
+                    std::mem::transmute::<
+                        (std::vec::Vec<()>, std::option::Option<u32>, i32),
+                        MedianAcc<Perbill>,
+                    >((Vec::<()>::new(), Option::<u32>::None, 0))
                 })
             })
             .collect(),),

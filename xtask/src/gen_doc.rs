@@ -44,7 +44,7 @@ const CALLS_DOC_FILEPATH: &str = "docs/api/runtime-calls.md";
 const EVENTS_DOC_FILEPATH: &str = "docs/api/runtime-events.md";
 const ERRORS_DOC_FILEPATH: &str = "docs/api/runtime-errors.md";
 const TEMPLATES_GLOB: &str = "xtask/res/templates/*.md";
-const WEIGHT_FILEPATH: &str = "runtime/common/src/weights/";
+const WEIGHT_FILEPATH: &str = "runtime/gdev/src/weights/";
 
 // define structs and implementations
 

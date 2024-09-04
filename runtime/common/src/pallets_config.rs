@@ -74,7 +74,7 @@ macro_rules! pallets_config {
             type SS58Prefix = SS58Prefix;
             type SingleBlockMigrations = ();
             /// Weight information for the extrinsics of this pallet.
-            type SystemWeightInfo = common_runtime::weights::frame_system::WeightInfo<Runtime>;
+            type SystemWeightInfo = weights::frame_system::WeightInfo<Runtime>;
             /// Version of the runtime.
             type Version = Version;
         }
@@ -97,7 +97,7 @@ macro_rules! pallets_config {
             type RuntimeEvent = RuntimeEvent;
             type RuntimeOrigin = RuntimeOrigin;
             type ScheduleOrigin = EnsureRoot<AccountId>;
-            type WeightInfo = common_runtime::weights::pallet_scheduler::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_scheduler::WeightInfo<Runtime>;
         }
 
         // ACCOUNT //
@@ -107,7 +107,7 @@ macro_rules! pallets_config {
             type InnerOnChargeTransaction = FungibleAdapter<Balances, HandleFees>;
             type Refund = Quota;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_duniter_account::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_duniter_account::WeightInfo<Runtime>;
         }
 
         // QUOTA //
@@ -130,7 +130,7 @@ macro_rules! pallets_config {
             type RefundAccount = TreasuryAccountId;
             type ReloadRate = ReloadRate;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_quota::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_quota::WeightInfo<Runtime>;
         }
 
         // BLOCK CREATION //
@@ -147,14 +147,14 @@ macro_rules! pallets_config {
                 <Historical as KeyOwnerProofSystem<(KeyTypeId, pallet_babe::AuthorityId)>>::Proof;
             type MaxAuthorities = MaxAuthorities;
             type MaxNominators = MaxNominators;
-            type WeightInfo = common_runtime::weights::pallet_babe::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_babe::WeightInfo<Runtime>;
         }
 
         impl pallet_timestamp::Config for Runtime {
             type MinimumPeriod = MinimumPeriod;
             type Moment = u64;
             type OnTimestampSet = (Babe, UniversalDividend);
-            type WeightInfo = common_runtime::weights::pallet_timestamp::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_timestamp::WeightInfo<Runtime>;
         }
 
         // MONEY MANAGEMENT //
@@ -172,7 +172,7 @@ macro_rules! pallets_config {
             type RuntimeEvent = RuntimeEvent;
             type RuntimeFreezeReason = ();
             type RuntimeHoldReason = RuntimeHoldReason;
-            type WeightInfo = common_runtime::weights::pallet_balances::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_balances::WeightInfo<Runtime>;
         }
 
         type CreditOf = frame_support::traits::tokens::fungible::Credit<AccountId, Balances>;
@@ -208,7 +208,7 @@ macro_rules! pallets_config {
             // when call is not oneshot account, fall back to duniter-account implementation
             type InnerOnChargeTransaction = Account;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_oneshot_account::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_oneshot_account::WeightInfo<Runtime>;
         }
 
         // CONSENSUS  //
@@ -226,8 +226,7 @@ macro_rules! pallets_config {
             type OnOutgoingMember = SmithMembers;
             type RemoveMemberOrigin = EnsureRoot<Self::AccountId>;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo =
-                common_runtime::weights::pallet_authority_members::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_authority_members::WeightInfo<Runtime>;
         }
         impl pallet_authorship::Config for Runtime {
             type EventHandler = ImOnline;
@@ -245,7 +244,7 @@ macro_rules! pallets_config {
             type RuntimeEvent = RuntimeEvent;
             type UnsignedPriority = ImOnlineUnsignedPriority;
             type ValidatorSet = Historical;
-            type WeightInfo = common_runtime::weights::pallet_im_online::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_im_online::WeightInfo<Runtime>;
         }
         impl pallet_offences::Config for Runtime {
             type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
@@ -262,7 +261,7 @@ macro_rules! pallets_config {
             type ShouldEndSession = Babe;
             type ValidatorId = AccountId;
             type ValidatorIdOf = sp_runtime::traits::ConvertInto;
-            type WeightInfo = common_runtime::weights::pallet_session::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_session::WeightInfo<Runtime>;
         }
         impl pallet_session::historical::Config for Runtime {
             type FullIdentification = ValidatorFullIdentification;
@@ -280,7 +279,7 @@ macro_rules! pallets_config {
             type MaxNominators = frame_support::traits::ConstU32<64>;
             type MaxSetIdSessionEntries = MaxSetIdSessionEntries;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_grandpa::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_grandpa::WeightInfo<Runtime>;
         }
         parameter_types! {
             // BondingDuration::get() * SessionsPerEra::get();
@@ -303,7 +302,7 @@ macro_rules! pallets_config {
                 2,
                 3,
             >;
-            type WeightInfo = common_runtime::weights::pallet_upgrade_origin::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_upgrade_origin::WeightInfo<Runtime>;
             #[cfg(feature = "runtime-benchmarks")]
             type WorstCaseOrigin = WorstCaseOrigin;
             #[cfg(feature = "runtime-benchmarks")]
@@ -321,7 +320,7 @@ macro_rules! pallets_config {
             type Currency = Balances;
             type ManagerOrigin = EnsureRoot<AccountId>;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_preimage::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_preimage::WeightInfo<Runtime>;
         }
 
         // UTILITIES //
@@ -342,8 +341,7 @@ macro_rules! pallets_config {
             type RandomnessFromOneEpochAgo = pallet_babe::RandomnessFromOneEpochAgo<Self>;
             type RequestPrice = frame_support::traits::ConstU64<2_000>;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo =
-                common_runtime::weights::pallet_provide_randomness::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_provide_randomness::WeightInfo<Runtime>;
         }
 
         parameter_types! {
@@ -366,7 +364,7 @@ macro_rules! pallets_config {
             type ProxyType = ProxyType;
             type RuntimeCall = RuntimeCall;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_proxy::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_proxy::WeightInfo<Runtime>;
         }
 
         parameter_types! {
@@ -380,14 +378,14 @@ macro_rules! pallets_config {
             type MaxSignatories = MaxSignatories;
             type RuntimeCall = RuntimeCall;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_multisig::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_multisig::WeightInfo<Runtime>;
         }
 
         impl pallet_utility::Config for Runtime {
             type PalletsOrigin = OriginCaller;
             type RuntimeCall = RuntimeCall;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_utility::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
         }
 
         parameter_types! {
@@ -400,7 +398,6 @@ macro_rules! pallets_config {
             pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
         }
         impl pallet_treasury::Config for Runtime {
-            type ApproveOrigin = TreasuryApproveOrigin;
             type AssetKind = ();
             type BalanceConverter = frame_support::traits::tokens::UnityAssetBalanceConversion;
             #[cfg(feature = "runtime-benchmarks")]
@@ -411,20 +408,16 @@ macro_rules! pallets_config {
             type BurnDestination = ();
             type Currency = Balances;
             type MaxApprovals = frame_support::traits::ConstU32<100>;
-            type OnSlash = Treasury;
             type PalletId = TreasuryPalletId;
             type Paymaster =
                 frame_support::traits::tokens::pay::PayFromAccount<Balances, TreasuryAccount>;
             type PayoutPeriod = sp_core::ConstU32<10>;
-            type ProposalBond = ProposalBond;
-            type ProposalBondMaximum = ProposalBondMaximum;
-            type ProposalBondMinimum = frame_support::traits::ConstU64<10_000>;
             type RejectOrigin = TreasuryRejectOrigin;
             type RuntimeEvent = RuntimeEvent;
             type SpendFunds = TreasurySpendFunds<Self>;
             type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
             type SpendPeriod = SpendPeriod;
-            type WeightInfo = common_runtime::weights::pallet_treasury::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
         }
 
         // UNIVERSAL DIVIDEND //
@@ -448,8 +441,7 @@ macro_rules! pallets_config {
             type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
             type UdCreationPeriod = UdCreationPeriod;
             type UdReevalPeriod = UdReevalPeriod;
-            type WeightInfo =
-                common_runtime::weights::pallet_universal_dividend::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_universal_dividend::WeightInfo<Runtime>;
         }
 
         // WEB OF TRUST //
@@ -482,13 +474,13 @@ macro_rules! pallets_config {
             type Signature = Signature;
             type Signer = <Signature as sp_runtime::traits::Verify>::Signer;
             type ValidationPeriod = ValidationPeriod;
-            type WeightInfo = common_runtime::weights::pallet_identity::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_identity::WeightInfo<Runtime>;
         }
 
         impl pallet_sudo::Config for Runtime {
             type RuntimeCall = RuntimeCall;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_sudo::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_sudo::WeightInfo<Runtime>;
         }
 
         impl pallet_membership::Config for Runtime {
@@ -502,7 +494,7 @@ macro_rules! pallets_config {
             type OnNewMembership = OnNewMembershipHandler<Runtime>;
             type OnRemoveMembership = OnRemoveMembershipHandler<Runtime>;
             type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = common_runtime::weights::pallet_membership::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_membership::WeightInfo<Runtime>;
         }
 
         impl pallet_certification::Config for Runtime {
@@ -516,7 +508,7 @@ macro_rules! pallets_config {
             type OnRemovedCert = Wot;
             type RuntimeEvent = RuntimeEvent;
             type ValidityPeriod = ValidityPeriod;
-            type WeightInfo = common_runtime::weights::pallet_certification::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_certification::WeightInfo<Runtime>;
         }
         parameter_types! {
             pub const MinAccessibleReferees: Perbill = Perbill::from_percent(80);
@@ -531,7 +523,7 @@ macro_rules! pallets_config {
             type OnValidDistanceStatus = Wot;
             type RuntimeEvent = RuntimeEvent;
             type RuntimeHoldReason = RuntimeHoldReason;
-            type WeightInfo = common_runtime::weights::pallet_distance::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_distance::WeightInfo<Runtime>;
         }
 
         // SMITH-MEMBERS
@@ -546,7 +538,7 @@ macro_rules! pallets_config {
             type OnSmithDelete = OnSmithDeletedHandler<Runtime>;
             type RuntimeEvent = RuntimeEvent;
             type SmithInactivityMaxDuration = SmithInactivityMaxDuration;
-            type WeightInfo = common_runtime::weights::pallet_smith_members::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_smith_members::WeightInfo<Runtime>;
         }
 
         pub struct TechnicalCommitteeDefaultVote;
@@ -577,7 +569,7 @@ macro_rules! pallets_config {
             type RuntimeEvent = RuntimeEvent;
             type RuntimeOrigin = RuntimeOrigin;
             type SetMembersOrigin = EnsureRoot<AccountId>;
-            type WeightInfo = common_runtime::weights::pallet_collective::WeightInfo<Runtime>;
+            type WeightInfo = weights::pallet_collective::WeightInfo<Runtime>;
         }
     };
 }

@@ -20,8 +20,7 @@ use crate::chain_spec::gen_genesis_data::{
 };
 use common_runtime::{constants::*, entities::IdtyData, GenesisIdty, IdtyStatus};
 use gdev_runtime::{
-    opaque::SessionKeys, pallet_universal_dividend, parameters, Runtime, RuntimeGenesisConfig,
-    WASM_BINARY,
+    opaque::SessionKeys, pallet_universal_dividend, parameters, Runtime, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_network::config::MultiaddrWithPeerId;
@@ -32,7 +31,7 @@ use sp_core::{sr25519, Get};
 use sp_runtime::Perbill;
 use std::{env, fs};
 
-pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig>;
+pub type ChainSpec = sc_service::GenericChainSpec;
 
 type GenesisParameters = gdev_runtime::GenesisParameters<u32, u32, u64, u32>;
 

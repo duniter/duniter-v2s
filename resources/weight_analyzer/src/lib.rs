@@ -47,10 +47,10 @@ pub struct WeightInfo {
 ///
 /// # Arguments
 ///
-/// * `folder_path` - A Path to a folder where the weight files are stored.
-/// `paritydb_weights.rs` is mandatory and pallet weights should start by
-/// `pallet_`.
-/// *`max_block_weight` - The maximal weight of a block.
+///   * `folder_path` - A Path to a folder where the weight files are stored.
+///     `paritydb_weights.rs` is mandatory and pallet weights should start by
+///     `pallet_`.
+///   * `max_block_weight` - The maximal weight of a block.
 ///
 /// # Examples
 ///
@@ -58,7 +58,7 @@ pub struct WeightInfo {
 ///    use weightanalyzer::analyze_weight;
 ///    use std::path::Path;
 ///    use weightanalyzer::MaxBlockWeight;
-///    let weight_by_pallet = analyze_weight(Path::new("../../runtime/common/src/weights/"), &MaxBlockWeight::default());
+///    let weight_by_pallet = analyze_weight(Path::new("../../runtime/gdev/src/weights/"), &MaxBlockWeight::default());
 ///    println!("{:?}", weight_by_pallet);
 /// ```
 pub fn analyze_weight(
@@ -177,7 +177,7 @@ mod tests {
     #[test]
     fn should_works() {
         let weight_by_pallet = analyze_weight(
-            Path::new("../../runtime/common/src/weights/"),
+            Path::new("../../runtime/gdev/src/weights/"),
             &MaxBlockWeight::default(),
         );
         assert!(
@@ -187,7 +187,7 @@ mod tests {
                 .get("Balances")
                 .unwrap()
                 .len()
-                == 8
+                == 10
         ); // 8 extrinsics in pallet
         println!("{:?}", weight_by_pallet); // cargo test  -- --nocapture
     }

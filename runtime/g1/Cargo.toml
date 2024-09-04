@@ -119,6 +119,7 @@ std = [
 	"sp-transaction-pool/std",
 	"sp-version/std",
 	"substrate-wasm-builder",
+	"sp-weights/std",
 ]
 try-runtime = [
 	"common-runtime/try-runtime",
@@ -237,3 +238,4 @@ sp-transaction-pool = { workspace = true }
 sp-version = { workspace = true }
 node-primitives = { workspace = true }
 sp-genesis-builder = { workspace = true }
+sp-weights = { workspace = true }

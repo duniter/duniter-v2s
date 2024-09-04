@@ -14,6 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+#![allow(unused_imports)]
+#![allow(dead_code)]
+
 use crate::chain_spec::{get_account_id_from_seed, get_from_seed, AccountPublic};
 use common_runtime::{
     constants::{DAYS, MILLISECS_PER_BLOCK},
@@ -1611,7 +1614,6 @@ fn decorate_smiths_with_identity(
         .collect()
 }
 
-#[cfg(feature = "gdev")]
 pub fn generate_genesis_data_for_local_chain<P, SK, SessionKeys: Encode, SKP>(
     initial_authorities_len: usize,
     initial_smiths_len: usize,
@@ -1626,6 +1628,7 @@ where
     SK: Decode,
     SKP: SessionKeysProvider<SessionKeys>,
 {
+    // For benchmarking, the total length of identities should be at least MinReceivedCertToBeAbleToIssueCert + 1
     assert!(initial_identities_len <= 6);
     assert!(initial_smiths_len <= initial_identities_len);
     assert!(initial_authorities_len <= initial_smiths_len);
@@ -1770,7 +1773,6 @@ where
     Ok(genesis_data)
 }
 
-#[cfg(feature = "gdev")]
 fn clique_wot(
     initial_identities_len: usize,
 ) -> (
@@ -1797,7 +1799,6 @@ fn clique_wot(
     (certs_by_issuer, count)
 }
 
-#[cfg(feature = "gdev")]
 fn clique_smith_wot(initial_identities_len: usize) -> BTreeMap<IdtyIndex, (bool, Vec<IdtyIndex>)> {
     let mut certs_by_issuer = BTreeMap::new();
     for i in 1..=initial_identities_len {

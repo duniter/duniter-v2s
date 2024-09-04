@@ -105,15 +105,10 @@ impl pallet_transaction_payment::Config for Test {
 }
 impl pallet_oneshot_account::Config for Test {
     type Currency = Balances;
-    type InnerOnChargeTransaction = FungibleAdapter<Balances, HandleFees>;
+    type InnerOnChargeTransaction = FungibleAdapter<Balances, ()>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
-
-pub struct HandleFees;
-type Imbalance =
-    frame_support::traits::fungible::Credit<<Test as frame_system::Config>::AccountId, Balances>;
-impl frame_support::traits::OnUnbalanced<Imbalance> for HandleFees {}
 
 // Build genesis storage according to the mock runtime.
 #[allow(dead_code)]
