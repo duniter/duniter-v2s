@@ -697,6 +697,13 @@ More than `MAX_HASH_UPGRADE_BULK_COUNT` hashes were requested to be upgraded at 
 Too few hashes were requested to be upgraded (i.e. zero).
 </details>
 </li>
+<li>
+<details>
+<summary>
+<code>NoCost</code> - 8</summary>
+No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
+</details>
+</li>
 </ul>
 </li>
 <li>TechnicalCommittee - 23
@@ -1396,28 +1403,21 @@ Too many calls batched.
 <li>
 <details>
 <summary>
-<code>InsufficientProposersBalance</code> - 0</summary>
-Proposer's balance is too low.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>InvalidIndex</code> - 1</summary>
+<code>InvalidIndex</code> - 0</summary>
 No proposal, bounty or spend at that index.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>TooManyApprovals</code> - 2</summary>
+<code>TooManyApprovals</code> - 1</summary>
 Too many approvals in the queue.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>InsufficientPermission</code> - 3</summary>
+<code>InsufficientPermission</code> - 2</summary>
 The spend origin is valid but the amount it is allowed to spend is lower than the
 amount to be spent.
 </details>
@@ -1425,56 +1425,56 @@ amount to be spent.
 <li>
 <details>
 <summary>
-<code>ProposalNotApproved</code> - 4</summary>
+<code>ProposalNotApproved</code> - 3</summary>
 Proposal has not been approved.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>FailedToConvertBalance</code> - 5</summary>
+<code>FailedToConvertBalance</code> - 4</summary>
 The balance of the asset kind is not convertible to the balance of the native asset.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>SpendExpired</code> - 6</summary>
+<code>SpendExpired</code> - 5</summary>
 The spend has expired and cannot be claimed.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>EarlyPayout</code> - 7</summary>
+<code>EarlyPayout</code> - 6</summary>
 The spend is not yet eligible for payout.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>AlreadyAttempted</code> - 8</summary>
+<code>AlreadyAttempted</code> - 7</summary>
 The payment has already been attempted.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>PayoutError</code> - 9</summary>
+<code>PayoutError</code> - 8</summary>
 There was some issue with the mechanism of payment.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NotAttempted</code> - 10</summary>
+<code>NotAttempted</code> - 9</summary>
 The payout was not yet attempted/claimed.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>Inconclusive</code> - 11</summary>
+<code>Inconclusive</code> - 10</summary>
 The payment has neither failed nor succeeded yet.
 </details>
 </li>

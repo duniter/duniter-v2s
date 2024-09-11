@@ -15,9 +15,11 @@ Usage: xtask <COMMAND>
 
 Commands:
   build                Build duniter binary
-  gen-calls-doc        Generate calls documentation
+  gen-doc              Generate documentation (calls and events)
   inject-runtime-code  Inject runtime code in raw specs
   release-runtime      Release a new runtime
+  update-raw-specs     Update raw specs locally with the files published on a Release
+  create-asset-link    Create asset in a release
   test                 Execute unit tests and integration tests End2tests are skipped
   help                 Print this message or the help of the given subcommand(s)
 

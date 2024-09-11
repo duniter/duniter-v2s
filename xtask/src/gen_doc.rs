@@ -43,7 +43,8 @@ where
 const CALLS_DOC_FILEPATH: &str = "docs/api/runtime-calls.md";
 const EVENTS_DOC_FILEPATH: &str = "docs/api/runtime-events.md";
 const ERRORS_DOC_FILEPATH: &str = "docs/api/runtime-errors.md";
-const TEMPLATES_GLOB: &str = "xtask/res/templates/*.md";
+const ERRORS_PO_FILEPATH: &str = "docs/api/runtime-errors.po";
+const TEMPLATES_GLOB: &str = "xtask/res/templates/*.{md,po}";
 const WEIGHT_FILEPATH: &str = "runtime/gdev/src/weights/";
 
 // define structs and implementations
@@ -306,7 +307,7 @@ pub(super) fn gen_doc() -> Result<()> {
         })
     });
 
-    let (call_doc, event_doc, error_doc) = print_runtime(runtime);
+    let (call_doc, event_doc, error_doc, error_po) = print_runtime(runtime);
 
     // Generate docs from rust code
     Command::new("cargo")
@@ -348,6 +349,10 @@ pub(super) fn gen_doc() -> Result<()> {
         .with_context(|| format!("Failed to create file '{}'", ERRORS_DOC_FILEPATH))?;
     file.write_all(error_doc.as_bytes())
         .with_context(|| format!("Failed to write to file '{}'", ERRORS_DOC_FILEPATH))?;
+    let mut file = File::create(ERRORS_PO_FILEPATH)
+        .with_context(|| format!("Failed to create file '{}'", ERRORS_PO_FILEPATH))?;
+    file.write_all(error_po.as_bytes())
+        .with_context(|| format!("Failed to write to file '{}'", ERRORS_PO_FILEPATH))?;
 
     Ok(())
 }
@@ -469,7 +474,7 @@ fn get_weights(max_weight: u128) -> Result<HashMap<String, HashMap<String, Weigh
 }
 
 /// use template to render markdown file with runtime calls documentation
-fn print_runtime(pallets: RuntimePallets) -> (String, String, String) {
+fn print_runtime(pallets: RuntimePallets) -> (String, String, String, String) {
     // init variables
     let mut user_calls_counter = 0;
     let user_calls_pallets: RuntimePallets = pallets
@@ -568,5 +573,9 @@ fn print_runtime(pallets: RuntimePallets) -> (String, String, String) {
         .render("runtime-errors.md", &context)
         .expect("template error");
 
-    (call_doc, event_doc, error_doc)
+    let error_po = tera
+        .render("runtime-errors.po", &context)
+        .expect("template error");
+
+    (call_doc, event_doc, error_doc, error_po)
 }
