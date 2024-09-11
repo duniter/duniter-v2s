@@ -55,7 +55,6 @@ clique_smiths:
   - name: "HugoTrentesaux"
   - name: "tuxmain"
   - name: "1000i100"
-  - name: "vit"
   - name: "cgeek"
     # This smith will be the first author
     session_keys: "0xec6d7141864ca265b1c31a164d258e907e044380ac110c57502135943904137f5a172f9a6759763f59a7e0a4d170b467b744eabb3adb454f38a2e7957fb9cd285a172f9a6759763f59a7e0a4d170b467b744eabb3adb454f38a2e7957fb9cd285a172f9a6759763f59a7e0a4d170b467b744eabb3adb454f38a2e7957fb9cd28"
@@ -67,4 +66,4 @@ treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"
 
 # The technical committee members, to act as sudo
 technical_committee:
-  ["Pini", "moul", "HugoTrentesaux", "tuxmain", "Maaltir", "vit", "cgeek", "poka"]
+  ["Pini", "moul", "HugoTrentesaux", "tuxmain", "cgeek", "poka"]
