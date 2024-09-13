@@ -165,3 +165,17 @@ where
         }
     }
 }
+
+/// Runtime handler OwnerKeyChangePermission.
+pub struct OwnerKeyChangePermissionHandler<Runtime>(core::marker::PhantomData<Runtime>);
+impl<
+        Runtime: frame_system::Config
+            + pallet_identity::Config<IdtyIndex = IdtyIndex>
+            + pallet_authority_members::Config<MemberId = IdtyIndex>,
+    > pallet_identity::traits::CheckKeyChangeAllowed<Runtime>
+    for OwnerKeyChangePermissionHandler<Runtime>
+{
+    fn check_allowed(idty_index: &IdtyIndex) -> bool {
+        !pallet_authority_members::Pallet::<Runtime>::online().contains(idty_index)
+    }
+}

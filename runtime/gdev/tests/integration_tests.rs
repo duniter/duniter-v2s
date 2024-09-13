@@ -1363,6 +1363,31 @@ fn test_link_account() {
 
 /// test change owner key
 #[test]
+fn test_change_owner_key_validator_online() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        let genesis_hash = System::block_hash(0);
+        let alice = AccountKeyring::Alice.to_account_id();
+        let ferdie = AccountKeyring::Ferdie.to_account_id();
+        let payload = (b"icok", genesis_hash, 1u32, alice.clone()).encode();
+        let signature = AccountKeyring::Alice.sign(&payload);
+
+        // Alice is an online validator
+        assert!(pallet_authority_members::OnlineAuthorities::<Runtime>::get().contains(&1));
+
+        // As an online validator she cannot change key
+        assert_noop!(
+            Identity::change_owner_key(
+                frame_system::RawOrigin::Signed(alice.clone()).into(),
+                ferdie.clone(),
+                signature.into()
+            ),
+            pallet_identity::Error::<gdev_runtime::Runtime>::OwnerKeyUsedAsValidator
+        );
+    })
+}
+
+/// test change owner key
+#[test]
 fn test_change_owner_key() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
         let genesis_hash = System::block_hash(0);

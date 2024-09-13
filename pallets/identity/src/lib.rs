@@ -132,6 +132,9 @@ pub mod pallet {
         /// The type used to check account worthiness.
         type CheckAccountWorthiness: CheckAccountWorthiness<Self>;
 
+        /// Handler that checks the necessary permissions for an identity's owner key change.
+        type OwnerKeyChangePermission: CheckKeyChangeAllowed<Self>;
+
         /// Custom data to store in each identity.
         type IdtyData: Clone
             + Codec
@@ -453,6 +456,12 @@ pub mod pallet {
                 Error::<T>::OwnerKeyAlreadyUsed
             );
 
+            // Ensure that the key is not currently as a validator
+            ensure!(
+                T::OwnerKeyChangePermission::check_allowed(&idty_index),
+                Error::<T>::OwnerKeyUsedAsValidator
+            );
+
             let block_number = frame_system::Pallet::<T>::block_number();
             let maybe_old_old_owner_key =
                 if let Some((old_owner_key, last_change)) = idty_value.old_owner_key {
@@ -690,6 +699,8 @@ pub mod pallet {
         AccountNotExist,
         /// Insufficient balance to create an identity.
         InsufficientBalance,
+        /// Owner key currently used as validator.
+        OwnerKeyUsedAsValidator,
     }
 
     // INTERNAL FUNCTIONS //

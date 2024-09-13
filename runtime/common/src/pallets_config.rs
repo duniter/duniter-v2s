@@ -470,6 +470,7 @@ macro_rules! pallets_config {
             type IdtyNameValidator = IdtyNameValidatorImpl;
             type OnNewIdty = OnNewIdtyHandler<Runtime>;
             type OnRemoveIdty = OnRemoveIdtyHandler<Runtime>;
+            type OwnerKeyChangePermission = OwnerKeyChangePermissionHandler<Runtime>;
             type RuntimeEvent = RuntimeEvent;
             type Signature = Signature;
             type Signer = <Signature as sp_runtime::traits::Verify>::Signer;
