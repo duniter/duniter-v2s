@@ -19,16 +19,18 @@ use crate::chain_spec::gen_genesis_data::{
     AuthorityKeys, CommonParameters, GenesisIdentity, SessionKeysProvider,
 };
 use common_runtime::{constants::*, entities::IdtyData, GenesisIdty, IdtyStatus};
-use g1_runtime::{opaque::SessionKeys, parameters, WASM_BINARY};
+use g1_runtime::{
+    opaque::SessionKeys, pallet_universal_dividend, parameters, Runtime, WASM_BINARY,
+};
 use sc_service::ChainType;
 use serde::Deserialize;
-use sp_core::sr25519;
+use sp_core::{sr25519, Get};
 use std::{env, fs};
 
 pub type ChainSpec = sc_service::GenericChainSpec;
 
 #[derive(Default, Clone, Deserialize)]
-// No parameters for GTest (unlike GDev)
+// No parameters for G1 (unlike GDev)
 struct GenesisParameters {}
 
 const TOKEN_DECIMALS: usize = 2;
@@ -49,7 +51,42 @@ impl SessionKeysProvider<SessionKeys> for G1SKP {
 }
 
 fn get_parameters(_parameters_from_file: &Option<GenesisParameters>) -> CommonParameters {
-    CommonParameters::default()
+    CommonParameters {
+        currency_name: TOKEN_SYMBOL.to_string(),
+        decimals: TOKEN_DECIMALS,
+        babe_epoch_duration: parameters::EpochDuration::get(),
+        babe_expected_block_time: parameters::ExpectedBlockTime::get(),
+        babe_max_authorities: parameters::MaxAuthorities::get(),
+        timestamp_minimum_period: parameters::MinimumPeriod::get(),
+        balances_existential_deposit: parameters::ExistentialDeposit::get(),
+        authority_members_max_authorities: parameters::MaxAuthorities::get(),
+        grandpa_max_authorities: parameters::MaxAuthorities::get(),
+        universal_dividend_max_past_reevals:
+            <Runtime as pallet_universal_dividend::Config>::MaxPastReeval::get(),
+        universal_dividend_square_money_growth_rate: parameters::SquareMoneyGrowthRate::get(),
+        universal_dividend_ud_creation_period: parameters::UdCreationPeriod::get() as u64,
+        universal_dividend_ud_reeval_period: parameters::UdReevalPeriod::get() as u64,
+        wot_first_issuable_on: parameters::WotFirstCertIssuableOn::get(),
+        wot_min_cert_for_membership: parameters::WotMinCertForMembership::get(),
+        wot_min_cert_for_create_idty_right: parameters::WotMinCertForCreateIdtyRight::get(),
+        identity_confirm_period: parameters::ConfirmPeriod::get(),
+        identity_change_owner_key_period: parameters::ChangeOwnerKeyPeriod::get(),
+        identity_idty_creation_period: parameters::IdtyCreationPeriod::get(),
+        identity_autorevocation_period: parameters::AutorevocationPeriod::get(),
+        membership_membership_period: parameters::MembershipPeriod::get(),
+        membership_membership_renewal_period: parameters::MembershipRenewalPeriod::get(),
+        cert_max_by_issuer: parameters::MaxByIssuer::get(),
+        cert_min_received_cert_to_be_able_to_issue_cert:
+            parameters::MinReceivedCertToBeAbleToIssueCert::get(),
+        cert_validity_period: parameters::ValidityPeriod::get(),
+        distance_min_accessible_referees: parameters::MinAccessibleReferees::get(),
+        distance_max_depth: parameters::MaxRefereeDistance::get(),
+        smith_sub_wot_min_cert_for_membership: parameters::SmithWotMinCertForMembership::get(),
+        smith_inactivity_max_duration: parameters::SmithInactivityMaxDuration::get(),
+        smith_cert_max_by_issuer: parameters::SmithMaxByIssuer::get(),
+        cert_cert_period: parameters::CertPeriod::get(),
+        treasury_spend_period: <Runtime as pallet_treasury::Config>::SpendPeriod::get(),
+    }
 }
 
 /// generate local network chainspects

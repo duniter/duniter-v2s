@@ -1,3 +1,4 @@
+set -e
 for chain in g1 gtest gdev
 do
   cargo build --release --no-default-features --features runtime-benchmarks,$chain

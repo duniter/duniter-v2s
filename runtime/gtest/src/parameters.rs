@@ -47,6 +47,12 @@ parameter_types! {
     pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
+// Distance
+parameter_types! {
+    pub const MinAccessibleReferees: Perbill = Perbill::from_percent(80);
+    pub const MaxRefereeDistance: u32 = 5;
+}
+
 // Babe
 pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = HOURS;
 parameter_types! {

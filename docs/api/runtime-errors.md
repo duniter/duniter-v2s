@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **190** errors from **35** pallets.
+There are **191** errors from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -984,6 +984,13 @@ Cannot link to an inexisting account.
 <summary>
 <code>InsufficientBalance</code> - 17</summary>
 Insufficient balance to create an identity.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>OwnerKeyUsedAsValidator</code> - 18</summary>
+Owner key currently used as validator.
 </details>
 </li>
 </ul>

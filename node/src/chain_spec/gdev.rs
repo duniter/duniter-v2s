@@ -28,7 +28,6 @@ use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use serde::Deserialize;
 use sp_core::{sr25519, Get};
-use sp_runtime::Perbill;
 use std::{env, fs};
 
 pub type ChainSpec = sc_service::GenericChainSpec;
@@ -86,8 +85,8 @@ fn get_parameters(parameters_from_file: &Option<GenesisParameters>) -> CommonPar
         cert_min_received_cert_to_be_able_to_issue_cert: parameters_from_file
             .cert_min_received_cert_to_issue_cert,
         cert_validity_period: parameters_from_file.cert_validity_period,
-        distance_min_accessible_referees: Perbill::from_percent(80), // TODO: generalize
-        distance_max_depth: 5,                                       // TODO: generalize
+        distance_min_accessible_referees: parameters::MinAccessibleReferees::get(),
+        distance_max_depth: parameters::MaxRefereeDistance::get(),
         smith_sub_wot_min_cert_for_membership: parameters_from_file
             .smith_wot_min_cert_for_membership,
         smith_cert_max_by_issuer: parameters_from_file.smith_cert_max_by_issuer,

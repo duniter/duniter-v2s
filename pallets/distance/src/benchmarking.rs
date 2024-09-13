@@ -54,6 +54,8 @@ mod benchmarks {
 
     #[benchmark]
     fn request_distance_evaluation() {
+        // More than membership renewal to avoid antispam
+        frame_system::pallet::Pallet::<T>::set_block_number(500_000_000u32.into());
         let idty = T::IdtyIndex::one();
         let caller: T::AccountId = pallet_identity::Identities::<T>::get(idty)
             .unwrap()
@@ -78,6 +80,8 @@ mod benchmarks {
 
     #[benchmark]
     fn request_distance_evaluation_for() {
+        // More than membership renewal to avoid antispam
+        frame_system::pallet::Pallet::<T>::set_block_number(500_000_000u32.into());
         let idty = T::IdtyIndex::one();
         let caller: T::AccountId = pallet_identity::Identities::<T>::get(idty)
             .unwrap()
@@ -182,7 +186,8 @@ mod benchmarks {
     fn do_evaluation_success() -> Result<(), BenchmarkError> {
         // Benchmarking do_evaluation in case of a single success.
         CurrentPoolIndex::<T>::put(0);
-        frame_system::pallet::Pallet::<T>::set_block_number(1u32.into());
+        // More than membership renewal to avoid antispam
+        frame_system::pallet::Pallet::<T>::set_block_number(500_000_000u32.into());
         let idty = T::IdtyIndex::one();
         let caller: T::AccountId = pallet_identity::Identities::<T>::get(idty)
             .unwrap()
@@ -225,7 +230,8 @@ mod benchmarks {
     fn do_evaluation_failure() -> Result<(), BenchmarkError> {
         // Benchmarking do_evaluation in case of a single failure.
         CurrentPoolIndex::<T>::put(0);
-        frame_system::pallet::Pallet::<T>::set_block_number(1u32.into());
+        // More than membership renewal to avoid antispam
+        frame_system::pallet::Pallet::<T>::set_block_number(500_000_000u32.into());
         let idty = T::IdtyIndex::one();
         let caller: T::AccountId = pallet_identity::Identities::<T>::get(idty)
             .unwrap()

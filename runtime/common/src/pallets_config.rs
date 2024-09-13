@@ -511,15 +511,13 @@ macro_rules! pallets_config {
             type ValidityPeriod = ValidityPeriod;
             type WeightInfo = weights::pallet_certification::WeightInfo<Runtime>;
         }
-        parameter_types! {
-            pub const MinAccessibleReferees: Perbill = Perbill::from_percent(80);
-        }
+
         impl pallet_distance::Config for Runtime {
             type CheckRequestDistanceEvaluation = Wot;
             type Currency = Balances;
             type EvaluationPeriod = frame_support::traits::ConstU32<7>;
             type EvaluationPrice = frame_support::traits::ConstU64<1000>;
-            type MaxRefereeDistance = frame_support::traits::ConstU32<5>;
+            type MaxRefereeDistance = MaxRefereeDistance;
             type MinAccessibleReferees = MinAccessibleReferees;
             type OnValidDistanceStatus = Wot;
             type RuntimeEvent = RuntimeEvent;

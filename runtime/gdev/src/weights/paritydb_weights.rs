@@ -1,6 +1,6 @@
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2024-07-03 (Y/M/D)
+//! DATE: 2024-09-09 (Y/M/D)
 //! HOSTNAME: `bgallois-ms7d43`, CPU: `12th Gen Intel(R) Core(TM) i3-12100F`
 //!
 //! DATABASE: `ParityDb`, RUNTIME: `Ğdev Local Testnet`
@@ -34,31 +34,31 @@ pub mod constants {
 			/// Calculated by multiplying the *Average* of all values with `2.0` and adding `0`.
 			///
 			/// Stats nanoseconds:
-			///   Min, Max: 768, 1_122_758
-			///   Average:  8_715
-			///   Median:   1_521
-			///   Std-Dev:  88353.03
+			///   Min, Max: 817, 1_099_187
+			///   Average:  8_741
+			///   Median:   1_696
+			///   Std-Dev:  86489.2
 			///
 			/// Percentiles nanoseconds:
-			///   99th: 9_045
-			///   95th: 2_965
-			///   75th: 2_038
-			read: 17_430 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			///   99th: 15_554
+			///   95th: 2_737
+			///   75th: 2_097
+			read: 17_482 * constants::WEIGHT_REF_TIME_PER_NANOS,
 
 			/// Time to write one storage item.
 			/// Calculated by multiplying the *Average* of all values with `2.0` and adding `0`.
 			///
 			/// Stats nanoseconds:
-			///   Min, Max: 3_776, 6_789_246
-			///   Average:  52_344
-			///   Median:   9_935
-			///   Std-Dev:  534281.94
+			///   Min, Max: 3_765, 7_415_709
+			///   Average:  56_955
+			///   Median:   10_926
+			///   Std-Dev:  583595.71
 			///
 			/// Percentiles nanoseconds:
-			///   99th: 32_656
-			///   95th: 14_772
-			///   75th: 12_150
-			write: 104_688 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			///   99th: 19_635
+			///   95th: 15_765
+			///   75th: 13_168
+			write: 113_910 * constants::WEIGHT_REF_TIME_PER_NANOS,
 		};
 	}
 
