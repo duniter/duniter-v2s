@@ -11,10 +11,15 @@ FROM --platform=$BUILDPLATFORM rust:1-bullseye as build
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
+# Debug
+RUN echo "BUILDPLATFORM = $BUILDPLATFORM"
+RUN echo "TARGETPLATFORM = $TARGETPLATFORM"
+
 # We need the target arch triplet in both Debian and rust flavor
 RUN echo "DEBIAN_ARCH_TRIPLET='$(dpkg-architecture -A${TARGETPLATFORM#linux/} -qDEB_TARGET_MULTIARCH)'" >>/root/dynenv
 RUN . /root/dynenv && \
     echo "RUST_ARCH_TRIPLET='$(echo "$DEBIAN_ARCH_TRIPLET" | sed -E 's/-linux-/-unknown&/')'" >>/root/dynenv
+RUN cat /root/dynenv
 
 WORKDIR /root
 
@@ -91,5 +96,9 @@ USER duniter
 
 # Intall
 COPY --from=build /root/build /usr/local/bin/
+COPY --from=build /root/dynenv /var/lib/duniter
 COPY docker/docker-entrypoint /usr/local/bin/
 COPY docker/docker-distance-entrypoint /usr/local/bin/
+
+# Debug
+RUN cat /var/lib/duniter/dynenv

@@ -15,6 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 mod create_asset_link;
+mod create_network_release;
 mod create_release;
 mod get_changes;
 mod get_issues;
@@ -61,42 +62,43 @@ struct CoreVersion {
     //transaction_version: u32,
 }
 
-pub(super) async fn release_runtime(milestone: String, branch: String) -> Result<()> {
-    // TODO: check spec_version in the code and bump if necessary (with a commit)
-    // TODO: create and push a git tag runtime-{spec_version}
-
+pub(super) async fn release_network(network: String, branch: String) -> Result<()> {
     let mut release_notes = String::from(
         "
-# Runtimes
+# Runtime
+
+",
+    );
+    add_srtool_notes(network.clone(), &mut release_notes)?;
+
+    println!("{}", release_notes);
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    create_network_release::create_network_release(
+        gitlab_token,
+        branch,
+        network,
+        release_notes.to_string(),
+    )
+    .await?;
+
+    Ok(())
+}
+
+pub(super) async fn release_runtime(
+    name: String,
+    network: String,
+    branch: String,
+    milestone: String,
+) -> Result<()> {
+    let mut release_notes = String::from(
+        "
+# Runtime
 
 ",
     );
 
-    // Generate release notes
-    let runtimes = vec![
-        ("ĞDev", "SRTOOL_OUTPUT_GDEV"),
-        ("ĞTest", "SRTOOL_OUTPUT_GTEST"),
-        ("Ğ1", "SRTOOL_OUTPUT_G1"),
-    ];
-    for (currency, env_var) in runtimes {
-        if let Ok(sr_tool_output_file) = std::env::var(env_var) {
-            let read = fs::read_to_string(sr_tool_output_file);
-            match read {
-                Ok(sr_tool_output) => {
-                    release_notes.push_str(
-                        gen_release_notes(currency.to_string(), sr_tool_output)
-                            .with_context(|| {
-                                format!("Fail to generate release notes for {}", currency)
-                            })?
-                            .as_str(),
-                    );
-                }
-                Err(e) => {
-                    eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
-                }
-            }
-        }
-    }
+    add_srtool_notes(network, &mut release_notes)?;
 
     // Get changes (list of MRs) from gitlab API
     let changes = get_changes::get_changes(milestone.clone()).await?;
@@ -128,26 +130,59 @@ pub(super) async fn release_runtime(milestone: String, branch: String) -> Result
     println!("{}", release_notes);
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
-    create_release::create_release(gitlab_token, branch, milestone, release_notes.to_string())
-        .await?;
+    create_release::create_release(
+        gitlab_token,
+        name,
+        branch,
+        milestone,
+        release_notes.to_string(),
+    )
+    .await?;
 
     Ok(())
 }
 
-pub(super) async fn update_raw_specs(milestone: String) -> Result<()> {
-    let specs = vec!["gdev-raw.json", "gtest-raw.json", "g1-raw.json"];
-    println!("Fetching release info…");
-    let assets = get_release::get_release(milestone).await?;
-    for spec in specs {
-        if let Some(gdev_raw_specs) = assets.iter().find(|asset| asset.ends_with(spec)) {
-            println!("Downloading {}…", spec);
-            let client = reqwest::Client::new();
-            let res = client.get(gdev_raw_specs).send().await?;
-            let write_to = format!("./node/specs/{}", spec);
-            fs::write(write_to, res.bytes().await?)?;
+fn add_srtool_notes(network: String, release_notes: &mut String) -> Result<()> {
+    // Generate release notes
+    let currency = network.clone();
+    let env_var = "SRTOOL_OUTPUT".to_string();
+
+    if let Ok(sr_tool_output_file) = std::env::var(env_var) {
+        let read = fs::read_to_string(sr_tool_output_file);
+        match read {
+            Ok(sr_tool_output) => {
+                release_notes.push_str(
+                    gen_release_notes(currency.to_string(), sr_tool_output)
+                        .with_context(|| {
+                            format!("Fail to generate release notes for {}", currency)
+                        })?
+                        .as_str(),
+                );
+            }
+            Err(e) => {
+                eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
+            }
         }
     }
-    println!("Done.");
+    Ok(())
+}
+
+pub(super) async fn print_spec(network: String) -> Result<()> {
+    let spec_file = match network.clone() {
+        network if network.starts_with("g1") => "g1.json",
+        network if network.starts_with("gtest") => "gtest.json",
+        network if network.starts_with("gdev") => "gdev.json",
+        _ => {
+            return Err(anyhow!("Invalid network"));
+        }
+    };
+    let assets = get_release::get_release(network).await?;
+    if let Some(gdev_spec) = assets.iter().find(|asset| asset.ends_with(spec_file)) {
+        let client = reqwest::Client::new();
+        let res = client.get(gdev_spec).send().await?;
+        let spec = String::from_utf8(res.bytes().await?.to_vec())?;
+        println!("{}", spec);
+    }
     Ok(())
 }
 
