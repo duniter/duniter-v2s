@@ -195,8 +195,7 @@ trigger_client_release:
     - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && echo "Release présente" || (echo "Release absente" && exit 1)
 
 docker_deploy:
-  stage: release
-  needs: ["build_raw_specs"]
+  stage: build
   rules:
     - <<: *is_network_branch
     - when: never
