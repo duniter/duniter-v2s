@@ -82,9 +82,9 @@ pub use types::*;
 pub use weights::WeightInfo;
 
 use frame_support::traits::{
-    fungible::{self, hold::Balanced, Mutate, MutateHold},
+    fungible::{self, hold, Credit, Mutate, MutateHold},
     tokens::Precision,
-    StorageVersion,
+    OnUnbalanced, StorageVersion,
 };
 use sp_distance::{InherentError, INHERENT_IDENTIFIER};
 use sp_inherents::{InherentData, InherentIdentifier};
@@ -132,7 +132,7 @@ pub mod pallet {
         /// Currency type used in this pallet for reserve and slash operations.
         type Currency: Mutate<Self::AccountId>
             + MutateHold<Self::AccountId, Reason = Self::RuntimeHoldReason>
-            + Balanced<Self::AccountId>;
+            + hold::Balanced<Self::AccountId>;
 
         /// The overarching hold reason type.
         type RuntimeHoldReason: From<HoldReason>;
@@ -154,6 +154,9 @@ pub mod pallet {
         /// The minimum ratio of accessible referees required.
         #[pallet::constant]
         type MinAccessibleReferees: Get<Perbill>;
+
+        /// Handler for unbalanced reduction when invalid distance causes a slash.
+        type OnUnbalanced: OnUnbalanced<Credit<Self::AccountId, Self::Currency>>;
 
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -668,11 +671,12 @@ pub mod pallet {
                             );
                         } else {
                             // Negative result, slash and deposit event
-                            let _ = T::Currency::slash(
+                            let (imbalance, _) = <T::Currency as hold::Balanced<_>>::slash(
                                 &HoldReason::DistanceHold.into(),
                                 &requester,
                                 <T as Config>::EvaluationPrice::get(),
                             );
+                            T::OnUnbalanced::on_unbalanced(imbalance);
                             Self::deposit_event(Event::EvaluatedInvalid {
                                 idty_index: idty,
                                 distance,

@@ -61,13 +61,13 @@ pub async fn run_oracle(
     )
     .await
     {
-        for _ in 0..30 {
+        // Distance evaluation period is 7 blocks
+        for _ in 0..7 {
             super::create_empty_block(&client.rpc).await?;
         }
-
         let _events = create_block_with_extrinsic(
-        &client.rpc,
-        client.client
+            &client.rpc,
+            client.client
                 .tx()
                 .create_signed(
                     &gdev::tx().sudo().sudo(gdev::runtime_types::gdev_runtime::RuntimeCall::Distance(
@@ -86,6 +86,15 @@ pub async fn run_oracle(
                 .await?,
         )
         .await?;
+        /*for event in events.iter() {
+            let event = event.unwrap();
+            println!(
+                "Event: {}::{} -> {:?}\n\n",
+                event.pallet_name(),
+                event.variant_name(),
+                event.field_values()
+            );
+        }*/
     }
 
     Ok(())

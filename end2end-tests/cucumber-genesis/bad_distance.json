@@ -1,0 +1,162 @@
+{
+  "first_ud": null,
+  "first_ud_reeval": null,
+  "genesis_parameters": {
+    "genesis_certs_expire_on": 1000,
+    "genesis_certs_min_received": 2,
+    "genesis_memberships_expire_on": 1000,
+    "genesis_smith_certs_expire_on": 1000,
+    "genesis_smith_certs_min_received": 2,
+    "genesis_smith_memberships_expire_on": 100000
+  },
+  "identities": {
+    "Alice": {
+      "index": 1,
+      "balance": 1000,
+      "certs_received": {
+        "Bob": 2700000000,
+        "Charlie": 2700000000
+      },
+      "owner_address": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": false,
+      "next_cert_issuable_on": 0
+    },
+    "Bob": {
+      "index": 2,
+      "balance": 1000,
+      "certs_received": {
+        "Alice": 2700000000,
+        "Charlie": 2700000000
+      },
+      "owner_address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+      "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": false,
+      "next_cert_issuable_on": 0
+    },
+    "Charlie": {
+      "index": 3,
+      "balance": 1000,
+      "certs_received": {
+        "Alice": 2700000000,
+        "Dave": 2700000000
+      },
+      "owner_address": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+      "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": false,
+      "next_cert_issuable_on": 0
+    },
+    "Dave": {
+      "index": 4,
+      "balance": 1000,
+      "certs_received": {
+        "Charlie": 2700000000,
+        "Eve": 2700000000
+      },
+      "owner_address": "5EWtNo12S57725GF641a6avLkHaXMWnJ5RPoo721GR92gSEt",
+      "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": false,
+      "next_cert_issuable_on": 0
+    },
+    "Eve": {
+      "index": 5,
+      "balance": 1000,
+      "certs_received": {
+        "Dave": 2700000000,
+        "Gertrude": 2700000000
+      },
+      "owner_address": "5EjiXi8p1sCEUevSCQkHom6yUFQY9N5U5xpEofE2N4ZhJ9vs",
+      "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": false,
+      "next_cert_issuable_on": 0
+    },
+    "Gertrude": {
+      "index": 6,
+      "balance": 1000,
+      "certs_received": {
+        "Eve": 2700000000,
+        "Henry": 2700000000,
+        "Irene": 2700000000
+      },
+      "owner_address": "5Hgx76GUW5ETtxTX53BJqzeRtxTASC4AgCPwGDuUjvSuKbC6",
+      "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": false,
+      "next_cert_issuable_on": 0
+    },
+    "Henry": {
+      "index": 7,
+      "balance": 1000,
+      "certs_received": {
+        "Irene": 2700000000,
+        "Gertrude": 2700000000
+      },
+      "owner_address": "5DJZ3Ns49G7B8tr2av53WZorSsMLzvfhPPVeS2RPispMK3Y9",
+      "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": false,
+      "next_cert_issuable_on": 0
+    },
+    "Irene": {
+      "index": 8,
+      "balance": 1000,
+      "certs_received": {
+        "Henry": 2700000000,
+        "Gertrude": 2700000000
+      },
+      "owner_address": "5EqdTcg58VmBfd7DGPj1GJeHahqUEh3fjWH2fS4KRQmhpAjN",
+      "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": false,
+      "next_cert_issuable_on": 0
+    }
+  },
+  "parameters": {
+    "babe_epoch_duration": 30,
+    "cert_period": 15,
+    "cert_max_by_issuer": 10,
+    "cert_min_received_cert_to_issue_cert": 2,
+    "cert_validity_period": 1000,
+    "idty_confirm_period": 40,
+    "idty_creation_period": 50,
+    "membership_period": 1000,
+    "membership_renewal_period": 500,
+    "ud_creation_period": 60000,
+    "ud_reeval_period": 600000,
+    "smith_cert_max_by_issuer": 8,
+    "smith_inactivity_max_duration": 48,
+    "smith_wot_min_cert_for_membership": 2,
+    "wot_first_cert_issuable_on": 20,
+    "wot_min_cert_for_create_idty_right": 2,
+    "wot_min_cert_for_membership": 2
+  },
+  "clique_smiths": [
+    {
+      "name": "Alice"
+    },
+    {
+      "name": "Bob"
+    },
+    {
+      "name": "Charlie"
+    }
+  ],
+  "sudo_key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+  "technical_committee": [
+    "Alice",
+    "Bob",
+    "Charlie"
+  ],
+  "treasury_funder_pubkey": "FHNpKmJrUtusuvKPGomAygQqeiks98bdV6yD61Stb6vg",
+  "ud": 1000,
+  "initial_monetary_mass": 8000,
+  "current_block": {
+    "number": 0,
+    "medianTime": 1700000000
+  }
+}

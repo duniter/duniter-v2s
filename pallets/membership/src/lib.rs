@@ -246,7 +246,7 @@ pub mod pallet {
                 Error::<T>::AlreadyMember
             );
 
-            // enough certifications and distance rule for example
+            // check status and enough certifications
             T::CheckMembershipOpAllowed::check_add_membership(idty_id)?;
             Ok(())
         }
