@@ -6,14 +6,14 @@ When voting for a runtime upgrade, you should check that the proposed hash actua
 mkdir runtime/gdev/target
 chmod o+w runtime/gdev/target
 # Workaround see !239
-echo -e "[toolchain]\nchannel = \"1.74.0\"\ncomponents = [ \"rust-std\", \"rust-src\" ]" > runtime/gdev/rust-toolchain.toml
+echo -e "[toolchain]\nchannel = \"1.77.0\"\ncomponents = [ \"rust-std\", \"rust-src\" ]" > runtime/gdev/rust-toolchain.toml
 docker run \
   -i \
   --rm \
   -e PACKAGE=gdev-runtime \
   -e RUNTIME_DIR=runtime/gdev \
   -v $PWD:/build \
-  paritytech/srtool:1.74.0-0.13.0 build --app --json -cM
+  paritytech/srtool:1.77.0-0.15.0 build --app --json -cM
 ```
 
 Then, the runtime wasm bytecode is generated in this location:
