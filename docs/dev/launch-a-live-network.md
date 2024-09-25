@@ -4,7 +4,7 @@ Launching a new live network is more difficult than spawning a local blockchain.
 
 ## Requirements
 
-In order to build in a standardized environment, you need Docker. 
+In order to build in a standardized environment, you need Docker.
 
 - see docker docs to [install docker](https://docs.docker.com/engine/install/)
 - make sure you can run docker as non-root user with `docker info` or so
@@ -15,10 +15,10 @@ When launching a new network, you're likely to use a new runtime. See how to [re
 
 ### Inject runtime in chainspec
 
-ĞDev runtime is automatically embeded in the raw chainspec with the `include_bytes!` macro. An other way to inject the runtime is to use "inject-runtime-code" xtask:
+~~ĞDev runtime is automatically embeded in the raw chainspec with the `include_bytes!` macro. An other way~~ to inject the runtime is to use "inject-runtime-code" xtask:
 
 ```bash
-cargo xtask inject-runtime-code --runtime runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm --raw-spec resources/gdev-raw.json 
+cargo xtask inject-runtime-code --runtime runtime/gdev/target/srtool/release/wbuild/gdev-runtime/gdev_runtime.compact.compressed.wasm --raw-spec resources/gdev-raw.json
 ```
 
 ## Bootstraping
@@ -108,7 +108,7 @@ You should rotate session keys for more secured keys produced on the server (the
 
 ### Publish image
 
-With these new session keys in the chainspec and the runtime build with srtool, you can release the new runtime again with: 
+With these new session keys in the chainspec and the runtime build with srtool, you can release the new runtime again with:
 
 ```bash
 cargo xtask release-runtime 400
