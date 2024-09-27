@@ -169,6 +169,8 @@ sp-block-builder = { git = 'https://github.com/duniter/duniter-polkadot-sdk', br
 sc-client-db = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.14.0', default-features = false }
 sc-client-api = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.14.0', default-features = false }
 sc-consensus-grandpa = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.14.0', default-features = false }
+sc-rpc = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.14.0', default-features = false }
+sc-consensus-grandpa-rpc = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.14.0', default-features = false }
 sc-consensus-babe = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.14.0', default-features = false }
 sc-consensus-babe-rpc = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.14.0', default-features = false }
 sp-blockchain = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.14.0', default-features = false }

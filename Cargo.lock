@@ -429,13 +429,13 @@ dependencies = [
 [[package]]
 name = "ark-secret-scalar"
 version = "0.0.2"
-source = "git+https://github.com/duniter/ring-vrf#06b60fdb7308c127448ef5799414c45516f6c42b"
+source = "git+https://github.com/duniter/ring-vrf#27a6b9f6aa0c576bc481947dd5e4f3beff0fe327"
 dependencies = [
  "ark-ec",
  "ark-ff",
  "ark-serialize",
  "ark-std",
- "ark-transcript",
+ "ark-transcript 0.0.2 (git+https://github.com/duniter/ring-vrf)",
  "digest 0.10.7",
  "getrandom_or_panic",
  "zeroize",
@@ -478,7 +478,20 @@ dependencies = [
 [[package]]
 name = "ark-transcript"
 version = "0.0.2"
-source = "git+https://github.com/duniter/ring-vrf#06b60fdb7308c127448ef5799414c45516f6c42b"
+source = "git+https://github.com/duniter/ring-vrf#27a6b9f6aa0c576bc481947dd5e4f3beff0fe327"
+dependencies = [
+ "ark-ff",
+ "ark-serialize",
+ "ark-std",
+ "digest 0.10.7",
+ "rand_core",
+ "sha3",
+]
+
+[[package]]
+name = "ark-transcript"
+version = "0.0.2"
+source = "git+https://github.com/w3f/ring-vrf#0fef8266d851932ad25d6b41bc4b34d834d1e11d"
 dependencies = [
  "ark-ff",
  "ark-serialize",
@@ -808,7 +821,7 @@ dependencies = [
 [[package]]
 name = "bandersnatch_vrfs"
 version = "0.0.4"
-source = "git+https://github.com/duniter/ring-vrf#06b60fdb7308c127448ef5799414c45516f6c42b"
+source = "git+https://github.com/duniter/ring-vrf#27a6b9f6aa0c576bc481947dd5e4f3beff0fe327"
 dependencies = [
  "ark-bls12-381",
  "ark-ec",
@@ -1487,7 +1500,7 @@ dependencies = [
 [[package]]
 name = "common"
 version = "0.1.0"
-source = "git+https://github.com/w3f/ring-proof#b273d33f9981e2bb3375ab45faeb537f7ee35224"
+source = "git+https://github.com/w3f/ring-proof#1472ce9cd87cee49c56ce7869a0aba872d837c51"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -1496,8 +1509,7 @@ dependencies = [
  "ark-std",
  "fflonk",
  "getrandom_or_panic",
- "merlin",
- "rand_chacha",
+ "rand_core",
 ]
 
 [[package]]
@@ -2401,7 +2413,7 @@ dependencies = [
 [[package]]
 name = "dleq_vrf"
 version = "0.0.2"
-source = "git+https://github.com/duniter/ring-vrf#06b60fdb7308c127448ef5799414c45516f6c42b"
+source = "git+https://github.com/duniter/ring-vrf#27a6b9f6aa0c576bc481947dd5e4f3beff0fe327"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -2409,7 +2421,7 @@ dependencies = [
  "ark-secret-scalar",
  "ark-serialize",
  "ark-std",
- "ark-transcript",
+ "ark-transcript 0.0.2 (git+https://github.com/duniter/ring-vrf)",
  "arrayvec 0.7.4",
  "zeroize",
 ]
@@ -2516,11 +2528,13 @@ dependencies = [
  "sc-consensus-babe",
  "sc-consensus-babe-rpc",
  "sc-consensus-grandpa",
+ "sc-consensus-grandpa-rpc",
  "sc-consensus-manual-seal",
  "sc-executor",
  "sc-keystore",
  "sc-network",
  "sc-offchain",
+ "sc-rpc",
  "sc-rpc-api",
  "sc-service",
  "sc-telemetry",
@@ -4334,14 +4348,14 @@ checksum = "08afdbb5c31130e3034af566421053ab03787c640246a446327f550d11bcb333"
 dependencies = [
  "futures-util",
  "http 1.1.0",
- "hyper 1.4.0",
+ "hyper 1.3.1",
  "hyper-util",
  "rustls 0.23.10",
  "rustls-pki-types",
  "tokio",
  "tokio-rustls 0.26.0",
  "tower-service",
- "webpki-roots 0.26.3",
+ "webpki-roots 0.26.5",
 ]
 
 [[package]]
@@ -8175,7 +8189,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c7c5fdde3cdae7203427dc4f0a68fe0ed09833edc525a03456b153b79828684"
 dependencies = [
  "bytes",
- "pin-project-lite 0.2.14",
+ "pin-project-lite",
  "quinn-proto 0.11.8",
  "quinn-udp 0.5.4",
  "rustc-hash 2.0.0",
@@ -8550,7 +8564,7 @@ dependencies = [
  "http 1.1.0",
  "http-body 1.0.0",
  "http-body-util",
- "hyper 1.4.0",
+ "hyper 1.3.1",
  "hyper-rustls 0.27.3",
  "hyper-util",
  "ipnet",
@@ -8559,7 +8573,7 @@ dependencies = [
  "mime",
  "once_cell",
  "percent-encoding",
- "pin-project-lite 0.2.14",
+ "pin-project-lite",
  "quinn 0.11.5",
  "rustls 0.23.10",
  "rustls-pemfile 2.1.2",
@@ -8575,7 +8589,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "webpki-roots 0.26.3",
+ "webpki-roots 0.26.5",
  "winreg 0.52.0",
 ]
 
@@ -8602,17 +8616,18 @@ dependencies = [
 [[package]]
 name = "ring"
 version = "0.1.0"
-source = "git+https://github.com/w3f/ring-proof#b273d33f9981e2bb3375ab45faeb537f7ee35224"
+source = "git+https://github.com/w3f/ring-proof#1472ce9cd87cee49c56ce7869a0aba872d837c51"
 dependencies = [
  "ark-ec",
  "ark-ff",
  "ark-poly",
  "ark-serialize",
  "ark-std",
+ "ark-transcript 0.0.2 (git+https://github.com/w3f/ring-vrf)",
+ "arrayvec 0.7.4",
  "blake2 0.10.6",
  "common",
  "fflonk",
- "merlin",
 ]
 
 [[package]]
@@ -9313,6 +9328,26 @@ dependencies = [
  "sp-keystore",
  "sp-runtime",
  "substrate-prometheus-endpoint",
+ "thiserror",
+]
+
+[[package]]
+name = "sc-consensus-grandpa-rpc"
+version = "0.19.0"
+source = "git+https://github.com/duniter/duniter-polkadot-sdk?branch=duniter-substrate-v1.14.0#bcc60f3e4170c3908689252242f40761270c9a51"
+dependencies = [
+ "finality-grandpa",
+ "futures 0.3.30",
+ "jsonrpsee 0.23.2",
+ "log",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sc-consensus-grandpa",
+ "sc-rpc",
+ "serde",
+ "sp-blockchain",
+ "sp-core",
+ "sp-runtime",
  "thiserror",
 ]
 
