@@ -32,7 +32,7 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"distanc0";
 /// Represents the result of a distance computation.
 #[derive(Clone, Decode, Encode, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct ComputationResult {
-    pub distances: sp_std::vec::Vec<Perbill>,
+    pub distances: scale_info::prelude::vec::Vec<Perbill>,
 }
 
 #[derive(Encode, sp_runtime::RuntimeDebug)]

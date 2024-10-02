@@ -210,6 +210,7 @@ impl ExtBuilder {
                     )
                 })
                 .collect::<Vec<_>>(),
+            non_authority_keys: Vec::new(),
         }
         .assimilate_storage(&mut t)
         .unwrap();

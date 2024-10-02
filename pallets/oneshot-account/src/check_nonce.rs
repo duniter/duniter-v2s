@@ -19,7 +19,10 @@ use crate::Config;
 use codec::{Decode, Encode};
 use frame_support::{dispatch::DispatchInfo, traits::IsSubType};
 //use frame_system::Config;
-use scale_info::TypeInfo;
+use scale_info::{
+    prelude::fmt::{Debug, Formatter},
+    TypeInfo,
+};
 use sp_runtime::{
     traits::{DispatchInfoOf, Dispatchable, SignedExtension},
     transaction_validity::{TransactionValidity, TransactionValidityError},
@@ -36,14 +39,14 @@ impl<T: Config> From<frame_system::CheckNonce<T>> for CheckNonce<T> {
     }
 }
 
-impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
+impl<T: Config> Debug for CheckNonce<T> {
     #[cfg(feature = "std")]
-    fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> scale_info::prelude::fmt::Result {
         write!(f, "CheckNonce({})", self.0 .0)
     }
 
     #[cfg(not(feature = "std"))]
-    fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+    fn fmt(&self, _: &mut Formatter) -> scale_info::prelude::fmt::Result {
         Ok(())
     }
 }
@@ -59,7 +62,7 @@ where
 
     const IDENTIFIER: &'static str = "CheckNonce";
 
-    fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+    fn additional_signed(&self) -> Result<(), TransactionValidityError> {
         self.0.additional_signed()
     }
 

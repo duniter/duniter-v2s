@@ -23,7 +23,6 @@ std = [
 	"serde/std",
 	"sp-inherents/std",
 	"sp-runtime/std",
-	"sp-std/std",
 	"thiserror",
 ]
 try-runtime = ["frame-support/try-runtime", "sp-runtime/try-runtime"]
@@ -37,5 +36,4 @@ scale-info = { workspace = true, features = ["derive"] }
 serde = { workspace = true, features = ["derive"] }
 sp-inherents = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 thiserror = { workspace = true, optional = true }

@@ -45,9 +45,9 @@ use core::marker::PhantomData;
 
 use codec::Encode;
 use frame_support::weights::Weight;
+use scale_info::prelude::vec::Vec;
 use sp_runtime::traits::Hash;
 use sp_staking::offence::{Kind, Offence, OffenceDetails, OffenceError, ReportOffence};
-use sp_std::prelude::*;
 
 pub use pallet::*;
 

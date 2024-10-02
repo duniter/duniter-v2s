@@ -80,14 +80,6 @@ pub enum Subcommand {
     /// The pallet benchmarking moved to the `pallet` sub-command.
     #[clap(subcommand)]
     Benchmark(Box<frame_benchmarking_cli::BenchmarkCmd>),
-
-    /// Try some command against runtime state.
-    #[cfg(feature = "try-runtime")]
-    TryRuntime,
-
-    /// Try some command against runtime state. Note: `try-runtime` feature must be enabled.
-    #[cfg(not(feature = "try-runtime"))]
-    TryRuntime,
 }
 
 /// Block authoring scheme to be used by the node

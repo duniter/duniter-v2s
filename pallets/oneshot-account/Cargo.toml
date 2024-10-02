@@ -37,7 +37,6 @@ std = [
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"sp-std/std",
 ]
 
 [package.metadata.docs.rs]
@@ -56,7 +55,6 @@ scale-info = { workspace = true, features = ["derive"] }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 
 [dev-dependencies]
-pallet-balances = { workspace = true }
+pallet-balances = { workspace = true, default-features = true }

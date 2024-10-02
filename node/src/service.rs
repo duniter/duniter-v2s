@@ -27,7 +27,7 @@ use sc_consensus_grandpa::{FinalityProofProvider, SharedVoterState};
 use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_service::{
-    error::Error as ServiceError, Configuration, PartialComponents, TaskManager, WarpSyncParams,
+    error::Error as ServiceError, Configuration, PartialComponents, TaskManager, WarpSyncConfig,
 };
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_consensus_babe::inherents::InherentDataProvider;
@@ -193,9 +193,9 @@ where
         .transpose()?;
 
     #[cfg(feature = "native")]
-    let executor = sc_service::new_native_or_wasm_executor(config);
+    let executor = sc_service::new_native_or_wasm_executor(&config.executor);
     #[cfg(not(feature = "native"))]
-    let executor = sc_service::new_wasm_executor(config);
+    let executor = sc_service::new_wasm_executor(&config.executor);
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts::<Block, RuntimeApi, _>(
@@ -337,7 +337,7 @@ where
         Block,
         <Block as sp_runtime::traits::Block>::Hash,
         N,
-    >::new(&config.network);
+    >::new(&config.network, config.prometheus_registry().cloned());
     let metrics = N::register_notification_metrics(config.prometheus_registry());
     let peer_store_handle = net_config.peer_store_handle();
     let (grandpa_protocol_config, grandpa_notification_service) =
@@ -363,12 +363,12 @@ where
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: None,
-            warp_sync_params: Some(WarpSyncParams::WithProvider(warp_sync)),
+            warp_sync_config: Some(WarpSyncConfig::WithProvider(warp_sync)),
             block_relay: None,
             metrics,
         })?;
 
-    let role = config.role.clone();
+    let role = config.role;
     let force_authoring = config.force_authoring;
     let backoff_authoring_blocks: Option<()> = None;
     let name = config.network.node_name.clone();
@@ -591,7 +591,7 @@ where
         let rpc_setup = shared_voter_state.clone();
 
         Box::new(
-            move |deny_unsafe, subscription_task_executor: SubscriptionTaskExecutor| {
+            move |subscription_task_executor: SubscriptionTaskExecutor| {
                 let grandpa_deps = crate::rpc::GrandpaDeps {
                     shared_voter_state: rpc_setup.clone(),
                     shared_authority_set: shared_authority_set.clone(),
@@ -604,7 +604,6 @@ where
                     client: client.clone(),
                     pool: pool.clone(),
                     select_chain: select_chain.clone(),
-                    deny_unsafe,
                     babe: babe_deps.clone(),
                     grandpa: grandpa_deps,
                     command_sink_opt: command_sink_opt.clone(),

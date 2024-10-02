@@ -25,11 +25,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg(feature = "runtime-benchmarks")]
 use codec::Decode;
-use sp_std::{prelude::*, vec};
 
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_session::*;
+use scale_info::prelude::{vec, vec::Vec};
 
 pub struct Pallet<T: Config>(pallet_session::Pallet<T>);
 pub trait Config: pallet_session::Config {}

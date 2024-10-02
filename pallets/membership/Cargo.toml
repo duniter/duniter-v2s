@@ -26,7 +26,6 @@ std = [
 	"sp-io/std",
 	"sp-membership/std",
 	"sp-runtime/std",
-	"sp-std/std",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
@@ -49,8 +48,7 @@ sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-membership = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 
 [dev-dependencies]
-maplit = { workspace = true }
-sp-io = { workspace = true }
+maplit = { workspace = true, default-features = true }
+sp-io = { workspace = true, default-features = true }

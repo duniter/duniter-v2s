@@ -21,8 +21,6 @@
 
 #![warn(missing_docs)]
 
-pub use sc_rpc_api::DenyUnsafe;
-
 use common_runtime::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use jsonrpsee::RpcModule;
 use sc_consensus_babe::{BabeApi, BabeWorkerHandle};
@@ -70,8 +68,6 @@ pub struct FullDeps<C, P, SC, B> {
     pub pool: Arc<P>,
     /// The SelectChain Strategy
     pub select_chain: SC,
-    /// Whether to deny unsafe calls
-    pub deny_unsafe: DenyUnsafe,
     /// Manual seal command sink
     pub command_sink_opt: Option<
         futures::channel::mpsc::Sender<sc_consensus_manual_seal::EngineCommand<sp_core::H256>>,
@@ -109,7 +105,6 @@ where
         client,
         pool,
         select_chain,
-        deny_unsafe,
         command_sink_opt,
         babe,
         grandpa,
@@ -121,14 +116,7 @@ where
             keystore,
         } = babe;
         module.merge(
-            Babe::new(
-                client.clone(),
-                babe_worker_handle,
-                keystore,
-                select_chain,
-                deny_unsafe,
-            )
-            .into_rpc(),
+            Babe::new(client.clone(), babe_worker_handle, keystore, select_chain).into_rpc(),
         )?;
     }
 
@@ -150,7 +138,7 @@ where
         .into_rpc(),
     )?;
 
-    module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
+    module.merge(System::new(client.clone(), pool).into_rpc())?;
     module.merge(TransactionPayment::new(client).into_rpc())?;
     if let Some(command_sink) = command_sink_opt {
         // We provide the rpc handler with the sending end of the channel to allow the rpc

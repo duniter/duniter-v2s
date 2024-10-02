@@ -46,15 +46,14 @@ use crate::traits::*;
 use codec::Codec;
 use duniter_primitives::Idty;
 use frame_support::{pallet_prelude::*, traits::StorageVersion};
+use scale_info::prelude::{collections::BTreeMap, fmt::Debug, vec::Vec};
 use sp_runtime::traits::AtLeast32BitUnsigned;
-use sp_std::{fmt::Debug, vec::Vec};
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::Saturating;
-    use sp_std::collections::btree_map::BTreeMap;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);

@@ -33,7 +33,7 @@ embed = []
 native = []
 runtime-benchmarks = [
 	"common-runtime/runtime-benchmarks",
-	"dc-distance/runtime-benchmarks",
+	"dc-distance?/runtime-benchmarks",
 	"frame-benchmarking-cli/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
@@ -50,7 +50,7 @@ runtime-benchmarks = [
 try-runtime = [
   "runtime-benchmarks",
 	"common-runtime/try-runtime",
-	"dc-distance/try-runtime",
+	"dc-distance?/try-runtime",
 	"distance-oracle?/try-runtime",
 	"frame-system/try-runtime",
 	"g1-runtime/try-runtime",
@@ -113,21 +113,28 @@ async-io = { workspace = true }
 bs58 = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 clap_complete = { workspace = true }
-common-runtime = { workspace = true }
-dc-distance = { workspace = true }
-distance-oracle = { workspace = true, optional = true }
 frame-benchmarking = { workspace = true }
 frame-benchmarking-cli = { workspace = true }
 frame-system = { workspace = true }
 futures = { workspace = true, features = ["compat"] }
-g1-runtime = { workspace = true, optional = true }
-gdev-runtime = { workspace = true, optional = true }
-gtest-runtime = { workspace = true, optional = true }
 hex = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server"] }
 log = { workspace = true }
 memmap2 = { workspace = true }
 num-format = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+
+# Local
+common-runtime = { workspace = true }
+g1-runtime = { workspace = true, optional = true }
+gdev-runtime = { workspace = true, optional = true }
+gtest-runtime = { workspace = true, optional = true }
+distance-oracle = { workspace = true, optional = true }
+dc-distance = { workspace = true, optional = true }
+
+# Substrate
 pallet-grandpa = { workspace = true, default-features = true }
 pallet-im-online = { workspace = true, default-features = true }
 pallet-transaction-payment = { workspace = true, default-features = true }
@@ -153,9 +160,6 @@ sc-rpc-api = { workspace = true, default-features = true }
 sc-telemetry = { workspace = true, default-features = true }
 sc-transaction-pool = { workspace = true, default-features = true }
 sc-transaction-pool-api = { workspace = true, default-features = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-serde_yaml = { workspace = true }
 sp-api = { workspace = true, default-features = true }
 sp-authority-discovery = { workspace = true, default-features = true }
 sp-block-builder = { workspace = true, default-features = true }

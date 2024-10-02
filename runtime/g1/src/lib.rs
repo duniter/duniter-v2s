@@ -53,6 +53,7 @@ use pallet_session::historical as session_historical;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::FungibleAdapter;
 pub use pallet_universal_dividend;
+use scale_info::prelude::{vec, vec::Vec};
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 #[cfg(any(feature = "std", test))]
@@ -64,7 +65,6 @@ use sp_runtime::{
     ApplyExtrinsicResult, Perquintill,
 };
 pub use sp_runtime::{KeyTypeId, Perbill, Permill};
-use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;

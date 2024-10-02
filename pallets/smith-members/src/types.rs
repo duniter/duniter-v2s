@@ -19,7 +19,7 @@
 use crate::SmithStatus;
 use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;
-use scale_info::TypeInfo;
+use scale_info::{prelude::vec::Vec, TypeInfo};
 use sp_staking::SessionIndex;
 
 /// Represents a certification metadata attached to a Smith identity.
@@ -30,9 +30,9 @@ pub struct SmithMeta<IdtyIndex> {
     /// The session at which the Smith will expire (for lack of validation activity).
     pub expires_on: Option<SessionIndex>,
     /// Certifications issued to other Smiths.
-    pub issued_certs: sp_std::vec::Vec<IdtyIndex>,
+    pub issued_certs: Vec<IdtyIndex>,
     /// Certifications received from other Smiths.
-    pub received_certs: sp_std::vec::Vec<IdtyIndex>,
+    pub received_certs: Vec<IdtyIndex>,
 }
 
 /// By default, a smith has the least possible privileges
@@ -41,8 +41,8 @@ impl<IdtyIndex> Default for SmithMeta<IdtyIndex> {
         Self {
             status: SmithStatus::Excluded,
             expires_on: None,
-            issued_certs: sp_std::vec::Vec::<IdtyIndex>::new(),
-            received_certs: sp_std::vec::Vec::<IdtyIndex>::new(),
+            issued_certs: Vec::<IdtyIndex>::new(),
+            received_certs: Vec::<IdtyIndex>::new(),
         }
     }
 }

@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **191** errors from **35** pallets.
+There are **190** errors from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -695,13 +695,6 @@ More than `MAX_HASH_UPGRADE_BULK_COUNT` hashes were requested to be upgraded at 
 <summary>
 <code>TooFew</code> - 7</summary>
 Too few hashes were requested to be upgraded (i.e. zero).
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>NoCost</code> - 8</summary>
-No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
 </details>
 </li>
 </ul>

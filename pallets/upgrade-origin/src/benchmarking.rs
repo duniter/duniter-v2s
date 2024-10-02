@@ -21,6 +21,7 @@ use super::*;
 use crate::Pallet;
 use frame_benchmarking::v2::*;
 use frame_support::traits::Get;
+use scale_info::prelude::vec;
 
 #[benchmarks]
 mod benchmarks {

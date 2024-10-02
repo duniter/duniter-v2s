@@ -26,6 +26,7 @@ use gdev_runtime::*;
 use pallet_identity::{RevocationPayload, REVOCATION_PAYLOAD_PREFIX};
 use pallet_membership::MembershipRemovalReason;
 use pallet_smith_members::{SmithMeta, SmithStatus};
+use scale_info::prelude::num::NonZeroU16;
 use sp_core::{Encode, Pair};
 use sp_keyring::AccountKeyring;
 use sp_runtime::MultiAddress;
@@ -502,7 +503,7 @@ fn test_identity_creation_workflow() {
                 Some(pallet_identity::IdtyValue {
                     data: IdtyData {
                         first_eligible_ud: pallet_universal_dividend::FirstEligibleUd(Some(
-                            sp_std::num::NonZeroU16::new(first_eligible).unwrap()
+                            NonZeroU16::new(first_eligible).unwrap()
                         ))
                     },
                     next_creatable_identity_on: 0u32,

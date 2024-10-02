@@ -18,7 +18,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;
-use scale_info::TypeInfo;
+use scale_info::{prelude::vec::Vec, TypeInfo};
 use serde::{Deserialize, Serialize};
 
 /// Internal events related to identity.
@@ -83,7 +83,7 @@ pub enum RemovalReason {
     Deserialize,
     TypeInfo,
 )]
-pub struct IdtyName(pub sp_std::vec::Vec<u8>);
+pub struct IdtyName(pub Vec<u8>);
 
 impl From<&str> for IdtyName {
     fn from(s: &str) -> Self {

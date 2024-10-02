@@ -24,7 +24,7 @@ use frame_support::{
         Weight,
     },
 };
-use sp_std::marker::PhantomData;
+use scale_info::prelude::marker::PhantomData;
 
 /// Weight functions for `pallet_grandpa`.
 pub struct WeightInfo<T>(PhantomData<T>);

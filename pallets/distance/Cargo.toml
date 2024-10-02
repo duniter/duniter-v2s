@@ -24,7 +24,6 @@ std = [
 	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
-	"getrandom/std",
 	"pallet-authority-members/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
@@ -38,7 +37,6 @@ std = [
 	"sp-io/std",
 	"sp-keystore/std",
 	"sp-runtime/std",
-	"sp-std/std",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
@@ -61,7 +59,6 @@ codec = { workspace = true, features = ["derive"] }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-getrandom = { workspace = true, features = ["js"] }
 pallet-authority-members = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
@@ -73,8 +70,7 @@ sp-core = { workspace = true }
 sp-distance = { workspace = true }
 sp-inherents = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 
 [dev-dependencies]
-sp-io = { workspace = true }
-sp-keystore = { workspace = true }
+sp-io = { workspace = true, default-features = true }
+sp-keystore = { workspace = true, default-features = true }

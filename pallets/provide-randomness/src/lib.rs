@@ -35,8 +35,8 @@ use frame_support::{
         tokens::{Fortitude, Precision, Preservation},
     },
 };
+use scale_info::prelude::vec::Vec;
 use sp_core::H256;
-use sp_std::prelude::*;
 
 pub use pallet::*;
 pub use types::*;

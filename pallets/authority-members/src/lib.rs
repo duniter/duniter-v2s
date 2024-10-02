@@ -63,9 +63,10 @@ pub use traits::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
+use codec::alloc::borrow::ToOwned;
 use frame_support::traits::Get;
-use sp_runtime::traits::Convert;
-use sp_std::prelude::*;
+use scale_info::prelude::{collections::BTreeMap, vec, vec::Vec};
+use sp_runtime::traits::{Convert, IsMember};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -75,8 +76,6 @@ pub mod pallet {
         traits::{StorageVersion, UnfilteredDispatchable, ValidatorRegistration},
     };
     use frame_system::pallet_prelude::*;
-    use sp_runtime::traits::{Convert, IsMember};
-    use sp_std::{collections::btree_map::BTreeMap, vec};
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -661,7 +660,7 @@ impl<T: Config> pallet_session::historical::SessionManager<T::ValidatorId, T::Fu
 {
     fn new_session(
         new_index: SessionIndex,
-    ) -> Option<sp_std::vec::Vec<(T::ValidatorId, T::FullIdentification)>> {
+    ) -> Option<Vec<(T::ValidatorId, T::FullIdentification)>> {
         <Self as pallet_session::SessionManager<_>>::new_session(new_index).map(|validators_ids| {
             validators_ids
                 .into_iter()
@@ -672,7 +671,7 @@ impl<T: Config> pallet_session::historical::SessionManager<T::ValidatorId, T::Fu
 
     fn new_session_genesis(
         new_index: SessionIndex,
-    ) -> Option<sp_std::vec::Vec<(T::ValidatorId, T::FullIdentification)>> {
+    ) -> Option<Vec<(T::ValidatorId, T::FullIdentification)>> {
         <Self as pallet_session::SessionManager<_>>::new_session_genesis(new_index).map(
             |validators_ids| {
                 validators_ids

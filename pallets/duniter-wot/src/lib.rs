@@ -272,9 +272,8 @@ impl<T: Config> pallet_identity::traits::OnNewIdty<T> for Pallet<T> {
         if let Err(e) =
             <pallet_certification::Pallet<T>>::do_add_cert_checked(*creator, *idty_index, true)
         {
-            sp_std::if_std! {
-                println!("fail to force add cert: {:?}", e)
-            }
+            #[cfg(feature = "std")]
+            println!("fail to force add cert: {:?}", e)
         }
     }
 }
@@ -392,9 +391,11 @@ impl<T: Config + pallet_distance::Config> pallet_distance::traits::OnValidDistan
         } else {
             // identity was removed before distance status was found
             // so it's ok to do nothing
-            sp_std::if_std! {
-                println!("identity was removed before distance status was found: {:?}", idty_index);
-            }
+            #[cfg(feature = "std")]
+            println!(
+                "identity was removed before distance status was found: {:?}",
+                idty_index
+            );
         }
     }
 }

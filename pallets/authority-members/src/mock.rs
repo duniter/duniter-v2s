@@ -168,6 +168,8 @@ pub fn new_test_ext(initial_authorities_len: u64) -> sp_io::TestExternalities {
         .map(|i| (i * 3, i * 3, UintAuthorityId(i * 3).into()))
         .collect();
 
+    let non_authority_keys = Vec::default();
+
     let mut t = frame_system::GenesisConfig::<Test>::default()
         .build_storage()
         .unwrap();
@@ -184,9 +186,12 @@ pub fn new_test_ext(initial_authorities_len: u64) -> sp_io::TestExternalities {
     }
     .assimilate_storage(&mut t)
     .unwrap();
-    pallet_session::GenesisConfig::<Test> { keys }
-        .assimilate_storage(&mut t)
-        .unwrap();
+    pallet_session::GenesisConfig::<Test> {
+        keys,
+        non_authority_keys,
+    }
+    .assimilate_storage(&mut t)
+    .unwrap();
     sp_io::TestExternalities::new(t)
 }
 

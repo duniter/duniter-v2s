@@ -55,8 +55,8 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
+use scale_info::prelude::vec::Vec;
 use sp_runtime::traits::Zero;
-use sp_std::{fmt::Debug, vec::Vec};
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]

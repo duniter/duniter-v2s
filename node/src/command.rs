@@ -362,12 +362,6 @@ pub fn run() -> sc_cli::Result<()> {
             You can enable it with `--features runtime-benchmarks`."
                 .into())
         }
-        #[cfg(feature = "try-runtime")]
-        Some(Subcommand::TryRuntime) => Err(try_runtime_cli::DEPRECATION_NOTICE.into()),
-        #[cfg(not(feature = "try-runtime"))]
-        Some(Subcommand::TryRuntime) => Err("TryRuntime wasn't enabled when building the node. \
-				You can enable it with `--features try-runtime`."
-            .into()),
         None => {
             let runner = cli.create_runner(&cli.run)?;
             runner.run_node_until_exit(|mut config| async move {

@@ -27,8 +27,8 @@ use frame_support::{
     dispatch::{GetDispatchInfo, PostDispatchInfo},
     traits::{IsSubType, UnfilteredDispatchable},
 };
+use scale_info::prelude::boxed::Box;
 use sp_runtime::traits::Dispatchable;
-use sp_std::prelude::*;
 
 #[frame_support::pallet]
 pub mod pallet {

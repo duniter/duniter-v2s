@@ -36,6 +36,7 @@
 /// and can be activated with the #[cfg(feature = "constant-fees")] feature.
 pub use frame_support::weights::{Weight, WeightToFee};
 use pallet_transaction_payment::{Multiplier, MultiplierUpdate};
+use scale_info::prelude::marker::PhantomData;
 use sp_arithmetic::traits::{BaseArithmetic, Unsigned};
 use sp_core::Get;
 use sp_runtime::{traits::Convert, Perquintill};
@@ -58,9 +59,9 @@ use {
 /// - `Runtime`: The system configuration type, providing access to block weights.
 /// - `Target`: A type providing the target block fullness.
 pub struct LengthToFeeImpl<Balance, Runtime, Target>(
-    sp_std::marker::PhantomData<Balance>,
-    sp_std::marker::PhantomData<Runtime>,
-    sp_std::marker::PhantomData<Target>,
+    PhantomData<Balance>,
+    PhantomData<Runtime>,
+    PhantomData<Target>,
 );
 
 /// Trait implementation for converting transaction length to fee.
@@ -126,9 +127,9 @@ where
 /// - `Runtime`: The system configuration type, providing access to block weights.
 /// - `Target`: A type providing the target block fullness.
 pub struct WeightToFeeImpl<Balance, Runtime, Target>(
-    sp_std::marker::PhantomData<Balance>,
-    sp_std::marker::PhantomData<Runtime>,
-    sp_std::marker::PhantomData<Target>,
+    PhantomData<Balance>,
+    PhantomData<Runtime>,
+    PhantomData<Target>,
 );
 
 /// Trait implementation for converting transaction weight to fee.
@@ -210,9 +211,9 @@ where
 /// - `Target`: A type providing the target block fullness.
 /// - `MaxMultiplier`: A type providing the maximum multiplier value.
 pub struct FeeMultiplier<Runtime, Target, MaxMultiplier>(
-    sp_std::marker::PhantomData<Runtime>,
-    sp_std::marker::PhantomData<Target>,
-    sp_std::marker::PhantomData<MaxMultiplier>,
+    PhantomData<Runtime>,
+    PhantomData<Target>,
+    PhantomData<MaxMultiplier>,
 );
 
 /// Trait implementation for updating the fee multiplier.

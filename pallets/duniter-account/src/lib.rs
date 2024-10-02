@@ -55,8 +55,11 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use pallet_quota::traits::RefundFee;
 use pallet_transaction_payment::OnChargeTransaction;
+use scale_info::prelude::{
+    collections::{BTreeMap, BTreeSet},
+    fmt::Debug,
+};
 use sp_runtime::traits::{DispatchInfoOf, PostDispatchInfoOf, Saturating};
-use sp_std::fmt::Debug;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -101,10 +104,7 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub accounts: sp_std::collections::btree_map::BTreeMap<
-            T::AccountId,
-            GenesisAccountData<T::Balance, IdtyIdOf<T>>,
-        >,
+        pub accounts: BTreeMap<T::AccountId, GenesisAccountData<T::Balance, IdtyIdOf<T>>>,
         pub treasury_balance: T::Balance,
     }
 
@@ -130,11 +130,7 @@ pub mod pallet {
             );
 
             // ensure no duplicate
-            let endowed_accounts = self
-                .accounts
-                .keys()
-                .cloned()
-                .collect::<sp_std::collections::btree_set::BTreeSet<_>>();
+            let endowed_accounts = self.accounts.keys().cloned().collect::<BTreeSet<_>>();
 
             assert!(
                 endowed_accounts.len() == self.accounts.len(),

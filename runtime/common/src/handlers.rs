@@ -159,9 +159,8 @@ where
             member_id: idty_index,
         };
         if let Err(e) = call.dispatch_bypass_filter(frame_system::Origin::<Runtime>::Root.into()) {
-            sp_std::if_std! {
-                println!("faid to remove member: {:?}", e)
-            }
+            #[cfg(feature = "std")]
+            println!("faid to remove member: {:?}", e)
         }
     }
 }

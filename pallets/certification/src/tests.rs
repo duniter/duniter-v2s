@@ -17,7 +17,7 @@
 use crate::{mock::*, Error, Event};
 use frame_support::{assert_noop, assert_ok};
 use maplit::btreemap;
-use sp_std::collections::btree_map::BTreeMap;
+use scale_info::prelude::{collections::BTreeMap, vec};
 
 #[test]
 fn test_must_receive_cert_before_can_issue() {

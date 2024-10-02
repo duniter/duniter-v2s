@@ -60,9 +60,11 @@ use frame_support::{
     pallet_prelude::{Get, RuntimeDebug, Weight},
 };
 use frame_system::{ensure_signed, pallet_prelude::OriginFor};
-use scale_info::TypeInfo;
+use scale_info::{
+    prelude::{collections::BTreeMap, fmt::Debug, vec, vec::Vec},
+    TypeInfo,
+};
 use sp_runtime::traits::{AtLeast32BitUnsigned, IsMember};
-use sp_std::{fmt::Debug, prelude::*};
 
 use crate::traits::OnSmithDelete;
 pub use crate::weights::WeightInfo;
@@ -100,7 +102,6 @@ pub mod pallet {
     use frame_support::{pallet_prelude::*, traits::StorageVersion};
     use pallet_authority_members::SessionIndex;
     use sp_runtime::traits::{Convert, IsMember};
-    use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 

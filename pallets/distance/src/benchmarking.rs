@@ -23,6 +23,7 @@ use codec::Encode;
 use frame_benchmarking::v2::*;
 use frame_support::traits::{Get, OnFinalize, OnInitialize};
 use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
+use scale_info::prelude::vec;
 use sp_runtime::Perbill;
 
 use crate::Pallet;

@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use frame_support::pallet_prelude::*;
-use sp_std::cmp::Ordering;
+use scale_info::prelude::cmp::Ordering;
 
 /// Represents a median accumulator.
 #[derive(Clone, Debug, Decode, Default, Encode, TypeInfo)]

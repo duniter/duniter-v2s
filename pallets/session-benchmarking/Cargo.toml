@@ -12,12 +12,12 @@ version.workspace = true
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+codec = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-system = { workspace = true }
 pallet-session = { workspace = true }
-sp-std = { workspace = true }
+scale-info = { workspace = true, features = ["derive"] }
 sp-runtime = { workspace = true }
-codec = { workspace = true }
 
 [features]
 default = ["std"]
@@ -27,7 +27,6 @@ std = [
 	"frame-system/std",
 	"pallet-session/std",
 	"sp-runtime/std",
-	"sp-std/std",
 ]
 try-runtime = [
 	"frame-system/try-runtime",
