@@ -174,16 +174,9 @@ mod benches {
 }
 
 pub struct BaseCallFilter;
-
-// implement filter
 impl Contains<RuntimeCall> for BaseCallFilter {
     fn contains(call: &RuntimeCall) -> bool {
-        !matches!(
-            call,
-            // session calls can not be called directly
-            // it should be done through authority-members pallet
-            RuntimeCall::Session(_)
-        )
+        !matches!(call, RuntimeCall::Session(_))
     }
 }
 

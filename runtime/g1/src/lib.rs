@@ -173,17 +173,6 @@ mod benches {
 
 pub struct BaseCallFilter;
 impl Contains<RuntimeCall> for BaseCallFilter {
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    fn contains(call: &RuntimeCall) -> bool {
-        !matches!(
-            call,
-            RuntimeCall::System(
-                frame_system::Call::remark { .. } | frame_system::Call::remark_with_event { .. }
-            ) | RuntimeCall::Session(_)
-        )
-    }
-
-    #[cfg(feature = "runtime-benchmarks")]
     fn contains(call: &RuntimeCall) -> bool {
         !matches!(call, RuntimeCall::Session(_))
     }

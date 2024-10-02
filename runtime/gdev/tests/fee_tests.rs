@@ -22,7 +22,6 @@ use common::*;
 use frame_support::{assert_ok, pallet_prelude::DispatchClass};
 use gdev_runtime::*;
 use sp_keyring::AccountKeyring;
-use sp_runtime::Perquintill;
 
 /// This test checks that an almost empty block incurs no fees for an extrinsic.
 #[test]
@@ -39,8 +38,14 @@ fn test_fees_empty() {
                 value: 500,
             });
 
-            let xt =
-                common::get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 0u64, 0);
+            let xt = common::get_unchecked_extrinsic(
+                call,
+                4u64,
+                8u64,
+                AccountKeyring::Alice,
+                0u64,
+                0u32,
+            );
             assert_ok!(Executive::apply_extrinsic(xt));
             // The block is almost empty, so the extrinsic should incur no fee
             assert_eq!(
@@ -62,35 +67,25 @@ fn test_fees_weight() {
         ])
         .build()
         .execute_with(|| {
-            let mut transactions = 0u64;
             let weights = BlockWeights::get();
             let normal_max_weight = weights
                 .get(DispatchClass::Normal)
                 .max_total
                 .unwrap_or(weights.max_block);
-            // Stopping just below the limit
-            while System::block_weight()
-                .get(DispatchClass::Normal)
-                .all_lt(Target::get() * normal_max_weight * Perbill::from_percent(99))
-            {
-                let call = RuntimeCall::System(SystemCall::remark {
-                    remark: vec![255u8; 1],
-                });
-                let xt = get_unchecked_extrinsic(
-                    call,
-                    4u64,
-                    8u64,
-                    AccountKeyring::Alice,
-                    0u64,
-                    transactions as u32,
-                );
-                assert_ok!(Executive::apply_extrinsic(xt));
-                transactions += 1;
-            }
+
+            // Ensure that the next extrinsic is below the limit.
+            System::set_block_consumed_resources(Weight::zero(), 0_usize);
+
+            let call = RuntimeCall::System(SystemCall::remark {
+                remark: vec![255u8; 1],
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 0u64, 0);
+            assert_ok!(Executive::apply_extrinsic(xt));
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Alice.to_account_id()),
                 10_000
             );
+
             // Ensure that the next extrinsic exceeds the limit.
             System::set_block_consumed_resources(Target::get() * normal_max_weight, 0_usize);
             // The block will reach the fee limit, so the next extrinsic should start incurring fees.
@@ -98,14 +93,7 @@ fn test_fees_weight() {
                 remark: vec![255u8; 1],
             });
 
-            let xt = get_unchecked_extrinsic(
-                call,
-                4u64,
-                8u64,
-                AccountKeyring::Alice,
-                0u64,
-                transactions as u32,
-            );
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 0u64, 1u32);
             assert_ok!(Executive::apply_extrinsic(xt));
             assert_ne!(
                 Balances::free_balance(AccountKeyring::Alice.to_account_id()),
@@ -126,33 +114,34 @@ fn test_fees_length() {
         ])
         .build()
         .execute_with(|| {
-            let mut transactions = 0u64;
             let length = BlockLength::get();
             let normal_max_length = *length.max.get(DispatchClass::Normal) as u64;
 
-            // Stopping just below the limit
-            while u64::from(System::all_extrinsics_len())
-                < (Target::get() * Perquintill::from_percent(99) * normal_max_length)
-            {
-                let call = RuntimeCall::System(SystemCall::remark {
-                    remark: vec![255u8; 1_000],
-                });
-                let xt = get_unchecked_extrinsic(
-                    call,
-                    4u64,
-                    8u64,
-                    AccountKeyring::Alice,
-                    0u64,
-                    transactions as u32,
-                );
-                assert_ok!(Executive::apply_extrinsic(xt));
-                transactions += 1;
-            }
+            // Ensure that the next extrinsic is below the limit.
+            System::set_block_consumed_resources(Weight::zero(), 0usize);
+            let call = RuntimeCall::System(SystemCall::remark {
+                remark: vec![255u8; 100],
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 0u64, 0u32);
+            assert_ok!(Executive::apply_extrinsic(xt));
             assert_eq!(
                 Balances::free_balance(AccountKeyring::Alice.to_account_id()),
                 10_000
             );
-            // Ensure that the next extrinsic exceeds the limit.
+
+            // Ensure that the next extrinsic exceeds the extrinsic limit.
+            System::set_block_consumed_resources(Weight::zero(), 0usize);
+            let call = RuntimeCall::System(SystemCall::remark {
+                remark: vec![0u8; 147],
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 0u64, 1u32);
+            assert_ok!(Executive::apply_extrinsic(xt));
+            assert_ne!(
+                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                10_000
+            );
+
+            // Ensure that the next extrinsic exceeds the block limit.
             System::set_block_consumed_resources(
                 Weight::zero(),
                 (Target::get() * normal_max_length).try_into().unwrap(),
@@ -162,17 +151,10 @@ fn test_fees_length() {
                 remark: vec![255u8; 1],
             });
 
-            let xt = get_unchecked_extrinsic(
-                call,
-                4u64,
-                8u64,
-                AccountKeyring::Alice,
-                0u64,
-                transactions as u32,
-            );
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Eve, 0u64, 0u32);
             assert_ok!(Executive::apply_extrinsic(xt));
             assert_ne!(
-                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
                 10_000
             );
         })

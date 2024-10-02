@@ -14,12 +14,26 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-// In the deployed fees model, a mapping of 5 (5cG) corresponds to a base extrinsic weight,
-// achieved through a 1-dimensional polynomial. Additionally, 1 (1cG) corresponds to an extrinsic length of 100 bytes.
-//
-// For testing purposes, we adopt a human-predictable weight system that remains invariant to the chosen fees model for release.
-// This involves setting a constant weight_to_fee equal to 1 and a constant length_to_fee set to 0, resulting in each extrinsic costing 2 (2cG).
-
+/// In our deployed fee model, users will not pay any fees if blockchain usage remains below a
+/// specified threshold, and fees are applied based on transaction weight and length once this
+/// threshold is exceeded, helping to prevent spamming attacks.
+///
+/// When the current block's weight and length are below the targeted thresholds, no fees are charged,
+/// as the weight-to-fee conversion results in zero. Once the block's weight and length exceed these
+/// targets, the weight-to-fee conversion maps BASE_EXTRINSIC_WEIGHT_COST to a base extrinsic weight.
+/// Additionally, a fee is applied based on the length of the extrinsic and is mapped affinely:
+/// 2_000 (20G) corresponds to an extrinsic length of BYTES_PER_UNIT*10 plus the BASE_EXTRINSIC_LENGTH_COST and will be applied only if the extrinsic
+/// exceeds MAX_EXTRINSIC_LENGTH bytes or if the block target in weight or length is surpassed.
+///
+/// To further deter abuse, if the previous block's weight or length  the target thresholds,
+/// the chain increases the fees by multiplying the transaction weight with a `FeeMultiplier`. For each
+/// consecutive block that exceeds the targets, this multiplier increases by one. If the targets are
+/// not reached, the multiplier decreases by one. The `FeeMultiplier` ranges from 1 (normal usage) to
+/// `MaxMultiplier`, where heavy usage causes a number `MaxMultiplier` of consecutive blocks to exceed targets.
+///
+/// For testing purposes, a simplified, human-predictable weight system is used. This test model sets
+/// a constant `weight_to_fee` of 1 and a `length_to_fee` of 0, making each extrinsic cost 2 (2cG),
+/// and can be activated with the #[cfg(feature = "constant-fees")] feature.
 pub use frame_support::weights::{Weight, WeightToFee};
 use pallet_transaction_payment::{Multiplier, MultiplierUpdate};
 use sp_arithmetic::traits::{BaseArithmetic, Unsigned};
@@ -61,10 +75,16 @@ where
     /// Function to convert weight to fee when "constant-fees" feature is not enabled.
     ///
     /// This function calculates the fee based on the length of the transaction in bytes.
-    /// If the current block weight and length are less than a fraction of the max block weight and length and the fee multiplier is one,
-    /// it returns a zero fee. Otherwise, it calculates the fee based on the length in bytes.
+    /// If the current block weight and length are less than a fraction of the max block weight and length, the fee multiplier is one,
+    /// and the extrinsic length is less than MAX_EXTRINSIC_LENGTH bytes, no fees are applied. Otherwise, it calculates the fee based on the length in bytes.
     #[cfg(not(feature = "constant-fees"))]
     fn weight_to_fee(length_in_bytes: &Weight) -> Self::Balance {
+        // The extrinsic overhead for a remark is approximately 110 bytes.
+        // This leaves 146 bytes available for the actual remark content.
+        const MAX_EXTRINSIC_LENGTH: u64 = 256;
+        const BYTES_PER_UNIT: u64 = 350;
+        const BASE_EXTRINSIC_LENGTH_COST: u64 = 5;
+
         let weights = Runtime::BlockWeights::get();
         let fee_multiplier = pallet_transaction_payment::Pallet::<Runtime>::next_fee_multiplier();
         let normal_max_weight = weights
@@ -82,10 +102,13 @@ where
             .all_lt(Target::get() * normal_max_weight)
             && current_block_length < (Target::get() * normal_max_length)
             && fee_multiplier.is_one()
+            && length_in_bytes.ref_time() < MAX_EXTRINSIC_LENGTH
         {
             0u32.into()
         } else {
-            Self::Balance::saturated_from(length_in_bytes.ref_time() / 100u64)
+            Self::Balance::saturated_from(
+                length_in_bytes.ref_time() / BYTES_PER_UNIT + BASE_EXTRINSIC_LENGTH_COST,
+            )
         }
     }
 
@@ -152,7 +175,8 @@ where
             }]
         } else {
             // The extrinsic base weight (smallest non-zero weight) is mapped to 5 cents
-            let p: Self::Balance = 5u64.into();
+            const BASE_EXTRINSIC_WEIGHT_COST: u64 = 5;
+            let p: Self::Balance = BASE_EXTRINSIC_WEIGHT_COST.into();
             let q: Self::Balance =
                 Self::Balance::from(weights.get(DispatchClass::Normal).base_extrinsic.ref_time());
             smallvec![WeightToFeeCoefficient {
