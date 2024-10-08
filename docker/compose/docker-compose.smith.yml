@@ -1,0 +1,37 @@
+# docker-compose.yml template for running a Duniter smith node
+# for more doc, see https://duniter.org/wiki/duniter-v2/
+services:
+  # duniter smith node
+  duniter-v2s-smith:
+    container_name: duniter-v2s-smith
+    image: duniter/duniter-v2s-gdev:latest
+    ports:
+      # RPC API of a smith node should not be exposed publicly!
+      - 127.0.0.1:9944:9944
+      # public p2p endpoint
+      - 30333:30333
+    environment:
+      DUNITER_NODE_NAME: duniter_smith
+      DUNITER_CHAIN_NAME: gdev
+      DUNITER_VALIDATOR: true
+      DUNITER_PRUNING_PROFILE: light
+      DUNITER_PUBLIC_ADDR: /dns/your.domain.name/tcp/30333
+      DUNITER_LISTEN_ADDR: /ip4/0.0.0.0/tcp/30333
+    volumes:
+      - duniter-smith-data:/var/lib/duniter
+  # distance oracle
+  distance-oracle:
+    container_name: distance-oracle
+    # choose the version of the image here
+    image: duniter/duniter-v2s-gdev:latest
+    entrypoint: docker-distance-entrypoint
+    environment:
+      ORACLE_RPC_URL: ws://duniter-v2s-smith:9944
+      ORACLE_RESULT_DIR: /var/lib/duniter/chains/gdev/distance/
+      ORACLE_EXECUTION_INTERVAL: 1800
+      ORACLE_LOG_LEVEL: info
+    volumes:
+      - duniter-smith-data:/var/lib/duniter
+
+volumes:
+  duniter-smith-data:
