@@ -195,6 +195,8 @@ sp-trie = { workspace = true, default-features = true }
 [package.metadata.deb]
 maintainer-scripts = "../resources/debian"
 systemd-units = [ { unit-name = "duniter-mirror", enable = false },
-                  { unit-name = "duniter-smith", enable = false }]
+                  { unit-name = "duniter-smith", enable = false },
+                  { unit-name = "distance-oracle", enable = false },
+                  ]
 assets = [ ["../resources/debian/env_file", "/etc/duniter/env_file", "0640"],
            ["../target/release/duniter", "/usr/bin/duniter2", "755"]]
