@@ -3,7 +3,17 @@ id: "gdev"
 chainType: "Live"
 bootNodes:
   - "/dns/gdev.cgeek.fr/tcp/30334/p2p/12D3KooWN7QhcPbTZgNMnS7AUZh3ZfnM43VdVKqy4JbAEp5AJh4f"
-  - "/dns/gdev.coinduf.eu/tcp/30333/p2p/12D3KooWFseA3B66eBzj4NY5ng3Lb2U3VPnKCi3iXYGYUSAahEw7"
+  - "/dns/gdev.trentesaux.fr/tcp/30333/p2p/12D3KooWBUofnBCndckssxLfMgygqioJTGWdfjkmjb8bDtjezWFE"
+  - "/dns/gdev.gyroi.de/tcp/30333/p2p/12D3KooWJtce4HiwrYbaV48CZjmb9QtatYmC3ANyVKT1wQRqARzd"
+  - "/dns/gdev-smith.pini.fr/tcp/443/wss/p2p/12D3KooWLwrbxC95wP6rTSv8TPy4hxaAYqPqN1KQnBgoza5K94XH"
+  - "/dns/gdev.pini.fr/tcp/443/wss/p2p/12D3KooWBfuEahrFypghc8niTseEq6ZVYkyXTUjTTcX6kkbFVgYB"
+  - "/dns/gdev.txmn.tk/tcp/30333/p2p/12D3KooWJmjLNArKNerjUgVyEQmHuZgNTBe2mQb6vjmuGR635Vuh"
+  - "/dns/duniter-v2-vjrj-gdev.comunes.net/tcp/30333/p2p/12D3KooWGL7SZ3ewQdfPh3FaQ23Cg15AePyBusLwFAYNU4oLKbsR"
+  - "/dns/bulmagdev.sleoconnect.fr/tcp/30333/p2p/12D3KooWB2de56jzZ7q5Qc4YAB6rUUiAoPxbMcaYAtwXR5j59D2Q"
+  - "/dns/gdev.cuates.net/tcp/30333/p2p/12D3KooWN5BBZuMraywLWApFVNYg5FUu3fhvy2vDYdSXsGuZ3zu8"
+  - "/dns/gdev.matograine.fr/tcp/30333/p2p/12D3KooWGwcpvdCYXHt89Tc2M5xbhzq4T7DrLKgYHPCBozzEkM2W"
+  # - "/dns/gdev.moul.re/tcp/30333/p2p/12D3KooWGr8Qm3Rp3hMBPguJmnQgCy2rFCpr4DQ5iyT8yra1jNcx"
+  # - "/dns/gdev.abrahel.d0p1.eu/tcp/30333/p2p/12D3KooWEPUp2go9eKQ85jxjCdtWcM6D7ytH2qtXkPzTBN8jcDWT"
 telemetryEndpoints:
   - ["/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]
 properties:

@@ -7,7 +7,7 @@ homepage.workspace = true
 license.workspace = true
 name = "duniter"
 repository.workspace = true
-version = "0.8.0"
+version = "0.8.1"
 default-run = "duniter"
 
 [package.metadata.docs.rs]
@@ -48,7 +48,7 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
-  "runtime-benchmarks",
+	"runtime-benchmarks",
 	"common-runtime/try-runtime",
 	"dc-distance?/try-runtime",
 	"distance-oracle?/try-runtime",
@@ -184,7 +184,7 @@ sp-transaction-storage-proof = { workspace = true, default-features = true }
 substrate-frame-rpc-system = { workspace = true, default-features = true }
 
 [build-dependencies]
-substrate-build-script-utils = { workspace = true, default-features = true}
+substrate-build-script-utils = { workspace = true, default-features = true }
 
 # Dependencies for specific targets
 [target.'cfg(any(target_arch="x86_64", target_arch="aarch64"))'.dependencies]
@@ -194,9 +194,20 @@ sp-trie = { workspace = true, default-features = true }
 
 [package.metadata.deb]
 maintainer-scripts = "../resources/debian"
-systemd-units = [ { unit-name = "duniter-mirror", enable = false },
-                  { unit-name = "duniter-smith", enable = false },
-                  { unit-name = "distance-oracle", enable = false },
-                  ]
-assets = [ ["../resources/debian/env_file", "/etc/duniter/env_file", "0640"],
-           ["../target/release/duniter", "/usr/bin/duniter2", "755"]]
+systemd-units = [
+	{ unit-name = "duniter-mirror", enable = false },
+	{ unit-name = "duniter-smith", enable = false },
+	{ unit-name = "distance-oracle", enable = false },
+]
+assets = [
+	[
+		"../resources/debian/env_file",
+		"/etc/duniter/env_file",
+		"0640",
+	],
+	[
+		"../target/release/duniter",
+		"/usr/bin/duniter2",
+		"755",
+	],
+]
