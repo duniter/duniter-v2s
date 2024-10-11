@@ -14,6 +14,29 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Duniter Smith Pallet
+//!
+//! The Smith pallet in Duniter serves as a bridge between the `identity` and `authority-members` pallets.
+//!
+//! ## Overview
+//!
+//! The Smith pallet manages the certification and membership status of Smiths. Smiths are identities that have met certain requirements and play a critical role in the network's operations (block authoring, distance evaluation).
+//!
+//! ## Key Concepts
+//!
+//! ### Smith Status
+//!
+//! The status of an identity within the Smith pallet can be one of the following:
+//! - **Invited**: The identity has been invited by a Smith but has not yet accepted the invitation.
+//! - **Pending**: The identity has accepted the invitation and is pending to become a full Smith.
+//! - **Smith**: The identity has fulfilled the requirements and is a full-fledged Smith, eligible to perform critical network functions.
+//! - **Excluded**: The identity has been removed from the Smiths set but its certifications are retained for tracking purposes.
+//!
+//! ### Certifications
+//!
+//! Certifications are crucial in determining Smith status:
+//! - An identity needs a minimum number of certifications to become a Smith (`MinCertForMembership`).
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -27,21 +50,21 @@ pub mod traits;
 mod types;
 pub mod weights;
 
-#[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
 use codec::{Codec, Decode, Encode};
-use frame_support::dispatch::DispatchResultWithPostInfo;
-use frame_support::ensure;
-use frame_support::pallet_prelude::Get;
-use frame_support::pallet_prelude::RuntimeDebug;
-use frame_system::ensure_signed;
-use frame_system::pallet_prelude::OriginFor;
-use scale_info::TypeInfo;
-use sp_runtime::traits::AtLeast32BitUnsigned;
-use sp_runtime::traits::IsMember;
-use sp_std::fmt::Debug;
-use sp_std::prelude::*;
+use duniter_primitives::Idty;
+use frame_support::{
+    dispatch::DispatchResultWithPostInfo,
+    ensure,
+    pallet_prelude::{Get, RuntimeDebug, Weight},
+};
+use frame_system::{ensure_signed, pallet_prelude::OriginFor};
+use scale_info::{
+    prelude::{collections::BTreeMap, fmt::Debug, vec, vec::Vec},
+    TypeInfo,
+};
+use sp_runtime::traits::{AtLeast32BitUnsigned, IsMember};
 
 use crate::traits::OnSmithDelete;
 pub use crate::weights::WeightInfo;
@@ -49,35 +72,36 @@ pub use pallet::*;
 use pallet_authority_members::SessionIndex;
 pub use types::*;
 
+/// Reasons for the removal of a Smith identity.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum SmithRemovalReason {
+    /// Membership was lost due to expiration or other reasons.
     LostMembership,
+    /// Smith was offline for too long.
     OfflineTooLong,
+    /// Smith was blacklisted.
     Blacklisted,
 }
 
+/// Possible statuses of a Smith identity.
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum SmithStatus {
-    /// The identity has been invited by a smith but has not accepted yet
+    /// The identity has been invited by a Smith but has not accepted yet.
     Invited,
-    /// The identity has accepted to eventually become a smith
+    /// The identity has accepted to eventually become a Smith.
     Pending,
-    /// The identity has reached the requirements to become a smith and can now goGoOnline() or invite/certify other smiths
+    /// The identity has reached the requirements to become a Smith and can now perform Smith operations.
     Smith,
-    /// The identity has been removed from the smiths set but is kept to keep track of its certifications
+    /// The identity has been removed from the Smiths set but is kept to track its certifications.
     Excluded,
 }
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::StorageVersion;
+    use frame_support::{pallet_prelude::*, traits::StorageVersion};
     use pallet_authority_members::SessionIndex;
     use sp_runtime::traits::{Convert, IsMember};
-    use sp_std::collections::btree_map::BTreeMap;
-    use sp_std::vec;
-    use sp_std::vec::Vec;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
@@ -89,13 +113,15 @@ pub mod pallet {
     /// The pallet's config trait.
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// To only allow WoT members to be invited
+        /// Trait to check if identity is a WoT members.
         type IsWoTMember: IsMember<Self::IdtyIndex>;
-        /// Notify when a smith is removed (for authority-members to react)
+
         type OnSmithDelete: traits::OnSmithDelete<Self::IdtyIndex>;
-        /// The overarching event type.
+
+        /// The overarching event type for this pallet.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        /// A short identity index.
+
+        /// A short identity index type.
         type IdtyIndex: Parameter
             + Member
             + AtLeast32BitUnsigned
@@ -105,24 +131,29 @@ pub mod pallet {
             + MaybeSerializeDeserialize
             + Debug
             + MaxEncodedLen;
-        /// Identifier for an authority-member
+
+        /// Identifier type for an authority-member.
         type MemberId: Copy + Ord + MaybeSerializeDeserialize + Parameter;
-        /// Something that gives the IdtyId of an AccountId
-        type IdtyIdOf: Convert<Self::AccountId, Option<Self::IdtyIndex>>;
-        /// Something that give the owner key of an identity
-        type OwnerKeyOf: Convert<Self::IdtyIndex, Option<Self::AccountId>>;
-        /// Something that gives the IdtyId of an AccountId
+
+        /// Something that gives the IdtyIndex of an AccountId and reverse.
+        type IdtyAttr: duniter_primitives::Idty<Self::IdtyIndex, Self::AccountId>;
+
+        /// Something that gives the AccountId of an identity.
         type IdtyIdOfAuthorityId: Convert<Self::MemberId, Option<Self::IdtyIndex>>;
-        /// Maximum number of active certifications by issuer
+
+        /// Maximum number of active certifications per issuer.
         #[pallet::constant]
         type MaxByIssuer: Get<u32>;
-        /// Minimum number of certifications to become a Smith
+
+        /// Minimum number of certifications required to become a Smith.
         #[pallet::constant]
         type MinCertForMembership: Get<u32>;
-        /// Maximum duration of inactivity before a smith is removed
+
+        /// Maximum duration of inactivity allowed before a Smith is removed.
         #[pallet::constant]
         type SmithInactivityMaxDuration: Get<u32>;
-        /// Type representing the weight of this pallet
+
+        /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
     }
 
@@ -132,20 +163,20 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// An identity is being inivited to become a smith.
         InvitationSent {
-            receiver: T::IdtyIndex,
             issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
         },
         /// The invitation has been accepted.
         InvitationAccepted { idty_index: T::IdtyIndex },
         /// Certification received
         SmithCertAdded {
-            receiver: T::IdtyIndex,
             issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
         },
         /// Certification lost
         SmithCertRemoved {
-            receiver: T::IdtyIndex,
             issuer: T::IdtyIndex,
+            receiver: T::IdtyIndex,
         },
         /// A smith gathered enough certifications to become an authority (can call `go_online()`).
         SmithMembershipAdded { idty_index: T::IdtyIndex },
@@ -226,19 +257,19 @@ pub mod pallet {
         }
     }
 
-    /// maps identity index to smith status
+    /// The Smith metadata for each identity.
     #[pallet::storage]
     #[pallet::getter(fn smiths)]
     pub type Smiths<T: Config> =
         StorageMap<_, Twox64Concat, T::IdtyIndex, SmithMeta<T::IdtyIndex>, OptionQuery>;
 
-    /// maps session index to possible smith removals
+    /// The indexes of Smith to remove at a given session.
     #[pallet::storage]
     #[pallet::getter(fn expires_on)]
     pub type ExpiresOn<T: Config> =
         StorageMap<_, Twox64Concat, SessionIndex, Vec<T::IdtyIndex>, OptionQuery>;
 
-    /// stores the current session index
+    /// The current session index.
     #[pallet::storage]
     #[pallet::getter(fn current_session)]
     pub type CurrentSession<T: Config> = StorageValue<_, SessionIndex, ValueQuery>;
@@ -281,7 +312,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Invite a WoT member to try becoming a Smith
+        /// Invite a member of the Web of Trust to attempt becoming a Smith.
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::invite_smith())]
         pub fn invite_smith(
@@ -290,25 +321,25 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin.clone())?;
             let issuer =
-                T::IdtyIdOf::convert(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
+                T::IdtyAttr::idty_index(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
             Self::check_invite_smith(issuer, receiver)?;
             Self::do_invite_smith(issuer, receiver);
             Ok(().into())
         }
 
-        /// Accept an invitation (must have been invited first)
+        /// Accept an invitation to become a Smith (must have been invited first).
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::accept_invitation())]
         pub fn accept_invitation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin.clone())?;
             let receiver =
-                T::IdtyIdOf::convert(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
+                T::IdtyAttr::idty_index(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
             Self::check_accept_invitation(receiver)?;
             Self::do_accept_invitation(receiver)?;
             Ok(().into())
         }
 
-        /// Certify an invited smith which can lead the certified to become a Smith
+        /// Certify an invited Smith, which can lead the certified to become a Smith.
         #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::certify_smith())]
         pub fn certify_smith(
@@ -317,7 +348,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let issuer =
-                T::IdtyIdOf::convert(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
+                T::IdtyAttr::idty_index(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
             Self::check_certify_smith(issuer, receiver)?;
             Self::do_certify_smith(receiver, issuer);
             Ok(().into())
@@ -326,6 +357,7 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+    /// Check conditions before inviting a potential Smith.
     fn check_invite_smith(
         issuer: T::IdtyIndex,
         receiver: T::IdtyIndex,
@@ -353,6 +385,7 @@ impl<T: Config> Pallet<T> {
         Ok(().into())
     }
 
+    /// Perform the invitation of a potential Smith.
     fn do_invite_smith(issuer: T::IdtyIndex, receiver: T::IdtyIndex) {
         let new_expires_on = CurrentSession::<T>::get() + T::SmithInactivityMaxDuration::get();
         let mut existing = Smiths::<T>::get(receiver).unwrap_or_default();
@@ -361,9 +394,10 @@ impl<T: Config> Pallet<T> {
         existing.received_certs = vec![];
         Smiths::<T>::insert(receiver, existing);
         ExpiresOn::<T>::append(new_expires_on, receiver);
-        Self::deposit_event(Event::<T>::InvitationSent { receiver, issuer });
+        Self::deposit_event(Event::<T>::InvitationSent { issuer, receiver });
     }
 
+    /// Check conditions before accepting an invitation to become a Smith.
     fn check_accept_invitation(receiver: T::IdtyIndex) -> DispatchResultWithPostInfo {
         let pretender_status = Smiths::<T>::get(receiver)
             .ok_or(Error::<T>::OriginHasNeverBeenInvited)?
@@ -375,6 +409,7 @@ impl<T: Config> Pallet<T> {
         Ok(().into())
     }
 
+    /// Accept the invitation to become a Smith.
     fn do_accept_invitation(receiver: T::IdtyIndex) -> DispatchResultWithPostInfo {
         Smiths::<T>::mutate(receiver, |maybe_smith_meta| {
             if let Some(smith_meta) = maybe_smith_meta {
@@ -387,6 +422,7 @@ impl<T: Config> Pallet<T> {
         Ok(().into())
     }
 
+    /// Check conditions before certifying a potential Smith.
     fn check_certify_smith(
         issuer_index: T::IdtyIndex,
         receiver_index: T::IdtyIndex,
@@ -430,6 +466,7 @@ impl<T: Config> Pallet<T> {
         Ok(().into())
     }
 
+    /// Perform certification of a potential Smith by another Smith.
     fn do_certify_smith(receiver: T::IdtyIndex, issuer: T::IdtyIndex) {
         // - adds a certification in issuer issued list
         Smiths::<T>::mutate(issuer, |maybe_smith_meta| {
@@ -443,7 +480,7 @@ impl<T: Config> Pallet<T> {
                 // - adds a certification in receiver received list
                 smith_meta.received_certs.push(issuer);
                 smith_meta.received_certs.sort();
-                Self::deposit_event(Event::<T>::SmithCertAdded { receiver, issuer });
+                Self::deposit_event(Event::<T>::SmithCertAdded { issuer, receiver });
 
                 // - receiving a certification either lead us to Pending or Smith status
                 let previous_status = smith_meta.status;
@@ -477,6 +514,7 @@ impl<T: Config> Pallet<T> {
         });
     }
 
+    /// Handle the removal of Smiths whose expiration time has been reached at a given session index.
     fn on_exclude_expired_smiths(at: SessionIndex) {
         if let Some(smiths_to_remove) = ExpiresOn::<T>::get(at) {
             for smith in smiths_to_remove {
@@ -491,12 +529,17 @@ impl<T: Config> Pallet<T> {
         }
     }
 
-    pub fn on_removed_wot_member(idty_index: T::IdtyIndex) {
+    /// Handle actions upon the removal of a Web of Trust member.
+    pub fn on_removed_wot_member(idty_index: T::IdtyIndex) -> Weight {
+        let mut weight = T::WeightInfo::on_removed_wot_member_empty();
         if Smiths::<T>::get(idty_index).is_some() {
             Self::_do_exclude_smith(idty_index, SmithRemovalReason::LostMembership);
+            weight = weight.saturating_add(T::WeightInfo::on_removed_wot_member());
         }
+        weight
     }
 
+    /// Perform the exclusion of a Smith.
     fn _do_exclude_smith(receiver: T::IdtyIndex, reason: SmithRemovalReason) {
         let mut lost_certs = vec![];
         Smiths::<T>::mutate(receiver, |maybe_smith_meta| {
@@ -517,8 +560,8 @@ impl<T: Config> Pallet<T> {
                     if let Ok(index) = smith_meta.issued_certs.binary_search(&receiver) {
                         smith_meta.issued_certs.remove(index);
                         Self::deposit_event(Event::<T>::SmithCertRemoved {
-                            receiver,
                             issuer: lost_cert_issuer,
+                            receiver,
                         });
                     }
                 }
@@ -531,6 +574,7 @@ impl<T: Config> Pallet<T> {
         });
     }
 
+    /// Handle the event when a Smith goes online.
     pub fn on_smith_goes_online(idty_index: T::IdtyIndex) {
         if let Some(smith_meta) = Smiths::<T>::get(idty_index) {
             if smith_meta.expires_on.is_some() {
@@ -545,6 +589,7 @@ impl<T: Config> Pallet<T> {
         }
     }
 
+    /// Handle the event when a Smith goes offline.
     pub fn on_smith_goes_offline(idty_index: T::IdtyIndex) {
         if let Some(smith_meta) = Smiths::<T>::get(idty_index) {
             if smith_meta.expires_on.is_none() {
@@ -561,6 +606,7 @@ impl<T: Config> Pallet<T> {
         }
     }
 
+    /// Provide whether the given identity index is a Smith.
     fn provide_is_member(idty_id: &T::IdtyIndex) -> bool {
         let Some(smith) = Smiths::<T>::get(idty_id) else {
             return false;

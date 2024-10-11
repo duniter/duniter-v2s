@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Duniter Test Parameters Pallet
+//!
+//! This pallet allows ĞDev runtime to tweak parameter values instead of having it as runtime constants.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
@@ -65,8 +69,7 @@ pub mod types {
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::StorageVersion;
+    use frame_support::{pallet_prelude::*, traits::StorageVersion};
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);

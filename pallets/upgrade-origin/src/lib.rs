@@ -24,12 +24,11 @@ pub use pallet::*;
 pub use weights::WeightInfo;
 
 use frame_support::{
-    dispatch::GetDispatchInfo,
-    dispatch::PostDispatchInfo,
+    dispatch::{GetDispatchInfo, PostDispatchInfo},
     traits::{IsSubType, UnfilteredDispatchable},
 };
+use scale_info::prelude::boxed::Box;
 use sp_runtime::traits::Dispatchable;
-use sp_std::prelude::*;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -55,18 +54,18 @@ pub mod pallet {
         /// The overarching event type.
         type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-        /// The upgradable origin
+        /// The origin type required for performing upgradable operations.
         type UpgradableOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
-        /// Pallet weights info
+        /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
 
+        /// Type representing the worst case origin type used in weight benchmarks.
         #[cfg(feature = "runtime-benchmarks")]
-        /// The worst case origin type to use in weights benchmarking
         type WorstCaseOriginType: Into<Self::RuntimeOrigin>;
 
+        /// Retrieves the worst case origin for use in weight benchmarks.
         #[cfg(feature = "runtime-benchmarks")]
-        /// The worst case origin to use in weights benchmarking
         type WorstCaseOrigin: Get<Self::WorstCaseOriginType>;
     }
 

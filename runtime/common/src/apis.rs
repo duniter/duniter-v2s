@@ -89,7 +89,7 @@ macro_rules! runtime_apis {
                     Executive::execute_block(block)
                 }
 
-                fn initialize_block(header: &<Block as BlockT>::Header) {
+                fn initialize_block(header: &<Block as BlockT>::Header) -> sp_runtime::ExtrinsicInclusionMode {
                     Executive::initialize_block(header)
                 }
             }
@@ -101,7 +101,7 @@ macro_rules! runtime_apis {
 		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
 			Runtime::metadata_at_version(version)
 		}
-		fn metadata_versions() -> sp_std::vec::Vec<u32> {
+		fn metadata_versions() -> Vec<u32> {
 			Runtime::metadata_versions()
 		}
             }
@@ -221,33 +221,33 @@ macro_rules! runtime_apis {
 		}
             }
 	impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
-		fn create_default_config() -> Vec<u8> {
-			frame_support::genesis_builder_helper::create_default_config::<RuntimeGenesisConfig>()
+		fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
+			frame_support::genesis_builder_helper::build_state::<RuntimeGenesisConfig>(config)
 		}
 
-		fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
-			frame_support::genesis_builder_helper::build_config::<RuntimeGenesisConfig>(config)
+		fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
+			frame_support::genesis_builder_helper::get_preset::<RuntimeGenesisConfig>(id, |_| None)
+		}
+
+		fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
+			vec![]
 		}
 	}
 
             #[cfg(feature = "try-runtime")]
-            impl frame_try_runtime::TryRuntime<Block> for Runtime where <Runtime as frame_system::Config>::BlockNumber: Clone + sp_std::fmt::Debug + sp_runtime::traits::AtLeast32BitUnsigned {
-                fn on_runtime_upgrade() -> (Weight, Weight) {
-                    log::info!("try-runtime::on_runtime_upgrade.");
-                    todo!()
-                    // TODO solve the problem to uncomment this:
-                    //let weight = Executive::try_runtime_upgrade().unwrap();
-                    //(weight, BlockWeights::get().max_block)
+            impl frame_try_runtime::TryRuntime<Block> for Runtime {
+                fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
+                    let weight = Executive::try_runtime_upgrade(checks).unwrap();
+					(weight, BlockWeights::get().max_block)
                 }
 
                 fn execute_block(
                     block: Block,
                     state_root_check: bool,
+					signature_check: bool,
                     select: frame_try_runtime::TryStateSelect,
                 ) -> Weight {
-                    todo!()
-                    // TODO solve the problem to uncomment this:
-                    //Executive::try_execute_block(block, state_root_check, select).expect("try_execute_block failed")
+                    Executive::try_execute_block(block, state_root_check, signature_check, select).expect("execute-block failed")
                 }
             }
 

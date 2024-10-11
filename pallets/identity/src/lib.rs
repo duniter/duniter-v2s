@@ -14,6 +14,43 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Duniter Identity Pallet
+//!
+//! Duniter features a built-in identity system that does not rely on external registrars, unlike the [Parity Identity Pallet](https://github.com/paritytech/substrate/tree/master/frame/identity).
+//!
+//! ## Duniter Identity Structure
+//!
+//! A Duniter identity comprises several key components:
+//!
+//! ### Name
+//!
+//! Each identity is declared with a name emitted during the confirmation event. Duniter maintains a hashed list of identity names to ensure uniqueness.
+//!
+//! ### Owner Key
+//!
+//! The owner key allows users to maintain a fixed identity while changing keys for security reasons, such as when a device with the keys might have been compromised. Changes are subject to frequency limits, and the old owner key can still revoke the identity for a given period.
+//!
+//! ### Status / Removable Date
+//!
+//! The status is a temporary value that allows pruning of identities before they become full members:
+//!   - **Unconfirmed**: Created by a member identity but not yet confirmed by the owner.
+//!   - **Unvalidated**: Confirmed by the owner, including assignment of a name.
+//!   - **Member**: Part of the main Web of Trust (WoT).
+//!   - **NotMember**: Not part of the main WoT.
+//!   - **Revoked**: Automatically or manually revoked.
+//!
+//! An identity that is not yet validated (e.g., not a member of the WoT) can be removed when its removable date is reached. The removable date of a validated identity is set to block zero.
+//!
+//! ### Next Certification
+//!
+//! The next certification specifies the block number from which the identity can issue its next certification, acting as a rate limit for certification issuance and identity creation.
+//!
+//! ### Revocation
+//!
+//! Revoking an identity essentially means deleting it from the system.
+//!
+//! Additional runtime-defined data may also be attached to identities, such the number of the first Universal Dividends (UD) it is eligible to.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
@@ -27,7 +64,6 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
 
 pub use pallet::*;
@@ -37,9 +73,8 @@ pub use weights::WeightInfo;
 use crate::traits::*;
 use codec::Codec;
 use frame_support::pallet_prelude::Weight;
+use scale_info::prelude::{collections::BTreeSet, fmt::Debug, vec::Vec};
 use sp_runtime::traits::{AtLeast32BitUnsigned, IdentifyAccount, One, Saturating, Verify, Zero};
-use sp_std::fmt::Debug;
-use sp_std::prelude::*;
 
 // icok = identity change owner key
 pub const NEW_OWNER_KEY_PAYLOAD_PREFIX: [u8; 4] = [b'i', b'c', b'o', b'k'];
@@ -51,8 +86,7 @@ pub const LINK_IDTY_PAYLOAD_PREFIX: [u8; 4] = [b'l', b'i', b'n', b'k'];
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::StorageVersion;
+    use frame_support::{pallet_prelude::*, traits::StorageVersion};
     use frame_system::pallet_prelude::*;
 
     /// The current storage version.
@@ -67,32 +101,40 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// Period during which the owner can confirm the new identity.
-        // something like 2 days but this should be done quickly as the first certifier is helping
+        /// The period during which the owner can confirm the new identity.
         #[pallet::constant]
         type ConfirmPeriod: Get<BlockNumberFor<Self>>;
-        /// Period before which the identity has to be validated (become member).
-        // this is the 2 month period in v1
+
+        /// The period during which the identity has to be validated to become a member.
         #[pallet::constant]
         type ValidationPeriod: Get<BlockNumberFor<Self>>;
-        /// Period before which an identity who lost membership is automatically revoked.
-        // this is the 1 year period in v1
+
+        /// The period before which an identity that lost membership is automatically revoked.
         #[pallet::constant]
         type AutorevocationPeriod: Get<BlockNumberFor<Self>>;
-        /// Period after which a revoked identity is removed and the keys are freed.
+
+        /// The period after which a revoked identity is removed and the keys are freed.
         #[pallet::constant]
         type DeletionPeriod: Get<BlockNumberFor<Self>>;
-        /// Minimum duration between two owner key changes.
-        // to avoid stealing the identity without means to revoke
+
+        /// The minimum duration between two owner key changes to prevent identity theft.
         #[pallet::constant]
         type ChangeOwnerKeyPeriod: Get<BlockNumberFor<Self>>;
-        /// Minimum duration between the creation of 2 identities by the same creator.
-        // it should be greater or equal than the certification period in certification pallet
+
+        /// The minimum duration between the creation of two identities by the same creator.
+        /// Should be greater than or equal to the certification period defined in the certification pallet.
         #[pallet::constant]
         type IdtyCreationPeriod: Get<BlockNumberFor<Self>>;
-        /// Management of the authorizations of the different calls.
-        /// The default implementation allows everything.
+
+        /// Management of the authorizations of the different calls related to identity.
         type CheckIdtyCallAllowed: CheckIdtyCallAllowed<Self>;
+
+        /// The type used to check account worthiness.
+        type CheckAccountWorthiness: CheckAccountWorthiness<Self>;
+
+        /// Handler that checks the necessary permissions for an identity's owner key change.
+        type OwnerKeyChangePermission: CheckKeyChangeAllowed<Self>;
+
         /// Custom data to store in each identity.
         type IdtyData: Clone
             + Codec
@@ -101,7 +143,8 @@ pub mod pallet {
             + TypeInfo
             + MaybeSerializeDeserialize
             + MaxEncodedLen;
-        /// A short identity index.
+
+        /// A short identity index type.
         type IdtyIndex: Parameter
             + Member
             + AtLeast32BitUnsigned
@@ -111,18 +154,28 @@ pub mod pallet {
             + MaybeSerializeDeserialize
             + Debug
             + MaxEncodedLen;
-        /// custom type for account data
+
+        /// A type for linking account data to identity.
         type AccountLinker: LinkIdty<Self::AccountId, Self::IdtyIndex>;
-        /// Handle logic to validate an identity name
+
+        /// Handle logic to validate an identity name.
         type IdtyNameValidator: IdtyNameValidator;
-        /// On identity confirmed by its owner
-        type OnIdtyChange: OnIdtyChange<Self>;
-        /// Signing key of a payload
+
+        /// Handler called when a new identity is created.
+        type OnNewIdty: OnNewIdty<Self>;
+
+        /// Handler called when an identity is removed.
+        type OnRemoveIdty: OnRemoveIdty<Self>;
+
+        /// Signing key type used for payload signatures.
         type Signer: IdentifyAccount<AccountId = Self::AccountId>;
-        /// Signature of a payload
+
+        /// Signature type for payload verification.
         type Signature: Parameter + Verify<Signer = Self::Signer>;
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
+
+        /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
     }
@@ -153,7 +206,7 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
-            let mut names = sp_std::collections::btree_set::BTreeSet::new();
+            let mut names = BTreeSet::new();
             for idty in &self.identities {
                 assert!(
                     !names.contains(&idty.name),
@@ -188,7 +241,7 @@ pub mod pallet {
 
     // STORAGE //
 
-    /// maps identity index to identity value
+    /// The identity value for each identity.
     #[pallet::storage]
     #[pallet::getter(fn identity)]
     pub type Identities<T: Config> = CountedStorageMap<
@@ -199,23 +252,23 @@ pub mod pallet {
         OptionQuery,
     >;
 
-    /// maps account id to identity index
+    /// The identity associated with each account.
     #[pallet::storage]
     #[pallet::getter(fn identity_index_of)]
     pub type IdentityIndexOf<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, T::IdtyIndex, OptionQuery>;
 
-    /// maps identity name to identity index (simply a set)
+    /// The name associated with each identity.
     #[pallet::storage]
     #[pallet::getter(fn identity_by_did)]
     pub type IdentitiesNames<T: Config> =
         StorageMap<_, Blake2_128Concat, IdtyName, T::IdtyIndex, OptionQuery>;
 
-    /// counter of the identity index to give to the next identity
+    /// The identity index to assign to the next created identity.
     #[pallet::storage]
     pub(super) type NextIdtyIndex<T: Config> = StorageValue<_, T::IdtyIndex, ValueQuery>;
 
-    /// maps block number to the list of identities set to be removed at this bloc
+    /// The identities to remove at a given block.
     #[pallet::storage]
     #[pallet::getter(fn next_scheduled)]
     pub type IdentityChangeSchedule<T: Config> =
@@ -325,13 +378,7 @@ pub mod pallet {
                 owner_key: owner_key.clone(),
             });
             T::AccountLinker::link_identity(&owner_key, idty_index)?;
-            T::OnIdtyChange::on_idty_change(
-                idty_index,
-                &IdtyEvent::Created {
-                    creator: creator_index,
-                    owner_key,
-                },
-            );
+            T::OnNewIdty::on_created(&idty_index, &creator_index);
             Ok(().into())
         }
 
@@ -407,6 +454,12 @@ pub mod pallet {
             ensure!(
                 IdentityIndexOf::<T>::get(&new_key).is_none(),
                 Error::<T>::OwnerKeyAlreadyUsed
+            );
+
+            // Ensure that the key is not currently as a validator
+            ensure!(
+                T::OwnerKeyChangePermission::check_allowed(&idty_index),
+                Error::<T>::OwnerKeyUsedAsValidator
             );
 
             let block_number = frame_system::Pallet::<T>::block_number();
@@ -517,9 +570,15 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Remove identity names from storage.
+        ///
+        /// This function allows a privileged root origin to remove multiple identity names from storage
+        /// in bulk.
+        ///
+        /// - `origin` - The origin of the call. It must be root.
+        /// - `names` - A vector containing the identity names to be removed from storage.
         #[pallet::call_index(6)]
         #[pallet::weight(T::WeightInfo::prune_item_identities_names(names.len() as u32))]
-        /// remove identity names from storage
         pub fn prune_item_identities_names(
             origin: OriginFor<T>,
             names: Vec<IdtyName>,
@@ -533,9 +592,17 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Change sufficient reference count for a given key.
+        ///
+        /// This function allows a privileged root origin to increment or decrement the sufficient
+        /// reference count associated with a specified owner key.
+        ///
+        /// - `origin` - The origin of the call. It must be root.
+        /// - `owner_key` - The account whose sufficient reference count will be modified.
+        /// - `inc` - A boolean indicating whether to increment (`true`) or decrement (`false`) the count.
+        ///
         #[pallet::call_index(7)]
         #[pallet::weight(T::WeightInfo::fix_sufficients())]
-        /// change sufficient ref count for given key
         pub fn fix_sufficients(
             origin: OriginFor<T>,
             owner_key: T::AccountId,
@@ -552,17 +619,23 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Link an account to an identity
-        // both must sign (target account and identity)
+        /// Link an account to an identity.
+        ///
+        /// This function links a specified account to an identity, requiring both the account and the
+        /// identity to sign the operation.
+        ///
+        /// - `origin` - The origin of the call, which must have an associated identity index.
+        /// - `account_id` - The account ID to link, which must sign the payload.
+        /// - `payload_sig` - The signature with the linked identity.
         // can be used for quota system
         // re-uses new owner key payload for simplicity
         // with other custom prefix
         #[pallet::call_index(8)]
         #[pallet::weight(T::WeightInfo::link_account())]
         pub fn link_account(
-            origin: OriginFor<T>,      // origin must have an identity index
-            account_id: T::AccountId,  // id of account to link (must sign the payload)
-            payload_sig: T::Signature, // signature with linked identity
+            origin: OriginFor<T>,
+            account_id: T::AccountId,
+            payload_sig: T::Signature,
         ) -> DispatchResultWithPostInfo {
             // verif
             let who = ensure_signed(origin)?;
@@ -624,20 +697,25 @@ pub mod pallet {
         CanNotRevokeUnvalidated,
         /// Cannot link to an inexisting account.
         AccountNotExist,
+        /// Insufficient balance to create an identity.
+        InsufficientBalance,
+        /// Owner key currently used as validator.
+        OwnerKeyUsedAsValidator,
     }
 
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
-        /// get identity count
+        /// Get the number of identities.
         pub fn identities_count() -> u32 {
             Identities::<T>::count()
         }
 
-        /// membership added
-        // when an identity becomes member, update its status
-        // unschedule identity action, this falls back to membership scheduling
-        // no identity schedule while membership is active
+        /// Handle the addition of membership to an identity.
+        ///
+        /// This function is called when an identity transitions to a member status. It updates
+        /// the identity's status, unschedules any pending identity change actions, and resets
+        /// the identity's next scheduled action to zero.
         pub fn membership_added(idty_index: T::IdtyIndex) {
             if let Some(mut idty_value) = Identities::<T>::get(idty_index) {
                 Self::unschedule_identity_change(idty_index, idty_value.next_scheduled);
@@ -652,11 +730,12 @@ pub mod pallet {
             // else should not happen
         }
 
-        /// membership removed
-        // only does something if identity is actually member
-        // a membership can be removed when the identity is revoked
-        // in this case, this does nothing
-        pub fn membership_removed(idty_index: T::IdtyIndex) {
+        /// Handle the removal of membership from an identity.
+        ///
+        /// This function is called when membership is revoked from an identity. It checks
+        /// if the identity is currently a member, and if so, updates its status to `NotMember`.
+        /// If the identity is already revoked, this function does nothing.
+        pub fn membership_removed(idty_index: T::IdtyIndex) -> Weight {
             if let Some(idty_value) = Identities::<T>::get(idty_index) {
                 if idty_value.status == IdtyStatus::Member {
                     Self::update_identity_status(
@@ -667,13 +746,15 @@ pub mod pallet {
                     );
                 }
             }
+            T::WeightInfo::membership_removed()
             // else should not happen
         }
 
-        /// perform identity removal
-        // (kind of garbage collector)
-        // this should not be called while the identity is still member
-        // otherwise there will still be a membership in storage, but no more identity
+        /// Perform the removal of an identity.
+        ///
+        /// This function acts as a garbage collector for identities. It should not be called
+        /// while the identity is still a member; otherwise, there will still be a membership
+        /// in storage, but no more identity.
         pub fn do_remove_identity(idty_index: T::IdtyIndex, reason: RemovalReason) -> Weight {
             if let Some(idty_value) = Identities::<T>::get(idty_index) {
                 // this line allows the owner key to be used after that
@@ -685,18 +766,19 @@ pub mod pallet {
                     frame_system::Pallet::<T>::dec_sufficients(&old_owner_key);
                 }
                 Self::deposit_event(Event::IdtyRemoved { idty_index, reason });
-                T::OnIdtyChange::on_idty_change(
-                    idty_index,
-                    &IdtyEvent::Removed {
-                        status: idty_value.status,
-                    },
+                let weight = T::OnRemoveIdty::on_removed(&idty_index);
+                return weight.saturating_add(
+                    T::WeightInfo::do_remove_identity()
+                        .saturating_sub(T::WeightInfo::do_remove_identity_handler()),
                 );
-                return T::WeightInfo::do_remove_identity();
             }
             T::WeightInfo::do_remove_identity_noop()
         }
 
-        /// revoke identity
+        /// Revoke an identity.
+        ///
+        /// This function revokes an identity, updating its status to `Revoked` and scheduling
+        /// it for removal after the specified deletion period.
         pub fn do_revoke_identity(idty_index: T::IdtyIndex, reason: RevocationReason) -> Weight {
             if let Some(idty_value) = Identities::<T>::get(idty_index) {
                 Self::update_identity_status(
@@ -707,12 +789,7 @@ pub mod pallet {
                 );
 
                 Self::deposit_event(Event::IdtyRevoked { idty_index, reason });
-                T::OnIdtyChange::on_idty_change(
-                    idty_index,
-                    &IdtyEvent::Removed {
-                        status: IdtyStatus::Revoked,
-                    },
-                );
+                T::OnRemoveIdty::on_revoked(&idty_index);
                 return T::WeightInfo::do_revoke_identity();
             }
             T::WeightInfo::do_revoke_identity_noop()
@@ -729,7 +806,7 @@ pub mod pallet {
             }
         }
 
-        /// remove identities planned for removal at the given block
+        /// Prune identities planned for removal at the given block number.
         pub fn prune_identities(block_number: BlockNumberFor<T>) -> Weight {
             let mut total_weight = Weight::zero();
 
@@ -738,39 +815,50 @@ pub mod pallet {
                     if idty_val.next_scheduled == block_number {
                         match idty_val.status {
                             IdtyStatus::Unconfirmed => {
-                                total_weight +=
-                                    Self::do_remove_identity(idty_index, RemovalReason::Unconfirmed)
+                                total_weight =
+                                    total_weight.saturating_add(Self::do_remove_identity(
+                                        idty_index,
+                                        RemovalReason::Unconfirmed,
+                                    ));
                             }
                             IdtyStatus::Unvalidated => {
-                                total_weight +=
-                                    Self::do_remove_identity(idty_index, RemovalReason::Unvalidated)
+                                total_weight =
+                                    total_weight.saturating_add(Self::do_remove_identity(
+                                        idty_index,
+                                        RemovalReason::Unvalidated,
+                                    ));
                             }
                             IdtyStatus::Revoked => {
-                                total_weight +=
-                                    Self::do_remove_identity(idty_index, RemovalReason::Revoked)
+                                total_weight = total_weight.saturating_add(
+                                    Self::do_remove_identity(idty_index, RemovalReason::Revoked),
+                                );
                             }
                             IdtyStatus::NotMember => {
-                                total_weight +=
-                                    Self::do_revoke_identity(idty_index, RevocationReason::Expired)
+                                total_weight = total_weight.saturating_add(
+                                    Self::do_revoke_identity(idty_index, RevocationReason::Expired),
+                                );
                             }
                             IdtyStatus::Member => { // do not touch identities of member accounts
                                  // this should not happen
                             }
                         }
                     } else {
-                        total_weight += T::WeightInfo::prune_identities_err()
-                            .saturating_sub(T::WeightInfo::prune_identities_none())
+                        total_weight = total_weight.saturating_add(
+                            T::WeightInfo::prune_identities_err()
+                                .saturating_sub(T::WeightInfo::prune_identities_none()),
+                        );
                     }
                 } else {
-                    total_weight += T::WeightInfo::prune_identities_none()
-                        .saturating_sub(T::WeightInfo::prune_identities_noop())
+                    total_weight = total_weight.saturating_add(
+                        T::WeightInfo::prune_identities_none()
+                            .saturating_sub(T::WeightInfo::prune_identities_noop()),
+                    );
                 }
             }
-
             total_weight.saturating_add(T::WeightInfo::prune_identities_noop())
         }
 
-        /// change identity status and reschedule next action
+        /// Change the identity status and reschedule the next action accordingly.
         fn update_identity_status(
             idty_index: T::IdtyIndex,
             mut idty_value: IdtyValue<BlockNumberFor<T>, T::AccountId, T::IdtyData>,
@@ -783,7 +871,7 @@ pub mod pallet {
             <Identities<T>>::insert(idty_index, idty_value);
         }
 
-        /// unschedule identity change
+        /// Unschedules the change related to an identity.
         fn unschedule_identity_change(idty_id: T::IdtyIndex, block_number: BlockNumberFor<T>) {
             let mut scheduled = IdentityChangeSchedule::<T>::get(block_number);
             if let Some(pos) = scheduled.iter().position(|x| *x == idty_id) {
@@ -792,7 +880,7 @@ pub mod pallet {
             }
         }
 
-        /// schedule identity change after given period
+        /// Schedule an identity change after a specified period.
         fn schedule_identity_change(
             idty_id: T::IdtyIndex,
             period: BlockNumberFor<T>,
@@ -803,7 +891,7 @@ pub mod pallet {
             next_scheduled
         }
 
-        /// check create identity
+        /// Check if creating an identity is allowed.
         // first internal checks
         // then other pallet checks trough trait
         fn check_create_identity(
@@ -839,6 +927,7 @@ pub mod pallet {
             // --- other checks depend on other pallets
             // run checks for identity creation
             T::CheckIdtyCallAllowed::check_create_identity(creator_index)?;
+            T::CheckAccountWorthiness::check_account_worthiness(receiver_key)?;
 
             Ok(creator_index)
         }
@@ -867,7 +956,7 @@ impl<T> frame_support::traits::StoredMap<T::AccountId, T::IdtyData> for Pallet<T
 where
     T: Config,
 {
-    /// get identity data for an account id
+    /// Get identity data for an account.
     fn get(key: &T::AccountId) -> T::IdtyData {
         if let Some(idty_index) = Self::identity_index_of(key) {
             if let Some(idty_val) = Identities::<T>::get(idty_index) {
@@ -880,7 +969,7 @@ where
         }
     }
 
-    /// mutate an account given a function of its data
+    /// Mutate an account in function of its data.
     fn try_mutate_exists<R, E: From<sp_runtime::DispatchError>>(
         key: &T::AccountId,
         f: impl FnOnce(&mut Option<T::IdtyData>) -> Result<R, E>,

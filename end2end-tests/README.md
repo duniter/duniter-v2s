@@ -125,7 +125,7 @@ For some scenarios, you may need to perform an action (When) that fails voluntar
 
 ### Run cucumber functional tests
 
-The cucumber tests use the last debug binary in your `target` folder. Make sure this binary corresponds to the executable you want to test by running `cargo build` before.
+The cucumber tests use the last debug binary in your `target` folder. Make sure this binary corresponds to the executable you want to test by running `cargo build --features constant-fees` before.
 
 To run the cucumber tests, you will need to have the rust toolchain installed locally.
 
@@ -167,6 +167,19 @@ subxt metadata -f bytes --version 14 > resources/metadata.scale
 ```
 
 If you don't have subxt, install it: `cargo install subxt-cli`
+
+### Debug
+
+Cucumber uses carriage returns to pretty-print.
+Hence you may need to append an additional newline to your debug printings.
+
+This commandline can be used to enable more debugging:
+
+```bash
+RUST_LOG=debug cargo cucumber -i distance_fail.feature -vvv --show-output
+```
+
+You can use the `log::debug` macro if the line `env_logger::init()` is uncommented in `cucumber_tests.rs`.
 
 [BDD]: https://en.wikipedia.org/wiki/Behavior-driven_development
 [cucumber]: https://cucumber.io/

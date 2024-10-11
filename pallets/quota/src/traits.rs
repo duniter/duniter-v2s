@@ -16,12 +16,12 @@
 
 use crate::*;
 
-/// trait used to request refund of a fee
+/// Trait for managing refund operations.
 pub trait RefundFee<T: Config> {
-    /// request refund for the account `account` using the quotas of identity `identity`
+    /// Request a refund of a fee for a specific account and identity.
     fn request_refund(account: T::AccountId, identity: IdtyId<T>, amount: BalanceOf<T>);
 }
-// dummy impl
+
 impl<T: Config> RefundFee<T> for () {
     fn request_refund(_account: T::AccountId, _identity: IdtyId<T>, _amount: BalanceOf<T>) {}
 }

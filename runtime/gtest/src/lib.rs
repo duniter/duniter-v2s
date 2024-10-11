@@ -27,43 +27,47 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 extern crate frame_benchmarking;
 
 pub mod parameters;
+pub mod weights;
 
 pub use self::parameters::*;
+use common_runtime::IdtyNameValidatorImpl;
 pub use common_runtime::{
     constants::*, entities::*, handlers::*, AccountId, Address, Balance, BlockNumber,
     FullIdentificationOfImpl, GetCurrentEpochIndex, Hash, Header, IdtyIndex, Index, Signature,
 };
+use frame_support::{
+    traits::{fungible::Balanced, Contains, Imbalance},
+    PalletId,
+};
 pub use frame_system::Call as SystemCall;
+use frame_system::EnsureRoot;
 pub use pallet_balances::Call as BalancesCall;
+#[cfg(feature = "runtime-benchmarks")]
+pub use pallet_collective::RawOrigin;
+use pallet_grandpa::{
+    fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
+};
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as session_historical;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::CurrencyAdapter;
+use pallet_transaction_payment::FungibleAdapter;
 pub use pallet_universal_dividend;
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{KeyTypeId, Perbill, Permill};
-
-use common_runtime::IdtyNameValidatorImpl;
-use frame_support::traits::Contains;
-use frame_support::PalletId;
-use frame_system::EnsureRoot;
-use pallet_grandpa::fg_primitives;
-use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
+use scale_info::prelude::{vec, vec::Vec};
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
-use sp_runtime::traits::{
-    AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, One, OpaqueKeys,
-};
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
+    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult,
+    ApplyExtrinsicResult, Perquintill,
 };
-use sp_std::prelude::*;
+pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+pub use weights::paritydb_weights::constants::ParityDbWeight as DbWeight;
 
 // A few exports that help ease life for downstream crates.
 use frame_support::instances::Instance2;
@@ -71,9 +75,7 @@ pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{EqualPrivilegeOnly, KeyOwnerProofSystem, Randomness},
     weights::{
-        constants::{
-            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
-        },
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
         Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
     },
     StorageValue,
@@ -170,9 +172,6 @@ mod benches {
 }
 
 pub struct BaseCallFilter;
-
-// implement filter
-// session pallet calls are filtered in order to use authority member instead
 impl Contains<RuntimeCall> for BaseCallFilter {
     fn contains(call: &RuntimeCall) -> bool {
         !matches!(call, RuntimeCall::Session(_))
@@ -240,7 +239,9 @@ impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
 }
 
 // Configure pallets to include in runtime.
-common_runtime::pallets_config! {}
+#[cfg(feature = "runtime-benchmarks")]
+type WorstOrigin = RawOrigin<AccountId, TechnicalCommitteeInstance>;
+common_runtime::pallets_config!();
 
 // Create the runtime by composing the pallets that were previously configured.
 construct_runtime!(

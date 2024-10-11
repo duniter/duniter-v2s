@@ -86,6 +86,7 @@ pub(super) async fn release_network(network: String, branch: String) -> Result<(
 }
 
 pub(super) async fn release_runtime(
+    name: String,
     network: String,
     branch: String,
     milestone: String,
@@ -129,8 +130,14 @@ pub(super) async fn release_runtime(
     println!("{}", release_notes);
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
-    create_release::create_release(gitlab_token, branch, milestone, release_notes.to_string())
-        .await?;
+    create_release::create_release(
+        gitlab_token,
+        name,
+        branch,
+        milestone,
+        release_notes.to_string(),
+    )
+    .await?;
 
     Ok(())
 }

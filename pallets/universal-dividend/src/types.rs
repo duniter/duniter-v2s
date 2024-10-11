@@ -16,11 +16,12 @@
 
 use codec::{Decode, Encode, Error, Input, MaxEncodedLen, Output};
 use core::num::NonZeroU16;
+use scale_info::prelude::vec::Vec;
 use sp_runtime::RuntimeDebug;
-use sp_std::vec::Vec;
 
 pub type UdIndex = u16;
 
+/// Represents the first eligible Universal Dividend.
 #[derive(
     Clone, Copy, Default, Eq, PartialEq, RuntimeDebug, serde::Deserialize, serde::Serialize,
 )]

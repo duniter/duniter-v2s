@@ -24,12 +24,9 @@ use frame_support::{
 };
 use frame_system as system;
 use sp_core::{Pair, H256};
-use sp_runtime::traits::IdentifyAccount;
-use sp_runtime::traits::Verify;
-use sp_runtime::BuildStorage;
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
-    MultiSignature, MultiSigner,
+    traits::{BlakeTwo256, IdentifyAccount, IdentityLookup, Verify},
+    BuildStorage, MultiSignature, MultiSigner,
 };
 
 type BlockNumber = u64;
@@ -91,16 +88,21 @@ impl system::Config for Test {
     type Hashing = BlakeTwo256;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type MultiBlockMigrator = ();
     type Nonce = u64;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
     type PalletInfo = PalletInfo;
+    type PostInherents = ();
+    type PostTransactions = ();
+    type PreInherents = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeTask = ();
     type SS58Prefix = SS58Prefix;
+    type SingleBlockMigrations = ();
     type SystemWeightInfo = ();
     type Version = ();
 }
@@ -117,7 +119,6 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type FreezeIdentifier = ();
     type MaxFreezes = ConstU32<0>;
-    type MaxHolds = ConstU32<0>;
     type MaxLocks = MaxLocks;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
@@ -146,6 +147,7 @@ impl pallet_identity::Config for Test {
     type AccountLinker = ();
     type AutorevocationPeriod = AutorevocationPeriod;
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
+    type CheckAccountWorthiness = ();
     type CheckIdtyCallAllowed = ();
     type ConfirmPeriod = ConfirmPeriod;
     type DeletionPeriod = DeletionPeriod;
@@ -153,7 +155,9 @@ impl pallet_identity::Config for Test {
     type IdtyData = ();
     type IdtyIndex = u64;
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
-    type OnIdtyChange = ();
+    type OnNewIdty = ();
+    type OnRemoveIdty = ();
+    type OwnerKeyChangePermission = ();
     type RuntimeEvent = RuntimeEvent;
     type Signature = Signature;
     type Signer = AccountPublic;

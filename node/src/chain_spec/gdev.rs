@@ -18,13 +18,9 @@ use super::*;
 use crate::chain_spec::gen_genesis_data::{
     AuthorityKeys, CommonParameters, GenesisIdentity, SessionKeysProvider,
 };
-use common_runtime::constants::*;
-use common_runtime::entities::IdtyData;
-use common_runtime::GenesisIdty;
-use common_runtime::IdtyStatus;
+use common_runtime::{constants::*, entities::IdtyData, GenesisIdty, IdtyStatus};
 use gdev_runtime::{
-    opaque::SessionKeys, pallet_universal_dividend, parameters, Runtime, RuntimeGenesisConfig,
-    WASM_BINARY,
+    opaque::SessionKeys, pallet_universal_dividend, parameters, Runtime, WASM_BINARY,
 };
 use jsonrpsee::core::JsonValue;
 use sc_network::config::MultiaddrWithPeerId;
@@ -32,10 +28,9 @@ use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use serde::Deserialize;
 use sp_core::{sr25519, Get};
-use sp_runtime::Perbill;
 use std::{env, fs};
 
-pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig>;
+pub type ChainSpec = sc_service::GenericChainSpec;
 
 type GenesisParameters = gdev_runtime::GenesisParameters<u32, u32, u64, u32>;
 
@@ -77,8 +72,6 @@ fn get_parameters(parameters_from_file: &Option<GenesisParameters>) -> CommonPar
         universal_dividend_square_money_growth_rate: parameters::SquareMoneyGrowthRate::get(),
         universal_dividend_ud_creation_period: parameters_from_file.ud_creation_period,
         universal_dividend_ud_reeval_period: parameters_from_file.ud_reeval_period,
-        universal_dividend_units_per_ud:
-            <Runtime as pallet_universal_dividend::Config>::UnitsPerUd::get(),
         wot_first_issuable_on: parameters_from_file.wot_first_cert_issuable_on,
         wot_min_cert_for_membership: parameters_from_file.wot_min_cert_for_membership,
         wot_min_cert_for_create_idty_right: parameters_from_file.wot_min_cert_for_create_idty_right,
@@ -92,8 +85,8 @@ fn get_parameters(parameters_from_file: &Option<GenesisParameters>) -> CommonPar
         cert_min_received_cert_to_be_able_to_issue_cert: parameters_from_file
             .cert_min_received_cert_to_issue_cert,
         cert_validity_period: parameters_from_file.cert_validity_period,
-        distance_min_accessible_referees: Perbill::from_percent(80), // TODO: generalize
-        distance_max_depth: 5,                                       // TODO: generalize
+        distance_min_accessible_referees: parameters::MinAccessibleReferees::get(),
+        distance_max_depth: parameters::MaxRefereeDistance::get(),
         smith_sub_wot_min_cert_for_membership: parameters_from_file
             .smith_wot_min_cert_for_membership,
         smith_cert_max_by_issuer: parameters_from_file.smith_cert_max_by_issuer,

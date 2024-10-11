@@ -14,6 +14,33 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Duniter Authority Members Pallet
+//!
+//! In a permissioned network, defining the set of authorities and selecting validators for the next session is crucial.
+//! The authority members pallet is responsible for this. Specifically, it:
+//!
+//! - Manages a `Members` set with custom rules.
+//! - Implements the `SessionManager` trait from the FRAME session pallet.
+//!
+//! ## Entering the Set of Authorities
+//!
+//! To become part of Duniter authorities, one must follow these steps:
+//!
+//! 1. Become a member of the main web of trust.
+//! 2. Request membership to the smith sub web of trust.
+//! 3. Obtain enough certifications to gain smith membership.
+//! 4. Claim membership to the set of authorities.
+//!
+//! After becoming an authority, one can "go online" and "go offline" to enter or leave two sessions later.
+//!
+//! ## Some Vocabulary
+//!
+//! *Smiths* are individuals allowed to forge blocks. Specifically, this entails:
+//!
+//! - **Smith** status is required to become an authority.
+//! - **Authority** status is required to become a validator.
+//! - **Validator** status is required to add blocks.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
@@ -28,30 +55,27 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-//pub use impls::*;
 pub use pallet::*;
 pub use sp_staking::SessionIndex;
 pub use traits::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
+use codec::alloc::borrow::ToOwned;
 use frame_support::traits::Get;
-use sp_runtime::traits::Convert;
-use sp_std::prelude::*;
+use scale_info::prelude::{collections::BTreeMap, vec, vec::Vec};
+use sp_runtime::traits::{Convert, IsMember};
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::ValidatorRegistration;
-    use frame_support::traits::{StorageVersion, UnfilteredDispatchable};
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{StorageVersion, UnfilteredDispatchable, ValidatorRegistration},
+    };
     use frame_system::pallet_prelude::*;
-    use sp_runtime::traits::{Convert, IsMember};
-    use sp_std::collections::btree_map::BTreeMap;
-    use sp_std::vec;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -67,17 +91,35 @@ pub mod pallet {
     pub trait Config:
         frame_system::Config + pallet_session::Config + pallet_session::historical::Config
     {
+        /// Specifies the type that determines membership status.
         type IsMember: IsMember<Self::MemberId>;
+
+        /// Handler for when a new session is initiated.
         type OnNewSession: OnNewSession;
+
+        /// Handler for when a member is removed from authorities.
         type OnOutgoingMember: OnOutgoingMember<Self::MemberId>;
+
+        /// Handler for when a new member is added to authorities.
         type OnIncomingMember: OnIncomingMember<Self::MemberId>;
-        /// Max number of authorities allowed
+
+        /// Maximum number of authorities allowed.
         #[pallet::constant]
         type MaxAuthorities: Get<u32>;
+
+        /// Type representing the identifier of a member.
         type MemberId: Copy + Ord + MaybeSerializeDeserialize + Parameter;
+
+        /// Converts an `AccountId` to an optional `MemberId`.
         type MemberIdOf: Convert<Self::AccountId, Option<Self::MemberId>>;
+
+        /// Specifies the origin type required to remove a member.
         type RemoveMemberOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
+        /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+        /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
     }
 
@@ -123,28 +165,28 @@ pub mod pallet {
 
     // STORAGE //
 
-    /// list incoming authorities
+    /// The incoming authorities.
     #[pallet::storage]
     #[pallet::getter(fn incoming)]
     pub type IncomingAuthorities<T: Config> = StorageValue<_, Vec<T::MemberId>, ValueQuery>;
 
-    /// list online authorities
+    /// The online authorities.
     #[pallet::storage]
     #[pallet::getter(fn online)]
     pub type OnlineAuthorities<T: Config> = StorageValue<_, Vec<T::MemberId>, ValueQuery>;
 
-    /// list outgoing authorities
+    /// The outgoing authorities.
     #[pallet::storage]
     #[pallet::getter(fn outgoing)]
     pub type OutgoingAuthorities<T: Config> = StorageValue<_, Vec<T::MemberId>, ValueQuery>;
 
-    /// maps member id to member data
+    /// The member data.
     #[pallet::storage]
     #[pallet::getter(fn member)]
     pub type Members<T: Config> =
         StorageMap<_, Twox64Concat, T::MemberId, MemberData<T::AccountId>, OptionQuery>;
 
-    // Blacklist.
+    /// The blacklisted authorities.
     #[pallet::storage]
     #[pallet::getter(fn blacklist)]
     pub type Blacklist<T: Config> = StorageValue<_, Vec<T::MemberId>, ValueQuery>;
@@ -204,7 +246,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// ask to leave the set of validators two sessions after
+        /// Request to leave the set of validators two sessions later.
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::go_offline())]
         pub fn go_offline(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -233,7 +275,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// ask to join the set of validators two sessions after
+        /// Request to join the set of validators two sessions later.
         #[pallet::call_index(1)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::go_online())]
         pub fn go_online(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -274,7 +316,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// declare new session keys to replace current ones
+        /// Declare new session keys to replace current ones.
         #[pallet::call_index(2)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_session_keys())]
         pub fn set_session_keys(origin: OriginFor<T>, keys: T::Keys) -> DispatchResultWithPostInfo {
@@ -292,7 +334,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// remove an identity from the set of authorities
+        /// Remove a member from the set of validators.
         #[pallet::call_index(3)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_member())]
         pub fn remove_member(
@@ -307,6 +349,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Remove a member from the blacklist.
         #[pallet::call_index(4)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_member_from_blacklist())]
         /// remove an identity from the blacklist
@@ -335,7 +378,7 @@ pub mod pallet {
         //  The return type of the annotated function must be `Result`. All changes to storage performed
         //  by the annotated function are discarded if it returns `Err`, or committed if `Ok`.
         #[frame_support::transactional]
-        /// change owner key of an authority member
+        /// Change the owner key of an authority member.
         pub fn change_owner_key(
             member_id: T::MemberId,
             new_owner_key: T::AccountId,
@@ -370,6 +413,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Get the number of authorities.
         pub fn authorities_counter() -> u32 {
             let count = OnlineAuthorities::<T>::get().len() + IncomingAuthorities::<T>::get().len()
                 - OutgoingAuthorities::<T>::get().len();
@@ -380,7 +424,7 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
-        /// perform authority member removal
+        /// Perform authority member removal.
         fn do_remove_member(member_id: T::MemberId, owner_key: T::AccountId) {
             if Self::is_online(member_id) {
                 // Trigger the member deletion for next session
@@ -407,7 +451,7 @@ pub mod pallet {
             Self::deposit_event(Event::MemberRemoved { member: member_id });
         }
 
-        /// perform incoming authorities insertion
+        /// Perform incoming authorities insertion.
         fn insert_in(member_id: T::MemberId) -> bool {
             let not_already_inserted = IncomingAuthorities::<T>::mutate(|members_ids| {
                 if let Err(index) = members_ids.binary_search(&member_id) {
@@ -423,7 +467,7 @@ pub mod pallet {
             not_already_inserted
         }
 
-        /// perform outgoing authority insertion
+        /// Perform outgoing authority insertion.
         pub fn insert_out(member_id: T::MemberId) -> bool {
             let not_already_inserted = OutgoingAuthorities::<T>::mutate(|members_ids| {
                 if let Err(index) = members_ids.binary_search(&member_id) {
@@ -439,33 +483,33 @@ pub mod pallet {
             not_already_inserted
         }
 
-        /// check if member is incoming
+        /// Check if member is incoming.
         fn is_incoming(member_id: T::MemberId) -> bool {
             IncomingAuthorities::<T>::get()
                 .binary_search(&member_id)
                 .is_ok()
         }
 
-        /// check if member is online
+        /// C&heck if member is online.
         fn is_online(member_id: T::MemberId) -> bool {
             OnlineAuthorities::<T>::get()
                 .binary_search(&member_id)
                 .is_ok()
         }
 
-        /// check if member is outgoing
+        /// Check if member is outgoing.
         fn is_outgoing(member_id: T::MemberId) -> bool {
             OutgoingAuthorities::<T>::get()
                 .binary_search(&member_id)
                 .is_ok()
         }
 
-        /// check if member is blacklisted
+        /// Check if member is blacklisted.
         fn is_blacklisted(member_id: T::MemberId) -> bool {
             Blacklist::<T>::get().contains(&member_id)
         }
 
-        /// perform removal from incoming authorities
+        /// Perform removal from incoming authorities.
         fn remove_in(member_id: T::MemberId) {
             IncomingAuthorities::<T>::mutate(|members_ids| {
                 if let Ok(index) = members_ids.binary_search(&member_id) {
@@ -474,7 +518,7 @@ pub mod pallet {
             })
         }
 
-        /// perform removal from online authorities
+        /// Perform removal from online authorities.
         fn remove_online(member_id: T::MemberId) {
             OnlineAuthorities::<T>::mutate(|members_ids| {
                 if let Ok(index) = members_ids.binary_search(&member_id) {
@@ -483,7 +527,7 @@ pub mod pallet {
             });
         }
 
-        /// perform removal from outgoing authorities
+        /// Perform removal from outgoing authorities.
         fn remove_out(member_id: T::MemberId) {
             OutgoingAuthorities::<T>::mutate(|members_ids| {
                 if let Ok(index) = members_ids.binary_search(&member_id) {
@@ -492,7 +536,7 @@ pub mod pallet {
             });
         }
 
-        /// check that accountid is member
+        /// Check that account is member.
         fn verify_ownership_and_membership(
             who: &T::AccountId,
         ) -> Result<T::MemberId, DispatchError> {
@@ -616,7 +660,7 @@ impl<T: Config> pallet_session::historical::SessionManager<T::ValidatorId, T::Fu
 {
     fn new_session(
         new_index: SessionIndex,
-    ) -> Option<sp_std::vec::Vec<(T::ValidatorId, T::FullIdentification)>> {
+    ) -> Option<Vec<(T::ValidatorId, T::FullIdentification)>> {
         <Self as pallet_session::SessionManager<_>>::new_session(new_index).map(|validators_ids| {
             validators_ids
                 .into_iter()
@@ -627,7 +671,7 @@ impl<T: Config> pallet_session::historical::SessionManager<T::ValidatorId, T::Fu
 
     fn new_session_genesis(
         new_index: SessionIndex,
-    ) -> Option<sp_std::vec::Vec<(T::ValidatorId, T::FullIdentification)>> {
+    ) -> Option<Vec<(T::ValidatorId, T::FullIdentification)>> {
         <Self as pallet_session::SessionManager<_>>::new_session_genesis(new_index).map(
             |validators_ids| {
                 validators_ids

@@ -19,16 +19,15 @@ use codec::Decode;
 use core::hash::Hash;
 use scale_info::form::PortableForm;
 use serde::Serialize;
-use std::collections::HashMap;
-use std::path::Path;
 use std::{
+    collections::HashMap,
     fs::File,
     io::{Read, Write},
+    path::Path,
+    process::Command,
 };
 use tera::Tera;
-use weightanalyzer::analyze_weight;
-use weightanalyzer::MaxBlockWeight;
-use weightanalyzer::WeightInfo;
+use weightanalyzer::{analyze_weight, MaxBlockWeight, WeightInfo};
 
 fn rename_key<K, V>(h: &mut HashMap<K, V>, old_key: &K, new_key: K)
 where
@@ -44,8 +43,9 @@ where
 const CALLS_DOC_FILEPATH: &str = "docs/api/runtime-calls.md";
 const EVENTS_DOC_FILEPATH: &str = "docs/api/runtime-events.md";
 const ERRORS_DOC_FILEPATH: &str = "docs/api/runtime-errors.md";
-const TEMPLATES_GLOB: &str = "xtask/res/templates/*.md";
-const WEIGHT_FILEPATH: &str = "runtime/common/src/weights/";
+const ERRORS_PO_FILEPATH: &str = "docs/api/runtime-errors.po";
+const TEMPLATES_GLOB: &str = "xtask/res/templates/*.{md,po}";
+const WEIGHT_FILEPATH: &str = "runtime/gdev/src/weights/";
 
 // define structs and implementations
 
@@ -55,6 +55,7 @@ type RuntimePallets = Vec<Pallet>;
 struct Pallet {
     index: u8,
     name: String,
+    type_name: String,
     calls: Vec<Call>,
     events: Vec<Event>,
     errors: Vec<ErroR>,
@@ -95,6 +96,7 @@ impl Pallet {
     fn new(
         index: u8,
         name: String,
+        type_name: String,
         call_scale_type_def: &Option<scale_info::TypeDef<PortableForm>>,
         event_scale_type_def: &Option<scale_info::TypeDef<PortableForm>>,
         error_scale_type_def: &Option<scale_info::TypeDef<PortableForm>>,
@@ -129,6 +131,7 @@ impl Pallet {
         Ok(Self {
             index,
             name,
+            type_name,
             calls,
             events,
             errors,
@@ -156,8 +159,8 @@ impl From<&scale_info::Variant<PortableForm>> for Call {
 impl From<&scale_info::Field<PortableForm>> for CallParam {
     fn from(field: &scale_info::Field<PortableForm>) -> Self {
         Self {
-            name: field.clone().name.unwrap_or_default(),
-            type_name: field.clone().type_name.unwrap_or_default(),
+            name: field.clone().name.unwrap_or_default().to_string(),
+            type_name: field.clone().type_name.unwrap_or_default().to_string(),
         }
     }
 }
@@ -175,8 +178,8 @@ impl From<&scale_info::Variant<PortableForm>> for Event {
 impl From<&scale_info::Field<PortableForm>> for EventParam {
     fn from(field: &scale_info::Field<PortableForm>) -> Self {
         Self {
-            name: field.clone().name.unwrap_or_default(),
-            type_name: field.clone().type_name.unwrap_or_default(),
+            name: field.clone().name.unwrap_or_default().to_string(),
+            type_name: field.clone().type_name.unwrap_or_default().to_string(),
         }
     }
 }
@@ -304,7 +307,35 @@ pub(super) fn gen_doc() -> Result<()> {
         })
     });
 
-    let (call_doc, event_doc, error_doc) = print_runtime(runtime);
+    let (call_doc, event_doc, error_doc, error_po) = print_runtime(runtime);
+
+    // Generate docs from rust code
+    Command::new("cargo")
+        .args([
+            "doc",
+            "--package=pallet-*",
+            "--package=*-runtime",
+            "--package=*distance*",
+            "--package=*membership*",
+            "--no-deps",
+            "--document-private-items",
+            "--features=runtime-benchmarks",
+            "--package=pallet-atomic-swap",
+            "--package=pallet-authority-discovery",
+            "--package=pallet-balances",
+            "--package=pallet-collective",
+            "--package=pallet-im-online",
+            "--package=pallet-preimage",
+            "--package=pallet-proxy",
+            "--package=pallet-scheduler",
+            "--package=pallet-session",
+            "--package=pallet-sudo",
+            "--package=pallet-timestamp",
+            "--package=pallet-treasury",
+            "--package=pallet-utility",
+        ])
+        .status()
+        .expect("cargo doc failed to execute");
 
     let mut file = File::create(CALLS_DOC_FILEPATH)
         .with_context(|| format!("Failed to create file '{}'", CALLS_DOC_FILEPATH))?;
@@ -318,6 +349,10 @@ pub(super) fn gen_doc() -> Result<()> {
         .with_context(|| format!("Failed to create file '{}'", ERRORS_DOC_FILEPATH))?;
     file.write_all(error_doc.as_bytes())
         .with_context(|| format!("Failed to write to file '{}'", ERRORS_DOC_FILEPATH))?;
+    let mut file = File::create(ERRORS_PO_FILEPATH)
+        .with_context(|| format!("Failed to create file '{}'", ERRORS_PO_FILEPATH))?;
+    file.write_all(error_po.as_bytes())
+        .with_context(|| format!("Failed to write to file '{}'", ERRORS_PO_FILEPATH))?;
 
     Ok(())
 }
@@ -339,7 +374,7 @@ fn get_max_weight_from_metadata_v15(
 
     let block_weights = scale_value::scale::decode_as_type(
         &mut &*block_weights.value,
-        block_weights.ty.id,
+        &block_weights.ty.id,
         &metadata_v15.types,
     )
     .expect("Can't decode max_weight")
@@ -363,10 +398,17 @@ fn get_from_metadata_v15(
     println!("Number of pallets: {}", metadata_v15.pallets.len());
     let mut pallets = Vec::new();
     for pallet in metadata_v15.pallets {
+        let mut type_name: String = Default::default();
         let calls_type_def = if let Some(calls) = pallet.calls {
             let Some(calls_type) = metadata_v15.types.resolve(calls.ty.id) else {
                 bail!("Invalid metadata")
             };
+            type_name = calls_type
+                .path
+                .segments
+                .first()
+                .expect("cannot decode pallet type")
+                .to_string();
             Some(calls_type.type_def.clone())
         } else {
             println!("{}: {} (0 calls)", pallet.index, pallet.name);
@@ -394,6 +436,7 @@ fn get_from_metadata_v15(
         let pallet = Pallet::new(
             pallet.index,
             pallet.name.clone(),
+            type_name,
             &calls_type_def,
             &events_type_def,
             &errors_type_def,
@@ -431,7 +474,7 @@ fn get_weights(max_weight: u128) -> Result<HashMap<String, HashMap<String, Weigh
 }
 
 /// use template to render markdown file with runtime calls documentation
-fn print_runtime(pallets: RuntimePallets) -> (String, String, String) {
+fn print_runtime(pallets: RuntimePallets) -> (String, String, String, String) {
     // init variables
     let mut user_calls_counter = 0;
     let user_calls_pallets: RuntimePallets = pallets
@@ -530,5 +573,9 @@ fn print_runtime(pallets: RuntimePallets) -> (String, String, String) {
         .render("runtime-errors.md", &context)
         .expect("template error");
 
-    (call_doc, event_doc, error_doc)
+    let error_po = tera
+        .render("runtime-errors.po", &context)
+        .expect("template error");
+
+    (call_doc, event_doc, error_doc, error_po)
 }

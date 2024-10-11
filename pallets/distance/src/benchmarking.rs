@@ -15,16 +15,15 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 #![cfg(feature = "runtime-benchmarks")]
+#![allow(clippy::multiple_bound_locations)]
 
 use super::*;
 
 use codec::Encode;
 use frame_benchmarking::v2::*;
-use frame_support::traits::{Currency, OnFinalize};
-use frame_system::pallet_prelude::BlockNumberFor;
-use frame_system::RawOrigin;
-use pallet_balances::Pallet as Balances;
-use sp_runtime::traits::{Bounded, One};
+use frame_support::traits::{Get, OnFinalize, OnInitialize};
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
+use scale_info::prelude::vec;
 use sp_runtime::Perbill;
 
 use crate::Pallet;
@@ -32,7 +31,7 @@ use crate::Pallet;
 #[benchmarks(
         where
         T: pallet_balances::Config,
-		T::Balance: From<u64>,
+		BalanceOf<T>: From<u32>,
         BlockNumberFor<T>: From<u32>,
 )]
 mod benchmarks {
@@ -56,12 +55,13 @@ mod benchmarks {
 
     #[benchmark]
     fn request_distance_evaluation() {
+        // More than membership renewal to avoid antispam
+        frame_system::pallet::Pallet::<T>::set_block_number(500_000_000u32.into());
         let idty = T::IdtyIndex::one();
         let caller: T::AccountId = pallet_identity::Identities::<T>::get(idty)
             .unwrap()
             .owner_key;
-        let _ =
-            <Balances<T> as Currency<_>>::make_free_balance_be(&caller, T::Balance::max_value());
+        let _ = T::Currency::set_balance(&caller, u32::MAX.into());
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller.clone()));
@@ -81,11 +81,13 @@ mod benchmarks {
 
     #[benchmark]
     fn request_distance_evaluation_for() {
+        // More than membership renewal to avoid antispam
+        frame_system::pallet::Pallet::<T>::set_block_number(500_000_000u32.into());
         let idty = T::IdtyIndex::one();
         let caller: T::AccountId = pallet_identity::Identities::<T>::get(idty)
             .unwrap()
             .owner_key;
-        <Balances<T> as Currency<_>>::make_free_balance_be(&caller, T::Balance::max_value());
+        T::Currency::set_balance(&caller, u32::MAX.into());
         let target: T::IdtyIndex = 2u32;
         // set target status since targeted distance evaluation only allowed for unvalidated
         pallet_identity::Identities::<T>::mutate(target, |idty_val| {
@@ -161,7 +163,122 @@ mod benchmarks {
         #[extrinsic_call]
         _(RawOrigin::Root, idty);
 
-        assert_has_event::<T>(Event::<T>::EvaluatedValid { idty_index: idty }.into());
+        assert_has_event::<T>(
+            Event::<T>::EvaluatedValid {
+                idty_index: idty,
+                distance: Perbill::one(),
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn on_initialize_overhead() {
+        // Benchmark on_initialize with no on_finalize and no do_evaluation.
+        let block_number: BlockNumberFor<T> = (T::EvaluationPeriod::get() + 1).into();
+
+        #[block]
+        {
+            Pallet::<T>::on_initialize(block_number);
+        }
+    }
+
+    #[benchmark]
+    fn do_evaluation_success() -> Result<(), BenchmarkError> {
+        // Benchmarking do_evaluation in case of a single success.
+        CurrentPoolIndex::<T>::put(0);
+        // More than membership renewal to avoid antispam
+        frame_system::pallet::Pallet::<T>::set_block_number(500_000_000u32.into());
+        let idty = T::IdtyIndex::one();
+        let caller: T::AccountId = pallet_identity::Identities::<T>::get(idty)
+            .unwrap()
+            .owner_key;
+        let _ = T::Currency::set_balance(&caller, u32::MAX.into());
+        Pallet::<T>::request_distance_evaluation(RawOrigin::Signed(caller.clone()).into())?;
+        assert_has_event::<T>(
+            Event::<T>::EvaluationRequested {
+                idty_index: idty,
+                who: caller.clone(),
+            }
+            .into(),
+        );
+
+        CurrentPoolIndex::<T>::put(2);
+        Pallet::<T>::force_update_evaluation(
+            RawOrigin::Root.into(),
+            caller,
+            ComputationResult {
+                distances: vec![Perbill::one()],
+            },
+        )?;
+
+        #[block]
+        {
+            Pallet::<T>::do_evaluation(0);
+        }
+
+        assert_has_event::<T>(
+            Event::<T>::EvaluatedValid {
+                idty_index: idty,
+                distance: Perbill::one(),
+            }
+            .into(),
+        );
+        Ok(())
+    }
+
+    #[benchmark]
+    fn do_evaluation_failure() -> Result<(), BenchmarkError> {
+        // Benchmarking do_evaluation in case of a single failure.
+        CurrentPoolIndex::<T>::put(0);
+        // More than membership renewal to avoid antispam
+        frame_system::pallet::Pallet::<T>::set_block_number(500_000_000u32.into());
+        let idty = T::IdtyIndex::one();
+        let caller: T::AccountId = pallet_identity::Identities::<T>::get(idty)
+            .unwrap()
+            .owner_key;
+        let _ = T::Currency::set_balance(&caller, u32::MAX.into());
+        Pallet::<T>::request_distance_evaluation(RawOrigin::Signed(caller.clone()).into())?;
+        assert_has_event::<T>(
+            Event::<T>::EvaluationRequested {
+                idty_index: idty,
+                who: caller.clone(),
+            }
+            .into(),
+        );
+
+        CurrentPoolIndex::<T>::put(2);
+        Pallet::<T>::force_update_evaluation(
+            RawOrigin::Root.into(),
+            caller,
+            ComputationResult {
+                distances: vec![Perbill::zero()],
+            },
+        )?;
+
+        #[block]
+        {
+            Pallet::<T>::do_evaluation(0);
+        }
+
+        assert_has_event::<T>(
+            Event::<T>::EvaluatedInvalid {
+                idty_index: idty,
+                distance: Perbill::zero(),
+            }
+            .into(),
+        );
+        Ok(())
+    }
+
+    #[benchmark]
+    fn do_evaluation_overhead() -> Result<(), BenchmarkError> {
+        #[block]
+        {
+            Pallet::<T>::do_evaluation(0);
+        }
+
+        Ok(())
     }
 
     #[benchmark]

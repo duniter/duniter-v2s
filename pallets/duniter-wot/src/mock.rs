@@ -19,25 +19,16 @@ use crate::{self as pallet_duniter_wot};
 use frame_support::{parameter_types, traits::Everything};
 use frame_system as system;
 use sp_core::H256;
-use sp_runtime::BuildStorage;
 use sp_runtime::{
     testing::{TestSignature, UintAuthorityId},
     traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
 };
 use sp_state_machine::BasicExternalities;
 use std::collections::BTreeMap;
 
 type AccountId = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
-
-pub struct IdentityIndexOf<T: pallet_identity::Config>(PhantomData<T>);
-impl<T: pallet_identity::Config> sp_runtime::traits::Convert<T::AccountId, Option<T::IdtyIndex>>
-    for IdentityIndexOf<T>
-{
-    fn convert(account_id: T::AccountId) -> Option<T::IdtyIndex> {
-        pallet_identity::Pallet::<T>::identity_index_of(account_id)
-    }
-}
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -69,16 +60,21 @@ impl system::Config for Test {
     type Hashing = BlakeTwo256;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type MultiBlockMigrator = ();
     type Nonce = u64;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
     type PalletInfo = PalletInfo;
+    type PostInherents = ();
+    type PostTransactions = ();
+    type PreInherents = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeTask = ();
     type SS58Prefix = SS58Prefix;
+    type SingleBlockMigrations = ();
     type SystemWeightInfo = ();
     type Version = ();
 }
@@ -117,6 +113,7 @@ impl pallet_identity::Config for Test {
     type AccountLinker = ();
     type AutorevocationPeriod = AutorevocationPeriod;
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
+    type CheckAccountWorthiness = ();
     type CheckIdtyCallAllowed = DuniterWot;
     type ConfirmPeriod = ConfirmPeriod;
     type DeletionPeriod = DeletionPeriod;
@@ -124,7 +121,9 @@ impl pallet_identity::Config for Test {
     type IdtyData = ();
     type IdtyIndex = IdtyIndex;
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
-    type OnIdtyChange = DuniterWot;
+    type OnNewIdty = DuniterWot;
+    type OnRemoveIdty = DuniterWot;
+    type OwnerKeyChangePermission = ();
     type RuntimeEvent = RuntimeEvent;
     type Signature = TestSignature;
     type Signer = UintAuthorityId;
@@ -139,15 +138,15 @@ parameter_types! {
 }
 
 impl pallet_membership::Config for Test {
-    type AccountIdOf = ();
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkSetupHandler = ();
     type CheckMembershipOpAllowed = DuniterWot;
+    type IdtyAttr = Identity;
     type IdtyId = IdtyIndex;
-    type IdtyIdOf = IdentityIndexOf<Self>;
     type MembershipPeriod = MembershipPeriod;
     type MembershipRenewalPeriod = MembershipRenewalPeriod;
-    type OnEvent = DuniterWot;
+    type OnNewMembership = DuniterWot;
+    type OnRemoveMembership = DuniterWot;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }

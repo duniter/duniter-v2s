@@ -20,7 +20,6 @@ use super::*;
 
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
-use sp_runtime::traits::Convert;
 
 use crate::Pallet;
 
@@ -38,9 +37,10 @@ mod benchmarks {
     #[benchmark]
     fn invite_smith() {
         let issuer: T::IdtyIndex = 1.into();
-        let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
         Pallet::<T>::on_smith_goes_online(1.into());
-        let receiver: T::IdtyIndex = 4.into();
+        // Should be the last identities from the local_testnet_config
+        let receiver: T::IdtyIndex = 6.into();
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller), receiver);
@@ -51,14 +51,15 @@ mod benchmarks {
     #[benchmark]
     fn accept_invitation() -> Result<(), BenchmarkError> {
         let issuer: T::IdtyIndex = 1.into();
-        let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
         Pallet::<T>::on_smith_goes_online(1.into());
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
             RawOrigin::Signed(caller.clone()).into();
-        let receiver: T::IdtyIndex = 4.into();
+        // Should be the last identities from the local_testnet_config
+        let receiver: T::IdtyIndex = 6.into();
         Pallet::<T>::invite_smith(caller_origin, receiver)?;
-        let issuer: T::IdtyIndex = 4.into();
-        let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
+        let issuer: T::IdtyIndex = 6.into();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller));
@@ -75,25 +76,48 @@ mod benchmarks {
     #[benchmark]
     fn certify_smith() -> Result<(), BenchmarkError> {
         let issuer: T::IdtyIndex = 1.into();
-        let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
         Pallet::<T>::on_smith_goes_online(1.into());
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
             RawOrigin::Signed(caller.clone()).into();
-        let receiver: T::IdtyIndex = 4.into();
+        // Should be the last identities from the local_testnet_config
+        let receiver: T::IdtyIndex = 6.into();
         Pallet::<T>::invite_smith(caller_origin, receiver)?;
         let issuer: T::IdtyIndex = receiver;
-        let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
             RawOrigin::Signed(caller.clone()).into();
         Pallet::<T>::accept_invitation(caller_origin)?;
         let issuer: T::IdtyIndex = 1.into();
-        let caller: T::AccountId = T::OwnerKeyOf::convert(issuer).unwrap();
+        let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller), receiver);
 
         assert_has_event::<T>(Event::<T>::SmithCertAdded { receiver, issuer }.into());
         Ok(())
+    }
+
+    #[benchmark]
+    fn on_removed_wot_member() {
+        let idty: T::IdtyIndex = 1.into();
+        assert!(Smiths::<T>::get(idty).is_some());
+
+        #[block]
+        {
+            Pallet::<T>::on_removed_wot_member(idty);
+        }
+    }
+
+    #[benchmark]
+    fn on_removed_wot_member_empty() {
+        let idty: T::IdtyIndex = 100.into();
+        assert!(Smiths::<T>::get(idty).is_none());
+
+        #[block]
+        {
+            Pallet::<T>::on_removed_wot_member(idty);
+        }
     }
 
     impl_benchmark_test_suite!(

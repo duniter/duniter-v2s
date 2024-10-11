@@ -19,11 +19,9 @@
 use super::*;
 
 use codec::Encode;
-use frame_benchmarking::account;
-use frame_benchmarking::v2::*;
+use frame_benchmarking::{account, v2::*};
 use frame_support::traits::OnInitialize;
-use frame_system::pallet_prelude::BlockNumberFor;
-use frame_system::RawOrigin;
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_core::Get;
 use sp_io::crypto::{sr25519_generate, sr25519_sign};
 use sp_runtime::{AccountId32, MultiSigner};
@@ -62,6 +60,7 @@ mod benchmarks {
             RawOrigin::Signed(caller.clone()).into();
         let owner_key_origin: <T as frame_system::Config>::RuntimeOrigin =
             RawOrigin::Signed(owner_key.clone()).into();
+        T::CheckAccountWorthiness::set_worthy(&owner_key);
         Pallet::<T>::create_identity(caller_origin.clone(), owner_key.clone())?;
         let name = IdtyName("new_identity".into());
         Pallet::<T>::confirm_identity(owner_key_origin.clone(), name.clone())?;
@@ -126,6 +125,7 @@ mod benchmarks {
     fn create_identity() {
         let caller: T::AccountId = Identities::<T>::get(T::IdtyIndex::one()).unwrap().owner_key; // Alice
         let owner_key: T::AccountId = account("new_identity", 2, 1);
+        T::CheckAccountWorthiness::set_worthy(&owner_key);
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller), owner_key.clone());
@@ -147,6 +147,7 @@ mod benchmarks {
         let caller_origin: <T as frame_system::Config>::RuntimeOrigin =
             RawOrigin::Signed(caller.clone()).into();
         let owner_key: T::AccountId = account("new_identity", 2, 1);
+        T::CheckAccountWorthiness::set_worthy(&owner_key);
         Pallet::<T>::create_identity(caller_origin.clone(), owner_key.clone())?;
 
         #[extrinsic_call]
@@ -427,6 +428,49 @@ mod benchmarks {
             }
             .into(),
         );
+    }
+
+    #[benchmark]
+    fn do_remove_identity_handler() {
+        let idty_index: T::IdtyIndex = 1u32.into();
+        let new_identity: T::AccountId = account("Bob", 2, 1);
+        assert!(Identities::<T>::get(idty_index).is_some());
+        frame_system::Pallet::<T>::inc_sufficients(&new_identity);
+        Identities::<T>::mutate(idty_index, |id| {
+            if let Some(id) = id {
+                id.old_owner_key = Some((new_identity, BlockNumberFor::<T>::zero()));
+            }
+        });
+        assert!(Identities::<T>::get(idty_index)
+            .unwrap()
+            .old_owner_key
+            .is_some());
+
+        #[block]
+        {
+            T::OnRemoveIdty::on_removed(&idty_index);
+        }
+    }
+
+    #[benchmark]
+    fn membership_removed() -> Result<(), BenchmarkError> {
+        let key: T::AccountId = account("new_identity", 2, 1);
+        let account: Account<T> = create_one_identity(key)?;
+        assert_eq!(
+            Identities::<T>::get(account.index).unwrap().status,
+            IdtyStatus::Member
+        );
+
+        #[block]
+        {
+            Pallet::<T>::membership_removed(account.index);
+        }
+
+        assert_eq!(
+            Identities::<T>::get(account.index).unwrap().status,
+            IdtyStatus::NotMember
+        );
+        Ok(())
     }
 
     #[benchmark]

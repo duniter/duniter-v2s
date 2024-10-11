@@ -22,7 +22,7 @@ use frame_support::{
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, ConvertInto, IdentityLookup},
+    traits::{BlakeTwo256, IdentityLookup},
     BuildStorage,
 };
 
@@ -57,16 +57,21 @@ impl system::Config for Test {
     type Hashing = BlakeTwo256;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type MultiBlockMigrator = ();
     type Nonce = u64;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
     type PalletInfo = PalletInfo;
+    type PostInherents = ();
+    type PostTransactions = ();
+    type PreInherents = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeTask = ();
     type SS58Prefix = SS58Prefix;
+    type SingleBlockMigrations = ();
     type SystemWeightInfo = ();
     type Version = ();
 }
@@ -77,15 +82,15 @@ parameter_types! {
 }
 
 impl pallet_membership::Config for Test {
-    type AccountIdOf = ConvertInto;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkSetupHandler = ();
     type CheckMembershipOpAllowed = ();
+    type IdtyAttr = ();
     type IdtyId = IdtyId;
-    type IdtyIdOf = ConvertInto;
     type MembershipPeriod = MembershipPeriod;
     type MembershipRenewalPeriod = MembershipRenewalPeriod;
-    type OnEvent = ();
+    type OnNewMembership = ();
+    type OnRemoveMembership = ();
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }

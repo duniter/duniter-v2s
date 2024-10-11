@@ -15,18 +15,14 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use common_runtime::constants::*;
-use common_runtime::{Balance, BlockNumber, Moment};
-use frame_support::parameter_types;
-use frame_support::weights::constants::WEIGHT_REF_TIME_PER_SECOND;
-use sp_arithmetic::Perbill;
+use common_runtime::{constants::*, Moment};
+use frame_support::{parameter_types, weights::constants::WEIGHT_REF_TIME_PER_SECOND};
 use sp_runtime::transaction_validity::TransactionPriority;
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
     /// We allow for 2 seconds of compute with a 6 second average block time.
-    pub BlockWeights: frame_system::limits::BlockWeights = block_weights((Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND, 0) * 2)
-        .set_proof_size(5 * 1024 * 1024), NORMAL_DISPATCH_RATIO);
+    pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::with_sensible_defaults(Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND * 2u64, u64::MAX), NORMAL_DISPATCH_RATIO);
     pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
         ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
     pub const SS58Prefix: u16 = 4450;
@@ -51,6 +47,12 @@ parameter_types! {
     pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
+// Distance
+parameter_types! {
+    pub const MinAccessibleReferees: Perbill = Perbill::from_percent(80);
+    pub const MaxRefereeDistance: u32 = 5;
+}
+
 // Babe
 pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 4 * HOURS;
 parameter_types! {
@@ -61,7 +63,7 @@ parameter_types! {
 
 // ImOnline
 parameter_types! {
-    pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+    pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::MAX;
     pub const MaxPeerInHeartbeats: u32 = 10_000;
     pub const MaxPeerDataEncodingSize: u32 = 1_000;
 }
@@ -71,6 +73,15 @@ parameter_types! {
 /*********/
 
 // Balances
+// Why? Pallet treasury benchmarks are broken because the spend
+// value is hardcoded 100 in benchmark and the account is not provided enough funds
+// to exist if ED > 100.
+#[cfg(feature = "runtime-benchmarks")]
+frame_support::parameter_types! {
+    pub const ExistentialDeposit: Balance = 100;
+    pub const MaxLocks: u32 = 50;
+}
+#[cfg(not(feature = "runtime-benchmarks"))]
 frame_support::parameter_types! {
     pub const ExistentialDeposit: Balance = 200;
     pub const MaxLocks: u32 = 50;

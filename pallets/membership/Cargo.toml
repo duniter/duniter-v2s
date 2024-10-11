@@ -5,7 +5,6 @@ edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 name = "pallet-membership"
-readme = "README.md"
 repository.workspace = true
 version.workspace = true
 
@@ -27,7 +26,6 @@ std = [
 	"sp-io/std",
 	"sp-membership/std",
 	"sp-runtime/std",
-	"sp-std/std",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
@@ -40,6 +38,7 @@ try-runtime = [
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+duniter-primitives = { workspace = true }
 codec = { workspace = true, features = ["derive"] }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
@@ -49,8 +48,7 @@ sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-membership = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 
 [dev-dependencies]
-maplit = { workspace = true }
-sp-io = { workspace = true }
+maplit = { workspace = true, default-features = true }
+sp-io = { workspace = true, default-features = true }

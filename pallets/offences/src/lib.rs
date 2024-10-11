@@ -14,6 +14,25 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Duniter Offences Pallet
+//!
+//! This pallet is a fork of the Substrate `offences` pallet, customized to align with the offence rules specified by the `authority-member` pallet rather than the Substrate `staking` pallet.
+//!
+//! ## Offences Processing
+//!
+//! The Duniter Offences Pallet manages various types of offences as follows:
+//!
+//! - **`im-online` Pallet Offences**: Offences from the `im-online` pallet necessitate disconnection of the offender.
+//!
+//! - **Other Offences**: For all other offences, the pallet enforces:
+//!   - Disconnection of the offender.
+//!   - Addition of the offender to a blacklist.
+//!   - Authorization from a designated origin to remove offenders from the blacklist.
+//!
+//! ## Offences Triage and Slashing Execution
+//!
+//! This pallet handles the triage of offences, categorizing them based on predefined rules. The actual execution of slashing and other punitive measures is delegated to the `authority-member` pallet.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -26,9 +45,9 @@ use core::marker::PhantomData;
 
 use codec::Encode;
 use frame_support::weights::Weight;
+use scale_info::prelude::vec::Vec;
 use sp_runtime::traits::Hash;
 use sp_staking::offence::{Kind, Offence, OffenceDetails, OffenceError, ReportOffence};
-use sp_std::prelude::*;
 
 pub use pallet::*;
 
@@ -63,8 +82,10 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         /// The overarching event type.
         type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
         /// Full identification of the validator.
         type IdentificationTuple: Parameter;
+
         /// A handler called for every offence report.
         type OnOffenceHandler: OnOffenceHandler<Self::AccountId, Self::IdentificationTuple, Weight>;
     }

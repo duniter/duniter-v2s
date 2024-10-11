@@ -14,16 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use super::gdev;
-use super::gdev::runtime_types::pallet_certification;
-use super::*;
+use super::{gdev, gdev::runtime_types::pallet_certification, *};
 use sp_keyring::AccountKeyring;
 use subxt::{tx::PairSigner, utils::MultiAddress};
 
 pub async fn certify(client: &FullClient, from: AccountKeyring, to: AccountKeyring) -> Result<()> {
     let signer = PairSigner::new(from.pair());
-    let from = from.to_account_id();
-    let to = to.to_account_id();
+    let from: subxt::utils::AccountId32 = from.to_account_id().into();
+    let to: subxt::utils::AccountId32 = to.to_account_id().into();
 
     let _issuer_index = client
         .client
@@ -31,11 +29,7 @@ pub async fn certify(client: &FullClient, from: AccountKeyring, to: AccountKeyri
         .at_latest()
         .await
         .unwrap()
-        .fetch(
-            &gdev::storage()
-                .identity()
-                .identity_index_of(&from.clone().into()),
-        )
+        .fetch(&gdev::storage().identity().identity_index_of(from.clone()))
         .await?
         .unwrap_or_else(|| panic!("{} issuer must exist", from));
     let receiver_index = client
@@ -44,7 +38,7 @@ pub async fn certify(client: &FullClient, from: AccountKeyring, to: AccountKeyri
         .at_latest()
         .await
         .unwrap()
-        .fetch(&gdev::storage().identity().identity_index_of(&to.into()))
+        .fetch(&gdev::storage().identity().identity_index_of(to))
         .await?
         .unwrap_or_else(|| panic!("{} issuer must exist", from));
 

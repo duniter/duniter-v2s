@@ -21,13 +21,13 @@
 
 #![warn(missing_docs)]
 
-pub use sc_rpc_api::DenyUnsafe;
-
-use common_runtime::Block;
-use common_runtime::{AccountId, Balance, Index};
+use common_runtime::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use jsonrpsee::RpcModule;
-use sc_consensus_babe::BabeApi;
-use sc_consensus_babe::BabeWorkerHandle;
+use sc_consensus_babe::{BabeApi, BabeWorkerHandle};
+use sc_consensus_grandpa::{
+    self, FinalityProofProvider, GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState,
+};
+use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
@@ -45,29 +45,42 @@ pub struct BabeDeps {
     pub keystore: KeystorePtr,
 }
 
+/// Dependencies for GRANDPA
+#[derive(Clone)]
+pub struct GrandpaDeps<B> {
+    /// Voting round info.
+    pub shared_voter_state: SharedVoterState,
+    /// Authority set info.
+    pub shared_authority_set: SharedAuthoritySet<Hash, BlockNumber>,
+    /// Receives notifications about justification events from Grandpa.
+    pub justification_stream: GrandpaJustificationStream<Block>,
+    /// Executor to drive the subscription manager in the Grandpa RPC handler.
+    pub subscription_executor: SubscriptionTaskExecutor,
+    /// Finality proof provider.
+    pub finality_provider: Arc<FinalityProofProvider<B, Block>>,
+}
+
 /// Full client dependencies.
-pub struct FullDeps<C, P, SC> {
+pub struct FullDeps<C, P, SC, B> {
     /// The client instance to use.
     pub client: Arc<C>,
     /// Transaction pool instance.
     pub pool: Arc<P>,
     /// The SelectChain Strategy
     pub select_chain: SC,
-    /// A copy of the chain spec.
-    pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
-    /// Whether to deny unsafe calls
-    pub deny_unsafe: DenyUnsafe,
     /// Manual seal command sink
     pub command_sink_opt: Option<
         futures::channel::mpsc::Sender<sc_consensus_manual_seal::EngineCommand<sp_core::H256>>,
     >,
     /// BABE specific dependencies.
     pub babe: Option<BabeDeps>,
+    /// GRANDPA specific dependencies.
+    pub grandpa: GrandpaDeps<B>,
 }
 
 /// Instantiate all full RPC extensions.
-pub fn create_full<C, P, SC>(
-    deps: FullDeps<C, P, SC>,
+pub fn create_full<C, P, SC, B>(
+    deps: FullDeps<C, P, SC, B>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>,
@@ -79,9 +92,11 @@ where
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + 'static,
     SC: SelectChain<Block> + 'static,
+    B: sc_client_api::Backend<Block> + 'static,
 {
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
     use sc_consensus_babe_rpc::{Babe, BabeApiServer};
+    use sc_consensus_grandpa_rpc::{Grandpa, GrandpaApiServer};
     use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApiServer};
     use substrate_frame_rpc_system::{System, SystemApiServer};
 
@@ -90,10 +105,9 @@ where
         client,
         pool,
         select_chain,
-        chain_spec: _,
-        deny_unsafe,
         command_sink_opt,
         babe,
+        grandpa,
     } = deps;
 
     if let Some(babe) = babe {
@@ -102,17 +116,29 @@ where
             keystore,
         } = babe;
         module.merge(
-            Babe::new(
-                client.clone(),
-                babe_worker_handle,
-                keystore,
-                select_chain,
-                deny_unsafe,
-            )
-            .into_rpc(),
+            Babe::new(client.clone(), babe_worker_handle, keystore, select_chain).into_rpc(),
         )?;
     }
-    module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
+
+    let GrandpaDeps {
+        shared_voter_state,
+        shared_authority_set,
+        justification_stream,
+        subscription_executor,
+        finality_provider,
+    } = grandpa;
+    module.merge(
+        Grandpa::new(
+            subscription_executor,
+            shared_authority_set,
+            shared_voter_state,
+            justification_stream,
+            finality_provider,
+        )
+        .into_rpc(),
+    )?;
+
+    module.merge(System::new(client.clone(), pool).into_rpc())?;
     module.merge(TransactionPayment::new(client).into_rpc())?;
     if let Some(command_sink) = command_sink_opt {
         // We provide the rpc handler with the sending end of the channel to allow the rpc

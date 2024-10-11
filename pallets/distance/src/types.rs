@@ -18,34 +18,33 @@ pub use crate::{median::*, MAX_EVALUATIONS_PER_SESSION, MAX_EVALUATORS_PER_SESSI
 pub use sp_distance::ComputationResult;
 
 use codec::{Decode, Encode};
-use frame_support::{pallet_prelude::*, BoundedBTreeSet};
+use frame_support::pallet_prelude::*;
 use sp_runtime::Perbill;
 
-/// Status of the distance evaluation of an identity
+/// Status of the distance evaluation of an identity.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum DistanceStatus {
     /// Identity is in evaluation.
     Pending,
-    /// Identity respects the distance
+    /// Identity respects the distance.
     Valid,
-    /// Identity doesn't respect the distance
+    /// Identity doesn't respect the distance.
     Invalid,
 }
 
-/// Pool where distance evaluation requests and results are stored
+/// Represents a pool where distance evaluation requests and results are stored.
 ///
-/// Depending on the pool rotation, this may not be complete, and still be accepting
-/// new evaluation requests (with empty median accumulators) or new evaluations (with evaluators
-/// and new samples in the median accumulators).
+/// Depending on the pool rotation, this may not be complete and may still be accepting
+/// new evaluation requests (with empty median accumulators) or new evaluations (with evaluators and new samples in the median accumulators).
 #[derive(Encode, Decode, Clone, RuntimeDebug, TypeInfo)]
 pub struct EvaluationPool<AccountId: Ord, IdtyIndex> {
-    /// List of identities with their evaluation result
+    /// List of identities with their evaluation result.
     /// The result is the median of all the evaluations.
     pub evaluations: BoundedVec<
         (IdtyIndex, MedianAcc<Perbill, MAX_EVALUATORS_PER_SESSION>),
         ConstU32<MAX_EVALUATIONS_PER_SESSION>,
     >,
-    /// Evaluators who have published a result
+    /// Evaluators who have published a result.
     /// Its length should be the same as the number of samples
     /// in each evaluation result `MedianAcc`.
     /// An evaluator is not allowed to publish twice in a single session.

@@ -21,10 +21,11 @@ use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
+/// Represents data associated with a member.
 #[cfg_attr(feature = "std", derive(Debug, Deserialize, Serialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 pub struct MemberData<AccountId> {
-    /// pubkey of the member
+    /// Public key of the member.
     pub owner_key: AccountId,
 }
 

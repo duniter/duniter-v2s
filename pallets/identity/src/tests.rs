@@ -14,14 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::mock::*;
-use crate::*;
+use crate::{mock::*, *};
 use codec::Encode;
-use frame_support::dispatch::DispatchResultWithPostInfo;
-use frame_support::{assert_noop, assert_ok};
-use sp_core::sr25519::Pair as KeyPair;
-use sp_core::Pair;
-use sp_runtime::{traits::IdentifyAccount, MultiSignature, MultiSigner};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchResultWithPostInfo};
+use sp_core::{sr25519::Pair as KeyPair, Pair};
+use sp_runtime::{MultiSignature, MultiSigner};
 
 type IdtyVal = IdtyValue<u64, AccountId, ()>;
 

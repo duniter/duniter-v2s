@@ -1,38 +1,25 @@
-# This is a minimal docker-compose.yml template for running a Duniter instance
+# This is a minimal docker-compose.yml template for running a Duniter mirror node
 # For more detailed examples, look at docker/compose folder
-
-version: "3.5"
-
 services:
-  duniter-v2s:
-    container_name: duniter-v2s
-    # choose the version of the image here
-    image: duniter/duniter-v2s:latest
+  duniter-v2s-mirror:
+    container_name: duniter-v2s-mirror
+    # the image tells which network you are connecting to
+    # here it is gdev network
+    image: duniter/duniter-v2s-gdev:latest
     ports:
-      # telemetry
+      # prometheus telemetry to monitor resource use
       - 9615:9615
-      # rpc
-      - 9933:9933
-      # rpc-ws
+      # RPC API (ws and http)
       - 9944:9944
-      # p2p
+      # public p2p endpoint
       - 30333:30333
     environment:
-      DUNITER_NODE_NAME: "duniter_local"
-      DUNITER_CHAIN_NAME: "gdev"
-    volumes:
-      - duniter-local-data:/var/lib/duniter
-  distance-oracle:
-    container_name: distance-oracle
-    # choose the version of the image here
-    image: duniter/duniter-v2s:latest
-    entrypoint: docker-distance-entrypoint
-    environment:
-      ORACLE_RPC_URL: "ws://duniter-v2s:9944"
-      ORACLE_RESULT_DIR: "/var/lib/duniter/chains/gdev/distance/"
-      ORACLE_EXECUTION_INTERVAL: "1800"
-      ORACLE_MAX_DEPTH: "5"
-      ORACLE_LOG_LEVEL: "info"
+      # read https://duniter.org/wiki/duniter-v2/configure-docker/
+      # to configure these
+      DUNITER_NODE_NAME: duniter_local
+      DUNITER_CHAIN_NAME: gdev
+      DUNITER_PUBLIC_ADDR: /dns/your.domain.name/tcp/30333
+      DUNITER_LISTEN_ADDR: /ip4/0.0.0.0/tcp/30333
     volumes:
       - duniter-local-data:/var/lib/duniter
 

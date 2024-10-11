@@ -14,22 +14,42 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Duniter Universal Dividend Pallet
+//!
+//! One of Duniter's core features is the Universal Dividend (UD), which operates based on the Relative Theory of Money. The UD serves both as a daily monetary creation mechanism and a unit of measure within the Duniter ecosystem.
+//!
+//! ## Overview
+//!
+//! This pallet enables:
+//! - Creation of Universal Dividends (UD) as a daily monetary issuance and measure unit.
+//! - Transfer of currency denominated in UD between accounts.
+//!
+//! **Note**: The UD is not automatically created daily for every account due to resource constraints. Instead, members must claim their UD using a specific extrinsic.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod benchmarking;
 mod compute_claim_uds;
+mod types;
+mod weights;
+
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
-mod types;
-mod weights;
+
+#[cfg(feature = "runtime-benchmarks")]
+use duniter_primitives::Idty;
 
 pub use pallet::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
-use frame_support::traits::{tokens::ExistenceRequirement, Currency, OnTimestampSet};
+use frame_support::traits::{
+    fungible::{self, Balanced, Mutate},
+    tokens::{Precision, Preservation},
+    OnTimestampSet,
+};
 use sp_arithmetic::{
     per_things::Perbill,
     traits::{One, Saturating, Zero},
@@ -39,72 +59,78 @@ use sp_runtime::traits::{Get, MaybeSerializeDeserialize, StaticLookup};
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::{StorageVersion, StoredMap};
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{StorageVersion, StoredMap},
+    };
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::Convert;
 
-    pub type BalanceOf<T> =
-        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+    type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+    pub type BalanceOf<T> = <<T as Config>::Currency as fungible::Inspect<AccountIdOf<T>>>::Balance;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
-    //#[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_timestamp::Config {
-        // Moment into Balance converter
+        /// Something that convert a Moment inot a Balance.
         type MomentIntoBalance: Convert<Self::Moment, BalanceOf<Self>>;
-        // The currency
-        type Currency: Currency<Self::AccountId>;
+
+        /// The currency type used in this pallet.
+        type Currency: fungible::Balanced<Self::AccountId> + fungible::Mutate<Self::AccountId>;
+
         /// Maximum number of past UD revaluations to keep in storage.
         #[pallet::constant]
         type MaxPastReeval: Get<u32>;
-        /// Somethings that must provide the number of accounts allowed to create the universal dividend
+
+        /// Provides the number of accounts allowed to create the universal dividend.
         type MembersCount: Get<BalanceOf<Self>>;
-        /// Somethings that must provide the list of accounts ids allowed to create the universal dividend
+
+        /// Storage for mapping AccountId to their first eligible UD creation time.
         type MembersStorage: frame_support::traits::StoredMap<Self::AccountId, FirstEligibleUd>;
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
+
+        /// The overarching event type for this pallet.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        /// Square of the money growth rate per ud reevaluation period
+
+        /// Square of the money growth rate per UD reevaluation period.
         #[pallet::constant]
         type SquareMoneyGrowthRate: Get<Perbill>;
-        /// Universal dividend creation period (ms)
+
+        /// Universal dividend creation period in milliseconds.
         #[pallet::constant]
         type UdCreationPeriod: Get<Self::Moment>;
-        /// Universal dividend reevaluation period (ms)
+
+        /// Universal dividend reevaluation period in milliseconds.
         #[pallet::constant]
         type UdReevalPeriod: Get<Self::Moment>;
-        /// The number of units to divide the amounts expressed in number of UDs
-        /// Example: If you wish to express the UD amounts with a maximum precision of the order
-        /// of the milliUD, choose 1000
-        #[pallet::constant]
-        type UnitsPerUd: Get<BalanceOf<Self>>;
-        /// Pallet weights info
+
+        /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
+
+        /// Something that gives the IdtyIndex of an AccountId and reverse, used for benchmarks.
         #[cfg(feature = "runtime-benchmarks")]
-        type AccountIdOf: Convert<u32, Option<Self::AccountId>>;
+        type IdtyAttr: duniter_primitives::Idty<u32, Self::AccountId>;
     }
 
     // STORAGE //
 
-    /// Current UD amount
+    /// The current Universal Dividend value.
     #[pallet::storage]
     #[pallet::getter(fn current_ud)]
     pub type CurrentUd<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
-    // default value for number of the next UD
+    /// The default index for the current Universal Dividend.
     #[pallet::type_value]
     pub fn DefaultForCurrentUdIndex() -> UdIndex {
         1
     }
 
-    /// Current UD index
-    // (more like the index of the ongoing UD = the next one)
+    /// The current Universal Dividend index.
     #[pallet::storage]
     #[pallet::getter(fn ud_index)]
     pub type CurrentUdIndex<T: Config> =
@@ -125,22 +151,22 @@ pub mod pallet {
         ConstU32<300_000>,
     >;
 
-    /// Total quantity of money created by universal dividend (does not take into account the possible destruction of money)
+    /// The total quantity of money created by Universal Dividend, excluding potential money destruction.
     #[pallet::storage]
     #[pallet::getter(fn total_money_created)]
     pub type MonetaryMass<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
-    /// Next UD reevaluation
+    /// The next Universal Dividend re-evaluation.
     #[pallet::storage]
     #[pallet::getter(fn next_reeval)]
     pub type NextReeval<T: Config> = StorageValue<_, T::Moment, OptionQuery>;
 
-    /// Next UD creation
+    /// The next Universal Dividend creation.
     #[pallet::storage]
     #[pallet::getter(fn next_ud)]
     pub type NextUd<T: Config> = StorageValue<_, T::Moment, OptionQuery>;
 
-    /// Past UD reevaluations
+    /// The past Universal Dividend re-evaluations.
     #[pallet::storage]
     #[pallet::getter(fn past_reevals)]
     pub type PastReevals<T: Config> =
@@ -181,7 +207,7 @@ pub mod pallet {
                 initial_monetary_mass: Default::default(),
                 #[cfg(test)]
                 initial_members: Default::default(),
-                ud: Default::default(),
+                ud: BalanceOf::<T>::one(),
             }
         }
     }
@@ -305,7 +331,7 @@ pub mod pallet {
                             core::num::NonZeroU16::new(current_ud_index)
                                 .expect("unreachable because current_ud_index is never zero."),
                         );
-                        let _ = T::Currency::deposit_creating(who, uds_total);
+                        let _ = T::Currency::deposit(who, uds_total, Precision::Exact);
                         Self::deposit_event(Event::UdsClaimed {
                             count: uds_count,
                             total: uds_total,
@@ -319,12 +345,12 @@ pub mod pallet {
             })
         }
 
-        /// like balance.transfer, but give an amount in UD
+        /// like balance.transfer, but give an amount in milliUD
         fn do_transfer_ud(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
             value: BalanceOf<T>,
-            existence_requirement: ExistenceRequirement,
+            preservation: Preservation,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             let dest = T::Lookup::lookup(dest)?;
@@ -332,8 +358,8 @@ pub mod pallet {
             T::Currency::transfer(
                 &who,
                 &dest,
-                value.saturating_mul(ud_amount) / T::UnitsPerUd::get(),
-                existence_requirement,
+                value.saturating_mul(ud_amount) / 1_000u32.into(),
+                preservation,
             )?;
             Ok(().into())
         }
@@ -395,7 +421,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Claim Universal Dividends
+        /// Claim Universal Dividends.
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::claim_uds(T::MaxPastReeval::get()))]
         pub fn claim_uds(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -411,10 +437,10 @@ pub mod pallet {
             dest: <T::Lookup as StaticLookup>::Source,
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
-            Self::do_transfer_ud(origin, dest, value, ExistenceRequirement::AllowDeath)
+            Self::do_transfer_ud(origin, dest, value, Preservation::Expendable)
         }
 
-        /// Transfer some liquid free balance to another account, in milliUD.
+        /// Transfer some liquid free balance to another account in milliUD and keep the account alive.
         #[pallet::call_index(2)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer_ud_keep_alive())]
         pub fn transfer_ud_keep_alive(
@@ -422,19 +448,19 @@ pub mod pallet {
             dest: <T::Lookup as StaticLookup>::Source,
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
-            Self::do_transfer_ud(origin, dest, value, ExistenceRequirement::KeepAlive)
+            Self::do_transfer_ud(origin, dest, value, Preservation::Preserve)
         }
     }
 
     // PUBLIC FUNCTIONS
 
     impl<T: Config> Pallet<T> {
+        /// Initialize the first eligible Universal Dividend index.
         pub fn init_first_eligible_ud() -> FirstEligibleUd {
             CurrentUdIndex::<T>::get().into()
         }
 
-        /// function to call when removing a member
-        /// auto-claims UDs
+        /// Handle the removal of a member, which automatically claims Universal Dividends.
         pub fn on_removed_member(first_ud_index: UdIndex, who: &T::AccountId) -> Weight {
             let current_ud_index = CurrentUdIndex::<T>::get();
             if first_ud_index < current_ud_index {
@@ -443,7 +469,7 @@ pub mod pallet {
                     first_ud_index,
                     PastReevals::<T>::get().into_iter(),
                 );
-                let _ = T::Currency::deposit_creating(who, uds_total);
+                let _ = T::Currency::deposit(who, uds_total, Precision::Exact);
                 Self::deposit_event(Event::UdsAutoPaid {
                     count: uds_count,
                     total: uds_total,

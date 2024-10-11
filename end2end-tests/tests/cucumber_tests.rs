@@ -17,14 +17,15 @@
 mod common;
 
 use common::*;
-use cucumber::StatsWriter;
-use cucumber::{given, then, when, World};
+use cucumber::{given, then, when, StatsWriter, World};
 use sp_keyring::AccountKeyring;
-use std::path::PathBuf;
-use std::str::FromStr;
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
+use std::{
+    path::PathBuf,
+    str::FromStr,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
 };
 use subxt::backend::rpc::RpcClient;
 
@@ -93,7 +94,7 @@ impl DuniterWorld {
         Output = std::result::Result<Option<Address::Target>, subxt::error::Error>,
     > + 'a
     where
-        Address: subxt::storage::StorageAddress<IsFetchable = subxt::storage::address::Yes> + 'a,
+        Address: subxt::storage::Address<IsFetchable = subxt::custom_values::Yes> + 'a,
     {
         self.client()
             .storage()
@@ -109,9 +110,9 @@ impl DuniterWorld {
         address: &'a Address,
     ) -> impl std::future::Future<Output = std::result::Result<Address::Target, subxt::error::Error>> + 'a
     where
-        Address: subxt::storage::StorageAddress<
-                IsFetchable = subxt::storage::address::Yes,
-                IsDefaultable = subxt::storage::address::Yes,
+        Address: subxt::storage::Address<
+                IsFetchable = subxt::custom_values::Yes,
+                IsDefaultable = subxt::custom_values::Yes,
             > + 'a,
     {
         self.client()
@@ -368,12 +369,33 @@ async fn run_distance_oracle(world: &mut DuniterWorld, who: String) -> Result<()
 // ===== then ====
 
 #[allow(clippy::needless_pass_by_ref_mut)]
-#[then(regex = r"([a-zA-Z]+) should have (\d+) (ĞD|cĞD)")]
+#[then(regex = r"treasury should contain (\d+) (ĞD|cĞD)")]
+async fn treasury_should_contain(
+    world: &mut DuniterWorld,
+    amount: u64,
+    unit: String,
+) -> Result<()> {
+    let who =
+        subxt::utils::AccountId32::from_str("5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z")
+            .expect("invalid treasury account id");
+    let (amount, _is_ud) = parse_amount(amount, &unit);
+
+    let who_account = world
+        .read_or_default(&gdev::storage().system().account(&who))
+        .await
+        .await?;
+    assert_eq!(who_account.data.free, amount);
+    Ok(())
+}
+
+#[allow(clippy::needless_pass_by_ref_mut)]
+#[then(regex = r"([a-zA-Z]+) should have (\d+) (ĞD|cĞD)( reserved)?")]
 async fn should_have(
     world: &mut DuniterWorld,
     who: String,
     amount: u64,
     unit: String,
+    reserved: String,
 ) -> Result<()> {
     // Parse inputs
     let who: subxt::utils::AccountId32 = AccountKeyring::from_str(&who)
@@ -386,7 +408,11 @@ async fn should_have(
         .read_or_default(&gdev::storage().system().account(&who))
         .await
         .await?;
-    assert_eq!(who_account.data.free, amount);
+    if reserved.is_empty() {
+        assert_eq!(who_account.data.free, amount);
+    } else {
+        assert_eq!(who_account.data.reserved, amount);
+    }
     Ok(())
 }
 
@@ -500,50 +526,6 @@ async fn should_be_certified_by(
     }
 }
 
-#[allow(clippy::needless_pass_by_ref_mut)]
-#[then(regex = r"([a-zA-Z]+) should have distance result in (\d+) sessions?")]
-async fn should_have_distance_result_in_sessions(
-    world: &mut DuniterWorld,
-    who: String,
-    sessions: u32,
-) -> Result<()> {
-    assert!(sessions < 3, "Session number must be < 3");
-
-    let who = AccountKeyring::from_str(&who).unwrap().to_account_id();
-
-    let idty_id = world
-        .read(&gdev::storage().identity().identity_index_of(&who.into()))
-        .await
-        .await?
-        .unwrap();
-
-    let current_session = world
-        .read(&gdev::storage().session().current_index())
-        .await
-        .await?
-        .unwrap_or_default();
-
-    let pool = world
-        .read(&match (current_session + sessions) % 3 {
-            0 => gdev::storage().distance().evaluation_pool0(),
-            1 => gdev::storage().distance().evaluation_pool1(),
-            2 => gdev::storage().distance().evaluation_pool2(),
-            _ => unreachable!("n%3<3"),
-        })
-        .await
-        .await
-        .unwrap()
-        .ok_or_else(|| anyhow::anyhow!("given pool is empty"))?;
-
-    for (sample_idty, _) in pool.evaluations.0 {
-        if sample_idty == idty_id {
-            return Ok(());
-        }
-    }
-
-    Err(anyhow::anyhow!("no evaluation in given pool").into())
-}
-
 use gdev::runtime_types::pallet_identity::types::IdtyStatus;
 
 // status from string
@@ -624,7 +606,7 @@ async fn main() {
     .expect("Error setting Ctrl-C handler");
 
     let summarize = DuniterWorld::cucumber()
-        //.fail_on_skipped()
+        .fail_on_skipped()
         .max_concurrent_scenarios(4)
         .before(move |feature, _rule, scenario, world| {
             let mut genesis_conf_file_path = PathBuf::new();

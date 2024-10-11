@@ -6,13 +6,13 @@ edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 repository.workspace = true
-readme = "README.md"
 version.workspace = true
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+duniter-primitives = { workspace = true }
 codec = { workspace = true, features = ["derive"] }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
@@ -22,12 +22,6 @@ pallet-authority-members = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 sp-runtime = { workspace = true }
 sp-staking = { workspace = true }
-sp-std = { workspace = true }
-
-[dev-dependencies]
-maplit = { workspace = true }
-sp-core = { workspace = true }
-sp-io = { workspace = true }
 
 [features]
 default = ["std"]
@@ -43,7 +37,6 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-staking/std",
-	"sp-std/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
@@ -60,3 +53,8 @@ try-runtime = [
 	"pallet-authority-members/try-runtime",
 	"sp-runtime/try-runtime",
 ]
+
+[dev-dependencies]
+maplit = { workspace = true, default-features = true }
+sp-core = { workspace = true, default-features = true }
+sp-io = { workspace = true, default-features = true }

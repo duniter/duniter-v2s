@@ -82,7 +82,7 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn del_cert() -> Result<(), BenchmarkError> {
+    fn del_cert() {
         let issuer: T::IdtyIndex = 1.into();
         let receiver: T::IdtyIndex = 2.into();
         // try to add cert if missing, else ignore
@@ -100,7 +100,6 @@ mod benchmarks {
             }
             .into(),
         );
-        Ok(())
     }
 
     #[benchmark]

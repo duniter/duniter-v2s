@@ -14,18 +14,29 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Provides Randomness Pallet
+//!
+//! The Provides Randomness Pallet facilitates the generation of randomness within the Duniter blockchain.
+//!
+//! This pallet manages randomness requests and emits events upon requesting and fulfilling randomness.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::boxed_local)]
 
-#[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
 mod types;
 pub mod weights;
 
-use frame_support::pallet_prelude::Weight;
+use frame_support::{
+    pallet_prelude::Weight,
+    traits::{
+        fungible::{self, Balanced, Credit},
+        tokens::{Fortitude, Precision, Preservation},
+    },
+};
+use scale_info::prelude::vec::Vec;
 use sp_core::H256;
-use sp_std::prelude::*;
 
 pub use pallet::*;
 pub use types::*;
@@ -45,18 +56,15 @@ impl OnFilledRandomness for () {
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::{
-        Currency, ExistenceRequirement, OnUnbalanced, Randomness, StorageVersion, WithdrawReasons,
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{OnUnbalanced, Randomness, StorageVersion},
     };
     use frame_system::pallet_prelude::*;
     use sp_core::H256;
 
-    pub type BalanceOf<T> =
-        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-    pub type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
-        <T as frame_system::Config>::AccountId,
-    >>::NegativeImbalance;
+    type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+    pub type BalanceOf<T> = <<T as Config>::Currency as fungible::Inspect<AccountIdOf<T>>>::Balance;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -69,47 +77,61 @@ pub mod pallet {
     /// Configuration trait.
     #[pallet::config]
     pub trait Config: frame_system::Config<Hash = H256> {
-        // The currency
-        type Currency: Currency<Self::AccountId>;
-        /// Get the current epoch index
+        // The currency type.
+        type Currency: fungible::Balanced<Self::AccountId> + fungible::Mutate<Self::AccountId>;
+
+        /// Type providing the current epoch index.
         type GetCurrentEpochIndex: Get<u64>;
-        /// Maximum number of not yet filled requests
+
+        /// Maximum number of not yet filled requests.
         #[pallet::constant]
         type MaxRequests: Get<u32>;
-        /// The price of a request
+
+        /// The price of a request.
         #[pallet::constant]
         type RequestPrice: Get<BalanceOf<Self>>;
-        /// On filled randomness
+
+        /// Handler called when randomness is filled.
         type OnFilledRandomness: OnFilledRandomness;
-        /// Handler for the unbalanced reduction when the requestor pays fees.
-        type OnUnbalanced: OnUnbalanced<NegativeImbalanceOf<Self>>;
-        /// A safe source of randomness from the parent block
+
+        /// Handler for unbalanced reduction when the requestor pays fees.
+        type OnUnbalanced: OnUnbalanced<Credit<Self::AccountId, Self::Currency>>;
+
+        /// A safe source of randomness from the parent block.
         type ParentBlockRandomness: Randomness<Option<H256>, BlockNumberFor<Self>>;
-        /// A safe source of randomness from one epoch ago
+
+        /// A safe source of randomness from one epoch ago.
         type RandomnessFromOneEpochAgo: Randomness<H256, BlockNumberFor<Self>>;
+
         /// The overarching event type.
         type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        /// Type representing the weight of this pallet
+
+        /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
     }
 
     // STORAGE //
 
+    /// The number of blocks before the next epoch.
     #[pallet::storage]
     pub(super) type NexEpochHookIn<T: Config> = StorageValue<_, u8, ValueQuery>;
 
+    /// The request ID.
     #[pallet::storage]
     pub(super) type RequestIdProvider<T: Config> = StorageValue<_, RequestId, ValueQuery>;
 
+    /// The requests that will be fulfilled at the next block.
     #[pallet::storage]
     #[pallet::getter(fn requests_ready_at_next_block)]
     pub type RequestsReadyAtNextBlock<T: Config> = StorageValue<_, Vec<Request>, ValueQuery>;
 
+    /// The requests that will be fulfilled at the next epoch.
     #[pallet::storage]
     #[pallet::getter(fn requests_ready_at_epoch)]
     pub type RequestsReadyAtEpoch<T: Config> =
         StorageMap<_, Twox64Concat, u64, Vec<Request>, ValueQuery>;
 
+    /// The requests being processed.
     #[pallet::storage]
     #[pallet::getter(fn requests_ids)]
     pub type RequestsIds<T: Config> =
@@ -145,7 +167,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Request a randomness
+        /// Request randomness.
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::request())]
         pub fn request(
@@ -218,6 +240,7 @@ pub mod pallet {
     // PUBLIC FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
+        /// Initiates a randomness request with specified parameters.
         pub fn do_request(
             requestor: &T::AccountId,
             randomness_type: RandomnessType,
@@ -235,10 +258,12 @@ pub mod pallet {
             Ok(Self::apply_request(randomness_type, salt))
         }
 
+        /// Forcefully initiates a randomness request using the specified parameters.
         pub fn force_request(randomness_type: RandomnessType, salt: H256) -> RequestId {
             Self::apply_request(randomness_type, salt)
         }
 
+        /// Set the next epoch hook value to 5.
         pub fn on_new_epoch() {
             NexEpochHookIn::<T>::put(5)
         }
@@ -247,17 +272,20 @@ pub mod pallet {
     // INTERNAL FUNCTIONS //
 
     impl<T: Config> Pallet<T> {
+        /// Withdraw funds from the requestor's account to pay for a request.
         fn pay_request(requestor: &T::AccountId) -> DispatchResult {
             let imbalance = T::Currency::withdraw(
                 requestor,
                 T::RequestPrice::get(),
-                WithdrawReasons::FEE,
-                ExistenceRequirement::KeepAlive,
+                Precision::Exact,
+                Preservation::Preserve,
+                Fortitude::Polite,
             )?;
             T::OnUnbalanced::on_unbalanced(imbalance);
             Ok(())
         }
 
+        /// Apply a randomness request with the specified type and salt.
         fn apply_request(randomness_type: RandomnessType, salt: H256) -> RequestId {
             let request_id = RequestIdProvider::<T>::mutate(|next_request_id| {
                 core::mem::replace(next_request_id, next_request_id.saturating_add(1))

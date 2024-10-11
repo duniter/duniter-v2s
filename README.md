@@ -22,11 +22,14 @@
   - [api](./docs/api/)
     - [manual](./docs/api/manual.md)
     - [runtime-calls](./docs/api/runtime-calls.md) the calls you can submit through the RPC API
+    - [runtime-errors](./docs/api/runtime-errors.md) the errors you can get submitting a call
+    - [runtime-events](./docs/api/runtime-events.md) the events you can get submitting a call
   - [dev](./docs/dev/)
     - [beginner-walkthrough](./docs/dev/beginner-walkthrough.md)
     - [git-conventions](./docs/dev/git-conventions.md)
     - [launch-a-live-network](./docs/dev/launch-a-live-network.md)
     - [setup](./docs/dev/setup.md)
+    - [compilation features](./docs/dev/compilation.md)
     - [verify-runtime-code](./docs/dev/verify-runtime-code.md)
     - [weights-benchmarking](./docs/dev/weights-benchmarking.md)
     - [upgrade-substrate](./docs/dev/upgrade-substrate.md)
@@ -34,9 +37,12 @@
     - [replay-block](./docs/test/replay-block.md)
   - [user](./docs/user/)
     - [autocompletion](./docs/user/autocompletion.md)
-    - [build-for-arm](./docs/user/build-for-arm.md)
     - [mirror](./docs/user/mirror.md) deploy a permanent ǦDev mirror node
     - [smith](./docs/user/smith.md) deploy a permanent ǦDev validator node
+    - [debian installation](./docs/user/installation_debian.md)
+  - [packaging](./docs/packaging/)
+    - [build-for-arm](./docs/packaging/build-for-arm.md)
+    - [build-debian](./docs/packaging/build-deb.md) build a native Debian package
 - [end2end-tests](./end2end-tests/) automated end to end tests written with cucumber
 - [live-tests](./live-tests/) sanity checks to test the storage of a live chain
 
@@ -169,8 +175,7 @@ If you want to see the multi-node consensus algorithm in action, refer to
   --chain local \
   --alice \
   --port 30333 \
-  --ws-port 9945 \
-  --rpc-port 9933 \
+  --rpc-port 9944 \
   --node-key 0000000000000000000000000000000000000000000000000000000000000001 \
   --validator
 ```
@@ -183,8 +188,7 @@ If you want to see the multi-node consensus algorithm in action, refer to
   --chain local \
   --bob \
   --port 30334 \
-  --ws-port 9946 \
-  --rpc-port 9934 \
+  --rpc-port 9945 \
   --validator \
   --bootnodes /ip4/127.0.0.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp
 ```

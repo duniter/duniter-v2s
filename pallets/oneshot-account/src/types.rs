@@ -17,8 +17,11 @@
 use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;
 
+/// The type of account.
 #[derive(Clone, Decode, Encode, PartialEq, RuntimeDebug, TypeInfo)]
 pub enum Account<AccountId> {
+    /// Normal account type.
     Normal(AccountId),
+    /// Oneshot account type.
     Oneshot(AccountId),
 }

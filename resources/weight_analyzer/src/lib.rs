@@ -1,15 +1,16 @@
 use convert_case::{Case, Casing};
 use glob::glob;
 use serde::Serialize;
-use std::collections::HashMap;
-use std::ops::Div;
-use std::path::Path;
-use subweight_core::parse::overhead::Weight;
-use subweight_core::parse::pallet::ChromaticExtrinsic;
-use subweight_core::parse::pallet::ComponentRange;
-use subweight_core::parse::storage::Weights;
-use subweight_core::scope::Scope;
-use subweight_core::term::Term;
+use std::{collections::HashMap, ops::Div, path::Path};
+use subweight_core::{
+    parse::{
+        overhead::Weight,
+        pallet::{ChromaticExtrinsic, ComponentRange},
+        storage::Weights,
+    },
+    scope::Scope,
+    term::Term,
+};
 
 // Substrate default maximum weight of a block in nanoseconds.
 // Since the maximum block weight is one-third of the execution time,
@@ -46,10 +47,10 @@ pub struct WeightInfo {
 ///
 /// # Arguments
 ///
-/// * `folder_path` - A Path to a folder where the weight files are stored.
-/// `paritydb_weights.rs` is mandatory and pallet weights should start by
-/// `pallet_`.
-/// *`max_block_weight` - The maximal weight of a block.
+///   * `folder_path` - A Path to a folder where the weight files are stored.
+///     `paritydb_weights.rs` is mandatory and pallet weights should start by
+///     `pallet_`.
+///   * `max_block_weight` - The maximal weight of a block.
 ///
 /// # Examples
 ///
@@ -57,7 +58,7 @@ pub struct WeightInfo {
 ///    use weightanalyzer::analyze_weight;
 ///    use std::path::Path;
 ///    use weightanalyzer::MaxBlockWeight;
-///    let weight_by_pallet = analyze_weight(Path::new("../../runtime/common/src/weights/"), &MaxBlockWeight::default());
+///    let weight_by_pallet = analyze_weight(Path::new("../../runtime/gdev/src/weights/"), &MaxBlockWeight::default());
 ///    println!("{:?}", weight_by_pallet);
 /// ```
 pub fn analyze_weight(
@@ -171,13 +172,12 @@ fn process(
 
 #[cfg(test)]
 mod tests {
-    use crate::analyze_weight;
-    use crate::MaxBlockWeight;
+    use crate::{analyze_weight, MaxBlockWeight};
     use std::path::Path;
     #[test]
     fn should_works() {
         let weight_by_pallet = analyze_weight(
-            Path::new("../../runtime/common/src/weights/"),
+            Path::new("../../runtime/gdev/src/weights/"),
             &MaxBlockWeight::default(),
         );
         assert!(
@@ -187,8 +187,8 @@ mod tests {
                 .get("Balances")
                 .unwrap()
                 .len()
-                == 7
-        ); // 7 extrinsics in pallet
+                == 10
+        ); // 8 extrinsics in pallet
         println!("{:?}", weight_by_pallet); // cargo test  -- --nocapture
     }
     #[test]

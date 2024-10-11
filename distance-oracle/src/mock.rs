@@ -46,7 +46,7 @@ pub async fn parent_hash(_client: &Client) -> H256 {
     Default::default()
 }
 
-pub async fn current_session(_client: &Client, _parent_hash: H256) -> u32 {
+pub async fn current_pool_index(_client: &Client, _parent_hash: H256) -> u32 {
     0
 }
 
@@ -64,7 +64,10 @@ pub async fn current_pool(
             .zip(0..client.pool_len)
             .map(|(wot_id, _)| {
                 (wot_id.0 as IdtyIndex, unsafe {
-                    std::mem::transmute((Vec::<()>::new(), Option::<u32>::None, 0))
+                    std::mem::transmute::<
+                        (std::vec::Vec<()>, std::option::Option<u32>, i32),
+                        MedianAcc<Perbill>,
+                    >((Vec::<()>::new(), Option::<u32>::None, 0))
                 })
             })
             .collect(),),

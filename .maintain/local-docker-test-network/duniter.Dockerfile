@@ -29,7 +29,7 @@ USER duniter
 # check if executable works in this container
 RUN /usr/local/bin/duniter --version
 
-EXPOSE 30333 9933 9944
+EXPOSE 30333 9944
 VOLUME ["/duniter"]
 
 ENTRYPOINT ["/usr/local/bin/duniter"]

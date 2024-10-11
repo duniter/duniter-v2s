@@ -29,10 +29,8 @@ use api::{AccountId, IdtyIndex};
 use codec::Encode;
 use fnv::{FnvHashMap, FnvHashSet};
 use log::{debug, error, info, warn};
-use rayon::iter::IntoParallelRefIterator;
-use rayon::iter::ParallelIterator;
-use std::io::Write;
-use std::path::PathBuf;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use std::{io::Write, path::PathBuf};
 
 // TODO select metadata file using features
 #[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
@@ -51,6 +49,7 @@ impl subxt::config::Config for RuntimeConfig {
     type Signature = subxt::ext::sp_runtime::MultiSignature;
 }
 
+/// Represents a tipping amount.
 #[derive(Copy, Clone, Debug, Default, Encode)]
 pub struct Tip {
     #[codec(compact)]
@@ -69,6 +68,7 @@ impl From<u64> for Tip {
     }
 }
 
+/// Represents configuration parameters.
 pub struct Settings {
     pub evaluation_result_dir: PathBuf,
     pub rpc_url: String,
@@ -83,8 +83,9 @@ impl Default for Settings {
     }
 }
 
+/// Asynchronously runs a computation using the provided client and saves the result to a file.
 pub async fn run_and_save(client: &api::Client, settings: Settings) {
-    let Some((evaluation, current_session, evaluation_result_path)) =
+    let Some((evaluation, current_pool_index, evaluation_result_path)) =
         run(client, &settings, true).await
     else {
         return;
@@ -127,8 +128,8 @@ pub async fn run_and_save(client: &api::Client, settings: Settings) {
         .flatten()
     {
         if let Ok(entry_name) = entry.file_name().into_string() {
-            if let Ok(entry_session) = entry_name.parse::<isize>() {
-                if current_session as isize - entry_session > 3 {
+            if let Ok(entry_pool) = entry_name.parse::<isize>() {
+                if current_pool_index as isize - entry_pool > 3 {
                     files_to_remove.push(entry.path());
                 }
             }
@@ -140,7 +141,8 @@ pub async fn run_and_save(client: &api::Client, settings: Settings) {
     });
 }
 
-/// Returns `Option<(evaluation, current_session, evaluation_result_path)>`
+/// Asynchronously runs a computation based on the provided client and settings.
+/// Returns `Option<(evaluation, current_pool_index, evaluation_result_path)>`.
 pub async fn run(
     client: &api::Client,
     settings: &Settings,
@@ -150,10 +152,10 @@ pub async fn run(
 
     let max_depth = api::max_referee_distance(client).await;
 
-    let current_session = api::current_session(client, parent_hash).await;
+    let current_pool_index = api::current_pool_index(client, parent_hash).await;
 
     // Fetch the pending identities
-    let Some(evaluation_pool) = api::current_pool(client, parent_hash, current_session).await
+    let Some(evaluation_pool) = api::current_pool(client, parent_hash, current_pool_index).await
     else {
         info!("Nothing to do: Pool does not exist");
         return None;
@@ -167,7 +169,7 @@ pub async fn run(
 
     let evaluation_result_path = settings
         .evaluation_result_dir
-        .join((current_session + 1).to_string());
+        .join((current_pool_index + 1).to_string());
 
     if handle_fs {
         // Stop if already evaluated
@@ -187,7 +189,7 @@ pub async fn run(
         });
     }
 
-    info!("Evaluating distance for session {}", current_session);
+    info!("Evaluating distance for pool {}", current_pool_index);
     let evaluation_block = api::evaluation_block(client, parent_hash).await;
 
     // member idty -> issued certs
@@ -243,7 +245,7 @@ pub async fn run(
         .map(|(idty, _)| distance_rule(&received_certs, &referees, max_depth, *idty))
         .collect();
 
-    Some((evaluation, current_session, evaluation_result_path))
+    Some((evaluation, current_pool_index, evaluation_result_path))
 }
 
 fn distance_rule_recursive(

@@ -24,6 +24,10 @@ pub trait WeightInfo {
     fn update_evaluation(i: u32) -> Weight;
     fn force_update_evaluation(i: u32) -> Weight;
     fn force_valid_distance_status() -> Weight;
+    fn on_initialize_overhead() -> Weight;
+    fn do_evaluation_overhead() -> Weight;
+    fn do_evaluation_success() -> Weight;
+    fn do_evaluation_failure() -> Weight;
     fn on_finalize() -> Weight;
 }
 
@@ -88,6 +92,53 @@ impl WeightInfo for () {
             .saturating_add(Weight::from_parts(0, 7121))
             .saturating_add(RocksDbWeight::get().reads(7))
             .saturating_add(RocksDbWeight::get().writes(5))
+    }
+
+    fn do_evaluation_success() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `612 + i * (10 ±0)`
+        //  Estimated: `2095 + i * (10 ±0)`
+        // Minimum execution time: 208_812_000 picoseconds.
+        Weight::from_parts(257_150_521, 0)
+            .saturating_add(Weight::from_parts(0, 2095))
+            // Standard Error: 53_366
+            .saturating_add(RocksDbWeight::get().reads(2))
+            .saturating_add(RocksDbWeight::get().writes(1))
+    }
+
+    fn do_evaluation_failure() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `612 + i * (10 ±0)`
+        //  Estimated: `2095 + i * (10 ±0)`
+        // Minimum execution time: 208_812_000 picoseconds.
+        Weight::from_parts(257_150_521, 0)
+            .saturating_add(Weight::from_parts(0, 2095))
+            // Standard Error: 53_366
+            .saturating_add(RocksDbWeight::get().reads(2))
+            .saturating_add(RocksDbWeight::get().writes(1))
+    }
+
+    fn do_evaluation_overhead() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `612 + i * (10 ±0)`
+        //  Estimated: `2095 + i * (10 ±0)`
+        // Minimum execution time: 208_812_000 picoseconds.
+        Weight::from_parts(257_150_521, 0)
+            .saturating_add(Weight::from_parts(0, 2095))
+            // Standard Error: 53_366
+            .saturating_add(RocksDbWeight::get().reads(2))
+            .saturating_add(RocksDbWeight::get().writes(1))
+    }
+
+    fn on_initialize_overhead() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `170`
+        //  Estimated: `1655`
+        // Minimum execution time: 93_595_000 picoseconds.
+        Weight::from_parts(109_467_000, 0)
+            .saturating_add(Weight::from_parts(0, 1655))
+            .saturating_add(RocksDbWeight::get().reads(1))
+            .saturating_add(RocksDbWeight::get().writes(1))
     }
 
     fn on_finalize() -> Weight {

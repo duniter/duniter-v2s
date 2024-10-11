@@ -97,7 +97,10 @@ macro_rules! impl_benchmark_setup_handler {
             <T as pallet_certification::Config>::IdtyIndex: From<u32>,
         {
             fn force_valid_distance_status(idty_id: &IdtyIndex) -> () {
-                let _ = pallet_distance::Pallet::<T>::do_valid_distance_status(*idty_id);
+                let _ = pallet_distance::Pallet::<T>::do_valid_distance_status(
+                    *idty_id,
+                    sp_runtime::Perbill::one(),
+                );
             }
 
             fn add_cert(issuer: &IdtyIndex, receiver: &IdtyIndex) {

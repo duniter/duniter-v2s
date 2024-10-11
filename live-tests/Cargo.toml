@@ -12,7 +12,6 @@ version.workspace = true
 anyhow = { workspace = true }
 codec = { workspace = true }
 countmap = { workspace = true }
-hex-literal = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 subxt = { workspace = true, features = [

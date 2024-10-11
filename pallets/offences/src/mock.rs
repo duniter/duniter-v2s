@@ -14,10 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-#![cfg(test)]
-
-use crate::Config;
-use crate::{self as pallet_offences, SlashStrategy};
+use crate::{self as pallet_offences, Config, SlashStrategy};
 use codec::Encode;
 use frame_support::{
     parameter_types,
@@ -25,10 +22,9 @@ use frame_support::{
     weights::{constants::RocksDbWeight, Weight},
 };
 use sp_core::H256;
-use sp_runtime::BuildStorage;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
+    BuildStorage, Perbill,
 };
 use sp_staking::{
     offence::{Kind, OffenceDetails},
@@ -76,16 +72,21 @@ impl frame_system::Config for Runtime {
     type Hashing = BlakeTwo256;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = ConstU32<16>;
+    type MultiBlockMigrator = ();
     type Nonce = u64;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
     type PalletInfo = PalletInfo;
+    type PostInherents = ();
+    type PostTransactions = ();
+    type PreInherents = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeTask = ();
     type SS58Prefix = ();
+    type SingleBlockMigrations = ();
     type SystemWeightInfo = ();
     type Version = ();
 }

@@ -14,71 +14,124 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use super::entities::*;
-use super::{AccountId, IdtyIndex};
-use frame_support::pallet_prelude::Weight;
-use frame_support::traits::UnfilteredDispatchable;
+use super::{entities::*, AccountId, IdtyIndex};
+use frame_support::{pallet_prelude::Weight, traits::UnfilteredDispatchable};
 use pallet_smith_members::SmithRemovalReason;
+use sp_core::Get;
 
-// new session handler
+/// OnNewSession handler for the runtime calling all the implementation
+/// of OnNewSession
 pub struct OnNewSessionHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_authority_members::traits::OnNewSession for OnNewSessionHandler<Runtime>
 where
-    Runtime:
-        pallet_provide_randomness::Config + pallet_distance::Config + pallet_smith_members::Config,
+    Runtime: pallet_provide_randomness::Config + pallet_smith_members::Config,
 {
     fn on_new_session(index: sp_staking::SessionIndex) {
         pallet_provide_randomness::Pallet::<Runtime>::on_new_epoch();
-        pallet_distance::Pallet::<Runtime>::on_new_session(index);
         pallet_smith_members::Pallet::<Runtime>::on_new_session(index);
     }
 }
 
-// membership event runtime handler
-pub struct OnMembershipEventHandler<Inner, Runtime>(core::marker::PhantomData<(Inner, Runtime)>);
-impl<
-        Inner: sp_membership::traits::OnEvent<IdtyIndex>,
-        Runtime: frame_system::Config<AccountId = AccountId>
-            + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
-            + pallet_membership::Config
-            + pallet_smith_members::Config<IdtyIndex = IdtyIndex>
-            + pallet_universal_dividend::Config,
-    > sp_membership::traits::OnEvent<IdtyIndex> for OnMembershipEventHandler<Inner, Runtime>
+/// Runtime handler for OnNewIdty, calling all implementations of
+/// OnNewIdty and implementing logic at the runtime level.
+pub struct OnNewIdtyHandler<Runtime>(core::marker::PhantomData<Runtime>);
+impl<Runtime: pallet_duniter_wot::Config + pallet_quota::Config>
+    pallet_identity::traits::OnNewIdty<Runtime> for OnNewIdtyHandler<Runtime>
 {
-    fn on_event(membership_event: &sp_membership::Event<IdtyIndex>) {
-        (match membership_event {
-            // when membership is removed, call on_removed_member handler which auto claims UD
-            sp_membership::Event::MembershipRemoved(idty_index) => {
-                if let Some(idty_value) = pallet_identity::Identities::<Runtime>::get(idty_index) {
-                    if let Some(first_ud_index) = idty_value.data.first_eligible_ud.into() {
-                        pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
-                            first_ud_index,
-                            &idty_value.owner_key,
-                        );
-                    }
-                }
-                pallet_smith_members::Pallet::<Runtime>::on_removed_wot_member(*idty_index);
-            }
-            // when main membership is acquired, it starts getting right to UD
-            sp_membership::Event::MembershipAdded(idty_index) => {
-                pallet_identity::Identities::<Runtime>::mutate_exists(idty_index, |idty_val_opt| {
-                    if let Some(ref mut idty_val) = idty_val_opt {
-                        idty_val.data = IdtyData {
-                            first_eligible_ud:
-                                pallet_universal_dividend::Pallet::<Runtime>::init_first_eligible_ud(
-                                ),
-                        };
-                    }
-                });
-            }
-            // in other case, ther is nothing to do
-            sp_membership::Event::MembershipRenewed(_) => (),
-        });
-        Inner::on_event(membership_event)
+    fn on_created(idty_index: &IdtyIndex, creator: &IdtyIndex) {
+        pallet_duniter_wot::Pallet::<Runtime>::on_created(idty_index, creator);
+        pallet_quota::Pallet::<Runtime>::on_created(idty_index, creator);
     }
 }
 
-// spend treasury handler
+/// Runtime handler for OnRemoveIdty, calling all implementations of
+/// OnRemoveIdty and implementing logic at the runtime level.
+pub struct OnRemoveIdtyHandler<Runtime>(core::marker::PhantomData<Runtime>);
+impl<Runtime: pallet_duniter_wot::Config + pallet_quota::Config>
+    pallet_identity::traits::OnRemoveIdty<Runtime> for OnRemoveIdtyHandler<Runtime>
+{
+    fn on_removed(idty_index: &IdtyIndex) -> Weight {
+        let mut weight = pallet_duniter_wot::Pallet::<Runtime>::on_removed(idty_index);
+        weight += pallet_quota::Pallet::<Runtime>::on_removed(idty_index);
+        weight
+    }
+
+    fn on_revoked(idty_index: &IdtyIndex) -> Weight {
+        let mut weight = pallet_duniter_wot::Pallet::<Runtime>::on_revoked(idty_index);
+        weight += pallet_quota::Pallet::<Runtime>::on_revoked(idty_index);
+        weight
+    }
+}
+
+/// Runtime handler for OnNewMembership, calling all implementations of
+/// OnNewMembership and implementing logic at the runtime level.
+pub struct OnNewMembershipHandler<Runtime>(core::marker::PhantomData<Runtime>);
+impl<
+        Runtime: frame_system::Config<AccountId = AccountId>
+            + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
+            + pallet_duniter_wot::Config
+            + pallet_universal_dividend::Config,
+    > sp_membership::traits::OnNewMembership<IdtyIndex> for OnNewMembershipHandler<Runtime>
+{
+    fn on_created(idty_index: &IdtyIndex) {
+        // duniter-wot related actions
+        pallet_duniter_wot::Pallet::<Runtime>::on_created(idty_index);
+
+        // When main membership is acquired, it starts getting right to UD.
+        pallet_identity::Identities::<Runtime>::mutate_exists(idty_index, |idty_val_opt| {
+            if let Some(ref mut idty_val) = idty_val_opt {
+                idty_val.data = IdtyData {
+                    first_eligible_ud:
+                        pallet_universal_dividend::Pallet::<Runtime>::init_first_eligible_ud(),
+                };
+            }
+        });
+    }
+
+    fn on_renewed(_idty_index: &IdtyIndex) {}
+}
+
+/// Runtime handler for OnRemoveMembership, calling all implementations of
+/// OnRemoveMembership and implementing logic at the runtime level.
+/// As the weight accounting is not trivial in this handler, the weight is
+/// done at the handler level.
+pub struct OnRemoveMembershipHandler<Runtime>(core::marker::PhantomData<Runtime>);
+impl<
+        Runtime: frame_system::Config<AccountId = AccountId>
+            + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
+            + pallet_smith_members::Config<IdtyIndex = IdtyIndex>
+            + pallet_duniter_wot::Config
+            + pallet_universal_dividend::Config,
+    > sp_membership::traits::OnRemoveMembership<IdtyIndex> for OnRemoveMembershipHandler<Runtime>
+{
+    fn on_removed(idty_index: &IdtyIndex) -> Weight {
+        // duniter-wot related actions
+        let mut weight = pallet_duniter_wot::Pallet::<Runtime>::on_removed(idty_index);
+
+        let mut add_db_reads_writes = |reads, writes| {
+            weight += Runtime::DbWeight::get().reads_writes(reads, writes);
+        };
+
+        // When membership is removed, call on_removed_member handler which auto claims UD.
+        if let Some(idty_value) = pallet_identity::Identities::<Runtime>::get(idty_index) {
+            add_db_reads_writes(1, 0);
+            if let Some(first_ud_index) = idty_value.data.first_eligible_ud.into() {
+                add_db_reads_writes(1, 0);
+                weight += pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
+                    first_ud_index,
+                    &idty_value.owner_key,
+                );
+            }
+        }
+
+        // When membership is removed, also remove from smith member.
+        weight.saturating_add(
+            pallet_smith_members::Pallet::<Runtime>::on_removed_wot_member(*idty_index),
+        )
+    }
+}
+
+/// Runtime handler for TreasurySpendFunds.
 pub struct TreasurySpendFunds<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_treasury::SpendFunds<Runtime> for TreasurySpendFunds<Runtime>
 where
@@ -94,6 +147,7 @@ where
     }
 }
 
+/// Runtime handler for OnSmithDelete.
 pub struct OnSmithDeletedHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<Runtime> pallet_smith_members::traits::OnSmithDelete<Runtime::MemberId>
     for OnSmithDeletedHandler<Runtime>
@@ -105,9 +159,22 @@ where
             member_id: idty_index,
         };
         if let Err(e) = call.dispatch_bypass_filter(frame_system::Origin::<Runtime>::Root.into()) {
-            sp_std::if_std! {
-                println!("faid to remove member: {:?}", e)
-            }
+            #[cfg(feature = "std")]
+            println!("faid to remove member: {:?}", e)
         }
+    }
+}
+
+/// Runtime handler OwnerKeyChangePermission.
+pub struct OwnerKeyChangePermissionHandler<Runtime>(core::marker::PhantomData<Runtime>);
+impl<
+        Runtime: frame_system::Config
+            + pallet_identity::Config<IdtyIndex = IdtyIndex>
+            + pallet_authority_members::Config<MemberId = IdtyIndex>,
+    > pallet_identity::traits::CheckKeyChangeAllowed<Runtime>
+    for OwnerKeyChangePermissionHandler<Runtime>
+{
+    fn check_allowed(idty_index: &IdtyIndex) -> bool {
+        !pallet_authority_members::Pallet::<Runtime>::online().contains(idty_index)
     }
 }

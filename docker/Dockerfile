@@ -53,8 +53,8 @@ ARG chain="gdev"
 RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
-    cargo build --locked $CARGO_OPTIONS --no-default-features $BENCH_OPTIONS --features $chain --target "$RUST_ARCH_TRIPLET" && \
-    cargo build --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" --package distance-oracle && \
+    cargo build -Zgit=shallow-deps --locked $CARGO_OPTIONS --no-default-features $BENCH_OPTIONS --features $chain --target "$RUST_ARCH_TRIPLET" && \
+    cargo build -Zgit=shallow-deps --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" --package distance-oracle && \
     mkdir -p build && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/ && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/distance-oracle build/
@@ -63,7 +63,7 @@ RUN set -x && \
 ARG cucumber=0
 RUN if [ "$cucumber" != 0 ] && [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then \
         cargo ta && \
-        cargo test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features=runtime-benchmarks,constant-fees \
+        cargo test -Zgit=shallow-deps --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features=runtime-benchmarks,constant-fees \
         cd target/debug/deps/ && \
         rm cucumber_tests-*.d && \
         mv cucumber_tests* ../../../build/duniter-cucumber; \
@@ -88,8 +88,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN adduser --home /var/lib/duniter duniter
 
 # Configuration
-# rpc, rpc-ws, p2p, telemetry
-EXPOSE 9933 9944 30333 9615
+# rpc, p2p, telemetry
+EXPOSE 9944 30333 9615
 VOLUME /var/lib/duniter
 ENTRYPOINT ["docker-entrypoint"]
 USER duniter

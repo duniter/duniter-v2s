@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;
 use sc_client_api::{ProvideUncles, StorageKey, StorageProvider};
-use scale_info::TypeInfo;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT, AccountId32};
 use std::path::PathBuf;
 
@@ -42,57 +40,69 @@ where
     Backend: sc_client_api::Backend<B>,
     IdtyIndex: Decode + Encode + PartialEq + TypeInfo,
 {
-    let &[owner_key] = owner_keys else {
-        log::error!("🧙 [distance oracle] More than one Babe owner key: oracle cannot work");
-        return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
-    };
-    let owner_key = sp_runtime::AccountId32::new(owner_key.0);
-
-    let session_index = client
+    // Retrieve the pool_index from storage. If storage is inaccessible or the data is corrupted,
+    // return the appropriate error.
+    let pool_index = client
         .storage(
             parent,
             &StorageKey(
-                frame_support::storage::storage_prefix(b"Session", b"CurrentIndex").to_vec(),
+                frame_support::storage::storage_prefix(b"Distance", b"CurrentPoolIndex").to_vec(),
             ),
-        )
-        .expect("CurrentIndex is Err")
-        .map_or(0, |raw| {
-            u32::decode(&mut &raw.0[..]).expect("cannot decode CurrentIndex")
-        });
+        )?
+        .map_or_else(
+            || {
+                Err(sc_client_api::blockchain::Error::Storage(
+                    "CurrentPoolIndex value not found".to_string(),
+                ))
+            },
+            |raw| {
+                u32::decode(&mut &raw.0[..])
+                    .map_err(|e| sc_client_api::blockchain::Error::from_state(Box::new(e)))
+            },
+        )?;
 
+    // Retrieve the published_results from storage.
+    // Return an error if the storage is inaccessible.
+    // If accessible, continue execution. If None, it means there are no published_results at this block.
     let published_results = client
         .storage(
             parent,
             &StorageKey(
                 frame_support::storage::storage_prefix(
                     b"Distance",
-                    match session_index % 3 {
-                        0 => b"StoragePublishedResults1",
-                        1 => b"StoragePublishedResults2",
-                        2 => b"StoragePublishedResults0",
-                        _ => unreachable!("n%3<3"),
+                    match pool_index {
+                        0 => b"EvaluationPool0",
+                        1 => b"EvaluationPool1",
+                        2 => b"EvaluationPool2",
+                        _ => unreachable!("n<3"),
                     },
                 )
                 .to_vec(),
             ),
         )?
-        .map_or_else(Default::default, |raw| {
-            pallet_distance::EvaluationPool::<AccountId32, IdtyIndex>::decode(&mut &raw.0[..])
-                .expect("cannot decode EvaluationPool")
+        .and_then(|raw| {
+            pallet_distance::EvaluationPool::<AccountId32, IdtyIndex>::decode(&mut &raw.0[..]).ok()
         });
 
-    // Have we already published a result for this session?
-    if published_results.evaluators.contains(&owner_key) {
-        log::debug!("🧙 [distance oracle] Already published a result for this session");
-        return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
+    // Have we already published a result for this period?
+    // The block author is guaranteed to be in the owner_keys.
+    if let Some(results) = published_results {
+        if owner_keys
+            .iter()
+            .map(|&key| sp_runtime::AccountId32::new(key.0))
+            .any(|key| results.evaluators.contains(&key))
+        {
+            log::debug!("🧙 [distance oracle] Already published a result for this period");
+            return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
+        }
     }
 
     // Read evaluation result from file, if it exists
     log::debug!(
         "🧙 [distance oracle] Reading evaluation result from file {:?}",
-        distance_dir.clone().join(session_index.to_string())
+        distance_dir.clone().join(pool_index.to_string())
     );
-    let evaluation_result = match std::fs::read(distance_dir.join(session_index.to_string())) {
+    let evaluation_result = match std::fs::read(distance_dir.join(pool_index.to_string())) {
         Ok(data) => data,
         Err(e) => {
             match e.kind() {

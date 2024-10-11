@@ -17,8 +17,7 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use frame_benchmarking::account;
-use frame_benchmarking::v2::*;
+use frame_benchmarking::{account, v2::*};
 use sp_runtime::traits::One;
 
 fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {

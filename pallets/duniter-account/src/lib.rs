@@ -14,11 +14,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-// Note: refund queue mechanism is inspired from frame contract
+//! # Duniter Account Pallet
+//!
+//! Duniter customizes the `AccountData` of the `Balances` Substrate pallet to include additional fields
+//! such as `linked_idty`.
+//!
+//! ## Sufficiency
+//!
+//! DuniterAccount adjusts the Substrate `AccountInfo` to accommodate identity-linked accounts without requiring
+//! an existential deposit. This flexibility helps reduce barriers to account creation.
+//!
+//! ## Linked Identity
+//!
+//! Duniter allows accounts to be linked to identities using the `linked_idty` field. This linkage facilitates
+//! transaction fee refunds through the `OnChargeTransaction` mechanism.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
 mod types;
@@ -28,22 +40,34 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
-use frame_support::pallet_prelude::*;
-use frame_support::traits::StoredMap;
-use frame_support::traits::{Currency, StorageVersion};
+use core::cmp;
+#[cfg(feature = "runtime-benchmarks")]
+use frame_support::traits::tokens::fungible::Mutate;
+use frame_support::{
+    pallet_prelude::*,
+    traits::{
+        fungible,
+        fungible::{Credit, Inspect},
+        tokens::WithdrawConsequence,
+        IsSubType, StorageVersion, StoredMap,
+    },
+};
 use frame_system::pallet_prelude::*;
 use pallet_quota::traits::RefundFee;
 use pallet_transaction_payment::OnChargeTransaction;
+use scale_info::prelude::{
+    collections::{BTreeMap, BTreeSet},
+    fmt::Debug,
+};
 use sp_runtime::traits::{DispatchInfoOf, PostDispatchInfoOf, Saturating};
-use sp_std::fmt::Debug;
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
     pub type IdtyIdOf<T> = <T as pallet_identity::Config>::IdtyIndex;
     pub type CurrencyOf<T> = pallet_balances::Pallet<T>;
-    pub type BalanceOf<T> =
-        <CurrencyOf<T> as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+    type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+    pub type BalanceOf<T> = <CurrencyOf<T> as fungible::Inspect<AccountIdOf<T>>>::Balance;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -65,11 +89,14 @@ pub mod pallet {
     {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        /// Type representing the weight of this pallet
+
+        /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
-        /// wrapped type
+
+        /// A wrapped type that handles the charging of transaction fees.
         type InnerOnChargeTransaction: OnChargeTransaction<Self>;
-        /// type implementing refund behavior
+
+        /// A type that implements the refund behavior for transaction fees.
         type Refund: pallet_quota::traits::RefundFee<Self>;
     }
 
@@ -77,10 +104,7 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub accounts: sp_std::collections::btree_map::BTreeMap<
-            T::AccountId,
-            GenesisAccountData<T::Balance, IdtyIdOf<T>>,
-        >,
+        pub accounts: BTreeMap<T::AccountId, GenesisAccountData<T::Balance, IdtyIdOf<T>>>,
         pub treasury_balance: T::Balance,
     }
 
@@ -106,11 +130,7 @@ pub mod pallet {
             );
 
             // ensure no duplicate
-            let endowed_accounts = self
-                .accounts
-                .keys()
-                .cloned()
-                .collect::<sp_std::collections::btree_set::BTreeSet<_>>();
+            let endowed_accounts = self.accounts.keys().cloned().collect::<BTreeSet<_>>();
 
             assert!(
                 endowed_accounts.len() == self.accounts.len(),
@@ -156,7 +176,7 @@ pub mod pallet {
     // CALLS //
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// unlink the identity associated with the account
+        /// Unlink the identity associated with the account.
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::unlink_identity())]
         pub fn unlink_identity(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -168,7 +188,7 @@ pub mod pallet {
 
     // INTERNAL FUNCTIONS //
     impl<T: Config> Pallet<T> {
-        /// unlink account
+        /// Unlink the account from its associated identity.
         pub fn do_unlink_identity(account_id: T::AccountId) {
             // no-op if account already linked to nothing
             frame_system::Account::<T>::mutate(&account_id, |account| {
@@ -179,7 +199,7 @@ pub mod pallet {
             })
         }
 
-        /// link account to identity
+        /// Link an account to an identity.
         pub fn do_link_identity(account_id: &T::AccountId, idty_id: IdtyIdOf<T>) {
             // no-op if identity does not change
             if frame_system::Account::<T>::get(account_id).data.linked_idty != Some(idty_id) {
@@ -290,14 +310,15 @@ where
 // allows pay fees with quota instead of currency if available
 impl<T: Config> OnChargeTransaction<T> for Pallet<T>
 where
+    T::RuntimeCall: IsSubType<Call<T>>,
     T::InnerOnChargeTransaction: OnChargeTransaction<
         T,
-        Balance = <CurrencyOf<T> as Currency<T::AccountId>>::Balance,
-        LiquidityInfo = Option<<CurrencyOf<T> as Currency<T::AccountId>>::NegativeImbalance>,
+        Balance = BalanceOf<T>,
+        LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>,
     >,
 {
     type Balance = BalanceOf<T>;
-    type LiquidityInfo = Option<<CurrencyOf<T> as Currency<T::AccountId>>::NegativeImbalance>;
+    type LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>;
 
     fn withdraw_fee(
         who: &T::AccountId,
@@ -333,5 +354,35 @@ where
             T::Refund::request_refund(who.clone(), idty_index, corrected_fee.saturating_sub(tip));
         }
         Ok(())
+    }
+}
+
+/// Implementation of the CheckAccountWorthiness trait for the Pallet.
+/// This trait is used to verify the worthiness of an account in terms
+/// of existence and sufficient balance to handle identity creation.
+impl<AccountId, T: Config> pallet_identity::traits::CheckAccountWorthiness<T> for Pallet<T>
+where
+    T: frame_system::Config<AccountId = AccountId>,
+    AccountId: cmp::Eq,
+{
+    /// Checks that the account exists and has the balance to handle the
+    /// identity creation process.
+    fn check_account_worthiness(account: &AccountId) -> Result<(), DispatchError> {
+        ensure!(
+            frame_system::Pallet::<T>::providers(account) > 0,
+            pallet_identity::Error::<T>::AccountNotExist
+        );
+        // This check verifies that the account can withdraw at least twice the minimum balance.
+        ensure!(
+            T::Currency::can_withdraw(account, T::Currency::minimum_balance() * 2u32.into())
+                == WithdrawConsequence::Success,
+            pallet_identity::Error::<T>::InsufficientBalance
+        );
+        Ok(())
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn set_worthy(account: &AccountId) {
+        T::Currency::set_balance(account, T::Currency::minimum_balance() * 4u32.into());
     }
 }

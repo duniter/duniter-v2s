@@ -14,11 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::mock::*;
-use crate::{Error, Event};
+use crate::{mock::*, Error, Event};
 use frame_support::{assert_noop, assert_ok};
 use maplit::btreemap;
-use sp_std::collections::btree_map::BTreeMap;
+use scale_info::prelude::{collections::BTreeMap, vec};
 
 #[test]
 fn test_must_receive_cert_before_can_issue() {

@@ -14,9 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+#![allow(unused_imports)]
+#![allow(dead_code)]
+
 use crate::chain_spec::{get_account_id_from_seed, get_from_seed, AccountPublic};
-use common_runtime::constants::{DAYS, MILLISECS_PER_BLOCK};
-use common_runtime::*;
+use common_runtime::{
+    constants::{DAYS, MILLISECS_PER_BLOCK},
+    *,
+};
 use log::{error, warn};
 use num_format::{Locale, ToFormattedString};
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
@@ -24,14 +29,16 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-use sp_core::crypto::AccountId32;
-use sp_core::{ed25519, sr25519, Decode, Encode};
-use sp_runtime::traits::{IdentifyAccount, Verify};
-use sp_runtime::{MultiSignature, Perbill};
-use std::collections::{BTreeMap, HashMap};
-use std::fmt::{Display, Formatter};
-use std::fs;
-use std::ops::{Add, Sub};
+use sp_core::{crypto::AccountId32, ed25519, sr25519, Decode, Encode};
+use sp_runtime::{
+    traits::{IdentifyAccount, Verify},
+    MultiSignature, Perbill,
+};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt::{Display, Formatter},
+    ops::{Add, Sub},
+};
 
 static G1_DUNITER_V1_EXISTENTIAL_DEPOSIT: u64 = 100;
 static G1_DUNITER_V1_DECIMALS: usize = 2;
@@ -124,7 +131,6 @@ pub struct GenesisIndexerExport {
     technical_committee: Vec<String>,
     ud: u64,
     wallets: BTreeMap<AccountId, u64>,
-    transactions_history: Option<BTreeMap<AccountId, Vec<TransactionV2>>>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -150,7 +156,6 @@ struct GenesisMigrationData {
     identities: BTreeMap<String, IdentityV1>,
     #[serde(default)]
     wallets: BTreeMap<PubkeyV1, u64>,
-    transactions_history: Option<BTreeMap<PubkeyV1, Vec<TransactionV1>>>,
 }
 
 // Base58 encoded Ed25519 public key
@@ -661,6 +666,9 @@ where
         panic!();
     }
 
+    // Indexer output
+    // handled by indexer directly from py-g1-migrator output
+
     let genesis_data = GenesisData {
         accounts,
         treasury_balance,
@@ -744,11 +752,6 @@ fn dump_genesis_info(info: GenesisInfo) {
         get_best_unit_and_diviser_for_ms(p.universal_dividend_ud_creation_period as f32);
     let (universal_dividend_ud_reeval_period, universal_dividend_ud_reeval_period_unit) =
         get_best_unit_and_diviser_for_ms(p.universal_dividend_ud_reeval_period as f32);
-    let (universal_dividend_units_per_ud, universal_dividend_units_per_ud_unit) =
-        get_best_unit_and_diviser_for_currency_units(
-            p.universal_dividend_units_per_ud,
-            p.currency_name.clone(),
-        );
     let (wot_first_issuable_on, wot_first_issuable_on_unit) =
         get_best_unit_and_diviser_for_blocks(p.wot_first_issuable_on);
     let (wot_min_cert_for_membership, wot_min_cert_for_membership_unit) =
@@ -805,7 +808,6 @@ fn dump_genesis_info(info: GenesisInfo) {
         - universal_dividend.square_money_growth_rate: {} {}/equinox
         - universal_dividend.ud_creation_period: {} {}
         - universal_dividend.ud_reeval_period: {} {}
-        - universal_dividend.units_per_ud: {} {}
         - wot.first_issuable_on: {} {}
         - wot.min_cert_for_membership: {} {}
         - wot.min_cert_for_create_idty_right: {} {}
@@ -847,8 +849,6 @@ fn dump_genesis_info(info: GenesisInfo) {
         universal_dividend_ud_creation_period_unit,
         universal_dividend_ud_reeval_period,
         universal_dividend_ud_reeval_period_unit,
-        universal_dividend_units_per_ud,
-        universal_dividend_units_per_ud_unit,
         wot_first_issuable_on,
         wot_first_issuable_on_unit,
         wot_min_cert_for_membership,
@@ -1614,7 +1614,6 @@ fn decorate_smiths_with_identity(
         .collect()
 }
 
-#[cfg(feature = "gdev")]
 pub fn generate_genesis_data_for_local_chain<P, SK, SessionKeys: Encode, SKP>(
     initial_authorities_len: usize,
     initial_smiths_len: usize,
@@ -1629,6 +1628,7 @@ where
     SK: Decode,
     SKP: SessionKeysProvider<SessionKeys>,
 {
+    // For benchmarking, the total length of identities should be at least MinReceivedCertToBeAbleToIssueCert + 1
     assert!(initial_identities_len <= 6);
     assert!(initial_smiths_len <= initial_identities_len);
     assert!(initial_authorities_len <= initial_smiths_len);
@@ -1773,7 +1773,6 @@ where
     Ok(genesis_data)
 }
 
-#[cfg(feature = "gdev")]
 fn clique_wot(
     initial_identities_len: usize,
 ) -> (
@@ -1800,7 +1799,6 @@ fn clique_wot(
     (certs_by_issuer, count)
 }
 
-#[cfg(feature = "gdev")]
 fn clique_smith_wot(initial_identities_len: usize) -> BTreeMap<IdtyIndex, (bool, Vec<IdtyIndex>)> {
     let mut certs_by_issuer = BTreeMap::new();
     for i in 1..=initial_identities_len {
@@ -1930,7 +1928,6 @@ pub struct CommonParameters {
     pub universal_dividend_square_money_growth_rate: Perbill,
     pub universal_dividend_ud_creation_period: u64,
     pub universal_dividend_ud_reeval_period: u64,
-    pub universal_dividend_units_per_ud: u64,
     pub wot_first_issuable_on: u32,
     pub wot_min_cert_for_membership: u32,
     pub wot_min_cert_for_create_idty_right: u32,
@@ -2000,8 +1997,10 @@ fn seconds_to_blocs(seconds: u32) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
-    use sp_core::ByteArray;
+    use sp_core::{
+        crypto::{Ss58AddressFormat, Ss58Codec},
+        ByteArray,
+    };
     use std::str::FromStr;
 
     #[test]

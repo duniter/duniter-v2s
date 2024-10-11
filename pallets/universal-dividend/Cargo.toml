@@ -40,7 +40,6 @@ std = [
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"sp-std/std",
 ]
 ### DOC ###
 
@@ -49,6 +48,7 @@ default-features = false
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+duniter-primitives = { workspace = true }
 codec = { workspace = true, features = ["derive", "max-encoded-len"] }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
@@ -61,7 +61,6 @@ sp-arithmetic = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 
 [dev-dependencies]
-sp-core = { workspace = true }
+sp-core = { workspace = true, default-features = true }

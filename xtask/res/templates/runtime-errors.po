@@ -1,0 +1,7 @@
+{% for pallet in pallets -%}
+{% for error in pallet.errors -%}
+
+msgid "{{ pallet.name }}.{{ error.name }}"
+msgstr "{{ error.documentation }}"
+{% endfor -%}
+{% endfor -%}

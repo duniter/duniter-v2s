@@ -22,19 +22,17 @@
 use codec::{Decode, Encode};
 use frame_support::pallet_prelude::RuntimeDebug;
 use scale_info::TypeInfo;
-//#[cfg(feature = "std")]
-//use serde::{Deserialize, Serialize};
 use sp_inherents::{InherentData, InherentIdentifier, IsFatalError};
 use sp_runtime::Perbill;
-use sp_std::vec::Vec;
 #[cfg(feature = "std")]
 use std::marker::PhantomData;
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"distanc0";
 
+/// Represents the result of a distance computation.
 #[derive(Clone, Decode, Encode, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct ComputationResult {
-    pub distances: Vec<Perbill>,
+    pub distances: scale_info::prelude::vec::Vec<Perbill>,
 }
 
 #[derive(Encode, sp_runtime::RuntimeDebug)]

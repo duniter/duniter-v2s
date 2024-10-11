@@ -5,7 +5,6 @@ edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 name = "pallet-quota"
-readme = "README.md"
 repository.workspace = true
 version.workspace = true
 
@@ -39,7 +38,6 @@ std = [
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"sp-std/std",
 ]
 
 [package.metadata.docs.rs]
@@ -55,7 +53,6 @@ pallet-identity = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 
 [dev-dependencies]
-sp-io = { workspace = true }
+sp-io = { workspace = true, default-features = true }

@@ -20,7 +20,6 @@ std = [
 	"distance-oracle/std",
 	"hex/std",
 	"serde_json/std",
-	"sp-core-hashing/std",
 	"sp-core/std",
 	"sp-runtime/std",
 ]
@@ -42,7 +41,6 @@ notify-debouncer-mini = { workspace = true }
 portpicker = { workspace = true }
 serde_json = { workspace = true }
 sp-core = { workspace = true }
-sp-core-hashing = { workspace = true }
 sp-keyring = { workspace = true }
 sp-runtime = { workspace = true }
 subxt = { workspace = true, features = [

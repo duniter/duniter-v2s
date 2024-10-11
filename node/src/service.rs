@@ -22,14 +22,15 @@ use self::client::{Client, ClientHandle, RuntimeApiCollection};
 use async_io::Timer;
 use common_runtime::Block;
 use futures::{Stream, StreamExt};
-use sc_client_api::client::BlockBackend;
-use sc_client_api::Backend;
-use sc_consensus_grandpa::SharedVoterState;
+use sc_client_api::{client::BlockBackend, Backend};
+use sc_consensus_grandpa::{FinalityProofProvider, SharedVoterState};
 use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
-pub use sc_executor::WasmExecutor;
-use sc_service::WarpSyncParams;
-use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TaskManager};
+use sc_rpc::SubscriptionTaskExecutor;
+use sc_service::{
+    error::Error as ServiceError, Configuration, PartialComponents, TaskManager, WarpSyncConfig,
+};
 use sc_telemetry::{Telemetry, TelemetryWorker};
+use sp_consensus_babe::inherents::InherentDataProvider;
 use sp_core::H256;
 use sp_runtime::traits::BlakeTwo256;
 use std::{sync::Arc, time::Duration};
@@ -43,64 +44,51 @@ type HostFunctions = (
     frame_benchmarking::benchmarking::HostFunctions,
 );
 
-type FullClient<RuntimeApi> =
-    sc_service::TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>;
+// Allow to use native Runtime for debugging/development purposes
+#[cfg(feature = "native")]
+type FullClient<RuntimeApi, Executor> =
+    sc_service::TFullClient<Block, RuntimeApi, sc_executor::NativeElseWasmExecutor<Executor>>;
+// By default, WASM only Runtime
+#[cfg(not(feature = "native"))]
+type FullClient<RuntimeApi, Executor> =
+    sc_service::TFullClient<Block, RuntimeApi, sc_executor::WasmExecutor<Executor>>;
+
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
-#[allow(dead_code)]
-#[cfg(feature = "gdev")]
-pub mod gdev_executor {
-    pub use gdev_runtime;
+pub mod runtime_executor {
+    use crate::service::HostFunctions;
+    #[cfg(feature = "g1")]
+    pub use g1_runtime as runtime;
+    #[cfg(feature = "gdev")]
+    pub use gdev_runtime as runtime;
+    #[cfg(feature = "gtest")]
+    pub use gtest_runtime as runtime;
 
-    pub struct GDevExecutor;
-    impl sc_executor::NativeExecutionDispatch for GDevExecutor {
+    use sc_executor::sp_wasm_interface::{Function, HostFunctionRegistry};
+
+    pub struct Executor;
+    impl sc_executor::NativeExecutionDispatch for Executor {
         type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
         fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-            gdev_runtime::api::dispatch(method, data)
+            runtime::api::dispatch(method, data)
         }
 
         fn native_version() -> sc_executor::NativeVersion {
-            gdev_runtime::native_version()
+            runtime::native_version()
         }
     }
-}
-
-#[allow(dead_code)]
-#[cfg(feature = "g1")]
-pub mod g1_executor {
-    pub use g1_runtime;
-
-    pub struct G1Executor;
-    impl sc_executor::NativeExecutionDispatch for G1Executor {
-        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-        fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-            g1_runtime::api::dispatch(method, data)
+    impl sc_executor::sp_wasm_interface::HostFunctions for Executor {
+        fn host_functions() -> Vec<&'static dyn Function> {
+            HostFunctions::host_functions()
         }
 
-        fn native_version() -> sc_executor::NativeVersion {
-            g1_runtime::native_version()
-        }
-    }
-}
-
-#[allow(dead_code)]
-#[cfg(feature = "gtest")]
-pub mod gtest_executor {
-    pub use gtest_runtime;
-
-    pub struct GTestExecutor;
-    impl sc_executor::NativeExecutionDispatch for GTestExecutor {
-        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-        fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-            gtest_runtime::api::dispatch(method, data)
-        }
-
-        fn native_version() -> sc_executor::NativeVersion {
-            gtest_runtime::native_version()
+        fn register_static<T>(registry: &mut T) -> Result<(), T::Error>
+        where
+            T: HostFunctionRegistry,
+        {
+            HostFunctions::register_static(registry)
         }
     }
 }
@@ -114,27 +102,6 @@ pub enum RuntimeType {
     G1,
     GDev,
     GTest,
-}
-
-/// Can be called for a `Configuration` to check if it is a configuration for
-/// a particular runtime type.
-pub trait IdentifyRuntimeType {
-    /// Returns the runtime type
-    fn runtime_type(&self) -> RuntimeType;
-}
-
-impl IdentifyRuntimeType for Box<dyn sc_chain_spec::ChainSpec> {
-    fn runtime_type(&self) -> RuntimeType {
-        if self.id().starts_with("g1") {
-            RuntimeType::G1
-        } else if self.id().starts_with("dev") || self.id().starts_with("gdev") {
-            RuntimeType::GDev
-        } else if self.id().starts_with("gtest") {
-            RuntimeType::GTest
-        } else {
-            panic!("unknown runtime")
-        }
-    }
 }
 
 /// Builds a new object suitable for chain operations.
@@ -151,94 +118,68 @@ pub fn new_chain_ops(
     ),
     ServiceError,
 > {
-    match config.chain_spec.runtime_type() {
-        #[cfg(feature = "g1")]
-        RuntimeType::G1::G1 => {
-            let PartialComponents {
-                client,
-                backend,
-                import_queue,
-                task_manager,
-                ..
-            } = new_partial::<g1_runtime::RuntimeApi>(config, manual_consensus)?;
-            Ok((
-                Arc::new(Client::G1(client)),
-                backend,
-                import_queue,
-                task_manager,
-            ))
-        }
-        #[cfg(feature = "gtest")]
-        RuntimeType::GTest => {
-            let PartialComponents {
-                client,
-                backend,
-                import_queue,
-                task_manager,
-                ..
-            } = new_partial::<gtest_runtime::RuntimeApi>(config, manual_consensus)?;
-            Ok((
-                Arc::new(Client::GTest(client)),
-                backend,
-                import_queue,
-                task_manager,
-            ))
-        }
-        #[cfg(feature = "gdev")]
-        RuntimeType::GDev => {
-            let PartialComponents {
-                client,
-                backend,
-                import_queue,
-                task_manager,
-                ..
-            } = new_partial::<gdev_runtime::RuntimeApi>(config, manual_consensus)?;
-            Ok((
-                Arc::new(Client::GDev(client)),
-                backend,
-                import_queue,
-                task_manager,
-            ))
-        }
-        _ => panic!("unknown runtime"),
-    }
+    let PartialComponents {
+        client,
+        backend,
+        import_queue,
+        task_manager,
+        ..
+    } = new_partial::<runtime_executor::runtime::RuntimeApi, runtime_executor::Executor>(
+        config,
+        manual_consensus,
+    )?;
+    Ok((
+        Arc::new(Client::Client(client)),
+        backend,
+        import_queue,
+        task_manager,
+    ))
 }
 
-type FullGrandpaBlockImport<RuntimeApi> = sc_consensus_grandpa::GrandpaBlockImport<
+type FullGrandpaBlockImport<RuntimeApi, Executor> = sc_consensus_grandpa::GrandpaBlockImport<
     FullBackend,
     Block,
-    FullClient<RuntimeApi>,
+    FullClient<RuntimeApi, Executor>,
     FullSelectChain,
 >;
 
 #[allow(clippy::type_complexity)]
-pub fn new_partial<RuntimeApi>(
+pub fn new_partial<RuntimeApi, Executor>(
     config: &Configuration,
     consensus_manual: bool,
 ) -> Result<
     sc_service::PartialComponents<
-        FullClient<RuntimeApi>,
+        FullClient<RuntimeApi, Executor>,
         FullBackend,
         FullSelectChain,
         sc_consensus::DefaultImportQueue<Block>,
-        sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi>>,
+        sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>,
         (
             sc_consensus_babe::BabeBlockImport<
                 Block,
-                FullClient<RuntimeApi>,
-                FullGrandpaBlockImport<RuntimeApi>,
+                FullClient<RuntimeApi, Executor>,
+                FullGrandpaBlockImport<RuntimeApi, Executor>,
             >,
             sc_consensus_babe::BabeLink<Block>,
             Option<sc_consensus_babe::BabeWorkerHandle<Block>>,
-            sc_consensus_grandpa::LinkHalf<Block, FullClient<RuntimeApi>, FullSelectChain>,
+            sc_consensus_grandpa::LinkHalf<
+                Block,
+                FullClient<RuntimeApi, Executor>,
+                FullSelectChain,
+            >,
             Option<Telemetry>,
         ),
     >,
     ServiceError,
 >
 where
-    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
+        + Send
+        + Sync
+        + 'static,
     RuntimeApi::RuntimeApi: RuntimeApiCollection,
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    Executor: sc_executor::sp_wasm_interface::HostFunctions + 'static,
 {
     let telemetry = config
         .telemetry_endpoints
@@ -251,7 +192,10 @@ where
         })
         .transpose()?;
 
-    let executor = sc_service::new_wasm_executor(config);
+    #[cfg(feature = "native")]
+    let executor = sc_service::new_native_or_wasm_executor(&config.executor);
+    #[cfg(not(feature = "native"))]
+    let executor = sc_service::new_wasm_executor(&config.executor);
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts::<Block, RuntimeApi, _>(
@@ -314,11 +258,10 @@ where
                 create_inherent_data_providers: move |_, ()| async move {
                     let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-                    let slot =
-				sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-					*timestamp,
-					slot_duration,
-				);
+                    let slot = InherentDataProvider::from_timestamp_and_slot_duration(
+                        *timestamp,
+                        slot_duration,
+                    );
 
                     Ok((slot, timestamp))
                 },
@@ -353,13 +296,22 @@ where
 }
 
 /// Builds a new service for a full client.
-pub fn new_full<RuntimeApi>(
+pub fn new_full<
+    RuntimeApi,
+    Executor,
+    N: sc_network::NetworkBackend<Block, <Block as sp_runtime::traits::Block>::Hash>,
+>(
     config: Configuration,
     sealing: crate::cli::Sealing,
 ) -> Result<TaskManager, ServiceError>
 where
-    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
+        + Send
+        + Sync
+        + 'static,
     RuntimeApi::RuntimeApi: RuntimeApiCollection,
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    Executor: sc_executor::sp_wasm_interface::HostFunctions + 'static,
 {
     let sc_service::PartialComponents {
         client,
@@ -370,7 +322,7 @@ where
         select_chain,
         transaction_pool,
         other: (block_import, babe_link, babe_worker_handle, grandpa_link, mut telemetry),
-    } = new_partial::<RuntimeApi>(&config, sealing.is_manual_consensus())?;
+    } = new_partial::<RuntimeApi, Executor>(&config, sealing.is_manual_consensus())?;
 
     let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
         &client
@@ -381,9 +333,19 @@ where
         &config.chain_spec,
     );
 
-    let mut net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
+    let mut net_config = sc_network::config::FullNetworkConfiguration::<
+        Block,
+        <Block as sp_runtime::traits::Block>::Hash,
+        N,
+    >::new(&config.network, config.prometheus_registry().cloned());
+    let metrics = N::register_notification_metrics(config.prometheus_registry());
+    let peer_store_handle = net_config.peer_store_handle();
     let (grandpa_protocol_config, grandpa_notification_service) =
-        sc_consensus_grandpa::grandpa_peers_set_config(grandpa_protocol_name.clone());
+        sc_consensus_grandpa::grandpa_peers_set_config::<_, N>(
+            grandpa_protocol_name.clone(),
+            metrics.clone(),
+            peer_store_handle,
+        );
     net_config.add_notification_protocol(grandpa_protocol_config);
 
     let warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
@@ -401,11 +363,12 @@ where
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: None,
-            warp_sync_params: Some(WarpSyncParams::WithProvider(warp_sync)),
+            warp_sync_config: Some(WarpSyncConfig::WithProvider(warp_sync)),
             block_relay: None,
+            metrics,
         })?;
 
-    let role = config.role.clone();
+    let role = config.role;
     let force_authoring = config.force_authoring;
     let backoff_authoring_blocks: Option<()> = None;
     let name = config.network.node_name.clone();
@@ -427,7 +390,7 @@ where
                         transaction_pool.clone(),
                     ),
                 ),
-                network_provider: network.clone(),
+                network_provider: Arc::new(network.clone()),
                 is_validator: role.is_authority(),
                 enable_http_requests: false,
                 custom_extensions: move |_| vec![],
@@ -530,13 +493,13 @@ where
                                     client.clone(),
                                 )
                                 .map_err(|err| format!("{:?}", err))?;
-                            let babe = sp_consensus_babe::inherents::InherentDataProvider::new(
+                            let babe = InherentDataProvider::new(
                                 timestamp.slot(),
                             );
                             let distance =
                                 dc_distance::create_distance_inherent_data_provider::<
                                     Block,
-                                    FullClient<RuntimeApi>,
+                                    FullClient<RuntimeApi, Executor>,
                                     FullBackend,
                                 >(
                                     &*client, parent, distance_dir, &babe_owner_keys.clone()
@@ -570,11 +533,10 @@ where
                     async move {
                         let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-                        let slot =
-						sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-							*timestamp,
-							slot_duration,
-						);
+                        let slot = InherentDataProvider::from_timestamp_and_slot_duration(
+                            *timestamp,
+                            slot_duration,
+                        );
 
                         let storage_proof =
                             sp_transaction_storage_proof::registration::new_data_provider(
@@ -583,7 +545,7 @@ where
 
                         let distance = dc_distance::create_distance_inherent_data_provider::<
                             Block,
-                            FullClient<RuntimeApi>,
+                            FullClient<RuntimeApi, Executor>,
                             FullBackend,
                         >(
                             &*client, parent, distance_dir, &babe_owner_keys.clone()
@@ -611,30 +573,45 @@ where
         }
     }
 
+    let justification_stream = grandpa_link.justification_stream();
+    let shared_authority_set = grandpa_link.shared_authority_set().clone();
+    let shared_voter_state = SharedVoterState::empty();
+    let finality_proof_provider =
+        FinalityProofProvider::new_for_service(backend.clone(), Some(shared_authority_set.clone()));
+
     let rpc_extensions_builder = {
         let client = client.clone();
         let pool = transaction_pool.clone();
         let select_chain = select_chain;
-        let chain_spec = config.chain_spec.cloned_box();
         let keystore = keystore_container.keystore().clone();
         let babe_deps = babe_worker_handle.map(|babe_worker_handle| crate::rpc::BabeDeps {
             babe_worker_handle,
             keystore: keystore.clone(),
         });
+        let rpc_setup = shared_voter_state.clone();
 
-        Box::new(move |deny_unsafe, _| {
-            let deps = crate::rpc::FullDeps {
-                client: client.clone(),
-                pool: pool.clone(),
-                select_chain: select_chain.clone(),
-                chain_spec: chain_spec.cloned_box(),
-                deny_unsafe,
-                babe: babe_deps.clone(),
-                command_sink_opt: command_sink_opt.clone(),
-            };
+        Box::new(
+            move |subscription_task_executor: SubscriptionTaskExecutor| {
+                let grandpa_deps = crate::rpc::GrandpaDeps {
+                    shared_voter_state: rpc_setup.clone(),
+                    shared_authority_set: shared_authority_set.clone(),
+                    justification_stream: justification_stream.clone(),
+                    subscription_executor: subscription_task_executor.clone(),
+                    finality_provider: finality_proof_provider.clone(),
+                };
 
-            crate::rpc::create_full(deps).map_err(Into::into)
-        })
+                let deps = crate::rpc::FullDeps {
+                    client: client.clone(),
+                    pool: pool.clone(),
+                    select_chain: select_chain.clone(),
+                    babe: babe_deps.clone(),
+                    grandpa: grandpa_deps,
+                    command_sink_opt: command_sink_opt.clone(),
+                };
+
+                crate::rpc::create_full(deps).map_err(Into::into)
+            },
+        )
     };
 
     let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
@@ -685,7 +662,7 @@ where
             network,
             voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
             prometheus_registry,
-            shared_voter_state: SharedVoterState::empty(),
+            shared_voter_state,
             telemetry: telemetry.as_ref().map(|x| x.handle()),
             notification_service: grandpa_notification_service,
             offchain_tx_pool_factory: sc_transaction_pool_api::OffchainTransactionPoolFactory::new(

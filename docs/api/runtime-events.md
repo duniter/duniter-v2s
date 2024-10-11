@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **134** events from **35** pallets.
+There are **136** events from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -168,7 +168,35 @@ result: DispatchResult
 <li>
 <details>
 <summary>
-<code>CallUnavailable(task, id)</code> - 3</summary>
+<code>RetrySet(task, id, period, retries)</code> - 3</summary>
+Set a retry configuration for some task.
+
+```rust
+task: TaskAddress<BlockNumberFor<T>>
+id: Option<TaskName>
+period: BlockNumberFor<T>
+retries: u8
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>RetryCancelled(task, id)</code> - 4</summary>
+Cancel a retry configuration for some task.
+
+```rust
+task: TaskAddress<BlockNumberFor<T>>
+id: Option<TaskName>
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CallUnavailable(task, id)</code> - 5</summary>
 The call for the provided hash was not found so the task has been aborted.
 
 ```rust
@@ -181,7 +209,7 @@ id: Option<TaskName>
 <li>
 <details>
 <summary>
-<code>PeriodicFailed(task, id)</code> - 4</summary>
+<code>PeriodicFailed(task, id)</code> - 6</summary>
 The given task was unable to be renewed since the agenda is full at that block.
 
 ```rust
@@ -194,7 +222,21 @@ id: Option<TaskName>
 <li>
 <details>
 <summary>
-<code>PermanentlyOverweight(task, id)</code> - 5</summary>
+<code>RetryFailed(task, id)</code> - 7</summary>
+The given task was unable to be retried since the agenda is full at that block or there
+was not enough weight to reschedule it.
+
+```rust
+task: TaskAddress<BlockNumberFor<T>>
+id: Option<TaskName>
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>PermanentlyOverweight(task, id)</code> - 8</summary>
 The given task can never be executed since it is overweight.
 
 ```rust
@@ -495,6 +537,19 @@ amount: T::Balance
 
 </details>
 </li>
+<li>
+<details>
+<summary>
+<code>TotalIssuanceForced(old, new)</code> - 21</summary>
+The `TotalIssuance` was forcefully changed.
+
+```rust
+old: T::Balance
+new: T::Balance
+```
+
+</details>
+</li>
 </ul>
 </li>
 <li>TransactionPayment - 32
@@ -526,7 +581,7 @@ A oneshot account was created.
 
 ```rust
 account: T::AccountId
-balance: <T::Currency as Currency<T::AccountId>>::Balance
+balance: BalanceOf<T>
 creator: T::AccountId
 ```
 
@@ -540,10 +595,8 @@ A oneshot account was consumed.
 
 ```rust
 account: T::AccountId
-dest1: (T::AccountId,<T::Currency as Currency<T::AccountId>>::Balance,)
-dest2: Option<
-(T::AccountId,<T::Currency as Currency<T::AccountId>>::Balance,)
->
+dest1: (T::AccountId, BalanceOf<T>)
+dest2: Option<(T::AccountId, BalanceOf<T>)>
 ```
 
 </details>
@@ -556,7 +609,7 @@ A withdrawal was executed on a oneshot account.
 
 ```rust
 account: T::AccountId
-balance: <T::Currency as Currency<T::AccountId>>::Balance
+balance: BalanceOf<T>
 ```
 
 </details>
@@ -636,12 +689,12 @@ no args
 <li>
 <details>
 <summary>
-<code>InvitationSent(receiver, issuer)</code> - 0</summary>
+<code>InvitationSent(issuer, receiver)</code> - 0</summary>
 An identity is being inivited to become a smith.
 
 ```rust
-receiver: T::IdtyIndex
 issuer: T::IdtyIndex
+receiver: T::IdtyIndex
 ```
 
 </details>
@@ -661,12 +714,12 @@ idty_index: T::IdtyIndex
 <li>
 <details>
 <summary>
-<code>SmithCertAdded(receiver, issuer)</code> - 2</summary>
+<code>SmithCertAdded(issuer, receiver)</code> - 2</summary>
 Certification received
 
 ```rust
-receiver: T::IdtyIndex
 issuer: T::IdtyIndex
+receiver: T::IdtyIndex
 ```
 
 </details>
@@ -674,12 +727,12 @@ issuer: T::IdtyIndex
 <li>
 <details>
 <summary>
-<code>SmithCertRemoved(receiver, issuer)</code> - 3</summary>
+<code>SmithCertRemoved(issuer, receiver)</code> - 3</summary>
 Certification lost
 
 ```rust
-receiver: T::IdtyIndex
 issuer: T::IdtyIndex
+receiver: T::IdtyIndex
 ```
 
 </details>
@@ -1386,11 +1439,12 @@ who: T::AccountId
 <li>
 <details>
 <summary>
-<code>EvaluatedValid(idty_index)</code> - 1</summary>
+<code>EvaluatedValid(idty_index, distance)</code> - 1</summary>
 Distance rule was found valid.
 
 ```rust
 idty_index: T::IdtyIndex
+distance: Perbill
 ```
 
 </details>
@@ -1398,11 +1452,12 @@ idty_index: T::IdtyIndex
 <li>
 <details>
 <summary>
-<code>EvaluatedInvalid(idty_index)</code> - 2</summary>
+<code>EvaluatedInvalid(idty_index, distance)</code> - 2</summary>
 Distance rule was found invalid.
 
 ```rust
 idty_index: T::IdtyIndex
+distance: Perbill
 ```
 
 </details>
@@ -1708,19 +1763,7 @@ result: DispatchResult
 <li>
 <details>
 <summary>
-<code>Proposed(proposal_index)</code> - 0</summary>
-New proposal.
-
-```rust
-proposal_index: ProposalIndex
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>Spending(budget_remaining)</code> - 1</summary>
+<code>Spending(budget_remaining)</code> - 0</summary>
 We have ended a spend period and will now allocate funds.
 
 ```rust
@@ -1732,7 +1775,7 @@ budget_remaining: BalanceOf<T, I>
 <li>
 <details>
 <summary>
-<code>Awarded(proposal_index, award, account)</code> - 2</summary>
+<code>Awarded(proposal_index, award, account)</code> - 1</summary>
 Some funds have been allocated.
 
 ```rust
@@ -1746,20 +1789,7 @@ account: T::AccountId
 <li>
 <details>
 <summary>
-<code>Rejected(proposal_index, slashed)</code> - 3</summary>
-A proposal was rejected; funds were slashed.
-
-```rust
-proposal_index: ProposalIndex
-slashed: BalanceOf<T, I>
-```
-
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>Burnt(burnt_funds)</code> - 4</summary>
+<code>Burnt(burnt_funds)</code> - 2</summary>
 Some of our funds have been burnt.
 
 ```rust
@@ -1771,7 +1801,7 @@ burnt_funds: BalanceOf<T, I>
 <li>
 <details>
 <summary>
-<code>Rollover(rollover_balance)</code> - 5</summary>
+<code>Rollover(rollover_balance)</code> - 3</summary>
 Spending has finished; this is the amount that rolls over until next spend.
 
 ```rust
@@ -1783,7 +1813,7 @@ rollover_balance: BalanceOf<T, I>
 <li>
 <details>
 <summary>
-<code>Deposit(value)</code> - 6</summary>
+<code>Deposit(value)</code> - 4</summary>
 Some funds have been deposited.
 
 ```rust
@@ -1795,7 +1825,7 @@ value: BalanceOf<T, I>
 <li>
 <details>
 <summary>
-<code>SpendApproved(proposal_index, amount, beneficiary)</code> - 7</summary>
+<code>SpendApproved(proposal_index, amount, beneficiary)</code> - 5</summary>
 A new spend proposal has been approved.
 
 ```rust
@@ -1809,7 +1839,7 @@ beneficiary: T::AccountId
 <li>
 <details>
 <summary>
-<code>UpdatedInactive(reactivated, deactivated)</code> - 8</summary>
+<code>UpdatedInactive(reactivated, deactivated)</code> - 6</summary>
 The inactive funds of the pallet have been updated.
 
 ```rust
@@ -1822,7 +1852,7 @@ deactivated: BalanceOf<T, I>
 <li>
 <details>
 <summary>
-<code>AssetSpendApproved(index, asset_kind, amount, beneficiary, valid_from, expire_at)</code> - 9</summary>
+<code>AssetSpendApproved(index, asset_kind, amount, beneficiary, valid_from, expire_at)</code> - 7</summary>
 A new asset spend proposal has been approved.
 
 ```rust
@@ -1839,7 +1869,7 @@ expire_at: BlockNumberFor<T>
 <li>
 <details>
 <summary>
-<code>AssetSpendVoided(index)</code> - 10</summary>
+<code>AssetSpendVoided(index)</code> - 8</summary>
 An approved spend was voided.
 
 ```rust
@@ -1851,7 +1881,7 @@ index: SpendIndex
 <li>
 <details>
 <summary>
-<code>Paid(index, payment_id)</code> - 11</summary>
+<code>Paid(index, payment_id)</code> - 9</summary>
 A payment happened.
 
 ```rust
@@ -1864,7 +1894,7 @@ payment_id: <T::Paymaster as Pay>::Id
 <li>
 <details>
 <summary>
-<code>PaymentFailed(index, payment_id)</code> - 12</summary>
+<code>PaymentFailed(index, payment_id)</code> - 10</summary>
 A payment failed and can be retried.
 
 ```rust
@@ -1877,7 +1907,7 @@ payment_id: <T::Paymaster as Pay>::Id
 <li>
 <details>
 <summary>
-<code>SpendProcessed(index)</code> - 13</summary>
+<code>SpendProcessed(index)</code> - 11</summary>
 A spend was processed and removed from the storage. It might have been successfully
 paid or it may have expired.
 

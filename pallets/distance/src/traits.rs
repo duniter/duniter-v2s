@@ -17,8 +17,9 @@
 use crate::*;
 use frame_support::pallet_prelude::*;
 
+/// Trait for handling actions when an identity has a valid distance status.
 pub trait OnValidDistanceStatus<T: Config> {
-    /// Handler for valid distance evaluation
+    /// Called when an identity has been determined to have a valid distance status.
     fn on_valid_distance_status(idty_index: T::IdtyIndex);
 }
 
@@ -26,7 +27,9 @@ impl<T: Config> OnValidDistanceStatus<T> for () {
     fn on_valid_distance_status(_idty_index: T::IdtyIndex) {}
 }
 
+/// Trait for checking if a request for distance evaluation is allowed.
 pub trait CheckRequestDistanceEvaluation<T: Config> {
+    /// Check if the request for distance evaluation is allowed for the given identity.
     fn check_request_distance_evaluation(idty_index: T::IdtyIndex) -> Result<(), DispatchError>;
 }
 

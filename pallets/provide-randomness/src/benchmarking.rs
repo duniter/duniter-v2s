@@ -15,17 +15,18 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 #![cfg(feature = "runtime-benchmarks")]
+#![allow(clippy::multiple_bound_locations)]
 
 use super::*;
 
-use frame_benchmarking::v2::*;
-use frame_benchmarking::whitelisted_caller;
-use frame_support::ensure;
-use frame_support::pallet_prelude::IsType;
-use frame_support::sp_runtime::{traits::One, Saturating};
-use frame_support::traits::{Currency, Get, OnInitialize};
-use frame_system::pallet_prelude::BlockNumberFor;
-use frame_system::RawOrigin;
+use frame_benchmarking::{v2::*, whitelisted_caller};
+use frame_support::{
+    ensure,
+    pallet_prelude::IsType,
+    sp_runtime::{traits::One, Saturating},
+    traits::{fungible::Mutate, Get, OnInitialize},
+};
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_core::H256;
 
 use crate::Pallet;
@@ -34,7 +35,7 @@ use crate::Pallet;
         where
         T: pallet_balances::Config,
         T::Balance: From<u64>,
-        <T::Currency as Currency<T::AccountId>>::Balance: IsType<T::Balance>,
+        BalanceOf<T>: IsType<T::Balance>,
         BlockNumberFor<T>: From<u32>,
 )]
 mod benchmarks {
@@ -79,7 +80,7 @@ mod benchmarks {
         // Provide deposit
         let existential_deposit = T::ExistentialDeposit::get();
         let balance = existential_deposit.saturating_mul((200).into());
-        let _ = T::Currency::make_free_balance_be(&caller, balance.into());
+        let _ = T::Currency::set_balance(&caller, balance.into());
 
         // Set randomness parameters
         let random = RandomnessType::RandomnessFromOneEpochAgo;

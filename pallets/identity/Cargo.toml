@@ -5,7 +5,6 @@ edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 name = "pallet-identity"
-readme = "README.md"
 repository.workspace = true
 version.workspace = true
 
@@ -30,7 +29,6 @@ std = [
 	"sp-keystore/std",
 	"sp-runtime/std",
 	"sp-state-machine/std",
-	"sp-std/std",
 ]
 try-runtime = [
 	"duniter-primitives/try-runtime",
@@ -43,23 +41,18 @@ try-runtime = [
 default-features = false
 targets = ["x86_64-unknown-linux-gnu"]
 
-[build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/duniter/duniter-polkadot-sdk", branch = "duniter-substrate-v1.6.0" }
-
 [dependencies]
 codec = { workspace = true, features = ["derive"] }
 duniter-primitives = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-impl-trait-for-tuples = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 serde = { workspace = true, features = ["derive"] }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 
 [dev-dependencies]
-sp-keystore = { workspace = true }
-sp-state-machine = { workspace = true }
+sp-keystore = { workspace = true, default-features = true }
+sp-state-machine = { workspace = true, default-features = true }

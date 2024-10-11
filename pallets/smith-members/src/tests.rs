@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-#![cfg(test)]
-
 use super::*;
 use crate::mock::{new_test_ext, run_to_block, Runtime, RuntimeEvent, RuntimeOrigin, System};
 use frame_support::{assert_err, assert_ok};

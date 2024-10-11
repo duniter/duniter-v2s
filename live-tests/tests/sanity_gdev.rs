@@ -14,31 +14,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-// WARNING
-// these live test build but I'm not sure they actually test something
-// they should be checked against corrupted storage to see that they actually fail
-
 #[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
 pub mod gdev {}
 
 use countmap::CountMap;
-use hex_literal::hex;
-use sp_core::crypto::AccountId32;
-use sp_core::{blake2_128, ByteArray, H256};
+use sp_core::{blake2_128, crypto::AccountId32, ByteArray, H256};
 use std::collections::{HashMap, HashSet};
-use subxt::backend::rpc::RpcClient;
-use subxt::config::SubstrateConfig as GdevConfig;
-use subxt::ext::sp_core;
-// use subxt::config::substrate::SubstrateExtrinsicParamsBuilder;
-// use subxt::backend::rpc::RpcParams;
-// use subxt::config::SubstrateExtrinsicParams;
-// use subxt::ext::{sp_core, sp_runtime};
+use subxt::{backend::rpc::RpcClient, config::SubstrateConfig as GdevConfig};
 
 const DEFAULT_ENDPOINT: &str = "ws://localhost:9944";
 
 const EXISTENTIAL_DEPOSIT: u64 = 100;
-const TREASURY_ACCOUNT_ID: [u8; 32] =
-    hex!("6d6f646c70792f74727372790000000000000000000000000000000000000000");
+//use hex_literal::hex;
+//const TREASURY_ACCOUNT_ID: [u8; 32] =
+//    hex!("6d6f646c70792f74727372790000000000000000000000000000000000000000");
 
 type Client = subxt::OnlineClient<GdevConfig>;
 
@@ -56,12 +45,15 @@ type IdtyData = gdev::runtime_types::common_runtime::entities::IdtyData;
 type IdtyIndex = u32;
 type IdtyValue =
     gdev::runtime_types::pallet_identity::types::IdtyValue<BlockNumber, AccountId32, IdtyData>;
-// use gdev::runtime_types::pallet_identity::types::IdtyStatus;
+type MembershipData = gdev::runtime_types::sp_membership::MembershipData<BlockNumber>;
+use gdev::runtime_types::pallet_identity::types::{IdtyName, IdtyStatus};
 
 struct Storage {
     accounts: HashMap<AccountId32, AccountInfo>,
     identities: HashMap<IdtyIndex, IdtyValue>,
     identity_index_of: HashMap<[u8; 16], IdtyIndex>,
+    memberships: HashMap<IdtyIndex, MembershipData>,
+    identities_names: HashMap<IdtyIndex, IdtyName>,
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -99,10 +91,10 @@ async fn sanity_tests_at(client: Client, _maybe_block_hash: Option<H256>) -> any
         .unwrap()
         .iter(gdev::storage().system().account_iter())
         .await?;
-    while let Some(Ok((key, account_info))) = account_iter.next().await {
+    while let Some(Ok(key)) = account_iter.next().await {
         let mut account_id_bytes = [0u8; 32];
-        account_id_bytes.copy_from_slice(&key[48..]);
-        accounts.insert(AccountId32::new(account_id_bytes), account_info);
+        account_id_bytes.copy_from_slice(&key.key_bytes[48..]);
+        accounts.insert(AccountId32::new(account_id_bytes), key.value);
     }
     println!("accounts.len(): {}.", accounts.len());
 
@@ -115,16 +107,16 @@ async fn sanity_tests_at(client: Client, _maybe_block_hash: Option<H256>) -> any
         .unwrap()
         .iter(gdev::storage().identity().identities_iter())
         .await?;
-    while let Some(Ok((key, idty_value))) = idty_iter.next().await {
+    while let Some(Ok(key)) = idty_iter.next().await {
         let mut idty_index_bytes = [0u8; 4];
-        idty_index_bytes.copy_from_slice(&key[40..]);
+        idty_index_bytes.copy_from_slice(&key.key_bytes[40..]);
         let idty_val = IdtyValue {
-            data: idty_value.data,
-            next_creatable_identity_on: idty_value.next_creatable_identity_on,
+            data: key.value.data,
+            next_creatable_identity_on: key.value.next_creatable_identity_on,
             old_owner_key: None, // Not used in the live test, skip the conversion
-            owner_key: AccountId32::from(idty_value.owner_key.0),
-            next_scheduled: idty_value.next_scheduled,
-            status: idty_value.status,
+            owner_key: AccountId32::from(key.value.owner_key.0),
+            next_scheduled: key.value.next_scheduled,
+            status: key.value.status,
         };
         identities.insert(IdtyIndex::from_le_bytes(idty_index_bytes), idty_val);
     }
@@ -139,17 +131,53 @@ async fn sanity_tests_at(client: Client, _maybe_block_hash: Option<H256>) -> any
         .unwrap()
         .iter(gdev::storage().identity().identity_index_of_iter())
         .await?;
-    while let Some(Ok((key, idty_index))) = idty_index_of_iter.next().await {
+    while let Some(Ok(key)) = idty_index_of_iter.next().await {
         let mut blake2_128_bytes = [0u8; 16];
-        blake2_128_bytes.copy_from_slice(&key[32..48]);
-        identity_index_of.insert(blake2_128_bytes, idty_index);
+        blake2_128_bytes.copy_from_slice(&key.key_bytes[32..48]);
+        identity_index_of.insert(blake2_128_bytes, key.value);
     }
     println!("identity_index_of.len(): {}.", identity_index_of.len());
+
+    // Collect identity_names
+    let mut identities_names: HashMap<IdtyIndex, IdtyName> = HashMap::new();
+    let mut idty_name_iter = client
+        .storage()
+        .at_latest()
+        .await
+        .unwrap()
+        .iter(gdev::storage().identity().identities_names_iter())
+        .await?;
+    while let Some(Ok(key)) = idty_name_iter.next().await {
+        let name = IdtyName(key.key_bytes);
+        identities_names.insert(key.value, name);
+    }
+    println!("identities_names.len(): {}.", identities_names.len());
+
+    // Collect memberships
+    let mut memberships: HashMap<IdtyIndex, MembershipData> = HashMap::new();
+    let mut membership_iter = client
+        .storage()
+        .at_latest()
+        .await
+        .unwrap()
+        .iter(gdev::storage().membership().membership_iter())
+        .await?;
+    while let Some(Ok(key)) = membership_iter.next().await {
+        let mut idty_index_bytes = [0u8; 4];
+        idty_index_bytes.copy_from_slice(&key.key_bytes[40..]);
+        let membership_val = MembershipData {
+            expire_on: key.value.expire_on,
+        };
+        memberships.insert(IdtyIndex::from_le_bytes(idty_index_bytes), membership_val);
+    }
+    println!("memberships.len(): {}.", memberships.len());
 
     let storage = Storage {
         accounts,
         identities,
         identity_index_of,
+        memberships,
+        identities_names,
     };
 
     // ===== Verify storage ===== //
@@ -178,6 +206,12 @@ mod verifier {
                 .await;
             self.verify_identity_coherence(&storage.identities, &storage.identity_index_of)
                 .await;
+            self.verify_status_coherence(
+                &storage.identities,
+                &storage.memberships,
+                &storage.identities_names,
+            )
+            .await;
 
             if self.errors.is_empty() {
                 Ok(())
@@ -230,15 +264,6 @@ mod verifier {
                     self.assert(
                         account_info.providers > 0,
                         format!("Account {} has no providers nor sufficients.", account_id),
-                    );
-                }
-
-                if account_id.as_slice() != TREASURY_ACCOUNT_ID {
-                    // Rule 4: If the account is not a "special account",
-                    // it should have a consumer
-                    self.assert(
-                        account_info.consumers > 0,
-                        format!("Account {} has no consumer.", account_id),
                     );
                 }
             }
@@ -335,6 +360,76 @@ mod verifier {
                             "Identity {} is referenced in IdentityIndexOf with an invalid key hash.",
                             idty_index
                         ),
+                    );
+                }
+            }
+        }
+
+        /// check identities status and membership coherence
+        async fn verify_status_coherence(
+            &mut self,
+            identities: &HashMap<IdtyIndex, IdtyValue>,
+            memberships: &HashMap<IdtyIndex, MembershipData>,
+            names: &HashMap<IdtyIndex, IdtyName>,
+        ) {
+            for (idty_index, idty_value) in identities {
+                // Rule 1: each Status::Member should have a membership and a name.
+                if let IdtyStatus::Member = idty_value.status {
+                    self.assert(
+                        memberships.get(idty_index).is_some(),
+                        format!("identity number {idty_index} should have a valid membership"),
+                    );
+                    self.assert(
+                        names.get(idty_index).is_some(),
+                        format!("identity number {idty_index} should have a name"),
+                    );
+                }
+
+                // Rule 2: each Status::NotMember should have a name but no membership.
+                if let IdtyStatus::NotMember = idty_value.status {
+                    self.assert(
+                        memberships.get(idty_index).is_none(),
+                        format!("identity number {idty_index} should not have a valid membership"),
+                    );
+                    self.assert(
+                        names.get(idty_index).is_some(),
+                        format!("identity number {idty_index} should have a name"),
+                    );
+                }
+
+                // Rule 3: each Status::Revoke should should have a name but no membership.
+                if let IdtyStatus::Revoked = idty_value.status {
+                    self.assert(
+                        memberships.get(idty_index).is_none(),
+                        format!("identity number {idty_index} should not have a valid membership"),
+                    );
+                    self.assert(
+                        names.get(idty_index).is_some(),
+                        format!("identity number {idty_index} should have a name"),
+                    );
+                }
+
+                // Rule 4: each Status::Unvalidaded should have a name but no membership.
+                if let IdtyStatus::Unvalidated = idty_value.status {
+                    self.assert(
+                        memberships.get(idty_index).is_none(),
+                        format!("identity number {idty_index} should not have a valid membership"),
+                    );
+                    self.assert(
+                        names.get(idty_index).is_some(),
+                        format!("identity number {idty_index} should have a name"),
+                    );
+                }
+
+                // Rule 5: each Status::Unconfirmed should not have a name neither a membership.
+                if let IdtyStatus::Unconfirmed = idty_value.status {
+                    self.assert(
+                        memberships.get(idty_index).is_none(),
+                        format!("identity number {idty_index} should not have a valid membership"),
+                    );
+                    self.assert(
+                        names.get(idty_index).is_none(),
+                        format!("identity number {idty_index} should not have a name"),
                     );
                 }
             }

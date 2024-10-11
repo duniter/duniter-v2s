@@ -18,16 +18,14 @@ use super::*;
 use crate::{self as pallet_authority_members};
 use frame_support::{pallet_prelude::*, parameter_types, traits::Everything};
 use frame_system as system;
-use pallet_offences::traits::OnOffenceHandler;
-use pallet_offences::SlashStrategy;
+use pallet_offences::{traits::OnOffenceHandler, SlashStrategy};
 use pallet_session::ShouldEndSession;
 use sp_core::{crypto::key_types::DUMMY, H256};
-use sp_runtime::BuildStorage;
 use sp_runtime::{
     impl_opaque_keys,
     testing::UintAuthorityId,
     traits::{BlakeTwo256, ConvertInto, IdentityLookup, IsMember, OpaqueKeys},
-    KeyTypeId,
+    BuildStorage, KeyTypeId,
 };
 use sp_staking::offence::OffenceDetails;
 use sp_state_machine::BasicExternalities;
@@ -75,16 +73,21 @@ impl system::Config for Test {
     type Hashing = BlakeTwo256;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type MultiBlockMigrator = ();
     type Nonce = u64;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
     type PalletInfo = PalletInfo;
+    type PostInherents = ();
+    type PostTransactions = ();
+    type PreInherents = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeTask = ();
     type SS58Prefix = SS58Prefix;
+    type SingleBlockMigrations = ();
     type SystemWeightInfo = ();
     type Version = ();
 }
@@ -165,6 +168,8 @@ pub fn new_test_ext(initial_authorities_len: u64) -> sp_io::TestExternalities {
         .map(|i| (i * 3, i * 3, UintAuthorityId(i * 3).into()))
         .collect();
 
+    let non_authority_keys = Vec::default();
+
     let mut t = frame_system::GenesisConfig::<Test>::default()
         .build_storage()
         .unwrap();
@@ -181,9 +186,12 @@ pub fn new_test_ext(initial_authorities_len: u64) -> sp_io::TestExternalities {
     }
     .assimilate_storage(&mut t)
     .unwrap();
-    pallet_session::GenesisConfig::<Test> { keys }
-        .assimilate_storage(&mut t)
-        .unwrap();
+    pallet_session::GenesisConfig::<Test> {
+        keys,
+        non_authority_keys,
+    }
+    .assimilate_storage(&mut t)
+    .unwrap();
     sp_io::TestExternalities::new(t)
 }
 

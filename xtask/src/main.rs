@@ -21,9 +21,11 @@ mod release_runtime;
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use std::io::{BufReader, BufWriter};
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::{
+    io::{BufReader, BufWriter},
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 const MIN_RUST_VERSION: &str = "1.58.0";
 
@@ -55,6 +57,7 @@ enum DuniterXTaskCommand {
     ReleaseNetwork { network: String, branch: String },
     /// Release a new runtime
     ReleaseRuntime {
+        name: String,
         network: String,
         branch: String,
         milestone: String,
@@ -104,10 +107,11 @@ async fn main() -> Result<()> {
             release_runtime::release_network(network, branch).await
         }
         DuniterXTaskCommand::ReleaseRuntime {
+            name,
             network,
             branch,
             milestone,
-        } => release_runtime::release_runtime(network, branch, milestone).await,
+        } => release_runtime::release_runtime(name, network, branch, milestone).await,
         DuniterXTaskCommand::PrintSpec { network } => release_runtime::print_spec(network).await,
         DuniterXTaskCommand::CreateAssetLink {
             tag,

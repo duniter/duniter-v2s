@@ -15,7 +15,6 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use super::UdIndex;
-use core::iter::DoubleEndedIterator;
 use sp_arithmetic::traits::{AtLeast32BitUnsigned, Zero};
 
 pub(super) fn compute_claim_uds<Balance: AtLeast32BitUnsigned>(

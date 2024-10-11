@@ -15,10 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{Balance, BlockNumber};
-use frame_support::weights::Weight;
 use sp_runtime::Perbill;
-
-pub use crate::weights::paritydb_weights::constants::ParityDbWeight as DbWeight;
 
 /// This determines the average expected block time that we are targeting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
@@ -61,32 +58,3 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 
 // Maximal weight proportion of normal extrinsics per block
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-
-// WEIGHTS CONSTANTS //
-
-// Block weights limits
-pub fn block_weights(
-    expected_block_weight: Weight,
-    normal_ratio: sp_arithmetic::Perbill,
-) -> frame_system::limits::BlockWeights {
-    let base_weight = crate::weights::extrinsic_weights::ExtrinsicBaseWeight::get();
-    let normal_weight = normal_ratio * expected_block_weight;
-    frame_system::limits::BlockWeights::builder()
-        .base_block(crate::weights::block_weights::BlockExecutionWeight::get())
-        .for_class(frame_support::dispatch::DispatchClass::all(), |weights| {
-            weights.base_extrinsic = base_weight;
-        })
-        .for_class(frame_support::dispatch::DispatchClass::Normal, |weights| {
-            weights.max_total = normal_weight.into();
-        })
-        .for_class(
-            frame_support::dispatch::DispatchClass::Operational,
-            |weights| {
-                weights.max_total = expected_block_weight.into();
-                weights.reserved = (expected_block_weight - normal_weight).into();
-            },
-        )
-        .avg_block_initialization(sp_arithmetic::Perbill::from_percent(10))
-        .build()
-        .expect("Fatal error: invalid BlockWeights configuration")
-}

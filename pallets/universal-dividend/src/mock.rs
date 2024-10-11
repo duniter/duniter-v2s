@@ -27,9 +27,6 @@ use sp_runtime::{
     BuildStorage,
 };
 
-#[cfg(feature = "runtime-benchmarks")]
-use sp_runtime::traits::ConvertInto;
-
 pub const BLOCK_TIME: u64 = 6_000;
 
 type Balance = u64;
@@ -64,16 +61,21 @@ impl system::Config for Test {
     type Hashing = BlakeTwo256;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type MultiBlockMigrator = ();
     type Nonce = u64;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
     type PalletInfo = PalletInfo;
+    type PostInherents = ();
+    type PostTransactions = ();
+    type PreInherents = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeTask = ();
     type SS58Prefix = SS58Prefix;
+    type SingleBlockMigrations = ();
     type SystemWeightInfo = ();
     type Version = ();
 }
@@ -101,7 +103,6 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type FreezeIdentifier = ();
     type MaxFreezes = ConstU32<0>;
-    type MaxHolds = ConstU32<0>;
     type MaxLocks = MaxLocks;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
@@ -138,9 +139,9 @@ impl frame_support::traits::StoredMap<u32, FirstEligibleUd> for TestMembersStora
 }
 
 impl pallet_universal_dividend::Config for Test {
-    #[cfg(feature = "runtime-benchmarks")]
-    type AccountIdOf = ConvertInto;
     type Currency = pallet_balances::Pallet<Test>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type IdtyAttr = ();
     type MaxPastReeval = frame_support::traits::ConstU32<2>;
     type MembersCount = MembersCount;
     type MembersStorage = TestMembersStorage;
@@ -149,7 +150,6 @@ impl pallet_universal_dividend::Config for Test {
     type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
     type UdCreationPeriod = UdCreationPeriod;
     type UdReevalPeriod = UdReevalPeriod;
-    type UnitsPerUd = frame_support::traits::ConstU64<1_000>;
     type WeightInfo = ();
 }
 

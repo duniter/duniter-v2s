@@ -5,7 +5,6 @@ edition.workspace = true
 homepage.workspace = true
 license.workspace = true
 name = "pallet-certification"
-readme = "README.md"
 repository.workspace = true
 version.workspace = true
 
@@ -28,7 +27,6 @@ std = [
 	"sp-io/std",
 	"sp-keystore/std",
 	"sp-runtime/std",
-	"sp-std/std",
 ]
 try-runtime = [
 	"duniter-primitives/try-runtime",
@@ -50,9 +48,8 @@ frame-system = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 
 [dev-dependencies]
-maplit = { workspace = true }
-sp-io = { workspace = true }
-sp-keystore = { workspace = true }
+maplit = { workspace = true, default-features = true }
+sp-io = { workspace = true, default-features = true }
+sp-keystore = { workspace = true, default-features = true }

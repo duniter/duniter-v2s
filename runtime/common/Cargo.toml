@@ -16,34 +16,23 @@ constant-fees = []
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
-	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"pallet-authority-members/runtime-benchmarks",
 	"pallet-babe/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-certification/runtime-benchmarks",
-	"pallet-collective/runtime-benchmarks",
 	"pallet-distance/runtime-benchmarks",
 	"pallet-duniter-account/runtime-benchmarks",
-	"pallet-grandpa/runtime-benchmarks",
+	"pallet-duniter-wot/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
-	"pallet-im-online/runtime-benchmarks",
 	"pallet-membership/runtime-benchmarks",
-	"pallet-multisig/runtime-benchmarks",
 	"pallet-offences/runtime-benchmarks",
-	"pallet-oneshot-account/runtime-benchmarks",
-	"pallet-preimage/runtime-benchmarks",
 	"pallet-provide-randomness/runtime-benchmarks",
-	"pallet-proxy/runtime-benchmarks",
 	"pallet-quota/runtime-benchmarks",
-	"pallet-scheduler/runtime-benchmarks",
 	"pallet-smith-members/runtime-benchmarks",
-	"pallet-sudo/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-universal-dividend/runtime-benchmarks",
-	"pallet-upgrade-origin/runtime-benchmarks",
-	"pallet-utility/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"sp-staking/runtime-benchmarks",
 ]
@@ -52,35 +41,24 @@ std = [
 	"duniter-primitives/std",
 	"frame-benchmarking/std",
 	"frame-support/std",
-	"frame-system-benchmarking?/std",
 	"frame-system/std",
 	"pallet-authority-members/std",
 	"pallet-babe/std",
 	"pallet-balances/std",
 	"pallet-certification/std",
-	"pallet-collective/std",
 	"pallet-distance/std",
 	"pallet-duniter-account/std",
-	"pallet-grandpa/std",
+	"pallet-duniter-wot/std",
 	"pallet-identity/std",
-	"pallet-im-online/std",
 	"pallet-membership/std",
-	"pallet-multisig/std",
 	"pallet-offences/std",
-	"pallet-oneshot-account/std",
-	"pallet-preimage/std",
 	"pallet-provide-randomness/std",
-	"pallet-proxy/std",
 	"pallet-quota/std",
-	"pallet-scheduler/std",
 	"pallet-session/std",
 	"pallet-smith-members/std",
-	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-treasury/std",
 	"pallet-universal-dividend/std",
-	"pallet-upgrade-origin/std",
-	"pallet-utility/std",
 	"scale-info/std",
 	"serde/std",
 	"sp-arithmetic/std",
@@ -89,7 +67,6 @@ std = [
 	"sp-membership/std",
 	"sp-runtime/std",
 	"sp-staking/std",
-	"sp-std/std",
 	"sp-weights/std",
 ]
 try-runtime = [
@@ -100,29 +77,20 @@ try-runtime = [
 	"pallet-babe/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-certification/try-runtime",
-	"pallet-collective/try-runtime",
 	"pallet-distance/try-runtime",
 	"pallet-duniter-account/try-runtime",
-	"pallet-grandpa/try-runtime",
+	"pallet-duniter-wot/try-runtime",
 	"pallet-identity/try-runtime",
-	"pallet-im-online/try-runtime",
 	"pallet-membership/try-runtime",
-	"pallet-multisig/try-runtime",
 	"pallet-offences/try-runtime",
-	"pallet-oneshot-account/try-runtime",
-	"pallet-preimage/try-runtime",
 	"pallet-provide-randomness/try-runtime",
-	"pallet-proxy/try-runtime",
 	"pallet-quota/try-runtime",
-	"pallet-scheduler/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-smith-members/try-runtime",
-	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
+	"pallet-transaction-payment/try-runtime",
 	"pallet-treasury/try-runtime",
 	"pallet-universal-dividend/try-runtime",
-	"pallet-upgrade-origin/try-runtime",
-	"pallet-utility/try-runtime",
 	"sp-membership/try-runtime",
 	"sp-runtime/try-runtime",
 ]
@@ -133,34 +101,24 @@ duniter-primitives = { workspace = true }
 frame-benchmarking = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-frame-system-benchmarking = { workspace = true, optional = true }
 pallet-authority-members = { workspace = true }
 pallet-babe = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-certification = { workspace = true }
-pallet-collective = { workspace = true }
 pallet-distance = { workspace = true }
 pallet-duniter-account = { workspace = true }
-pallet-grandpa = { workspace = true }
+pallet-duniter-wot = { workspace = true }
 pallet-identity = { workspace = true }
-pallet-im-online = { workspace = true }
 pallet-membership = { workspace = true }
-pallet-multisig = { workspace = true }
 pallet-offences = { workspace = true }
-pallet-oneshot-account = { workspace = true }
-pallet-preimage = { workspace = true }
 pallet-provide-randomness = { workspace = true }
-pallet-proxy = { workspace = true }
 pallet-quota = { workspace = true }
-pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true }
 pallet-smith-members = { workspace = true }
-pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
+pallet-transaction-payment = { workspace = true }
 pallet-treasury = { workspace = true }
 pallet-universal-dividend = { workspace = true }
-pallet-upgrade-origin = { workspace = true }
-pallet-utility = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 serde = { workspace = true }
 smallvec = { workspace = true }
@@ -170,5 +128,4 @@ sp-core = { workspace = true }
 sp-membership = { workspace = true }
 sp-runtime = { workspace = true }
 sp-staking = { workspace = true }
-sp-std = { workspace = true }
 sp-weights = { workspace = true }

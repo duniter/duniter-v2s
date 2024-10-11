@@ -15,9 +15,9 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use common_runtime::{AccountId, Balance, Block, BlockNumber, Hash, Header, Index};
-use sc_client_api::MerkleValue;
 use sc_client_api::{
-    AuxStore, Backend as BackendT, BlockchainEvents, KeysIter, PairsIter, UsageProvider,
+    AuxStore, Backend as BackendT, BlockchainEvents, KeysIter, MerkleValue, PairsIter,
+    UsageProvider,
 };
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
@@ -145,12 +145,14 @@ impl<Api> RuntimeApiCollection for Api where
 /// A client instance.
 #[derive(Clone)]
 pub enum Client {
-    #[cfg(feature = "g1")]
-    G1(Arc<super::FullClient<g1_runtime::RuntimeApi>>),
-    #[cfg(feature = "gtest")]
-    GTest(Arc<super::FullClient<gtest_runtime::RuntimeApi>>),
-    #[cfg(feature = "gdev")]
-    GDev(Arc<super::FullClient<gdev_runtime::RuntimeApi>>),
+    Client(
+        Arc<
+            super::FullClient<
+                super::runtime_executor::runtime::RuntimeApi,
+                super::runtime_executor::Executor,
+            >,
+        >,
+    ),
 }
 
 macro_rules! with_client {
@@ -162,22 +164,8 @@ macro_rules! with_client {
         }
     } => {
         match $self {
-            #[cfg(feature = "g1")]
-            Self::G1($client) => {
+            Self::Client($client) => {
                 #[allow(unused_imports)]
-                use g1_runtime as runtime;
-                $( $code )*
-            }
-            #[cfg(feature = "gtest")]
-            Self::GTest($client) => {
-                #[allow(unused_imports)]
-                use gtest_runtime as runtime;
-                $( $code )*
-            }
-            #[cfg(feature = "gdev")]
-            Self::GDev($client) => {
-                #[allow(unused_imports)]
-                use gdev_runtime as runtime;
                 $( $code )*
             }
         }
@@ -196,36 +184,32 @@ impl ClientHandle for Client {
     }
 }
 
-#[cfg(feature = "g1")]
-impl From<Arc<super::FullClient<g1_runtime::RuntimeApi>>> for Client {
-    fn from(client: Arc<super::FullClient<g1_runtime::RuntimeApi>>) -> Self {
-        Self::G1(client)
-    }
-}
-
-#[cfg(feature = "gtest")]
-impl From<Arc<super::FullClient<gtest_runtime::RuntimeApi>>> for Client {
-    fn from(client: Arc<super::FullClient<gtest_runtime::RuntimeApi>>) -> Self {
-        Self::GTest(client)
-    }
-}
-
-#[cfg(feature = "gdev")]
-impl From<Arc<super::FullClient<gdev_runtime::RuntimeApi>>> for Client {
-    fn from(client: Arc<super::FullClient<gdev_runtime::RuntimeApi>>) -> Self {
-        Self::GDev(client)
+impl
+    From<
+        Arc<
+            super::FullClient<
+                super::runtime_executor::runtime::RuntimeApi,
+                super::runtime_executor::Executor,
+            >,
+        >,
+    > for Client
+{
+    fn from(
+        client: Arc<
+            super::FullClient<
+                super::runtime_executor::runtime::RuntimeApi,
+                super::runtime_executor::Executor,
+            >,
+        >,
+    ) -> Self {
+        Self::Client(client)
     }
 }
 
 macro_rules! match_client {
     ($self:ident, $method:ident($($param:ident),*)) => {
         match $self {
-            #[cfg(feature = "g1")]
-            Self::G1(client) => client.$method($($param),*),
-            #[cfg(feature = "gtest")]
-            Self::GTest(client) => client.$method($($param),*),
-            #[cfg(feature = "gdev")]
-            Self::GDev(client) => client.$method($($param),*),
+            Self::Client(client) => client.$method($($param),*),
         }
     };
 }
@@ -310,21 +294,28 @@ trait BenchmarkCallSigner<RuntimeCall: Encode + Clone, Signer: Pair> {
 }
 
 #[cfg(feature = "g1")]
-use g1_runtime as runtime;
+type FullClient = super::FullClient<
+    super::runtime_executor::runtime::RuntimeApi,
+    super::runtime_executor::Executor,
+>;
 #[cfg(feature = "gdev")]
-use gdev_runtime as runtime;
-#[cfg(feature = "gdev")]
-type FullClient = super::FullClient<runtime::RuntimeApi>;
+type FullClient = super::FullClient<
+    super::runtime_executor::runtime::RuntimeApi,
+    super::runtime_executor::Executor,
+>;
 #[cfg(feature = "gtest")]
-use gtest_runtime as runtime;
-#[cfg(feature = "gtest")]
-type FullClient = super::FullClient<runtime::RuntimeApi>;
+type FullClient = super::FullClient<
+    super::runtime_executor::runtime::RuntimeApi,
+    super::runtime_executor::Executor,
+>;
 
-#[cfg(any(feature = "gdev", feature = "gtest"))]
-impl BenchmarkCallSigner<runtime::RuntimeCall, sp_core::sr25519::Pair> for FullClient {
+#[cfg(any(feature = "gdev", feature = "gtest", feature = "g1"))]
+impl BenchmarkCallSigner<super::runtime_executor::runtime::RuntimeCall, sp_core::sr25519::Pair>
+    for FullClient
+{
     fn sign_call(
         &self,
-        call: runtime::RuntimeCall,
+        call: super::runtime_executor::runtime::RuntimeCall,
         nonce: u32,
         current_block: u64,
         period: u64,
@@ -333,17 +324,20 @@ impl BenchmarkCallSigner<runtime::RuntimeCall, sp_core::sr25519::Pair> for FullC
     ) -> sp_runtime::OpaqueExtrinsic {
         // use runtime;
 
-        let extra: runtime::SignedExtra = (
-            frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
-            frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
-            frame_system::CheckTxVersion::<runtime::Runtime>::new(),
-            frame_system::CheckGenesis::<runtime::Runtime>::new(),
-            frame_system::CheckMortality::<runtime::Runtime>::from(
+        let extra: super::runtime_executor::runtime::SignedExtra = (
+            frame_system::CheckNonZeroSender::<super::runtime_executor::runtime::Runtime>::new(),
+            frame_system::CheckSpecVersion::<super::runtime_executor::runtime::Runtime>::new(),
+            frame_system::CheckTxVersion::<super::runtime_executor::runtime::Runtime>::new(),
+            frame_system::CheckGenesis::<super::runtime_executor::runtime::Runtime>::new(),
+            frame_system::CheckMortality::<super::runtime_executor::runtime::Runtime>::from(
                 sp_runtime::generic::Era::mortal(period, current_block),
             ),
-            frame_system::CheckNonce::<runtime::Runtime>::from(nonce).into(),
-            frame_system::CheckWeight::<runtime::Runtime>::new(),
-            pallet_transaction_payment::ChargeTransactionPayment::<runtime::Runtime>::from(0),
+            frame_system::CheckNonce::<super::runtime_executor::runtime::Runtime>::from(nonce)
+                .into(),
+            frame_system::CheckWeight::<super::runtime_executor::runtime::Runtime>::new(),
+            pallet_transaction_payment::ChargeTransactionPayment::<
+                super::runtime_executor::runtime::Runtime,
+            >::from(0),
         );
 
         let payload = sp_runtime::generic::SignedPayload::from_raw(
@@ -351,8 +345,8 @@ impl BenchmarkCallSigner<runtime::RuntimeCall, sp_core::sr25519::Pair> for FullC
             extra.clone(),
             (
                 (),
-                runtime::VERSION.spec_version,
-                runtime::VERSION.transaction_version,
+                super::runtime_executor::runtime::VERSION.spec_version,
+                super::runtime_executor::runtime::VERSION.transaction_version,
                 genesis,
                 genesis,
                 (),
@@ -362,7 +356,7 @@ impl BenchmarkCallSigner<runtime::RuntimeCall, sp_core::sr25519::Pair> for FullC
         );
 
         let signature = payload.using_encoded(|p| acc.sign(p));
-        runtime::UncheckedExtrinsic::new_signed(
+        super::runtime_executor::runtime::UncheckedExtrinsic::new_signed(
             call,
             sp_runtime::AccountId32::from(acc.public()).into(),
             common_runtime::Signature::Sr25519(signature),
@@ -384,10 +378,10 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for Client {
     fn build(&self, nonce: u32) -> std::result::Result<sp_runtime::OpaqueExtrinsic, &'static str> {
         with_client! {
             self, client, {
-                let call = runtime::RuntimeCall::System(runtime::SystemCall::remark { remark: vec![] });
+                let call = super::runtime_executor::runtime::RuntimeCall::System(super::runtime_executor::runtime::SystemCall::remark { remark: vec![] });
                 let signer = sp_keyring::Sr25519Keyring::Bob.pair();
 
-                let period = runtime::BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
+                let period = super::runtime_executor::runtime::BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
                 let genesis = client.usage_info().chain.best_hash;
 
                 Ok(client.sign_call(call, nonce, 0, period, genesis, signer))

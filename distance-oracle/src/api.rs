@@ -40,38 +40,38 @@ pub async fn parent_hash(client: &Client) -> H256 {
         .hash()
 }
 
-pub async fn current_session(client: &Client, parent_hash: H256) -> u32 {
+pub async fn current_pool_index(client: &Client, parent_hash: H256) -> u32 {
     client
         .storage()
         .at(parent_hash)
-        .fetch(&runtime::storage().session().current_index())
+        .fetch(&runtime::storage().distance().current_pool_index())
         .await
-        .expect("Cannot fetch current session")
+        .expect("Cannot fetch current pool index")
         .unwrap_or_default()
 }
 
 pub async fn current_pool(
     client: &Client,
     parent_hash: H256,
-    current_session: u32,
+    current_pool_index: u32,
 ) -> Option<runtime::runtime_types::pallet_distance::types::EvaluationPool<AccountId, IdtyIndex>> {
     client
         .storage()
         .at(parent_hash)
-        .fetch(&match current_session % 3 {
+        .fetch(&match current_pool_index {
             0 => {
-                debug!("Looking at Pool1 for session {}", current_session);
+                debug!("Looking at Pool1 for pool index {}", current_pool_index);
                 runtime::storage().distance().evaluation_pool1()
             }
             1 => {
-                debug!("Looking at Pool2 for session {}", current_session);
+                debug!("Looking at Pool2 for pool index {}", current_pool_index);
                 runtime::storage().distance().evaluation_pool2()
             }
             2 => {
-                debug!("Looking at Pool0 for session {}", current_session);
+                debug!("Looking at Pool0 for pool index {}", current_pool_index);
                 runtime::storage().distance().evaluation_pool0()
             }
-            _ => unreachable!("n%3<3"),
+            _ => unreachable!("n<3"),
         })
         .await
         .expect("Cannot fetch current pool")
@@ -106,17 +106,26 @@ pub async fn member_iter(client: &Client, evaluation_block: H256) -> MemberIter 
 }
 
 pub struct MemberIter(
-    subxt::backend::StreamOfResults<(
-        Vec<u8>,
-        runtime::runtime_types::sp_membership::MembershipData<u32>,
-    )>,
+    subxt::backend::StreamOfResults<
+        subxt::storage::StorageKeyValuePair<
+            subxt::storage::StaticAddress<
+                (),
+                runtime::runtime_types::sp_membership::MembershipData<u32>,
+                (),
+                (),
+                subxt::utils::Yes,
+            >,
+        >,
+    >,
 );
 
 impl MemberIter {
     pub async fn next(&mut self) -> Result<Option<IdtyIndex>, subxt::error::Error> {
-        self.0.next().await.transpose().map(|i| {
-            i.map(|(storage_key, _membership_data)| idty_id_from_storage_key(&storage_key))
-        })
+        self.0
+            .next()
+            .await
+            .transpose()
+            .map(|i| i.map(|j| idty_id_from_storage_key(&j.key_bytes)))
     }
 }
 
@@ -131,15 +140,29 @@ pub async fn cert_iter(client: &Client, evaluation_block: H256) -> CertIter {
     )
 }
 
-pub struct CertIter(subxt::backend::StreamOfResults<(Vec<u8>, Vec<(IdtyIndex, u32)>)>);
+pub struct CertIter(
+    subxt::backend::StreamOfResults<
+        subxt::storage::StorageKeyValuePair<
+            subxt::storage::StaticAddress<
+                (),
+                Vec<(u32, u32)>,
+                (),
+                subxt::utils::Yes,
+                subxt::utils::Yes,
+            >,
+        >,
+    >,
+);
 
 impl CertIter {
     pub async fn next(
         &mut self,
     ) -> Result<Option<(IdtyIndex, Vec<(IdtyIndex, u32)>)>, subxt::error::Error> {
-        self.0.next().await.transpose().map(|i| {
-            i.map(|(storage_key, issuers)| (idty_id_from_storage_key(&storage_key), issuers))
-        })
+        self.0
+            .next()
+            .await
+            .transpose()
+            .map(|i| i.map(|j| (idty_id_from_storage_key(&j.key_bytes), j.value)))
     }
 }
 

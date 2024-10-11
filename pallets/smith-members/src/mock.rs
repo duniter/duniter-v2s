@@ -14,19 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-#![cfg(test)]
-
 use crate::{self as pallet_smith_members};
-use frame_support::pallet_prelude::Hooks;
 use frame_support::{
+    pallet_prelude::Hooks,
     parameter_types,
     traits::{ConstU32, ConstU64},
     weights::{constants::RocksDbWeight, Weight},
 };
 use sp_core::H256;
-use sp_runtime::traits::{ConvertInto, IsMember};
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, ConvertInto, IdentityLookup, IsMember},
     BuildStorage, Perbill,
 };
 
@@ -57,16 +54,21 @@ impl frame_system::Config for Runtime {
     type Hashing = BlakeTwo256;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = ConstU32<16>;
+    type MultiBlockMigrator = ();
     type Nonce = u64;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
     type PalletInfo = PalletInfo;
+    type PostInherents = ();
+    type PostTransactions = ();
+    type PreInherents = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeTask = ();
     type SS58Prefix = ();
+    type SingleBlockMigrations = ();
     type SystemWeightInfo = ();
     type Version = ();
 }
@@ -79,7 +81,7 @@ impl IsMember<u64> for EveryoneExceptIdZero {
 }
 
 impl pallet_smith_members::Config for Runtime {
-    type IdtyIdOf = ConvertInto;
+    type IdtyAttr = ();
     type IdtyIdOfAuthorityId = ConvertInto;
     type IdtyIndex = u64;
     type IsWoTMember = EveryoneExceptIdZero;
@@ -87,7 +89,6 @@ impl pallet_smith_members::Config for Runtime {
     type MemberId = u64;
     type MinCertForMembership = ConstU32<2>;
     type OnSmithDelete = ();
-    type OwnerKeyOf = ConvertInto;
     type RuntimeEvent = RuntimeEvent;
     type SmithInactivityMaxDuration = ConstU32<5>;
     type WeightInfo = ();
