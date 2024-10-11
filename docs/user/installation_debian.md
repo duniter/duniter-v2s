@@ -13,9 +13,9 @@
 1. Download the Duniter .deb file.
 2. Install the package: `dpkg -i duniter_vx.y.z.deb`.
 3. Change the default configuration (at least the node name) by modifying `/etc/duniter/env_file`.
-4. Create network keys using the same base path as in the config file: `duniter key generate-node-key --base-path <YOUR_BASE_PATH> --chain <YOUR_CHAIN>`.
-5. Start the service: `sudo systemctl start duniter-validator.service`.
-6. Enable the service at startup: `sudo systemctl enable duniter-validator.service`.
+4. Create network keys using the same base path as in the config file: `duniter2 key generate-node-key --base-path <YOUR_BASE_PATH> --chain <YOUR_CHAIN>`.
+5. Start the service: `sudo systemctl start duniter-smith.service`.
+6. Enable the service at startup: `sudo systemctl enable duniter-smith.service`.
 
 ## Distance Oracle
 
