@@ -40,18 +40,30 @@ where
     Backend: sc_client_api::Backend<B>,
     IdtyIndex: Decode + Encode + PartialEq + TypeInfo,
 {
+    // Retrieve the pool_index from storage. If storage is inaccessible or the data is corrupted,
+    // return the appropriate error.
     let pool_index = client
         .storage(
             parent,
             &StorageKey(
                 frame_support::storage::storage_prefix(b"Distance", b"CurrentPoolIndex").to_vec(),
             ),
-        )
-        .expect("CurrentIndex is Err")
-        .map_or(0, |raw| {
-            u32::decode(&mut &raw.0[..]).expect("cannot decode CurrentIndex")
-        });
+        )?
+        .map_or_else(
+            || {
+                Err(sc_client_api::blockchain::Error::Storage(
+                    "CurrentPoolIndex value not found".to_string(),
+                ))
+            },
+            |raw| {
+                u32::decode(&mut &raw.0[..])
+                    .map_err(|e| sc_client_api::blockchain::Error::from_state(Box::new(e)))
+            },
+        )?;
 
+    // Retrieve the published_results from storage.
+    // Return an error if the storage is inaccessible.
+    // If accessible, continue execution. If None, it means there are no published_results at this block.
     let published_results = client
         .storage(
             parent,
@@ -68,21 +80,21 @@ where
                 .to_vec(),
             ),
         )?
-        .map_or_else(Default::default, |raw| {
-            pallet_distance::EvaluationPool::<AccountId32, IdtyIndex>::decode(&mut &raw.0[..])
-                .expect("cannot decode EvaluationPool")
+        .and_then(|raw| {
+            pallet_distance::EvaluationPool::<AccountId32, IdtyIndex>::decode(&mut &raw.0[..]).ok()
         });
 
     // Have we already published a result for this period?
     // The block author is guaranteed to be in the owner_keys.
-    let owner_keys = owner_keys
-        .iter()
-        .map(|&key| sp_runtime::AccountId32::new(key.0))
-        .any(|key| published_results.evaluators.contains(&key));
-
-    if owner_keys {
-        log::debug!("🧙 [distance oracle] Already published a result for this period");
-        return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
+    if let Some(results) = published_results {
+        if owner_keys
+            .iter()
+            .map(|&key| sp_runtime::AccountId32::new(key.0))
+            .any(|key| results.evaluators.contains(&key))
+        {
+            log::debug!("🧙 [distance oracle] Already published a result for this period");
+            return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
+        }
     }
 
     // Read evaluation result from file, if it exists

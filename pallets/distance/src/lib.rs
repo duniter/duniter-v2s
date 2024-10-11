@@ -81,10 +81,13 @@ pub use traits::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
-use frame_support::traits::{
-    fungible::{self, hold, Credit, Mutate, MutateHold},
-    tokens::Precision,
-    OnUnbalanced, StorageVersion,
+use frame_support::{
+    traits::{
+        fungible::{self, hold, Credit, Mutate, MutateHold},
+        tokens::Precision,
+        OnUnbalanced, StorageVersion,
+    },
+    DefaultNoBound,
 };
 use sp_distance::{InherentError, INHERENT_IDENTIFIER};
 use sp_inherents::{InherentData, InherentIdentifier};
@@ -286,6 +289,19 @@ pub mod pallet {
         WrongResultLength,
         /// Targeted distance evaluation request is only possible for an unvalidated identity.
         TargetMustBeUnvalidated,
+    }
+
+    #[pallet::genesis_config]
+    #[derive(DefaultNoBound)]
+    pub struct GenesisConfig<T: Config> {
+        pub _config: core::marker::PhantomData<T>,
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+        fn build(&self) {
+            CurrentPoolIndex::<T>::put(0u32);
+        }
     }
 
     #[pallet::hooks]
