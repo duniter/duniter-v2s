@@ -249,7 +249,7 @@ build_runtime:
   stage: build
   rules:
     - <<: *is_network_branch
-  image: paritytech/srtool:1.77.0-0.15.0
+  image: paritytech/srtool:1.81.0-0.17.0
   variables:
     SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/srtool_output.json
   script:
