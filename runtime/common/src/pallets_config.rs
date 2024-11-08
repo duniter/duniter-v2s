@@ -454,7 +454,6 @@ macro_rules! pallets_config {
 
         parameter_types! {
             pub const ValidationPeriod: BlockNumber = 2 * MONTHS;
-            pub const DeletionPeriod: BlockNumber = 10 * YEARS;
         }
         impl pallet_identity::Config for Runtime {
             type AccountLinker = Account;

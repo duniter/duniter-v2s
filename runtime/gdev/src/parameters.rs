@@ -90,8 +90,10 @@ parameter_types! {
 
 // Identity
 frame_support::parameter_types! {
+    // for gdev we can have short periods
     pub const ChangeOwnerKeyPeriod: BlockNumber = 7 * DAYS;
-    pub const AutorevocationPeriod: BlockNumber = YEARS;
+    pub const AutorevocationPeriod: BlockNumber = MONTHS;
+    pub const DeletionPeriod: BlockNumber = MONTHS;
 }
 
 // Membership

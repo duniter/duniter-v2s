@@ -373,7 +373,10 @@ mod verifier {
             names: &HashMap<IdtyIndex, IdtyName>,
         ) {
             for (idty_index, idty_value) in identities {
-                // Rule 1: each Status::Member should have a membership and a name.
+                // Rule 1: each Status::Member
+                // should have a membership and a name
+                // membership should be set to expire
+                // identity should have no scheduled action
                 if let IdtyStatus::Member = idty_value.status {
                     self.assert(
                         memberships.get(idty_index).is_some(),
@@ -383,9 +386,23 @@ mod verifier {
                         names.get(idty_index).is_some(),
                         format!("identity number {idty_index} should have a name"),
                     );
+                    self.assert(
+                        memberships.get(idty_index).unwrap().expire_on != 0,
+                        format!(
+                            "Member identity number {idty_index} should have a non-null expire_on value"
+                        ),
+                    );
+                    self.assert(
+                        identities.get(idty_index).unwrap().next_scheduled == 0,
+                        format!(
+                            "Member identity number {idty_index} should have a null next_scheduled value"
+                        ),
+                    );
                 }
 
-                // Rule 2: each Status::NotMember should have a name but no membership.
+                // Rule 2: each Status::NotMember
+                // should have a name but no membership
+                // should have a scheduled action (auto-revocation)
                 if let IdtyStatus::NotMember = idty_value.status {
                     self.assert(
                         memberships.get(idty_index).is_none(),
@@ -395,9 +412,16 @@ mod verifier {
                         names.get(idty_index).is_some(),
                         format!("identity number {idty_index} should have a name"),
                     );
+                    self.assert(
+                        identities.get(idty_index).unwrap().next_scheduled != 0,
+                        format!("NotMember identity number {idty_index} should have a non-null next_scheduled value"),
+                    );
                 }
 
-                // Rule 3: each Status::Revoke should should have a name but no membership.
+                // Rule 3: each Status::Revoked
+                // should should have a name
+                // no membership
+                // should be scheduled for removal
                 if let IdtyStatus::Revoked = idty_value.status {
                     self.assert(
                         memberships.get(idty_index).is_none(),
@@ -407,9 +431,15 @@ mod verifier {
                         names.get(idty_index).is_some(),
                         format!("identity number {idty_index} should have a name"),
                     );
+                    self.assert(
+                        identities.get(idty_index).unwrap().next_scheduled != 0,
+                        format!("Revoked identity number {idty_index} should have a non-null next_scheduled value"),
+                    );
                 }
 
-                // Rule 4: each Status::Unvalidaded should have a name but no membership.
+                // Rule 4: each Status::Unvalidaded
+                // should have a name but no membership.
+                // should be scheduled for removal
                 if let IdtyStatus::Unvalidated = idty_value.status {
                     self.assert(
                         memberships.get(idty_index).is_none(),
@@ -419,9 +449,15 @@ mod verifier {
                         names.get(idty_index).is_some(),
                         format!("identity number {idty_index} should have a name"),
                     );
+                    self.assert(
+                        identities.get(idty_index).unwrap().next_scheduled != 0,
+                        format!("Unvalidated identity number {idty_index} should have a non-null next_scheduled value"),
+                    );
                 }
 
-                // Rule 5: each Status::Unconfirmed should not have a name neither a membership.
+                // Rule 5: each Status::Unconfirmed
+                // should not have a name neither a membership.
+                // should be scheduled for removal soon
                 if let IdtyStatus::Unconfirmed = idty_value.status {
                     self.assert(
                         memberships.get(idty_index).is_none(),
@@ -430,6 +466,10 @@ mod verifier {
                     self.assert(
                         names.get(idty_index).is_none(),
                         format!("identity number {idty_index} should not have a name"),
+                    );
+                    self.assert(
+                        identities.get(idty_index).unwrap().next_scheduled != 0,
+                        format!("Unconfirmed identity number {idty_index} should have a non-null next_scheduled value"),
                     );
                 }
             }
