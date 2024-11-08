@@ -1899,12 +1899,9 @@ dependencies = [
  "frame-support",
  "log",
  "pallet-distance",
- "parity-scale-codec",
  "sc-client-api",
- "scale-info",
  "sp-core",
  "sp-distance",
- "sp-keystore",
  "sp-runtime",
  "thiserror",
 ]
