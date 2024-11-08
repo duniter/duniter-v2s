@@ -48,7 +48,7 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
-  "runtime-benchmarks",
+	"runtime-benchmarks",
 	"common-runtime/try-runtime",
 	"dc-distance?/try-runtime",
 	"distance-oracle?/try-runtime",
@@ -106,7 +106,7 @@ std = [
 	"sp-transaction-storage-proof/std",
 	"sp-trie/std",
 ]
-standalone = ["distance-oracle?/standalone"]
+distance-oracle = ["dep:distance-oracle"]
 
 [dependencies]
 async-io = { workspace = true }
@@ -125,6 +125,7 @@ num-format = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 # Local
 common-runtime = { workspace = true }
@@ -184,7 +185,7 @@ sp-transaction-storage-proof = { workspace = true, default-features = true }
 substrate-frame-rpc-system = { workspace = true, default-features = true }
 
 [build-dependencies]
-substrate-build-script-utils = { workspace = true, default-features = true}
+substrate-build-script-utils = { workspace = true, default-features = true }
 
 # Dependencies for specific targets
 [target.'cfg(any(target_arch="x86_64", target_arch="aarch64"))'.dependencies]
@@ -194,9 +195,20 @@ sp-trie = { workspace = true, default-features = true }
 
 [package.metadata.deb]
 maintainer-scripts = "../resources/debian"
-systemd-units = [ { unit-name = "duniter-mirror", enable = false },
-                  { unit-name = "duniter-smith", enable = false },
-                  { unit-name = "distance-oracle", enable = false },
-                  ]
-assets = [ ["../resources/debian/env_file", "/etc/duniter/env_file", "0640"],
-           ["../target/release/duniter", "/usr/bin/duniter2", "755"]]
+systemd-units = [
+	{ unit-name = "duniter-mirror", enable = false },
+	{ unit-name = "duniter-smith", enable = false },
+	{ unit-name = "distance-oracle", enable = false },
+]
+assets = [
+	[
+		"../resources/debian/env_file",
+		"/etc/duniter/env_file",
+		"0640",
+	],
+	[
+		"../target/release/duniter",
+		"/usr/bin/duniter2",
+		"755",
+	],
+]

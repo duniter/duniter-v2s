@@ -1,4 +1,4 @@
-// Copyright 2023 Axiom-Team
+// Copyright 2023-2024 Axiom-Team
 //
 // This file is part of Duniter-v2S.
 //
@@ -20,6 +20,8 @@ use clap::Parser;
 struct Cli {
     #[clap(short = 'd', long, default_value = "/tmp/duniter/chains/gdev/distance")]
     evaluation_result_dir: String,
+    #[clap(short = 'i', long, default_value = "None")]
+    interval: Option<u64>,
     #[clap(short = 'u', long, default_value = "ws://127.0.0.1:9944")]
     rpc_url: String,
     /// Log level (off, error, warn, info, debug, trace)
@@ -36,12 +38,21 @@ async fn main() {
         .init()
         .unwrap();
 
-    distance_oracle::run_and_save(
-        &distance_oracle::api::client(cli.rpc_url.clone()).await,
-        distance_oracle::Settings {
-            evaluation_result_dir: cli.evaluation_result_dir.into(),
-            rpc_url: cli.rpc_url,
-        },
-    )
-    .await;
+    let client = distance_oracle::api::client(&cli.rpc_url).await;
+
+    let settings = distance_oracle::Settings {
+        evaluation_result_dir: cli.evaluation_result_dir.into(),
+        rpc_url: cli.rpc_url,
+    };
+
+    if let Some(duration) = cli.interval {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(duration));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+        loop {
+            distance_oracle::run_and_save(&client, &settings).await;
+            interval.tick().await;
+        }
+    } else {
+        distance_oracle::run_and_save(&client, &settings).await;
+    }
 }

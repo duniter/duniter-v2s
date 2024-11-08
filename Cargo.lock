@@ -2100,9 +2100,7 @@ dependencies = [
  "dubp-wot",
  "flate2",
  "fnv",
- "hex",
  "log",
- "num-traits 0.2.19",
  "parity-scale-codec",
  "rayon",
  "simple_logger",
@@ -2254,6 +2252,7 @@ dependencies = [
  "sp-trie",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
+ "tokio",
 ]
 
 [[package]]

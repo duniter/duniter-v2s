@@ -285,14 +285,23 @@ pub fn run() -> sc_cli::Result<()> {
         }
         #[cfg(feature = "distance-oracle")]
         Some(Subcommand::DistanceOracle(cmd)) => sc_cli::build_runtime()?.block_on(async move {
-            distance_oracle::run_and_save(
-                &distance_oracle::api::client(cmd.rpc_url.clone()).await,
-                distance_oracle::Settings {
-                    evaluation_result_dir: cmd.evaluation_result_dir.clone().into(),
-                    rpc_url: cmd.rpc_url.clone(),
-                },
-            )
-            .await;
+            let client = distance_oracle::api::client(&cmd.rpc_url).await;
+
+            let settings = distance_oracle::Settings {
+                evaluation_result_dir: cmd.evaluation_result_dir.clone().into(),
+                rpc_url: cmd.rpc_url.clone(),
+            };
+
+            if let Some(duration) = cmd.interval {
+                let mut interval = tokio::time::interval(std::time::Duration::from_secs(duration));
+                interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+                loop {
+                    distance_oracle::run_and_save(&client, &settings).await;
+                    interval.tick().await;
+                }
+            } else {
+                distance_oracle::run_and_save(&client, &settings).await;
+            }
             Ok(())
         }),
         #[cfg(feature = "runtime-benchmarks")]

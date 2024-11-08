@@ -25,7 +25,7 @@ pub type Client = subxt::OnlineClient<crate::RuntimeConfig>;
 pub type AccountId = subxt::utils::AccountId32;
 pub type IdtyIndex = u32;
 
-pub async fn client(rpc_url: String) -> Client {
+pub async fn client(rpc_url: impl AsRef<str>) -> Client {
     Client::from_insecure_url(rpc_url)
         .await
         .expect("Cannot create RPC client")

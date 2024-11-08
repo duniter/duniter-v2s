@@ -34,7 +34,7 @@ pub struct EvaluationPool<AccountId: Ord, IdtyIndex> {
     pub evaluators: BTreeSet<AccountId>,
 }
 
-pub async fn client(_rpc_url: String) -> Client {
+pub async fn client(_rpc_url: impl AsRef<str>) -> Client {
     unimplemented!()
 }
 

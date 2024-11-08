@@ -84,9 +84,9 @@ impl Default for Settings {
 }
 
 /// Asynchronously runs a computation using the provided client and saves the result to a file.
-pub async fn run_and_save(client: &api::Client, settings: Settings) {
+pub async fn run_and_save(client: &api::Client, settings: &Settings) {
     let Some((evaluation, current_pool_index, evaluation_result_path)) =
-        run(client, &settings, true).await
+        run(client, settings, true).await
     else {
         return;
     };
