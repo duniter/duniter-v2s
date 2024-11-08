@@ -8,18 +8,14 @@ Distance evaluation is operated on a voluntary basis by individual smiths. Since
 
 Any smith member authoring blocks can run a distance evaluation oracle. It is better to have a machine more powerful than the reference machine.
 
-The simplest way is to run the oracle on the same machine as Duniter.
+Create a service from this commandline, run by the same user as Duniter, on the same system:
 
-Add this line to your cron with the command `crontab -e`: (add option `-u <user>` to edit another user's cron)
+    /absolute/path/to/duniter distance-oracle --interval <duration>
 
-    4,24,44 * * * * nice -n 2 /absolute/path/to/duniter distance-oracle
+The duration is the number of seconds between two evaluations. It should be less than the duration of a distance evaluation period. If it is equal, your node may not have the time to evaluate distance.
 
-The precise hours don't matter so you can pick random values, but it should run at least one time per hour, and running it more often decreases the risk of problem in case of missing blocks or temporary network failure.
-
-If the evaluation ran successfully in a session, the next runs in the same session won't re-evaluate the same data.
-
-The `nice -n 2` lowers the oracle's priority, so that Duniter has the priority even when the oracle wants to use all the cores.
+The oracle communicates with Duniter using its RPC API and using temporary files. Without additional (unsupported) configuration, both must run on the same filesystem. The node also needs to be forging blocks for the evaluations to be published.
 
 ### Additional Duniter configuration
 
-Duniter should keep states at least one session old, that is 600 blocks (while 256 is the default). Use the option `--state-pruning 600` if your node is not already an archive (`--state-pruning archive`).
+Duniter should keep states at least one distance evaluation period old. If this is more than the default 256 and your node is not already an archive (`--state-pruning archive`), use the option `--state-pruning <blocks>`.
