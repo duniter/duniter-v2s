@@ -129,12 +129,15 @@ pub struct Completion {
     pub generator: clap_complete::Shell,
 }
 
-#[derive(Debug, clap::Args)]
+#[cfg(feature = "distance-oracle")]
+#[derive(Debug, clap::Parser)]
 pub struct DistanceOracle {
     #[clap(short = 'd', long, default_value = "/tmp/duniter/chains/gdev/distance")]
     pub evaluation_result_dir: String,
-    #[clap(short = 'i', long, default_value = "None")]
+    /// Number of seconds between two evaluations (oneshot if absent)
+    #[clap(short = 'i', long)]
     pub interval: Option<u64>,
+    /// Local forging node
     #[clap(short = 'u', long, default_value = "ws://127.0.0.1:9944")]
     pub rpc_url: String,
 }
