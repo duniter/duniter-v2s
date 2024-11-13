@@ -18,6 +18,7 @@
 
 use super::*;
 use frame_benchmarking::{account, v2::*};
+use frame_support::traits::fungible::Mutate;
 use sp_runtime::traits::One;
 
 fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
@@ -98,7 +99,7 @@ mod benchmarks {
                 amount: 10u64.into(),
             },
         );
-        let _ = CurrencyOf::<T>::make_free_balance_be(&T::RefundAccount::get(), u32::MAX.into());
+        let _ = CurrencyOf::<T>::set_balance(&T::RefundAccount::get(), u32::MAX.into());
         // The worst-case scenario is when the refund fails
         // and can only be triggered if the account is dead,
         // in this case by having no balance in the account.
@@ -119,7 +120,7 @@ mod benchmarks {
     #[benchmark]
     fn do_refund() {
         let account: T::AccountId = account("Alice", 1, 1);
-        let _ = CurrencyOf::<T>::make_free_balance_be(&T::RefundAccount::get(), u32::MAX.into());
+        let _ = CurrencyOf::<T>::set_balance(&T::RefundAccount::get(), u32::MAX.into());
         // The worst-case scenario is when the refund fails
         // and can only be triggered if the account is dead,
         // in this case by having no balance in the account.
@@ -161,7 +162,7 @@ mod benchmarks {
                 amount: 10u64.into(),
             },
         );
-        let _ = CurrencyOf::<T>::make_free_balance_be(&T::RefundAccount::get(), u32::MAX.into());
+        let _ = CurrencyOf::<T>::set_balance(&T::RefundAccount::get(), u32::MAX.into());
         // The worst-case scenario is when the refund fails
         // and can only be triggered if the account is dead,
         // in this case by having no balance in the account.

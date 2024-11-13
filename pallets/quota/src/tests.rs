@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{mock::*, Weight};
-use frame_support::traits::Currency;
+use frame_support::traits::fungible::Mutate;
 use sp_core::Get;
 
 // Note: values for reload rate and max quota defined in mock file
@@ -150,10 +150,10 @@ fn test_process_refund_queue() {
     .execute_with(|| {
         run_to_block(5);
         // give enough currency to accounts and treasury and double check
-        Balances::make_free_balance_be(&account(1), 1000);
-        Balances::make_free_balance_be(&account(2), 1000);
-        Balances::make_free_balance_be(&account(3), 1000);
-        Balances::make_free_balance_be(
+        Balances::set_balance(&account(1), 1000);
+        Balances::set_balance(&account(2), 1000);
+        Balances::set_balance(&account(3), 1000);
+        Balances::set_balance(
             &<Test as pallet_quota::Config>::RefundAccount::get(),
             10_000,
         );
@@ -208,8 +208,8 @@ fn test_not_enough_treasury() {
     })
     .execute_with(|| {
         run_to_block(5);
-        Balances::make_free_balance_be(&account(1), 1000);
-        Balances::make_free_balance_be(&<Test as pallet_quota::Config>::RefundAccount::get(), 1200);
+        Balances::set_balance(&account(1), 1000);
+        Balances::set_balance(&<Test as pallet_quota::Config>::RefundAccount::get(), 1200);
         Quota::queue_refund(pallet_quota::Refund {
             account: account(1),
             identity: 1,
@@ -246,10 +246,10 @@ fn test_process_refund_queue_weight_with_quotas() {
     .execute_with(|| {
         run_to_block(15);
         // give enough currency to accounts and treasury and double check
-        Balances::make_free_balance_be(&account(1), 1000);
-        Balances::make_free_balance_be(&account(2), 1000);
-        Balances::make_free_balance_be(&account(3), 1000);
-        Balances::make_free_balance_be(
+        Balances::set_balance(&account(1), 1000);
+        Balances::set_balance(&account(2), 1000);
+        Balances::set_balance(&account(3), 1000);
+        Balances::set_balance(
             &<Test as pallet_quota::Config>::RefundAccount::get(),
             10_000,
         );
@@ -314,10 +314,10 @@ fn test_process_refund_queue_weight_no_quotas() {
     .execute_with(|| {
         run_to_block(15);
         // give enough currency to accounts and treasury and double check
-        Balances::make_free_balance_be(&account(1), 1000);
-        Balances::make_free_balance_be(&account(2), 1000);
-        Balances::make_free_balance_be(&account(3), 1000);
-        Balances::make_free_balance_be(
+        Balances::set_balance(&account(1), 1000);
+        Balances::set_balance(&account(2), 1000);
+        Balances::set_balance(&account(3), 1000);
+        Balances::set_balance(
             &<Test as pallet_quota::Config>::RefundAccount::get(),
             10_000,
         );

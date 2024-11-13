@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{mock::*, *};
-use frame_support::{assert_noop, assert_ok, traits::Currency};
+use frame_support::{assert_noop, assert_ok, traits::fungible::Mutate};
 
 // allow request distance evaluation for oneself
 #[test]
@@ -23,7 +23,7 @@ fn test_request_distance_evaluation() {
     new_test_ext().execute_with(|| {
         run_to_block(1);
         // give enough for reserve
-        Balances::make_free_balance_be(&1, 10_000);
+        Balances::set_balance(&1, 10_000);
 
         // call request
         assert_ok!(Distance::request_distance_evaluation(
@@ -45,7 +45,7 @@ fn test_request_distance_evaluation_for() {
     new_test_ext().execute_with(|| {
         run_to_block(1);
         // give enough for reserve
-        Balances::make_free_balance_be(&1, 10_000);
+        Balances::set_balance(&1, 10_000);
         assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 5));
         assert_ok!(Identity::confirm_identity(
             RuntimeOrigin::signed(5),
@@ -73,7 +73,7 @@ fn test_request_distance_evaluation_non_member() {
     new_test_ext().execute_with(|| {
         run_to_block(1);
         // give enough for reserve
-        Balances::make_free_balance_be(&5, 10_000);
+        Balances::set_balance(&5, 10_000);
 
         assert_noop!(
             Distance::request_distance_evaluation_for(RuntimeOrigin::signed(5), 1),
@@ -93,7 +93,7 @@ fn test_request_distance_evaluation_twice() {
     new_test_ext().execute_with(|| {
         run_to_block(1);
         // give enough for reserve
-        Balances::make_free_balance_be(&1, 10_000);
+        Balances::set_balance(&1, 10_000);
 
         assert_ok!(Distance::request_distance_evaluation(
             RuntimeOrigin::signed(1)
