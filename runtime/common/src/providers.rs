@@ -14,35 +14,36 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{entities::IdtyData, AccountId, IdtyIndex};
+use crate::{entities::IdtyData, AccountId, Balance, IdtyIndex};
 use core::marker::PhantomData;
 use pallet_universal_dividend::FirstEligibleUd;
 
+/// A provider for converting IdtyIndex to associated AccountId.
 pub struct IdentityAccountIdProvider<Runtime>(PhantomData<Runtime>);
-
-impl<
-        Runtime: frame_system::Config<AccountId = AccountId>
-            + pallet_identity::Config<IdtyIndex = IdtyIndex>,
-    > sp_runtime::traits::Convert<IdtyIndex, Option<AccountId>>
+impl<Runtime> sp_runtime::traits::Convert<IdtyIndex, Option<AccountId>>
     for IdentityAccountIdProvider<Runtime>
+where
+    Runtime: frame_system::Config<AccountId = AccountId>
+        + pallet_identity::Config<IdtyIndex = IdtyIndex>,
 {
     fn convert(idty_index: IdtyIndex) -> Option<AccountId> {
         pallet_identity::Pallet::<Runtime>::identity(idty_index).map(|idty| idty.owner_key)
     }
 }
 
+/// A provider for converting AccountId to their associated IdtyIndex.
 pub struct IdentityIndexOf<T: pallet_identity::Config>(PhantomData<T>);
-
-impl<T: pallet_identity::Config> sp_runtime::traits::Convert<T::AccountId, Option<T::IdtyIndex>>
-    for IdentityIndexOf<T>
+impl<T> sp_runtime::traits::Convert<T::AccountId, Option<T::IdtyIndex>> for IdentityIndexOf<T>
+where
+    T: pallet_identity::Config,
 {
     fn convert(account_id: T::AccountId) -> Option<T::IdtyIndex> {
         pallet_identity::Pallet::<T>::identity_index_of(account_id)
     }
 }
 
+/// A provider associating an AccountId to their first eligible UD creation time.
 pub struct UdMembersStorage<T: pallet_identity::Config>(PhantomData<T>);
-
 impl<T> frame_support::traits::StoredMap<AccountId, FirstEligibleUd> for UdMembersStorage<T>
 where
     T: frame_system::Config<AccountId = AccountId>,
@@ -71,12 +72,12 @@ where
     }
 }
 
+/// A provider to WoT membership status based on an IdtyIndex.
 pub struct IsWoTMemberProvider<T>(PhantomData<T>);
-impl<T: pallet_smith_members::Config>
-    sp_runtime::traits::IsMember<<T as pallet_membership::Config>::IdtyId>
+impl<T> sp_runtime::traits::IsMember<<T as pallet_membership::Config>::IdtyId>
     for IsWoTMemberProvider<T>
 where
-    T: pallet_distance::Config + pallet_membership::Config,
+    T: pallet_distance::Config + pallet_membership::Config + pallet_smith_members::Config,
 {
     fn is_member(idty_id: &T::IdtyId) -> bool {
         pallet_membership::Pallet::<T>::is_member(idty_id)
@@ -116,3 +117,14 @@ macro_rules! impl_benchmark_setup_handler {
 
 #[cfg(feature = "runtime-benchmarks")]
 impl_benchmark_setup_handler!(pallet_membership::SetupBenchmark<<T as pallet_identity::Config>::IdtyIndex, T::AccountId>);
+
+/// A provider for retrieving the number of accounts allowed to create the universal dividend.
+pub struct MembersCount<T>(PhantomData<T>);
+impl<T> frame_support::pallet_prelude::Get<Balance> for MembersCount<T>
+where
+    T: sp_membership::traits::MembersCount,
+{
+    fn get() -> Balance {
+        T::members_count() as Balance
+    }
+}

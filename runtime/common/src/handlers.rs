@@ -15,7 +15,10 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use super::{entities::*, AccountId, IdtyIndex};
-use frame_support::{pallet_prelude::Weight, traits::UnfilteredDispatchable};
+use frame_support::{
+    pallet_prelude::Weight,
+    traits::{Imbalance, UnfilteredDispatchable},
+};
 use pallet_smith_members::SmithRemovalReason;
 use sp_core::Get;
 
@@ -97,7 +100,7 @@ impl<
 /// done at the handler level.
 pub struct OnRemoveMembershipHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<
-        Runtime: frame_system::Config<AccountId = AccountId>
+        Runtime: frame_system::Config
             + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
             + pallet_smith_members::Config<IdtyIndex = IdtyIndex>
             + pallet_duniter_wot::Config
@@ -176,5 +179,27 @@ impl<
 {
     fn check_allowed(idty_index: &IdtyIndex) -> bool {
         !pallet_authority_members::Pallet::<Runtime>::online().contains(idty_index)
+    }
+}
+
+/// Runtime handler for managing fee handling by transferring unbalanced amounts to a treasury account.
+pub struct HandleFees<TreasuryAccount, Balances>(
+    frame_support::pallet_prelude::PhantomData<TreasuryAccount>,
+    frame_support::pallet_prelude::PhantomData<Balances>,
+);
+type CreditOf<Balances> = frame_support::traits::tokens::fungible::Credit<AccountId, Balances>;
+impl<TreasuryAccount, Balances> frame_support::traits::OnUnbalanced<CreditOf<Balances>>
+    for HandleFees<TreasuryAccount, Balances>
+where
+    TreasuryAccount: Get<AccountId>,
+    Balances: frame_support::traits::fungible::Balanced<AccountId>,
+{
+    fn on_nonzero_unbalanced(amount: CreditOf<Balances>) {
+        // fee is moved to treasury
+        let _ = Balances::deposit(
+            &TreasuryAccount::get(),
+            amount.peek(),
+            frame_support::traits::tokens::Precision::Exact,
+        );
     }
 }
