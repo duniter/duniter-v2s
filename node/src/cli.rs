@@ -137,7 +137,7 @@ pub struct DistanceOracle {
     /// Number of seconds between two evaluations (oneshot if absent)
     #[clap(short = 'i', long)]
     pub interval: Option<u64>,
-    /// Local forging node
+    /// Node used for fetching state
     #[clap(short = 'u', long, default_value = "ws://127.0.0.1:9944")]
     pub rpc_url: String,
 }

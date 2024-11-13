@@ -8,7 +8,7 @@ Distance evaluation is operated on a voluntary basis by individual smiths. Since
 
 Any smith member authoring blocks can run a distance evaluation oracle. It is better to have a machine more powerful than the reference machine.
 
-Create a service from this commandline, run by the same user as Duniter, on the same system:
+Create a service from this command line, run by the same user as Duniter, on the same system:
 
     /absolute/path/to/duniter distance-oracle --interval <duration>
 
