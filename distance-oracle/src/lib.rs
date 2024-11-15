@@ -42,7 +42,7 @@ impl subxt::config::Config for RuntimeConfig {
     type Address = subxt::ext::sp_runtime::MultiAddress<Self::AccountId, u32>;
     type AssetId = ();
     type ExtrinsicParams = subxt::config::substrate::SubstrateExtrinsicParams<Self>;
-    type Hash = sp_core::H256;
+    type Hash = subxt::utils::H256;
     type Hasher = subxt::config::substrate::BlakeTwo256;
     type Header =
         subxt::config::substrate::SubstrateHeader<u32, subxt::config::substrate::BlakeTwo256>;

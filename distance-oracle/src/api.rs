@@ -19,7 +19,7 @@
 use crate::runtime;
 use log::debug;
 
-use sp_core::H256;
+use subxt::utils::H256;
 
 pub type Client = subxt::OnlineClient<crate::RuntimeConfig>;
 pub type AccountId = subxt::utils::AccountId32;
