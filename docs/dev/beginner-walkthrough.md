@@ -13,7 +13,7 @@ This walkthrough is based on the following video (french), don't hesitate to rec
 If you are on a debian based system, you can install the required packages with:
 
 ```bash
-sudo apt install cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
+sudo apt install cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
 ```
 
 Else, look at the corresponding section in the [system setup documentation](./setup.md).
