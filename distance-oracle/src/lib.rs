@@ -28,7 +28,7 @@ use api::{AccountId, IdtyIndex};
 
 use codec::Encode;
 use fnv::{FnvHashMap, FnvHashSet};
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::{io::Write, path::PathBuf};
 
@@ -85,7 +85,7 @@ impl Default for Settings {
 
 /// Asynchronously runs a computation using the provided client and saves the result to a file.
 pub async fn run_and_save(client: &api::Client, settings: &Settings) {
-    let Some((evaluation, current_pool_index, evaluation_result_path)) =
+    let Some((evaluation, _current_pool_index, evaluation_result_path)) =
         run(client, settings, true).await
     else {
         return;
@@ -113,32 +113,6 @@ pub async fn run_and_save(client: &api::Client, settings: &Settings) {
                 "Cannot write distance evaluation result to file `{evaluation_result_path:?}`: {e:?}"
             )
         });
-
-    // Remove old results
-    let mut files_to_remove = Vec::new();
-    for entry in settings
-        .evaluation_result_dir
-        .read_dir()
-        .unwrap_or_else(|e| {
-            panic!(
-                "Cannot read distance evaluation result directory `{0:?}`: {e:?}",
-                settings.evaluation_result_dir
-            )
-        })
-        .flatten()
-    {
-        if let Ok(entry_name) = entry.file_name().into_string() {
-            if let Ok(entry_pool) = entry_name.parse::<isize>() {
-                if current_pool_index as isize - entry_pool > 3 {
-                    files_to_remove.push(entry.path());
-                }
-            }
-        }
-    }
-    files_to_remove.into_iter().for_each(|f| {
-        std::fs::remove_file(&f)
-            .unwrap_or_else(move |e| warn!("Cannot remove old result file `{f:?}`: {e:?}"));
-    });
 }
 
 /// Asynchronously runs a computation based on the provided client and settings.
@@ -169,7 +143,7 @@ pub async fn run(
 
     let evaluation_result_path = settings
         .evaluation_result_dir
-        .join((current_pool_index + 1).to_string());
+        .join(((current_pool_index + 1) % 3).to_string());
 
     if handle_fs {
         // Stop if already evaluated

@@ -85,24 +85,45 @@ where
         });
 
     // Have we already published a result for this period?
-    // The block author is guaranteed to be in the owner_keys.
     if let Some(results) = published_results {
-        if owner_keys
-            .iter()
-            .map(|&key| sp_runtime::AccountId32::new(key.0))
-            .any(|key| results.evaluators.contains(&key))
-        {
-            log::debug!("🧙 [distance oracle] Already published a result for this period");
+        // Find the account associated with the BABE key that is in our owner keys.
+        let mut local_account = None;
+        for key in owner_keys {
+            // Session::KeyOwner is StorageMap<_, Twox64Concat, (KeyTypeId, Vec<u8>), AccountId32, OptionQuery>
+            // Slices (variable length) and array (fixed length) are encoded differently, so the `.as_slice()` is needed
+            let item_key = (sp_runtime::KeyTypeId(*b"babe"), key.0.as_slice()).encode();
+            let mut storage_key =
+                frame_support::storage::storage_prefix(b"Session", b"KeyOwner").to_vec();
+            storage_key.extend_from_slice(&sp_core::twox_64(&item_key));
+            storage_key.extend_from_slice(&item_key);
+
+            if let Some(raw_data) = client.storage(parent, &StorageKey(storage_key))? {
+                if let Ok(key_owner) = AccountId32::decode(&mut &raw_data.0[..]) {
+                    local_account = Some(key_owner);
+                    break;
+                } else {
+                    log::warn!("🧙 [distance oracle] Cannot decode key owner value");
+                }
+            }
+        }
+        if let Some(local_account) = local_account {
+            if results.evaluators.contains(&local_account) {
+                log::debug!("🧙 [distance oracle] Already published a result for this period");
+                return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
+            }
+        } else {
+            log::error!("🧙 [distance oracle] Cannot find our BABE owner key");
             return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
         }
     }
 
-    // Read evaluation result from file, if it exists
+    // Read evaluation result from file, if it exists, then remove it
     log::debug!(
         "🧙 [distance oracle] Reading evaluation result from file {:?}",
         distance_dir.clone().join(pool_index.to_string())
     );
-    let evaluation_result = match std::fs::read(distance_dir.join(pool_index.to_string())) {
+    let evaluation_result_file_path = distance_dir.join(pool_index.to_string());
+    let evaluation_result = match std::fs::read(&evaluation_result_file_path) {
         Ok(data) => data,
         Err(e) => {
             match e.kind() {
@@ -118,6 +139,9 @@ where
             return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
         }
     };
+    std::fs::remove_file(&evaluation_result_file_path).unwrap_or_else(move |e| {
+        log::warn!("🧙 [distance oracle] Cannot remove old result file `{evaluation_result_file_path:?}`: {e:?}")
+    });
 
     log::info!("🧙 [distance oracle] Providing evaluation result");
     Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(Some(
