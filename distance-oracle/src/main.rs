@@ -21,7 +21,7 @@ struct Cli {
     #[clap(short = 'd', long, default_value = "/tmp/duniter/chains/gdev/distance")]
     evaluation_result_dir: String,
     /// Number of seconds between two evaluations (oneshot if absent)
-    #[clap(short = 'i', long, default_value = "None")]
+    #[clap(short = 'i', long)]
     interval: Option<u64>,
     /// Node used for fetching state
     #[clap(short = 'u', long, default_value = "ws://127.0.0.1:9944")]
