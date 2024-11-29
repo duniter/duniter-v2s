@@ -285,6 +285,9 @@ pub fn run() -> sc_cli::Result<()> {
         }
         #[cfg(feature = "distance-oracle")]
         Some(Subcommand::DistanceOracle(cmd)) => sc_cli::build_runtime()?.block_on(async move {
+            let mut builder = sc_cli::LoggerBuilder::new("");
+            builder.with_profiling(sc_cli::TracingReceiver::Log.into(), cmd.log.clone());
+            builder.init()?;
             let client = distance_oracle::api::client(&cmd.rpc_url).await;
 
             let settings = distance_oracle::Settings {
@@ -296,11 +299,11 @@ pub fn run() -> sc_cli::Result<()> {
                 let mut interval = tokio::time::interval(std::time::Duration::from_secs(duration));
                 interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
                 loop {
-                    distance_oracle::run_and_save(&client, &settings).await;
+                    distance_oracle::run(&client, &settings).await;
                     interval.tick().await;
                 }
             } else {
-                distance_oracle::run_and_save(&client, &settings).await;
+                distance_oracle::run(&client, &settings).await;
             }
             Ok(())
         }),

@@ -51,15 +51,15 @@ pub async fn run_oracle(
     let origin = PairSigner::new(origin.pair());
     let account_id: &AccountId32 = origin.account_id();
 
-    if let Some((distances, _current_session, _evaluation_result_path)) = distance_oracle::run(
-        &distance_oracle::api::client(rpc_url.clone()).await,
-        &distance_oracle::Settings {
-            evaluation_result_dir: PathBuf::default(),
-            rpc_url,
-        },
-        false,
-    )
-    .await
+    if let Some((distances, _current_session, _evaluation_result_path)) =
+        distance_oracle::compute_distance_evaluation(
+            &distance_oracle::api::client(rpc_url.clone()).await,
+            &distance_oracle::Settings {
+                evaluation_result_dir: PathBuf::default(),
+                rpc_url,
+            },
+        )
+        .await
     {
         // Distance evaluation period is 7 blocks
         for _ in 0..7 {

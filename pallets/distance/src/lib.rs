@@ -234,10 +234,10 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type DidUpdate<T: Config> = StorageValue<_, bool, ValueQuery>;
 
-    /// The current evaluation pool index.
+    /// The current evaluation period index.
     #[pallet::storage]
-    #[pallet::getter(fn current_pool_index)]
-    pub(super) type CurrentPoolIndex<T: Config> = StorageValue<_, u32, ValueQuery>;
+    #[pallet::getter(fn current_period_index)]
+    pub(super) type CurrentPeriodIndex<T: Config> = StorageValue<_, u32, ValueQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -300,7 +300,7 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
-            CurrentPoolIndex::<T>::put(0u32);
+            CurrentPeriodIndex::<T>::put(0u32);
         }
     }
 
@@ -314,10 +314,10 @@ pub mod pallet {
             if block % BlockNumberFor::<T>::one().saturating_mul(T::EvaluationPeriod::get().into())
                 == BlockNumberFor::<T>::zero()
             {
-                let index = (CurrentPoolIndex::<T>::get() + 1) % 3;
-                CurrentPoolIndex::<T>::put(index);
+                let index = CurrentPeriodIndex::<T>::get() + 1;
+                CurrentPeriodIndex::<T>::put(index);
                 weight = weight
-                    .saturating_add(Self::do_evaluation(index))
+                    .saturating_add(Self::do_evaluation(index % 3))
                     .saturating_add(T::DbWeight::get().reads_writes(1, 1));
             }
             weight.saturating_add(<T as pallet::Config>::WeightInfo::on_finalize())
@@ -557,7 +557,7 @@ pub mod pallet {
             who: &T::AccountId,
             idty_index: <T as pallet_identity::Config>::IdtyIndex,
         ) -> Result<(), DispatchError> {
-            Pallet::<T>::mutate_current_pool(CurrentPoolIndex::<T>::get(), |current_pool| {
+            Pallet::<T>::mutate_current_pool(CurrentPeriodIndex::<T>::get() % 3, |current_pool| {
                 // extrinsics are transactional by default, this check might not be needed
                 ensure!(
                     current_pool.evaluations.len() < (MAX_EVALUATIONS_PER_SESSION as usize),
@@ -590,7 +590,7 @@ pub mod pallet {
             evaluator: <T as frame_system::Config>::AccountId,
             computation_result: ComputationResult,
         ) -> DispatchResult {
-            Pallet::<T>::mutate_next_pool(CurrentPoolIndex::<T>::get(), |result_pool| {
+            Pallet::<T>::mutate_next_pool(CurrentPeriodIndex::<T>::get() % 3, |result_pool| {
                 // evaluation must be provided for all identities (no more, no less)
                 ensure!(
                     computation_result.distances.len() == result_pool.evaluations.len(),

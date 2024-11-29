@@ -51,10 +51,10 @@ async fn main() {
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(duration));
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
         loop {
-            distance_oracle::run_and_save(&client, &settings).await;
+            distance_oracle::run(&client, &settings).await;
             interval.tick().await;
         }
     } else {
-        distance_oracle::run_and_save(&client, &settings).await;
+        distance_oracle::run(&client, &settings).await;
     }
 }

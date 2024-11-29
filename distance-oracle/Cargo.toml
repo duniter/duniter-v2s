@@ -23,7 +23,6 @@ std = [
 	"sp-runtime/std",
 ]
 try-runtime = ["sp-distance/try-runtime", "sp-runtime/try-runtime"]
-runtime-benchmarks = []
 
 [dependencies]
 clap = { workspace = true, features = ["derive"], optional = true }
