@@ -19,13 +19,14 @@
 use crate::runtime;
 use log::debug;
 
-use sp_core::H256;
-
 pub type Client = subxt::OnlineClient<crate::RuntimeConfig>;
 pub type AccountId = subxt::utils::AccountId32;
 pub type IdtyIndex = u32;
+pub type EvaluationPool =
+    runtime::runtime_types::pallet_distance::types::EvaluationPool<AccountId, IdtyIndex>;
+pub type H256 = subxt::utils::H256;
 
-pub async fn client(rpc_url: String) -> Client {
+pub async fn client(rpc_url: impl AsRef<str>) -> Client {
     Client::from_insecure_url(rpc_url)
         .await
         .expect("Cannot create RPC client")
@@ -40,11 +41,11 @@ pub async fn parent_hash(client: &Client) -> H256 {
         .hash()
 }
 
-pub async fn current_pool_index(client: &Client, parent_hash: H256) -> u32 {
+pub async fn current_period_index(client: &Client, parent_hash: H256) -> u32 {
     client
         .storage()
         .at(parent_hash)
-        .fetch(&runtime::storage().distance().current_pool_index())
+        .fetch(&runtime::storage().distance().current_period_index())
         .await
         .expect("Cannot fetch current pool index")
         .unwrap_or_default()
@@ -54,7 +55,7 @@ pub async fn current_pool(
     client: &Client,
     parent_hash: H256,
     current_pool_index: u32,
-) -> Option<runtime::runtime_types::pallet_distance::types::EvaluationPool<AccountId, IdtyIndex>> {
+) -> Option<EvaluationPool> {
     client
         .storage()
         .at(parent_hash)

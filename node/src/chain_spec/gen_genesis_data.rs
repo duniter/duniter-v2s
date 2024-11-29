@@ -100,8 +100,7 @@ pub struct GenesisIdentity {
     pub name: String,
     pub owner_key: AccountId,
     pub status: IdtyStatus,
-    pub expires_on: Option<u32>,
-    pub revokes_on: Option<u32>,
+    pub next_scheduled: u32,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -197,6 +196,10 @@ struct IdentityV1 {
 }
 
 /// identities
+// note: having membership_expire_on and identity_revoke_on is tricky
+// because the model of identity does not take into account the status
+// see this forum topic for a suggestion
+// https://forum.duniter.org/t/proposition-pour-supprimer-la-pallet-membership/11918
 #[derive(Clone, Deserialize, Serialize)]
 struct IdentityV2 {
     /// indentity index matching the order of appearance in the Ǧ1v1 blockchain
@@ -206,7 +209,7 @@ struct IdentityV2 {
     /// block at which the membership is set to expire (0 for expired members)
     membership_expire_on: u32,
     /// block at which the identity should be revoked (value in the past for already revoked identities)
-    identity_revokes_on: u32,
+    identity_revoke_on: u32,
     /// whether the identity is revoked (manually or automatically)
     revoked: bool,
     /// block at which the next cert can be emitted
@@ -376,6 +379,7 @@ where
         &mut inactive_identities,
         &mut memberships,
         &identities_v2,
+        &common_parameters,
     )?;
     if was_fatal {
         fatal = true;
@@ -1223,7 +1227,7 @@ fn genesis_data_to_identities_v2(
                         i.membership_expire_on,
                         genesis_timestamp,
                     ),
-                    identity_revokes_on: timestamp_to_relative_blocs(
+                    identity_revoke_on: timestamp_to_relative_blocs(
                         i.membership_revokes_on,
                         genesis_timestamp,
                     ),
@@ -1268,8 +1272,9 @@ fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKey
                 owner_key: get_account_id_from_seed::<sr25519::Public>(authority_name),
                 balance: common_parameters.balances_existential_deposit,
                 certs_received: HashMap::new(),
+                // note: in this context of generating genesis identities
                 membership_expire_on: common_parameters.membership_membership_period,
-                identity_revokes_on: common_parameters.identity_autorevocation_period,
+                identity_revoke_on: common_parameters.membership_membership_period,
                 revoked: false,
                 next_cert_issuable_on: 0,
             },
@@ -1319,6 +1324,7 @@ fn feed_identities(
     inactive_identities: &mut HashMap<u32, (String, IdtyStatus)>,
     memberships: &mut BTreeMap<u32, MembershipData>,
     identities_v2: &HashMap<String, IdentityV2>,
+    common_parameters: &CommonParameters,
 ) -> Result<(bool, Vec<GenesisIdentity>), String> {
     let mut fatal = false;
     let mut identities: Vec<GenesisIdentity> = Vec::new();
@@ -1327,25 +1333,6 @@ fn feed_identities(
         if !validate_idty_name(name) {
             return Err(format!("Identity name '{}' is invalid", &name));
         }
-
-        // TODO: re-check this code origin and wether it should be included or not
-        // do not check existential deposit of identities
-        // // check existential deposit
-        // if identity.balance < common_parameters.existencial_deposit {
-        //     if identity.membership_expire_on == 0 {
-        //         log::warn!(
-        //             "expired identity {name} has {} cǦT which is below {}",
-        //             identity.balance, common_parameters.existencial_deposit
-        //         );
-        //         fatal = true;
-        //     } else {
-        //         member identities can still be below existential deposit thanks to sufficient
-        //         log::info!(
-        //             "identity {name} has {} cǦT which is below {}",
-        //             identity.balance, common_parameters.existencial_deposit
-        //         );
-        //     }
-        // }
 
         // Money
         // check that wallet with same owner_key does not exist
@@ -1408,23 +1395,29 @@ fn feed_identities(
             owner_key: identity.owner_key.clone(),
             // but expired identities will just have their pseudonym reserved in the storage
             status,
-            expires_on: if status == IdtyStatus::Member {
-                Some(identity.membership_expire_on)
-            } else {
-                None
-            },
-            revokes_on: if status == IdtyStatus::NotMember {
-                Some(identity.identity_revokes_on)
-            } else {
-                None
+            next_scheduled: match status {
+                IdtyStatus::Unconfirmed | IdtyStatus::Unvalidated => {
+                    // these intermediary formats are disallowed in the genesis
+                    // since they correspond to offchain v1 data
+                    panic!("Unconfirmed or Unvalidated identity in genesis")
+                }
+                // Member identities schedule is managed by membership pallet
+                IdtyStatus::Member => 0,
+                // The identity will be scheduled for revocation after the auto-revocation period.
+                IdtyStatus::NotMember => common_parameters.identity_autorevocation_period,
+                // The identity will be scheduled for removal at the revoke block plus the deletion period.
+                IdtyStatus::Revoked => {
+                    identity.identity_revoke_on + common_parameters.identity_deletion_period
+                }
             },
         });
 
-        // insert the membershup data (only if not expired)
+        // insert the membership data (only if not expired)
         if !expired {
             memberships.insert(
                 identity.index,
                 MembershipData {
+                    // here we are using the correct expire block
                     expire_on: identity.membership_expire_on,
                 },
             );
@@ -1667,8 +1660,7 @@ where
             name: String::from_utf8(name.0.clone()).unwrap(),
             owner_key: owner_key.clone(),
             status: IdtyStatus::Member,
-            expires_on: Some(common_parameters.membership_membership_period),
-            revokes_on: None,
+            next_scheduled: 0,
         })
         .collect();
 
@@ -1758,8 +1750,16 @@ where
         identities,
         initial_authorities,
         initial_monetary_mass: initial_identities_len as u64 * initial_idty_balance,
+        // when generating data for local chain, we can set membersip expiration to membership period
         memberships: (1..=initial_identities.len())
-            .map(|i| (i as u32, MembershipData { expire_on: 0 }))
+            .map(|i| {
+                (
+                    i as u32,
+                    MembershipData {
+                        expire_on: common_parameters.membership_membership_period,
+                    },
+                )
+            })
             .collect(),
         parameters,
         common_parameters: None,
@@ -1935,6 +1935,7 @@ pub struct CommonParameters {
     pub identity_change_owner_key_period: u32,
     pub identity_idty_creation_period: u32,
     pub identity_autorevocation_period: u32,
+    pub identity_deletion_period: u32,
     pub membership_membership_period: u32,
     pub membership_membership_renewal_period: u32,
     pub cert_cert_period: u32,

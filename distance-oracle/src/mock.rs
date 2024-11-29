@@ -19,7 +19,6 @@ use crate::runtime::runtime_types::{
 };
 
 use dubp_wot::{data::rusty::RustyWebOfTrust, WebOfTrust, WotId};
-use sp_core::H256;
 use std::collections::BTreeSet;
 
 pub struct Client {
@@ -28,13 +27,14 @@ pub struct Client {
 }
 pub type AccountId = subxt::ext::sp_runtime::AccountId32;
 pub type IdtyIndex = u32;
+pub type H256 = subxt::utils::H256;
 
-pub struct EvaluationPool<AccountId: Ord, IdtyIndex> {
+pub struct EvaluationPool {
     pub evaluations: (Vec<(IdtyIndex, MedianAcc<Perbill>)>,),
     pub evaluators: BTreeSet<AccountId>,
 }
 
-pub async fn client(_rpc_url: String) -> Client {
+pub async fn client(_rpc_url: impl AsRef<str>) -> Client {
     unimplemented!()
 }
 
@@ -46,7 +46,7 @@ pub async fn parent_hash(_client: &Client) -> H256 {
     Default::default()
 }
 
-pub async fn current_pool_index(_client: &Client, _parent_hash: H256) -> u32 {
+pub async fn current_period_index(_client: &Client, _parent_hash: H256) -> u32 {
     0
 }
 
@@ -54,7 +54,7 @@ pub async fn current_pool(
     client: &Client,
     _parent_hash: H256,
     _current_session: u32,
-) -> Option<EvaluationPool<AccountId, IdtyIndex>> {
+) -> Option<EvaluationPool> {
     Some(EvaluationPool {
         evaluations: (client
             .wot

@@ -18,9 +18,10 @@ use super::*;
 use crate::chain_spec::gen_genesis_data::{
     AuthorityKeys, CommonParameters, GenesisIdentity, SessionKeysProvider,
 };
-use common_runtime::{constants::*, entities::IdtyData, GenesisIdty, IdtyStatus};
+use common_runtime::{constants::*, entities::IdtyData, GenesisIdty};
 use g1_runtime::{
-    opaque::SessionKeys, pallet_universal_dividend, parameters, Runtime, WASM_BINARY,
+    opaque::SessionKeys, pallet_universal_dividend, parameters, Runtime, RuntimeGenesisConfig,
+    WASM_BINARY,
 };
 use sc_service::ChainType;
 use serde::Deserialize;
@@ -73,6 +74,7 @@ fn get_parameters(_parameters_from_file: &Option<GenesisParameters>) -> CommonPa
         identity_change_owner_key_period: parameters::ChangeOwnerKeyPeriod::get(),
         identity_idty_creation_period: parameters::IdtyCreationPeriod::get(),
         identity_autorevocation_period: parameters::AutorevocationPeriod::get(),
+        identity_deletion_period: parameters::DeletionPeriod::get(),
         membership_membership_period: parameters::MembershipPeriod::get(),
         membership_membership_renewal_period: parameters::MembershipRenewalPeriod::get(),
         cert_max_by_issuer: parameters::MaxByIssuer::get(),
@@ -191,8 +193,7 @@ fn genesis_data_to_g1_genesis_conf(
                          name,
                          owner_key,
                          status,
-                         expires_on,
-                         revokes_on,
+                         next_scheduled,
                      }| GenesisIdty {
                         index: idty_index,
                         name: common_runtime::IdtyName::from(name.as_str()),
@@ -201,16 +202,7 @@ fn genesis_data_to_g1_genesis_conf(
                             next_creatable_identity_on: 0,
                             old_owner_key: None,
                             owner_key,
-                            next_scheduled: match status {
-                                IdtyStatus::Unconfirmed | IdtyStatus::Unvalidated => {
-                                    panic!("Unconfirmed or Unvalidated identity in genesis")
-                                }
-                                IdtyStatus::Member => expires_on.expect("must have expires_on set"),
-                                IdtyStatus::Revoked => 0,
-                                IdtyStatus::NotMember => {
-                                    revokes_on.expect("must have revokes_on set")
-                                }
-                            },
+                            next_scheduled,
                             status,
                         },
                     },

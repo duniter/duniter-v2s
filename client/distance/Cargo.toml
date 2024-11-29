@@ -13,14 +13,10 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [features]
 std = [
-	"codec/std",
 	"frame-support/std",
-	"log/std",
 	"pallet-distance/std",
-	"scale-info/std",
 	"sp-core/std",
 	"sp-distance/std",
-	"sp-keystore/std",
 	"sp-runtime/std",
 ]
 runtime-benchmarks = [
@@ -36,14 +32,11 @@ try-runtime = [
 ]
 
 [dependencies]
-codec = { workspace = true, features = ["derive"] }
 frame-support = { workspace = true }
 log = { workspace = true }
 pallet-distance = { workspace = true }
 sc-client-api = { workspace = true }
-scale-info = { workspace = true, features = ["derive"] }
 sp-core = { workspace = true }
 sp-distance = { workspace = true }
-sp-keystore = { workspace = true }
 sp-runtime = { workspace = true }
 thiserror = { workspace = true }

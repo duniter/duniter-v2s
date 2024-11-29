@@ -104,30 +104,22 @@ macro_rules! pallets_config {
 
         impl pallet_duniter_account::Config for Runtime {
             // does currency adapter in any case, but adds "refund with quota" feature
-            type InnerOnChargeTransaction = FungibleAdapter<Balances, HandleFees>;
+            type InnerOnChargeTransaction =
+                FungibleAdapter<Balances, HandleFees<TreasuryAccount, Balances>>;
             type Refund = Quota;
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = weights::pallet_duniter_account::WeightInfo<Runtime>;
         }
 
-        // QUOTA //
-        pub struct TreasuryAccountId;
-        impl frame_support::pallet_prelude::Get<AccountId> for TreasuryAccountId {
-            fn get() -> AccountId {
-                // TODO optimize: make this a constant
-                // calling Treasury.account_id() actually requires computation
-                Treasury::account_id()
-            }
-        }
         parameter_types! {
-                    pub const ReloadRate: BlockNumber = 1 * HOURS; // faster than DAYS
-                    pub const MaxQuota: Balance = 1000; // 10 ĞD
-                    pub const MaxNominators: u32 = 64;
-        pub TreasuryAccount: AccountId = Treasury::account_id(); // TODO
-                }
+            pub const ReloadRate: BlockNumber = 1 * HOURS; // faster than DAYS
+            pub const MaxQuota: Balance = 1000; // 10 ĞD
+            pub const MaxNominators: u32 = 64;
+            pub TreasuryAccount: AccountId = Treasury::account_id();
+        }
         impl pallet_quota::Config for Runtime {
             type MaxQuota = MaxQuota;
-            type RefundAccount = TreasuryAccountId;
+            type RefundAccount = TreasuryAccount;
             type ReloadRate = ReloadRate;
             type RuntimeEvent = RuntimeEvent;
             type WeightInfo = weights::pallet_quota::WeightInfo<Runtime>;
@@ -162,7 +154,7 @@ macro_rules! pallets_config {
         impl pallet_balances::Config for Runtime {
             type AccountStore = Account;
             type Balance = Balance;
-            type DustRemoval = HandleFees;
+            type DustRemoval = HandleFees<TreasuryAccount, Balances>;
             type ExistentialDeposit = ExistentialDeposit;
             type FreezeIdentifier = ();
             type MaxFreezes = frame_support::pallet_prelude::ConstU32<0>;
@@ -174,20 +166,6 @@ macro_rules! pallets_config {
             type RuntimeHoldReason = RuntimeHoldReason;
             type WeightInfo = weights::pallet_balances::WeightInfo<Runtime>;
         }
-
-        type CreditOf = frame_support::traits::tokens::fungible::Credit<AccountId, Balances>;
-        pub struct HandleFees;
-        impl frame_support::traits::OnUnbalanced<CreditOf> for HandleFees {
-            fn on_nonzero_unbalanced(amount: CreditOf) {
-                // fee is moved to treasury
-                let _ = Balances::deposit(
-                    &Treasury::account_id(),
-                    amount.peek(),
-                    frame_support::traits::tokens::Precision::Exact,
-                );
-            }
-        }
-        pub struct OnChargeTransaction;
 
         parameter_types! {
         pub Target: Perquintill = Perquintill::from_percent(25);
@@ -336,7 +314,7 @@ macro_rules! pallets_config {
             type GetCurrentEpochIndex = GetCurrentEpochIndex<Self>;
             type MaxRequests = frame_support::traits::ConstU32<100>;
             type OnFilledRandomness = ();
-            type OnUnbalanced = HandleFees;
+            type OnUnbalanced = HandleFees<TreasuryAccount, Balances>;
             type ParentBlockRandomness = pallet_babe::ParentBlockRandomness<Self>;
             type RandomnessFromOneEpochAgo = pallet_babe::RandomnessFromOneEpochAgo<Self>;
             type RequestPrice = frame_support::traits::ConstU64<2_000>;
@@ -422,19 +400,12 @@ macro_rules! pallets_config {
 
         // UNIVERSAL DIVIDEND //
 
-        pub struct MembersCount;
-        impl frame_support::pallet_prelude::Get<Balance> for MembersCount {
-            fn get() -> Balance {
-                <Membership as sp_membership::traits::MembersCount>::members_count() as Balance
-            }
-        }
-
         impl pallet_universal_dividend::Config for Runtime {
             type Currency = Balances;
             #[cfg(feature = "runtime-benchmarks")]
             type IdtyAttr = Identity;
             type MaxPastReeval = frame_support::traits::ConstU32<160>;
-            type MembersCount = MembersCount;
+            type MembersCount = common_runtime::providers::MembersCount<Membership>;
             type MembersStorage = common_runtime::providers::UdMembersStorage<Runtime>;
             type MomentIntoBalance = sp_runtime::traits::ConvertInto;
             type RuntimeEvent = RuntimeEvent;
@@ -454,7 +425,6 @@ macro_rules! pallets_config {
 
         parameter_types! {
             pub const ValidationPeriod: BlockNumber = 2 * MONTHS;
-            pub const DeletionPeriod: BlockNumber = 10 * YEARS;
         }
         impl pallet_identity::Config for Runtime {
             type AccountLinker = Account;
@@ -520,7 +490,7 @@ macro_rules! pallets_config {
             type EvaluationPrice = frame_support::traits::ConstU64<1000>;
             type MaxRefereeDistance = MaxRefereeDistance;
             type MinAccessibleReferees = MinAccessibleReferees;
-            type OnUnbalanced = HandleFees;
+            type OnUnbalanced = HandleFees<TreasuryAccount, Balances>;
             type OnValidDistanceStatus = Wot;
             type RuntimeEvent = RuntimeEvent;
             type RuntimeHoldReason = RuntimeHoldReason;

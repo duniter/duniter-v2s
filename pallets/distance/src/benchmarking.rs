@@ -21,7 +21,7 @@ use super::*;
 
 use codec::Encode;
 use frame_benchmarking::v2::*;
-use frame_support::traits::{Get, OnFinalize, OnInitialize};
+use frame_support::traits::{fungible::Mutate, Get, OnFinalize, OnInitialize};
 use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use scale_info::prelude::vec;
 use sp_runtime::Perbill;
@@ -186,7 +186,7 @@ mod benchmarks {
     #[benchmark]
     fn do_evaluation_success() -> Result<(), BenchmarkError> {
         // Benchmarking do_evaluation in case of a single success.
-        CurrentPoolIndex::<T>::put(0);
+        CurrentPeriodIndex::<T>::put(0);
         // More than membership renewal to avoid antispam
         frame_system::pallet::Pallet::<T>::set_block_number(500_000_000u32.into());
         let idty = T::IdtyIndex::one();
@@ -203,7 +203,7 @@ mod benchmarks {
             .into(),
         );
 
-        CurrentPoolIndex::<T>::put(2);
+        CurrentPeriodIndex::<T>::put(2);
         Pallet::<T>::force_update_evaluation(
             RawOrigin::Root.into(),
             caller,
@@ -230,7 +230,7 @@ mod benchmarks {
     #[benchmark]
     fn do_evaluation_failure() -> Result<(), BenchmarkError> {
         // Benchmarking do_evaluation in case of a single failure.
-        CurrentPoolIndex::<T>::put(0);
+        CurrentPeriodIndex::<T>::put(0);
         // More than membership renewal to avoid antispam
         frame_system::pallet::Pallet::<T>::set_block_number(500_000_000u32.into());
         let idty = T::IdtyIndex::one();
@@ -247,7 +247,7 @@ mod benchmarks {
             .into(),
         );
 
-        CurrentPoolIndex::<T>::put(2);
+        CurrentPeriodIndex::<T>::put(2);
         Pallet::<T>::force_update_evaluation(
             RawOrigin::Root.into(),
             caller,

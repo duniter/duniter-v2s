@@ -1,0 +1,2 @@
+#Type	Name	ID	GECOS			Home directory		Shell
+u		duniter	-	"Duniter user"	/var/lib/duniter	/sbin/nologin

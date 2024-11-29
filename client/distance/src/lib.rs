@@ -14,10 +14,36 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Distance Oracle Inherent Data Provider
+//!
+//! This crate provides functionality for creating an **inherent data provider**
+//! specifically designed for the "Distance Oracle".
+//! The inherent data provider is responsible for fetching and delivering
+//! computation results required for the runtime to process distance evaluations.
+//!
+//! ## Relationship with Distance Oracle
+//!
+//! The **distance-oracle** is responsible for computing distance evaluations,
+//! storing the results to be read in the next period, and saving them to files.
+//! These files are then read by **this inherent data provider**
+//! to provide the required data to the runtime.
+//!
+//! ## Overview
+//!
+//! - Retrieves **period index** and **evaluation results** from the storage and file system.
+//! - Determines whether the computation results for the current period have already been published.
+//! - Reads and parses evaluation result files when available, providing the necessary data to the runtime.
+
 use frame_support::pallet_prelude::*;
 use sc_client_api::{ProvideUncles, StorageKey, StorageProvider};
 use sp_runtime::{generic::BlockId, traits::Block as BlockT, AccountId32};
 use std::path::PathBuf;
+
+/// The file version that should match the distance oracle one.
+/// This ensures that the smith avoids accidentally submitting invalid data
+/// in case there are changes in logic between the runtime and the oracle,
+/// thereby preventing potential penalties.
+const VERSION_PREFIX: &str = "001-";
 
 type IdtyIndex = u32;
 
@@ -40,19 +66,19 @@ where
     Backend: sc_client_api::Backend<B>,
     IdtyIndex: Decode + Encode + PartialEq + TypeInfo,
 {
-    // Retrieve the pool_index from storage. If storage is inaccessible or the data is corrupted,
+    // Retrieve the period_index from storage. If storage is inaccessible or the data is corrupted,
     // return the appropriate error.
-    let pool_index = client
+    let period_index = client
         .storage(
             parent,
             &StorageKey(
-                frame_support::storage::storage_prefix(b"Distance", b"CurrentPoolIndex").to_vec(),
+                frame_support::storage::storage_prefix(b"Distance", b"CurrentPeriodIndex").to_vec(),
             ),
         )?
         .map_or_else(
             || {
                 Err(sc_client_api::blockchain::Error::Storage(
-                    "CurrentPoolIndex value not found".to_string(),
+                    "CurrentPeriodIndex value not found".to_string(),
                 ))
             },
             |raw| {
@@ -70,7 +96,7 @@ where
             &StorageKey(
                 frame_support::storage::storage_prefix(
                     b"Distance",
-                    match pool_index {
+                    match period_index % 3 {
                         0 => b"EvaluationPool0",
                         1 => b"EvaluationPool1",
                         2 => b"EvaluationPool2",
@@ -85,14 +111,34 @@ where
         });
 
     // Have we already published a result for this period?
-    // The block author is guaranteed to be in the owner_keys.
     if let Some(results) = published_results {
-        if owner_keys
-            .iter()
-            .map(|&key| sp_runtime::AccountId32::new(key.0))
-            .any(|key| results.evaluators.contains(&key))
-        {
-            log::debug!("🧙 [distance oracle] Already published a result for this period");
+        // Find the account associated with the BABE key that is in our owner keys.
+        let mut local_account = None;
+        for key in owner_keys {
+            // Session::KeyOwner is StorageMap<_, Twox64Concat, (KeyTypeId, Vec<u8>), AccountId32, OptionQuery>
+            // Slices (variable length) and array (fixed length) are encoded differently, so the `.as_slice()` is needed
+            let item_key = (sp_runtime::KeyTypeId(*b"babe"), key.0.as_slice()).encode();
+            let mut storage_key =
+                frame_support::storage::storage_prefix(b"Session", b"KeyOwner").to_vec();
+            storage_key.extend_from_slice(&sp_core::twox_64(&item_key));
+            storage_key.extend_from_slice(&item_key);
+
+            if let Some(raw_data) = client.storage(parent, &StorageKey(storage_key))? {
+                if let Ok(key_owner) = AccountId32::decode(&mut &raw_data.0[..]) {
+                    local_account = Some(key_owner);
+                    break;
+                } else {
+                    log::warn!("🧙 [distance oracle] Cannot decode key owner value");
+                }
+            }
+        }
+        if let Some(local_account) = local_account {
+            if results.evaluators.contains(&local_account) {
+                log::debug!("🧙 [distance oracle] Already published a result for this period");
+                return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
+            }
+        } else {
+            log::error!("🧙 [distance oracle] Cannot find our BABE owner key");
             return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
         }
     }
@@ -100,14 +146,16 @@ where
     // Read evaluation result from file, if it exists
     log::debug!(
         "🧙 [distance oracle] Reading evaluation result from file {:?}",
-        distance_dir.clone().join(pool_index.to_string())
+        distance_dir.clone().join(period_index.to_string())
     );
-    let evaluation_result = match std::fs::read(distance_dir.join(pool_index.to_string())) {
+    let evaluation_result = match std::fs::read(
+        distance_dir.join(VERSION_PREFIX.to_owned() + &period_index.to_string()),
+    ) {
         Ok(data) => data,
         Err(e) => {
             match e.kind() {
                 std::io::ErrorKind::NotFound => {
-                    log::debug!("🧙 [distance oracle] Evaluation result file not found");
+                    log::debug!("🧙 [distance oracle] Evaluation result file not found. Please ensure that the oracle version matches {}", VERSION_PREFIX);
                 }
                 _ => {
                     log::error!(

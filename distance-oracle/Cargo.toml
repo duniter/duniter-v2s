@@ -12,27 +12,23 @@ required-features = ["standalone"]
 
 [features]
 default = ["standalone", "std"]
+# Feature standalone is for CLI executable
 standalone = ["clap", "tokio"]
+# Feature std is needed
 std = [
 	"codec/std",
 	"fnv/std",
-	"hex/std",
-	"log/std",
-	"num-traits/std",
 	"sp-core/std",
 	"sp-distance/std",
 	"sp-runtime/std",
 ]
 try-runtime = ["sp-distance/try-runtime", "sp-runtime/try-runtime"]
-runtime-benchmarks = []
 
 [dependencies]
 clap = { workspace = true, features = ["derive"], optional = true }
 codec = { workspace = true }
 fnv = { workspace = true }
-hex = { workspace = true }
 log = { workspace = true }
-num-traits = { workspace = true }
 rayon = { workspace = true }
 simple_logger = { workspace = true }
 sp-core = { workspace = true }

@@ -313,6 +313,7 @@ pub(super) fn gen_doc() -> Result<()> {
     Command::new("cargo")
         .args([
             "doc",
+            "--package=duniter",
             "--package=pallet-*",
             "--package=*-runtime",
             "--package=*distance*",

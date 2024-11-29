@@ -14,6 +14,38 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+//! # Distance Oracle
+//!
+//! The **Distance Oracle** is a standalone program designed to calculate the distances between identities in the Duniter Web of Trust (WoT). This process is computationally intensive and is therefore decoupled from the main runtime. It allows smith users to choose whether to run the oracle and provide results to the network.
+//!
+//! The **oracle** works in conjunction with the **Inherent Data Provider** and the **Distance Pallet** in the runtime to deliver periodic computation results. The **Inherent Data Provider** fetches and supplies these results to the runtime, ensuring that the necessary data for distance evaluations is available to be processed at the appropriate time in the runtime lifecycle.
+//!
+//! ## Structure
+//!
+//! The Distance Oracle is organized into the following modules:
+//!
+//! 1. **`/distance-oracle/`**: Contains the main binary for executing the distance computation.
+//! 2. **`/primitives/distance/`**: Defines primitive types shared between the client and runtime.
+//! 3. **`/client/distance/`**: Exposes the `create_distance_inherent_data_provider`, which feeds data into the runtime through the Inherent Data Provider.
+//! 4. **`/pallets/distance/`**: A pallet that handles distance-related types, traits, storage, and hooks in the runtime, coordinating the interaction between the oracle, inherent data provider, and runtime.
+//!
+//! ## How it works
+//! - The **Distance Pallet** adds an evaluation request at period `i` in the runtime.
+//! - The **Distance Oracle** evaluates this request at period `i + 1`, computes the necessary results and stores them on disk.
+//! - The **Inherent Data Provider** reads this evaluation result from disk at period `i + 2` and provides it to the runtime to perform the required operations.
+//!
+//! ## Usage
+//!
+//! ### Docker Integration
+//!
+//! To run the Distance Oracle, use the provided Docker setup. Refer to the [docker-compose.yml](../docker-compose.yml) file for an example configuration.
+//!
+//! Example Output:
+//! ```text
+//! 2023-12-09T14:45:05.942Z INFO [distance_oracle] Nothing to do: Pool does not exist
+//! Waiting 1800 seconds before next execution...
+//! ```
+
 #[cfg(not(test))]
 pub mod api;
 #[cfg(test)]
@@ -24,15 +56,20 @@ mod tests;
 #[cfg(test)]
 pub use mock as api;
 
-use api::{AccountId, IdtyIndex};
+use api::{AccountId, EvaluationPool, IdtyIndex, H256};
 
 use codec::Encode;
 use fnv::{FnvHashMap, FnvHashSet};
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::{io::Write, path::PathBuf};
 
-// TODO select metadata file using features
+/// The file version must match the version used by the inherent data provider.
+/// This ensures that the smith avoids accidentally submitting invalid data
+/// in case there are changes in logic between the runtime and the oracle,
+/// thereby preventing potential penalties.
+const VERSION_PREFIX: &str = "001-";
+
 #[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
 pub mod runtime {}
 
@@ -42,7 +79,7 @@ impl subxt::config::Config for RuntimeConfig {
     type Address = subxt::ext::sp_runtime::MultiAddress<Self::AccountId, u32>;
     type AssetId = ();
     type ExtrinsicParams = subxt::config::substrate::SubstrateExtrinsicParams<Self>;
-    type Hash = sp_core::H256;
+    type Hash = subxt::utils::H256;
     type Hasher = subxt::config::substrate::BlakeTwo256;
     type Header =
         subxt::config::substrate::SubstrateHeader<u32, subxt::config::substrate::BlakeTwo256>;
@@ -83,10 +120,18 @@ impl Default for Settings {
     }
 }
 
-/// Asynchronously runs a computation using the provided client and saves the result to a file.
-pub async fn run_and_save(client: &api::Client, settings: Settings) {
-    let Some((evaluation, current_pool_index, evaluation_result_path)) =
-        run(client, &settings, true).await
+/// Runs the evaluation process, saves the results, and cleans up old files.
+///
+/// This function performs the following steps:
+/// 1. Runs the evaluation task by invoking `compute_distance_evaluation`, which provides:
+///    - The evaluation results.
+///    - The current period index.
+///    - The file path where the results should be stored.
+/// 2. Saves the evaluation results to a file in the specified directory.
+/// 3. Cleans up outdated evaluation files.
+pub async fn run(client: &api::Client, settings: &Settings) {
+    let Some((evaluation, current_period_index, evaluation_result_path)) =
+        compute_distance_evaluation(client, settings).await
     else {
         return;
     };
@@ -114,83 +159,52 @@ pub async fn run_and_save(client: &api::Client, settings: Settings) {
             )
         });
 
-    // Remove old results
-    let mut files_to_remove = Vec::new();
-    for entry in settings
+    // When a new result is written, remove old results except for the current period used by the inherent logic and the next period that was just generated.
+    settings
         .evaluation_result_dir
         .read_dir()
         .unwrap_or_else(|e| {
             panic!(
-                "Cannot read distance evaluation result directory `{0:?}`: {e:?}",
-                settings.evaluation_result_dir
+                "Cannot read distance evaluation result directory `{:?}`: {:?}",
+                settings.evaluation_result_dir, e
             )
         })
         .flatten()
-    {
-        if let Ok(entry_name) = entry.file_name().into_string() {
-            if let Ok(entry_pool) = entry_name.parse::<isize>() {
-                if current_pool_index as isize - entry_pool > 3 {
-                    files_to_remove.push(entry.path());
-                }
-            }
-        }
-    }
-    files_to_remove.into_iter().for_each(|f| {
-        std::fs::remove_file(&f)
-            .unwrap_or_else(move |e| warn!("Cannot remove old result file `{f:?}`: {e:?}"));
-    });
+        .filter_map(|entry| {
+            entry
+                .file_name()
+                .to_str()
+                .and_then(|name| {
+                    name.split('-').last()?.parse::<u32>().ok().filter(|&pool| {
+                        pool != current_period_index && pool != current_period_index + 1
+                    })
+                })
+                .map(|_| entry.path())
+        })
+        .for_each(|path| {
+            std::fs::remove_file(&path)
+                .unwrap_or_else(|e| warn!("Cannot remove file `{:?}`: {:?}", path, e));
+        });
 }
 
-/// Asynchronously runs a computation based on the provided client and settings.
-/// Returns `Option<(evaluation, current_pool_index, evaluation_result_path)>`.
-pub async fn run(
+/// Evaluates distance for the current period and prepares results for storage.
+///
+/// This function performs the following steps:
+/// 1. Prepares the evaluation context using `prepare_evaluation_context`. If the context is not
+///    ready (e.g., no pending evaluations, or results already exist), it returns `None`.
+/// 2. Evaluates distances for all identities in the evaluation pool.
+/// 3. Returns the evaluation results, the current period index, and the path to store the results.
+///
+pub async fn compute_distance_evaluation(
     client: &api::Client,
     settings: &Settings,
-    handle_fs: bool,
 ) -> Option<(Vec<sp_runtime::Perbill>, u32, PathBuf)> {
-    let parent_hash = api::parent_hash(client).await;
+    let (evaluation_block, current_period_index, evaluation_pool, evaluation_result_path) =
+        prepare_evaluation_context(client, settings).await?;
+
+    info!("Evaluating distance for period {}", current_period_index);
 
     let max_depth = api::max_referee_distance(client).await;
-
-    let current_pool_index = api::current_pool_index(client, parent_hash).await;
-
-    // Fetch the pending identities
-    let Some(evaluation_pool) = api::current_pool(client, parent_hash, current_pool_index).await
-    else {
-        info!("Nothing to do: Pool does not exist");
-        return None;
-    };
-
-    // Stop if nothing to evaluate
-    if evaluation_pool.evaluations.0.is_empty() {
-        info!("Nothing to do: Pool is empty");
-        return None;
-    }
-
-    let evaluation_result_path = settings
-        .evaluation_result_dir
-        .join((current_pool_index + 1).to_string());
-
-    if handle_fs {
-        // Stop if already evaluated
-        if evaluation_result_path
-            .try_exists()
-            .expect("Result path unavailable")
-        {
-            info!("Nothing to do: File already exists");
-            return None;
-        }
-
-        std::fs::create_dir_all(&settings.evaluation_result_dir).unwrap_or_else(|e| {
-            error!(
-                "Cannot create distance evaluation result directory `{0:?}`: {e:?}",
-                settings.evaluation_result_dir
-            );
-        });
-    }
-
-    info!("Evaluating distance for pool {}", current_pool_index);
-    let evaluation_block = api::evaluation_block(client, parent_hash).await;
 
     // member idty -> issued certs
     let mut members = FnvHashMap::<IdtyIndex, u32>::default();
@@ -245,9 +259,75 @@ pub async fn run(
         .map(|(idty, _)| distance_rule(&received_certs, &referees, max_depth, *idty))
         .collect();
 
-    Some((evaluation, current_pool_index, evaluation_result_path))
+    Some((evaluation, current_period_index, evaluation_result_path))
 }
 
+/// Prepares the context for the next evaluation task.
+///
+/// This function performs the following steps:
+/// 1. Fetches the parent hash of the latest block from the API.
+/// 2. Determines the current period index.
+/// 3. Retrieves the evaluation pool for the current period.
+///    - If the pool does not exist or is empty, it returns `None`.
+/// 4. Checks if the evaluation result file for the next period already exists.
+///    - If it exists, the task has already been completed, so the function returns `None`.
+/// 5. Ensures the evaluation result directory is available, creating it if necessary.
+/// 6. Retrieves the block number of the evaluation.
+///
+async fn prepare_evaluation_context(
+    client: &api::Client,
+    settings: &Settings,
+) -> Option<(H256, u32, EvaluationPool, PathBuf)> {
+    let parent_hash = api::parent_hash(client).await;
+
+    let current_period_index = api::current_period_index(client, parent_hash).await;
+
+    // Fetch the pending identities
+    let Some(evaluation_pool) =
+        api::current_pool(client, parent_hash, current_period_index % 3).await
+    else {
+        info!("Nothing to do: Pool does not exist");
+        return None;
+    };
+
+    // Stop if nothing to evaluate
+    if evaluation_pool.evaluations.0.is_empty() {
+        info!("Nothing to do: Pool is empty");
+        return None;
+    }
+
+    // The result is saved in a file named `current_period_index + 1`.
+    // It will be picked up during the next period by the inherent.
+    let evaluation_result_path = settings
+        .evaluation_result_dir
+        .join(VERSION_PREFIX.to_owned() + &(current_period_index + 1).to_string());
+
+    // Stop if already evaluated
+    if evaluation_result_path
+        .try_exists()
+        .expect("Result path unavailable")
+    {
+        info!("Nothing to do: File already exists");
+        return None;
+    }
+
+    #[cfg(not(test))]
+    std::fs::create_dir_all(&settings.evaluation_result_dir).unwrap_or_else(|e| {
+        panic!(
+            "Cannot create distance evaluation result directory `{0:?}`: {e:?}",
+            settings.evaluation_result_dir
+        );
+    });
+
+    Some((
+        api::evaluation_block(client, parent_hash).await,
+        current_period_index,
+        evaluation_pool,
+        evaluation_result_path,
+    ))
+}
+
+/// Recursively explores the certification graph to identify referees accessible within a given depth.
 fn distance_rule_recursive(
     received_certs: &FnvHashMap<IdtyIndex, Vec<IdtyIndex>>,
     referees: &FnvHashMap<IdtyIndex, u32>,
@@ -293,7 +373,7 @@ fn distance_rule_recursive(
     }
 }
 
-/// Returns the fraction `nb_accessible_referees / nb_referees`
+/// Calculates the fraction of accessible referees to total referees for a given identity.
 fn distance_rule(
     received_certs: &FnvHashMap<IdtyIndex, Vec<IdtyIndex>>,
     referees: &FnvHashMap<IdtyIndex, u32>,

@@ -106,7 +106,7 @@ std = [
 	"sp-transaction-storage-proof/std",
 	"sp-trie/std",
 ]
-standalone = ["distance-oracle?/standalone"]
+distance-oracle = ["dep:distance-oracle"]
 
 [dependencies]
 async-io = { workspace = true }
@@ -125,6 +125,7 @@ num-format = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 # Local
 common-runtime = { workspace = true }
@@ -210,4 +211,15 @@ assets = [
 		"/usr/bin/duniter2",
 		"755",
 	],
+]
+
+[package.metadata.generate-rpm]
+assets = [
+	{ source = "../target/release/duniter", dest = "/usr/bin/duniter2", mode = "755" },
+	{ source = "../resources/debian/duniter.sysusers", dest = "/usr/lib/sysusers.d/duniter.conf", mode = "0644" },
+	{ source = "../resources/debian/env_file", dest = "/etc/duniter/env_file", config = true, mode = "0640" },
+	{ source = "../LICENSE", dest = "/usr/share/licenses/duniter/LICENSE" },
+	{ source = "../resources/debian/duniter-mirror.service", dest = "/usr/lib/systemd/system/duniter-mirror.service", mode = "0644" },
+	{ source = "../resources/debian/duniter-smith.service", dest = "/usr/lib/systemd/system/duniter-smith.service", mode = "0644" },
+	{ source = "../resources/debian/duniter-smith.service", dest = "/usr/lib/systemd/system/distance-oracle.service", mode = "0644" },
 ]

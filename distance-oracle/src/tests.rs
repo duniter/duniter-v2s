@@ -58,7 +58,7 @@ async fn test_distance_against_v1() {
     client.pool_len = n;
 
     let t_a = std::time::Instant::now();
-    let results = crate::run(&client, &Default::default(), false)
+    let results = crate::compute_distance_evaluation(&client, &Default::default())
         .await
         .unwrap();
     println!("new time: {}", t_a.elapsed().as_millis());

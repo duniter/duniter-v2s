@@ -35,10 +35,7 @@ pub use common_runtime::{
     constants::*, entities::*, handlers::*, AccountId, Address, Balance, BlockNumber,
     FullIdentificationOfImpl, GetCurrentEpochIndex, Hash, Header, IdtyIndex, Index, Signature,
 };
-use frame_support::{
-    traits::{fungible::Balanced, Contains, Imbalance},
-    PalletId,
-};
+use frame_support::{traits::Contains, PalletId};
 pub use frame_system::Call as SystemCall;
 use frame_system::EnsureRoot;
 pub use pallet_balances::Call as BalancesCall;

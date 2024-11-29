@@ -112,6 +112,7 @@ parameter_types! {
     pub const IdtyCreationPeriod: BlockNumber = MONTHS;
     pub const ValidationPeriod: BlockNumber = YEARS;
     pub const AutorevocationPeriod: BlockNumber = YEARS;
+    pub const DeletionPeriod: BlockNumber = 10 * YEARS;
 }
 
 // Membership

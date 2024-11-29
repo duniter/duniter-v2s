@@ -59,7 +59,7 @@ impl subxt::config::Config for GdevConfig {
     type Address = sp_runtime::MultiAddress<Self::AccountId, u32>;
     type AssetId = ();
     type ExtrinsicParams = SubstrateExtrinsicParams<Self>;
-    type Hash = sp_core::H256;
+    type Hash = subxt::utils::H256;
     type Hasher = subxt::config::substrate::BlakeTwo256;
     type Header =
         subxt::config::substrate::SubstrateHeader<u32, subxt::config::substrate::BlakeTwo256>;
