@@ -125,9 +125,10 @@ build_deb:
     - if: $CI_COMMIT_TAG
       when: never
     - <<: *is_network_branch
-      when: manual
+      when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
       when: manual
+    - when: manual
   variables:
     DEBIAN_FRONTEND: noninteractive
   script:
@@ -147,9 +148,10 @@ build_rpm:
     - if: $CI_COMMIT_TAG
       when: never
     - <<: *is_network_branch
-      when: manual
+      when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
       when: manual
+    - when: manual
   script:
     - cargo install cargo-generate-rpm
     - cargo build -Zgit=shallow-deps --release
