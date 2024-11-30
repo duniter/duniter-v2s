@@ -503,7 +503,15 @@ where
                                     FullBackend,
                                 >(
                                     &*client, parent, distance_dir, &babe_owner_keys.clone()
-                                )?;
+                                );
+                            // provides fallback when distance inherent data provider crashes
+                            let distance = match distance {
+                                Ok(distance) => distance,
+                                Err(e) => {
+                                    log::warn!("{:?}", e);
+                                    sp_distance::InherentDataProvider::new(None)
+                                }
+                            };
                             Ok((timestamp, babe, distance))
                         }
                     },
