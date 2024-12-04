@@ -11,6 +11,7 @@
 </div>
 
 ## Documentation TOC
+Full up to date technical doc (auto-generated) : https://doc-duniter-org.ipns.pagu.re/gdev_runtime/
 
 - [README](./README.md)
   - [Use](#use)
