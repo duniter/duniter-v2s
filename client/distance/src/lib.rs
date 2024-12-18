@@ -59,37 +59,35 @@ pub fn create_distance_inherent_data_provider<B, C, Backend>(
     parent: B::Hash,
     distance_dir: PathBuf,
     owner_keys: &[sp_core::sr25519::Public],
-) -> Result<sp_distance::InherentDataProvider<IdtyIndex>, sc_client_api::blockchain::Error>
+) -> sp_distance::InherentDataProvider<IdtyIndex>
 where
     B: BlockT,
     C: ProvideUncles<B> + StorageProvider<B, Backend>,
     Backend: sc_client_api::Backend<B>,
     IdtyIndex: Decode + Encode + PartialEq + TypeInfo,
 {
-    // Retrieve the period_index from storage. If storage is inaccessible or the data is corrupted,
-    // return the appropriate error.
+    // Retrieve the period_index from storage.
     let period_index = client
         .storage(
             parent,
             &StorageKey(
                 frame_support::storage::storage_prefix(b"Distance", b"CurrentPeriodIndex").to_vec(),
             ),
-        )?
-        .map_or_else(
-            || {
-                Err(sc_client_api::blockchain::Error::Storage(
-                    "CurrentPeriodIndex value not found".to_string(),
-                ))
-            },
-            |raw| {
-                u32::decode(&mut &raw.0[..])
-                    .map_err(|e| sc_client_api::blockchain::Error::from_state(Box::new(e)))
-            },
-        )?;
+        )
+        .ok()
+        .flatten()
+        .and_then(|raw| u32::decode(&mut &raw.0[..]).ok());
+
+    // Return early if the storage is inaccessible or the data is corrupted.
+    let period_index = match period_index {
+        Some(index) => index,
+        None => {
+            log::error!("🧙 [distance inherent] PeriodIndex decoding failed.");
+            return sp_distance::InherentDataProvider::<IdtyIndex>::new(None);
+        }
+    };
 
     // Retrieve the published_results from storage.
-    // Return an error if the storage is inaccessible.
-    // If accessible, continue execution. If None, it means there are no published_results at this block.
     let published_results = client
         .storage(
             parent,
@@ -105,47 +103,61 @@ where
                 )
                 .to_vec(),
             ),
-        )?
+        )
+        .ok()
+        .flatten()
         .and_then(|raw| {
             pallet_distance::EvaluationPool::<AccountId32, IdtyIndex>::decode(&mut &raw.0[..]).ok()
         });
 
-    // Have we already published a result for this period?
-    if let Some(results) = published_results {
-        // Find the account associated with the BABE key that is in our owner keys.
-        let mut local_account = None;
-        for key in owner_keys {
-            // Session::KeyOwner is StorageMap<_, Twox64Concat, (KeyTypeId, Vec<u8>), AccountId32, OptionQuery>
-            // Slices (variable length) and array (fixed length) are encoded differently, so the `.as_slice()` is needed
-            let item_key = (sp_runtime::KeyTypeId(*b"babe"), key.0.as_slice()).encode();
-            let mut storage_key =
-                frame_support::storage::storage_prefix(b"Session", b"KeyOwner").to_vec();
-            storage_key.extend_from_slice(&sp_core::twox_64(&item_key));
-            storage_key.extend_from_slice(&item_key);
+    // Return early if the storage is inaccessible or the data is corrupted.
+    let published_results = match published_results {
+        Some(published_results) => published_results,
+        None => {
+            log::info!("🧙 [distance inherent] No published result at this block.");
+            return sp_distance::InherentDataProvider::<IdtyIndex>::new(None);
+        }
+    };
 
-            if let Some(raw_data) = client.storage(parent, &StorageKey(storage_key))? {
-                if let Ok(key_owner) = AccountId32::decode(&mut &raw_data.0[..]) {
-                    local_account = Some(key_owner);
-                    break;
-                } else {
-                    log::warn!("🧙 [distance oracle] Cannot decode key owner value");
-                }
+    // Find the account associated with the BABE key that is in our owner keys.
+    let mut local_account = None;
+    for key in owner_keys {
+        // Session::KeyOwner is StorageMap<_, Twox64Concat, (KeyTypeId, Vec<u8>), AccountId32, OptionQuery>
+        // Slices (variable length) and array (fixed length) are encoded differently, so the `.as_slice()` is needed
+        let item_key = (sp_runtime::KeyTypeId(*b"babe"), key.0.as_slice()).encode();
+        let mut storage_key =
+            frame_support::storage::storage_prefix(b"Session", b"KeyOwner").to_vec();
+        storage_key.extend_from_slice(&sp_core::twox_64(&item_key));
+        storage_key.extend_from_slice(&item_key);
+
+        if let Some(raw_data) = client
+            .storage(parent, &StorageKey(storage_key))
+            .ok()
+            .flatten()
+        {
+            if let Ok(key_owner) = AccountId32::decode(&mut &raw_data.0[..]) {
+                local_account = Some(key_owner);
+                break;
+            } else {
+                log::warn!("🧙 [distance inherent] Cannot decode key owner value");
             }
         }
-        if let Some(local_account) = local_account {
-            if results.evaluators.contains(&local_account) {
-                log::debug!("🧙 [distance oracle] Already published a result for this period");
-                return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
-            }
-        } else {
-            log::error!("🧙 [distance oracle] Cannot find our BABE owner key");
-            return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
+    }
+
+    // Have we already published a result for this period?
+    if let Some(local_account) = local_account {
+        if published_results.evaluators.contains(&local_account) {
+            log::debug!("🧙 [distance inherent] Already published a result for this period");
+            return sp_distance::InherentDataProvider::<IdtyIndex>::new(None);
         }
+    } else {
+        log::error!("🧙 [distance inherent] Cannot find our BABE owner key");
+        return sp_distance::InherentDataProvider::<IdtyIndex>::new(None);
     }
 
     // Read evaluation result from file, if it exists
     log::debug!(
-        "🧙 [distance oracle] Reading evaluation result from file {:?}",
+        "🧙 [distance inherent] Reading evaluation result from file {:?}",
         distance_dir.clone().join(period_index.to_string())
     );
     let evaluation_result = match std::fs::read(
@@ -155,20 +167,20 @@ where
         Err(e) => {
             match e.kind() {
                 std::io::ErrorKind::NotFound => {
-                    log::debug!("🧙 [distance oracle] Evaluation result file not found. Please ensure that the oracle version matches {}", VERSION_PREFIX);
+                    log::debug!("🧙 [distance inherent] Evaluation result file not found. Please ensure that the oracle version matches {}", VERSION_PREFIX);
                 }
                 _ => {
                     log::error!(
-                        "🧙 [distance oracle] Cannot read distance evaluation result file: {e:?}"
+                        "🧙 [distance inherent] Cannot read distance evaluation result file: {e:?}"
                     );
                 }
             }
-            return Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(None));
+            return sp_distance::InherentDataProvider::<IdtyIndex>::new(None);
         }
     };
 
-    log::info!("🧙 [distance oracle] Providing evaluation result");
-    Ok(sp_distance::InherentDataProvider::<IdtyIndex>::new(Some(
+    log::info!("🧙 [distance inherent] Providing evaluation result");
+    sp_distance::InherentDataProvider::<IdtyIndex>::new(Some(
         sp_distance::ComputationResult::decode(&mut evaluation_result.as_slice()).unwrap(),
-    )))
+    ))
 }

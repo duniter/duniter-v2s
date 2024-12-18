@@ -503,7 +503,7 @@ where
                                     FullBackend,
                                 >(
                                     &*client, parent, distance_dir, &babe_owner_keys.clone()
-                                )?;
+                                );
                             Ok((timestamp, babe, distance))
                         }
                     },
@@ -549,7 +549,7 @@ where
                             FullBackend,
                         >(
                             &*client, parent, distance_dir, &babe_owner_keys.clone()
-                        )?;
+                        );
 
                         Ok((slot, timestamp, storage_proof, distance))
                     }

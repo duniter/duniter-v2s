@@ -35,29 +35,14 @@ pub struct ComputationResult {
     pub distances: scale_info::prelude::vec::Vec<Perbill>,
 }
 
+/// Errors that can occur while checking the inherent data in `ProvideInherent::check_inherent` from pallet-distance.
 #[derive(Encode, sp_runtime::RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error))]
-pub enum InherentError {
-    #[cfg_attr(feature = "std", error("InvalidComputationResultFile"))]
-    InvalidComputationResultFile,
-}
+pub enum InherentError {}
 
 impl IsFatalError for InherentError {
     fn is_fatal_error(&self) -> bool {
-        match self {
-            InherentError::InvalidComputationResultFile => false,
-        }
-    }
-}
-
-impl InherentError {
-    #[cfg(feature = "std")]
-    pub fn try_from(id: &InherentIdentifier, mut data: &[u8]) -> Option<Self> {
-        if id == &INHERENT_IDENTIFIER {
-            <InherentError as codec::Decode>::decode(&mut data).ok()
-        } else {
-            None
-        }
+        false
     }
 }
 
@@ -94,15 +79,12 @@ impl<IdtyIndex: Decode + Encode + PartialEq + TypeInfo + Send + Sync>
 
     async fn try_handle_error(
         &self,
-        identifier: &InherentIdentifier,
-        error: &[u8],
+        _identifier: &InherentIdentifier,
+        _error: &[u8],
     ) -> Option<Result<(), sp_inherents::Error>> {
-        if *identifier != INHERENT_IDENTIFIER {
-            return None;
-        }
-
-        Some(Err(sp_inherents::Error::Application(Box::from(
-            InherentError::try_from(&INHERENT_IDENTIFIER, error)?,
-        ))))
+        // No errors occur here.
+        // Errors handled here are emitted in the `ProvideInherent::check_inherent`
+        // (from pallet-distance) which is not implemented.
+        None
     }
 }
