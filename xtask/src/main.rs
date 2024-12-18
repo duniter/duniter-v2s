@@ -17,7 +17,7 @@
 #![feature(let_chains)]
 
 mod gen_doc;
-mod release_runtime;
+mod gitlab;
 
 use anyhow::{Context, Result};
 use clap::Parser;
@@ -104,20 +104,20 @@ async fn main() -> Result<()> {
             inject_runtime_code(&raw_spec, &runtime)
         }
         DuniterXTaskCommand::ReleaseNetwork { network, branch } => {
-            release_runtime::release_network(network, branch).await
+            gitlab::release_network(network, branch).await
         }
         DuniterXTaskCommand::ReleaseRuntime {
             name,
             network,
             branch,
             milestone,
-        } => release_runtime::release_runtime(name, network, branch, milestone).await,
-        DuniterXTaskCommand::PrintSpec { network } => release_runtime::print_spec(network).await,
+        } => gitlab::release_runtime(name, network, branch, milestone).await,
+        DuniterXTaskCommand::PrintSpec { network } => gitlab::print_spec(network).await,
         DuniterXTaskCommand::CreateAssetLink {
             tag,
             asset_name,
             asset_url,
-        } => release_runtime::create_asset_link(tag, asset_name, asset_url).await,
+        } => gitlab::create_asset_link(tag, asset_name, asset_url).await,
         DuniterXTaskCommand::Test => test(),
     }
 }
