@@ -188,8 +188,8 @@ tests:
   - echo $CLIENT_VERSION
   - export RUNTIME_VERSION=$(cat runtime/gdev/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
   - echo $RUNTIME_VERSION
-  - export RUNTIME_MILESTONE="runtime-$RUNTIME_VERSION"
-  - echo $RUNTIME_MILESTONE
+  - export CLIENT_MILESTONE="client-$CLIENT_VERSION"
+  - echo $CLIENT_MILESTONE
   - export NETWORK_RELEASE="$NETWORK"
   - echo $NETWORK_RELEASE
   - export DOCKER_TAG="$RUNTIME_VERSION-$CLIENT_VERSION"
@@ -260,11 +260,10 @@ docker_deploy:
 
 ############## SRTOOL ##############
 
-# We always build the runtime on a network/ branch, either it is for:
-# - creating a network release (i.e.: genesis)
-# - creating a client release (i.e.: which also includes the runtime)
-build_runtime:
+# The Network Runtime is only built when creating a network release (i.e.: genesis)
+build_network_runtime:
   stage: build
+  needs: ["trigger_network_release"]
   rules:
     - <<: *is_network_branch
   image: paritytech/srtool:1.77.0-0.15.0
@@ -340,7 +339,7 @@ g1_data:
 
 build_specs:
   stage: build
-  needs: ["build_runtime", "g1_data"]
+  needs: ["build_network_runtime", "g1_data"]
   rules:
     - <<: *is_network_branch
   extends: .env
@@ -425,17 +424,15 @@ create_network_release:
 
 create_client_release:
   stage: release
-  needs: ["build_runtime", "build_raw_specs"]
+  needs: ["build_raw_specs"]
   rules:
     - <<: *is_network_branch
   image: rust:1-bullseye
-  variables:
-    # Used by `release-runtime` command
-    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/srtool_output.json
   script:
     - *define_network_branch_vars
-    - cargo xtask release-runtime $CLIENT_RELEASE_NAME $NETWORK_RELEASE $CI_COMMIT_BRANCH $RUNTIME_MILESTONE
-    - cargo xtask create-asset-link $CLIENT_RELEASE_NAME ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
+    # Create the GitLab release page + tag and associate the milestone
+    - cargo xtask release-client $CLIENT_RELEASE_NAME $CI_COMMIT_BRANCH $CLIENT_MILESTONE
+    # Add the client assets
     - cargo xtask create-asset-link $CLIENT_RELEASE_NAME ${RUNTIME}_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_CLIENT_SPEC
     - cargo xtask create-asset-link $CLIENT_RELEASE_NAME ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_RAW_SPEC
   artifacts:
