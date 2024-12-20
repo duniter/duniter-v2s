@@ -26,6 +26,9 @@ workflow:
 .is_network_branch: &is_network_branch
   if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
 
+.is_master_branch: &is_master_branch
+  if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^master$/
+
 sanity_tests:
   extends: .env
   rules:
@@ -181,12 +184,16 @@ tests:
   - echo "NETWORK = $NETWORK"
   - export RUNTIME=$(echo $NETWORK | grep -Po "gdev|gtest|g1")
   - echo "RUNTIME = $RUNTIME"
+  # srtool specific
+  - export RUNTIME_DIR=runtime/$RUNTIME
+  - echo "RUNTIME_DIR = $RUNTIME_DIR"
+  # srtool specific
   - export PACKAGE=$RUNTIME-runtime
   - echo "PACKAGE = $PACKAGE"
   # GitLab milestone : used for both GitLab and Docker releases. Milestone must match source code's runtime version to fetch the git changes for release notes.
   - export CLIENT_VERSION=$(cat node/Cargo.toml | grep version | sed "s/version = \"//g" | sed "s/\"//")
   - echo $CLIENT_VERSION
-  - export RUNTIME_VERSION=$(cat runtime/gdev/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
+  - export RUNTIME_VERSION=$(cat runtime/$RUNTIME/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
   - echo $RUNTIME_VERSION
   - export CLIENT_MILESTONE="client-$CLIENT_VERSION"
   - echo $CLIENT_MILESTONE
@@ -214,6 +221,36 @@ tests:
   - export CLIENT_RELEASE_NAME=$RUNTIME-$RUNTIME_VERSION-$CLIENT_VERSION
   - echo $CLIENT_RELEASE_NAME
 
+.release_runtime_vars: &define_release_runtime_vars
+  - echo "RUNTIME = $RUNTIME"
+  - export RUNTIME_VERSION=$(cat runtime/$RUNTIME/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
+  - echo $RUNTIME_VERSION
+  - export RUNTIME_MILESTONE="runtime-$RUNTIME_VERSION"
+  - echo $RUNTIME_MILESTONE
+  - export SRTOOL_OUTPUT=$CI_PROJECT_DIR/release/srtool_output_$RUNTIME.json
+  - echo "SRTOOL_OUTPUT = $SRTOOL_OUTPUT"
+  - export RELEASE_FILE_WASM=release/${RUNTIME}_runtime.compact.compressed.wasm
+  - echo $RELEASE_FILE_WASM
+  # srtool specific
+  - export RUNTIME_DIR=runtime/$RUNTIME
+  - echo "RUNTIME_DIR = $RUNTIME_DIR"
+  # srtool specific
+  - export PACKAGE=$RUNTIME-runtime
+  - echo "PACKAGE = $PACKAGE"
+
+trigger_runtime_release:
+  stage: build
+  rules:
+    - <<: *is_master_branch
+      when: manual
+  variables:
+    RUNTIME: gdev
+  script:
+    - *define_release_runtime_vars
+    - echo "Vérification de l'absence de la release $RUNTIME_MILESTONE"
+    - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$RUNTIME_MILESTONE"
+    - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$RUNTIME_MILESTONE --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
+
 trigger_network_release:
   stage: build
   rules:
@@ -221,7 +258,7 @@ trigger_network_release:
       when: manual
   script:
     - *define_network_branch_vars
-    - echo "Vérification de la présence de la release $NETWORK"
+    - echo "Vérification de l'absence de la release $NETWORK"
     - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK"
     - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
 
@@ -268,12 +305,35 @@ build_network_runtime:
     - <<: *is_network_branch
   image: paritytech/srtool:1.77.0-0.15.0
   variables:
-    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/srtool_output.json
+    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/network_srtool_output.json
   script:
     - *define_network_branch_vars
-    - export RUNTIME_DIR=runtime/$RUNTIME
-    - echo "RUNTIME_DIR = $RUNTIME_DIR"
     - echo "SRTOOL_OUTPUT = $SRTOOL_OUTPUT"
+    - mkdir -p $CI_PROJECT_DIR/release
+    - echo -e "[toolchain]\nchannel = \"`curl -s https://raw.githubusercontent.com/paritytech/srtool/master/RUSTC_VERSION`\"\ncomponents = [ \"rust-std\", \"rust-src\" ]" > $RUNTIME_DIR/rust-toolchain.toml # Workaround see !239
+    # Copy sources to the expected directory of srtool
+    - cp -R * /build/
+    # Build the runtime
+    - /srtool/build --app --json -cM | tee -a $SRTOOL_OUTPUT
+    - mv /build/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/${RUNTIME}_runtime.compact.compressed.wasm $CI_PROJECT_DIR/release/
+  artifacts:
+    expire_in: never
+    name: "runtime"
+    paths:
+      - $CI_PROJECT_DIR/release
+  tags:
+    - kepler
+
+build_gdev_runtime:
+  stage: build
+  needs: ["trigger_runtime_release"]
+  rules:
+    - <<: *is_master_branch
+  image: paritytech/srtool:1.77.0-0.15.0
+  variables:
+    RUNTIME: gdev
+  script:
+    - *define_release_runtime_vars
     - mkdir -p $CI_PROJECT_DIR/release
     - echo -e "[toolchain]\nchannel = \"`curl -s https://raw.githubusercontent.com/paritytech/srtool/master/RUSTC_VERSION`\"\ncomponents = [ \"rust-std\", \"rust-src\" ]" > $RUNTIME_DIR/rust-toolchain.toml # Workaround see !239
     # Copy sources to the expected directory of srtool
@@ -402,7 +462,7 @@ create_network_release:
   image: rust:1-bullseye
   variables:
     # Used by `release-network` command
-    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/srtool_output.json
+    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/network_srtool_output.json
   script:
     - *define_network_branch_vars
     # Release creation
@@ -435,6 +495,28 @@ create_client_release:
     # Add the client assets
     - cargo xtask create-asset-link $CLIENT_RELEASE_NAME ${RUNTIME}_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_CLIENT_SPEC
     - cargo xtask create-asset-link $CLIENT_RELEASE_NAME ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_RAW_SPEC
+  artifacts:
+    expire_in: never
+    paths:
+      - $CI_PROJECT_DIR/release/
+  tags:
+    - kepler
+
+create_runtime_release:
+  stage: release
+  needs: ["build_gdev_runtime"]
+  rules:
+    - <<: *is_master_branch
+  image: rust:1-bullseye
+  variables:
+    RUNTIME: gdev
+  script:
+    - *define_release_runtime_vars
+    # Create the GitLab release page + tag and associate the milestone.
+    # Note: the release name = the release tag = runtime milesone ($RUNTIME_MILESTONE)
+    - cargo xtask release-runtime $RUNTIME_MILESTONE $RUNTIME $CI_COMMIT_BRANCH $RUNTIME_MILESTONE
+    - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
+    # In the future: also build gtest and g1 runtimes and atach them
   artifacts:
     expire_in: never
     paths:
