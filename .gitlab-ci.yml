@@ -25,7 +25,7 @@ workflow:
 
 .is_network_branch: &is_network_branch
   # TODO: revert
-  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(239-).+/
 
 sanity_tests:
   extends: .env
@@ -186,7 +186,8 @@ tests:
   - export PACKAGE=$RUNTIME-runtime
   - echo "PACKAGE = $PACKAGE"
   # GitLab milestone : used for both GitLab and Docker releases. Milestone must match source code's runtime version to fetch the git changes for release notes.
-  - export CLIENT_VERSION=$(cat node/Cargo.toml | grep version | sed "s/version = \"//g" | sed "s/\"//")
+  # TODO: revert
+  - export CLIENT_VERSION=0.9.1
   - echo $CLIENT_VERSION
   - export RUNTIME_VERSION=$(cat runtime/gdev/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
   - echo $RUNTIME_VERSION
