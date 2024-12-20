@@ -57,9 +57,22 @@ enum DuniterXTaskCommand {
     ReleaseNetwork { network: String, branch: String },
     /// Release a new runtime
     ReleaseRuntime {
+        /// Name of the release + tag to be applied
         name: String,
+        /// Name of the network to be put in the release notes title of the srtool part
         network: String,
+        /// Branch on which the tag `name` will be created during the release
         branch: String,
+        /// Name of the milestone to add this release to
+        milestone: String,
+    },
+    /// Release a new client for a network
+    ReleaseClient {
+        /// Name of the release + tag to be applied
+        name: String,
+        /// Branch on which the tag `name` will be created during the release
+        branch: String,
+        /// Name of the milestone to add this release to
         milestone: String,
     },
     /// Print the chainSpec published on given Network Release
@@ -112,6 +125,11 @@ async fn main() -> Result<()> {
             branch,
             milestone,
         } => gitlab::release_runtime(name, network, branch, milestone).await,
+        DuniterXTaskCommand::ReleaseClient {
+            name,
+            branch,
+            milestone,
+        } => gitlab::release_client(name, branch, milestone).await,
         DuniterXTaskCommand::PrintSpec { network } => gitlab::print_spec(network).await,
         DuniterXTaskCommand::CreateAssetLink {
             tag,
