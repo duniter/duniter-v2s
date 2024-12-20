@@ -228,12 +228,15 @@ tests:
   - echo $RUNTIME_VERSION
   - export RUNTIME_MILESTONE="runtime-$RUNTIME_VERSION"
   - echo $RUNTIME_MILESTONE
-  - export RUNTIME_DIR=runtime/$RUNTIME
-  - echo "RUNTIME_DIR = $RUNTIME_DIR"
   - export SRTOOL_OUTPUT=$CI_PROJECT_DIR/release/srtool_output_$RUNTIME.json
   - echo "SRTOOL_OUTPUT = $SRTOOL_OUTPUT"
   - export RELEASE_FILE_WASM=release/${RUNTIME}_runtime.compact.compressed.wasm
   - echo $RELEASE_FILE_WASM
+  # srtool specific
+  - export RUNTIME_DIR=runtime/$RUNTIME
+  - echo "RUNTIME_DIR = $RUNTIME_DIR"
+  - export PACKAGE=$RUNTIME-runtime
+  - echo "PACKAGE = $PACKAGE"
 
 trigger_runtime_release:
   stage: build
