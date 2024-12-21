@@ -23,6 +23,9 @@ workflow:
         - Cargo.toml
         - Cargo.lock
 
+.is_fix_arm_branch: &is_fix_arm_branch
+  if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^139/
+
 .is_network_branch: &is_network_branch
   if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
 
@@ -180,7 +183,7 @@ tests:
     - cargo cucumber
 
 .network_branch_vars: &define_network_branch_vars
-  - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
+  - export NETWORK=gdev-800
   - echo "NETWORK = $NETWORK"
   - export RUNTIME=$(echo $NETWORK | grep -Po "gdev|gtest|g1")
   - echo "RUNTIME = $RUNTIME"
@@ -191,7 +194,7 @@ tests:
   - export PACKAGE=$RUNTIME-runtime
   - echo "PACKAGE = $PACKAGE"
   # GitLab milestone : used for both GitLab and Docker releases. Milestone must match source code's runtime version to fetch the git changes for release notes.
-  - export CLIENT_VERSION=$(cat node/Cargo.toml | grep version | sed "s/version = \"//g" | sed "s/\"//")
+  - export CLIENT_VERSION=0.9.1-cgeek
   - echo $CLIENT_VERSION
   - export RUNTIME_VERSION=$(cat runtime/$RUNTIME/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
   - echo $RUNTIME_VERSION
@@ -274,10 +277,10 @@ trigger_client_release:
     - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && echo "Release présente" || (echo "Release absente" && exit 1)
 
 docker_deploy:
-  stage: release
-  needs: ["build_raw_specs"]
+  stage: build
+#  needs: ["build_raw_specs"]
   rules:
-    - <<: *is_network_branch
+    - <<: *is_fix_arm_branch
     - when: never
   before_script:
     - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
@@ -285,9 +288,9 @@ docker_deploy:
   script:
     - *define_network_branch_vars
     - podman manifest rm "$MANIFEST" 2>/dev/null || true
-    - podman build --layers --platform linux/amd64 --manifest "$MANIFEST" -f docker/Dockerfile --build-arg chain=$RUNTIME .
+    - podman build --layers --platform linux/arm64 --manifest "$MANIFEST" -f docker/Dockerfile --build-arg chain=$RUNTIME .
     - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$DOCKER_TAG"
-    - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:latest"
+#    - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:latest"
   after_script:
     - *define_network_branch_vars
     - echo $MANIFEST
