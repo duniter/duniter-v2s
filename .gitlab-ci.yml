@@ -224,7 +224,8 @@ tests:
 
 .release_runtime_vars: &define_release_runtime_vars
   - echo "RUNTIME = $RUNTIME"
-  - export RUNTIME_VERSION=$(cat runtime/$RUNTIME/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
+  # TODO: revert
+  - export RUNTIME_VERSION=1000
   - echo $RUNTIME_VERSION
   - export RUNTIME_MILESTONE="runtime-$RUNTIME_VERSION"
   - echo $RUNTIME_MILESTONE
