@@ -112,12 +112,12 @@ async fn release(
     branch: String,
     milestone: String,
 ) -> Result<()> {
-    let mut release_notes = String::from(format!(
+    let mut release_notes = format!(
         "
 # {title}
 
 "
-    ));
+    );
 
     if let Some(network) = network {
         add_srtool_notes(network.clone(), &mut release_notes)?;
