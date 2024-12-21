@@ -26,8 +26,8 @@ workflow:
 .is_network_branch: &is_network_branch
   if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
 
-.is_master_branch: &is_master_branch
-  if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^master$/
+.is_master_branch: &is_runtime_branch
+  if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(runtime\/).+/
 
 sanity_tests:
   extends: .env
@@ -241,7 +241,7 @@ tests:
 trigger_runtime_release:
   stage: build
   rules:
-    - <<: *is_master_branch
+    - <<: *is_runtime_branch
       when: manual
   variables:
     RUNTIME: gdev
@@ -327,7 +327,7 @@ build_gdev_runtime:
   stage: build
   needs: ["trigger_runtime_release"]
   rules:
-    - <<: *is_master_branch
+    - <<: *is_runtime_branch
   image: paritytech/srtool:1.77.0-0.15.0
   variables:
     RUNTIME: gdev
@@ -504,7 +504,7 @@ create_runtime_release:
   stage: release
   needs: ["build_gdev_runtime"]
   rules:
-    - <<: *is_master_branch
+    - <<: *is_runtime_branch
   image: rust:1-bullseye
   variables:
     RUNTIME: gdev
