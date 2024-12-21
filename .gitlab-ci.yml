@@ -310,7 +310,6 @@ build_network_runtime:
     - *define_network_branch_vars
     - echo "SRTOOL_OUTPUT = $SRTOOL_OUTPUT"
     - mkdir -p $CI_PROJECT_DIR/release
-    - echo -e "[toolchain]\nchannel = \"`curl -s https://raw.githubusercontent.com/paritytech/srtool/master/RUSTC_VERSION`\"\ncomponents = [ \"rust-std\", \"rust-src\" ]" > $RUNTIME_DIR/rust-toolchain.toml # Workaround see !239
     # Copy sources to the expected directory of srtool
     - cp -R * /build/
     # Build the runtime
@@ -335,7 +334,6 @@ build_gdev_runtime:
   script:
     - *define_release_runtime_vars
     - mkdir -p $CI_PROJECT_DIR/release
-    - echo -e "[toolchain]\nchannel = \"`curl -s https://raw.githubusercontent.com/paritytech/srtool/master/RUSTC_VERSION`\"\ncomponents = [ \"rust-std\", \"rust-src\" ]" > $RUNTIME_DIR/rust-toolchain.toml # Workaround see !239
     # Copy sources to the expected directory of srtool
     - cp -R * /build/
     # Build the runtime
