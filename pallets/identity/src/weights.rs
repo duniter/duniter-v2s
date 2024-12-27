@@ -23,6 +23,7 @@ pub trait WeightInfo {
     fn confirm_identity() -> Weight;
     fn change_owner_key() -> Weight;
     fn revoke_identity() -> Weight;
+    fn revoke_identity_legacy() -> Weight;
     fn prune_item_identities_names(i: u32) -> Weight;
     fn fix_sufficients() -> Weight;
     fn link_account() -> Weight;
@@ -74,6 +75,17 @@ impl WeightInfo for () {
     }
 
     fn revoke_identity() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `778`
+        //  Estimated: `6718`
+        // Minimum execution time: 829_174_000 picoseconds.
+        Weight::from_parts(869_308_000, 0)
+            .saturating_add(Weight::from_parts(0, 6718))
+            .saturating_add(RocksDbWeight::get().reads(6))
+            .saturating_add(RocksDbWeight::get().writes(6))
+    }
+
+    fn revoke_identity_legacy() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `778`
         //  Estimated: `6718`

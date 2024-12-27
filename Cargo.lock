@@ -8302,10 +8302,14 @@ dependencies = [
 name = "pallet-identity"
 version = "1.0.0"
 dependencies = [
+ "base64 0.22.1",
+ "bs58 0.5.1",
  "duniter-primitives",
+ "ed25519-dalek",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "log",
  "parity-scale-codec",
  "scale-info",
  "serde",

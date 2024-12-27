@@ -86,6 +86,7 @@ pub const LINK_IDTY_PAYLOAD_PREFIX: [u8; 4] = [b'l', b'i', b'n', b'k'];
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use base64::Engine;
     use frame_support::{pallet_prelude::*, traits::StorageVersion};
     use frame_system::pallet_prelude::*;
 
@@ -570,6 +571,114 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Revoke an identity using a legacy (DUBP) revocation document
+        ///
+        /// - `revocation document`: the full-length revocation document, signature included
+        ///
+        /// Any signed origin can execute this call.
+        #[pallet::call_index(9)]
+        #[pallet::weight(T::WeightInfo::revoke_identity_legacy())]
+        pub fn revoke_identity_legacy(
+            origin: OriginFor<T>,
+            revocation_document: Vec<u8>,
+        ) -> DispatchResultWithPostInfo {
+            let _ = ensure_signed(origin)?;
+
+            // Strip possible Unicode magic number that is not part of the protocol
+            let revocation_document = revocation_document
+                .strip_prefix(b"\xef\xbb\xbf")
+                .unwrap_or(&revocation_document);
+            let mut lines = revocation_document.split(|b| *b == b'\n');
+            ensure!(
+                lines.next() == Some(b"Version: 10"),
+                Error::<T>::InvalidLegacyRevocationFormat
+            );
+            ensure!(
+                lines.next() == Some(b"Type: Revocation"),
+                Error::<T>::InvalidLegacyRevocationFormat
+            );
+            ensure!(
+                lines.next() == Some(b"Currency: g1"),
+                Error::<T>::InvalidLegacyRevocationFormat
+            );
+            let line_issuer = lines
+                .next()
+                .ok_or(Error::<T>::InvalidLegacyRevocationFormat)?;
+            let line_username = lines
+                .next()
+                .ok_or(Error::<T>::InvalidLegacyRevocationFormat)?;
+            let _line_blockstamp = lines
+                .next()
+                .ok_or(Error::<T>::InvalidLegacyRevocationFormat)?;
+            let _line_idty_signature = lines
+                .next()
+                .ok_or(Error::<T>::InvalidLegacyRevocationFormat)?;
+            let line_signature = lines
+                .next()
+                .ok_or(Error::<T>::InvalidLegacyRevocationFormat)?;
+            ensure!(
+                lines.next() == Some(b""),
+                Error::<T>::InvalidLegacyRevocationFormat
+            );
+            ensure!(
+                lines.next().is_none(),
+                Error::<T>::InvalidLegacyRevocationFormat
+            );
+            let document = revocation_document
+                .get(0..revocation_document.len().saturating_sub(89))
+                .ok_or(Error::<T>::InvalidLegacyRevocationFormat)?;
+            let mut signature = [0; 64];
+            base64::prelude::BASE64_STANDARD
+                .decode_slice(line_signature, &mut signature)
+                .map_err(|_| Error::<T>::InvalidLegacyRevocationFormat)?;
+            let issuer = bs58::decode(
+                line_issuer
+                    .get(8..)
+                    .ok_or(Error::<T>::InvalidLegacyRevocationFormat)?,
+            )
+            .into_array_const::<32>()
+            .map_err(|_| Error::<T>::InvalidLegacyRevocationFormat)?;
+            ed25519_dalek::VerifyingKey::from_bytes(&issuer)
+                .map_err(|_| Error::<T>::InvalidLegacyRevocationFormat)?
+                .verify_strict(document, &ed25519_dalek::Signature::from_bytes(&signature))
+                .map_err(|_| Error::<T>::InvalidSignature)?;
+            let username = line_username
+                .get(14..)
+                .ok_or(Error::<T>::InvalidLegacyRevocationFormat)?;
+            let idty_index = <IdentitiesNames<T>>::get(IdtyName(username.into()))
+                .ok_or(Error::<T>::IdtyNotFound)?;
+
+            let idty_value = Identities::<T>::get(idty_index).ok_or(Error::<T>::IdtyNotFound)?;
+
+            match idty_value.status {
+                IdtyStatus::Unconfirmed => Err(Error::<T>::CanNotRevokeUnconfirmed),
+                IdtyStatus::Unvalidated => Err(Error::<T>::CanNotRevokeUnvalidated),
+                IdtyStatus::Member => Ok(()),
+                IdtyStatus::NotMember => Ok(()),
+                IdtyStatus::Revoked => Err(Error::<T>::AlreadyRevoked),
+            }?;
+
+            let revocation_key = T::AccountId::decode(&mut &issuer[..]).unwrap();
+
+            ensure!(
+                if let Some((ref old_owner_key, last_change)) = idty_value.old_owner_key {
+                    // old owner key can also revoke the identity until the period expired
+                    revocation_key == idty_value.owner_key
+                        || (&revocation_key == old_owner_key
+                            && frame_system::Pallet::<T>::block_number()
+                                < last_change + T::ChangeOwnerKeyPeriod::get())
+                } else {
+                    revocation_key == idty_value.owner_key
+                },
+                Error::<T>::InvalidRevocationKey
+            );
+
+            // finally if all checks pass, remove identity
+            Self::do_revoke_identity(idty_index, RevocationReason::User);
+
+            Ok(().into())
+        }
+
         /// Remove identity names from storage.
         ///
         /// This function allows a privileged root origin to remove multiple identity names from storage
@@ -701,6 +810,8 @@ pub mod pallet {
         InsufficientBalance,
         /// Owner key currently used as validator.
         OwnerKeyUsedAsValidator,
+        /// Legacy revocation document format is invalid
+        InvalidLegacyRevocationFormat,
     }
 
     // INTERNAL FUNCTIONS //

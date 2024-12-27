@@ -135,6 +135,16 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
+	fn revoke_identity_legacy() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `697`
+		//  Estimated: `6637`
+		// Minimum execution time: 70_321_000 picoseconds.
+		Weight::from_parts(72_274_000, 0)
+			.saturating_add(Weight::from_parts(0, 6637))
+			.saturating_add(T::DbWeight::get().reads(5))
+			.saturating_add(T::DbWeight::get().writes(5))
+	}
 	/// Storage: `Identity::IdentitiesNames` (r:0 w:999)
 	/// Proof: `Identity::IdentitiesNames` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `i` is `[2, 1000]`.

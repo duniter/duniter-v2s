@@ -42,11 +42,15 @@ default-features = false
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+base64 = { workspace = true }
+bs58 = { workspace = true }
 codec = { workspace = true, features = ["derive"] }
 duniter-primitives = { workspace = true }
+ed25519-dalek = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
+log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 serde = { workspace = true, features = ["derive"] }
 sp-core = { workspace = true }

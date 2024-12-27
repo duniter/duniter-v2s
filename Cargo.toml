@@ -48,9 +48,11 @@ version = '1.0.0'
 [workspace.dependencies]
 # crates.io dependencies
 anyhow = { version = "1.0.81", default-features = false }
+base64 = { version = "0.22.1", default-features = false }
 countmap = { version = "0.2.0", default-features = false }
 ctrlc = { version = "3.4.4", default-features = false }
 cucumber = { version = "0.20.2", default-features = false }
+ed25519-dalek = { version = "2.1.1", default-features = false }
 env_logger = { version = "0.11.3", default-features = false }
 notify = { version = "6.1.1", default-features = false }
 portpicker = { version = "0.1.1", default-features = false }
@@ -64,13 +66,15 @@ bs58 = { version = "0.5.1", default-features = false }
 placeholder = { version = "1.1.4", default-features = false }
 clap = { version = "4.5.3" }
 clap_complete = { version = "4.5.1" }
-reqwest = { version = "0.12.0", default-features = false, features = ["rustls-tls"] }
+reqwest = { version = "0.12.0", default-features = false, features = [
+    "rustls-tls",
+] }
 glob = { version = "0.3.1", default-features = false }
 convert_case = { version = "0.6.0", default-features = false }
 subweight-core = { version = "3.3.1", default-features = false }
 version_check = { version = "0.9.4", default-features = false }
 codec = { package = "parity-scale-codec", version = "3.6.9", default-features = false }
-enum-as-inner = { version = "=0.5.1", default-features = false }                        #https://github.com/bluejekyll/trust-dns/issues/1946
+enum-as-inner = { version = "=0.5.1", default-features = false } #https://github.com/bluejekyll/trust-dns/issues/1946
 futures = { version = "0.3.30", default-features = false }
 tera = { version = "1", default-features = false }
 hex = { version = "0.4.3", default-features = false }
@@ -274,4 +278,3 @@ zeroize = { opt-level = 3 }
 lto = "thin"
 # Substrate runtime requires unwinding.
 panic = "unwind"
-
