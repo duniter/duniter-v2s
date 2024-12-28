@@ -193,7 +193,7 @@ where
         .transpose()?;
 
     #[cfg(feature = "native")]
-    let executor = sc_service::new_native_or_wasm_executor(&config.executor);
+    let executor = sc_service::new_native_or_wasm_executor(&config);
     #[cfg(not(feature = "native"))]
     let executor = sc_service::new_wasm_executor(&config.executor);
 
