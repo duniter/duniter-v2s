@@ -91,14 +91,37 @@ pub(super) async fn release_runtime(
     branch: String,
     milestone: String,
 ) -> Result<()> {
-    let mut release_notes = String::from(
-        "
-# Runtime
+    release(
+        "Runtime".to_string(),
+        name,
+        Some(network),
+        branch,
+        milestone,
+    )
+    .await
+}
 
-",
+pub(super) async fn release_client(name: String, branch: String, milestone: String) -> Result<()> {
+    release("Client".to_string(), name, None, branch, milestone).await
+}
+
+async fn release(
+    title: String,
+    name: String,
+    network: Option<String>,
+    branch: String,
+    milestone: String,
+) -> Result<()> {
+    let mut release_notes = format!(
+        "
+# {title}
+
+"
     );
 
-    add_srtool_notes(network, &mut release_notes)?;
+    if let Some(network) = network {
+        add_srtool_notes(network.clone(), &mut release_notes)?;
+    }
 
     // Get changes (list of MRs) from gitlab API
     let changes = get_changes::get_changes(milestone.clone()).await?;

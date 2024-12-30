@@ -17,7 +17,7 @@
 #![feature(let_chains)]
 
 mod gen_doc;
-mod release_runtime;
+mod gitlab;
 
 use anyhow::{Context, Result};
 use clap::Parser;
@@ -57,9 +57,22 @@ enum DuniterXTaskCommand {
     ReleaseNetwork { network: String, branch: String },
     /// Release a new runtime
     ReleaseRuntime {
+        /// Name of the release + tag to be applied
         name: String,
+        /// Name of the network to be put in the release notes title of the srtool part
         network: String,
+        /// Branch on which the tag `name` will be created during the release
         branch: String,
+        /// Name of the milestone to add this release to
+        milestone: String,
+    },
+    /// Release a new client for a network
+    ReleaseClient {
+        /// Name of the release + tag to be applied
+        name: String,
+        /// Branch on which the tag `name` will be created during the release
+        branch: String,
+        /// Name of the milestone to add this release to
         milestone: String,
     },
     /// Print the chainSpec published on given Network Release
@@ -104,20 +117,25 @@ async fn main() -> Result<()> {
             inject_runtime_code(&raw_spec, &runtime)
         }
         DuniterXTaskCommand::ReleaseNetwork { network, branch } => {
-            release_runtime::release_network(network, branch).await
+            gitlab::release_network(network, branch).await
         }
         DuniterXTaskCommand::ReleaseRuntime {
             name,
             network,
             branch,
             milestone,
-        } => release_runtime::release_runtime(name, network, branch, milestone).await,
-        DuniterXTaskCommand::PrintSpec { network } => release_runtime::print_spec(network).await,
+        } => gitlab::release_runtime(name, network, branch, milestone).await,
+        DuniterXTaskCommand::ReleaseClient {
+            name,
+            branch,
+            milestone,
+        } => gitlab::release_client(name, branch, milestone).await,
+        DuniterXTaskCommand::PrintSpec { network } => gitlab::print_spec(network).await,
         DuniterXTaskCommand::CreateAssetLink {
             tag,
             asset_name,
             asset_url,
-        } => release_runtime::create_asset_link(tag, asset_name, asset_url).await,
+        } => gitlab::create_asset_link(tag, asset_name, asset_url).await,
         DuniterXTaskCommand::Test => test(),
     }
 }
