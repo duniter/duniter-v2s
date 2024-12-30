@@ -24,18 +24,22 @@ pub(super) fn compute_claim_uds<Balance: AtLeast32BitUnsigned>(
 ) -> (UdIndex, Balance) {
     let mut total_amount = Zero::zero();
     let mut total_count = 0;
-    for (ud_index, ud_amount) in past_reevals.rev() {
-        if ud_index <= first_ud_index {
+    // We start in reverse order, i.e. the most recent reeval first
+    for (reeval_index, ud_amount) in past_reevals.rev() {
+        // Therefore, if our first UD is above the current reeval index, we have reached our final useful reeval and must break
+        if reeval_index <= first_ud_index {
             let count = current_ud_index - first_ud_index;
             total_amount += Balance::from(count) * ud_amount;
             total_count += count;
             // First unclaimed UD is reached; stop counting now.
             break;
-        } else {
-            let count = current_ud_index - ud_index;
+        }
+        // Otherwise, we consume the full reeval contained UDs
+        else {
+            let count = current_ud_index - reeval_index;
             total_amount += Balance::from(count) * ud_amount;
             total_count += count;
-            current_ud_index = ud_index;
+            current_ud_index = reeval_index;
         }
     }
 
@@ -107,6 +111,21 @@ mod tests {
         assert_eq!(
             compute_claim_uds(4, 2, past_reevals.into_iter()),
             (2, 110_000)
+        );
+    }
+
+    #[test]
+    fn very_old_unclaimed_ud_out_of_reevals() {
+        let past_reevals = vec![
+            // (3, 100 as Balance), "old" reeval which has gone out of reevals window.
+            (4, 1_000 as Balance),
+            (5, 10_000 as Balance),
+            (6, 100_000 as Balance),
+        ];
+        // All the UDs out of the reeval window must produce 0 money units
+        assert_eq!(
+            compute_claim_uds(7, 1, past_reevals.into_iter()),
+            (3, 111_000)
         );
     }
 }
