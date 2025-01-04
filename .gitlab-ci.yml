@@ -24,7 +24,7 @@ workflow:
         - Cargo.lock
 
 .is_network_branch: &is_network_branch
-  if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(278-chain-file\/).+/
+  if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(278-chain-file).+/
 
 .is_runtime_branch: &is_runtime_branch
   if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(runtime\/).+/
