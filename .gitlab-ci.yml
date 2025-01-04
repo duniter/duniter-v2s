@@ -436,15 +436,15 @@ build_raw_specs:
     - export FEATURES="--features $RUNTIME --no-default-features"
     - echo "FEATURES = $FEATURES"
     - apt-get update
-    - apt-get install -y clang cmake protobuf-compiler jq yq
+    - apt-get install -y clang cmake protobuf-compiler jq
     # Print chainspec to file
     - cargo xtask print-spec $NETWORK_RELEASE > ${RUNTIME}-printed.json
     # Merge client specs into chainspec file (to update bootnodes for example)
     # 1. Download yq to create a json client spec file
-#    - wget https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_arm64 -O yq
-#    - chmod +x ./yq
+    - wget https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_arm64 -O yq
+    - chmod +x ./yq
     # 2. YML -> JSON for the client specs
-    - cat node/specs/${RUNTIME}_client-specs.yaml | yq --output-format json > node/specs/${RUNTIME}_client-specs.json
+    - cat node/specs/${RUNTIME}_client-specs.yaml | ./yq --output-format json > node/specs/${RUNTIME}_client-specs.json
     # 3. Merge the client spec file into chainspec file and create the final spec file (e.g. gdev.json)
     - jq -s '.[0] * .[1]' node/specs/${RUNTIME}_client-specs.json ${RUNTIME}-printed.json > ${RUNTIME}.json
     # Produce raw spec file
