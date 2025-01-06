@@ -59,7 +59,7 @@ where
     ) -> Result<R, E> {
         pallet_identity::Pallet::<T>::try_mutate_exists(key, |maybe_idty_data| {
             if let Some(ref mut idty_data) = maybe_idty_data {
-                let mut maybe_first_eligible_ud = Some(idty_data.first_eligible_ud);
+                let mut maybe_first_eligible_ud = Some(idty_data.first_eligible_ud.clone());
                 let result = f(&mut maybe_first_eligible_ud)?;
                 if let Some(first_eligible_ud) = maybe_first_eligible_ud {
                     idty_data.first_eligible_ud = first_eligible_ud;

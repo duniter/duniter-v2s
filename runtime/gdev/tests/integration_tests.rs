@@ -731,6 +731,57 @@ fn test_revoke_identity_after_one_ud() {
     });
 }
 
+// test that UD cannot be claimed after revocation
+#[test]
+fn test_claim_ud_after_revoke() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        run_to_block(
+            (<Runtime as pallet_universal_dividend::Config>::UdCreationPeriod::get()
+                / <Runtime as pallet_babe::Config>::ExpectedBlockTime::get()
+                + 1) as u32,
+        );
+
+        // before UD, bob has 0 (initial amount)
+        run_to_block(1);
+        assert_eq!(
+            Balances::free_balance(AccountKeyring::Bob.to_account_id()),
+            0
+        );
+
+        // revoke identity
+        Identity::do_revoke_identity(2, pallet_identity::RevocationReason::Root);
+
+        assert_eq!(
+            Balances::free_balance(AccountKeyring::Bob.to_account_id()),
+            1_000
+        );
+
+        // go after UD creation block
+        run_to_block(
+            (<Runtime as pallet_universal_dividend::Config>::UdCreationPeriod::get()
+                / <Runtime as pallet_babe::Config>::ExpectedBlockTime::get()
+                + 1) as u32,
+        );
+
+        assert_eq!(
+            Balances::free_balance(AccountKeyring::Bob.to_account_id()),
+            1_000
+        );
+
+        assert_err!(
+            UniversalDividend::claim_uds(
+                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into()
+            ),
+            pallet_universal_dividend::Error::<Runtime>::AccountNotAllowedToClaimUds,
+        );
+
+        assert_eq!(
+            Balances::free_balance(AccountKeyring::Bob.to_account_id()),
+            1_000
+        );
+    });
+}
+
 /// test that UD are auto claimed when membership expires
 /// and that claimed UD matches expectations
 #[test]

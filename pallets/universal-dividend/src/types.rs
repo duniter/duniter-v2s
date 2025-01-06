@@ -22,9 +22,7 @@ use sp_runtime::RuntimeDebug;
 pub type UdIndex = u16;
 
 /// Represents the first eligible Universal Dividend.
-#[derive(
-    Clone, Copy, Default, Eq, PartialEq, RuntimeDebug, serde::Deserialize, serde::Serialize,
-)]
+#[derive(Clone, Default, Eq, PartialEq, RuntimeDebug, serde::Deserialize, serde::Serialize)]
 pub struct FirstEligibleUd(pub Option<NonZeroU16>);
 
 impl FirstEligibleUd {
