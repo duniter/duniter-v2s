@@ -575,14 +575,25 @@ impl<T: Config> pallet_session::SessionManager<T::ValidatorId> for Pallet<T> {
             return None;
         }
 
+        // -- handle incoming members
+        // callback when smith is incoming
         for member_id in members_ids_to_add.iter() {
             T::OnIncomingMember::on_incoming_member(*member_id);
+        }
+        // a single event with all authorities if some
+        if !members_ids_to_add.is_empty() {
             Self::deposit_event(Event::IncomingAuthorities {
                 members: members_ids_to_add.clone(),
             });
         }
+
+        // -- handle outgoing members
+        // callback when smith is outgoing
         for member_id in members_ids_to_del.iter() {
             T::OnOutgoingMember::on_outgoing_member(*member_id);
+        }
+        // a single event with all authorities if some
+        if !members_ids_to_del.is_empty() {
             Self::deposit_event(Event::OutgoingAuthorities {
                 members: members_ids_to_del.clone(),
             });

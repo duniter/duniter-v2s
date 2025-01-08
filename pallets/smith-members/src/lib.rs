@@ -582,7 +582,7 @@ impl<T: Config> Pallet<T> {
                     if let Some(smith_meta) = maybe_smith_meta {
                         // As long as the smith is online, it cannot expire
                         smith_meta.expires_on = None;
-                        // FIXME: unschedule old expiry
+                        // FIXME: unschedule old expiry (#182)
                     }
                 });
             }
@@ -592,10 +592,12 @@ impl<T: Config> Pallet<T> {
     /// Handle the event when a Smith goes offline.
     pub fn on_smith_goes_offline(idty_index: T::IdtyIndex) {
         if let Some(smith_meta) = Smiths::<T>::get(idty_index) {
-            if smith_meta.expires_on.is_none() {
+            // Smith can go offline after main membership expiry
+            // in this case, there is no scheduled expiry since it is already excluded
+            if smith_meta.status != SmithStatus::Excluded {
                 Smiths::<T>::mutate(idty_index, |maybe_smith_meta| {
                     if let Some(smith_meta) = maybe_smith_meta {
-                        // As long as the smith is online, it cannot expire
+                        // schedule expiry
                         let new_expires_on =
                             CurrentSession::<T>::get() + T::SmithInactivityMaxDuration::get();
                         smith_meta.expires_on = Some(new_expires_on);

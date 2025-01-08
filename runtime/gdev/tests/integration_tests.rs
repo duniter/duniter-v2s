@@ -25,6 +25,7 @@ use frame_support::{
 use gdev_runtime::*;
 use pallet_identity::{RevocationPayload, REVOCATION_PAYLOAD_PREFIX};
 use pallet_membership::MembershipRemovalReason;
+use pallet_session::historical::SessionManager;
 use pallet_smith_members::{SmithMeta, SmithStatus};
 use scale_info::prelude::num::NonZeroU16;
 use sp_core::{Encode, Pair};
@@ -1018,6 +1019,93 @@ fn test_smith_process() {
                 frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
             ));
         })
+}
+
+// reveal bug from #243
+#[test]
+fn test_expired_smith_has_null_expires_on() {
+    // initial_authorities_len = 2 → Alice and Bob are online
+    // initial_smiths_len = 3 → Charlie is offline Smith
+    // initial_identities_len = 4 → Dave is member but not smith
+    ExtBuilder::new(2, 3, 4).build().execute_with(|| {
+        run_to_block(1);
+
+        // Bob is smith
+        assert_eq!(
+            SmithMembers::smiths(2),
+            Some(pallet_smith_members::SmithMeta {
+                status: SmithStatus::Smith,
+                expires_on: None, // because online
+                issued_certs: vec![1, 3],
+                received_certs: vec![1, 3],
+            })
+        );
+
+        // force Bob to leave by expiring his main WoT membership
+        Membership::do_remove_membership(2, MembershipRemovalReason::System);
+
+        // check events
+        // membership removal
+        System::assert_has_event(RuntimeEvent::Membership(
+            pallet_membership::Event::MembershipRemoved {
+                member: 2,
+                reason: MembershipRemovalReason::System,
+            },
+        ));
+        // smith membership removal
+        System::assert_has_event(RuntimeEvent::SmithMembers(
+            pallet_smith_members::Event::SmithMembershipRemoved { idty_index: 2 },
+        ));
+        System::assert_has_event(RuntimeEvent::AuthorityMembers(
+            pallet_authority_members::Event::MemberRemoved { member: 2 },
+        ));
+        // also events for certifications
+
+        // check state
+        // Bob is not Smith anymore
+        assert_eq!(
+            SmithMembers::smiths(2),
+            Some(pallet_smith_members::SmithMeta {
+                status: SmithStatus::Excluded, // automatically excluded
+                expires_on: None,              // because excluded, no expiry is scheduled
+                issued_certs: vec![1, 3],
+                received_certs: vec![], // received certs are deleted
+            })
+        );
+        // Alice smith cert to Bob has been deleted
+        assert_eq!(
+            SmithMembers::smiths(1),
+            Some(pallet_smith_members::SmithMeta {
+                status: SmithStatus::Smith,
+                expires_on: None,      // because online
+                issued_certs: vec![3], // cert to Bob has been deleted
+                received_certs: vec![2, 3],
+            })
+        );
+
+        // run to next block
+        run_to_block(2);
+
+        // simulate new session
+        AuthorityMembers::new_session(2);
+        // check event
+        System::assert_has_event(RuntimeEvent::AuthorityMembers(
+            pallet_authority_members::Event::OutgoingAuthorities { members: vec![2] },
+        ));
+
+        // control state is still ok
+        assert_eq!(
+            SmithMembers::smiths(2),
+            Some(pallet_smith_members::SmithMeta {
+                status: SmithStatus::Excluded, // still excluded
+                expires_on: None,              // should be still None
+                issued_certs: vec![1, 3],
+                received_certs: vec![],
+            })
+        );
+
+        // println!("{:#?}", System::events()); // with -- --nocapture
+    })
 }
 
 /// test new account creation
