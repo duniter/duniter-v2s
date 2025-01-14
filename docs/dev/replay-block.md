@@ -1,5 +1,7 @@
 # How to replay a block
 
+WARN: try-runtime is not properly implemented
+
 You can use `try-runtime` subcommand to replay a block against a real state from a live network.
 
 1. Checkout the git tag of the runtime version at the block you want to replay

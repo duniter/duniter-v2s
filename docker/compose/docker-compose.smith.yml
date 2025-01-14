@@ -4,7 +4,7 @@ services:
   # duniter smith node
   duniter-v2s-smith:
     container_name: duniter-v2s-smith
-    image: duniter/duniter-v2s-gdev:latest
+    image: duniter/duniter-v2s-gdev-800:latest
     ports:
       # RPC API of a smith node should not be exposed publicly!
       - 127.0.0.1:9944:9944
