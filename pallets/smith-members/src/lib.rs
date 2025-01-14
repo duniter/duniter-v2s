@@ -240,10 +240,13 @@ pub mod pallet {
                         received_certs: issuers_,
                     },
                 );
-                ExpiresOn::<T>::append(
-                    CurrentSession::<T>::get() + T::SmithInactivityMaxDuration::get(),
-                    receiver,
-                );
+                // if smith is offline, schedule expire
+                if !*is_online {
+                    ExpiresOn::<T>::append(
+                        CurrentSession::<T>::get() + T::SmithInactivityMaxDuration::get(),
+                        receiver,
+                    );
+                }
             }
 
             for (issuer, issued_certs) in cert_meta_by_issuer {
@@ -516,7 +519,7 @@ impl<T: Config> Pallet<T> {
 
     /// Handle the removal of Smiths whose expiration time has been reached at a given session index.
     fn on_exclude_expired_smiths(at: SessionIndex) {
-        if let Some(smiths_to_remove) = ExpiresOn::<T>::get(at) {
+        if let Some(smiths_to_remove) = ExpiresOn::<T>::take(at) {
             for smith in smiths_to_remove {
                 if let Some(smith_meta) = Smiths::<T>::get(smith) {
                     if let Some(expires_on) = smith_meta.expires_on {
