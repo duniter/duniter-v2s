@@ -526,6 +526,26 @@ async fn should_be_certified_by(
     }
 }
 
+#[then(regex = r"([a-zA-Z]+) should (not )?be eligible to UD")]
+async fn should_be_eligible_to_ud(
+    world: &mut DuniterWorld,
+    identity: String,
+    not: String,
+) -> Result<()> {
+    let eligible = not.is_empty();
+
+    assert_eq!(
+        identity::get_identity_value(world, identity)
+            .await
+            .expect("Identity not found")
+            .data
+            .first_eligible_ud
+            != 0,
+        eligible
+    );
+    Ok(())
+}
+
 use gdev::runtime_types::pallet_identity::types::IdtyStatus;
 
 // status from string

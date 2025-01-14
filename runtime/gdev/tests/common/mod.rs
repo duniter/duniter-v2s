@@ -223,7 +223,9 @@ impl ExtBuilder {
                     index: i as u32 + 1,
                     name: name.clone(),
                     value: IdtyValue {
-                        data: IdtyData::new(),
+                        data: IdtyData {
+                            first_eligible_ud: pallet_universal_dividend::FirstEligibleUd::min(),
+                        },
                         next_creatable_identity_on: Default::default(),
                         owner_key: owner_key.clone(),
                         old_owner_key: None,
