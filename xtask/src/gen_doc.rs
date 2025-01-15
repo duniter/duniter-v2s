@@ -232,6 +232,7 @@ impl CallCategory {
                 | "force_unreserve"
                 | "force_adjust_total_issuance",
             ) => Self::Root,
+            ("Balances", "burn") => Self::Disabled,
             ("Sudo", _) => Self::Sudo,
             ("Treasury", "approve_proposal" | "reject_proposal") => Self::OtherOrigin,
             ("Utility", "dispatch_as" | "with_weight") => Self::Root,

@@ -180,7 +180,7 @@ fn test_refund_reaped_linked_account() {
 
             // Ferdie's account can be linked to Alice identity
             assert_ok!(Identity::link_account(
-                frame_system::RawOrigin::Signed(alice.clone()).into(),
+                RuntimeOrigin::signed(alice.clone()),
                 ferdie.clone(),
                 signature.into()
             ));

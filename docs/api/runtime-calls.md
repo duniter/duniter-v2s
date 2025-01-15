@@ -12,7 +12,7 @@ Calls are categorized according to the dispatch origin they require:
 
 We only document user calls below.
 
-There are **64** user calls from **17** pallets.
+There are **63** user calls from **17** pallets.
 
 ## Account - 1
 
@@ -104,28 +104,6 @@ The dispatch origin of this call must be Signed.
   of the funds the account has, causing the sender account to be killed (false), or
   transfer everything except at least the existential deposit, which will guarantee to
   keep the sender account alive (true).
-
-### burn - 10
-
-<details><summary><code>burn(value, keep_alive)</code></summary>
-
-No weight available.
-
-```rust
-value: T::Balance
-keep_alive: bool
-```
-</details>
-
-
-
-Burn the specified liquid free balance from the origin account.
-
-If the origin's account ends up below the existential deposit as a result
-of the burn and `keep_alive` is false, the account will be reaped.
-
-Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
-this `burn` operation will reduce total issuance by the amount _burned_.
 
 ## OneshotAccount - 7
 

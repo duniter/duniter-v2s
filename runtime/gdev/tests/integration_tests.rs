@@ -166,9 +166,9 @@ fn test_total_issuance_vs_monetary_mass() {
                 6000
             );
             // Alice claims her UD
-            assert_ok!(UniversalDividend::claim_uds(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into()
-            ));
+            assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(
+                AccountKeyring::Alice.to_account_id()
+            )));
             assert_eq!(Balances::total_issuance(), 4000);
             assert_eq!(
                 pallet_universal_dividend::MonetaryMass::<Runtime>::get(),
@@ -177,9 +177,9 @@ fn test_total_issuance_vs_monetary_mass() {
             // second UD creation
             run_to_block(21);
             // Bob claims his 2 UDs
-            assert_ok!(UniversalDividend::claim_uds(
-                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into()
-            ));
+            assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(
+                AccountKeyring::Bob.to_account_id()
+            )));
             assert_eq!(Balances::total_issuance(), 6000);
             assert_eq!(
                 pallet_universal_dividend::MonetaryMass::<Runtime>::get(),
@@ -200,7 +200,7 @@ fn test_identity_below_ed() {
             // a transfer below ED will lead to frozen token error
             assert_noop!(
                 Balances::transfer_allow_death(
-                    frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                    RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                     MultiAddress::Id(AccountKeyring::Bob.to_account_id()),
                     850
                 ),
@@ -209,7 +209,7 @@ fn test_identity_below_ed() {
             // // Old behavior below
             // // Should be able to go below existential deposit, loose dust, and still not die
             // assert_ok!(Balances::transfer(
-            //     frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+            //     RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
             //     MultiAddress::Id(AccountKeyring::Bob.to_account_id()),
             //     800
             // ));
@@ -337,29 +337,29 @@ fn test_validate_identity_when_claim() {
             run_to_block(1);
             // alice create identity for Eve
             assert_ok!(Identity::create_identity(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 AccountKeyring::Eve.to_account_id(),
             ));
             run_to_block(2);
             // eve confirms her identity
             assert_ok!(Identity::confirm_identity(
-                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
                 "Eeeeeveeeee".into(),
             ));
             run_to_block(3);
             // eve gets certified by bob and charlie
             assert_ok!(Certification::add_cert(
-                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Bob.to_account_id()),
                 5
             ));
             assert_ok!(Certification::add_cert(
-                frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Charlie.to_account_id()),
                 5
             ));
 
             // eve request distance evaluation for herself
             assert_ok!(Distance::request_distance_evaluation(
-                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
             ));
 
             // Pass 2nd evaluation period
@@ -367,7 +367,7 @@ fn test_validate_identity_when_claim() {
             run_to_block(2 * eval_period);
             // simulate an evaluation published by smith Alice
             assert_ok!(Distance::force_update_evaluation(
-                frame_system::RawOrigin::Root.into(),
+                RuntimeOrigin::root(),
                 AccountKeyring::Alice.to_account_id(),
                 pallet_distance::ComputationResult {
                     distances: vec![Perbill::one()],
@@ -386,7 +386,7 @@ fn test_validate_identity_when_claim() {
             // the following call does not exist anymore
             // assert_noop!(
             //     Membership::claim_membership(
-            //         frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+            //         RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
             //     ),
             //     pallet_membership::Error::<Runtime>::AlreadyMember
             // );
@@ -417,7 +417,7 @@ fn test_identity_creation_workflow() {
             run_to_block(1);
             // alice create identity for Eve
             assert_ok!(Identity::create_identity(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 AccountKeyring::Eve.to_account_id(),
             ));
             assert_eq!(
@@ -434,7 +434,7 @@ fn test_identity_creation_workflow() {
             run_to_block(2);
             // eve confirms her identity
             assert_ok!(Identity::confirm_identity(
-                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
                 "Eeeeeveeeee".into(),
             ));
             assert_eq!(
@@ -451,17 +451,17 @@ fn test_identity_creation_workflow() {
             run_to_block(3);
             // eve gets certified by bob and charlie
             assert_ok!(Certification::add_cert(
-                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Bob.to_account_id()),
                 5
             ));
             assert_ok!(Certification::add_cert(
-                frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Charlie.to_account_id()),
                 5
             ));
             // charlie also request distance evaluation for eve
             // (could be done in batch)
             assert_ok!(Distance::request_distance_evaluation_for(
-                frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Charlie.to_account_id()),
                 5
             ));
             // then the evaluation is pending
@@ -475,7 +475,7 @@ fn test_identity_creation_workflow() {
             run_to_block(2 * eval_period);
             // simulate evaluation published by smith Alice
             assert_ok!(Distance::force_update_evaluation(
-                frame_system::RawOrigin::Root.into(),
+                RuntimeOrigin::root(),
                 AccountKeyring::Alice.to_account_id(),
                 pallet_distance::ComputationResult {
                     distances: vec![Perbill::one()],
@@ -524,9 +524,9 @@ fn test_identity_creation_workflow() {
                     members_count: 5,
                 },
             ));
-            assert_ok!(UniversalDividend::claim_uds(
-                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
-            ));
+            assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(
+                AccountKeyring::Eve.to_account_id()
+            ),));
             System::assert_has_event(RuntimeEvent::UniversalDividend(
                 pallet_universal_dividend::Event::UdsClaimed {
                     count: (10 - first_eligible),
@@ -555,7 +555,7 @@ fn test_can_not_issue_cert_when_membership_lost() {
         // Bob can not issue a certification
         assert_noop!(
             Certification::add_cert(
-                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Bob.to_account_id()),
                 3,
             ),
             pallet_duniter_wot::Error::<gdev_runtime::Runtime>::IssuerNotMember
@@ -614,23 +614,23 @@ fn test_membership_renewal() {
         .execute_with(|| {
             // can not renew membership immediately
             assert_noop!(
-                Distance::request_distance_evaluation(
-                    frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
-                ),
+                Distance::request_distance_evaluation(RuntimeOrigin::signed(
+                    AccountKeyring::Alice.to_account_id()
+                ),),
                 pallet_duniter_wot::Error::<Runtime>::MembershipRenewalPeriodNotRespected,
             );
 
             // but ok after waiting 10 blocks delay
             run_to_block(11);
             assert_ok!(Distance::request_distance_evaluation(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
             ));
 
             // Pass 3rd evaluation period
             let eval_period: u32 = <Runtime as pallet_distance::Config>::EvaluationPeriod::get();
             run_to_block(3 * eval_period);
             assert_ok!(Distance::force_update_evaluation(
-                frame_system::RawOrigin::Root.into(),
+                RuntimeOrigin::root(),
                 AccountKeyring::Alice.to_account_id(),
                 pallet_distance::ComputationResult {
                     distances: vec![Perbill::one()],
@@ -650,9 +650,9 @@ fn test_membership_renewal() {
             // not possible to renew manually
             // can not ask renewal when period is not respected
             assert_noop!(
-                Distance::request_distance_evaluation(
-                    frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
-                ),
+                Distance::request_distance_evaluation(RuntimeOrigin::signed(
+                    AccountKeyring::Alice.to_account_id()
+                ),),
                 pallet_duniter_wot::Error::<Runtime>::MembershipRenewalPeriodNotRespected,
             );
 
@@ -770,9 +770,9 @@ fn test_claim_ud_after_revoke() {
         );
 
         assert_err!(
-            UniversalDividend::claim_uds(
-                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into()
-            ),
+            UniversalDividend::claim_uds(RuntimeOrigin::signed(
+                AccountKeyring::Bob.to_account_id()
+            )),
             pallet_universal_dividend::Error::<Runtime>::AccountNotAllowedToClaimUds,
         );
 
@@ -833,14 +833,14 @@ fn test_ud_claimed_membership_on_and_off() {
 
         // alice claims back her membership through distance evaluation
         assert_ok!(Distance::force_valid_distance_status(
-            frame_system::RawOrigin::Root.into(),
+            RuntimeOrigin::root(),
             1,
         ));
         // it can not be done manually
         // because the call does not exist anymore
         // assert_noop!(
         //     Membership::claim_membership(
-        //         frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+        //         RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
         //     ),
         //     pallet_membership::Error::<Runtime>::AlreadyMember
         // );
@@ -864,9 +864,9 @@ fn test_ud_claimed_membership_on_and_off() {
 
         // one block later, alice claims her new UD
         run_to_block(25);
-        assert_ok!(UniversalDividend::claim_uds(
-            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into()
-        ));
+        assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(
+            AccountKeyring::Alice.to_account_id()
+        )));
         System::assert_has_event(RuntimeEvent::UniversalDividend(
             pallet_universal_dividend::Event::UdsClaimed {
                 count: 1,
@@ -919,7 +919,7 @@ fn test_smith_certification() {
 
         assert_noop!(
             SmithMembers::certify_smith(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 2
             ),
             pallet_smith_members::Error::<Runtime>::CertificationAlreadyExists
@@ -927,7 +927,7 @@ fn test_smith_certification() {
 
         assert_noop!(
             SmithMembers::certify_smith(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 4
             ),
             pallet_smith_members::Error::<Runtime>::CertificationReceiverMustHaveBeenInvited
@@ -966,17 +966,15 @@ fn test_smith_process() {
             // no more membership request
 
             assert_ok!(SmithMembers::invite_smith(
-                frame_system::RawOrigin::Signed(alice.clone()).into(),
+                RuntimeOrigin::signed(alice.clone()),
                 4
             ));
-            assert_ok!(SmithMembers::accept_invitation(
-                frame_system::RawOrigin::Signed(dave).into(),
-            ));
+            assert_ok!(SmithMembers::accept_invitation(RuntimeOrigin::signed(dave),));
 
             // Dave cannot (yet) set his session keys
             assert_err!(
                 AuthorityMembers::set_session_keys(
-                    frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
+                    RuntimeOrigin::signed(AccountKeyring::Dave.to_account_id()),
                     dummy_session_keys.clone()
                 ),
                 pallet_authority_members::Error::<Runtime>::NotMember
@@ -984,15 +982,15 @@ fn test_smith_process() {
 
             // Alice Bob and Charlie can certify Dave
             assert_ok!(SmithMembers::certify_smith(
-                frame_system::RawOrigin::Signed(alice.clone()).into(),
+                RuntimeOrigin::signed(alice.clone()),
                 4
             ));
             assert_ok!(SmithMembers::certify_smith(
-                frame_system::RawOrigin::Signed(bob.clone()).into(),
+                RuntimeOrigin::signed(bob.clone()),
                 4
             ));
             assert_ok!(SmithMembers::certify_smith(
-                frame_system::RawOrigin::Signed(charlie.clone()).into(),
+                RuntimeOrigin::signed(charlie.clone()),
                 4
             ));
 
@@ -1010,14 +1008,14 @@ fn test_smith_process() {
 
             // Dave can set his (dummy) session keys
             assert_ok!(AuthorityMembers::set_session_keys(
-                frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Dave.to_account_id()),
                 dummy_session_keys
             ));
 
             // Dave can go online
-            assert_ok!(AuthorityMembers::go_online(
-                frame_system::RawOrigin::Signed(AccountKeyring::Dave.to_account_id()).into(),
-            ));
+            assert_ok!(AuthorityMembers::go_online(RuntimeOrigin::signed(
+                AccountKeyring::Dave.to_account_id()
+            ),));
         })
 }
 
@@ -1120,7 +1118,7 @@ fn test_create_new_account() {
 
             // Should be able to transfer 5 units to a new account
             assert_ok!(Balances::transfer_allow_death(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 500
             ));
@@ -1148,7 +1146,7 @@ fn test_create_new_account() {
 
             // can remove an account using transfer
             assert_ok!(Balances::transfer_allow_death(
-                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
                 MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
                 500
             ));
@@ -1177,26 +1175,26 @@ fn test_create_new_idty() {
 
             // Should be able to create an identity
             assert_ok!(Balances::transfer_allow_death(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 200
             ));
             assert_noop!(
                 Identity::create_identity(
-                    frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                    RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                     AccountKeyring::Eve.to_account_id(),
                 ),
                 pallet_identity::Error::<Runtime>::InsufficientBalance
             );
 
             assert_ok!(Balances::transfer_allow_death(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 200
             ));
 
             assert_ok!(Identity::create_identity(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 AccountKeyring::Eve.to_account_id(),
             ));
 
@@ -1222,7 +1220,7 @@ fn test_create_new_idty_without_founds() {
             // Should not be able to create an identity without founds
             assert_noop!(
                 Identity::create_identity(
-                    frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                    RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                     AccountKeyring::Eve.to_account_id(),
                 ),
                 pallet_identity::Error::<Runtime>::AccountNotExist
@@ -1230,13 +1228,13 @@ fn test_create_new_idty_without_founds() {
 
             // Deposit some founds on the account
             assert_ok!(Balances::transfer_allow_death(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 500
             ));
 
             assert_ok!(Identity::create_identity(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 AccountKeyring::Eve.to_account_id(),
             ));
             System::assert_has_event(RuntimeEvent::Identity(
@@ -1276,38 +1274,38 @@ fn test_validate_new_idty_after_few_uds() {
 
             // Should be able to create an identity
             assert_ok!(Balances::transfer_allow_death(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 200
             ));
             assert_ok!(Identity::create_identity(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 AccountKeyring::Eve.to_account_id(),
             ));
 
             // At next block, the created identity should be confirmed by its owner
             run_to_block(22);
             assert_ok!(Identity::confirm_identity(
-                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
                 pallet_identity::IdtyName::from("Eve"),
             ));
 
             // At next block, Bob should be able to certify the new identity
             run_to_block(23);
             assert_ok!(Certification::add_cert(
-                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Bob.to_account_id()),
                 5,
             ));
             // valid distance status should trigger identity validation
             assert_ok!(Distance::force_valid_distance_status(
-                frame_system::RawOrigin::Root.into(),
+                RuntimeOrigin::root(),
                 5,
             ));
             // and it is not possible to call it manually
             // because the call does not exist anymore
             // assert_noop!(
             //     Membership::claim_membership(
-            //         frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+            //         RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
             //     ),
             //     pallet_membership::Error::<Runtime>::AlreadyMember
             // );
@@ -1341,34 +1339,34 @@ fn test_claim_memberhsip_after_few_uds() {
 
             // Should be able to create an identity
             assert_ok!(Identity::create_identity(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 AccountKeyring::Eve.to_account_id(),
             ));
 
             // At next block, the created identity should be confirmed by its owner
             run_to_block(22);
             assert_ok!(Identity::confirm_identity(
-                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
                 pallet_identity::IdtyName::from("Eve"),
             ));
 
             // At next block, Bob should be able to certify the new identity
             run_to_block(23);
             assert_ok!(Certification::add_cert(
-                frame_system::RawOrigin::Signed(AccountKeyring::Bob.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Bob.to_account_id()),
                 5,
             ));
 
             // eve membership should be able to be claimed through distance evaluation
             assert_ok!(Distance::force_valid_distance_status(
-                frame_system::RawOrigin::Root.into(),
+                RuntimeOrigin::root(),
                 5,
             ));
             // but not manually
             // because the call does not exist
             // assert_noop!(
             //     Membership::claim_membership(
-            //         frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+            //         RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
             //     ),
             //     pallet_membership::Error::<Runtime>::AlreadyMember
             // );
@@ -1398,7 +1396,7 @@ fn test_oneshot_accounts() {
             run_to_block(6);
 
             assert_ok!(OneshotAccount::create_oneshot_account(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
                 400
             ));
@@ -1409,7 +1407,7 @@ fn test_oneshot_accounts() {
             run_to_block(7);
 
             assert_ok!(OneshotAccount::consume_oneshot_account_with_remaining(
-                frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
                 0,
                 pallet_oneshot_account::Account::Oneshot(MultiAddress::Id(
                     AccountKeyring::Ferdie.to_account_id()
@@ -1425,7 +1423,7 @@ fn test_oneshot_accounts() {
             );
             assert_noop!(
                 OneshotAccount::consume_oneshot_account(
-                    frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                    RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
                     0,
                     pallet_oneshot_account::Account::Oneshot(MultiAddress::Id(
                         AccountKeyring::Ferdie.to_account_id()
@@ -1441,7 +1439,7 @@ fn test_oneshot_accounts() {
             );
 
             assert_ok!(OneshotAccount::consume_oneshot_account(
-                frame_system::RawOrigin::Signed(AccountKeyring::Ferdie.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Ferdie.to_account_id()),
                 0,
                 pallet_oneshot_account::Account::Normal(MultiAddress::Id(
                     AccountKeyring::Alice.to_account_id()
@@ -1453,7 +1451,7 @@ fn test_oneshot_accounts() {
             );
             assert_noop!(
                 OneshotAccount::consume_oneshot_account(
-                    frame_system::RawOrigin::Signed(AccountKeyring::Eve.to_account_id()).into(),
+                    RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
                     0,
                     pallet_oneshot_account::Account::Normal(MultiAddress::Id(
                         AccountKeyring::Alice.to_account_id()
@@ -1480,7 +1478,7 @@ fn test_link_account() {
             // Ferdie's account cannot be linked to Alice identity because the account does not exist
             assert_noop!(
                 Identity::link_account(
-                    frame_system::RawOrigin::Signed(alice.clone()).into(),
+                    RuntimeOrigin::signed(alice.clone()),
                     ferdie.clone(),
                     signature.into()
                 ),
@@ -1488,13 +1486,13 @@ fn test_link_account() {
             );
 
             assert_ok!(Balances::transfer_allow_death(
-                frame_system::RawOrigin::Signed(alice.clone()).into(),
+                RuntimeOrigin::signed(alice.clone()),
                 MultiAddress::Id(ferdie.clone()),
                 1_000
             ));
             // Ferdie's account can be linked to Alice identity
             assert_ok!(Identity::link_account(
-                frame_system::RawOrigin::Signed(alice).into(),
+                RuntimeOrigin::signed(alice),
                 ferdie,
                 signature.into()
             ));
@@ -1517,7 +1515,7 @@ fn test_change_owner_key_validator_online() {
         // As an online validator she cannot change key
         assert_noop!(
             Identity::change_owner_key(
-                frame_system::RawOrigin::Signed(alice.clone()).into(),
+                RuntimeOrigin::signed(alice.clone()),
                 ferdie.clone(),
                 signature.into()
             ),
@@ -1558,7 +1556,7 @@ fn test_change_owner_key() {
         );
         // Dave can change his owner key to Ferdie's
         assert_ok!(Identity::change_owner_key(
-            frame_system::RawOrigin::Signed(charlie.clone()).into(),
+            RuntimeOrigin::signed(charlie.clone()),
             ferdie.clone(),
             signature.into()
         ));
@@ -1581,12 +1579,12 @@ fn test_change_owner_key() {
         // Ferdie can set its session_keys and go online
         frame_system::Pallet::<Runtime>::inc_providers(&ferdie);
         assert_ok!(AuthorityMembers::set_session_keys(
-            frame_system::RawOrigin::Signed(AccountKeyring::Ferdie.to_account_id()).into(),
+            RuntimeOrigin::signed(AccountKeyring::Ferdie.to_account_id()),
             create_dummy_session_keys()
         ));
-        assert_ok!(AuthorityMembers::go_online(
-            frame_system::RawOrigin::Signed(AccountKeyring::Ferdie.to_account_id()).into()
-        ));
+        assert_ok!(AuthorityMembers::go_online(RuntimeOrigin::signed(
+            AccountKeyring::Ferdie.to_account_id()
+        )));
 
         // Charlie is still an offline smith
         assert_eq!(
@@ -1630,12 +1628,12 @@ fn test_smith_member_can_revoke_its_idty() {
         // Charlie goes online
         frame_system::Pallet::<Runtime>::inc_providers(&AccountKeyring::Charlie.to_account_id());
         assert_ok!(AuthorityMembers::set_session_keys(
-            frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
+            RuntimeOrigin::signed(AccountKeyring::Charlie.to_account_id()),
             create_dummy_session_keys()
         ));
-        assert_ok!(AuthorityMembers::go_online(
-            frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into()
-        ));
+        assert_ok!(AuthorityMembers::go_online(RuntimeOrigin::signed(
+            AccountKeyring::Charlie.to_account_id()
+        )));
 
         run_to_block(25);
 
@@ -1654,7 +1652,7 @@ fn test_smith_member_can_revoke_its_idty() {
             AccountKeyring::Charlie.sign(&(REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode());
 
         assert_ok!(Identity::revoke_identity(
-            frame_system::RawOrigin::Signed(AccountKeyring::Charlie.to_account_id()).into(),
+            RuntimeOrigin::signed(AccountKeyring::Charlie.to_account_id()),
             3,
             AccountKeyring::Charlie.to_account_id(),
             signature.into()
@@ -1720,9 +1718,9 @@ fn test_unlink_identity() {
         assert_eq!(Identity::identity_index_of(&alice_account), Some(1));
 
         // Alice can unlink her identity from her account
-        assert_ok!(Account::unlink_identity(
-            frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
-        ));
+        assert_ok!(Account::unlink_identity(RuntimeOrigin::signed(
+            AccountKeyring::Alice.to_account_id()
+        ),));
 
         // Alice account has been unlinked
         assert_eq!(
@@ -1749,7 +1747,7 @@ fn test_new_account_linked() {
             );
             // Alice creates identity for Eve
             assert_ok!(Identity::create_identity(
-                frame_system::RawOrigin::Signed(AccountKeyring::Alice.to_account_id()).into(),
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
                 eve_account.clone(),
             ));
             // then eve account should be linked to her identity
@@ -1781,7 +1779,7 @@ fn test_killed_account() {
                 Some(2)
             );
             assert_ok!(Balances::transfer_all(
-                frame_system::RawOrigin::Signed(bob_account.clone()).into(),
+                RuntimeOrigin::signed(bob_account.clone()),
                 sp_runtime::MultiAddress::Id(alice_account.clone()),
                 false
             ));
