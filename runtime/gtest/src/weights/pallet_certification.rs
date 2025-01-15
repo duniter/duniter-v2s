@@ -188,4 +188,26 @@ impl<T: frame_system::Config> pallet_certification::WeightInfo for WeightInfo<T>
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
+	/// Storage: `Certification::CertsByReceiver` (r:1 w:1)
+	/// Proof: `Certification::CertsByReceiver` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Certification::StorageIdtyCertMeta` (r:1000 w:1000)
+	/// Proof: `Certification::StorageIdtyCertMeta` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Membership::Membership` (r:1 w:0)
+	/// Proof: `Membership::Membership` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// The range of component `i` is `[2, 1000]`.
+	fn do_remove_all_certs_received_by(i: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `554 + i * (35 ±0)`
+		//  Estimated: `4018 + i * (2511 ±0)`
+		// Minimum execution time: 29_810_000 picoseconds.
+		Weight::from_parts(30_875_000, 0)
+			.saturating_add(Weight::from_parts(0, 4018))
+			// Standard Error: 25_367
+			.saturating_add(Weight::from_parts(8_966_191, 0).saturating_mul(i.into()))
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(i.into())))
+			.saturating_add(T::DbWeight::get().writes(1))
+			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i.into())))
+			.saturating_add(Weight::from_parts(0, 2511).saturating_mul(i.into()))
+	}
 }

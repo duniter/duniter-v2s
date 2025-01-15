@@ -37,11 +37,11 @@ mod benchmarks {
 
     fn add_certs<T: Config>(i: u32, receiver: T::IdtyIndex) -> Result<(), &'static str> {
         Pallet::<T>::remove_all_certs_received_by(RawOrigin::Root.into(), receiver)?;
-        for j in 1..i {
+        for j in 1..i + 1 {
             Pallet::<T>::do_add_cert_checked(j.into(), receiver, false)?;
         }
         assert!(
-            CertsByReceiver::<T>::get(receiver).len() as u32 == i - 1,
+            CertsByReceiver::<T>::get(receiver).len() as u32 == i,
             "Certs not added",
         );
         Ok(())
@@ -154,6 +154,29 @@ mod benchmarks {
             }
             .into(),
         );
+        Ok(())
+    }
+
+    #[benchmark]
+    fn do_remove_all_certs_received_by(i: Linear<2, 100>) -> Result<(), BenchmarkError> {
+        let receiver: T::IdtyIndex = 0.into();
+        add_certs::<T>(i, receiver)?;
+
+        #[block]
+        {
+            Pallet::<T>::do_remove_all_certs_received_by(receiver);
+        }
+
+        for issuer in 1..i + 1 {
+            assert_has_event::<T>(
+                Event::<T>::CertRemoved {
+                    issuer: issuer.into(),
+                    receiver,
+                    expiration: false,
+                }
+                .into(),
+            );
+        }
         Ok(())
     }
 
