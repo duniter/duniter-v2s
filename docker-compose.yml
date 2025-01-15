@@ -5,7 +5,7 @@ services:
     container_name: duniter-v2s-mirror
     # the image tells which network you are connecting to
     # here it is gdev network
-    image: duniter/duniter-v2s-gdev:latest
+    image: duniter/duniter-v2s-gdev-800:latest
     ports:
       # prometheus telemetry to monitor resource use
       - 9615:9615

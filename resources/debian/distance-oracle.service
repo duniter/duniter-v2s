@@ -5,6 +5,6 @@ After=duniter-smith.service
 
 [Service]
 EnvironmentFile=/etc/duniter/env_file
-ExecStart=/usr/bin/duniter2 distance-oracle --evaluation-result-dir ${BASE_PATH}/chains/${DUNITER_CHAIN_NAME}/distance --rpc-url ${ORACLE_RPC_URL} --log ${ORACLE_LOG_LEVEL}
+ExecStart=/usr/bin/duniter2 distance-oracle --evaluation-result-dir ${BASE_PATH}/chains/${DUNITER_CHAIN_NAME}/distance --rpc-url ${ORACLE_RPC_URL} --interval ${ORACLE_INTERVAL} --log ${ORACLE_LOG_LEVEL}
 User=duniter
 Group=duniter

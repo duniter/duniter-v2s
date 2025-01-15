@@ -3,249 +3,47 @@
 Calls are categorized according to the dispatch origin they require:
 
 1. **User calls**: the dispatch origin for this kind of call must be signed by
-the transactor. This is the only call category that can be submitted with an extrinsic.
+   the transactor. This is the only call category that can be submitted with an extrinsic.
 1. **Root calls**: This kind of call requires a special origin that can only be invoked
-through on-chain governance mechanisms.
+   through on-chain governance mechanisms.
 1. **Inherent calls**: This kind of call is invoked by the author of the block itself
-(usually automatically by the node).
+   (usually automatically by the node).
 1. **Disabled calls**: These calls can not be called directly, they are reserved for internal use by other runtime calls.
 
+We only document user calls below.
 
-## User calls
+There are **63** user calls from **17** pallets.
 
-There are **86** user calls from **21** pallets.
+## Account - 1
 
-### Account - 1
-
-#### unlink_identity - 0
+### unlink_identity - 0
 
 <details><summary><code>unlink_identity()</code></summary>
 
-Taking 0.0111 % of a block.
+Taking 0.0109 % of a block.
 
 ```rust
 ```
 </details>
+
 
 
 Unlink the identity associated with the account.
 
-### Scheduler - 2
+## Balances - 6
 
-#### schedule - 0
-
-<details><summary><code>schedule(when, maybe_periodic, priority, call)</code></summary>
-
-Taking 0.0122 % of a block.
-
-```rust
-when: BlockNumberFor<T>
-maybe_periodic: Option<schedule::Period<BlockNumberFor<T>>>
-priority: schedule::Priority
-call: Box<<T as Config>::RuntimeCall>
-```
-</details>
-
-
-Anonymously schedule a task.
-
-#### cancel - 1
-
-<details><summary><code>cancel(when, index)</code></summary>
-
-Taking 0.0236 % of a block.
-
-```rust
-when: BlockNumberFor<T>
-index: u32
-```
-</details>
-
-
-Cancel an anonymously scheduled task.
-
-#### schedule_named - 2
-
-<details><summary><code>schedule_named(id, when, maybe_periodic, priority, call)</code></summary>
-
-Taking 0.0189 % of a block.
-
-```rust
-id: TaskName
-when: BlockNumberFor<T>
-maybe_periodic: Option<schedule::Period<BlockNumberFor<T>>>
-priority: schedule::Priority
-call: Box<<T as Config>::RuntimeCall>
-```
-</details>
-
-
-Schedule a named task.
-
-#### cancel_named - 3
-
-<details><summary><code>cancel_named(id)</code></summary>
-
-Taking 0.0248 % of a block.
-
-```rust
-id: TaskName
-```
-</details>
-
-
-Cancel a named scheduled task.
-
-#### schedule_after - 4
-
-<details><summary><code>schedule_after(after, maybe_periodic, priority, call)</code></summary>
-
-No weight available.
-
-```rust
-after: BlockNumberFor<T>
-maybe_periodic: Option<schedule::Period<BlockNumberFor<T>>>
-priority: schedule::Priority
-call: Box<<T as Config>::RuntimeCall>
-```
-</details>
-
-
-Anonymously schedule a task after a delay.
-
-#### schedule_named_after - 5
-
-<details><summary><code>schedule_named_after(id, after, maybe_periodic, priority, call)</code></summary>
-
-No weight available.
-
-```rust
-id: TaskName
-after: BlockNumberFor<T>
-maybe_periodic: Option<schedule::Period<BlockNumberFor<T>>>
-priority: schedule::Priority
-call: Box<<T as Config>::RuntimeCall>
-```
-</details>
-
-
-Schedule a named task after a delay.
-
-#### set_retry - 6
-
-<details><summary><code>set_retry(task, retries, period)</code></summary>
-
-Taking 0.012 % of a block.
-
-```rust
-task: TaskAddress<BlockNumberFor<T>>
-retries: u8
-period: BlockNumberFor<T>
-```
-</details>
-
-
-Set a retry configuration for a task so that, in case its scheduled run fails, it will
-be retried after `period` blocks, for a total amount of `retries` retries or until it
-succeeds.
-
-Tasks which need to be scheduled for a retry are still subject to weight metering and
-agenda space, same as a regular task. If a periodic task fails, it will be scheduled
-normally while the task is retrying.
-
-Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
-clones of the original task. Their retry configuration will be derived from the
-original task's configuration, but will have a lower value for `remaining` than the
-original `total_retries`.
-
-#### set_retry_named - 7
-
-<details><summary><code>set_retry_named(id, retries, period)</code></summary>
-
-Taking 0.0132 % of a block.
-
-```rust
-id: TaskName
-retries: u8
-period: BlockNumberFor<T>
-```
-</details>
-
-
-Set a retry configuration for a named task so that, in case its scheduled run fails, it
-will be retried after `period` blocks, for a total amount of `retries` retries or until
-it succeeds.
-
-Tasks which need to be scheduled for a retry are still subject to weight metering and
-agenda space, same as a regular task. If a periodic task fails, it will be scheduled
-normally while the task is retrying.
-
-Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
-clones of the original task. Their retry configuration will be derived from the
-original task's configuration, but will have a lower value for `remaining` than the
-original `total_retries`.
-
-#### cancel_retry - 8
-
-<details><summary><code>cancel_retry(task)</code></summary>
-
-Taking 0.012 % of a block.
-
-```rust
-task: TaskAddress<BlockNumberFor<T>>
-```
-</details>
-
-
-Removes the retry configuration of a task.
-
-#### cancel_retry_named - 9
-
-<details><summary><code>cancel_retry_named(id)</code></summary>
-
-Taking 0.0132 % of a block.
-
-```rust
-id: TaskName
-```
-</details>
-
-
-Cancel the retry configuration of a named task.
-
-### Babe - 3
-
-#### report_equivocation - 0
-
-<details><summary><code>report_equivocation(equivocation_proof, key_owner_proof)</code></summary>
-
-No weight available.
-
-```rust
-equivocation_proof: Box<EquivocationProof<HeaderFor<T>>>
-key_owner_proof: T::KeyOwnerProof
-```
-</details>
-
-
-Report authority equivocation/misbehavior. This method will verify
-the equivocation proof and validate the given key ownership proof
-against the extracted offender. If both are valid, the offence will
-be reported.
-
-### Balances - 6
-
-#### transfer_allow_death - 0
+### transfer_allow_death - 0
 
 <details><summary><code>transfer_allow_death(dest, value)</code></summary>
 
-Taking 0.0199 % of a block.
+Taking 0.0194 % of a block.
 
 ```rust
 dest: AccountIdLookupOf<T>
 value: T::Balance
 ```
 </details>
+
 
 
 Transfer some liquid free balance to another account.
@@ -256,17 +54,18 @@ of the transfer, the account will be reaped.
 
 The dispatch origin for this call must be `Signed` by the transactor.
 
-#### transfer_keep_alive - 3
+### transfer_keep_alive - 3
 
 <details><summary><code>transfer_keep_alive(dest, value)</code></summary>
 
-Taking 0.0125 % of a block.
+Taking 0.0122 % of a block.
 
 ```rust
 dest: AccountIdLookupOf<T>
 value: T::Balance
 ```
 </details>
+
 
 
 Same as the [`transfer_allow_death`] call, but with a check that the transfer will not
@@ -276,17 +75,18 @@ kill the origin account.
 
 [`transfer_allow_death`]: struct.Pallet.html#method.transfer
 
-#### transfer_all - 4
+### transfer_all - 4
 
 <details><summary><code>transfer_all(dest, keep_alive)</code></summary>
 
-Taking 0.0129 % of a block.
+Taking 0.0126 % of a block.
 
 ```rust
 dest: AccountIdLookupOf<T>
 keep_alive: bool
 ```
 </details>
+
 
 
 Transfer the entire transferable balance from the caller account.
@@ -305,84 +105,20 @@ The dispatch origin of this call must be Signed.
   transfer everything except at least the existential deposit, which will guarantee to
   keep the sender account alive (true).
 
-#### force_set_balance - 8
+## OneshotAccount - 7
 
-<details><summary><code>force_set_balance(who, new_free)</code></summary>
-
-No weight available.
-
-```rust
-who: AccountIdLookupOf<T>
-new_free: T::Balance
-```
-</details>
-
-
-Upgrade a specified account.
-
-- `origin`: Must be `Signed`.
-- `who`: The account to be upgraded.
-
-This will waive the transaction fee if at least all but 10% of the accounts needed to
-be upgraded. (We let some not have to be upgraded just in order to allow for the
-possibility of churn).
-Set the regular balance of a given account.
-
-The dispatch origin for this call is `root`.
-
-#### force_adjust_total_issuance - 9
-
-<details><summary><code>force_adjust_total_issuance(direction, delta)</code></summary>
-
-Taking 0.0048 % of a block.
-
-```rust
-direction: AdjustmentDirection
-delta: T::Balance
-```
-</details>
-
-
-Adjust the total issuance in a saturating way.
-
-Can only be called by root and always needs a positive `delta`.
-
-# Example
-
-#### burn - 10
-
-<details><summary><code>burn(value, keep_alive)</code></summary>
-
-No weight available.
-
-```rust
-value: T::Balance
-keep_alive: bool
-```
-</details>
-
-
-Burn the specified liquid free balance from the origin account.
-
-If the origin's account ends up below the existential deposit as a result
-of the burn and `keep_alive` is false, the account will be reaped.
-
-Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
-this `burn` operation will reduce total issuance by the amount _burned_.
-
-### OneshotAccount - 7
-
-#### create_oneshot_account - 0
+### create_oneshot_account - 0
 
 <details><summary><code>create_oneshot_account(dest, value)</code></summary>
 
-Taking 0.012 % of a block.
+Taking 0.0117 % of a block.
 
 ```rust
 dest: <T::Lookup as StaticLookup>::Source
 value: BalanceOf<T>
 ```
 </details>
+
 
 
 Create an account that can only be consumed once
@@ -392,17 +128,18 @@ Create an account that can only be consumed once
 
 Origin account is kept alive.
 
-#### consume_oneshot_account - 1
+### consume_oneshot_account - 1
 
 <details><summary><code>consume_oneshot_account(block_height, dest)</code></summary>
 
-Taking 0.0197 % of a block.
+Taking 0.0195 % of a block.
 
 ```rust
 block_height: BlockNumberFor<T>
 dest: Account<<T::Lookup as StaticLookup>::Source>
 ```
 </details>
+
 
 
 Consume a oneshot account and transfer its balance to an account
@@ -411,11 +148,11 @@ Consume a oneshot account and transfer its balance to an account
 - `dest`: The destination account.
 - `dest_is_oneshot`: If set to `true`, then a oneshot account is created at `dest`. Else, `dest` has to be an existing account.
 
-#### consume_oneshot_account_with_remaining - 2
+### consume_oneshot_account_with_remaining - 2
 
 <details><summary><code>consume_oneshot_account_with_remaining(block_height, dest, remaining_to, balance)</code></summary>
 
-Taking 0.0268 % of a block.
+Taking 0.0265 % of a block.
 
 ```rust
 block_height: BlockNumberFor<T>
@@ -424,6 +161,7 @@ remaining_to: Account<<T::Lookup as StaticLookup>::Source>
 balance: BalanceOf<T>
 ```
 </details>
+
 
 
 Consume a oneshot account then transfer some amount to an account,
@@ -437,13 +175,13 @@ and the remaining amount to another account.
 - `dest2_is_oneshot`: If set to `true`, then a oneshot account is created at `dest2`. Else, `dest2` has to be an existing account.
 - `balance1`: The amount transfered to `dest`, the leftover being transfered to `dest2`.
 
-### SmithMembers - 10
+## SmithMembers - 10
 
-#### invite_smith - 0
+### invite_smith - 0
 
 <details><summary><code>invite_smith(receiver)</code></summary>
 
-Taking 0.0235 % of a block.
+Taking 0.024 % of a block.
 
 ```rust
 receiver: T::IdtyIndex
@@ -451,22 +189,24 @@ receiver: T::IdtyIndex
 </details>
 
 
+
 Invite a member of the Web of Trust to attempt becoming a Smith.
 
-#### accept_invitation - 1
+### accept_invitation - 1
 
 <details><summary><code>accept_invitation()</code></summary>
 
-Taking 0.0127 % of a block.
+Taking 0.0126 % of a block.
 
 ```rust
 ```
 </details>
 
 
+
 Accept an invitation to become a Smith (must have been invited first).
 
-#### certify_smith - 2
+### certify_smith - 2
 
 <details><summary><code>certify_smith(receiver)</code></summary>
 
@@ -478,41 +218,44 @@ receiver: T::IdtyIndex
 </details>
 
 
+
 Certify an invited Smith, which can lead the certified to become a Smith.
 
-### AuthorityMembers - 11
+## AuthorityMembers - 11
 
-#### go_offline - 0
+### go_offline - 0
 
 <details><summary><code>go_offline()</code></summary>
 
-Taking 0.0167 % of a block.
+Taking 0.0172 % of a block.
 
 ```rust
 ```
 </details>
+
 
 
 Request to leave the set of validators two sessions later.
 
-#### go_online - 1
+### go_online - 1
 
 <details><summary><code>go_online()</code></summary>
 
-Taking 0.0189 % of a block.
+Taking 0.0199 % of a block.
 
 ```rust
 ```
 </details>
 
 
+
 Request to join the set of validators two sessions later.
 
-#### set_session_keys - 2
+### set_session_keys - 2
 
 <details><summary><code>set_session_keys(keys)</code></summary>
 
-Taking 0.0249 % of a block.
+Taking 0.0256 % of a block.
 
 ```rust
 keys: T::Keys
@@ -520,71 +263,16 @@ keys: T::Keys
 </details>
 
 
+
 Declare new session keys to replace current ones.
 
-#### remove_member_from_blacklist - 4
+## Preimage - 22
 
-<details><summary><code>remove_member_from_blacklist(member_id)</code></summary>
-
-Taking 0.0114 % of a block.
-
-```rust
-member_id: T::MemberId
-```
-</details>
-
-
-Remove a member from the blacklist.
-remove an identity from the blacklist
-
-### Grandpa - 16
-
-#### report_equivocation - 0
-
-<details><summary><code>report_equivocation(equivocation_proof, key_owner_proof)</code></summary>
-
-No weight available.
-
-```rust
-equivocation_proof: Box<EquivocationProof<T::Hash, BlockNumberFor<T>>>
-key_owner_proof: T::KeyOwnerProof
-```
-</details>
-
-
-Report voter equivocation/misbehavior. This method will verify the
-equivocation proof and validate the given key ownership proof
-against the extracted offender. If both are valid, the offence
-will be reported.
-
-### UpgradeOrigin - 21
-
-#### dispatch_as_root_unchecked_weight - 1
-
-<details><summary><code>dispatch_as_root_unchecked_weight(call, weight)</code></summary>
-
-No weight available.
-
-```rust
-call: Box<<T as Config>::Call>
-weight: Weight
-```
-</details>
-
-
-Dispatches a function call from root origin.
-This function does not check the weight of the call, and instead allows the
-caller to specify the weight of the call.
-
-The weight of this call is defined by the caller.
-
-### Preimage - 22
-
-#### note_preimage - 0
+### note_preimage - 0
 
 <details><summary><code>note_preimage(bytes)</code></summary>
 
-Taking 0.2947 % of a block.
+Taking 0.2845 % of a block.
 
 ```rust
 bytes: Vec<u8>
@@ -592,21 +280,23 @@ bytes: Vec<u8>
 </details>
 
 
+
 Register a preimage on-chain.
 
 If the preimage was previously requested, no fees or deposits are taken for providing
 the preimage. Otherwise, a deposit is taken proportional to the size of the preimage.
 
-#### unnote_preimage - 1
+### unnote_preimage - 1
 
 <details><summary><code>unnote_preimage(hash)</code></summary>
 
-Taking 0.0184 % of a block.
+Taking 0.0181 % of a block.
 
 ```rust
 hash: T::Hash
 ```
 </details>
+
 
 
 Clear an unrequested preimage from the runtime storage.
@@ -616,16 +306,17 @@ If `len` is provided, then it will be a much cheaper operation.
 - `hash`: The hash of the preimage to be removed from the store.
 - `len`: The length of the preimage of `hash`.
 
-#### request_preimage - 2
+### request_preimage - 2
 
 <details><summary><code>request_preimage(hash)</code></summary>
 
-Taking 0.0129 % of a block.
+Taking 0.0128 % of a block.
 
 ```rust
 hash: T::Hash
 ```
 </details>
+
 
 
 Request a preimage be uploaded to the chain without paying any fees or deposits.
@@ -633,11 +324,11 @@ Request a preimage be uploaded to the chain without paying any fees or deposits.
 If the preimage requests has already been provided on-chain, we unreserve any deposit
 a user may have paid, and take the control of the preimage out of their hands.
 
-#### unrequest_preimage - 3
+### unrequest_preimage - 3
 
 <details><summary><code>unrequest_preimage(hash)</code></summary>
 
-Taking 0.0184 % of a block.
+Taking 0.018 % of a block.
 
 ```rust
 hash: T::Hash
@@ -645,15 +336,16 @@ hash: T::Hash
 </details>
 
 
+
 Clear a previously made request for a preimage.
 
 NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`.
 
-#### ensure_updated - 4
+### ensure_updated - 4
 
 <details><summary><code>ensure_updated(hashes)</code></summary>
 
-Taking 19.3634 % of a block.
+Taking 18.8992 % of a block.
 
 ```rust
 hashes: Vec<T::Hash>
@@ -661,13 +353,14 @@ hashes: Vec<T::Hash>
 </details>
 
 
+
 Ensure that the a bulk of pre-images is upgraded.
 
 The caller pays no fee if at least 90% of pre-images were successfully updated.
 
-### TechnicalCommittee - 23
+## TechnicalCommittee - 23
 
-#### execute - 1
+### execute - 1
 
 <details><summary><code>execute(proposal, length_bound)</code></summary>
 
@@ -680,17 +373,18 @@ length_bound: u32
 </details>
 
 
+
 Dispatch a proposal from a member using the `Member` origin.
 
 Origin must be a member of the collective.
 
-**Complexity**:
+###### Complexity:
 - `O(B + M + P)` where:
 - `B` is `proposal` size in bytes (length-fee-bounded)
 - `M` members-count (code-bounded)
 - `P` complexity of dispatching `proposal`
 
-#### propose - 2
+### propose - 2
 
 <details><summary><code>propose(threshold, proposal, length_bound)</code></summary>
 
@@ -704,6 +398,7 @@ length_bound: u32
 </details>
 
 
+
 Add a new proposal to either be voted on or executed directly.
 
 Requires the sender to be member.
@@ -711,7 +406,7 @@ Requires the sender to be member.
 `threshold` determines whether `proposal` is executed directly (`threshold < 2`)
 or put up for voting.
 
-**Complexity**
+###### Complexity
 - `O(B + M + P1)` or `O(B + M + P2)` where:
   - `B` is `proposal` size in bytes (length-fee-bounded)
   - `M` is members-count (code- and governance-bounded)
@@ -719,11 +414,11 @@ or put up for voting.
     - `P1` is proposal execution complexity (`threshold < 2`)
     - `P2` is proposals-count (code-bounded) (`threshold >= 2`)
 
-#### vote - 3
+### vote - 3
 
 <details><summary><code>vote(proposal, index, approve)</code></summary>
 
-Taking 0.0129 % of a block.
+Taking 0.0128 % of a block.
 
 ```rust
 proposal: T::Hash
@@ -733,6 +428,7 @@ approve: bool
 </details>
 
 
+
 Add an aye or nay vote for the sender to the given proposal.
 
 Requires the sender to be a member.
@@ -740,10 +436,10 @@ Requires the sender to be a member.
 Transaction fees will be waived if the member is voting on any particular proposal
 for the first time and the call is successful. Subsequent vote changes will charge a
 fee.
-**Complexity**
+###### Complexity
 - `O(M)` where `M` is members-count (code- and governance-bounded)
 
-#### close - 6
+### close - 6
 
 <details><summary><code>close(proposal_hash, index, proposal_weight_bound, length_bound)</code></summary>
 
@@ -756,6 +452,7 @@ proposal_weight_bound: Weight
 length_bound: u32
 ```
 </details>
+
 
 
 Close a vote that is either approved, disapproved or whose voting period has ended.
@@ -776,48 +473,50 @@ proposal.
 + `length_bound`: The upper bound for the length of the proposal in storage. Checked via
 `storage::read` so it is `size_of::<u32>() == 4` larger than the pure length.
 
-**Complexity**
+###### Complexity
 - `O(B + M + P1 + P2)` where:
   - `B` is `proposal` size in bytes (length-fee-bounded)
   - `M` is members-count (code- and governance-bounded)
   - `P1` is the complexity of `proposal` preimage.
   - `P2` is proposal-count (code-bounded)
 
-### UniversalDividend - 30
+## UniversalDividend - 30
 
-#### claim_uds - 0
+### claim_uds - 0
 
 <details><summary><code>claim_uds()</code></summary>
 
-Taking 0.0218 % of a block.
+Taking 0.0219 % of a block.
 
 ```rust
 ```
 </details>
+
 
 
 Claim Universal Dividends.
 
-#### transfer_ud - 1
+### transfer_ud - 1
 
 <details><summary><code>transfer_ud(dest, value)</code></summary>
 
-Taking 0.021 % of a block.
+Taking 0.0207 % of a block.
 
 ```rust
 dest: <T::Lookup as StaticLookup>::Source
 value: BalanceOf<T>
 ```
 </details>
+
 
 
 Transfer some liquid free balance to another account, in milliUD.
 
-#### transfer_ud_keep_alive - 2
+### transfer_ud_keep_alive - 2
 
 <details><summary><code>transfer_ud_keep_alive(dest, value)</code></summary>
 
-Taking 0.0135 % of a block.
+Taking 0.0134 % of a block.
 
 ```rust
 dest: <T::Lookup as StaticLookup>::Source
@@ -826,20 +525,22 @@ value: BalanceOf<T>
 </details>
 
 
+
 Transfer some liquid free balance to another account in milliUD and keep the account alive.
 
-### Identity - 41
+## Identity - 41
 
-#### create_identity - 0
+### create_identity - 0
 
 <details><summary><code>create_identity(owner_key)</code></summary>
 
-Taking 0.0856 % of a block.
+Taking 0.0843 % of a block.
 
 ```rust
 owner_key: T::AccountId
 ```
 </details>
+
 
 
 Create an identity for an existing account
@@ -848,16 +549,17 @@ Create an identity for an existing account
 
 The origin must be allowed to create an identity.
 
-#### confirm_identity - 1
+### confirm_identity - 1
 
 <details><summary><code>confirm_identity(idty_name)</code></summary>
 
-Taking 0.0327 % of a block.
+Taking 0.0322 % of a block.
 
 ```rust
 idty_name: IdtyName
 ```
 </details>
+
 
 
 Confirm the creation of an identity and give it a name
@@ -866,17 +568,18 @@ Confirm the creation of an identity and give it a name
 
 The identity must have been created using `create_identity` before it can be confirmed.
 
-#### change_owner_key - 3
+### change_owner_key - 3
 
 <details><summary><code>change_owner_key(new_key, new_key_sig)</code></summary>
 
-Taking 0.0424 % of a block.
+Taking 0.0421 % of a block.
 
 ```rust
 new_key: T::AccountId
 new_key_sig: T::Signature
 ```
 </details>
+
 
 
 Change identity owner key.
@@ -887,11 +590,11 @@ Change identity owner key.
 
 The origin should be the old identity owner key.
 
-#### revoke_identity - 4
+### revoke_identity - 4
 
 <details><summary><code>revoke_identity(idty_index, revocation_key, revocation_sig)</code></summary>
 
-Taking 0.0399 % of a block.
+Taking 0.0392 % of a block.
 
 ```rust
 idty_index: T::IdtyIndex
@@ -899,6 +602,7 @@ revocation_key: T::AccountId
 revocation_sig: T::Signature
 ```
 </details>
+
 
 
 Revoke an identity using a revocation signature
@@ -910,30 +614,26 @@ Revoke an identity using a revocation signature
 
 Any signed origin can execute this call.
 
-#### fix_sufficients - 7
+### revoke_identity_legacy - 9
 
-<details><summary><code>fix_sufficients(owner_key, inc)</code></summary>
+<details><summary><code>revoke_identity_legacy(revocation_document)</code></summary>
 
-Taking 0.0113 % of a block.
+Taking 0.0392 % of a block.
 
 ```rust
-owner_key: T::AccountId
-inc: bool
+revocation_document: Vec<u8>
 ```
 </details>
 
 
-Change sufficient reference count for a given key.
 
-This function allows a privileged root origin to increment or decrement the sufficient
-reference count associated with a specified owner key.
+Revoke an identity using a legacy (DUBP) revocation document
 
-- `origin` - The origin of the call. It must be root.
-- `owner_key` - The account whose sufficient reference count will be modified.
-- `inc` - A boolean indicating whether to increment (`true`) or decrement (`false`) the count.
+- `revocation document`: the full-length revocation document, signature included
 
+Any signed origin can execute this call.
 
-#### link_account - 8
+### link_account - 8
 
 <details><summary><code>link_account(account_id, payload_sig)</code></summary>
 
@@ -946,6 +646,7 @@ payload_sig: T::Signature
 </details>
 
 
+
 Link an account to an identity.
 
 This function links a specified account to an identity, requiring both the account and the
@@ -955,80 +656,50 @@ identity to sign the operation.
 - `account_id` - The account ID to link, which must sign the payload.
 - `payload_sig` - The signature with the linked identity.
 
-### Certification - 43
+## Certification - 43
 
-#### add_cert - 0
+### add_cert - 0
 
 <details><summary><code>add_cert(receiver)</code></summary>
 
-Taking 0.0356 % of a block.
+Taking 0.0357 % of a block.
 
 ```rust
 receiver: T::IdtyIndex
 ```
 </details>
+
 
 
 Add a new certification.
 
-#### renew_cert - 3
+### renew_cert - 3
 
 <details><summary><code>renew_cert(receiver)</code></summary>
 
-Taking 0.0292 % of a block.
+Taking 0.0295 % of a block.
 
 ```rust
 receiver: T::IdtyIndex
 ```
 </details>
+
 
 
 Renew an existing certification.
 
-#### del_cert - 1
+## Distance - 44
 
-<details><summary><code>del_cert(issuer, receiver)</code></summary>
-
-Taking 0.0257 % of a block.
-
-```rust
-issuer: T::IdtyIndex
-receiver: T::IdtyIndex
-```
-</details>
-
-
-Remove one certification given the issuer and the receiver.
-
-- `origin`: Must be `Root`.
-
-#### remove_all_certs_received_by - 2
-
-<details><summary><code>remove_all_certs_received_by(idty_index)</code></summary>
-
-Taking 6.846 % of a block.
-
-```rust
-idty_index: T::IdtyIndex
-```
-</details>
-
-
-Remove all certifications received by an identity.
-
-- `origin`: Must be `Root`.
-
-### Distance - 44
-
-#### request_distance_evaluation - 0
+### request_distance_evaluation - 0
 
 <details><summary><code>request_distance_evaluation()</code></summary>
 
-Taking 0.0389 % of a block.
+Taking 0.0393 % of a block.
 
 ```rust
 ```
 </details>
+
 
 
 Request evaluation of the caller's identity distance.
@@ -1037,11 +708,11 @@ This function allows the caller to request an evaluation of their distance.
 A positive evaluation will lead to claiming or renewing membership, while a negative
 evaluation will result in slashing for the caller.
 
-#### request_distance_evaluation_for - 4
+### request_distance_evaluation_for - 4
 
 <details><summary><code>request_distance_evaluation_for(target)</code></summary>
 
-Taking 0.0399 % of a block.
+Taking 0.0404 % of a block.
 
 ```rust
 target: T::IdtyIndex
@@ -1049,68 +720,15 @@ target: T::IdtyIndex
 </details>
 
 
+
 Request evaluation of a target identity's distance.
 
 This function allows the caller to request an evaluation of a specific target identity's distance.
 This action is only permitted for unvalidated identities.
 
-#### update_evaluation - 1
+## AtomicSwap - 50
 
-<details><summary><code>update_evaluation(computation_result)</code></summary>
-
-Taking 0.0341 % of a block.
-
-```rust
-computation_result: ComputationResult
-```
-</details>
-
-
-Push an evaluation result to the pool.
-
-This inherent function is called internally by validators to push an evaluation result
-to the evaluation pool.
-
-#### force_update_evaluation - 2
-
-<details><summary><code>force_update_evaluation(evaluator, computation_result)</code></summary>
-
-Taking 0.0192 % of a block.
-
-```rust
-evaluator: <T as frame_system::Config>::AccountId
-computation_result: ComputationResult
-```
-</details>
-
-
-Force push an evaluation result to the pool.
-
-It is primarily used for testing purposes.
-
-- `origin`: Must be `Root`.
-
-#### force_valid_distance_status - 3
-
-<details><summary><code>force_valid_distance_status(identity)</code></summary>
-
-Taking 0.027 % of a block.
-
-```rust
-identity: <T as pallet_identity::Config>::IdtyIndex
-```
-</details>
-
-
-Force set the distance evaluation status of an identity.
-
-It is primarily used for testing purposes.
-
-- `origin`: Must be `Root`.
-
-### AtomicSwap - 50
-
-#### create_swap - 0
+### create_swap - 0
 
 <details><summary><code>create_swap(target, hashed_proof, action, duration)</code></summary>
 
@@ -1123,6 +741,7 @@ action: T::SwapAction
 duration: BlockNumberFor<T>
 ```
 </details>
+
 
 
 Register a new atomic swap, declaring an intention to send funds from origin to target
@@ -1138,7 +757,7 @@ The dispatch origin for this call must be _Signed_.
   that the revealer uses a shorter duration than the counterparty, to prevent the
   situation where the revealer reveals the proof too late around the end block.
 
-#### claim_swap - 1
+### claim_swap - 1
 
 <details><summary><code>claim_swap(proof, action)</code></summary>
 
@@ -1151,6 +770,7 @@ action: T::SwapAction
 </details>
 
 
+
 Claim an atomic swap.
 
 The dispatch origin for this call must be _Signed_.
@@ -1159,7 +779,7 @@ The dispatch origin for this call must be _Signed_.
 - `action`: Action defined in the swap, it must match the entry in blockchain. Otherwise
   the operation fails. This is used for weight calculation.
 
-#### cancel_swap - 2
+### cancel_swap - 2
 
 <details><summary><code>cancel_swap(target, hashed_proof)</code></summary>
 
@@ -1172,6 +792,7 @@ hashed_proof: HashedProof
 </details>
 
 
+
 Cancel an atomic swap. Only possible after the originally set duration has passed.
 
 The dispatch origin for this call must be _Signed_.
@@ -1179,19 +800,20 @@ The dispatch origin for this call must be _Signed_.
 - `target`: Target of the original atomic swap.
 - `hashed_proof`: Hashed proof of the original atomic swap.
 
-### Multisig - 51
+## Multisig - 51
 
-#### as_multi_threshold_1 - 0
+### as_multi_threshold_1 - 0
 
 <details><summary><code>as_multi_threshold_1(other_signatories, call)</code></summary>
 
-Taking 0.005 % of a block.
+Taking 0.0048 % of a block.
 
 ```rust
 other_signatories: Vec<T::AccountId>
 call: Box<<T as Config>::RuntimeCall>
 ```
 </details>
+
 
 
 Immediately dispatch a multi-signature call using a single approval from the caller.
@@ -1204,10 +826,10 @@ multi-signature, but do not participate in the approval process.
 
 Result is equivalent to the dispatched result.
 
-**Complexity**
+###### Complexity
 O(Z + C) where Z is the length of the call and C its execution weight.
 
-#### as_multi - 1
+### as_multi - 1
 
 <details><summary><code>as_multi(threshold, other_signatories, maybe_timepoint, call, max_weight)</code></summary>
 
@@ -1221,6 +843,7 @@ call: Box<<T as Config>::RuntimeCall>
 max_weight: Weight
 ```
 </details>
+
 
 
 Register approval for a dispatch to be made from a deterministic composite account if
@@ -1249,7 +872,7 @@ Result is equivalent to the dispatched result if `threshold` is exactly `1`. Oth
 on success, result is `Ok` and the result from the interior call, if it was executed,
 may be found in the deposited `MultisigExecuted` event.
 
-**Complexity**
+###### Complexity
 - `O(S + Z + Call)`.
 - Up to one balance-reserve or unreserve operation.
 - One passthrough operation, one insert, both `O(S)` where `S` is the number of
@@ -1263,7 +886,7 @@ may be found in the deposited `MultisigExecuted` event.
 - Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit
   taken for its lifetime of `DepositBase + threshold * DepositFactor`.
 
-#### approve_as_multi - 2
+### approve_as_multi - 2
 
 <details><summary><code>approve_as_multi(threshold, other_signatories, maybe_timepoint, call_hash, max_weight)</code></summary>
 
@@ -1277,6 +900,7 @@ call_hash: [u8; 32]
 max_weight: Weight
 ```
 </details>
+
 
 
 Register approval for a dispatch to be made from a deterministic composite account if
@@ -1298,7 +922,7 @@ transaction index) of the first approval transaction.
 
 NOTE: If this is the final approval, you will want to use `as_multi` instead.
 
-**Complexity**
+###### Complexity
 - `O(S)`.
 - Up to one balance-reserve or unreserve operation.
 - One passthrough operation, one insert, both `O(S)` where `S` is the number of
@@ -1310,11 +934,11 @@ NOTE: If this is the final approval, you will want to use `as_multi` instead.
 - Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit
   taken for its lifetime of `DepositBase + threshold * DepositFactor`.
 
-#### cancel_as_multi - 3
+### cancel_as_multi - 3
 
 <details><summary><code>cancel_as_multi(threshold, other_signatories, timepoint, call_hash)</code></summary>
 
-Taking 0.0123 % of a block.
+Taking 0.0121 % of a block.
 
 ```rust
 threshold: u16
@@ -1323,6 +947,7 @@ timepoint: Timepoint<BlockNumberFor<T>>
 call_hash: [u8; 32]
 ```
 </details>
+
 
 
 Cancel a pre-existing, on-going multisig transaction. Any deposit reserved previously
@@ -1337,7 +962,7 @@ dispatch. May not be empty.
 transaction for this dispatch.
 - `call_hash`: The hash of the call to be executed.
 
-**Complexity**
+###### Complexity
 - `O(S)`.
 - Up to one balance-reserve or unreserve operation.
 - One passthrough operation, one insert, both `O(S)` where `S` is the number of
@@ -1347,13 +972,13 @@ transaction for this dispatch.
 - I/O: 1 read `O(S)`, one remove.
 - Storage: removes one item.
 
-### ProvideRandomness - 52
+## ProvideRandomness - 52
 
-#### request - 0
+### request - 0
 
 <details><summary><code>request(randomness_type, salt)</code></summary>
 
-Taking 0.0404 % of a block.
+Taking 0.0401 % of a block.
 
 ```rust
 randomness_type: RandomnessType
@@ -1362,11 +987,12 @@ salt: H256
 </details>
 
 
+
 Request randomness.
 
-### Proxy - 53
+## Proxy - 53
 
-#### proxy - 0
+### proxy - 0
 
 <details><summary><code>proxy(real, force_proxy_type, call)</code></summary>
 
@@ -1380,6 +1006,7 @@ call: Box<<T as Config>::RuntimeCall>
 </details>
 
 
+
 Dispatch the given `call` from an account that the sender is authorised for through
 `add_proxy`.
 
@@ -1390,11 +1017,11 @@ Parameters:
 - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
 - `call`: The call to be made by the `real` account.
 
-#### add_proxy - 1
+### add_proxy - 1
 
 <details><summary><code>add_proxy(delegate, proxy_type, delay)</code></summary>
 
-Taking 0.0121 % of a block.
+Taking 0.0118 % of a block.
 
 ```rust
 delegate: AccountIdLookupOf<T>
@@ -1402,6 +1029,7 @@ proxy_type: T::ProxyType
 delay: BlockNumberFor<T>
 ```
 </details>
+
 
 
 Register a proxy account for the sender that is able to make calls on its behalf.
@@ -1414,11 +1042,11 @@ Parameters:
 - `delay`: The announcement period required of the initial proxy. Will generally be
 zero.
 
-#### remove_proxy - 2
+### remove_proxy - 2
 
 <details><summary><code>remove_proxy(delegate, proxy_type, delay)</code></summary>
 
-Taking 0.0121 % of a block.
+Taking 0.0118 % of a block.
 
 ```rust
 delegate: AccountIdLookupOf<T>
@@ -1426,6 +1054,7 @@ proxy_type: T::ProxyType
 delay: BlockNumberFor<T>
 ```
 </details>
+
 
 
 Unregister a proxy account for the sender.
@@ -1436,15 +1065,16 @@ Parameters:
 - `proxy`: The account that the `caller` would like to remove as a proxy.
 - `proxy_type`: The permissions currently enabled for the removed proxy account.
 
-#### remove_proxies - 3
+### remove_proxies - 3
 
 <details><summary><code>remove_proxies()</code></summary>
 
-Taking 0.012 % of a block.
+Taking 0.0117 % of a block.
 
 ```rust
 ```
 </details>
+
 
 
 Unregister all proxy accounts for the sender.
@@ -1454,11 +1084,11 @@ The dispatch origin for this call must be _Signed_.
 WARNING: This may be called on accounts created by `pure`, however if done, then
 the unreserved fees will be inaccessible. **All access to this account will be lost.**
 
-#### create_pure - 4
+### create_pure - 4
 
 <details><summary><code>create_pure(proxy_type, delay, index)</code></summary>
 
-Taking 0.0121 % of a block.
+Taking 0.0118 % of a block.
 
 ```rust
 proxy_type: T::ProxyType
@@ -1466,6 +1096,7 @@ delay: BlockNumberFor<T>
 index: u16
 ```
 </details>
+
 
 
 Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and
@@ -1487,11 +1118,11 @@ same sender, with the same parameters.
 
 Fails if there are insufficient funds to pay for deposit.
 
-#### kill_pure - 5
+### kill_pure - 5
 
 <details><summary><code>kill_pure(spawner, proxy_type, index, height, ext_index)</code></summary>
 
-Taking 0.012 % of a block.
+Taking 0.0117 % of a block.
 
 ```rust
 spawner: AccountIdLookupOf<T>
@@ -1501,6 +1132,7 @@ height: BlockNumberFor<T>
 ext_index: u32
 ```
 </details>
+
 
 
 Removes a previously spawned pure proxy.
@@ -1520,17 +1152,18 @@ Requires a `Signed` origin, and the sender account must have been created by a c
 Fails with `NoPermission` in case the caller is not a previously created pure
 account whose `pure` call has corresponding parameters.
 
-#### announce - 6
+### announce - 6
 
 <details><summary><code>announce(real, call_hash)</code></summary>
 
-Taking 0.0199 % of a block.
+Taking 0.0197 % of a block.
 
 ```rust
 real: AccountIdLookupOf<T>
 call_hash: CallHashOf<T>
 ```
 </details>
+
 
 
 Publish the hash of a proxy-call that will be made in the future.
@@ -1549,17 +1182,18 @@ Parameters:
 - `real`: The account that the proxy will make a call on behalf of.
 - `call_hash`: The hash of the call to be made by the `real` account.
 
-#### remove_announcement - 7
+### remove_announcement - 7
 
 <details><summary><code>remove_announcement(real, call_hash)</code></summary>
 
-Taking 0.0186 % of a block.
+Taking 0.0182 % of a block.
 
 ```rust
 real: AccountIdLookupOf<T>
 call_hash: CallHashOf<T>
 ```
 </details>
+
 
 
 Remove a given announcement.
@@ -1573,17 +1207,18 @@ Parameters:
 - `real`: The account that the proxy will make a call on behalf of.
 - `call_hash`: The hash of the call to be made by the `real` account.
 
-#### reject_announcement - 8
+### reject_announcement - 8
 
 <details><summary><code>reject_announcement(delegate, call_hash)</code></summary>
 
-Taking 0.0186 % of a block.
+Taking 0.0182 % of a block.
 
 ```rust
 delegate: AccountIdLookupOf<T>
 call_hash: CallHashOf<T>
 ```
 </details>
+
 
 
 Remove the given announcement of a delegate.
@@ -1597,11 +1232,11 @@ Parameters:
 - `delegate`: The account that previously announced the call.
 - `call_hash`: The hash of the call to be made.
 
-#### proxy_announced - 9
+### proxy_announced - 9
 
 <details><summary><code>proxy_announced(delegate, real, force_proxy_type, call)</code></summary>
 
-Taking 0.02 % of a block.
+Taking 0.0198 % of a block.
 
 ```rust
 delegate: AccountIdLookupOf<T>
@@ -1610,6 +1245,7 @@ force_proxy_type: Option<T::ProxyType>
 call: Box<<T as Config>::RuntimeCall>
 ```
 </details>
+
 
 
 Dispatch the given `call` from an account that the sender is authorized for through
@@ -1624,18 +1260,19 @@ Parameters:
 - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
 - `call`: The call to be made by the `real` account.
 
-### Utility - 54
+## Utility - 54
 
-#### batch - 0
+### batch - 0
 
 <details><summary><code>batch(calls)</code></summary>
 
-Taking 0.1149 % of a block.
+Taking 0.1076 % of a block.
 
 ```rust
 calls: Vec<<T as Config>::RuntimeCall>
 ```
 </details>
+
 
 
 Send a batch of dispatch calls.
@@ -1648,7 +1285,7 @@ May be called from any origin except `None`.
 If origin is root then the calls are dispatched without checking origin filter. (This
 includes bypassing `frame_system::Config::BaseCallFilter`).
 
-**Complexity**
+###### Complexity
 - O(C) where C is the number of calls to be batched.
 
 This will return `Ok` in all circumstances. To determine the success of the batch, an
@@ -1657,17 +1294,18 @@ event is deposited. If a call failed and the batch was interrupted, then the
 and the error of the failed call. If all were successful, then the `BatchCompleted`
 event is deposited.
 
-#### as_derivative - 1
+### as_derivative - 1
 
 <details><summary><code>as_derivative(index, call)</code></summary>
 
-Taking 0.0047 % of a block.
+Taking 0.0046 % of a block.
 
 ```rust
 index: u16
 call: Box<<T as Config>::RuntimeCall>
 ```
 </details>
+
 
 
 Send a call through an indexed pseudonym of the sender.
@@ -1684,16 +1322,17 @@ NOTE: Prior to version *12, this was called `as_limited_sub`.
 
 The dispatch origin for this call must be _Signed_.
 
-#### batch_all - 2
+### batch_all - 2
 
 <details><summary><code>batch_all(calls)</code></summary>
 
-Taking 0.1241 % of a block.
+Taking 0.1148 % of a block.
 
 ```rust
 calls: Vec<<T as Config>::RuntimeCall>
 ```
 </details>
+
 
 
 Send a batch of dispatch calls and atomically execute them.
@@ -1707,19 +1346,20 @@ May be called from any origin except `None`.
 If origin is root then the calls are dispatched without checking origin filter. (This
 includes bypassing `frame_system::Config::BaseCallFilter`).
 
-**Complexity**
+###### Complexity
 - O(C) where C is the number of calls to be batched.
 
-#### force_batch - 4
+### force_batch - 4
 
 <details><summary><code>force_batch(calls)</code></summary>
 
-Taking 0.1155 % of a block.
+Taking 0.1074 % of a block.
 
 ```rust
 calls: Vec<<T as Config>::RuntimeCall>
 ```
 </details>
+
 
 
 Send a batch of dispatch calls.
@@ -1733,36 +1373,16 @@ May be called from any origin except `None`.
 If origin is root then the calls are dispatch without checking origin filter. (This
 includes bypassing `frame_system::Config::BaseCallFilter`).
 
-**Complexity**
+###### Complexity
 - O(C) where C is the number of calls to be batched.
 
-#### with_weight - 5
+## Treasury - 55
 
-<details><summary><code>with_weight(call, weight)</code></summary>
-
-No weight available.
-
-```rust
-call: Box<<T as Config>::RuntimeCall>
-weight: Weight
-```
-</details>
-
-
-Dispatch a function call with a specified weight.
-
-This function does not check the weight of the call, and instead allows the
-Root origin to specify the weight of the call.
-
-The dispatch origin for this call must be _Root_.
-
-### Treasury - 55
-
-#### spend_local - 3
+### spend_local - 3
 
 <details><summary><code>spend_local(amount, beneficiary)</code></summary>
 
-Taking 0.0045 % of a block.
+Taking 0.0044 % of a block.
 
 ```rust
 amount: BalanceOf<T, I>
@@ -1771,25 +1391,26 @@ beneficiary: AccountIdLookupOf<T>
 </details>
 
 
+
 Propose and approve a spend of treasury funds.
 
-## Dispatch Origin
+###### Dispatch Origin
 
 Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
 
-### Details
+###### Details
 NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
 beneficiary.
 
-### Parameters
+###### Parameters
 - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
 - `beneficiary`: The destination account for the transfer.
 
-## Events
+###### Events
 
 Emits [`Event::SpendApproved`] if successful.
 
-#### remove_approval - 4
+### remove_approval - 4
 
 <details><summary><code>remove_approval(proposal_id)</code></summary>
 
@@ -1801,33 +1422,34 @@ proposal_id: ProposalIndex
 </details>
 
 
+
 Force a previously approved proposal to be removed from the approval queue.
 
-## Dispatch Origin
+###### Dispatch Origin
 
 Must be [`Config::RejectOrigin`].
 
-## Details
+###### Details
 
 The original deposit will no longer be returned.
 
-### Parameters
+###### Parameters
 - `proposal_id`: The index of a proposal
 
-#**Complexity**
+###### Complexity
 - O(A) where `A` is the number of approvals
 
-### Errors
+###### Errors
 - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
   approval queue, i.e., the proposal has not been approved. This could also mean the
   proposal does not exist altogether, thus there is no way it would have been approved
   in the first place.
 
-#### spend - 5
+### spend - 5
 
 <details><summary><code>spend(asset_kind, amount, beneficiary, valid_from)</code></summary>
 
-Taking 0.0045 % of a block.
+Taking 0.0044 % of a block.
 
 ```rust
 asset_kind: Box<T::AssetKind>
@@ -1838,21 +1460,22 @@ valid_from: Option<BlockNumberFor<T>>
 </details>
 
 
+
 Propose and approve a spend of treasury funds.
 
-## Dispatch Origin
+###### Dispatch Origin
 
 Must be [`Config::SpendOrigin`] with the `Success` value being at least
 `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
 for assertion using the [`Config::BalanceConverter`].
 
-## Details
+###### Details
 
 Create an approved spend for transferring a specific `amount` of `asset_kind` to a
 designated beneficiary. The spend must be claimed using the `payout` dispatchable within
 the [`Config::PayoutPeriod`].
 
-### Parameters
+###### Parameters
 - `asset_kind`: An indicator of the specific asset class to be spent.
 - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
 - `beneficiary`: The beneficiary of the spend.
@@ -1861,11 +1484,11 @@ the [`Config::PayoutPeriod`].
   [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
   approval.
 
-## Events
+###### Events
 
 Emits [`Event::AssetSpendApproved`] if successful.
 
-#### payout - 6
+### payout - 6
 
 <details><summary><code>payout(index)</code></summary>
 
@@ -1877,27 +1500,28 @@ index: SpendIndex
 </details>
 
 
+
 Claim a spend.
 
-## Dispatch Origin
+###### Dispatch Origin
 
 Must be signed
 
-## Details
+###### Details
 
 Spends must be claimed within some temporal bounds. A spend may be claimed within one
 [`Config::PayoutPeriod`] from the `valid_from` block.
 In case of a payout failure, the spend status must be updated with the `check_status`
 dispatchable before retrying with the current function.
 
-### Parameters
+###### Parameters
 - `index`: The spend index.
 
-## Events
+###### Events
 
 Emits [`Event::Paid`] if successful.
 
-#### check_status - 7
+### check_status - 7
 
 <details><summary><code>check_status(index)</code></summary>
 
@@ -1909,31 +1533,32 @@ index: SpendIndex
 </details>
 
 
+
 Check the status of the spend and remove it from the storage if processed.
 
-## Dispatch Origin
+###### Dispatch Origin
 
 Must be signed.
 
-## Details
+###### Details
 
 The status check is a prerequisite for retrying a failed payout.
 If a spend has either succeeded or expired, it is removed from the storage by this
 function. In such instances, transaction fees are refunded.
 
-### Parameters
+###### Parameters
 - `index`: The spend index.
 
-## Events
+###### Events
 
 Emits [`Event::PaymentFailed`] if the spend payout has failed.
 Emits [`Event::SpendProcessed`] if the spend payout has succeed.
 
-#### void_spend - 8
+### void_spend - 8
 
 <details><summary><code>void_spend(index)</code></summary>
 
-Taking 0.0057 % of a block.
+Taking 0.0056 % of a block.
 
 ```rust
 index: SpendIndex
@@ -1941,476 +1566,22 @@ index: SpendIndex
 </details>
 
 
+
 Void previously approved spend.
 
-## Dispatch Origin
+###### Dispatch Origin
 
 Must be [`Config::RejectOrigin`].
 
-## Details
+###### Details
 
 A spend void is only possible if the payout has not been attempted yet.
 
-### Parameters
+###### Parameters
 - `index`: The spend index.
 
-## Events
+###### Events
 
 Emits [`Event::AssetSpendVoided`] if successful.
 
-
-
-## Root calls
-
-There are **18** root calls from **8** pallets.
-
-### System - 0
-
-#### set_heap_pages - 1
-
-<details><summary><code>set_heap_pages(pages)</code></summary>
-
-Taking 0.0165 % of a block.
-
-```rust
-pages: u64
-```
-</details>
-
-
-Set the number of pages in the WebAssembly environment's heap.
-
-#### set_code - 2
-
-<details><summary><code>set_code(code)</code></summary>
-
-Taking 3.9234 % of a block.
-
-```rust
-code: Vec<u8>
-```
-</details>
-
-
-Set the new runtime code.
-
-#### set_code_without_checks - 3
-
-<details><summary><code>set_code_without_checks(code)</code></summary>
-
-No weight available.
-
-```rust
-code: Vec<u8>
-```
-</details>
-
-
-Set the new runtime code without doing any checks of the given `code`.
-
-Note that runtime upgrades will not run if this is called with a not-increasing spec
-version!
-
-#### set_storage - 4
-
-<details><summary><code>set_storage(items)</code></summary>
-
-Taking 5.4867 % of a block.
-
-```rust
-items: Vec<KeyValue>
-```
-</details>
-
-
-Set some items of storage.
-
-#### kill_storage - 5
-
-<details><summary><code>kill_storage(keys)</code></summary>
-
-Taking 5.4797 % of a block.
-
-```rust
-keys: Vec<Key>
-```
-</details>
-
-
-Kill some items from storage.
-
-#### kill_prefix - 6
-
-<details><summary><code>kill_prefix(prefix, subkeys)</code></summary>
-
-Taking 6.4024 % of a block.
-
-```rust
-prefix: Key
-subkeys: u32
-```
-</details>
-
-
-Kill all storage items with a key that starts with the given prefix.
-
-**NOTE:** We rely on the Root origin to provide us the number of subkeys under
-the prefix we are removing to accurately calculate the weight of this function.
-
-#### authorize_upgrade - 9
-
-<details><summary><code>authorize_upgrade(code_hash)</code></summary>
-
-Taking 0.0105 % of a block.
-
-```rust
-code_hash: T::Hash
-```
-</details>
-
-
-Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
-later.
-
-This call requires Root origin.
-
-#### authorize_upgrade_without_checks - 10
-
-<details><summary><code>authorize_upgrade_without_checks(code_hash)</code></summary>
-
-No weight available.
-
-```rust
-code_hash: T::Hash
-```
-</details>
-
-
-Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
-later.
-
-WARNING: This authorizes an upgrade that will take place without any safety checks, for
-example that the spec name remains the same and that the version number increases. Not
-recommended for normal use. Use `authorize_upgrade` instead.
-
-This call requires Root origin.
-
-#### apply_authorized_upgrade - 11
-
-<details><summary><code>apply_authorized_upgrade(code)</code></summary>
-
-Taking 4.1629 % of a block.
-
-```rust
-code: Vec<u8>
-```
-</details>
-
-
-Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
-
-If the authorization required a version check, this call will ensure the spec name
-remains unchanged and that the spec version has increased.
-
-Depending on the runtime's `OnSetCode` configuration, this function may directly apply
-the new `code` in the same block or attempt to schedule the upgrade.
-
-All origins are allowed.
-
-### Babe - 3
-
-#### plan_config_change - 2
-
-<details><summary><code>plan_config_change(config)</code></summary>
-
-No weight available.
-
-```rust
-config: NextConfigDescriptor
-```
-</details>
-
-
-Plan an epoch config change. The epoch config change is recorded and will be enacted on
-the next call to `enact_epoch_change`. The config will be activated one epoch after.
-Multiple calls to this method will replace any existing planned config change that had
-not been enacted yet.
-
-### Balances - 6
-
-#### force_transfer - 2
-
-<details><summary><code>force_transfer(source, dest, value)</code></summary>
-
-Taking 0.0262 % of a block.
-
-```rust
-source: AccountIdLookupOf<T>
-dest: AccountIdLookupOf<T>
-value: T::Balance
-```
-</details>
-
-
-Exactly as `transfer_allow_death`, except the origin must be root and the source account
-may be specified.
-
-#### force_unreserve - 5
-
-<details><summary><code>force_unreserve(who, amount)</code></summary>
-
-Taking 0.0117 % of a block.
-
-```rust
-who: AccountIdLookupOf<T>
-amount: T::Balance
-```
-</details>
-
-
-Unreserve some balance from a user by force.
-
-Can only be called by ROOT.
-
-### AuthorityMembers - 11
-
-#### remove_member - 3
-
-<details><summary><code>remove_member(member_id)</code></summary>
-
-Taking 0.0665 % of a block.
-
-```rust
-member_id: T::MemberId
-```
-</details>
-
-
-Remove a member from the set of validators.
-
-### Grandpa - 16
-
-#### note_stalled - 2
-
-<details><summary><code>note_stalled(delay, best_finalized_block_number)</code></summary>
-
-No weight available.
-
-```rust
-delay: BlockNumberFor<T>
-best_finalized_block_number: BlockNumberFor<T>
-```
-</details>
-
-
-Note that the current authority set of the GRANDPA finality gadget has stalled.
-
-This will trigger a forced authority set change at the beginning of the next session, to
-be enacted `delay` blocks after that. The `delay` should be high enough to safely assume
-that the block signalling the forced change will not be re-orged e.g. 1000 blocks.
-The block production rate (which may be slowed down because of finality lagging) should
-be taken into account when choosing the `delay`. The GRANDPA voters based on the new
-authority will start voting on top of `best_finalized_block_number` for new finalized
-blocks. `best_finalized_block_number` should be the highest of the latest finalized
-block of all validators of the new authority set.
-
-Only callable by root.
-
-### TechnicalCommittee - 23
-
-#### set_members - 0
-
-<details><summary><code>set_members(new_members, prime, old_count)</code></summary>
-
-Taking 0.1558 % of a block.
-
-```rust
-new_members: Vec<T::AccountId>
-prime: Option<T::AccountId>
-old_count: MemberCount
-```
-</details>
-
-
-Set the collective's membership.
-
-- `new_members`: The new member list. Be nice to the chain and provide it sorted.
-- `prime`: The prime member whose vote sets the default.
-- `old_count`: The upper bound for the previous number of members in storage. Used for
-  weight estimation.
-
-The dispatch of this call must be `SetMembersOrigin`.
-
-NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but
-      the weight estimations rely on it to estimate dispatchable weight.
-
-WARNING:
-
-The `pallet-collective` can also be managed by logic outside of the pallet through the
-implementation of the trait [`ChangeMembers`].
-Any call to `set_members` must be careful that the member set doesn't get out of sync
-with other logic managing the member set.
-
-**Complexity**:
-- `O(MP + N)` where:
-  - `M` old-members-count (code- and governance-bounded)
-  - `N` new-members-count (code- and governance-bounded)
-  - `P` proposals-count (code-bounded)
-
-#### disapprove_proposal - 5
-
-<details><summary><code>disapprove_proposal(proposal_hash)</code></summary>
-
-Taking 0.0226 % of a block.
-
-```rust
-proposal_hash: T::Hash
-```
-</details>
-
-
-Disapprove a proposal, close, and remove it from the system, regardless of its current
-state.
-
-Must be called by the Root origin.
-
-Parameters:
-* `proposal_hash`: The hash of the proposal that should be disapproved.
-
-**Complexity**
-O(P) where P is the number of max proposals
-
-### Identity - 41
-
-#### prune_item_identities_names - 6
-
-<details><summary><code>prune_item_identities_names(names)</code></summary>
-
-Taking 5.524 % of a block.
-
-```rust
-names: Vec<IdtyName>
-```
-</details>
-
-
-Remove identity names from storage.
-
-This function allows a privileged root origin to remove multiple identity names from storage
-in bulk.
-
-- `origin` - The origin of the call. It must be root.
-- `names` - A vector containing the identity names to be removed from storage.
-
-### Utility - 54
-
-#### dispatch_as - 3
-
-<details><summary><code>dispatch_as(as_origin, call)</code></summary>
-
-Taking 0.0048 % of a block.
-
-```rust
-as_origin: Box<T::PalletsOrigin>
-call: Box<<T as Config>::RuntimeCall>
-```
-</details>
-
-
-Dispatches a function call with a provided origin.
-
-The dispatch origin for this call must be _Root_.
-
-**Complexity**
-- O(1).
-
-
-
-
-
-
-## Disabled calls
-
-There are **4** disabled calls from **2** pallets.
-
-### System - 0
-
-#### remark - 0
-
-<details><summary><code>remark(remark)</code></summary>
-
-Taking 0.0546 % of a block.
-
-```rust
-remark: Vec<u8>
-```
-</details>
-
-
-Make some on-chain remark.
-
-Can be executed by every `origin`.
-
-#### remark_with_event - 7
-
-<details><summary><code>remark_with_event(remark)</code></summary>
-
-Taking 0.2093 % of a block.
-
-```rust
-remark: Vec<u8>
-```
-</details>
-
-
-Make some on-chain remark and emit event.
-
-### Session - 15
-
-#### set_keys - 0
-
-<details><summary><code>set_keys(keys, proof)</code></summary>
-
-Taking 0.0378 % of a block.
-
-```rust
-keys: T::Keys
-proof: Vec<u8>
-```
-</details>
-
-
-Sets the session key(s) of the function caller to `keys`.
-Allows an account to set its session key prior to becoming a validator.
-This doesn't take effect until the next session.
-
-The dispatch origin of this function must be signed.
-
-**Complexity**
-- `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-  fixed.
-
-#### purge_keys - 1
-
-<details><summary><code>purge_keys()</code></summary>
-
-Taking 0.0336 % of a block.
-
-```rust
-```
-</details>
-
-
-Removes any session key(s) of the function caller.
-
-This doesn't take effect until the next session.
-
-The dispatch origin of this function must be Signed and the account must be either be
-convertible to a validator ID using the chain's typical addressing system (this usually
-means being a controller account) or directly convertible into a validator ID (which
-usually means being a stash account).
-
-**Complexity**
-- `O(1)` in number of key types. Actual cost depends on the number of length of
-  `T::Keys::key_ids()` which is fixed.
 

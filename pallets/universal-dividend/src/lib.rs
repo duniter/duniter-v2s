@@ -331,10 +331,11 @@ pub mod pallet {
                             core::num::NonZeroU16::new(current_ud_index)
                                 .expect("unreachable because current_ud_index is never zero."),
                         );
-                        let _ = T::Currency::deposit(who, uds_total, Precision::Exact);
+                        // Currency is issued here
+                        let actual_total = T::Currency::mint_into(who, uds_total)?;
                         Self::deposit_event(Event::UdsClaimed {
                             count: uds_count,
-                            total: uds_total,
+                            total: actual_total,
                             who: who.clone(),
                         });
                         Ok(().into())

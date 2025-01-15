@@ -362,11 +362,28 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Perform removal of all certifications received by an identity.
         pub fn do_remove_all_certs_received_by(idty_index: T::IdtyIndex) -> Weight {
-            let mut weight = T::DbWeight::get().reads_writes(1, 0);
-            for (issuer, _) in CertsByReceiver::<T>::get(idty_index) {
-                weight = weight.saturating_add(Self::do_remove_cert(issuer, idty_index, None));
+            let received_certs = CertsByReceiver::<T>::take(idty_index);
+            for (receiver_received_count, (issuer, _)) in received_certs.iter().enumerate().rev() {
+                let issuer_issued_count =
+                    <StorageIdtyCertMeta<T>>::mutate_exists(issuer, |cert_meta_opt| {
+                        let cert_meta = cert_meta_opt.get_or_insert(IdtyCertMeta::default());
+                        cert_meta.issued_count = cert_meta.issued_count.saturating_sub(1);
+                        cert_meta.issued_count
+                    });
+                T::OnRemovedCert::on_removed_cert(
+                    *issuer,
+                    issuer_issued_count,
+                    idty_index,
+                    receiver_received_count as u32,
+                    false,
+                );
+                Self::deposit_event(Event::CertRemoved {
+                    issuer: *issuer,
+                    receiver: idty_index,
+                    expiration: false,
+                });
             }
-            weight
+            T::WeightInfo::do_remove_all_certs_received_by(received_certs.len() as u32)
         }
 
         /// Get the issuer index from the origin.

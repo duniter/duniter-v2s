@@ -187,8 +187,6 @@ struct IdentityV1 {
     membership_revokes_on: TimestampV1,
     /// whether the identity is revoked (manually or automatically)
     revoked: bool,
-    /// timestamp at which the next cert can be emitted
-    next_cert_issuable_on: TimestampV1, // TODO: unused?
     /// balance of the account of this identity
     balance: u64,
     /// certs received with their expiration timestamp
@@ -212,8 +210,6 @@ struct IdentityV2 {
     identity_revoke_on: u32,
     /// whether the identity is revoked (manually or automatically)
     revoked: bool,
-    /// block at which the next cert can be emitted
-    next_cert_issuable_on: u32,
     /// balance of the account of this identity
     balance: u64,
     /// certs received with their expiration block
@@ -1232,10 +1228,6 @@ fn genesis_data_to_identities_v2(
                         genesis_timestamp,
                     ),
                     revoked: i.revoked,
-                    next_cert_issuable_on: timestamp_to_relative_blocs(
-                        i.next_cert_issuable_on,
-                        genesis_timestamp,
-                    ),
                     balance: i.balance,
                     certs_received: i
                         .certs_received
@@ -1276,7 +1268,6 @@ fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKey
                 membership_expire_on: common_parameters.membership_membership_period,
                 identity_revoke_on: common_parameters.membership_membership_period,
                 revoked: false,
-                next_cert_issuable_on: 0,
             },
         );
     };

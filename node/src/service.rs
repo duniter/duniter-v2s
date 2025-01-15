@@ -193,7 +193,7 @@ where
         .transpose()?;
 
     #[cfg(feature = "native")]
-    let executor = sc_service::new_native_or_wasm_executor(&config.executor);
+    let executor = sc_service::new_native_or_wasm_executor(&config);
     #[cfg(not(feature = "native"))]
     let executor = sc_service::new_wasm_executor(&config.executor);
 
@@ -503,8 +503,7 @@ where
                                     FullBackend,
                                 >(
                                     &*client, parent, distance_dir, &babe_owner_keys.clone()
-                                )?;
-                            // in case of manual sealing, the distance is forced to succeed
+                                );
                             Ok((timestamp, babe, distance))
                         }
                     },
@@ -551,16 +550,6 @@ where
                         >(
                             &*client, parent, distance_dir, &babe_owner_keys.clone()
                         );
-
-                        // provides fallback when distance inherent data provider crashes
-                        // (only when sealing is not manual)
-                        let distance = match distance {
-                            Ok(distance) => distance,
-                            Err(e) => {
-                                log::warn!("{:?}", e);
-                                sp_distance::InherentDataProvider::new(None)
-                            }
-                        };
 
                         Ok((slot, timestamp, storage_proof, distance))
                     }

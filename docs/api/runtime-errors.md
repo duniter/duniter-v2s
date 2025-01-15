@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **190** errors from **35** pallets.
+There are **191** errors from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -984,6 +984,13 @@ Insufficient balance to create an identity.
 <summary>
 <code>OwnerKeyUsedAsValidator</code> - 18</summary>
 Owner key currently used as validator.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>InvalidLegacyRevocationFormat</code> - 19</summary>
+Legacy revocation document format is invalid
 </details>
 </li>
 </ul>

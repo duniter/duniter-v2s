@@ -22,12 +22,18 @@ use sp_runtime::RuntimeDebug;
 pub type UdIndex = u16;
 
 /// Represents the first eligible Universal Dividend.
-#[derive(
-    Clone, Copy, Default, Eq, PartialEq, RuntimeDebug, serde::Deserialize, serde::Serialize,
-)]
+#[derive(Clone, Eq, PartialEq, RuntimeDebug, serde::Deserialize, serde::Serialize)]
 pub struct FirstEligibleUd(pub Option<NonZeroU16>);
 
+/// Default is not eligible
+impl Default for FirstEligibleUd {
+    fn default() -> Self {
+        FirstEligibleUd(None)
+    }
+}
+
 impl FirstEligibleUd {
+    /// Eligible at the first UD index
     pub fn min() -> Self {
         Self(Some(NonZeroU16::new(1).expect("unreachable")))
     }

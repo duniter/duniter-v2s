@@ -1,10 +1,12 @@
 There are **{{ calls_counter }}** {{ category_name }} calls from **{{ pallets | length }}** pallets.
 
 {% for pallet in pallets -%}
-### {{ pallet.name }} - {{ pallet.index }}
+
+## {{ pallet.name }} - {{ pallet.index }}
 
 {% for call in pallet.calls -%}
-#### {{ call.name }} - {{ call.index }}
+
+### {{ call.name }} - {{ call.index }}
 
 <details><summary><code>{{ call.name }}(
     {%- for param in call.params -%}
@@ -23,8 +25,15 @@ Taking {{ call.weight }} % of a block.
 ```
 </details>
 
-{# replace markdown sytax in documentation breaking the final result #}
-{{ call.documentation | replace(from="# WARNING:", to="WARNING:") | replace(from="## Complexity", to="**Complexity**") }}
+{# lower heading title to integrate into document hierarchy #}
+{# with a maximum to 6 #}
+{{ call.documentation
+| replace(from="# ", to="## ")
+| replace(from="# ", to="## ")
+| replace(from="# ", to="## ")
+| replace(from="# ", to="## ")
+| replace(from="####### ", to="###### ")
+}}
 
 {% endfor -%}
 {% endfor -%}

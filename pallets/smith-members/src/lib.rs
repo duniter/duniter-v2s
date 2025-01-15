@@ -240,10 +240,13 @@ pub mod pallet {
                         received_certs: issuers_,
                     },
                 );
-                ExpiresOn::<T>::append(
-                    CurrentSession::<T>::get() + T::SmithInactivityMaxDuration::get(),
-                    receiver,
-                );
+                // if smith is offline, schedule expire
+                if !*is_online {
+                    ExpiresOn::<T>::append(
+                        CurrentSession::<T>::get() + T::SmithInactivityMaxDuration::get(),
+                        receiver,
+                    );
+                }
             }
 
             for (issuer, issued_certs) in cert_meta_by_issuer {
@@ -516,7 +519,7 @@ impl<T: Config> Pallet<T> {
 
     /// Handle the removal of Smiths whose expiration time has been reached at a given session index.
     fn on_exclude_expired_smiths(at: SessionIndex) {
-        if let Some(smiths_to_remove) = ExpiresOn::<T>::get(at) {
+        if let Some(smiths_to_remove) = ExpiresOn::<T>::take(at) {
             for smith in smiths_to_remove {
                 if let Some(smith_meta) = Smiths::<T>::get(smith) {
                     if let Some(expires_on) = smith_meta.expires_on {
@@ -582,7 +585,7 @@ impl<T: Config> Pallet<T> {
                     if let Some(smith_meta) = maybe_smith_meta {
                         // As long as the smith is online, it cannot expire
                         smith_meta.expires_on = None;
-                        // FIXME: unschedule old expiry
+                        // FIXME: unschedule old expiry (#182)
                     }
                 });
             }
@@ -592,10 +595,12 @@ impl<T: Config> Pallet<T> {
     /// Handle the event when a Smith goes offline.
     pub fn on_smith_goes_offline(idty_index: T::IdtyIndex) {
         if let Some(smith_meta) = Smiths::<T>::get(idty_index) {
-            if smith_meta.expires_on.is_none() {
+            // Smith can go offline after main membership expiry
+            // in this case, there is no scheduled expiry since it is already excluded
+            if smith_meta.status != SmithStatus::Excluded {
                 Smiths::<T>::mutate(idty_index, |maybe_smith_meta| {
                     if let Some(smith_meta) = maybe_smith_meta {
-                        // As long as the smith is online, it cannot expire
+                        // schedule expiry
                         let new_expires_on =
                             CurrentSession::<T>::get() + T::SmithInactivityMaxDuration::get();
                         smith_meta.expires_on = Some(new_expires_on);

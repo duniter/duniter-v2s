@@ -21,27 +21,45 @@ function ternary () {
   fi
 }
 
+# Define chain name at the beginning
+# with #274 we could have default given in network branch
+DUNITER_CHAIN_NAME="${DUNITER_CHAIN_NAME:-dev}"
+case "$DUNITER_CHAIN_NAME" in
+  dev)
+    chain=(--dev)
+    ;;
+  *)
+    chain=(--chain "$DUNITER_CHAIN_NAME")
+    ;;
+esac
+
+# Node name will appear on network
 DUNITER_NODE_NAME="${DUNITER_NODE_NAME:-$DUNITER_INSTANCE_NAME}"
 if [ -n "$DUNITER_NODE_NAME" ]; then
   set -- "$@" --name "$DUNITER_NODE_NAME"
 fi
 
+# Path of key file. Should be generated below if not present before starting Duniter
 _DUNITER_KEY_FILE=/var/lib/duniter/node.key
 set -- "$@" --node-key-file "$_DUNITER_KEY_FILE"
 
+# Generate node.key if not existing (chain name is required)
 if [ ! -f "$_DUNITER_KEY_FILE" ]; then
   echo "Generating node key file '$_DUNITER_KEY_FILE'..."
-  duniter key generate-node-key --file "$_DUNITER_KEY_FILE"
+  duniter key generate-node-key --file "$_DUNITER_KEY_FILE" "${chain[@]}"
 else
   echo "Node key file '$_DUNITER_KEY_FILE' exists."
 fi
+# Log peer ID
 _DUNITER_PEER_ID="$(duniter key inspect-node-key --file "$_DUNITER_KEY_FILE")"
 echo "Node peer ID is '$_DUNITER_PEER_ID'."
 
+# Define public address (with dns, correct port and protocol for instance)
 if [ -n "$DUNITER_PUBLIC_ADDR" ]; then
   set -- "$@" --public-addr "$DUNITER_PUBLIC_ADDR"
 fi
 
+# Define listen address (inside docker)
 if [ -n "$DUNITER_LISTEN_ADDR" ]; then
   set -- "$@" --listen-addr "$DUNITER_LISTEN_ADDR"
 fi
@@ -49,6 +67,7 @@ fi
 DUNITER_RPC_CORS="${DUNITER_RPC_CORS:-all}"
 set -- "$@" --rpc-cors "$DUNITER_RPC_CORS"
 
+# In case of validator, unsafe rpc methods are needed (like rotate_key) and should not be exposed publicly
 DUNITER_VALIDATOR=$(boolean "${DUNITER_VALIDATOR:-false}")
 if [ "$DUNITER_VALIDATOR" = true ]; then
   set -- "$@" --rpc-methods Unsafe --validator
@@ -64,6 +83,7 @@ if [ "$DUNITER_DISABLE_TELEMETRY" = true ]; then
   set -- "$@" --no-telemetry
 fi
 
+# Set pruning profile
 DUNITER_PRUNING_PROFILE="${DUNITER_PRUNING_PROFILE:-default}"
 case "$DUNITER_PRUNING_PROFILE" in
   default)
@@ -79,16 +99,9 @@ case "$DUNITER_PRUNING_PROFILE" in
     ;;
 esac
 
-DUNITER_CHAIN_NAME="${DUNITER_CHAIN_NAME:-dev}"
-case "$DUNITER_CHAIN_NAME" in
-  dev)
-    chain=(--dev)
-    ;;
-  *)
-    chain=(--chain "$DUNITER_CHAIN_NAME")
-    ;;
-esac
-
+# Set main command
+# Since we are inside docker, we can bind to all interfaces.
+# User will bind port to host interface or set reverse proxy when needed.
 set -- "$@" \
   "${chain[@]}" \
   -d /var/lib/duniter --unsafe-rpc-external

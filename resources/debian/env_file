@@ -36,6 +36,11 @@ BASE_PATH=/home/duniter/.local/share/duniter
 # Default: ws://127.0.0.1:9944 for a local WebSocket RPC server.
 ORACLE_RPC_URL=ws://127.0.0.1:9944
 
+# Interval in seconds at which the oracle is run.
+# This should not exceed the evaluation period of the blockchain.
+# Default: 600 seconds
+ORACLE_INTERVAL=600
+
 # Determines the log level for the Oracle.
 # Options include 'error', 'warn', 'info', 'debug', 'trace'.
 # 'info' is a good default that provides useful runtime information without too much detail.

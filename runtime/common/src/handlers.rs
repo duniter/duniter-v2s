@@ -111,21 +111,20 @@ impl<
         // duniter-wot related actions
         let mut weight = pallet_duniter_wot::Pallet::<Runtime>::on_removed(idty_index);
 
-        let mut add_db_reads_writes = |reads, writes| {
-            weight += Runtime::DbWeight::get().reads_writes(reads, writes);
-        };
-
-        // When membership is removed, call on_removed_member handler which auto claims UD.
-        if let Some(idty_value) = pallet_identity::Identities::<Runtime>::get(idty_index) {
-            add_db_reads_writes(1, 0);
-            if let Some(first_ud_index) = idty_value.data.first_eligible_ud.into() {
-                add_db_reads_writes(1, 0);
-                weight += pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
-                    first_ud_index,
-                    &idty_value.owner_key,
-                );
+        // When membership is removed:
+        // - call on_removed_member handler which auto claims UD;
+        // - set the first_eligible_ud to None so the identity cannot claim UD anymore.
+        pallet_identity::Identities::<Runtime>::mutate(idty_index, |maybe_idty_value| {
+            if let Some(idty_value) = maybe_idty_value {
+                if let Some(first_ud_index) = idty_value.data.first_eligible_ud.0.take() {
+                    weight += pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
+                        first_ud_index.into(),
+                        &idty_value.owner_key,
+                    );
+                }
             }
-        }
+        });
+        weight += Runtime::DbWeight::get().reads_writes(1, 1);
 
         // When membership is removed, also remove from smith member.
         weight.saturating_add(

@@ -59,6 +59,31 @@
       "membership_revokes_on": 2700000001,
       "revoked": false,
       "next_cert_issuable_on": 0
+    },
+    "Eve": {
+      "index": 5,
+      "balance": 1000,
+      "certs_received": {
+        "Alice": 2700000000,
+        "Bob": 2700000000
+      },
+      "owner_address": "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw",
+      "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": true,
+      "next_cert_issuable_on": 0
+    },
+    "Ferdie": {
+      "index": 6,
+      "balance": 1000,
+      "certs_received": {
+        "Alice": 2700000000
+      },
+      "owner_address": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+      "membership_expire_on": 2700000000,
+      "membership_revokes_on": 2700000001,
+      "revoked": false,
+      "next_cert_issuable_on": 0
     }
   },
   "parameters": {
@@ -99,7 +124,7 @@
   ],
   "treasury_funder_pubkey": "FHNpKmJrUtusuvKPGomAygQqeiks98bdV6yD61Stb6vg",
   "ud": 1000,
-  "initial_monetary_mass": 4000,
+  "initial_monetary_mass": 6000,
   "current_block": {
     "number": 0,
     "medianTime": 1700000000

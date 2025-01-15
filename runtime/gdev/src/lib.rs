@@ -173,7 +173,12 @@ mod benches {
 pub struct BaseCallFilter;
 impl Contains<RuntimeCall> for BaseCallFilter {
     fn contains(call: &RuntimeCall) -> bool {
-        !matches!(call, RuntimeCall::Session(_))
+        // not allowed to run session calls directly
+        // not allowed to burn currency
+        !matches!(
+            call,
+            RuntimeCall::Session(_) | RuntimeCall::Balances(pallet_balances::Call::burn { .. })
+        )
     }
 }
 

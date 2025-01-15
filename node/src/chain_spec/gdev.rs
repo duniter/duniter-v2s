@@ -286,7 +286,14 @@ fn genesis_data_to_gdev_genesis_conf(
                         index: idty_index,
                         name: common_runtime::IdtyName::from(name.as_str()),
                         value: common_runtime::IdtyValue {
-                            data: IdtyData::new(),
+                            data: IdtyData {
+                                first_eligible_ud: match status {
+                                    // Only members are eligible to UD.
+                                    // The first claimable UD has the minimum index (1).
+                                    common_runtime::IdtyStatus::Member => gdev_runtime::pallet_universal_dividend::FirstEligibleUd::min(),
+                                    _ => gdev_runtime::pallet_universal_dividend::FirstEligibleUd(None),
+                                }
+                            },
                             next_creatable_identity_on: 0,
                             old_owner_key: None,
                             owner_key,

@@ -14,11 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+use core::str::FromStr;
+
 use crate::{mock::*, *};
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchResultWithPostInfo};
 use sp_core::{sr25519::Pair as KeyPair, Pair};
-use sp_runtime::{MultiSignature, MultiSigner};
+use sp_runtime::{AccountId32, MultiSignature, MultiSigner};
 
 type IdtyVal = IdtyValue<u64, AccountId, ()>;
 
@@ -83,6 +85,23 @@ fn inactive_bob() -> GenesisIdty<Test> {
             owner_key: account(2).id,
             next_scheduled: 2,
             status: crate::IdtyStatus::NotMember,
+        },
+    }
+}
+
+// From legacy credentials Charlie:Charlie
+fn legacy_charlie() -> GenesisIdty<Test> {
+    GenesisIdty {
+        index: 102,
+        name: IdtyName::from("Charlie"),
+        value: IdtyVal {
+            data: (),
+            next_creatable_identity_on: 0,
+            old_owner_key: None,
+            owner_key: AccountId32::from_str("5H2nLXGku46iztpqdRwsCAiP6vHZbShhKmSV4yyufQgEUFvV")
+                .unwrap(),
+            next_scheduled: 0,
+            status: crate::IdtyStatus::Member,
         },
     }
 }
@@ -610,6 +629,86 @@ fn test_idty_revocation() {
         );
     });
 }
+
+// # Generate dummy revocation documents in Python.
+// # The seed derivation is not the same as sr25519.from_seed so this doesn't work yet.
+// ```python
+// import duniterpy, substrateinterface
+// s = duniterpy.key.SigningKey.from_credentials("Charlie", "Charlie")
+// block = duniterpy.documents.BlockID(42, "A"*64)
+// idty = duniterpy.documents.Identity(s.pubkey, "Charlie", block, s)
+// r = duniterpy.documents.Revocation(idty, s)
+// print("SS58 address:", substrateinterface.base.ss58_encode(s.vk))
+// print(r.signed_raw())
+// ```
+#[test]
+fn test_idty_revocation_legacy() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice(), legacy_charlie()],
+    })
+    .execute_with(|| {
+        // We need to initialize at least one block before any call
+        run_to_block(1);
+
+        let valid_revocation_document = r"Version: 10
+Type: Revocation
+Currency: g1
+Issuer: Fnf2xaxYdQpB4kU45DMLQ9Ey4bd6DtoebKJajRkLBUXm
+IdtyUniqueID: Charlie
+IdtyTimestamp: 42-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+IdtySignature: 7KUagcMiQw05rwbkBsRrnNqPRHu/Y5ukCLoAEpb/1tXAQsSNf2gRi1h5PWIGs9y/vHnFXvF5epKsOjA6X75vDg==
+CfiG4xhcWS+/DgxY0xFIyOA9TVr4Im3XEXcCApNgXC+Ns9jy2yrNoC3NF8MCD63cZ8QTRfrr4Iv6n3leYCCcDQ==
+";
+
+let revocation_document_bad_username = r"Version: 10
+Type: Revocation
+Currency: g1
+Issuer: Fnf2xaxYdQpB4kU45DMLQ9Ey4bd6DtoebKJajRkLBUXm
+IdtyUniqueID: Alice
+IdtyTimestamp: 42-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+IdtySignature: dqO8nnYWZDDDzadMXpOVwehJXQ9wocE9QTKsVBa88rPONLhz12QA6Ytib2+VtPU+gnewO2mRVOvzdYKXemQPDg==
+0q/Dy4jwLTjZGSOu4GWdkfW+SqXRAPHUwwvWQenqiuNuL2eEc0x2hM0MWhIOuSLy2ifNq6PfSH/dBrV5CgYIAw==
+";
+
+let revocation_document_bad_signer = r"Version: 10
+Type: Revocation
+Currency: g1
+Issuer: 9cFLFh12MZSL8HHW9KvEDGTEEyKALGjEdHpNP8rqmmw3
+IdtyUniqueID: Charlie
+IdtyTimestamp: 42-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+IdtySignature: 8P2vjDHZf4tHaGpZYTuTXJ9Xe+3qQ0FAM6fypvwl2mYqLs1ZfE07gp4mqRpNY90rC9+CIIi7eHvv2uAlFVpfCQ==
+iWOssQ1y2svWeUD4byjJx6n+/Xgf0pgMe1FDhnR9oN76Ri9B8SQfP+hFD3GCth7sZRD162sR83g3UvYpFHJLBQ==
+";
+
+        assert_eq!(
+            Identity::revoke_identity_legacy(
+                RuntimeOrigin::signed(account(1).id),
+                revocation_document_bad_username.into()
+            ),
+            Err(Error::<Test>::InvalidRevocationKey.into())
+        );
+
+        assert_eq!(
+            Identity::revoke_identity_legacy(
+                RuntimeOrigin::signed(account(1).id),
+                revocation_document_bad_signer.into()
+            ),
+            Err(Error::<Test>::InvalidRevocationKey.into())
+        );
+
+        // Anyone can submit a revocation payload
+        assert_ok!(Identity::revoke_identity_legacy(
+            RuntimeOrigin::signed(account(42).id),
+            valid_revocation_document.into()
+        ));
+
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRevoked {
+            idty_index: 102,
+            reason: RevocationReason::User,
+        }));
+    });
+}
+
 #[test]
 fn test_inactive_genesis_members() {
     new_test_ext(IdentityConfig {

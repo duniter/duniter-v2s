@@ -628,6 +628,48 @@ fn certifying_an_online_smith() {
     });
 }
 
+/// Test that scheduled expiration is removed after session
+#[test]
+fn expires_on_cleans_up() {
+    new_test_ext(GenesisConfig {
+        initial_smiths: btreemap![
+            1 => (true, vec![2, 3]),
+            2 => (true, vec![1,3]),
+            3 => (true, vec![1,2]),
+        ],
+    })
+    .execute_with(|| {
+        // Alice goes offline, and is set to expire
+        Pallet::<Runtime>::on_smith_goes_offline(1);
+        // The expiration block is present in smith data
+        assert_eq!(
+            Smiths::<Runtime>::get(1),
+            Some(SmithMeta {
+                status: Smith,
+                expires_on: Some(5),
+                issued_certs: vec![2, 3],
+                received_certs: vec![2, 3]
+            })
+        );
+        // It is also present in ExpiresOn schedule
+        assert_eq!(ExpiresOn::<Runtime>::get(5), Some(vec![1]));
+        // Go to expiration session
+        Pallet::<Runtime>::on_new_session(5);
+        // Alice is expired
+        assert_eq!(
+            Smiths::<Runtime>::get(1),
+            Some(SmithMeta {
+                status: Excluded,
+                expires_on: None,
+                issued_certs: vec![2, 3],
+                received_certs: vec![]
+            })
+        );
+        // ExpiresOn is clean
+        assert_eq!(ExpiresOn::<Runtime>::get(5), None);
+    });
+}
+
 #[test]
 fn invitation_on_non_wot_member() {
     new_test_ext(GenesisConfig {

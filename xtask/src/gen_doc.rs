@@ -194,55 +194,68 @@ impl From<&scale_info::Variant<PortableForm>> for ErroR {
     }
 }
 
+// classify calls into categories depending on their origin
 enum CallCategory {
+    // calls filtered by runtime
     Disabled,
+    // inherents
     Inherent,
-    OtherOrigin,
+    // ensure_root
     Root,
+    // sudo
     Sudo,
+    // user calls
     User,
+    // other (like a certain proportion of technical comittee)
+    OtherOrigin,
 }
 
 impl CallCategory {
     fn is(pallet_name: &str, call_name: &str) -> Self {
         match (pallet_name, call_name) {
-            ("System", "remark" | "remark_with_event") => Self::Disabled,
+            // substrate "system"
             ("System", _) => Self::Root,
-            ("Babe", "report_equivocation_unsigned") => Self::Inherent,
+            ("Scheduler", _) => Self::Root,
+            ("Babe", "report_equivocation" | "report_equivocation_unsigned") => Self::Inherent,
             ("Babe", "plan_config_change") => Self::Root,
-            ("Timestamp", _) => Self::Inherent,
-            ("Balances", "set_balance" | "force_transfer" | "force_unreserve") => Self::Root,
-            ("AuthorityMembers", "prune_account_id_of" | "remove_member") => Self::Root,
             ("Authorship", _) => Self::Inherent,
             ("Session", _) => Self::Disabled,
-            ("Grandpa", "report_equivocation_unsigned") => Self::Inherent,
+            ("Grandpa", "report_equivocation" | "report_equivocation_unsigned") => Self::Inherent,
             ("Grandpa", "note_stalled") => Self::Root,
-            ("UpgradeOrigin", "dispatch_as_root") => Self::OtherOrigin,
+            ("Timestamp", _) => Self::Inherent,
             ("ImOnline", _) => Self::Inherent,
-            ("Sudo", _) => Self::Sudo,
+            // substrate "common"
             (
-                "Identity",
-                "remove_identity" | "prune_item_identities_names" | "prune_item_identity_index_of",
+                "Balances",
+                "force_set_balance"
+                | "force_transfer"
+                | "force_unreserve"
+                | "force_adjust_total_issuance",
             ) => Self::Root,
-            ("Cert", "del_cert" | "remove_all_certs_received_by") => Self::Root,
-            ("SmithCert", "del_cert" | "remove_all_certs_received_by") => Self::Root,
-            ("TechnicalCommittee", "set_members" | "disapprove_proposal") => Self::Root,
-            ("Utility", "dispatch_as") => Self::Root,
+            ("Balances", "burn") => Self::Disabled,
+            ("Sudo", _) => Self::Sudo,
             ("Treasury", "approve_proposal" | "reject_proposal") => Self::OtherOrigin,
+            ("Utility", "dispatch_as" | "with_weight") => Self::Root,
+            // duniter
+            ("Distance", "force_update_evaluation" | "force_valid_distance_status") => Self::Root,
+            ("Distance", "update_evaluation") => Self::Inherent,
+            ("AuthorityMembers", "remove_member_from_blacklist" | "remove_member") => Self::Root,
+            ("UpgradeOrigin", "dispatch_as_root" | "dispatch_as_root_unchecked_weight") => {
+                Self::OtherOrigin
+            }
+            ("Identity", "remove_identity" | "prune_item_identities_names" | "fix_sufficients") => {
+                Self::Root
+            }
+            ("Certification", "del_cert" | "remove_all_certs_received_by") => Self::Root,
+            ("TechnicalCommittee", "set_members" | "disapprove_proposal") => Self::Root,
+            // if not classified, consider it at a user call
             _ => Self::User,
         }
     }
 
-    fn is_root(pallet_name: &str, call_name: &str) -> bool {
-        matches!(Self::is(pallet_name, call_name), Self::Root)
-    }
-
+    // only user calls
     fn is_user(pallet_name: &str, call_name: &str) -> bool {
         matches!(Self::is(pallet_name, call_name), Self::User)
-    }
-
-    fn is_disabled(pallet_name: &str, call_name: &str) -> bool {
-        matches!(Self::is(pallet_name, call_name), Self::Disabled)
     }
 }
 
@@ -477,6 +490,7 @@ fn get_weights(max_weight: u128) -> Result<HashMap<String, HashMap<String, Weigh
 /// use template to render markdown file with runtime calls documentation
 fn print_runtime(pallets: RuntimePallets) -> (String, String, String, String) {
     // init variables
+    // -- user calls
     let mut user_calls_counter = 0;
     let user_calls_pallets: RuntimePallets = pallets
         .iter()
@@ -494,46 +508,14 @@ fn print_runtime(pallets: RuntimePallets) -> (String, String, String, String) {
             }
         })
         .collect();
-    let mut root_calls_counter = 0;
-    let root_calls_pallets: RuntimePallets = pallets
-        .iter()
-        .cloned()
-        .filter_map(|mut pallet| {
-            let pallet_name = pallet.name.clone();
-            pallet
-                .calls
-                .retain(|call| CallCategory::is_root(&pallet_name, &call.name));
-            if pallet.calls.is_empty() {
-                None
-            } else {
-                root_calls_counter += pallet.calls.len();
-                Some(pallet)
-            }
-        })
-        .collect();
-    let mut disabled_calls_counter = 0;
-    let disabled_calls_pallets: RuntimePallets = pallets
-        .iter()
-        .cloned()
-        .filter_map(|mut pallet| {
-            let pallet_name = pallet.name.clone();
-            pallet
-                .calls
-                .retain(|call| CallCategory::is_disabled(&pallet_name, &call.name));
-            if pallet.calls.is_empty() {
-                None
-            } else {
-                disabled_calls_counter += pallet.calls.len();
-                Some(pallet)
-            }
-        })
-        .collect();
 
+    // event counter
     let mut event_counter = 0;
     pallets
         .iter()
         .for_each(|pallet| event_counter += pallet.events.len());
 
+    // error counter
     let mut error_counter = 0;
     pallets
         .iter()
@@ -552,10 +534,6 @@ fn print_runtime(pallets: RuntimePallets) -> (String, String, String, String) {
     let mut context = tera::Context::new();
     context.insert("user_calls_counter", &user_calls_counter);
     context.insert("user_calls_pallets", &user_calls_pallets);
-    context.insert("root_calls_counter", &root_calls_counter);
-    context.insert("root_calls_pallets", &root_calls_pallets);
-    context.insert("disabled_calls_counter", &disabled_calls_counter);
-    context.insert("disabled_calls_pallets", &disabled_calls_pallets);
 
     let call_doc = tera
         .render("runtime-calls.md", &context)

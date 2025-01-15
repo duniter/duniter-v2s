@@ -62,6 +62,11 @@ fn test_claim_uds() {
             total: 1_000,
             who: 1,
         }));
+        // the expected event from pallet balances is Minted
+        System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Minted {
+            who: 1,
+            amount: 1000,
+        }));
         assert_eq!(Balances::free_balance(1), 1_000);
         // Others members should not receive any UDs with Alice claim
         assert_eq!(Balances::free_balance(2), 0);

@@ -53,15 +53,6 @@ pub struct IdtyData {
     pub first_eligible_ud: pallet_universal_dividend::FirstEligibleUd,
 }
 
-#[cfg(feature = "std")]
-impl IdtyData {
-    pub fn new() -> Self {
-        Self {
-            first_eligible_ud: pallet_universal_dividend::FirstEligibleUd::min(),
-        }
-    }
-}
-
 impl From<IdtyData> for pallet_universal_dividend::FirstEligibleUd {
     fn from(idty_data: IdtyData) -> Self {
         idty_data.first_eligible_ud

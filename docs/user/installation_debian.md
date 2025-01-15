@@ -22,5 +22,5 @@
 A Smith node needs to be installed.
 
 1. Change the default configuration by modifying `/etc/duniter/env_file`.
-2. Start the service: `sudo systemctl start distance-oracle.timer`.
-3. Enable the service at startup: `sudo systemctl enable distance-oracle.timer`.
+2. Start the service: `sudo systemctl start distance-oracle.service`.
+3. Enable the service at startup: `sudo systemctl enable distance-oracle.service`.
