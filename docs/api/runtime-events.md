@@ -1270,12 +1270,11 @@ owner_key: T::AccountId
 <li>
 <details>
 <summary>
-<code>IdtyConfirmed(idty_index, owner_key, name)</code> - 1</summary>
+<code>IdtyConfirmed(idty_index, name)</code> - 1</summary>
 An identity has been confirmed by its owner.
 
 ```rust
 idty_index: T::IdtyIndex
-owner_key: T::AccountId
 name: IdtyName
 ```
 

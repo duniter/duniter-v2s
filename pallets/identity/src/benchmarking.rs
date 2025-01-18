@@ -160,7 +160,6 @@ mod benchmarks {
         assert_has_event::<T>(
             Event::<T>::IdtyConfirmed {
                 idty_index: idty_index.unwrap(),
-                owner_key,
                 name: IdtyName("new_identity".into()),
             }
             .into(),

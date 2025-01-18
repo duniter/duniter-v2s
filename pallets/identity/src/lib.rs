@@ -303,7 +303,6 @@ pub mod pallet {
         /// An identity has been confirmed by its owner.
         IdtyConfirmed {
             idty_index: T::IdtyIndex,
-            owner_key: T::AccountId,
             name: IdtyName,
         },
         /// An identity has been validated.
@@ -424,7 +423,6 @@ pub mod pallet {
             <IdentitiesNames<T>>::insert(idty_name.clone(), idty_index);
             Self::deposit_event(Event::IdtyConfirmed {
                 idty_index,
-                owner_key: who,
                 name: idty_name,
             });
             Ok(().into())
