@@ -17,6 +17,7 @@ runtime-benchmarks = [
 	"pallet-balances/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
 	"pallet-quota/runtime-benchmarks",
+	"pallet-transaction-payment/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]

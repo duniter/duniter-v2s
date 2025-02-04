@@ -31,6 +31,7 @@ runtime-benchmarks = [
 	"pallet-quota/runtime-benchmarks",
 	"pallet-smith-members/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
+	"pallet-transaction-payment/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-universal-dividend/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",

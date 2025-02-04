@@ -46,10 +46,7 @@ lazy_static! {
 /// Unwraps a [`crate::service::client::Client`] into the concrete runtime client.
 #[cfg(feature = "runtime-benchmarks")]
 macro_rules! unwrap_client {
-    (
-		$client:ident,
-		$code:expr
-	) => {
+    ($client:ident, $code:expr) => {
         match $client.as_ref() {
             crate::service::client::Client::Client($client) => $code,
         }
@@ -335,11 +332,12 @@ pub fn run() -> sc_cli::Result<()> {
                     unwrap_client!(
                         client,
                         cmd.run(
-                            config,
+                            config.chain_spec.name().into(),
                             client.clone(),
                             inherent_data,
                             Vec::new(),
-                            wrapped.as_ref()
+                            wrapped.as_ref(),
+                            false,
                         )
                     )
                 }),

@@ -49,6 +49,7 @@ use frame_support::{pallet_prelude::*, traits::StorageVersion};
 use scale_info::prelude::{collections::BTreeMap, fmt::Debug, vec::Vec};
 use sp_runtime::traits::AtLeast32BitUnsigned;
 
+#[allow(unreachable_patterns)]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;

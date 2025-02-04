@@ -30,6 +30,7 @@ use frame_support::{
 use scale_info::prelude::boxed::Box;
 use sp_runtime::traits::Dispatchable;
 
+#[allow(unreachable_patterns)]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -86,7 +87,7 @@ pub mod pallet {
 			let dispatch_info = call.get_dispatch_info();
 			(
 				T::WeightInfo::dispatch_as_root()
-					.saturating_add(dispatch_info.weight),
+					.saturating_add(dispatch_info.call_weight).saturating_add(dispatch_info.extension_weight),
 				dispatch_info.class,
 			)
 		})]

@@ -30,6 +30,7 @@ use sc_service::{
     error::Error as ServiceError, Configuration, PartialComponents, TaskManager, WarpSyncConfig,
 };
 use sc_telemetry::{Telemetry, TelemetryWorker};
+use sc_transaction_pool_api::TransactionPool;
 use sp_consensus_babe::inherents::InherentDataProvider;
 use sp_core::H256;
 use sp_runtime::traits::BlakeTwo256;
@@ -153,7 +154,7 @@ pub fn new_partial<RuntimeApi, Executor>(
         FullBackend,
         FullSelectChain,
         sc_consensus::DefaultImportQueue<Block>,
-        sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>,
+        sc_transaction_pool::TransactionPoolWrapper<Block, FullClient<RuntimeApi, Executor>>,
         (
             sc_consensus_babe::BabeBlockImport<
                 Block,
@@ -214,12 +215,15 @@ where
 
     let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
-    let transaction_pool = sc_transaction_pool::BasicPool::new_full(
-        config.transaction_pool.clone(),
-        config.role.is_authority().into(),
-        config.prometheus_registry(),
-        task_manager.spawn_essential_handle(),
-        client.clone(),
+    let transaction_pool = Arc::from(
+        sc_transaction_pool::Builder::new(
+            task_manager.spawn_essential_handle(),
+            client.clone(),
+            config.role.is_authority().into(),
+        )
+        .with_options(config.transaction_pool.clone())
+        .with_prometheus(config.prometheus_registry())
+        .build(),
     );
 
     let client_ = client.clone();
@@ -394,7 +398,7 @@ where
                 is_validator: role.is_authority(),
                 enable_http_requests: false,
                 custom_extensions: move |_| vec![],
-            })
+            })?
             .run(client.clone(), task_manager.spawn_handle())
             .boxed(),
         );
@@ -424,16 +428,14 @@ where
                     crate::cli::Sealing::Instant => {
                         Box::new(
                             // This bit cribbed from the implementation of instant seal.
-                            transaction_pool
-                                .pool()
-                                .validated_pool()
-                                .import_notification_stream()
-                                .map(|_| EngineCommand::SealNewBlock {
+                            transaction_pool.import_notification_stream().map(|_| {
+                                EngineCommand::SealNewBlock {
                                     create_empty: false,
                                     finalize: false,
                                     parent_hash: None,
                                     sender: None,
-                                }),
+                                }
+                            }),
                         )
                     }
                     crate::cli::Sealing::Manual => {

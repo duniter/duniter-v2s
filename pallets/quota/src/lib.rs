@@ -59,6 +59,7 @@ use scale_info::prelude::vec::Vec;
 use sp_runtime::traits::Zero;
 pub use weights::WeightInfo;
 
+#[allow(unreachable_patterns)]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;

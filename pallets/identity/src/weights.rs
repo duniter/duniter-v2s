@@ -85,17 +85,6 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().writes(6))
     }
 
-    fn revoke_identity_legacy() -> Weight {
-        // Proof Size summary in bytes:
-        //  Measured:  `778`
-        //  Estimated: `6718`
-        // Minimum execution time: 829_174_000 picoseconds.
-        Weight::from_parts(869_308_000, 0)
-            .saturating_add(Weight::from_parts(0, 6718))
-            .saturating_add(RocksDbWeight::get().reads(6))
-            .saturating_add(RocksDbWeight::get().writes(6))
-    }
-
     fn prune_item_identities_names(i: u32) -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `0`
@@ -149,6 +138,17 @@ impl WeightInfo for () {
     }
 
     fn do_revoke_identity() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `1525`
+        //  Estimated: `7465`
+        // Minimum execution time: 2_204_911_000 picoseconds.
+        Weight::from_parts(2_225_493_000, 0)
+            .saturating_add(Weight::from_parts(0, 7465))
+            .saturating_add(RocksDbWeight::get().reads(17))
+            .saturating_add(RocksDbWeight::get().writes(20))
+    }
+
+    fn revoke_identity_legacy() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `1525`
         //  Estimated: `7465`

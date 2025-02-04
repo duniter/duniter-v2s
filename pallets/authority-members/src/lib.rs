@@ -68,6 +68,7 @@ use frame_support::traits::Get;
 use scale_info::prelude::{collections::BTreeMap, vec, vec::Vec};
 use sp_runtime::traits::{Convert, IsMember};
 
+#[allow(unreachable_patterns)]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;

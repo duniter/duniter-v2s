@@ -66,6 +66,7 @@ pub mod types {
     }
 }
 
+#[allow(unreachable_patterns)]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;

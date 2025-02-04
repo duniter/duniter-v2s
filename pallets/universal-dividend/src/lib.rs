@@ -56,6 +56,7 @@ use sp_arithmetic::{
 };
 use sp_runtime::traits::{Get, MaybeSerializeDeserialize, StaticLookup};
 
+#[allow(unreachable_patterns)]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;

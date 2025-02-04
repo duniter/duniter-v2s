@@ -61,6 +61,7 @@ use scale_info::prelude::{
 };
 use sp_runtime::traits::{DispatchInfoOf, PostDispatchInfoOf, Saturating};
 
+#[allow(unreachable_patterns)]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -320,6 +321,16 @@ where
     type Balance = BalanceOf<T>;
     type LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>;
 
+    fn can_withdraw_fee(
+        who: &T::AccountId,
+        call: &T::RuntimeCall,
+        dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
+        fee: Self::Balance,
+        tip: Self::Balance,
+    ) -> Result<(), TransactionValidityError> {
+        T::InnerOnChargeTransaction::can_withdraw_fee(who, call, dispatch_info, fee, tip)
+    }
+
     fn withdraw_fee(
         who: &T::AccountId,
         call: &T::RuntimeCall,
@@ -354,6 +365,16 @@ where
             T::Refund::request_refund(who.clone(), idty_index, corrected_fee.saturating_sub(tip));
         }
         Ok(())
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn endow_account(who: &T::AccountId, amount: Self::Balance) {
+        T::InnerOnChargeTransaction::endow_account(who, amount);
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn minimum_balance() -> Self::Balance {
+        T::InnerOnChargeTransaction::minimum_balance()
     }
 }
 

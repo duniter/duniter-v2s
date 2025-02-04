@@ -83,6 +83,7 @@ pub const REVOCATION_PAYLOAD_PREFIX: [u8; 4] = [b'r', b'e', b'v', b'o'];
 // link = link (identity with account)
 pub const LINK_IDTY_PAYLOAD_PREFIX: [u8; 4] = [b'l', b'i', b'n', b'k'];
 
+#[allow(unreachable_patterns)]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;

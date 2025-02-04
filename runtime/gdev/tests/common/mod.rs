@@ -30,7 +30,7 @@ use sp_membership::MembershipData;
 use sp_runtime::{
     generic::SignedPayload,
     testing::{Digest, DigestItem},
-    traits::{Extrinsic, IdentifyAccount, Verify},
+    traits::{ExtrinsicLike, IdentifyAccount, Verify},
 };
 use std::collections::BTreeMap;
 
@@ -492,25 +492,29 @@ pub fn get_unchecked_extrinsic(
     tip: Balance,
     nonce: u32,
 ) -> gdev_runtime::UncheckedExtrinsic {
-    let extra: gdev_runtime::SignedExtra = (
+    let tx_ext: gdev_runtime::TxExtension = (
         frame_system::CheckNonZeroSender::<gdev_runtime::Runtime>::new(),
         frame_system::CheckSpecVersion::<gdev_runtime::Runtime>::new(),
         frame_system::CheckTxVersion::<gdev_runtime::Runtime>::new(),
         frame_system::CheckGenesis::<gdev_runtime::Runtime>::new(),
-        frame_system::CheckMortality::<gdev_runtime::Runtime>::from(
-            sp_runtime::generic::Era::mortal(era, block),
+        frame_system::CheckEra::<gdev_runtime::Runtime>::from(sp_runtime::generic::Era::mortal(
+            era, block,
+        )),
+        pallet_oneshot_account::CheckNonce::<gdev_runtime::Runtime>::from(
+            frame_system::CheckNonce::<gdev_runtime::Runtime>::from(nonce),
         ),
-        frame_system::CheckNonce::<gdev_runtime::Runtime>::from(nonce).into(),
         frame_system::CheckWeight::<gdev_runtime::Runtime>::new(),
         pallet_transaction_payment::ChargeTransactionPayment::<gdev_runtime::Runtime>::from(tip),
+        frame_metadata_hash_extension::CheckMetadataHash::<gdev_runtime::Runtime>::new(false),
     );
-    let payload = SignedPayload::new(call.clone(), extra.clone()).unwrap();
+    let payload = SignedPayload::new(call.clone(), tx_ext.clone()).unwrap();
     let origin = signer;
     let sig = payload.using_encoded(|payload| origin.pair().sign(payload));
 
-    gdev_runtime::UncheckedExtrinsic::new(
+    gdev_runtime::UncheckedExtrinsic::new_signed(
         call,
-        Some((origin.to_account_id().into(), sig.into(), extra)),
+        origin.to_account_id().into(),
+        sig.into(),
+        tx_ext,
     )
-    .unwrap()
 }

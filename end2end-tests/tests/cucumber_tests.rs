@@ -631,7 +631,7 @@ async fn main() {
         .before(move |feature, _rule, scenario, world| {
             let mut genesis_conf_file_path = PathBuf::new();
             genesis_conf_file_path.push("cucumber-genesis");
-            genesis_conf_file_path.push(&format!(
+            genesis_conf_file_path.push(format!(
                 "{}.json",
                 genesis_conf_name(&feature.tags, &scenario.tags)
             ));

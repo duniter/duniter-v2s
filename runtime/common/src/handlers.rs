@@ -95,6 +95,7 @@ impl<
 }
 
 /// Runtime handler for OnRemoveMembership, calling all implementations of
+///
 /// OnRemoveMembership and implementing logic at the runtime level.
 /// As the weight accounting is not trivial in this handler, the weight is
 /// done at the handler level.

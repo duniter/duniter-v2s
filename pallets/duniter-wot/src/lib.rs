@@ -61,6 +61,7 @@ use pallet_membership::MembershipRemovalReason;
 
 type IdtyIndex = u32;
 
+#[allow(unreachable_patterns)]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
