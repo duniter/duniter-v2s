@@ -17,7 +17,8 @@
 use anyhow::{bail, Context, Result};
 use codec::Decode;
 use core::hash::Hash;
-use scale_info::form::PortableForm;
+use frame_metadata::v15::{StorageEntryModifier, StorageEntryType};
+use scale_info::{form::PortableForm, PortableRegistry, Type, TypeDef};
 use serde::Serialize;
 use std::{
     collections::HashMap,
@@ -42,6 +43,8 @@ where
 
 const CALLS_DOC_FILEPATH: &str = "docs/api/runtime-calls.md";
 const EVENTS_DOC_FILEPATH: &str = "docs/api/runtime-events.md";
+const STORAGES_DOC_FILEPATH: &str = "docs/api/runtime-storages.md";
+const CONSTANTS_DOC_FILEPATH: &str = "docs/api/runtime-constants.md";
 const ERRORS_DOC_FILEPATH: &str = "docs/api/runtime-errors.md";
 const ERRORS_PO_FILEPATH: &str = "docs/api/runtime-errors.po";
 const TEMPLATES_GLOB: &str = "xtask/res/templates/*.{md,po}";
@@ -59,6 +62,8 @@ struct Pallet {
     calls: Vec<Call>,
     events: Vec<Event>,
     errors: Vec<ErroR>,
+    storages: Vec<Storage>,
+    constants: Vec<Constant>,
 }
 #[derive(Clone, Serialize)]
 struct Call {
@@ -91,8 +96,23 @@ struct ErroR {
     index: u8,
     name: String,
 }
+#[derive(Clone, Serialize)]
+struct Storage {
+    documentation: String,
+    name: String,
+    type_key: String,
+    type_value: String,
+}
+#[derive(Clone, Serialize)]
+struct Constant {
+    documentation: String,
+    name: String,
+    value: String,
+    type_value: String,
+}
 
 impl Pallet {
+    #![allow(clippy::too_many_arguments)]
     fn new(
         index: u8,
         name: String,
@@ -100,6 +120,8 @@ impl Pallet {
         call_scale_type_def: &Option<scale_info::TypeDef<PortableForm>>,
         event_scale_type_def: &Option<scale_info::TypeDef<PortableForm>>,
         error_scale_type_def: &Option<scale_info::TypeDef<PortableForm>>,
+        storages: Vec<Storage>,
+        constants: Vec<Constant>,
     ) -> Result<Self> {
         let calls = if let Some(call_scale_type_def) = call_scale_type_def {
             if let scale_info::TypeDef::Variant(calls_enum) = call_scale_type_def {
@@ -128,6 +150,7 @@ impl Pallet {
         } else {
             vec![]
         };
+
         Ok(Self {
             index,
             name,
@@ -135,6 +158,8 @@ impl Pallet {
             calls,
             events,
             errors,
+            storages,
+            constants,
         })
     }
 }
@@ -320,7 +345,8 @@ pub(super) fn gen_doc() -> Result<()> {
         })
     });
 
-    let (call_doc, event_doc, error_doc, error_po) = print_runtime(runtime);
+    let (call_doc, event_doc, error_doc, error_po, storage_doc, constant_doc) =
+        print_runtime(runtime);
 
     // Generate docs from rust code
     Command::new("cargo")
@@ -363,6 +389,14 @@ pub(super) fn gen_doc() -> Result<()> {
         .with_context(|| format!("Failed to create file '{}'", ERRORS_DOC_FILEPATH))?;
     file.write_all(error_doc.as_bytes())
         .with_context(|| format!("Failed to write to file '{}'", ERRORS_DOC_FILEPATH))?;
+    let mut file = File::create(STORAGES_DOC_FILEPATH)
+        .with_context(|| format!("Failed to create file '{}'", STORAGES_DOC_FILEPATH))?;
+    file.write_all(storage_doc.as_bytes())
+        .with_context(|| format!("Failed to write to file '{}'", STORAGES_DOC_FILEPATH))?;
+    let mut file = File::create(CONSTANTS_DOC_FILEPATH)
+        .with_context(|| format!("Failed to create file '{}'", CONSTANTS_DOC_FILEPATH))?;
+    file.write_all(constant_doc.as_bytes())
+        .with_context(|| format!("Failed to write to file '{}'", CONSTANTS_DOC_FILEPATH))?;
     let mut file = File::create(ERRORS_PO_FILEPATH)
         .with_context(|| format!("Failed to create file '{}'", ERRORS_PO_FILEPATH))?;
     file.write_all(error_po.as_bytes())
@@ -403,6 +437,138 @@ fn get_max_weight_from_metadata_v15(
         Ok(*k)
     } else {
         bail!("Invalid max_weight")
+    }
+}
+
+/// Converts a `Type<PortableForm>` into a human-readable string representation.
+///
+/// This function is a core part of the type resolution pipeline, working together with:
+/// - `resolve_type()` to obtain type definitions.
+/// - `format_generics()` to correctly format generic parameters.
+///
+/// It processes a `Type<PortableForm>` from the metadata registry and outputs a Rust-like string representation,
+/// handling all supported type definitions (composite types, sequences, arrays, tuples, primitives, etc.).
+///
+/// # Returns
+/// - `Ok(String)`: A formatted type string (e.g., `"Vec<u32>"`, `"(i32, bool)"`).
+/// - `Err(anyhow::Error)`: If metadata are incorrect.
+///
+/// # How It Works With Other Functions:
+/// - Calls `format_generics()` to handle generic type parameters.
+/// - Calls `resolve_type()` when resolving inner types inside sequences, arrays, and tuples.
+/// - Used by `resolve_type()` as a formatting step after retrieving a type.
+///
+fn format_type(ty: &Type<PortableForm>, types: &PortableRegistry) -> Result<String> {
+    let path = ty.path.to_string();
+
+    match &ty.type_def {
+        TypeDef::Composite(_) => {
+            let generics = format_generics(&ty.type_params, types)?;
+            Ok(format!("{}{}", path, generics))
+        }
+        TypeDef::Variant(_) => {
+            let generics = format_generics(&ty.type_params, types)?;
+            Ok(format!("{}{}", path, generics))
+        }
+        TypeDef::Sequence(seq) => {
+            let element_type = resolve_type(seq.type_param.id, types)?;
+            Ok(format!("Vec<{}>", element_type))
+        }
+        TypeDef::Array(arr) => {
+            let element_type = resolve_type(arr.type_param.id, types)?;
+            Ok(format!("[{}; {}]", element_type, arr.len))
+        }
+        TypeDef::Tuple(tuple) => {
+            let elements = tuple
+                .fields
+                .iter()
+                .map(|f| resolve_type(f.id, types))
+                .collect::<Result<Vec<String>>>()?;
+            Ok(format!("({})", elements.join(", ")))
+        }
+        TypeDef::Primitive(primitive) => Ok(format!("{:?}", primitive)),
+        TypeDef::Compact(compact) => {
+            let inner_type = resolve_type(compact.type_param.id, types)?;
+            Ok(format!("Compact<{}>", inner_type))
+        }
+        TypeDef::BitSequence(_) => Ok(String::default()),
+    }
+}
+
+/// Resolves a type ID to a formatted string representation.
+///
+/// This function serves as a bridge between raw type IDs and fully formatted types.
+/// It works closely with `format_type()`, ensuring that once a type is found, it is properly formatted.
+///
+/// # How It Works With Other Functions:
+/// - Retrieves a type from the registry using `types.resolve(type_id)`.
+/// - If successful, calls `format_type()` to get a human-readable format.
+/// - Used internally by `format_type()` when resolving type dependencies.
+///
+fn resolve_type(type_id: u32, types: &PortableRegistry) -> Result<String> {
+    types
+        .resolve(type_id)
+        .map(|t| format_type(t, types))
+        .unwrap_or_else(|| bail!("Invalid metadata"))
+}
+
+/// Formats generic type parameters into a Rust-like string representation.
+///
+/// This function helps `format_type()` handle generic types, ensuring that type parameters
+/// are formatted correctly when they exist. If a type has generic parameters, they are enclosed
+/// in angle brackets (e.g., `<T, U>`).
+///
+/// # How It Works With Other Functions:
+/// - Called inside `format_type()` to process generic type parameters.
+/// - Uses `resolve_type()` to retrieve and format each generic type.
+///
+fn format_generics(
+    params: &[scale_info::TypeParameter<PortableForm>],
+    types: &PortableRegistry,
+) -> Result<String> {
+    if params.is_empty() {
+        Ok(String::default())
+    } else {
+        let generics = params
+            .iter()
+            .map(|p| {
+                p.ty.map(|ty| resolve_type(ty.id, types))
+                    .unwrap_or_else(|| Ok(String::default()))
+            })
+            .collect::<Result<Vec<String>>>()?;
+        Ok(format!("<{}>", generics.join(", ")))
+    }
+}
+
+fn parse_storage_entry(
+    variant: &frame_metadata::v15::StorageEntryMetadata<scale_info::form::PortableForm>,
+    types: &PortableRegistry,
+) -> Result<Storage> {
+    match &variant.ty {
+        StorageEntryType::Map { key, value, .. } => {
+            let type_key = resolve_type(key.id, types)?;
+            let type_value = resolve_type(value.id, types)?;
+            Ok(Storage {
+                documentation: variant.docs.join("\n"),
+                name: variant.name.clone(),
+                type_key,
+                type_value,
+            })
+        }
+        StorageEntryType::Plain(v) => {
+            let type_value = resolve_type(v.id, types)?;
+            let type_value = if let StorageEntryModifier::Optional = &variant.modifier {
+                format!("Option<{}>", type_value)
+            } else {
+                type_value
+            };
+            Ok(Storage {
+                documentation: variant.docs.join("\n"),
+                name: variant.name.clone(),
+                type_key: String::default(),
+                type_value,
+            })
+        }
     }
 }
 
@@ -447,6 +613,40 @@ fn get_from_metadata_v15(
             None
         };
 
+        let storages = pallet
+            .storage
+            .map(|storage| {
+                storage
+                    .entries
+                    .iter()
+                    .map(|v| parse_storage_entry(v, &metadata_v15.types))
+                    .collect::<Result<Vec<Storage>>>()
+            })
+            .unwrap_or_else(|| {
+                println!("{}: {} (0 storage)", pallet.index, pallet.name);
+                Ok(Vec::default())
+            })?;
+
+        let constants = pallet
+            .constants
+            .iter()
+            .map(|i| {
+                let type_value = resolve_type(i.ty.id, &metadata_v15.types)?;
+                let value = scale_value::scale::decode_as_type(
+                    &mut &*i.value,
+                    &i.ty.id,
+                    &metadata_v15.types,
+                )
+                .map_err(|e| anyhow::anyhow!("{}", e))?;
+                Ok(Constant {
+                    documentation: i.docs.join("\n"),
+                    name: i.name.clone(),
+                    value: value.to_string(),
+                    type_value,
+                })
+            })
+            .collect::<Result<Vec<Constant>>>()?;
+
         let pallet = Pallet::new(
             pallet.index,
             pallet.name.clone(),
@@ -454,6 +654,8 @@ fn get_from_metadata_v15(
             &calls_type_def,
             &events_type_def,
             &errors_type_def,
+            storages,
+            constants,
         )?;
 
         println!(
@@ -474,6 +676,18 @@ fn get_from_metadata_v15(
             pallet.name,
             pallet.errors.len()
         );
+        println!(
+            "{}: {} ({} storages)",
+            pallet.index,
+            pallet.name,
+            pallet.storages.len()
+        );
+        println!(
+            "{}: {} ({} constants)",
+            pallet.index,
+            pallet.name,
+            pallet.constants.len()
+        );
         pallets.push(pallet);
     }
     Ok(pallets)
@@ -488,7 +702,7 @@ fn get_weights(max_weight: u128) -> Result<HashMap<String, HashMap<String, Weigh
 }
 
 /// use template to render markdown file with runtime calls documentation
-fn print_runtime(pallets: RuntimePallets) -> (String, String, String, String) {
+fn print_runtime(pallets: RuntimePallets) -> (String, String, String, String, String, String) {
     // init variables
     // -- user calls
     let mut user_calls_counter = 0;
@@ -520,6 +734,18 @@ fn print_runtime(pallets: RuntimePallets) -> (String, String, String, String) {
     pallets
         .iter()
         .for_each(|pallet| error_counter += pallet.errors.len());
+
+    // storage counter
+    let mut storage_counter = 0;
+    pallets
+        .iter()
+        .for_each(|pallet| storage_counter += pallet.storages.len());
+
+    // constant counter
+    let mut constant_counter = 0;
+    pallets
+        .iter()
+        .for_each(|pallet| constant_counter += pallet.constants.len());
 
     // compile template
     let tera = match Tera::new(TEMPLATES_GLOB) {
@@ -556,5 +782,26 @@ fn print_runtime(pallets: RuntimePallets) -> (String, String, String, String) {
         .render("runtime-errors.po", &context)
         .expect("template error");
 
-    (call_doc, event_doc, error_doc, error_po)
+    // render storages
+    context.insert("pallets", &pallets);
+    context.insert("storage_counter", &event_counter);
+    let storage_doc = tera
+        .render("runtime-storages.md", &context)
+        .expect("template storage");
+
+    // render constant
+    context.insert("pallets", &pallets);
+    context.insert("constant_counter", &constant_counter);
+    let constant_doc = tera
+        .render("runtime-constants.md", &context)
+        .expect("template constant");
+
+    (
+        call_doc,
+        event_doc,
+        error_doc,
+        error_po,
+        storage_doc,
+        constant_doc,
+    )
 }

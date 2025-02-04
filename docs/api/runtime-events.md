@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **136** events from **35** pallets.
+There are **139** events from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -12,7 +12,7 @@ There are **136** events from **35** pallets.
 An extrinsic completed successfully.
 
 ```rust
-dispatch_info: DispatchInfo
+dispatch_info: DispatchEventInfo
 ```
 
 </details>
@@ -25,7 +25,7 @@ An extrinsic failed.
 
 ```rust
 dispatch_error: DispatchError
-dispatch_info: DispatchInfo
+dispatch_info: DispatchEventInfo
 ```
 
 </details>
@@ -1181,6 +1181,44 @@ A proposal was closed because its threshold was reached or after its duration wa
 proposal_hash: T::Hash
 yes: MemberCount
 no: MemberCount
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>Killed(proposal_hash)</code> - 7</summary>
+A proposal was killed.
+
+```rust
+proposal_hash: T::Hash
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>ProposalCostBurned(proposal_hash, who)</code> - 8</summary>
+Some cost for storing a proposal was burned.
+
+```rust
+proposal_hash: T::Hash
+who: T::AccountId
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>ProposalCostReleased(proposal_hash, who)</code> - 9</summary>
+Some cost for storing a proposal was released.
+
+```rust
+proposal_hash: T::Hash
+who: T::AccountId
 ```
 
 </details>
