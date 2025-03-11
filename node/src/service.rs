@@ -19,9 +19,18 @@
 pub mod client;
 
 use self::client::{Client, ClientHandle, RuntimeApiCollection};
+use crate::{
+    endpoint_gossip::{
+        rpc::state::DuniterPeeringsState,
+        well_known_endpoint_types::{RPC, SQUID},
+        DuniterEndpoint, DuniterEndpoints, Peering,
+    },
+    rpc::DuniterPeeringRpcModuleDeps,
+};
 use async_io::Timer;
 use common_runtime::Block;
 use futures::{Stream, StreamExt};
+use log::error;
 use sc_client_api::{client::BlockBackend, Backend};
 use sc_consensus_grandpa::{FinalityProofProvider, SharedVoterState};
 use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
@@ -34,7 +43,7 @@ use sc_transaction_pool_api::TransactionPool;
 use sp_consensus_babe::inherents::InherentDataProvider;
 use sp_core::H256;
 use sp_runtime::traits::BlakeTwo256;
-use std::{sync::Arc, time::Duration};
+use std::{fs, sync::Arc, time::Duration};
 
 #[cfg(not(feature = "runtime-benchmarks"))]
 type HostFunctions = sp_io::SubstrateHostFunctions;
@@ -119,15 +128,19 @@ pub fn new_chain_ops(
     ),
     ServiceError,
 > {
-    let PartialComponents {
-        client,
-        backend,
-        import_queue,
-        task_manager,
-        ..
-    } = new_partial::<runtime_executor::runtime::RuntimeApi, runtime_executor::Executor>(
+    let (
+        PartialComponents {
+            client,
+            backend,
+            import_queue,
+            task_manager,
+            ..
+        },
+        _duniter_config,
+    ) = new_partial::<runtime_executor::runtime::RuntimeApi, runtime_executor::Executor>(
         config,
         manual_consensus,
+        Default::default(),
     )?;
     Ok((
         Arc::new(Client::Client(client)),
@@ -148,29 +161,33 @@ type FullGrandpaBlockImport<RuntimeApi, Executor> = sc_consensus_grandpa::Grandp
 pub fn new_partial<RuntimeApi, Executor>(
     config: &Configuration,
     consensus_manual: bool,
+    duniter_options: crate::cli::DuniterConfigExtension,
 ) -> Result<
-    sc_service::PartialComponents<
-        FullClient<RuntimeApi, Executor>,
-        FullBackend,
-        FullSelectChain,
-        sc_consensus::DefaultImportQueue<Block>,
-        sc_transaction_pool::TransactionPoolWrapper<Block, FullClient<RuntimeApi, Executor>>,
-        (
-            sc_consensus_babe::BabeBlockImport<
-                Block,
-                FullClient<RuntimeApi, Executor>,
-                FullGrandpaBlockImport<RuntimeApi, Executor>,
-            >,
-            sc_consensus_babe::BabeLink<Block>,
-            Option<sc_consensus_babe::BabeWorkerHandle<Block>>,
-            sc_consensus_grandpa::LinkHalf<
-                Block,
-                FullClient<RuntimeApi, Executor>,
-                FullSelectChain,
-            >,
-            Option<Telemetry>,
-        ),
-    >,
+    (
+        sc_service::PartialComponents<
+            FullClient<RuntimeApi, Executor>,
+            FullBackend,
+            FullSelectChain,
+            sc_consensus::DefaultImportQueue<Block>,
+            sc_transaction_pool::TransactionPoolWrapper<Block, FullClient<RuntimeApi, Executor>>,
+            (
+                sc_consensus_babe::BabeBlockImport<
+                    Block,
+                    FullClient<RuntimeApi, Executor>,
+                    FullGrandpaBlockImport<RuntimeApi, Executor>,
+                >,
+                sc_consensus_babe::BabeLink<Block>,
+                Option<sc_consensus_babe::BabeWorkerHandle<Block>>,
+                sc_consensus_grandpa::LinkHalf<
+                    Block,
+                    FullClient<RuntimeApi, Executor>,
+                    FullSelectChain,
+                >,
+                Option<Telemetry>,
+            ),
+        >,
+        crate::cli::DuniterConfigExtension,
+    ),
     ServiceError,
 >
 where
@@ -281,22 +298,25 @@ where
         (queue, Some(handle))
     };
 
-    Ok(sc_service::PartialComponents {
-        client,
-        backend,
-        task_manager,
-        import_queue,
-        keystore_container,
-        select_chain,
-        transaction_pool,
-        other: (
-            babe_block_import,
-            babe_link,
-            babe_worker_handle,
-            grandpa_link,
-            telemetry,
-        ),
-    })
+    Ok((
+        sc_service::PartialComponents {
+            client,
+            backend,
+            task_manager,
+            import_queue,
+            keystore_container,
+            select_chain,
+            transaction_pool,
+            other: (
+                babe_block_import,
+                babe_link,
+                babe_worker_handle,
+                grandpa_link,
+                telemetry,
+            ),
+        },
+        duniter_options,
+    ))
 }
 
 /// Builds a new service for a full client.
@@ -307,6 +327,7 @@ pub fn new_full<
 >(
     config: Configuration,
     sealing: crate::cli::Sealing,
+    duniter_options: crate::cli::DuniterConfigExtension,
 ) -> Result<TaskManager, ServiceError>
 where
     RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
@@ -317,26 +338,32 @@ where
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     Executor: sc_executor::sp_wasm_interface::HostFunctions + 'static,
 {
-    let sc_service::PartialComponents {
-        client,
-        backend,
-        mut task_manager,
-        import_queue,
-        keystore_container,
-        select_chain,
-        transaction_pool,
-        other: (block_import, babe_link, babe_worker_handle, grandpa_link, mut telemetry),
-    } = new_partial::<RuntimeApi, Executor>(&config, sealing.is_manual_consensus())?;
+    let (
+        sc_service::PartialComponents {
+            client,
+            backend,
+            mut task_manager,
+            import_queue,
+            keystore_container,
+            select_chain,
+            transaction_pool,
+            other: (block_import, babe_link, babe_worker_handle, grandpa_link, mut telemetry),
+        },
+        duniter_options,
+    ) = new_partial::<RuntimeApi, Executor>(
+        &config,
+        sealing.is_manual_consensus(),
+        duniter_options,
+    )?;
 
-    let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
-        &client
-            .block_hash(0)
-            .ok()
-            .flatten()
-            .expect("Genesis block exists; qed"),
-        &config.chain_spec,
-    );
+    // genesis hash used in protocol names
+    let genesis_hash = client
+        .block_hash(0)
+        .ok()
+        .flatten()
+        .expect("Genesis block exists; qed");
 
+    // shared network config
     let mut net_config = sc_network::config::FullNetworkConfiguration::<
         Block,
         <Block as sp_runtime::traits::Block>::Hash,
@@ -344,20 +371,35 @@ where
     >::new(&config.network, config.prometheus_registry().cloned());
     let metrics = N::register_notification_metrics(config.prometheus_registry());
     let peer_store_handle = net_config.peer_store_handle();
+
+    // grandpa network config
+    let grandpa_protocol_name =
+        sc_consensus_grandpa::protocol_standard_name(&genesis_hash, &config.chain_spec);
     let (grandpa_protocol_config, grandpa_notification_service) =
         sc_consensus_grandpa::grandpa_peers_set_config::<_, N>(
             grandpa_protocol_name.clone(),
             metrics.clone(),
-            peer_store_handle,
+            peer_store_handle.clone(),
         );
     net_config.add_notification_protocol(grandpa_protocol_config);
 
+    let (duniter_peering_params, duniter_peering_config) =
+        crate::endpoint_gossip::DuniterPeeringParams::new::<_, Block, N>(
+            genesis_hash,
+            config.chain_spec.fork_id(),
+            metrics.clone(),
+            Arc::clone(&peer_store_handle),
+        );
+    net_config.add_notification_protocol(duniter_peering_config);
+
+    // warp sync network provider
     let warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
         backend.clone(),
         grandpa_link.shared_authority_set().clone(),
         Vec::default(),
     ));
 
+    // build network service from params
     let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
@@ -372,6 +414,7 @@ where
             metrics,
         })?;
 
+    // aliases
     let role = config.role;
     let force_authoring = config.force_authoring;
     let backoff_authoring_blocks: Option<()> = None;
@@ -580,6 +623,7 @@ where
     let shared_voter_state = SharedVoterState::empty();
     let finality_proof_provider =
         FinalityProofProvider::new_for_service(backend.clone(), Some(shared_authority_set.clone()));
+    let shared_duniter_peerings_state = DuniterPeeringsState::empty();
 
     let rpc_extensions_builder = {
         let client = client.clone();
@@ -591,6 +635,7 @@ where
             keystore: keystore.clone(),
         });
         let rpc_setup = shared_voter_state.clone();
+        let state_clone = shared_duniter_peerings_state.clone();
 
         Box::new(
             move |subscription_task_executor: SubscriptionTaskExecutor| {
@@ -601,6 +646,9 @@ where
                     subscription_executor: subscription_task_executor.clone(),
                     finality_provider: finality_proof_provider.clone(),
                 };
+                let endpoint_gossip_deps = DuniterPeeringRpcModuleDeps {
+                    state: state_clone.clone(),
+                };
 
                 let deps = crate::rpc::FullDeps {
                     client: client.clone(),
@@ -608,6 +656,7 @@ where
                     select_chain: select_chain.clone(),
                     babe: babe_deps.clone(),
                     grandpa: grandpa_deps,
+                    duniter_peering: endpoint_gossip_deps,
                     command_sink_opt: command_sink_opt.clone(),
                 };
 
@@ -660,8 +709,8 @@ where
         let grandpa_config = sc_consensus_grandpa::GrandpaParams {
             config: grandpa_config,
             link: grandpa_link,
-            sync: sync_service,
-            network,
+            sync: sync_service.clone(),
+            network: network.clone(),
             voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
             prometheus_registry,
             shared_voter_state,
@@ -680,6 +729,53 @@ where
             sc_consensus_grandpa::run_grandpa_voter(grandpa_config)?,
         );
     }
+
+    // Get the endpoint list from file first
+    let mut duniter_endpoints: DuniterEndpoints = match duniter_options.public_endpoints {
+        None => DuniterEndpoints::truncate_from(vec![]),
+        Some(path) => fs::read_to_string(path)
+            .map(|s| {
+                serde_json::from_str::<Peering>(&s).expect("Failed to parse Duniter endpoints")
+            })
+            .map(|p| p.endpoints)
+            .expect("Failed to read Duniter endpoints"),
+    };
+    // Then add through the specific options
+    if let Some(rpc_endoint) = duniter_options.public_rpc {
+        if duniter_endpoints
+            .try_push(DuniterEndpoint {
+                protocol: RPC.into(),
+                address: rpc_endoint,
+            })
+            .is_err()
+        {
+            error!("Could not add RPC endpoint, too much endpoints already");
+        }
+    }
+    if let Some(squid_endoint) = duniter_options.public_squid {
+        if duniter_endpoints
+            .try_push(DuniterEndpoint {
+                protocol: SQUID.into(),
+                address: squid_endoint,
+            })
+            .is_err()
+        {
+            error!("Could not add SQUID endpoint, too much endpoints already");
+        }
+    }
+
+    task_manager.spawn_handle().spawn_blocking(
+        "duniter-endpoint-gossip-handler",
+        Some("networking"),
+        crate::endpoint_gossip::handler::build::<Block, _>(
+            duniter_peering_params.notification_service,
+            network.clone(),
+            shared_duniter_peerings_state.listen(),
+            None, // We don't send command for now
+            duniter_endpoints,
+        )
+        .run(),
+    );
 
     network_starter.start_network();
 

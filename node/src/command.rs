@@ -22,7 +22,7 @@ pub mod utils;
 
 use crate::{
     chain_spec,
-    cli::{Cli, Subcommand},
+    cli::{Cli, DuniterConfigExtension, Subcommand},
     service,
     service::{runtime_executor::Executor, RuntimeType},
 };
@@ -374,6 +374,7 @@ pub fn run() -> sc_cli::Result<()> {
         }
         None => {
             let runner = cli.create_runner(&cli.run)?;
+            let duniter_options: DuniterConfigExtension = cli.duniter_options;
             runner.run_node_until_exit(|mut config| async move {
                 // Force offchain worker and offchain indexing if we have the role Authority
                 if config.role.is_authority() {
@@ -386,7 +387,7 @@ pub fn run() -> sc_cli::Result<()> {
                         service::runtime_executor::runtime::RuntimeApi,
                         Executor,
                         sc_network::Litep2pNetworkBackend,
-                    >(config, cli.sealing)
+                    >(config, cli.sealing, duniter_options)
                     .map_err(sc_cli::Error::Service)
                 }
             })

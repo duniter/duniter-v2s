@@ -24,6 +24,7 @@ mod chain_spec;
 mod service;
 pub(crate) mod cli;
 mod command;
+mod endpoint_gossip;
 mod rpc;
 
 fn main() -> sc_cli::Result<()> {

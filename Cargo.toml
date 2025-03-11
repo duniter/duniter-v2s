@@ -105,6 +105,8 @@ simple_logger = { version = "4.3.3", default-features = false }
 bincode = { version = "1.3.3", default-features = false }
 dubp-wot = { version = "0.11.1", default-features = false }
 flate2 = { version = "1.0.28", default-features = false }
+array-bytes = { version = "6.2.2", default-features = false }
+parking_lot = { version = "0.12.1" }
 
 # Subxt
 subxt = { git = 'https://github.com/duniter/subxt', branch = 'subxt-v0.38.0-duniter-substrate-v1.17.0', default-features = false }
@@ -213,6 +215,9 @@ sc-telemetry = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch
 sc-transaction-pool = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.17.0', default-features = false }
 sc-basic-authorship = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.17.0', default-features = false }
 sc-network = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.17.0', default-features = false }
+sc-network-sync = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.17.0', default-features = false }
+sc-network-test = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.17.0', default-features = false }
+sc-utils = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.17.0', default-features = false }
 sp-keystore = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.17.0', default-features = false }
 sp-storage = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.17.0', default-features = false }
 sp-timestamp = { git = 'https://github.com/duniter/duniter-polkadot-sdk', branch = 'duniter-substrate-v1.17.0', default-features = false }

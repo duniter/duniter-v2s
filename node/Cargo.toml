@@ -130,6 +130,9 @@ num-format = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
+codec = { workspace = true }
+array-bytes = { workspace = true }
+parking_lot = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 # Local
@@ -162,11 +165,13 @@ sc-consensus-manual-seal = { workspace = true, default-features = true }
 sc-executor = { workspace = true, default-features = true }
 sc-keystore = { workspace = true, default-features = true }
 sc-network = { workspace = true, default-features = true }
+sc-network-sync = { workspace = true, default-features = true }
 sc-offchain = { workspace = true, default-features = true }
 sc-rpc-api = { workspace = true, default-features = true }
 sc-telemetry = { workspace = true, default-features = true }
 sc-transaction-pool = { workspace = true, default-features = true }
 sc-transaction-pool-api = { workspace = true, default-features = true }
+sc-utils = { workspace = true, default-features = true }
 sp-api = { workspace = true, default-features = true }
 sp-authority-discovery = { workspace = true, default-features = true }
 sp-block-builder = { workspace = true, default-features = true }
@@ -189,6 +194,12 @@ sp-timestamp = { workspace = true, default-features = true }
 sp-transaction-pool = { workspace = true, default-features = true }
 sp-transaction-storage-proof = { workspace = true, default-features = true }
 substrate-frame-rpc-system = { workspace = true, default-features = true }
+
+[dev-dependencies]
+sc-network-test = { workspace = true, default-features = true }
+async-trait = { version = "0.1.79" }
+env_logger = "0.10.2"
+async-channel = "2.3.1"
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true, default-features = true }
