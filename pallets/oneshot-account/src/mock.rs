@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{self as pallet_oneshot_account};
-use frame_support::{parameter_types, traits::Everything, weights::IdentityFee};
+use frame_support::{derive_impl, parameter_types, traits::Everything, weights::IdentityFee};
 use frame_system as system;
 use pallet_transaction_payment::FungibleAdapter;
 use sp_core::{ConstU32, H256};
@@ -43,36 +43,23 @@ parameter_types! {
     pub const SS58Prefix: u8 = 42;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl system::Config for Test {
     type AccountData = pallet_balances::AccountData<Balance>;
     type AccountId = u64;
     type BaseCallFilter = Everything;
     type Block = Block;
     type BlockHashCount = BlockHashCount;
-    type BlockLength = ();
-    type BlockWeights = ();
-    type DbWeight = ();
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
-    type MultiBlockMigrator = ();
     type Nonce = u64;
-    type OnKilledAccount = ();
-    type OnNewAccount = ();
-    type OnSetCode = ();
     type PalletInfo = PalletInfo;
-    type PostInherents = ();
-    type PostTransactions = ();
-    type PreInherents = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeTask = ();
     type SS58Prefix = SS58Prefix;
-    type SingleBlockMigrations = ();
-    type SystemWeightInfo = ();
-    type Version = ();
 }
 
 parameter_types! {
@@ -83,6 +70,7 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type AccountStore = System;
     type Balance = Balance;
+    type DoneSlashHandler = ();
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type FreezeIdentifier = ();
@@ -101,6 +89,7 @@ impl pallet_transaction_payment::Config for Test {
     type OnChargeTransaction = OneshotAccount;
     type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
     type WeightToFee = IdentityFee<u64>;
 }
 impl pallet_oneshot_account::Config for Test {

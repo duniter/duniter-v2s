@@ -59,6 +59,21 @@ if [ -n "$DUNITER_PUBLIC_ADDR" ]; then
   set -- "$@" --public-addr "$DUNITER_PUBLIC_ADDR"
 fi
 
+# Define public RPC endpoint (gossiped on the network)
+if [ -n "$DUNITER_PUBLIC_RPC" ]; then
+  set -- "$@" --public-rpc "$DUNITER_PUBLIC_RPC"
+fi
+
+# Define public Squid endpoint (gossiped on the network)  
+if [ -n "$DUNITER_PUBLIC_SQUID" ]; then
+  set -- "$@" --public-squid "$DUNITER_PUBLIC_SQUID"
+fi
+
+# Define public endpoints from JSON file (gossiped on the network)
+if [ -n "$DUNITER_PUBLIC_ENDPOINTS" ]; then
+  set -- "$@" --public-endpoints "$DUNITER_PUBLIC_ENDPOINTS"
+fi
+
 # Define listen address (inside docker)
 if [ -n "$DUNITER_LISTEN_ADDR" ]; then
   set -- "$@" --listen-addr "$DUNITER_LISTEN_ADDR"

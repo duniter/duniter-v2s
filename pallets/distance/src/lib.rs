@@ -103,6 +103,7 @@ pub const MAX_EVALUATIONS_PER_SESSION: u32 = 1_300; // See https://git.duniter.o
 /// Maximum number of evaluators in an evaluation period.
 pub const MAX_EVALUATORS_PER_SESSION: u32 = 100;
 
+#[allow(unreachable_patterns)]
 #[frame_support::pallet()]
 pub mod pallet {
     use super::*;

@@ -69,6 +69,7 @@ pub enum MembershipRemovalReason {
     System,
 }
 
+#[allow(unreachable_patterns)]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;

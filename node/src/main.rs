@@ -18,11 +18,13 @@
 
 #![warn(missing_docs)]
 
+//mod benchmarking;
 mod chain_spec;
 #[macro_use]
 mod service;
 pub(crate) mod cli;
 mod command;
+mod endpoint_gossip;
 mod rpc;
 
 fn main() -> sc_cli::Result<()> {

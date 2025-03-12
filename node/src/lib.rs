@@ -65,5 +65,6 @@
 pub mod chain_spec;
 pub mod cli;
 pub mod command;
+pub mod endpoint_gossip;
 pub mod rpc;
 pub mod service;

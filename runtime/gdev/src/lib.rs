@@ -22,10 +22,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-#[cfg(feature = "runtime-benchmarks")]
-#[macro_use]
-extern crate frame_benchmarking;
-
 pub mod parameters;
 pub mod weights;
 
@@ -39,8 +35,6 @@ use frame_support::{traits::Contains, PalletId};
 pub use frame_system::Call as SystemCall;
 use frame_system::EnsureRoot;
 pub use pallet_balances::Call as BalancesCall;
-#[cfg(feature = "runtime-benchmarks")]
-pub use pallet_collective::RawOrigin;
 pub use pallet_duniter_test_parameters::Parameters as GenesisParameters;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -56,10 +50,10 @@ use sp_core::OpaqueMetadata;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
+    generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Perquintill,
+    ApplyExtrinsicResult, Cow, Perquintill,
 };
 pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 #[cfg(feature = "std")]
@@ -79,14 +73,12 @@ pub use frame_support::{
     StorageValue,
 };
 
-common_runtime::declare_session_keys! {}
-
 // To learn more about runtime versioning and what each of the following value means:
 //   https://substrate.dev/docs/en/knowledgebase/runtime/upgrades#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("gdev"),
-    impl_name: create_runtime_str!("duniter-gdev"),
+    spec_name: Cow::Borrowed("gdev"),
+    impl_name: Cow::Borrowed("duniter-gdev"),
     authoring_version: 1,
     // The version of the runtime specification. A full node will not attempt to use its native
     //   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
@@ -97,7 +89,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
-    state_version: 1,
+    system_version: 1,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -111,11 +103,8 @@ pub fn native_version() -> NativeVersion {
 
 /// Block type as expected by this runtime.
 pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
-/// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic =
-    generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
-/// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = (
+/// The `TransactionExtension` to the basic transaction logic.
+pub type TxExtension = (
     frame_system::CheckNonZeroSender<Runtime>,
     frame_system::CheckSpecVersion<Runtime>,
     frame_system::CheckTxVersion<Runtime>,
@@ -124,7 +113,11 @@ pub type SignedExtra = (
     pallet_oneshot_account::CheckNonce<Runtime>,
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+    frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 );
+/// Unchecked extrinsic type as expected by this runtime.
+pub type UncheckedExtrinsic =
+    generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -136,39 +129,6 @@ pub type Executive = frame_executive::Executive<
 >;
 
 pub type TechnicalCommitteeInstance = Instance2;
-
-#[cfg(feature = "runtime-benchmarks")]
-mod benches {
-    define_benchmarks!(
-        [pallet_certification, Certification]
-        [pallet_distance, Distance]
-        [pallet_oneshot_account, OneshotAccount]
-        [pallet_universal_dividend, UniversalDividend]
-        [pallet_provide_randomness, ProvideRandomness]
-        [pallet_upgrade_origin, UpgradeOrigin]
-        [pallet_duniter_account, Account]
-        [pallet_quota, Quota]
-        [pallet_identity, Identity]
-        [pallet_membership, Membership]
-        [pallet_smith_members, SmithMembers]
-        [pallet_authority_members, AuthorityMembers]
-        // Substrate
-        [pallet_balances, Balances]
-        [frame_benchmarking::baseline, Baseline::<Runtime>]
-        [pallet_collective, TechnicalCommittee]
-        [pallet_session, SessionBench::<Runtime>]
-        [pallet_im_online, ImOnline]
-        [pallet_sudo, Sudo]
-        [pallet_multisig, Multisig]
-        [pallet_preimage, Preimage]
-        [pallet_proxy, Proxy]
-        [pallet_scheduler, Scheduler]
-        [frame_system, SystemBench::<Runtime>]
-        [pallet_timestamp, Timestamp]
-        [pallet_treasury, Treasury]
-        [pallet_utility, Utility]
-    );
-}
 
 pub struct BaseCallFilter;
 impl Contains<RuntimeCall> for BaseCallFilter {
@@ -271,9 +231,6 @@ impl pallet_duniter_test_parameters::Config for Runtime {
     type PeriodCount = Balance;
     type SessionCount = u32;
 }
-#[cfg(feature = "runtime-benchmarks")]
-type WorstOrigin = RawOrigin<AccountId, TechnicalCommitteeInstance>;
-common_runtime::pallets_config!();
 
 // Create the runtime by composing the pallets that were previously configured.
 construct_runtime!(
@@ -333,22 +290,11 @@ construct_runtime!(
     }
 );
 
-impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
-where
-    RuntimeCall: From<C>,
-{
-    type Extrinsic = UncheckedExtrinsic;
-    type OverarchingCall = RuntimeCall;
-}
-
 // All of our runtimes share most of their Runtime API implementations.
 // We use a macro to implement this common part and add runtime-specific additional implementations.
-// This macro expands to :
-// ```
-// impl_runtime_apis! {
-//     // All impl blocks shared between all runtimes.
-//
-//     // Specific impls provided to the `runtime_apis!` macro.
-// }
-// ```
+common_runtime::pallets_config!();
+common_runtime::declare_session_keys! {}
+#[cfg(feature = "runtime-benchmarks")]
+common_runtime::benchmarks_config!();
+common_runtime::offchain_config! {}
 common_runtime::runtime_apis! {}

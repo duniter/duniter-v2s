@@ -168,7 +168,6 @@ fn test_confirm_idty_ok() {
         System::assert_has_event(RuntimeEvent::Identity(
             pallet_identity::Event::IdtyConfirmed {
                 idty_index: 6,
-                owner_key: 6,
                 name: IdtyName::from("Ferdie"),
             },
         ));

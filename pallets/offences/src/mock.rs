@@ -17,7 +17,7 @@
 use crate::{self as pallet_offences, Config, SlashStrategy};
 use codec::Encode;
 use frame_support::{
-    parameter_types,
+    derive_impl, parameter_types,
     traits::{ConstU32, ConstU64},
     weights::{constants::RocksDbWeight, Weight},
 };
@@ -59,36 +59,22 @@ frame_support::construct_runtime!(
     }
 );
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Runtime {
-    type AccountData = ();
     type AccountId = u64;
     type BaseCallFilter = frame_support::traits::Everything;
     type Block = Block;
     type BlockHashCount = ConstU64<250>;
-    type BlockLength = ();
-    type BlockWeights = ();
     type DbWeight = RocksDbWeight;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = ConstU32<16>;
-    type MultiBlockMigrator = ();
     type Nonce = u64;
-    type OnKilledAccount = ();
-    type OnNewAccount = ();
-    type OnSetCode = ();
     type PalletInfo = PalletInfo;
-    type PostInherents = ();
-    type PostTransactions = ();
-    type PreInherents = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeTask = ();
-    type SS58Prefix = ();
-    type SingleBlockMigrations = ();
-    type SystemWeightInfo = ();
-    type Version = ();
 }
 
 impl Config for Runtime {

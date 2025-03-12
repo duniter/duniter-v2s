@@ -163,7 +163,7 @@ To work, the integration tests need to have the runtime metadata up to date, her
 them:
 
 ```bash
-subxt metadata -f bytes --version 14 > resources/metadata.scale
+subxt metadata -f bytes > resources/metadata.scale
 ```
 
 If you don't have subxt, install it: `cargo install subxt-cli`

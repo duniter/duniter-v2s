@@ -16,8 +16,8 @@
 
 use common_runtime::{AccountId, Balance, Block, BlockNumber, Hash, Header, Index};
 use sc_client_api::{
-    AuxStore, Backend as BackendT, BlockchainEvents, KeysIter, MerkleValue, PairsIter,
-    UsageProvider,
+    AuxStore, Backend as BackendT, BlockBackend, BlockchainEvents, KeysIter, MerkleValue,
+    PairsIter, UsageProvider,
 };
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
@@ -26,7 +26,7 @@ use sp_core::{Encode, Pair};
 use sp_runtime::{
     generic::SignedBlock,
     traits::{BlakeTwo256, Block as BlockT},
-    Justifications,
+    Justifications, SaturatedConversion,
 };
 use sp_storage::{ChildInfo, StorageData, StorageKey};
 use std::sync::Arc;
@@ -322,36 +322,39 @@ impl BenchmarkCallSigner<super::runtime_executor::runtime::RuntimeCall, sp_core:
         genesis: sp_core::H256,
         acc: sp_core::sr25519::Pair,
     ) -> sp_runtime::OpaqueExtrinsic {
-        // use runtime;
-
-        let extra: super::runtime_executor::runtime::SignedExtra = (
+        let tx_ext: super::runtime_executor::runtime::TxExtension = (
             frame_system::CheckNonZeroSender::<super::runtime_executor::runtime::Runtime>::new(),
             frame_system::CheckSpecVersion::<super::runtime_executor::runtime::Runtime>::new(),
             frame_system::CheckTxVersion::<super::runtime_executor::runtime::Runtime>::new(),
             frame_system::CheckGenesis::<super::runtime_executor::runtime::Runtime>::new(),
-            frame_system::CheckMortality::<super::runtime_executor::runtime::Runtime>::from(
+            frame_system::CheckEra::<super::runtime_executor::runtime::Runtime>::from(
                 sp_runtime::generic::Era::mortal(period, current_block),
             ),
-            frame_system::CheckNonce::<super::runtime_executor::runtime::Runtime>::from(nonce)
-                .into(),
+            pallet_oneshot_account::CheckNonce::<super::runtime_executor::runtime::Runtime>::from(
+                frame_system::CheckNonce::<super::runtime_executor::runtime::Runtime>::from(nonce),
+            ),
             frame_system::CheckWeight::<super::runtime_executor::runtime::Runtime>::new(),
             pallet_transaction_payment::ChargeTransactionPayment::<
                 super::runtime_executor::runtime::Runtime,
             >::from(0),
+            frame_metadata_hash_extension::CheckMetadataHash::<
+                super::runtime_executor::runtime::Runtime,
+            >::new(false),
         );
 
         let payload = sp_runtime::generic::SignedPayload::from_raw(
             call.clone(),
-            extra.clone(),
+            tx_ext.clone(),
             (
                 (),
                 super::runtime_executor::runtime::VERSION.spec_version,
                 super::runtime_executor::runtime::VERSION.transaction_version,
                 genesis,
-                genesis,
+                self.chain_info().best_hash,
                 (),
                 (),
                 (),
+                None,
             ),
         );
 
@@ -360,7 +363,7 @@ impl BenchmarkCallSigner<super::runtime_executor::runtime::RuntimeCall, sp_core:
             call,
             sp_runtime::AccountId32::from(acc.public()).into(),
             common_runtime::Signature::Sr25519(signature),
-            extra,
+            tx_ext,
         )
         .into()
     }
@@ -377,16 +380,17 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for Client {
 
     fn build(&self, nonce: u32) -> std::result::Result<sp_runtime::OpaqueExtrinsic, &'static str> {
         with_client! {
-            self, client, {
-                let call = super::runtime_executor::runtime::RuntimeCall::System(super::runtime_executor::runtime::SystemCall::remark { remark: vec![] });
-                let signer = sp_keyring::Sr25519Keyring::Bob.pair();
+                    self, client, {
+                        let call = super::runtime_executor::runtime::RuntimeCall::System(super::runtime_executor::runtime::SystemCall::remark { remark: vec![] });
+                        let signer = sp_keyring::Sr25519Keyring::Bob.pair();
 
-                let period = super::runtime_executor::runtime::BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
-                let genesis = client.usage_info().chain.best_hash;
+                        let period = super::runtime_executor::runtime::BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
+                        let genesis = client.block_hash(0).ok().flatten().expect("Genesis block exists; qed");
+        let best_block = client.chain_info().best_number;
 
-                Ok(client.sign_call(call, nonce, 0, period, genesis, signer))
-            }
-        }
+                        Ok(client.sign_call(call, nonce, best_block.saturated_into(), period, genesis, signer))
+                    }
+                }
     }
 }
 

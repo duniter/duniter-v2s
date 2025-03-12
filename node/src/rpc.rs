@@ -15,12 +15,14 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 //! A collection of node-specific RPC methods.
+//!
 //! Substrate provides the `sc-rpc` crate, which defines the core RPC layer
 //! used by Substrate nodes. This file extends those RPC definitions with
 //! capabilities that are specific to this project's runtime configuration.
 
 #![warn(missing_docs)]
 
+use crate::endpoint_gossip::rpc::{api::DuniterPeeringRpcApiServer, state::DuniterPeeringsState};
 use common_runtime::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use jsonrpsee::RpcModule;
 use sc_consensus_babe::{BabeApi, BabeWorkerHandle};
@@ -60,6 +62,13 @@ pub struct GrandpaDeps<B> {
     pub finality_provider: Arc<FinalityProofProvider<B, Block>>,
 }
 
+/// Dependencies for DuniterPeering
+#[derive(Clone)]
+pub struct DuniterPeeringRpcModuleDeps {
+    /// The state of the DuniterPeering RPC module which will be exposed.
+    pub state: DuniterPeeringsState,
+}
+
 /// Full client dependencies.
 pub struct FullDeps<C, P, SC, B> {
     /// The client instance to use.
@@ -76,6 +85,8 @@ pub struct FullDeps<C, P, SC, B> {
     pub babe: Option<BabeDeps>,
     /// GRANDPA specific dependencies.
     pub grandpa: GrandpaDeps<B>,
+    /// DuniterPeering specific dependencies.
+    pub duniter_peering: DuniterPeeringRpcModuleDeps,
 }
 
 /// Instantiate all full RPC extensions.
@@ -108,6 +119,7 @@ where
         command_sink_opt,
         babe,
         grandpa,
+        duniter_peering: endpoint_gossip,
     } = deps;
 
     if let Some(babe) = babe {
@@ -139,7 +151,7 @@ where
     )?;
 
     module.merge(System::new(client.clone(), pool).into_rpc())?;
-    module.merge(TransactionPayment::new(client).into_rpc())?;
+    module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
     if let Some(command_sink) = command_sink_opt {
         // We provide the rpc handler with the sending end of the channel to allow the rpc
         // send EngineCommands to the background block authorship task.
@@ -150,6 +162,10 @@ where
     // `YourRpcStruct` should have a reference to a client, which is needed
     // to call into the runtime.
     // `module.merge(YourRpcTrait::into_rpc(YourRpcStruct::new(ReferenceToClient, ...)))?;`
+    module.merge(
+        crate::endpoint_gossip::rpc::api::DuniterPeeringRpcApiImpl::new(endpoint_gossip.state)
+            .into_rpc(),
+    )?;
 
     Ok(module)
 }

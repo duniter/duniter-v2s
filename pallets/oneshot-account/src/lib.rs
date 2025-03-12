@@ -48,6 +48,7 @@ use sp_runtime::traits::{DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticL
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 type BalanceOf<T> = <<T as Config>::Currency as fungible::Inspect<AccountIdOf<T>>>::Balance;
 
+#[allow(unreachable_patterns)]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -136,7 +137,7 @@ pub mod pallet {
         ///
         /// Origin account is kept alive.
         #[pallet::call_index(0)]
-        #[pallet::weight(T::WeightInfo::create_oneshot_account())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::create_oneshot_account())]
         pub fn create_oneshot_account(
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
@@ -177,7 +178,7 @@ pub mod pallet {
         /// - `dest`: The destination account.
         /// - `dest_is_oneshot`: If set to `true`, then a oneshot account is created at `dest`. Else, `dest` has to be an existing account.
         #[pallet::call_index(1)]
-        #[pallet::weight(T::WeightInfo::consume_oneshot_account())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::consume_oneshot_account())]
         pub fn consume_oneshot_account(
             origin: OriginFor<T>,
             block_height: BlockNumberFor<T>,
@@ -237,7 +238,7 @@ pub mod pallet {
         /// - `dest2_is_oneshot`: If set to `true`, then a oneshot account is created at `dest2`. Else, `dest2` has to be an existing account.
         /// - `balance1`: The amount transfered to `dest`, the leftover being transfered to `dest2`.
         #[pallet::call_index(2)]
-        #[pallet::weight(T::WeightInfo::consume_oneshot_account_with_remaining())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::consume_oneshot_account_with_remaining())]
         pub fn consume_oneshot_account_with_remaining(
             origin: OriginFor<T>,
             block_height: BlockNumberFor<T>,
@@ -339,6 +340,16 @@ where
     type Balance = BalanceOf<T>;
     type LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>;
 
+    fn can_withdraw_fee(
+        who: &T::AccountId,
+        call: &T::RuntimeCall,
+        dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
+        fee: Self::Balance,
+        tip: Self::Balance,
+    ) -> Result<(), TransactionValidityError> {
+        T::InnerOnChargeTransaction::can_withdraw_fee(who, call, dispatch_info, fee, tip)
+    }
+
     fn withdraw_fee(
         who: &T::AccountId,
         call: &T::RuntimeCall,
@@ -389,5 +400,15 @@ where
             tip,
             already_withdrawn,
         )
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn endow_account(who: &T::AccountId, amount: Self::Balance) {
+        T::InnerOnChargeTransaction::endow_account(who, amount);
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn minimum_balance() -> Self::Balance {
+        T::InnerOnChargeTransaction::minimum_balance()
     }
 }

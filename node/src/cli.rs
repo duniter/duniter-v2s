@@ -19,14 +19,46 @@ pub struct Cli {
     #[clap(subcommand)]
     pub subcommand: Option<Subcommand>,
 
+    /// substrate base options
     #[clap(flatten)]
     pub run: sc_cli::RunCmd,
+
+    /// duniter specific options
+    #[clap(flatten)]
+    pub duniter_options: DuniterConfigExtension,
 
     /// How blocks should be sealed
     ///
     /// Options are "production", "instant", "manual", or timer interval in milliseconds
     #[clap(long, default_value = "production")]
     pub sealing: crate::cli::Sealing,
+}
+
+/// add options specific to duniter client
+#[derive(Debug, Default, Clone, clap::Parser)]
+pub struct DuniterConfigExtension {
+    /// Public RPC endpoint to gossip on the network and make available in the apps.
+    #[arg(long)]
+    pub public_rpc: Option<String>,
+
+    /// Public Squid graphql endpoint to gossip on the network and make available in the apps.
+    #[arg(long)]
+    pub public_squid: Option<String>,
+
+    /// Public endpoints from a JSON file, using following format where `protocol` and `address` are
+    /// strings (value is free) :
+    ///
+    /// ```json
+    /// {
+    ///     "endpoints": [
+    ///         { "protocol": "rpc", "address": "wss://gdev.example.com" },
+    ///         { "protocol": "squid", "address": "gdev.example.com/graphql/v1" },
+    ///         { "protocol": "other", "address": "gdev.example.com/other" }
+    ///     ]
+    /// }
+    /// ```
+    #[arg(long, value_name = "JSON_FILE_PATH")]
+    pub public_endpoints: Option<String>,
 }
 
 #[derive(Debug, clap::Subcommand)]

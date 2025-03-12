@@ -22,7 +22,7 @@ use codec::Encode;
 use frame_benchmarking::{account, v2::*};
 use frame_support::traits::OnInitialize;
 use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
-use sp_core::Get;
+use sp_core::{crypto::Ss58Codec, Get};
 use sp_io::crypto::{sr25519_generate, sr25519_sign};
 use sp_runtime::{AccountId32, MultiSigner};
 
@@ -160,7 +160,6 @@ mod benchmarks {
         assert_has_event::<T>(
             Event::<T>::IdtyConfirmed {
                 idty_index: idty_index.unwrap(),
-                owner_key,
                 name: IdtyName("new_identity".into()),
             }
             .into(),
@@ -507,6 +506,56 @@ mod benchmarks {
             Pallet::<T>::prune_identities(BlockNumberFor::<T>::zero());
         }
 
+        Ok(())
+    }
+
+    #[benchmark]
+    fn revoke_identity_legacy() -> Result<(), BenchmarkError> {
+        let caller_index = T::IdtyIndex::from(1u32);
+        let caller: T::AccountId = Identities::<T>::get(caller_index).unwrap().owner_key;
+
+        let idty_index: T::IdtyIndex = 102.into();
+        let owner_key: T::AccountId =
+            AccountId32::from_ss58check("5H2nLXGku46iztpqdRwsCAiP6vHZbShhKmSV4yyufQgEUFvV")
+                .unwrap()
+                .into();
+        let next_scheduled = BlockNumberFor::<T>::zero();
+        let value = IdtyValue {
+            data: Default::default(),
+            next_creatable_identity_on: BlockNumberFor::<T>::zero(),
+            old_owner_key: None,
+            owner_key: owner_key.clone(),
+            next_scheduled,
+            status: IdtyStatus::Member,
+        };
+        let name = "Charlie";
+        let idty_name = IdtyName(name.into());
+        frame_system::Pallet::<T>::inc_sufficients(&owner_key);
+        <Identities<T>>::insert(idty_index, value);
+        IdentityChangeSchedule::<T>::append(next_scheduled, idty_index);
+        IdentityIndexOf::<T>::insert(owner_key.clone(), idty_index);
+        <IdentitiesNames<T>>::insert(idty_name.clone(), idty_index);
+
+        let document = r"Version: 10
+Type: Revocation
+Currency: g1
+Issuer: Fnf2xaxYdQpB4kU45DMLQ9Ey4bd6DtoebKJajRkLBUXm
+IdtyUniqueID: Charlie
+IdtyTimestamp: 42-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+IdtySignature: 7KUagcMiQw05rwbkBsRrnNqPRHu/Y5ukCLoAEpb/1tXAQsSNf2gRi1h5PWIGs9y/vHnFXvF5epKsOjA6X75vDg==
+CfiG4xhcWS+/DgxY0xFIyOA9TVr4Im3XEXcCApNgXC+Ns9jy2yrNoC3NF8MCD63cZ8QTRfrr4Iv6n3leYCCcDQ==
+";
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(caller), document.into());
+
+        assert_has_event::<T>(
+            Event::<T>::IdtyRevoked {
+                idty_index,
+                reason: RevocationReason::User,
+            }
+            .into(),
+        );
         Ok(())
     }
 

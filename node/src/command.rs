@@ -22,7 +22,7 @@ pub mod utils;
 
 use crate::{
     chain_spec,
-    cli::{Cli, Subcommand},
+    cli::{Cli, DuniterConfigExtension, Subcommand},
     service,
     service::{runtime_executor::Executor, RuntimeType},
 };
@@ -46,10 +46,7 @@ lazy_static! {
 /// Unwraps a [`crate::service::client::Client`] into the concrete runtime client.
 #[cfg(feature = "runtime-benchmarks")]
 macro_rules! unwrap_client {
-    (
-		$client:ident,
-		$code:expr
-	) => {
+    ($client:ident, $code:expr) => {
         match $client.as_ref() {
             crate::service::client::Client::Client($client) => $code,
         }
@@ -335,11 +332,12 @@ pub fn run() -> sc_cli::Result<()> {
                     unwrap_client!(
                         client,
                         cmd.run(
-                            config,
+                            config.chain_spec.name().into(),
                             client.clone(),
                             inherent_data,
                             Vec::new(),
-                            wrapped.as_ref()
+                            wrapped.as_ref(),
+                            false,
                         )
                     )
                 }),
@@ -376,6 +374,7 @@ pub fn run() -> sc_cli::Result<()> {
         }
         None => {
             let runner = cli.create_runner(&cli.run)?;
+            let duniter_options: DuniterConfigExtension = cli.duniter_options;
             runner.run_node_until_exit(|mut config| async move {
                 // Force offchain worker and offchain indexing if we have the role Authority
                 if config.role.is_authority() {
@@ -388,7 +387,7 @@ pub fn run() -> sc_cli::Result<()> {
                         service::runtime_executor::runtime::RuntimeApi,
                         Executor,
                         sc_network::Litep2pNetworkBackend,
-                    >(config, cli.sealing)
+                    >(config, cli.sealing, duniter_options)
                     .map_err(sc_cli::Error::Service)
                 }
             })

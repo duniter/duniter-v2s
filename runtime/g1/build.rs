@@ -17,10 +17,12 @@
 fn main() {
     #[cfg(feature = "std")]
     {
-        substrate_wasm_builder::WasmBuilder::new()
-            .with_current_project()
-            .export_heap_base()
-            .import_memory()
+        #[cfg(not(feature = "metadata-hash"))]
+        substrate_wasm_builder::WasmBuilder::init_with_defaults().build();
+
+        #[cfg(feature = "metadata-hash")]
+        substrate_wasm_builder::WasmBuilder::init_with_defaults()
+            .enable_metadata_hash("Ğ", 2)
             .build();
     }
 }

@@ -17,15 +17,19 @@
 use crate::Config;
 
 use codec::{Decode, Encode};
-use frame_support::{dispatch::DispatchInfo, traits::IsSubType};
+use frame_support::{dispatch::DispatchInfo, pallet_prelude::Weight, traits::IsSubType};
 //use frame_system::Config;
 use scale_info::{
     prelude::fmt::{Debug, Formatter},
     TypeInfo,
 };
 use sp_runtime::{
-    traits::{DispatchInfoOf, Dispatchable, SignedExtension},
-    transaction_validity::{TransactionValidity, TransactionValidityError},
+    traits::{
+        AsSystemOriginSigner, DispatchInfoOf, Dispatchable, PostDispatchInfoOf,
+        TransactionExtension, ValidateResult,
+    },
+    transaction_validity::{TransactionSource, TransactionValidityError},
+    DispatchResult,
 };
 
 /// Wrapper around `frame_system::CheckNonce<T>`.
@@ -51,46 +55,71 @@ impl<T: Config> Debug for CheckNonce<T> {
     }
 }
 
-impl<T: Config + TypeInfo> SignedExtension for CheckNonce<T>
+impl<T: Config + TypeInfo> TransactionExtension<T::RuntimeCall> for CheckNonce<T>
 where
-    T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<crate::Call<T>>,
+    T::RuntimeCall: Dispatchable<Info = DispatchInfo>,
+    <T::RuntimeCall as Dispatchable>::RuntimeOrigin: AsSystemOriginSigner<T::AccountId> + Clone,
+    T::RuntimeCall: IsSubType<crate::Call<T>>,
 {
-    type AccountId = <T as frame_system::Config>::AccountId;
-    type AdditionalSigned = ();
-    type Call = <T as frame_system::Config>::RuntimeCall;
-    type Pre = ();
+    type Implicit = ();
+    type Pre = <frame_system::CheckNonce<T> as TransactionExtension<T::RuntimeCall>>::Pre;
+    type Val = <frame_system::CheckNonce<T> as TransactionExtension<T::RuntimeCall>>::Val;
 
     const IDENTIFIER: &'static str = "CheckNonce";
 
-    fn additional_signed(&self) -> Result<(), TransactionValidityError> {
-        self.0.additional_signed()
+    fn validate(
+        &self,
+        origin: <T as frame_system::Config>::RuntimeOrigin,
+        call: &T::RuntimeCall,
+        info: &DispatchInfoOf<T::RuntimeCall>,
+        len: usize,
+        self_implicit: Self::Implicit,
+        inherited_implication: &impl Encode,
+        source: TransactionSource,
+    ) -> ValidateResult<Self::Val, T::RuntimeCall> {
+        self.0.validate(
+            origin,
+            call,
+            info,
+            len,
+            self_implicit,
+            inherited_implication,
+            source,
+        )
     }
 
-    fn pre_dispatch(
+    fn weight(&self, origin: &T::RuntimeCall) -> Weight {
+        self.0.weight(origin)
+    }
+
+    fn prepare(
         self,
-        who: &Self::AccountId,
-        call: &Self::Call,
-        info: &DispatchInfoOf<Self::Call>,
+        val: Self::Val,
+        origin: &T::RuntimeOrigin,
+        call: &T::RuntimeCall,
+        info: &DispatchInfoOf<T::RuntimeCall>,
         len: usize,
-    ) -> Result<(), TransactionValidityError> {
+    ) -> Result<Self::Pre, TransactionValidityError> {
         if let Some(
             crate::Call::consume_oneshot_account { .. }
             | crate::Call::consume_oneshot_account_with_remaining { .. },
         ) = call.is_sub_type()
         {
-            Ok(())
+            Ok(Self::Pre::NonceChecked)
         } else {
-            self.0.pre_dispatch(who, call, info, len)
+            self.0.prepare(val, origin, call, info, len)
         }
     }
 
-    fn validate(
-        &self,
-        who: &Self::AccountId,
-        call: &Self::Call,
-        info: &DispatchInfoOf<Self::Call>,
+    fn post_dispatch_details(
+        pre: Self::Pre,
+        info: &DispatchInfo,
+        post_info: &PostDispatchInfoOf<T::RuntimeCall>,
         len: usize,
-    ) -> TransactionValidity {
-        self.0.validate(who, call, info, len)
+        result: &DispatchResult,
+    ) -> Result<Weight, TransactionValidityError> {
+        <frame_system::CheckNonce<T> as TransactionExtension<T::RuntimeCall>>::post_dispatch_details(
+            pre, info, post_info, len, result,
+        )
     }
 }

@@ -40,6 +40,8 @@ macro_rules! pallets_config {
             type BlockWeights = BlockWeights;
             /// The weight of database operations that the runtime can invoke.
             type DbWeight = DbWeight;
+            /// The weight of transaction extensions.
+            type ExtensionsWeightInfo = weights::frame_system_extensions::WeightInfo<Runtime>;
             /// The type for hashing blocks and tries.
             type Hash = Hash;
             /// The hashing algorithm used.
@@ -154,6 +156,7 @@ macro_rules! pallets_config {
         impl pallet_balances::Config for Runtime {
             type AccountStore = Account;
             type Balance = Balance;
+            type DoneSlashHandler = ();
             type DustRemoval = HandleFees<TreasuryAccount, Balances>;
             type ExistentialDeposit = ExistentialDeposit;
             type FreezeIdentifier = ();
@@ -179,6 +182,7 @@ macro_rules! pallets_config {
             type OnChargeTransaction = OneshotAccount;
             type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
             type RuntimeEvent = RuntimeEvent;
+            type WeightInfo = weights::pallet_transaction_payment::WeightInfo<Runtime>;
             type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance, Self, Target>;
         }
         impl pallet_oneshot_account::Config for Runtime {
@@ -382,6 +386,7 @@ macro_rules! pallets_config {
             type BenchmarkHelper = ();
             type Beneficiary = AccountId;
             type BeneficiaryLookup = AccountIdLookup<AccountId, ()>;
+            type BlockNumberProvider = System;
             type Burn = Burn;
             type BurnDestination = ();
             type Currency = Balances;
@@ -528,10 +533,13 @@ macro_rules! pallets_config {
             pub MaxWeight: Weight = Perbill::from_percent(50) * BlockWeights::get().max_block;
         }
         impl pallet_collective::Config<Instance2> for Runtime {
+            type Consideration = ();
             #[cfg(not(feature = "runtime-benchmarks"))]
             type DefaultVote = TechnicalCommitteeDefaultVote;
             #[cfg(feature = "runtime-benchmarks")]
             type DefaultVote = pallet_collective::PrimeDefaultVote;
+            type DisapproveOrigin = EnsureRoot<Self::AccountId>;
+            type KillOrigin = EnsureRoot<Self::AccountId>;
             type MaxMembers = frame_support::pallet_prelude::ConstU32<100>;
             type MaxProposalWeight = MaxWeight;
             type MaxProposals = frame_support::pallet_prelude::ConstU32<20>;

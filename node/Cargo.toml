@@ -41,8 +41,10 @@ runtime-benchmarks = [
 	"gdev-runtime/runtime-benchmarks",
 	"gtest-runtime/runtime-benchmarks",
 	"pallet-grandpa/runtime-benchmarks",
+	"pallet-oneshot-account/runtime-benchmarks",
 	"pallet-im-online/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
+	"pallet-transaction-payment/runtime-benchmarks",
 	"sc-client-db/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
@@ -57,6 +59,7 @@ try-runtime = [
 	"gdev-runtime/try-runtime",
 	"gtest-runtime/try-runtime",
 	"pallet-grandpa/try-runtime",
+	"pallet-oneshot-account/try-runtime",
 	"pallet-im-online/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-treasury/try-runtime",
@@ -79,6 +82,7 @@ std = [
 	"log/std",
 	"num-format/std",
 	"pallet-grandpa/std",
+	"pallet-oneshot-account/std",
 	"pallet-im-online/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
@@ -116,6 +120,7 @@ clap_complete = { workspace = true }
 frame-benchmarking = { workspace = true }
 frame-benchmarking-cli = { workspace = true }
 frame-system = { workspace = true }
+frame-metadata-hash-extension = { workspace = true, default-features = true }
 futures = { workspace = true, features = ["compat"] }
 hex = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server"] }
@@ -125,6 +130,9 @@ num-format = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
+codec = { workspace = true }
+array-bytes = { workspace = true }
+parking_lot = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 # Local
@@ -134,6 +142,7 @@ gdev-runtime = { workspace = true, optional = true }
 gtest-runtime = { workspace = true, optional = true }
 distance-oracle = { workspace = true, optional = true }
 dc-distance = { workspace = true, optional = true }
+pallet-oneshot-account = { workspace = true, optional = true }
 
 # Substrate
 pallet-grandpa = { workspace = true, default-features = true }
@@ -156,11 +165,13 @@ sc-consensus-manual-seal = { workspace = true, default-features = true }
 sc-executor = { workspace = true, default-features = true }
 sc-keystore = { workspace = true, default-features = true }
 sc-network = { workspace = true, default-features = true }
+sc-network-sync = { workspace = true, default-features = true }
 sc-offchain = { workspace = true, default-features = true }
 sc-rpc-api = { workspace = true, default-features = true }
 sc-telemetry = { workspace = true, default-features = true }
 sc-transaction-pool = { workspace = true, default-features = true }
 sc-transaction-pool-api = { workspace = true, default-features = true }
+sc-utils = { workspace = true, default-features = true }
 sp-api = { workspace = true, default-features = true }
 sp-authority-discovery = { workspace = true, default-features = true }
 sp-block-builder = { workspace = true, default-features = true }
@@ -183,6 +194,12 @@ sp-timestamp = { workspace = true, default-features = true }
 sp-transaction-pool = { workspace = true, default-features = true }
 sp-transaction-storage-proof = { workspace = true, default-features = true }
 substrate-frame-rpc-system = { workspace = true, default-features = true }
+
+[dev-dependencies]
+sc-network-test = { workspace = true, default-features = true }
+async-trait = { version = "0.1.79" }
+env_logger = "0.10.2"
+async-channel = "2.3.1"
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true, default-features = true }

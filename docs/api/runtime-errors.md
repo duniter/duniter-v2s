@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **191** errors from **35** pallets.
+There are **192** errors from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -776,6 +776,13 @@ The given length bound for the proposal was too low.
 <summary>
 <code>PrimeAccountNotMember</code> - 10</summary>
 Prime account is not a member
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>ProposalActive</code> - 11</summary>
+Proposal is still active.
 </details>
 </li>
 </ul>

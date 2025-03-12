@@ -20,6 +20,8 @@
 #![allow(clippy::unnecessary_cast)]
 #![allow(unused_doc_comments)]
 
+pub mod frame_system_extensions;
+pub mod pallet_transaction_payment;
 pub mod block_weights;
 pub mod extrinsic_weights;
 pub mod frame_system;

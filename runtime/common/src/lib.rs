@@ -17,10 +17,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod apis;
+mod benchmarks;
 pub mod constants;
 pub mod entities;
 pub mod fees;
 pub mod handlers;
+mod offchain;
 mod pallets_config;
 pub mod providers;
 

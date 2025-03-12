@@ -18,11 +18,10 @@ use crate::{Balance, BlockNumber};
 use sp_runtime::Perbill;
 
 /// This determines the average expected block time that we are targeting.
-/// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
-/// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
-/// up by `pallet_babe` to implement `fn slot_duration()`.
-///
-/// Change this to adjust the block time.
+// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
+// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
+// up by `pallet_babe` to implement `fn slot_duration()`.
+// Change this to adjust the block time.
 pub const MILLISECS_PER_BLOCK: u64 = 6000;
 pub const SECS_PER_BLOCK: u64 = MILLISECS_PER_BLOCK / 1_000;
 
@@ -41,7 +40,7 @@ pub const YEARS: BlockNumber = (SECS_PER_YEAR / SECS_PER_BLOCK) as BlockNumber;
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 
-/// The BABE epoch configuration at genesis.
+// The BABE epoch configuration at genesis.
 pub const BABE_GENESIS_EPOCH_CONFIG: sp_consensus_babe::BabeEpochConfiguration =
     sp_consensus_babe::BabeEpochConfiguration {
         c: PRIMARY_PROBABILITY,

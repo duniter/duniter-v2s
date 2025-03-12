@@ -16,7 +16,7 @@
 
 use crate::{self as pallet_membership};
 use frame_support::{
-    parameter_types,
+    derive_impl, parameter_types,
     traits::{Everything, OnFinalize, OnInitialize},
 };
 use frame_system as system;
@@ -44,36 +44,22 @@ parameter_types! {
     pub const SS58Prefix: u8 = 42;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl system::Config for Test {
-    type AccountData = ();
     type AccountId = AccountId;
     type BaseCallFilter = Everything;
     type Block = Block;
     type BlockHashCount = BlockHashCount;
-    type BlockLength = ();
-    type BlockWeights = ();
-    type DbWeight = ();
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
-    type MultiBlockMigrator = ();
     type Nonce = u64;
-    type OnKilledAccount = ();
-    type OnNewAccount = ();
-    type OnSetCode = ();
     type PalletInfo = PalletInfo;
-    type PostInherents = ();
-    type PostTransactions = ();
-    type PreInherents = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeTask = ();
     type SS58Prefix = SS58Prefix;
-    type SingleBlockMigrations = ();
-    type SystemWeightInfo = ();
-    type Version = ();
 }
 
 parameter_types! {
