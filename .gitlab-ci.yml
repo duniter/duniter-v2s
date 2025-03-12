@@ -198,7 +198,7 @@ tests:
   - export PACKAGE=$RUNTIME-runtime
   - echo "PACKAGE = $PACKAGE"
   # GitLab milestone : used for both GitLab and Docker releases. Milestone must match source code's runtime version to fetch the git changes for release notes.
-  - export CLIENT_VERSION=$(cat node/Cargo.toml | grep version | sed "s/version = \"//g" | sed "s/\"//")
+  - export CLIENT_VERSION=$(cat node/Cargo.toml | grep version | head -n1 | sed "s/version = \"//g" | sed "s/\"//")
   - echo $CLIENT_VERSION
   - export RUNTIME_VERSION=$(cat runtime/$RUNTIME/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
   - echo $RUNTIME_VERSION
