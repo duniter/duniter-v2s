@@ -8878,6 +8878,7 @@ dependencies = [
 name = "pallet-duniter-account"
 version = "1.0.0"
 dependencies = [
+ "duniter-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -9546,6 +9547,7 @@ dependencies = [
  "scale-info",
  "sp-core",
  "sp-io",
+ "sp-membership",
  "sp-runtime",
 ]
 

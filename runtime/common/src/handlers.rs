@@ -38,31 +38,28 @@ where
 /// Runtime handler for OnNewIdty, calling all implementations of
 /// OnNewIdty and implementing logic at the runtime level.
 pub struct OnNewIdtyHandler<Runtime>(core::marker::PhantomData<Runtime>);
-impl<Runtime: pallet_duniter_wot::Config + pallet_quota::Config>
-    pallet_identity::traits::OnNewIdty<Runtime> for OnNewIdtyHandler<Runtime>
+impl<Runtime: pallet_duniter_wot::Config> pallet_identity::traits::OnNewIdty<Runtime>
+    for OnNewIdtyHandler<Runtime>
 {
     fn on_created(idty_index: &IdtyIndex, creator: &IdtyIndex) {
         pallet_duniter_wot::Pallet::<Runtime>::on_created(idty_index, creator);
-        pallet_quota::Pallet::<Runtime>::on_created(idty_index, creator);
     }
 }
 
 /// Runtime handler for OnRemoveIdty, calling all implementations of
 /// OnRemoveIdty and implementing logic at the runtime level.
 pub struct OnRemoveIdtyHandler<Runtime>(core::marker::PhantomData<Runtime>);
-impl<Runtime: pallet_duniter_wot::Config + pallet_quota::Config>
+impl<Runtime: pallet_duniter_wot::Config + pallet_duniter_account::Config>
     pallet_identity::traits::OnRemoveIdty<Runtime> for OnRemoveIdtyHandler<Runtime>
 {
     fn on_removed(idty_index: &IdtyIndex) -> Weight {
-        let mut weight = pallet_duniter_wot::Pallet::<Runtime>::on_removed(idty_index);
-        weight += pallet_quota::Pallet::<Runtime>::on_removed(idty_index);
-        weight
+        pallet_duniter_wot::Pallet::<Runtime>::on_removed(idty_index)
     }
 
     fn on_revoked(idty_index: &IdtyIndex) -> Weight {
-        let mut weight = pallet_duniter_wot::Pallet::<Runtime>::on_revoked(idty_index);
-        weight += pallet_quota::Pallet::<Runtime>::on_revoked(idty_index);
-        weight
+        pallet_duniter_wot::Pallet::<Runtime>::on_revoked(idty_index).saturating_add(
+            pallet_duniter_account::Pallet::<Runtime>::on_revoked(idty_index),
+        )
     }
 }
 
@@ -73,12 +70,15 @@ impl<
         Runtime: frame_system::Config<AccountId = AccountId>
             + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
             + pallet_duniter_wot::Config
-            + pallet_universal_dividend::Config,
+            + pallet_universal_dividend::Config
+            + pallet_quota::Config,
     > sp_membership::traits::OnNewMembership<IdtyIndex> for OnNewMembershipHandler<Runtime>
 {
     fn on_created(idty_index: &IdtyIndex) {
         // duniter-wot related actions
         pallet_duniter_wot::Pallet::<Runtime>::on_created(idty_index);
+
+        pallet_quota::Pallet::<Runtime>::on_created(idty_index);
 
         // When main membership is acquired, it starts getting right to UD.
         pallet_identity::Identities::<Runtime>::mutate_exists(idty_index, |idty_val_opt| {
@@ -105,6 +105,7 @@ impl<
             + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
             + pallet_smith_members::Config<IdtyIndex = IdtyIndex>
             + pallet_duniter_wot::Config
+            + pallet_quota::Config
             + pallet_universal_dividend::Config,
     > sp_membership::traits::OnRemoveMembership<IdtyIndex> for OnRemoveMembershipHandler<Runtime>
 {
@@ -125,7 +126,8 @@ impl<
                 }
             }
         });
-        weight += Runtime::DbWeight::get().reads_writes(1, 1);
+        weight.saturating_add(pallet_quota::Pallet::<Runtime>::on_removed(idty_index));
+        weight.saturating_add(Runtime::DbWeight::get().reads_writes(1, 1));
 
         // When membership is removed, also remove from smith member.
         weight.saturating_add(

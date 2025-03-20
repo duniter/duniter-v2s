@@ -31,12 +31,14 @@ Feature: Distance fail
     When bob certifies ferdie
     Then ferdie should be certified by bob
     Then ferdie should have 0 ĞD reserved
-    Then ferdie should have 1449 cĞD
+    # 700 + 750 - 2(one transaction fee, not a member yet)
+    Then ferdie should have 1448 cĞD
     When ferdie requests distance evaluation
     Then ferdie should have 10 ĞD reserved
-    Then ferdie should have 449 cĞD
+    # 1448 - 1000 - 2(one transaction fee, not a member yet)
+    Then ferdie should have 446 cĞD
     When 7 blocks later
-    Then treasury should contain 102 cĞD
+    Then treasury should contain 105 cĞD
     When alice runs distance oracle
     When 7 blocks later
     Then ferdie should be certified by alice
@@ -45,6 +47,6 @@ Feature: Distance fail
     Then ferdie identity should be unvalidated
     # Ferdie got his reserve slashed
     Then ferdie should have 0 ĞD reserved
-    Then ferdie should have 449 cĞD
+    Then ferdie should have 446 cĞD
     # Slashed amount is transfered to treasury
-    Then treasury should contain 1102 cĞD
+    Then treasury should contain 1105 cĞD

@@ -216,6 +216,25 @@ pub mod pallet {
     }
 }
 
+/// Implementing identity removal event handling for the pallet.
+impl<T: Config> pallet_identity::traits::OnRemoveIdty<T> for Pallet<T> {
+    fn on_removed(_idty_index: &IdtyIdOf<T>) -> Weight {
+        Weight::zero()
+    }
+
+    /// This implementation unlinks account associated with the identity.
+    fn on_revoked(idty_index: &IdtyIdOf<T>) -> Weight {
+        if let Some(account) = <pallet_identity::Pallet<T> as duniter_primitives::Idty<
+            IdtyIdOf<T>,
+            T::AccountId,
+        >>::owner_key(*idty_index)
+        {
+            Self::do_unlink_identity(account);
+        }
+        <T as pallet::Config>::WeightInfo::on_revoke_identity()
+    }
+}
+
 // implement account linker
 impl<T> pallet_identity::traits::LinkIdty<T::AccountId, IdtyIdOf<T>> for Pallet<T>
 where

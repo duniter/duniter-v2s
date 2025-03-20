@@ -669,6 +669,23 @@ fn test_membership_renewal() {
         });
 }
 
+// test that identity is unlinked when identity is revoked
+#[test]
+fn test_revoke_identity_should_unlink() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        run_to_block(1);
+
+        // revoke identity
+        Identity::do_revoke_identity(1, pallet_identity::RevocationReason::Root);
+
+        assert_eq!(
+            frame_system::Pallet::<Runtime>::get(&AccountKeyring::Alice.to_account_id())
+                .linked_idty,
+            None
+        );
+    })
+}
+
 // test that UD are auto claimed when identity is revoked
 #[test]
 fn test_revoke_identity_after_one_ud() {

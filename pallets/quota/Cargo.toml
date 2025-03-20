@@ -16,6 +16,7 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
+	"sp-membership/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
@@ -23,8 +24,8 @@ try-runtime = [
 	"frame-system/try-runtime",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-balances/try-runtime",
-	"pallet-identity/runtime-benchmarks",
 	"pallet-identity/try-runtime",
+	"sp-membership/try-runtime",
 	"sp-runtime/try-runtime",
 ]
 std = [
@@ -34,6 +35,7 @@ std = [
 	"frame-system/std",
 	"pallet-balances/std",
 	"pallet-identity/std",
+	"sp-membership/std",
 	"scale-info/std",
 	"sp-core/std",
 	"sp-io/std",
@@ -50,6 +52,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-identity = { workspace = true }
+sp-membership = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }

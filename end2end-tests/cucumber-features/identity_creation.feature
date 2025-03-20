@@ -24,13 +24,15 @@ Feature: Identity creation
     Then dave should be certified by bob
     Then dave should be certified by charlie
     Then dave should have 0 ĞD reserved
-    Then dave should have 1449 cĞD
+    # 700 + 750 - 2(one transaction fee, not a member yet)
+    Then dave should have 1448 cĞD
     When dave requests distance evaluation
     Then dave should have 10 ĞD reserved
-    Then dave should have 449 cĞD
+    # 1448 - 1000 - 2(one transaction fee, not a member yet)
+    Then dave should have 446 cĞD
     When 7 blocks later
     When alice runs distance oracle
     When 7 blocks later
     Then dave identity should be member
     Then dave should have 0 ĞD reserved
-    Then dave should have 1449 cĞD
+    Then dave should have 1446 cĞD

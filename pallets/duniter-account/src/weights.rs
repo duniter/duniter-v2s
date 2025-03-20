@@ -21,6 +21,7 @@ use frame_support::weights::{constants::RocksDbWeight, Weight};
 /// Weight functions needed for pallet_universal_dividend.
 pub trait WeightInfo {
     fn unlink_identity() -> Weight;
+    fn on_revoke_identity() -> Weight;
 }
 
 // Insecure weights implementation, use it for tests only!
@@ -28,6 +29,16 @@ impl WeightInfo for () {
     /// Storage: System Account (r:1 w:0)
     /// Proof: System Account (max_values: None, max_size: Some(126), added: 2601, mode: MaxEncodedLen)
     fn unlink_identity() -> Weight {
+        // Proof Size summary in bytes:
+        //  Measured:  `0`
+        //  Estimated: `3591`
+        // Minimum execution time: 95_130_000 picoseconds.
+        Weight::from_parts(110_501_000, 0)
+            .saturating_add(Weight::from_parts(0, 3591))
+            .saturating_add(RocksDbWeight::get().reads(1))
+    }
+
+    fn on_revoke_identity() -> Weight {
         // Proof Size summary in bytes:
         //  Measured:  `0`
         //  Estimated: `3591`

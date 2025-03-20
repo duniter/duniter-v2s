@@ -207,3 +207,100 @@ fn test_refund_reaped_linked_account() {
             assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
         })
 }
+
+/// test no refund on_idle when account is not a member
+#[test]
+fn test_no_member_no_refund() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (AccountKeyring::Alice.to_account_id(), 10_000),
+            (AccountKeyring::Bob.to_account_id(), 10_000),
+        ])
+        .build()
+        .execute_with(|| {
+            // Revoked identities are not eligible for a refund
+            let revocation_payload = pallet_identity::RevocationPayload {
+                idty_index: 2u32,
+                genesis_hash: System::block_hash(0),
+            };
+            let signature = AccountKeyring::Bob.sign(
+                &(
+                    pallet_identity::REVOCATION_PAYLOAD_PREFIX,
+                    revocation_payload,
+                )
+                    .encode(),
+            );
+            assert_ok!(Identity::revoke_identity(
+                RuntimeOrigin::signed(AccountKeyring::Bob.to_account_id()),
+                2,
+                AccountKeyring::Bob.to_account_id(),
+                signature.into()
+            ));
+            assert_eq!(
+                pallet_identity::Identities::<Runtime>::get(&2)
+                    .unwrap()
+                    .status,
+                pallet_identity::IdtyStatus::Revoked
+            );
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: AccountKeyring::Ferdie.to_account_id().into(),
+                value: 500,
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Bob, 0u64, 0);
+            assert_ok!(Executive::apply_extrinsic(xt));
+            assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
+
+            // Unconfirmed identities are not eligible for a refund
+            assert_ok!(Identity::create_identity(
+                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
+                AccountKeyring::Ferdie.to_account_id(),
+            ));
+            assert_eq!(
+                pallet_identity::Identities::<Runtime>::get(&5)
+                    .unwrap()
+                    .status,
+                pallet_identity::IdtyStatus::Unconfirmed
+            );
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: AccountKeyring::Alice.to_account_id().into(),
+                value: 500,
+            });
+            let xt =
+                get_unchecked_extrinsic(call.clone(), 4u64, 8u64, AccountKeyring::Ferdie, 0u64, 0);
+            assert_ok!(Executive::apply_extrinsic(xt));
+            assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
+
+            // Unvalidated identities are not eligible for a refund
+            assert_ok!(Identity::confirm_identity(
+                RuntimeOrigin::signed(AccountKeyring::Ferdie.to_account_id()),
+                "ferdie".into(),
+            ));
+            assert_eq!(
+                pallet_identity::Identities::<Runtime>::get(&5)
+                    .unwrap()
+                    .status,
+                pallet_identity::IdtyStatus::Unvalidated
+            );
+            let xt =
+                get_unchecked_extrinsic(call.clone(), 4u64, 8u64, AccountKeyring::Ferdie, 0u64, 1);
+            assert_ok!(Executive::apply_extrinsic(xt));
+            assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
+
+            // NotMember identities are not eligible for a refund
+            pallet_identity::Pallet::<Runtime>::membership_removed(1);
+            assert_eq!(
+                pallet_identity::Identities::<Runtime>::get(&1)
+                    .unwrap()
+                    .status,
+                pallet_identity::IdtyStatus::NotMember
+            );
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: AccountKeyring::Bob.to_account_id().into(),
+                value: 500,
+            });
+            let xt =
+                get_unchecked_extrinsic(call.clone(), 4u64, 8u64, AccountKeyring::Alice, 0u64, 0);
+            assert_ok!(Executive::apply_extrinsic(xt));
+            assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
+        })
+}

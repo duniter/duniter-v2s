@@ -34,4 +34,14 @@ mod benchmarks {
         #[extrinsic_call]
         _(RawOrigin::Signed(account));
     }
+
+    #[benchmark]
+    fn on_revoke_identity() {
+        let idty: IdtyIdOf<T> = 1u32.into();
+
+        #[block]
+        {
+            <Pallet<T> as pallet_identity::traits::OnRemoveIdty<T>>::on_revoked(&idty);
+        }
+    }
 }

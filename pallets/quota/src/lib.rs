@@ -360,17 +360,20 @@ impl<T: Config> RefundFee<T> for Pallet<T> {
 
 /// Checks if an identity is eligible for a refund.
 ///
-/// This function returns `true` for all identities, regardless of their status.
-/// If the identity has no quotas or has been deleted, the refund request is still queued,
-/// but when handled, no refund will be issued (and `NoQuotaForIdty` may be raised).
-fn is_eligible_for_refund<T: pallet_identity::Config>(_identity: IdtyId<T>) -> bool {
-    true
+/// This function returns `true` only if the identity exists and has a status of `Member`.
+/// If the identity does not exist or has a different status, it returns `false`, and the refund request will not be processed.
+///
+fn is_eligible_for_refund<T: pallet_identity::Config>(idty_index: IdtyId<T>) -> bool {
+    pallet_identity::Identities::<T>::get(idty_index).map_or_else(
+        || false,
+        |id| id.status == pallet_identity::IdtyStatus::Member,
+    )
 }
 
-/// Implementing the on new identity event handler for the pallet.
-impl<T: Config> pallet_identity::traits::OnNewIdty<T> for Pallet<T> {
+/// Implementing the on new membership event handler for the pallet.
+impl<T: Config> sp_membership::traits::OnNewMembership<IdtyId<T>> for Pallet<T> {
     /// This implementation initializes the identity quota for the newly created identity.
-    fn on_created(idty_index: &IdtyId<T>, _creator: &T::IdtyIndex) {
+    fn on_created(idty_index: &IdtyId<T>) {
         IdtyQuota::<T>::insert(
             idty_index,
             Quota {
@@ -379,10 +382,12 @@ impl<T: Config> pallet_identity::traits::OnNewIdty<T> for Pallet<T> {
             },
         );
     }
+
+    fn on_renewed(_idty_index: &IdtyId<T>) {}
 }
 
 /// Implementing the on remove identity event handler for the pallet.
-impl<T: Config> pallet_identity::traits::OnRemoveIdty<T> for Pallet<T> {
+impl<T: Config> sp_membership::traits::OnRemoveMembership<IdtyId<T>> for Pallet<T> {
     /// This implementation removes the identity quota associated with the removed identity.
     fn on_removed(idty_id: &IdtyId<T>) -> Weight {
         let mut weight = Weight::zero();
@@ -393,10 +398,5 @@ impl<T: Config> pallet_identity::traits::OnRemoveIdty<T> for Pallet<T> {
         IdtyQuota::<T>::remove(idty_id);
         add_db_reads_writes(1, 1);
         weight
-    }
-
-    /// This implementation removes the identity quota associated with the removed identity.
-    fn on_revoked(idty_id: &IdtyId<T>) -> Weight {
-        Self::on_removed(idty_id)
     }
 }
