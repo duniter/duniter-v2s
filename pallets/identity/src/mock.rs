@@ -89,6 +89,7 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
 }
 
 impl pallet_identity::Config for Test {
+    type AccountId32 = AccountId;
     type AccountLinker = ();
     type AutorevocationPeriod = AutorevocationPeriod;
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;

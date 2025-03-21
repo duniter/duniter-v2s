@@ -432,6 +432,7 @@ macro_rules! pallets_config {
             pub const ValidationPeriod: BlockNumber = 2 * MONTHS;
         }
         impl pallet_identity::Config for Runtime {
+            type AccountId32 = AccountId;
             type AccountLinker = Account;
             type AutorevocationPeriod = AutorevocationPeriod;
             type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;

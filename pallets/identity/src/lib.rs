@@ -103,6 +103,9 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
+        /// The way to deserialize accound id from 32 raw bytes
+        type AccountId32: From<[u8; 32]> + Into<Self::AccountId>;
+
         /// The period during which the owner can confirm the new identity.
         #[pallet::constant]
         type ConfirmPeriod: Get<BlockNumberFor<Self>>;
@@ -173,7 +176,9 @@ pub mod pallet {
         type Signer: IdentifyAccount<AccountId = Self::AccountId>;
 
         /// Signature type for payload verification.
-        type Signature: Parameter + Verify<Signer = Self::Signer>;
+        type Signature: Parameter
+            + Verify<Signer = Self::Signer>
+            + From<sp_core::ed25519::Signature>;
 
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -637,10 +642,15 @@ pub mod pallet {
             )
             .into_array_const::<32>()
             .map_err(|_| Error::<T>::InvalidLegacyRevocationFormat)?;
-            ed25519_dalek::VerifyingKey::from_bytes(&issuer)
-                .map_err(|_| Error::<T>::InvalidLegacyRevocationFormat)?
-                .verify_strict(document, &ed25519_dalek::Signature::from_bytes(&signature))
-                .map_err(|_| Error::<T>::InvalidSignature)?;
+
+            // Verify signature
+            let revocation_key = T::AccountId32::from(issuer).into();
+            let signature = T::Signature::from(sp_core::ed25519::Signature::from(signature));
+            ensure!(
+                signature.verify(document, &revocation_key),
+                Error::<T>::InvalidSignature
+            );
+
             let username = line_username
                 .get(14..)
                 .ok_or(Error::<T>::InvalidLegacyRevocationFormat)?;
@@ -656,8 +666,6 @@ pub mod pallet {
                 IdtyStatus::NotMember => Ok(()),
                 IdtyStatus::Revoked => Err(Error::<T>::AlreadyRevoked),
             }?;
-
-            let revocation_key = T::AccountId::decode(&mut &issuer[..]).unwrap();
 
             ensure!(
                 if let Some((ref old_owner_key, last_change)) = idty_value.old_owner_key {

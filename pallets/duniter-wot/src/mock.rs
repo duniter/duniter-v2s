@@ -20,7 +20,7 @@ use frame_support::{derive_impl, parameter_types, traits::Everything};
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
-    testing::{TestSignature, UintAuthorityId},
+    testing::{TestSignature as SubtrateTestSignature, UintAuthorityId},
     traits::{BlakeTwo256, IdentityLookup},
     BuildStorage,
 };
@@ -29,6 +29,46 @@ use std::collections::BTreeMap;
 
 type AccountId = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
+
+pub struct AccountId32Mock(u64);
+impl From<AccountId32Mock> for u64 {
+    fn from(account: AccountId32Mock) -> u64 {
+        account.0
+    }
+}
+impl From<[u8; 32]> for AccountId32Mock {
+    fn from(bytes: [u8; 32]) -> Self {
+        Self(u64::from_be_bytes([
+            bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+        ]))
+    }
+}
+
+/// Test signature that impl From<ed25519::Signature> (required to compile pallet identity)
+#[derive(Clone, codec::Decode, Debug, Eq, codec::Encode, PartialEq, scale_info::TypeInfo)]
+pub struct TestSignature(SubtrateTestSignature);
+
+impl TestSignature {
+    pub fn new(signer: u64, message: Vec<u8>) -> Self {
+        Self(SubtrateTestSignature(signer, message))
+    }
+}
+
+impl From<sp_core::ed25519::Signature> for TestSignature {
+    fn from(_: sp_core::ed25519::Signature) -> Self {
+        // Implementation here only to satisfy traits bounds at compilation
+        // This convertion should not be used inside pallet distance tests
+        unimplemented!()
+    }
+}
+
+impl sp_runtime::traits::Verify for TestSignature {
+    type Signer = UintAuthorityId;
+
+    fn verify<L: sp_runtime::traits::Lazy<[u8]>>(&self, msg: L, signer: &u64) -> bool {
+        <SubtrateTestSignature as sp_runtime::traits::Verify>::verify::<L>(&self.0, msg, signer)
+    }
+}
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -96,6 +136,7 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
 }
 
 impl pallet_identity::Config for Test {
+    type AccountId32 = AccountId32Mock;
     type AccountLinker = ();
     type AutorevocationPeriod = AutorevocationPeriod;
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;

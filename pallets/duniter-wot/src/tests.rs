@@ -21,7 +21,6 @@ use pallet_identity::{
     IdtyName, IdtyStatus, RevocationPayload, RevocationReason, REVOCATION_PAYLOAD_PREFIX,
 };
 use pallet_membership::MembershipRemovalReason;
-use sp_runtime::testing::TestSignature;
 
 /// test that genesis builder creates the good number of identities
 /// and good identity and certification metadate
@@ -186,7 +185,7 @@ fn test_revoke_idty() {
             RuntimeOrigin::signed(1),
             1,
             1,
-            TestSignature(
+            TestSignature::new(
                 1,
                 (
                     REVOCATION_PAYLOAD_PREFIX,
@@ -211,7 +210,7 @@ fn test_revoke_idty() {
             RuntimeOrigin::signed(42),
             2,
             2,
-            TestSignature(
+            TestSignature::new(
                 2,
                 (
                     REVOCATION_PAYLOAD_PREFIX,

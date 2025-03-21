@@ -52,7 +52,6 @@ base64 = { version = "0.22.1", default-features = false }
 countmap = { version = "0.2.0", default-features = false }
 ctrlc = { version = "3.4.4", default-features = false }
 cucumber = { version = "0.20.2", default-features = false }
-ed25519-dalek = { version = "2.1.1", default-features = false }
 env_logger = { version = "0.11.3", default-features = false }
 notify = { version = "6.1.1", default-features = false }
 portpicker = { version = "0.1.1", default-features = false }
@@ -248,8 +247,6 @@ cranelift-wasm = { opt-level = 3 }
 crc32fast = { opt-level = 3 }
 crossbeam-deque = { opt-level = 3 }
 crypto-mac = { opt-level = 3 }
-curve25519-dalek = { opt-level = 3 }
-ed25519-dalek = { opt-level = 3 }
 futures-channel = { opt-level = 3 }
 hashbrown = { opt-level = 3 }
 hash-db = { opt-level = 3 }
