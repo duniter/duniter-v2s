@@ -59,7 +59,10 @@ use frame_support::{
     ensure,
     pallet_prelude::{Get, RuntimeDebug, Weight},
 };
-use frame_system::{ensure_signed, pallet_prelude::OriginFor};
+use frame_system::{
+    ensure_signed,
+    pallet_prelude::{BlockNumberFor, OriginFor},
+};
 use scale_info::{
     prelude::{collections::BTreeMap, fmt::Debug, vec, vec::Vec},
     TypeInfo,
@@ -239,6 +242,7 @@ pub mod pallet {
                         },
                         issued_certs: vec![],
                         received_certs: issuers_,
+                        last_online: None,
                     },
                 );
                 // if smith is offline, schedule expire
@@ -264,8 +268,13 @@ pub mod pallet {
     /// The Smith metadata for each identity.
     #[pallet::storage]
     #[pallet::getter(fn smiths)]
-    pub type Smiths<T: Config> =
-        StorageMap<_, Twox64Concat, T::IdtyIndex, SmithMeta<T::IdtyIndex>, OptionQuery>;
+    pub type Smiths<T: Config> = StorageMap<
+        _,
+        Twox64Concat,
+        T::IdtyIndex,
+        SmithMeta<T::IdtyIndex, BlockNumberFor<T>>,
+        OptionQuery,
+    >;
 
     /// The indexes of Smith to remove at a given session.
     #[pallet::storage]
@@ -580,44 +589,39 @@ impl<T: Config> Pallet<T> {
 
     /// Handle the event when a Smith goes online.
     pub fn on_smith_goes_online(idty_index: T::IdtyIndex) {
-        if let Some(smith_meta) = Smiths::<T>::get(idty_index) {
-            if smith_meta.expires_on.is_some() {
-                Smiths::<T>::mutate(idty_index, |maybe_smith_meta| {
-                    if let Some(smith_meta) = maybe_smith_meta {
-                        // As long as the smith is online, it cannot expire
-                        smith_meta.expires_on = None;
-                        // FIXME: unschedule old expiry (#182)
-                    }
-                });
+        Smiths::<T>::mutate(idty_index, |maybe_smith_meta| {
+            if let Some(smith_meta) = maybe_smith_meta {
+                if smith_meta.expires_on.is_some() {
+                    // As long as the smith is online, it cannot expire
+                    smith_meta.expires_on = None;
+                    smith_meta.last_online = None;
+                }
             }
-        }
+        });
     }
 
     /// Handle the event when a Smith goes offline.
     pub fn on_smith_goes_offline(idty_index: T::IdtyIndex) {
-        if let Some(smith_meta) = Smiths::<T>::get(idty_index) {
-            // Smith can go offline after main membership expiry
-            // in this case, there is no scheduled expiry since it is already excluded
-            if smith_meta.status != SmithStatus::Excluded {
-                Smiths::<T>::mutate(idty_index, |maybe_smith_meta| {
-                    if let Some(smith_meta) = maybe_smith_meta {
-                        // schedule expiry
-                        let new_expires_on =
-                            CurrentSession::<T>::get() + T::SmithInactivityMaxDuration::get();
-                        smith_meta.expires_on = Some(new_expires_on);
-                        ExpiresOn::<T>::append(new_expires_on, idty_index);
-                    }
-                });
+        Smiths::<T>::mutate(idty_index, |maybe_smith_meta| {
+            if let Some(smith_meta) = maybe_smith_meta {
+                // Smith can go offline after main membership expiry
+                // in this case, there is no scheduled expiry since it is already excluded
+                if smith_meta.status != SmithStatus::Excluded {
+                    // schedule expiry
+                    let new_expires_on =
+                        CurrentSession::<T>::get() + T::SmithInactivityMaxDuration::get();
+                    smith_meta.expires_on = Some(new_expires_on);
+                    let block_number = frame_system::pallet::Pallet::<T>::block_number();
+                    smith_meta.last_online = Some(block_number);
+                    ExpiresOn::<T>::append(new_expires_on, idty_index);
+                }
             }
-        }
+        });
     }
 
     /// Provide whether the given identity index is a Smith.
     fn provide_is_member(idty_id: &T::IdtyIndex) -> bool {
-        let Some(smith) = Smiths::<T>::get(idty_id) else {
-            return false;
-        };
-        smith.status == SmithStatus::Smith
+        Smiths::<T>::get(idty_id).map_or(false, |smith| smith.status == SmithStatus::Smith)
     }
 }
 

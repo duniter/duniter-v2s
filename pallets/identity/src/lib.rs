@@ -137,8 +137,8 @@ pub mod pallet {
         /// The type used to check account worthiness.
         type CheckAccountWorthiness: CheckAccountWorthiness<Self>;
 
-        /// Handler that checks the necessary permissions for an identity's owner key change.
-        type OwnerKeyChangePermission: CheckKeyChangeAllowed<Self>;
+        /// A handler called when an identity's owner key change.
+        type OnKeyChange: KeyChange<Self>;
 
         /// Custom data to store in each identity.
         type IdtyData: Clone
@@ -461,12 +461,6 @@ pub mod pallet {
                 Error::<T>::OwnerKeyAlreadyUsed
             );
 
-            // Ensure that the key is not currently as a validator
-            ensure!(
-                T::OwnerKeyChangePermission::check_allowed(&idty_index),
-                Error::<T>::OwnerKeyUsedAsValidator
-            );
-
             let block_number = frame_system::Pallet::<T>::block_number();
             let maybe_old_old_owner_key =
                 if let Some((old_owner_key, last_change)) = idty_value.old_owner_key {
@@ -508,6 +502,7 @@ pub mod pallet {
             IdentityIndexOf::<T>::insert(&idty_value.owner_key, idty_index);
             Identities::<T>::insert(idty_index, idty_value);
             T::AccountLinker::link_identity(&new_key, idty_index)?;
+            T::OnKeyChange::on_changed(idty_index, new_key.clone())?;
             Self::deposit_event(Event::IdtyChangedOwnerKey {
                 idty_index,
                 new_owner_key: new_key,
@@ -793,6 +788,10 @@ pub mod pallet {
         IdtyNotFound,
         /// Invalid payload signature.
         InvalidSignature,
+        /// Key used as validator.
+        OwnerKeyUsedAsValidator,
+        /// Key in bound period.
+        OwnerKeyInBound,
         /// Invalid revocation key.
         InvalidRevocationKey,
         /// Issuer is not member and can not perform this action.
@@ -815,8 +814,6 @@ pub mod pallet {
         AccountNotExist,
         /// Insufficient balance to create an identity.
         InsufficientBalance,
-        /// Owner key currently used as validator.
-        OwnerKeyUsedAsValidator,
         /// Legacy revocation document format is invalid
         InvalidLegacyRevocationFormat,
     }

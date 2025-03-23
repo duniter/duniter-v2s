@@ -62,6 +62,7 @@ fn process_to_become_a_smith_and_lose_it() {
                 expires_on: Some(5),
                 issued_certs: vec![],
                 received_certs: vec![],
+                last_online: None,
             }
         );
         // Then certification 1/2
@@ -80,6 +81,7 @@ fn process_to_become_a_smith_and_lose_it() {
                 expires_on: Some(5),
                 issued_certs: vec![],
                 received_certs: vec![1],
+                last_online: None,
             }
         );
         // Then certification 2/2
@@ -101,6 +103,7 @@ fn process_to_become_a_smith_and_lose_it() {
                 expires_on: Some(5),
                 issued_certs: vec![],
                 received_certs: vec![1, 2],
+                last_online: None,
             }
         );
         // Go online to be able to invite+certify
@@ -161,7 +164,8 @@ fn process_to_become_a_smith_and_lose_it() {
                 status: SmithStatus::Excluded,
                 expires_on: None,
                 issued_certs: vec![],
-                received_certs: vec![]
+                received_certs: vec![],
+                last_online: Some(1),
             })
         );
         assert_eq!(
@@ -170,7 +174,8 @@ fn process_to_become_a_smith_and_lose_it() {
                 status: SmithStatus::Excluded,
                 expires_on: None,
                 issued_certs: vec![],
-                received_certs: vec![]
+                received_certs: vec![],
+                last_online: Some(1),
             })
         );
         assert_eq!(
@@ -179,7 +184,8 @@ fn process_to_become_a_smith_and_lose_it() {
                 status: SmithStatus::Excluded,
                 expires_on: None,
                 issued_certs: vec![],
-                received_certs: vec![]
+                received_certs: vec![],
+                last_online: None,
             })
         );
     });
@@ -252,6 +258,7 @@ fn should_have_checks_on_certify() {
                 expires_on: None,
                 issued_certs: vec![4],
                 received_certs: vec![2, 3, 4],
+                last_online: None,
             }
         );
         assert_eq!(
@@ -261,6 +268,7 @@ fn should_have_checks_on_certify() {
                 expires_on: Some(5),
                 issued_certs: vec![1, 4],
                 received_certs: vec![3, 4],
+                last_online: None,
             }
         );
         assert_eq!(
@@ -270,6 +278,7 @@ fn should_have_checks_on_certify() {
                 expires_on: Some(5),
                 issued_certs: vec![1, 2],
                 received_certs: vec![4],
+                last_online: None,
             }
         );
         assert_eq!(
@@ -279,6 +288,7 @@ fn should_have_checks_on_certify() {
                 expires_on: Some(5),
                 issued_certs: vec![1, 2, 3],
                 received_certs: vec![1, 2],
+                last_online: None,
             }
         );
 
@@ -312,6 +322,7 @@ fn should_have_checks_on_certify() {
                 expires_on: Some(5),
                 issued_certs: vec![1, 2],
                 received_certs: vec![4],
+                last_online: None,
             }
         );
         // Try to certify #3
@@ -327,6 +338,7 @@ fn should_have_checks_on_certify() {
                 expires_on: Some(5),
                 issued_certs: vec![1, 2],
                 received_certs: vec![1, 4],
+                last_online: None,
             }
         );
     });
@@ -359,7 +371,8 @@ fn smith_activity_postpones_expiration() {
                 status: SmithStatus::Excluded,
                 expires_on: None,
                 issued_certs: vec![],
-                received_certs: vec![]
+                received_certs: vec![],
+                last_online: None,
             })
         );
         // issued_certs is empty because #1 was excluded
@@ -370,6 +383,7 @@ fn smith_activity_postpones_expiration() {
                 expires_on: None,
                 issued_certs: vec![],
                 received_certs: vec![3, 4],
+                last_online: None,
             })
         );
 
@@ -383,6 +397,7 @@ fn smith_activity_postpones_expiration() {
                 expires_on: Some(11),
                 issued_certs: vec![],
                 received_certs: vec![3, 4],
+                last_online: Some(0),
             })
         );
         // Still not expired on session 10
@@ -394,6 +409,7 @@ fn smith_activity_postpones_expiration() {
                 expires_on: Some(11),
                 issued_certs: vec![],
                 received_certs: vec![3, 4],
+                last_online: Some(0),
             })
         );
         // But expired on session 11
@@ -404,7 +420,8 @@ fn smith_activity_postpones_expiration() {
                 status: SmithStatus::Excluded,
                 expires_on: None,
                 issued_certs: vec![],
-                received_certs: vec![]
+                received_certs: vec![],
+                last_online: None,
             })
         );
         assert_eq!(
@@ -413,7 +430,8 @@ fn smith_activity_postpones_expiration() {
                 status: SmithStatus::Excluded,
                 expires_on: None,
                 issued_certs: vec![],
-                received_certs: vec![]
+                received_certs: vec![],
+                last_online: Some(0),
             })
         );
     });
@@ -443,7 +461,8 @@ fn smith_coming_back_recovers_its_issued_certs() {
                 status: Excluded,
                 expires_on: None,
                 issued_certs: vec![1],
-                received_certs: vec![]
+                received_certs: vec![],
+                last_online: None,
             })
         );
         // Smith #2 comes back
@@ -466,7 +485,8 @@ fn smith_coming_back_recovers_its_issued_certs() {
                 status: Smith,
                 expires_on: Some(10),
                 issued_certs: vec![1],
-                received_certs: vec![1, 3]
+                received_certs: vec![1, 3],
+                last_online: None,
             })
         );
         Pallet::<Runtime>::on_smith_goes_online(2);
@@ -590,7 +610,8 @@ fn certifying_an_online_smith() {
                 status: Smith,
                 expires_on: Some(8),
                 issued_certs: vec![],
-                received_certs: vec![1, 2]
+                received_certs: vec![1, 2],
+                last_online: None,
             })
         );
         assert_eq!(ExpiresOn::<Runtime>::get(7), Some(vec![5]));
@@ -604,7 +625,8 @@ fn certifying_an_online_smith() {
                 status: Smith,
                 expires_on: None,
                 issued_certs: vec![],
-                received_certs: vec![1, 2]
+                received_certs: vec![1, 2],
+                last_online: None,
             })
         );
         // ExpiresOn is not unscheduled, but as expires_on has switched to None it's not a problem
@@ -622,7 +644,8 @@ fn certifying_an_online_smith() {
                 status: Smith,
                 expires_on: None,
                 issued_certs: vec![],
-                received_certs: vec![1, 2, 3]
+                received_certs: vec![1, 2, 3],
+                last_online: None,
             })
         );
     });
@@ -648,7 +671,8 @@ fn expires_on_cleans_up() {
                 status: Smith,
                 expires_on: Some(5),
                 issued_certs: vec![2, 3],
-                received_certs: vec![2, 3]
+                received_certs: vec![2, 3],
+                last_online: Some(0),
             })
         );
         // It is also present in ExpiresOn schedule
@@ -662,7 +686,8 @@ fn expires_on_cleans_up() {
                 status: Excluded,
                 expires_on: None,
                 issued_certs: vec![2, 3],
-                received_certs: vec![]
+                received_certs: vec![],
+                last_online: Some(0),
             })
         );
         // ExpiresOn is clean
@@ -713,6 +738,7 @@ fn losing_wot_membership_cascades_to_smith_members() {
                 expires_on: Some(5),
                 issued_certs: vec![3],
                 received_certs: vec![2, 3, 4],
+                last_online: None,
             })
         );
         assert_eq!(
@@ -742,6 +768,7 @@ fn losing_wot_membership_cascades_to_smith_members() {
                 expires_on: None,
                 issued_certs: vec![3],
                 received_certs: vec![],
+                last_online: None,
             })
         );
         // Issued certifications updated for certifiers of 1

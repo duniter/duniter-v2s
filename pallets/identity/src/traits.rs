@@ -95,14 +95,14 @@ impl<AccountId, IdtyIndex> LinkIdty<AccountId, IdtyIndex> for () {
     }
 }
 
-/// Trait for checking whether a key change is allowed for a given identity.
-pub trait CheckKeyChangeAllowed<T: Config> {
-    /// Determines if a key change is allowed for the given identity.
-    fn check_allowed(account_id: &T::IdtyIndex) -> bool;
+/// A trait for handling identity owner key changes.
+pub trait KeyChange<T: Config> {
+    fn on_changed(id: T::IdtyIndex, account_id: T::AccountId) -> Result<(), DispatchError>;
 }
 
-impl<T: Config> CheckKeyChangeAllowed<T> for () {
-    fn check_allowed(_: &T::IdtyIndex) -> bool {
-        true
+impl<T: Config> KeyChange<T> for () {
+    /// Called when an identity's owner key has changed.
+    fn on_changed(_id: T::IdtyIndex, _account_id: T::AccountId) -> Result<(), DispatchError> {
+        Ok(())
     }
 }

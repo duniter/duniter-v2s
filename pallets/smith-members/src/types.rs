@@ -24,7 +24,7 @@ use sp_staking::SessionIndex;
 
 /// Represents a certification metadata attached to a Smith identity.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct SmithMeta<IdtyIndex> {
+pub struct SmithMeta<IdtyIndex, BlockNumber> {
     /// Current status of the Smith.
     pub status: SmithStatus,
     /// The session at which the Smith will expire (for lack of validation activity).
@@ -33,16 +33,19 @@ pub struct SmithMeta<IdtyIndex> {
     pub issued_certs: Vec<IdtyIndex>,
     /// Certifications received from other Smiths.
     pub received_certs: Vec<IdtyIndex>,
+    /// Last online time.
+    pub last_online: Option<BlockNumber>,
 }
 
 /// By default, a smith has the least possible privileges
-impl<IdtyIndex> Default for SmithMeta<IdtyIndex> {
+impl<IdtyIndex, BlockNumber> Default for SmithMeta<IdtyIndex, BlockNumber> {
     fn default() -> Self {
         Self {
             status: SmithStatus::Excluded,
             expires_on: None,
             issued_certs: Vec::<IdtyIndex>::new(),
             received_certs: Vec::<IdtyIndex>::new(),
+            last_online: Default::default(),
         }
     }
 }

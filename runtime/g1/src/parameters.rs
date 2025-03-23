@@ -58,7 +58,7 @@ pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 4 * HOURS;
 parameter_types! {
     pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS as u64;
     pub const ExpectedBlockTime: u64 = MILLISECS_PER_BLOCK;
-    pub const ReportLongevity: u64 = 168 * EpochDuration::get();
+    pub const ReportLongevity: BlockNumber = 168 * EPOCH_DURATION_IN_SLOTS;
 }
 
 // ImOnline

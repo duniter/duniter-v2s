@@ -58,9 +58,8 @@ parameter_types! {
 // Babe
 parameter_types! {
     pub const ExpectedBlockTime: u64 = MILLISECS_PER_BLOCK;
-    pub const ReportLongevity: u64 = 168 * HOURS as u64;
+    pub const ReportLongevity: BlockNumber = 168 * HOURS;
 }
-
 // ImOnline
 parameter_types! {
     pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::MAX;

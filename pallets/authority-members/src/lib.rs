@@ -258,17 +258,17 @@ pub mod pallet {
             if !Members::<T>::contains_key(member_id) {
                 return Err(Error::<T>::MemberNotFound.into());
             }
-            if Self::is_outgoing(member_id) {
+            if Self::is_outgoing(&member_id) {
                 return Err(Error::<T>::AlreadyOutgoing.into());
             }
-            let is_incoming = Self::is_incoming(member_id);
-            if !is_incoming && !Self::is_online(member_id) {
+            let is_incoming = Self::is_incoming(&member_id);
+            if !is_incoming && !Self::is_online(&member_id) {
                 return Err(Error::<T>::NotOnlineNorIncoming.into());
             }
 
             // Apply phase //
             if is_incoming {
-                Self::remove_in(member_id);
+                Self::remove_in(&member_id);
             } else {
                 Self::insert_out(member_id);
             }
@@ -284,7 +284,7 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             let member_id = Self::verify_ownership_and_membership(&who)?;
 
-            if Self::is_blacklisted(member_id) {
+            if Self::is_blacklisted(&member_id) {
                 return Err(Error::<T>::MemberBlacklisted.into());
             }
             if !Members::<T>::contains_key(member_id) {
@@ -296,11 +296,11 @@ pub mod pallet {
                 return Err(Error::<T>::SessionKeysNotProvided.into());
             }
 
-            if Self::is_incoming(member_id) {
+            if Self::is_incoming(&member_id) {
                 return Err(Error::<T>::AlreadyIncoming.into());
             }
-            let is_outgoing = Self::is_outgoing(member_id);
-            if Self::is_online(member_id) && !is_outgoing {
+            let is_outgoing = Self::is_outgoing(&member_id);
+            if Self::is_online(&member_id) && !is_outgoing {
                 return Err(Error::<T>::AlreadyOnline.into());
             }
             if Self::authorities_counter() >= T::MaxAuthorities::get() {
@@ -309,7 +309,7 @@ pub mod pallet {
 
             // Apply phase //
             if is_outgoing {
-                Self::remove_out(member_id);
+                Self::remove_out(&member_id);
             } else {
                 Self::insert_in(member_id);
             }
@@ -378,25 +378,25 @@ pub mod pallet {
         //  Execute the annotated function in a new storage transaction.
         //  The return type of the annotated function must be `Result`. All changes to storage performed
         //  by the annotated function are discarded if it returns `Err`, or committed if `Ok`.
-        #[frame_support::transactional]
         /// Change the owner key of an authority member.
+        #[frame_support::transactional]
         pub fn change_owner_key(
             member_id: T::MemberId,
             new_owner_key: T::AccountId,
         ) -> DispatchResultWithPostInfo {
-            let old_owner_key = Members::<T>::mutate_exists(member_id, |maybe_member_data| {
-                if let Some(ref mut member_data) = maybe_member_data {
-                    Ok(core::mem::replace(
-                        &mut member_data.owner_key,
-                        new_owner_key.clone(),
-                    ))
-                } else {
-                    Err(Error::<T>::MemberNotFound)
-                }
+            let old_owner_key = Members::<T>::try_mutate_exists(member_id, |maybe_member_data| {
+                let member_data = maybe_member_data
+                    .as_mut()
+                    .ok_or(Error::<T>::MemberNotFound)?;
+                Ok::<T::AccountId, Error<T>>(core::mem::replace(
+                    &mut member_data.owner_key,
+                    new_owner_key.clone(),
+                ))
             })?;
 
             let validator_id = T::ValidatorIdOf::convert(old_owner_key.clone())
                 .ok_or(pallet_session::Error::<T>::NoAssociatedValidatorId)?;
+
             let session_keys = pallet_session::NextKeys::<T>::get(validator_id)
                 .ok_or(Error::<T>::SessionKeysNotProvided)?;
 
@@ -405,7 +405,7 @@ pub mod pallet {
                 .dispatch_bypass_filter(frame_system::RawOrigin::Signed(old_owner_key).into())?;
 
             // Set session keys
-            let _post_info = pallet_session::Call::<T>::set_keys {
+            pallet_session::Call::<T>::set_keys {
                 keys: session_keys,
                 proof: vec![],
             }
@@ -427,14 +427,14 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Perform authority member removal.
         fn do_remove_member(member_id: T::MemberId, owner_key: T::AccountId) {
-            if Self::is_online(member_id) {
+            if Self::is_online(&member_id) {
                 // Trigger the member deletion for next session
                 Self::insert_out(member_id);
             }
 
             // remove all member data
-            Self::remove_in(member_id);
-            Self::remove_online(member_id);
+            Self::remove_in(&member_id);
+            Self::remove_online(&member_id);
             Members::<T>::remove(member_id);
 
             // Purge session keys
@@ -485,53 +485,53 @@ pub mod pallet {
         }
 
         /// Check if member is incoming.
-        fn is_incoming(member_id: T::MemberId) -> bool {
+        fn is_incoming(member_id: &T::MemberId) -> bool {
             IncomingAuthorities::<T>::get()
-                .binary_search(&member_id)
+                .binary_search(member_id)
                 .is_ok()
         }
 
-        /// C&heck if member is online.
-        fn is_online(member_id: T::MemberId) -> bool {
+        /// Check if member is online.
+        fn is_online(member_id: &T::MemberId) -> bool {
             OnlineAuthorities::<T>::get()
-                .binary_search(&member_id)
+                .binary_search(member_id)
                 .is_ok()
         }
 
         /// Check if member is outgoing.
-        fn is_outgoing(member_id: T::MemberId) -> bool {
+        fn is_outgoing(member_id: &T::MemberId) -> bool {
             OutgoingAuthorities::<T>::get()
-                .binary_search(&member_id)
+                .binary_search(member_id)
                 .is_ok()
         }
 
         /// Check if member is blacklisted.
-        fn is_blacklisted(member_id: T::MemberId) -> bool {
-            Blacklist::<T>::get().contains(&member_id)
+        fn is_blacklisted(member_id: &T::MemberId) -> bool {
+            Blacklist::<T>::get().contains(member_id)
         }
 
         /// Perform removal from incoming authorities.
-        fn remove_in(member_id: T::MemberId) {
+        fn remove_in(member_id: &T::MemberId) {
             IncomingAuthorities::<T>::mutate(|members_ids| {
-                if let Ok(index) = members_ids.binary_search(&member_id) {
+                if let Ok(index) = members_ids.binary_search(member_id) {
                     members_ids.remove(index);
                 }
             })
         }
 
         /// Perform removal from online authorities.
-        fn remove_online(member_id: T::MemberId) {
+        fn remove_online(member_id: &T::MemberId) {
             OnlineAuthorities::<T>::mutate(|members_ids| {
-                if let Ok(index) = members_ids.binary_search(&member_id) {
+                if let Ok(index) = members_ids.binary_search(member_id) {
                     members_ids.remove(index);
                 }
             });
         }
 
         /// Perform removal from outgoing authorities.
-        fn remove_out(member_id: T::MemberId) {
+        fn remove_out(member_id: &T::MemberId) {
             OutgoingAuthorities::<T>::mutate(|members_ids| {
-                if let Ok(index) = members_ids.binary_search(&member_id) {
+                if let Ok(index) = members_ids.binary_search(member_id) {
                     members_ids.remove(index);
                 }
             });

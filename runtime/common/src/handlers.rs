@@ -19,6 +19,7 @@ use frame_support::{
     pallet_prelude::Weight,
     traits::{Imbalance, UnfilteredDispatchable},
 };
+use frame_system::pallet_prelude::BlockNumberFor;
 use pallet_smith_members::SmithRemovalReason;
 use sp_core::Get;
 
@@ -171,23 +172,54 @@ where
 }
 
 /// Runtime handler OwnerKeyChangePermission.
-pub struct OwnerKeyChangePermissionHandler<Runtime>(core::marker::PhantomData<Runtime>);
+pub struct KeyChangeHandler<Runtime, ReportLongevity>(
+    core::marker::PhantomData<(Runtime, ReportLongevity)>,
+);
 impl<
-        Runtime: frame_system::Config
+        Runtime: frame_system::Config<AccountId = AccountId>
             + pallet_identity::Config<IdtyIndex = IdtyIndex>
-            + pallet_authority_members::Config<MemberId = IdtyIndex>,
-    > pallet_identity::traits::CheckKeyChangeAllowed<Runtime>
-    for OwnerKeyChangePermissionHandler<Runtime>
+            + pallet_authority_members::Config<MemberId = IdtyIndex>
+            + pallet_smith_members::Config<IdtyIndex = IdtyIndex>,
+        ReportLongevity: Get<BlockNumberFor<Runtime>>,
+    > pallet_identity::traits::KeyChange<Runtime> for KeyChangeHandler<Runtime, ReportLongevity>
 {
-    fn check_allowed(idty_index: &IdtyIndex) -> bool {
-        !pallet_authority_members::Pallet::<Runtime>::online().contains(idty_index)
+    /// Handles the event when an identity's owner key is changed.
+    ///
+    /// # Errors
+    /// * Returns `OwnerKeyInBound` if the smith was a validator and the bond period is not finished, meaning it can still be punished for past actions.
+    /// * Returns `OwnerKeyUsedAsValidator` if the owner key is currently used as a validator.
+    ///
+    /// # Behavior
+    /// * If the smith is online, the operation is rejected.
+    /// * If the smith was a validator and is still within the bond period, the operation is rejected. It means they can still be punished for past actions.
+    /// * If the smith is neither online nor within the bond period, the owner key is changed successfully and the change is reflected in the validator member data if available.
+    fn on_changed(
+        idty_index: IdtyIndex,
+        account_id: AccountId,
+    ) -> Result<(), sp_runtime::DispatchError> {
+        if let Some(smith) = pallet_smith_members::Pallet::<Runtime>::smiths(&idty_index) {
+            if let Some(last_online) = smith.last_online {
+                if last_online + ReportLongevity::get()
+                    > frame_system::pallet::Pallet::<Runtime>::block_number()
+                {
+                    return Err(pallet_identity::Error::<Runtime>::OwnerKeyInBound.into());
+                } else {
+                    pallet_authority_members::Pallet::<Runtime>::change_owner_key(
+                        idty_index, account_id,
+                    )
+                    .map_err(|e| e.error)?;
+                }
+            } else {
+                return Err(pallet_identity::Error::<Runtime>::OwnerKeyUsedAsValidator.into());
+            }
+        }
+        Ok(())
     }
 }
 
 /// Runtime handler for managing fee handling by transferring unbalanced amounts to a treasury account.
 pub struct HandleFees<TreasuryAccount, Balances>(
-    frame_support::pallet_prelude::PhantomData<TreasuryAccount>,
-    frame_support::pallet_prelude::PhantomData<Balances>,
+    frame_support::pallet_prelude::PhantomData<(TreasuryAccount, Balances)>,
 );
 type CreditOf<Balances> = frame_support::traits::tokens::fungible::Credit<AccountId, Balances>;
 impl<TreasuryAccount, Balances> frame_support::traits::OnUnbalanced<CreditOf<Balances>>

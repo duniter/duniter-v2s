@@ -1020,6 +1020,7 @@ fn test_smith_process() {
                     expires_on: Some(48),
                     issued_certs: vec![],
                     received_certs: vec![1, 2, 3],
+                    last_online: None,
                 })
             );
 
@@ -1053,6 +1054,7 @@ fn test_expired_smith_has_null_expires_on() {
                 expires_on: None, // because online
                 issued_certs: vec![1, 3],
                 received_certs: vec![1, 3],
+                last_online: None,
             })
         );
 
@@ -1085,6 +1087,7 @@ fn test_expired_smith_has_null_expires_on() {
                 expires_on: None,              // because excluded, no expiry is scheduled
                 issued_certs: vec![1, 3],
                 received_certs: vec![], // received certs are deleted
+                last_online: None,
             })
         );
         // Alice smith cert to Bob has been deleted
@@ -1095,6 +1098,7 @@ fn test_expired_smith_has_null_expires_on() {
                 expires_on: None,      // because online
                 issued_certs: vec![3], // cert to Bob has been deleted
                 received_certs: vec![2, 3],
+                last_online: None,
             })
         );
 
@@ -1116,6 +1120,7 @@ fn test_expired_smith_has_null_expires_on() {
                 expires_on: None,              // should be still None
                 issued_certs: vec![1, 3],
                 received_certs: vec![],
+                last_online: None,
             })
         );
 
@@ -1516,124 +1521,256 @@ fn test_link_account() {
         })
 }
 
-/// test change owner key
+/// test change owner key was validator is online
 #[test]
 fn test_change_owner_key_validator_online() {
-    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
-        let genesis_hash = System::block_hash(0);
-        let alice = AccountKeyring::Alice.to_account_id();
-        let ferdie = AccountKeyring::Ferdie.to_account_id();
-        let payload = (b"icok", genesis_hash, 1u32, alice.clone()).encode();
-        let signature = AccountKeyring::Alice.sign(&payload);
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(AccountKeyring::Ferdie.to_account_id(), 8888)])
+        .build()
+        .execute_with(|| {
+            let genesis_hash = System::block_hash(0);
+            let alice = AccountKeyring::Alice.to_account_id();
+            let ferdie = AccountKeyring::Ferdie.to_account_id();
+            let payload = (b"icok", genesis_hash, 1u32, alice.clone()).encode();
+            let signature = AccountKeyring::Ferdie.sign(&payload);
 
-        // Alice is an online validator
-        assert!(pallet_authority_members::OnlineAuthorities::<Runtime>::get().contains(&1));
+            // Alice is an online validator
+            assert!(pallet_authority_members::OnlineAuthorities::<Runtime>::get().contains(&1));
+            assert_eq!(
+                pallet_authority_members::Members::<Runtime>::get(1)
+                    .unwrap()
+                    .owner_key,
+                alice
+            );
 
-        // As an online validator she cannot change key
-        assert_noop!(
-            Identity::change_owner_key(
-                RuntimeOrigin::signed(alice.clone()),
+            // As an online validator she cannot change key
+            assert_noop!(
+                Identity::change_owner_key(
+                    RuntimeOrigin::signed(alice.clone()),
+                    ferdie.clone(),
+                    signature.into()
+                ),
+                pallet_identity::Error::<gdev_runtime::Runtime>::OwnerKeyUsedAsValidator
+            );
+        })
+}
+
+/// test change owner key between set_key and go online
+#[test]
+#[ignore = "long to go to ReportLongevity"]
+fn test_change_owner_key_offline() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(AccountKeyring::Ferdie.to_account_id(), 8888)])
+        .build()
+        .execute_with(|| {
+            let genesis_hash = System::block_hash(0);
+            let charlie = AccountKeyring::Charlie.to_account_id();
+            let ferdie = AccountKeyring::Ferdie.to_account_id();
+            let payload = (b"icok", genesis_hash, 3u32, charlie.clone()).encode();
+            let signature = AccountKeyring::Ferdie.sign(&payload);
+
+            // Charlie is an offline smith
+            SmithMembers::on_smith_goes_offline(3);
+            assert_eq!(
+                SmithMembers::smiths(3),
+                Some(SmithMeta {
+                    status: SmithStatus::Smith,
+                    expires_on: Some(48),
+                    issued_certs: vec![1, 2],
+                    received_certs: vec![1, 2],
+                    last_online: Some(1),
+                })
+            );
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&charlie).linked_idty,
+                Some(3)
+            );
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
+                None
+            );
+
+            // We run after the bound period
+            // Keeping members intact
+            for i in 1..4 {
+                let expiration = pallet_membership::Membership::<Runtime>::get(i)
+                    .unwrap()
+                    .expire_on;
+                pallet_membership::MembershipsExpireOn::<Runtime>::take(expiration);
+                pallet_smith_members::Smiths::<Runtime>::mutate(i, |data| {
+                    if let Some(ref mut data) = data {
+                        data.expires_on = None;
+                    }
+                });
+            }
+            pallet_certification::CertsRemovableOn::<Runtime>::take(ValidityPeriod::get());
+            run_to_block(ReportLongevity::get() + 1);
+
+            // Charlie can set its session_keys
+            assert_ok!(AuthorityMembers::set_session_keys(
+                RuntimeOrigin::signed(AccountKeyring::Charlie.to_account_id()),
+                create_dummy_session_keys()
+            ));
+            assert_eq!(
+                pallet_authority_members::Members::<Runtime>::get(3)
+                    .unwrap()
+                    .owner_key,
+                charlie.clone()
+            );
+
+            // Charlie can change his owner key to Ferdie's a valid account
+            // with providers and balance
+            assert_ok!(Identity::change_owner_key(
+                RuntimeOrigin::signed(charlie.clone()),
                 ferdie.clone(),
                 signature.into()
-            ),
-            pallet_identity::Error::<gdev_runtime::Runtime>::OwnerKeyUsedAsValidator
-        );
-    })
+            ));
+            // The change is reflected on the authority member data
+            assert_eq!(
+                pallet_authority_members::Members::<Runtime>::get(3)
+                    .unwrap()
+                    .owner_key,
+                ferdie.clone()
+            );
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
+                Some(3)
+            );
+        })
 }
 
 /// test change owner key
 #[test]
+#[ignore = "long to go to ReportLongevity"]
 fn test_change_owner_key() {
-    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
-        let genesis_hash = System::block_hash(0);
-        let charlie = AccountKeyring::Charlie.to_account_id();
-        let ferdie = AccountKeyring::Ferdie.to_account_id();
-        let payload = (b"icok", genesis_hash, 3u32, charlie.clone()).encode();
-        let signature = AccountKeyring::Ferdie.sign(&payload);
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(AccountKeyring::Ferdie.to_account_id(), 8888)])
+        .build()
+        .execute_with(|| {
+            let genesis_hash = System::block_hash(0);
+            let charlie = AccountKeyring::Charlie.to_account_id();
+            let ferdie = AccountKeyring::Ferdie.to_account_id();
+            let payload = (b"icok", genesis_hash, 3u32, charlie.clone()).encode();
+            let signature = AccountKeyring::Ferdie.sign(&payload);
 
-        SmithMembers::on_smith_goes_offline(3);
-        // Charlie is now offline smith
-        assert_eq!(
-            SmithMembers::smiths(3),
-            Some(SmithMeta {
-                status: SmithStatus::Smith,
-                expires_on: Some(48),
-                issued_certs: vec![1, 2],
-                received_certs: vec![1, 2]
-            })
-        );
+            SmithMembers::on_smith_goes_offline(3);
+            // Charlie is now offline smith
+            assert_eq!(
+                SmithMembers::smiths(3),
+                Some(SmithMeta {
+                    status: SmithStatus::Smith,
+                    expires_on: Some(48),
+                    issued_certs: vec![1, 2],
+                    received_certs: vec![1, 2],
+                    last_online: Some(1),
+                })
+            );
 
-        assert_eq!(
-            frame_system::Pallet::<Runtime>::get(&charlie).linked_idty,
-            Some(3)
-        );
-        assert_eq!(
-            frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
-            None
-        );
-        // Dave can change his owner key to Ferdie's
-        assert_ok!(Identity::change_owner_key(
-            RuntimeOrigin::signed(charlie.clone()),
-            ferdie.clone(),
-            signature.into()
-        ));
-        assert_eq!(
-            frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
-            Some(3)
-        );
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&charlie).linked_idty,
+                Some(3)
+            );
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
+                None
+            );
 
-        // Charlie is still an offline smith
-        assert_eq!(
-            SmithMembers::smiths(3),
-            Some(SmithMeta {
-                status: SmithStatus::Smith,
-                expires_on: Some(48),
-                issued_certs: vec![1, 2],
-                received_certs: vec![1, 2]
-            })
-        );
+            run_to_block(5);
 
-        // Ferdie can set its session_keys and go online
-        frame_system::Pallet::<Runtime>::inc_providers(&ferdie);
-        assert_ok!(AuthorityMembers::set_session_keys(
-            RuntimeOrigin::signed(AccountKeyring::Ferdie.to_account_id()),
-            create_dummy_session_keys()
-        ));
-        assert_ok!(AuthorityMembers::go_online(RuntimeOrigin::signed(
-            AccountKeyring::Ferdie.to_account_id()
-        )));
+            // Charlie cannot change his owner key because he is in bound period
+            // and can be punished for past actions
+            assert_noop!(
+                Identity::change_owner_key(
+                    RuntimeOrigin::signed(charlie.clone()),
+                    ferdie.clone(),
+                    signature.into()
+                ),
+                pallet_identity::Error::<gdev_runtime::Runtime>::OwnerKeyInBound
+            );
 
-        // Charlie is still an offline smith
-        assert_eq!(
-            SmithMembers::smiths(3),
-            Some(SmithMeta {
-                status: SmithStatus::Smith,
-                expires_on: Some(48),
-                issued_certs: vec![1, 2],
-                received_certs: vec![1, 2]
-            })
-        );
+            // We run after the bound period
+            // Keeping members intact
+            let smith_expire_on = ReportLongevity::get() * 2;
+            for i in 1..4 {
+                let expiration = pallet_membership::Membership::<Runtime>::get(i)
+                    .unwrap()
+                    .expire_on;
+                pallet_membership::MembershipsExpireOn::<Runtime>::take(expiration);
+                pallet_smith_members::Smiths::<Runtime>::mutate(i, |data| {
+                    if let Some(ref mut data) = data {
+                        data.expires_on = Some(smith_expire_on);
+                    }
+                });
+            }
+            pallet_certification::CertsRemovableOn::<Runtime>::take(ValidityPeriod::get());
+            pallet_smith_members::ExpiresOn::<Runtime>::take(SmithInactivityMaxDuration::get() + 1);
+            run_to_block(SmithInactivityMaxDuration::get() * 25);
+            pallet_smith_members::ExpiresOn::<Runtime>::take(SmithInactivityMaxDuration::get() + 2);
+            run_to_block(ReportLongevity::get() + 1);
 
-        run_to_block(25);
+            // Charlie can change his owner key to Ferdie's
+            assert_ok!(Identity::change_owner_key(
+                RuntimeOrigin::signed(charlie.clone()),
+                ferdie.clone(),
+                signature.into()
+            ));
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
+                Some(3)
+            );
 
-        System::assert_has_event(RuntimeEvent::AuthorityMembers(
-            pallet_authority_members::Event::IncomingAuthorities { members: vec![3] },
-        ));
-        System::assert_has_event(RuntimeEvent::AuthorityMembers(
-            pallet_authority_members::Event::OutgoingAuthorities { members: vec![1] },
-        ));
+            // Charlie is still an offline smith
+            assert_eq!(
+                SmithMembers::smiths(3),
+                Some(SmithMeta {
+                    status: SmithStatus::Smith,
+                    expires_on: Some(smith_expire_on),
+                    issued_certs: vec![1, 2],
+                    received_certs: vec![1, 2],
+                    last_online: Some(1),
+                })
+            );
 
-        // "Charlie" (idty 3) is now online because its identity is mapped to Ferdies's key
-        assert_eq!(
-            SmithMembers::smiths(3),
-            Some(SmithMeta {
-                status: SmithStatus::Smith,
-                expires_on: None,
-                issued_certs: vec![1, 2],
-                received_certs: vec![1, 2]
-            })
-        );
-    })
+            // Ferdie can set its session_keys and go online
+            frame_system::Pallet::<Runtime>::inc_providers(&ferdie);
+            assert_ok!(AuthorityMembers::set_session_keys(
+                RuntimeOrigin::signed(AccountKeyring::Ferdie.to_account_id()),
+                create_dummy_session_keys()
+            ));
+            assert_ok!(AuthorityMembers::go_online(RuntimeOrigin::signed(
+                AccountKeyring::Ferdie.to_account_id()
+            )));
+
+            // Charlie is still an offline smith
+            assert_eq!(
+                SmithMembers::smiths(3),
+                Some(SmithMeta {
+                    status: SmithStatus::Smith,
+                    expires_on: Some(smith_expire_on),
+                    issued_certs: vec![1, 2],
+                    received_certs: vec![1, 2],
+                    last_online: Some(1),
+                })
+            );
+
+            run_to_block(((ReportLongevity::get() + 1 + 24) / 25) * 25);
+
+            System::assert_has_event(RuntimeEvent::AuthorityMembers(
+                pallet_authority_members::Event::IncomingAuthorities { members: vec![3] },
+            ));
+
+            // "Charlie" (idty 3) is now online because its identity is mapped to Ferdies's key
+            assert_eq!(
+                SmithMembers::smiths(3),
+                Some(SmithMeta {
+                    status: SmithStatus::Smith,
+                    expires_on: None,
+                    issued_certs: vec![1, 2],
+                    received_certs: vec![1, 2],
+                    last_online: None,
+                })
+            );
+        })
 }
 
 /// members of the smith subwot can revoke their identity

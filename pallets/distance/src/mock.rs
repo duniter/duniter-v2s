@@ -262,9 +262,9 @@ impl pallet_identity::Config for Test {
     type IdtyData = ();
     type IdtyIndex = u32;
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
+    type OnKeyChange = ();
     type OnNewIdty = ();
     type OnRemoveIdty = ();
-    type OwnerKeyChangePermission = ();
     type RuntimeEvent = RuntimeEvent;
     type Signature = TestSignature;
     type Signer = UintAuthorityId;
