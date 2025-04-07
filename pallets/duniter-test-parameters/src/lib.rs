@@ -51,6 +51,7 @@ pub mod types {
         pub cert_max_by_issuer: CertCount,
         pub cert_min_received_cert_to_issue_cert: CertCount,
         pub cert_validity_period: BlockNumber,
+        pub distance_evaluation_period: BlockNumber,
         pub idty_confirm_period: BlockNumber,
         pub idty_creation_period: BlockNumber,
         pub membership_period: BlockNumber,

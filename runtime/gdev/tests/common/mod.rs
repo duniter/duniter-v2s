@@ -100,6 +100,7 @@ impl ExtBuilder {
                 cert_max_by_issuer: 10,
                 cert_min_received_cert_to_issue_cert: 2,
                 cert_validity_period: 10_000,
+                distance_evaluation_period: 7,
                 idty_confirm_period: 40,
                 idty_creation_period: 50,
                 membership_period: 100,

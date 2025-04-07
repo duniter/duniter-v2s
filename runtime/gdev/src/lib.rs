@@ -204,6 +204,8 @@ impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
 
 // Dynamic parameters
 pub type EpochDuration = pallet_duniter_test_parameters::BabeEpochDuration<Runtime>;
+pub type DistanceEvaluationPeriod =
+    pallet_duniter_test_parameters::DistanceEvaluationPeriod<Runtime>;
 pub type CertPeriod = pallet_duniter_test_parameters::CertPeriod<Runtime>;
 pub type MaxByIssuer = pallet_duniter_test_parameters::CertMaxByIssuer<Runtime>;
 pub type MinReceivedCertToBeAbleToIssueCert =

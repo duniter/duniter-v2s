@@ -86,6 +86,7 @@ fn get_parameters(parameters_from_file: &Option<GenesisParameters>) -> CommonPar
         cert_min_received_cert_to_be_able_to_issue_cert: parameters_from_file
             .cert_min_received_cert_to_issue_cert,
         cert_validity_period: parameters_from_file.cert_validity_period,
+        distance_evaluation_period: parameters_from_file.distance_evaluation_period,
         distance_min_accessible_referees: parameters::MinAccessibleReferees::get(),
         distance_max_depth: parameters::MaxRefereeDistance::get(),
         smith_sub_wot_min_cert_for_membership: parameters_from_file
@@ -332,6 +333,7 @@ fn get_local_chain_parameters() -> Option<GenesisParameters> {
         cert_max_by_issuer: 10,
         cert_min_received_cert_to_issue_cert: 2,
         cert_validity_period,
+        distance_evaluation_period: 7,
         idty_confirm_period: 40,
         idty_creation_period: 50,
         membership_period,

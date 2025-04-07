@@ -490,8 +490,7 @@ macro_rules! pallets_config {
         impl pallet_distance::Config for Runtime {
             type CheckRequestDistanceEvaluation = Wot;
             type Currency = Balances;
-            // 100 blocks
-            type EvaluationPeriod = frame_support::traits::ConstU32<100>;
+            type EvaluationPeriod = DistanceEvaluationPeriod;
             type EvaluationPrice = frame_support::traits::ConstU64<1000>;
             type MaxRefereeDistance = MaxRefereeDistance;
             type MinAccessibleReferees = MinAccessibleReferees;

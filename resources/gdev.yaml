@@ -17,6 +17,8 @@ parameters:
   ud_reeval_period: 86400000
 
   # ----- MAIN WOT -----
+  # Evaluation window size, 100 blocks = 600s = 10 min.
+  distance_evaluation_period: 100
   # Duration to wait between two emitted certifications 14400 blocks = 24h = 1 day.
   cert_period: 14400
   # Maximum quantity of currently valid certifications emitted by a same issuer. 100 certs.

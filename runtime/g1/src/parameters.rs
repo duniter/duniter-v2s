@@ -51,6 +51,7 @@ parameter_types! {
 parameter_types! {
     pub const MinAccessibleReferees: Perbill = Perbill::from_percent(80);
     pub const MaxRefereeDistance: u32 = 5;
+    pub const DistanceEvaluationPeriod: u32 = 100;
 }
 
 // Babe

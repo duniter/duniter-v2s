@@ -52,6 +52,7 @@
   },
   "parameters": {
     "babe_epoch_duration": 30,
+    "distance_evaluation_period": 7,
     "cert_period": 15,
     "cert_max_by_issuer": 10,
     "cert_min_received_cert_to_issue_cert": 2,

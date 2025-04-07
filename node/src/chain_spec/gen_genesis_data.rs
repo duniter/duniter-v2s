@@ -1933,6 +1933,7 @@ pub struct CommonParameters {
     pub cert_max_by_issuer: u32,
     pub cert_min_received_cert_to_be_able_to_issue_cert: u32,
     pub cert_validity_period: u32,
+    pub distance_evaluation_period: u32,
     pub distance_min_accessible_referees: Perbill,
     pub distance_max_depth: u32,
     pub smith_sub_wot_min_cert_for_membership: u32,
