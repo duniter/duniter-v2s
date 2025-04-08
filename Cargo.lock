@@ -3327,7 +3327,7 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
 name = "duniter"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "array-bytes",
  "async-channel 2.3.1",
