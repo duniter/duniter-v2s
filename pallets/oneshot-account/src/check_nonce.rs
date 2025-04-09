@@ -16,7 +16,7 @@
 
 use crate::Config;
 
-use codec::{Decode, Encode};
+use codec::{Decode, DecodeWithMemTracking, Encode};
 use frame_support::{dispatch::DispatchInfo, pallet_prelude::Weight, traits::IsSubType};
 //use frame_system::Config;
 use scale_info::{
@@ -33,7 +33,7 @@ use sp_runtime::{
 };
 
 /// Wrapper around `frame_system::CheckNonce<T>`.
-#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(Runtime))]
 pub struct CheckNonce<T: Config>(pub frame_system::CheckNonce<T>);
 
@@ -74,7 +74,7 @@ where
         info: &DispatchInfoOf<T::RuntimeCall>,
         len: usize,
         self_implicit: Self::Implicit,
-        inherited_implication: &impl Encode,
+        inherited_implication: &(impl Encode + sp_runtime::traits::Implication),
         source: TransactionSource,
     ) -> ValidateResult<Self::Val, T::RuntimeCall> {
         self.0.validate(

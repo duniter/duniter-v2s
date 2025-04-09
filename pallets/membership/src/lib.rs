@@ -57,7 +57,7 @@ impl<IdtyId, AccountId> SetupBenchmark<IdtyId, AccountId> for () {
 }
 
 /// Represent reasons for the removal of membership.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, DecodeWithMemTracking, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum MembershipRemovalReason {
     /// Indicates membership was removed because it reached the end of its life.
     Expired,

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode, Error, Input, MaxEncodedLen, Output};
+use codec::{Decode, DecodeWithMemTracking, Encode, Error, Input, MaxEncodedLen, Output};
 use core::num::NonZeroU16;
 use scale_info::prelude::vec::Vec;
 use sp_runtime::RuntimeDebug;
@@ -22,7 +22,9 @@ use sp_runtime::RuntimeDebug;
 pub type UdIndex = u16;
 
 /// Represents the first eligible Universal Dividend.
-#[derive(Clone, Eq, PartialEq, RuntimeDebug, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Clone, Eq, DecodeWithMemTracking, PartialEq, RuntimeDebug, serde::Deserialize, serde::Serialize,
+)]
 pub struct FirstEligibleUd(pub Option<NonZeroU16>);
 
 /// Default is not eligible

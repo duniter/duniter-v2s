@@ -17,13 +17,15 @@
 //! Various basic types for use in pallet provide randomness
 
 use super::RequestId;
-use codec::{Decode, Encode};
+use codec::{Decode, DecodeWithMemTracking, Encode};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::H256;
 
 /// The type of randomness source.
-#[derive(Clone, Copy, Decode, Encode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(
+    Clone, DecodeWithMemTracking, Copy, Decode, Encode, Eq, PartialEq, RuntimeDebug, TypeInfo,
+)]
 pub enum RandomnessType {
     /// Randomness derived from the previous block.
     RandomnessFromPreviousBlock,

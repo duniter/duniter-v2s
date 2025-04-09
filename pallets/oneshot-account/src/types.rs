@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode};
+use codec::{Decode, DecodeWithMemTracking, Encode};
 use frame_support::pallet_prelude::*;
 
 /// The type of account.
-#[derive(Clone, Decode, Encode, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Decode, Encode, DecodeWithMemTracking, PartialEq, RuntimeDebug, TypeInfo)]
 pub enum Account<AccountId> {
     /// Normal account type.
     Normal(AccountId),

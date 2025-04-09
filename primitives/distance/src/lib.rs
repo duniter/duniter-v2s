@@ -19,7 +19,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
-use codec::{Decode, Encode};
+use codec::{Decode, DecodeWithMemTracking, Encode};
 use frame_support::pallet_prelude::RuntimeDebug;
 use scale_info::TypeInfo;
 use sp_inherents::{InherentData, InherentIdentifier, IsFatalError};
@@ -30,7 +30,7 @@ use std::marker::PhantomData;
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"distanc0";
 
 /// Represents the result of a distance computation.
-#[derive(Clone, Decode, Encode, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, DecodeWithMemTracking, Decode, Encode, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct ComputationResult {
     pub distances: scale_info::prelude::vec::Vec<Perbill>,
 }

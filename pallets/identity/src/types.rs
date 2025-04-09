@@ -16,7 +16,7 @@
 
 //! Various basic types for use in the identity pallet.
 
-use codec::{Decode, Encode};
+use codec::{Decode, DecodeWithMemTracking, Encode};
 use frame_support::pallet_prelude::*;
 use scale_info::{prelude::vec::Vec, TypeInfo};
 use serde::{Deserialize, Serialize};
@@ -45,7 +45,7 @@ pub enum IdtyEvent<T: crate::Config> {
 }
 
 /// Reasons for revocation.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum RevocationReason {
     /// Revoked by root (e.g., governance or migration).
     Root,
@@ -56,7 +56,7 @@ pub enum RevocationReason {
 }
 
 /// Reasons for removal.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, DecodeWithMemTracking, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum RemovalReason {
     /// Removed by root.
     Root,
@@ -72,6 +72,7 @@ pub enum RemovalReason {
 #[derive(
     Encode,
     Decode,
+    DecodeWithMemTracking,
     Default,
     Clone,
     PartialEq,
