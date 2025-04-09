@@ -51,7 +51,16 @@ impl From<[u8; 32]> for AccountId32Mock {
 }
 
 /// Test signature that impl From<ed25519::Signature> (required to compile pallet identity)
-#[derive(Clone, codec::Decode, Debug, Eq, codec::Encode, PartialEq, scale_info::TypeInfo)]
+#[derive(
+    Clone,
+    codec::DecodeWithMemTracking,
+    codec::Decode,
+    Debug,
+    Eq,
+    codec::Encode,
+    PartialEq,
+    scale_info::TypeInfo,
+)]
 pub struct TestSignature(SubtrateTestSignature);
 impl From<sp_core::ed25519::Signature> for TestSignature {
     fn from(_: sp_core::ed25519::Signature) -> Self {
@@ -143,6 +152,7 @@ impl ShouldEndSession<u64> for TestShouldEndSession {
 }
 
 impl pallet_session::Config for Test {
+    type DisablingStrategy = ();
     type Keys = MockSessionKeys;
     type NextSessionRotation = ();
     type RuntimeEvent = RuntimeEvent;

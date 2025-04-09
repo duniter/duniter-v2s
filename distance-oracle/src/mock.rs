@@ -25,7 +25,7 @@ pub struct Client {
     wot: RustyWebOfTrust,
     pub pool_len: usize,
 }
-pub type AccountId = subxt::ext::sp_runtime::AccountId32;
+pub type AccountId = sp_runtime::AccountId32;
 pub type IdtyIndex = u32;
 pub type H256 = subxt::utils::H256;
 

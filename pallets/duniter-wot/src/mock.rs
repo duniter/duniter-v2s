@@ -45,7 +45,16 @@ impl From<[u8; 32]> for AccountId32Mock {
 }
 
 /// Test signature that impl From<ed25519::Signature> (required to compile pallet identity)
-#[derive(Clone, codec::Decode, Debug, Eq, codec::Encode, PartialEq, scale_info::TypeInfo)]
+#[derive(
+    Clone,
+    codec::DecodeWithMemTracking,
+    codec::Decode,
+    Debug,
+    Eq,
+    codec::Encode,
+    PartialEq,
+    scale_info::TypeInfo,
+)]
 pub struct TestSignature(SubtrateTestSignature);
 
 impl TestSignature {

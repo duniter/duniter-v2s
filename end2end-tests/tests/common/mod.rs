@@ -32,7 +32,7 @@ use anyhow::anyhow;
 use codec::Encode;
 use notify_debouncer_mini::new_debouncer;
 use serde_json::Value;
-use sp_keyring::AccountKeyring;
+use sp_keyring::sr25519::Keyring;
 use std::{
     io::prelude::*,
     path::{Path, PathBuf},
@@ -41,29 +41,28 @@ use std::{
     time::{Duration, Instant},
 };
 use subxt::{
-    backend::rpc::{RpcClient, RpcParams},
+    backend::rpc::RpcClient,
     config::{substrate::SubstrateExtrinsicParamsBuilder, SubstrateExtrinsicParams},
-    ext::{sp_core, sp_runtime},
-    rpc_params,
+    ext::subxt_rpcs::client::{rpc_params, RpcParams},
 };
 
 pub type Client = subxt::OnlineClient<GdevConfig>;
 pub type Event = gdev::Event;
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-pub type SubmittableExtrinsic = subxt::tx::SubmittableExtrinsic<GdevConfig, Client>;
+pub type SubmittableExtrinsic = subxt::tx::SubmittableTransaction<GdevConfig, Client>;
 pub type TxProgress = subxt::tx::TxProgress<GdevConfig, Client>;
 
 pub enum GdevConfig {}
 impl subxt::config::Config for GdevConfig {
     type AccountId = subxt::utils::AccountId32;
-    type Address = sp_runtime::MultiAddress<Self::AccountId, u32>;
+    type Address = subxt::utils::MultiAddress<Self::AccountId, u32>;
     type AssetId = ();
     type ExtrinsicParams = SubstrateExtrinsicParams<Self>;
     type Hash = subxt::utils::H256;
     type Hasher = subxt::config::substrate::BlakeTwo256;
     type Header =
         subxt::config::substrate::SubstrateHeader<u32, subxt::config::substrate::BlakeTwo256>;
-    type Signature = sp_runtime::MultiSignature;
+    type Signature = subxt::utils::MultiSignature;
 }
 
 #[derive(Copy, Clone, Debug, Default, Encode)]
@@ -89,7 +88,7 @@ impl From<u64> for Tip {
     }
 }
 
-pub const SUDO_ACCOUNT: AccountKeyring = AccountKeyring::Alice;
+pub const SUDO_ACCOUNT: Keyring = Keyring::Alice;
 
 pub struct Process(std::process::Child);
 impl Process {
@@ -338,4 +337,56 @@ pub fn spawn_distance_oracle(distance_oracle_binary_path: &str, duniter_rpc_port
         .expect("failed to spawn distance oracle")
         .wait()
         .unwrap();
+}
+
+/// A concrete PairSigner implementation which relies on `sr25519::Pair` for signing
+/// and where GdevConfig is the runtime configuration.
+mod pair_signer {
+    use super::*;
+    use sp_core::{sr25519, Pair as _};
+    use sp_runtime::{
+        traits::{IdentifyAccount, Verify},
+        MultiSignature as SpMultiSignature,
+    };
+    use subxt::{
+        config::substrate::{AccountId32, MultiSignature},
+        tx::Signer,
+        Config,
+    };
+
+    #[derive(Clone)]
+    pub struct PairSigner {
+        account_id: <GdevConfig as Config>::AccountId,
+        signer: sr25519::Pair,
+    }
+
+    impl PairSigner {
+        pub fn new(signer: sr25519::Pair) -> Self {
+            let account_id =
+                <SpMultiSignature as Verify>::Signer::from(signer.public()).into_account();
+            Self {
+                account_id: AccountId32(account_id.into()),
+                signer,
+            }
+        }
+
+        pub fn signer(&self) -> &sr25519::Pair {
+            &self.signer
+        }
+
+        pub fn account_id(&self) -> &AccountId32 {
+            &self.account_id
+        }
+    }
+
+    impl Signer<GdevConfig> for PairSigner {
+        fn account_id(&self) -> <GdevConfig as Config>::AccountId {
+            self.account_id.clone()
+        }
+
+        fn sign(&self, signer_payload: &[u8]) -> <GdevConfig as Config>::Signature {
+            let signature = self.signer.sign(signer_payload);
+            MultiSignature::Sr25519(signature.0)
+        }
+    }
 }

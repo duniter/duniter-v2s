@@ -18,7 +18,7 @@ mod common;
 
 use common::*;
 use cucumber::{given, then, when, StatsWriter, World};
-use sp_keyring::AccountKeyring;
+use sp_keyring::sr25519::Keyring;
 use std::{
     path::PathBuf,
     str::FromStr,
@@ -169,7 +169,7 @@ fn parse_amount(amount: u64, unit: &str) -> (u64, bool) {
 #[given(regex = r"([a-zA-Z]+) ha(?:ve|s) (\d+) (ĞD|cĞD|UD|mUD)")]
 async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: String) -> Result<()> {
     // Parse inputs
-    let who = AccountKeyring::from_str(&who).expect("unknown to");
+    let who = Keyring::from_str(&who).expect("unknown to");
     let (mut amount, is_ud) = parse_amount(amount, &unit);
 
     if is_ud {
@@ -208,8 +208,8 @@ async fn transfer(
     to: String,
 ) -> Result<()> {
     // Parse inputs
-    let from = AccountKeyring::from_str(&from).expect("unknown from");
-    let to = AccountKeyring::from_str(&to).expect("unknown to");
+    let from = Keyring::from_str(&from).expect("unknown from");
+    let to = Keyring::from_str(&to).expect("unknown to");
     let (amount, is_ud) = parse_amount(amount, &unit);
 
     let res = if is_ud {
@@ -235,8 +235,8 @@ async fn create_oneshot_account(
     to: String,
 ) -> Result<()> {
     // Parse inputs
-    let from = AccountKeyring::from_str(&from).expect("unknown from");
-    let to = AccountKeyring::from_str(&to).expect("unknown to");
+    let from = Keyring::from_str(&from).expect("unknown from");
+    let to = Keyring::from_str(&to).expect("unknown to");
     let (amount, is_ud) = parse_amount(amount, &unit);
 
     assert!(!is_ud);
@@ -253,8 +253,8 @@ async fn consume_oneshot_account(
     to: String,
 ) -> Result<()> {
     // Parse inputs
-    let from = AccountKeyring::from_str(&from).expect("unknown from");
-    let to = AccountKeyring::from_str(&to).expect("unknown to");
+    let from = Keyring::from_str(&from).expect("unknown from");
+    let to = Keyring::from_str(&to).expect("unknown to");
     let to = match is_dest_oneshot.as_str() {
         "oneshot" => common::oneshot::Account::Oneshot(to),
         "account" => common::oneshot::Account::Normal(to),
@@ -280,9 +280,9 @@ async fn consume_oneshot_account_with_remaining(
     remaining_to: String,
 ) -> Result<()> {
     // Parse inputs
-    let from = AccountKeyring::from_str(&from).expect("unknown from");
-    let to = AccountKeyring::from_str(&to).expect("unknown to");
-    let remaining_to = AccountKeyring::from_str(&remaining_to).expect("unknown remaining_to");
+    let from = Keyring::from_str(&from).expect("unknown from");
+    let to = Keyring::from_str(&to).expect("unknown to");
+    let remaining_to = Keyring::from_str(&remaining_to).expect("unknown remaining_to");
     let to = match is_dest_oneshot.as_str() {
         "oneshot" => common::oneshot::Account::Oneshot(to),
         "account" => common::oneshot::Account::Normal(to),
@@ -311,8 +311,8 @@ async fn consume_oneshot_account_with_remaining(
 #[when(regex = r"([a-zA-Z]+) sends? all (?:his|her) (?:ĞDs?|DUs?|UDs?) to ([a-zA-Z]+)")]
 async fn send_all_to(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
     // Parse inputs
-    let from = AccountKeyring::from_str(&from).expect("unknown from");
-    let to = AccountKeyring::from_str(&to).expect("unknown to");
+    let from = Keyring::from_str(&from).expect("unknown from");
+    let to = Keyring::from_str(&to).expect("unknown to");
 
     common::balances::transfer_all(world.full_client(), from, to).await
 }
@@ -321,8 +321,8 @@ async fn send_all_to(world: &mut DuniterWorld, from: String, to: String) -> Resu
 #[when(regex = r"([a-zA-Z]+) certifies ([a-zA-Z]+)")]
 async fn certifies(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
     // Parse inputs
-    let from = AccountKeyring::from_str(&from).expect("unknown from");
-    let to = AccountKeyring::from_str(&to).expect("unknown to");
+    let from = Keyring::from_str(&from).expect("unknown from");
+    let to = Keyring::from_str(&to).expect("unknown to");
 
     common::cert::certify(world.full_client(), from, to).await
 }
@@ -331,8 +331,8 @@ async fn certifies(world: &mut DuniterWorld, from: String, to: String) -> Result
 #[when(regex = r"([a-zA-Z]+) creates identity for ([a-zA-Z]+)")]
 async fn creates_identity(world: &mut DuniterWorld, from: String, to: String) -> Result<()> {
     // Parse inputs
-    let from = AccountKeyring::from_str(&from).expect("unknown from");
-    let to = AccountKeyring::from_str(&to).expect("unknown to");
+    let from = Keyring::from_str(&from).expect("unknown from");
+    let to = Keyring::from_str(&to).expect("unknown to");
 
     common::identity::create_identity(world.full_client(), from, to).await
 }
@@ -340,7 +340,7 @@ async fn creates_identity(world: &mut DuniterWorld, from: String, to: String) ->
 #[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r#"([a-zA-Z]+) confirms (?:his|her) identity with pseudo "([a-zA-Z]+)""#)]
 async fn confirm_identity(world: &mut DuniterWorld, from: String, pseudo: String) -> Result<()> {
-    let from = AccountKeyring::from_str(&from).expect("unknown from");
+    let from = Keyring::from_str(&from).expect("unknown from");
 
     common::identity::confirm_identity(world.full_client(), from, pseudo).await
 }
@@ -348,7 +348,7 @@ async fn confirm_identity(world: &mut DuniterWorld, from: String, pseudo: String
 #[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r#"([a-zA-Z]+) requests distance evaluation"#)]
 async fn request_distance_evaluation(world: &mut DuniterWorld, who: String) -> Result<()> {
-    let who = AccountKeyring::from_str(&who).expect("unknown origin");
+    let who = Keyring::from_str(&who).expect("unknown origin");
 
     common::distance::request_evaluation(world.full_client(), who).await
 }
@@ -356,7 +356,7 @@ async fn request_distance_evaluation(world: &mut DuniterWorld, who: String) -> R
 #[allow(clippy::needless_pass_by_ref_mut)]
 #[when(regex = r#"([a-zA-Z]+) runs distance oracle"#)]
 async fn run_distance_oracle(world: &mut DuniterWorld, who: String) -> Result<()> {
-    let who = AccountKeyring::from_str(&who).expect("unknown origin");
+    let who = Keyring::from_str(&who).expect("unknown origin");
 
     common::distance::run_oracle(
         world.full_client(),
@@ -398,9 +398,9 @@ async fn should_have(
     reserved: String,
 ) -> Result<()> {
     // Parse inputs
-    let who: subxt::utils::AccountId32 = AccountKeyring::from_str(&who)
+    let who: subxt::utils::AccountId32 = Keyring::from_str(&who)
         .expect("unknown to")
-        .to_account_id()
+        .to_raw_public()
         .into();
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
@@ -425,9 +425,9 @@ async fn should_have_oneshot(
     unit: String,
 ) -> Result<()> {
     // Parse inputs
-    let who: subxt::utils::AccountId32 = AccountKeyring::from_str(&who)
+    let who: subxt::utils::AccountId32 = Keyring::from_str(&who)
         .expect("unknown to")
-        .to_account_id()
+        .to_raw_public()
         .into();
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
@@ -475,13 +475,13 @@ async fn should_be_certified_by(
     issuer: String,
 ) -> Result<()> {
     // Parse inputs
-    let receiver_account: subxt::utils::AccountId32 = AccountKeyring::from_str(&receiver)
+    let receiver_account: subxt::utils::AccountId32 = Keyring::from_str(&receiver)
         .expect("unknown to")
-        .to_account_id()
+        .to_raw_public()
         .into();
-    let issuer_account: subxt::utils::AccountId32 = AccountKeyring::from_str(&issuer)
+    let issuer_account: subxt::utils::AccountId32 = Keyring::from_str(&issuer)
         .expect("unknown to")
-        .to_account_id()
+        .to_raw_public()
         .into();
 
     // get corresponding identities index

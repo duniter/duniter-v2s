@@ -15,15 +15,11 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use super::{gdev, gdev::runtime_types::pallet_identity, *};
-use crate::DuniterWorld;
-use sp_keyring::AccountKeyring;
-use subxt::{
-    backend::rpc::RpcClient,
-    tx::{PairSigner, Signer},
-    utils::AccountId32,
-};
+use crate::{common::pair_signer::PairSigner, DuniterWorld};
+use sp_keyring::sr25519::Keyring;
+use subxt::{backend::rpc::RpcClient, tx::Signer, utils::AccountId32};
 
-pub async fn request_evaluation(client: &FullClient, origin: AccountKeyring) -> Result<()> {
+pub async fn request_evaluation(client: &FullClient, origin: Keyring) -> Result<()> {
     let origin = PairSigner::new(origin.pair());
 
     let _events = create_block_with_extrinsic(
@@ -43,11 +39,7 @@ pub async fn request_evaluation(client: &FullClient, origin: AccountKeyring) -> 
     Ok(())
 }
 
-pub async fn run_oracle(
-    client: &FullClient,
-    origin: AccountKeyring,
-    rpc_url: String,
-) -> Result<()> {
+pub async fn run_oracle(client: &FullClient, origin: Keyring, rpc_url: String) -> Result<()> {
     let origin = PairSigner::new(origin.pair());
     let account_id: &AccountId32 = origin.account_id();
 

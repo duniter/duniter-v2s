@@ -29,7 +29,7 @@ use pallet_session::historical::SessionManager;
 use pallet_smith_members::{SmithMeta, SmithStatus};
 use scale_info::prelude::num::NonZeroU16;
 use sp_core::{Encode, Pair};
-use sp_keyring::AccountKeyring;
+use sp_keyring::sr25519::Keyring;
 use sp_runtime::MultiAddress;
 
 #[test]
@@ -96,35 +96,26 @@ fn test_genesis_build() {
 fn test_initial_state() {
     ExtBuilder::new(1, 2, 3)
         .with_initial_balances(vec![
-            (AccountKeyring::Alice.to_account_id(), 1_000),
-            (AccountKeyring::Bob.to_account_id(), 200),
-            (AccountKeyring::Charlie.to_account_id(), 100), // below ED allowed for identities
-            (AccountKeyring::Dave.to_account_id(), 900),
+            (Keyring::Alice.to_account_id(), 1_000),
+            (Keyring::Bob.to_account_id(), 200),
+            (Keyring::Charlie.to_account_id(), 100), // below ED allowed for identities
+            (Keyring::Dave.to_account_id(), 900),
         ])
         .build()
         .execute_with(|| {
             run_to_block(1);
 
             assert_eq!(
-                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                Balances::free_balance(Keyring::Alice.to_account_id()),
                 1_000
             );
+            assert_eq!(Balances::free_balance(Keyring::Bob.to_account_id()), 200);
             assert_eq!(
-                Balances::free_balance(AccountKeyring::Bob.to_account_id()),
-                200
-            );
-            assert_eq!(
-                Balances::free_balance(AccountKeyring::Charlie.to_account_id()),
+                Balances::free_balance(Keyring::Charlie.to_account_id()),
                 100
             );
-            assert_eq!(
-                Balances::free_balance(AccountKeyring::Dave.to_account_id()),
-                900
-            );
-            assert_eq!(
-                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                0
-            );
+            assert_eq!(Balances::free_balance(Keyring::Dave.to_account_id()), 900);
+            assert_eq!(Balances::free_balance(Keyring::Eve.to_account_id()), 0);
             // total issuance and monetary mass should be coherent
             assert_eq!(Balances::total_issuance(), 2_200);
             assert_eq!(
@@ -141,9 +132,9 @@ fn test_initial_state() {
 fn test_total_issuance_vs_monetary_mass() {
     ExtBuilder::new(1, 2, 3)
         .with_initial_balances(vec![
-            (AccountKeyring::Alice.to_account_id(), 2000),
-            (AccountKeyring::Bob.to_account_id(), 1000),
-            (AccountKeyring::Charlie.to_account_id(), 0),
+            (Keyring::Alice.to_account_id(), 2000),
+            (Keyring::Bob.to_account_id(), 1000),
+            (Keyring::Charlie.to_account_id(), 0),
         ])
         .build()
         .execute_with(|| {
@@ -167,7 +158,7 @@ fn test_total_issuance_vs_monetary_mass() {
             );
             // Alice claims her UD
             assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(
-                AccountKeyring::Alice.to_account_id()
+                Keyring::Alice.to_account_id()
             )));
             assert_eq!(Balances::total_issuance(), 4000);
             assert_eq!(
@@ -178,7 +169,7 @@ fn test_total_issuance_vs_monetary_mass() {
             run_to_block(21);
             // Bob claims his 2 UDs
             assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(
-                AccountKeyring::Bob.to_account_id()
+                Keyring::Bob.to_account_id()
             )));
             assert_eq!(Balances::total_issuance(), 6000);
             assert_eq!(
@@ -192,7 +183,7 @@ fn test_total_issuance_vs_monetary_mass() {
 #[test]
 fn test_identity_below_ed() {
     ExtBuilder::new(1, 1, 1)
-        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 900)])
+        .with_initial_balances(vec![(Keyring::Alice.to_account_id(), 900)])
         .build()
         .execute_with(|| {
             run_to_block(1);
@@ -200,8 +191,8 @@ fn test_identity_below_ed() {
             // a transfer below ED will lead to frozen token error
             assert_noop!(
                 Balances::transfer_allow_death(
-                    RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                    MultiAddress::Id(AccountKeyring::Bob.to_account_id()),
+                    RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                    MultiAddress::Id(Keyring::Bob.to_account_id()),
                     850
                 ),
                 sp_runtime::TokenError::Frozen
@@ -209,33 +200,33 @@ fn test_identity_below_ed() {
             // // Old behavior below
             // // Should be able to go below existential deposit, loose dust, and still not die
             // assert_ok!(Balances::transfer(
-            //     RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-            //     MultiAddress::Id(AccountKeyring::Bob.to_account_id()),
+            //     RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+            //     MultiAddress::Id(Keyring::Bob.to_account_id()),
             //     800
             // ));
             // assert_eq!(
-            //     Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+            //     Balances::free_balance(Keyring::Alice.to_account_id()),
             //     0
             // );
             // assert_eq!(
-            //     Balances::free_balance(AccountKeyring::Bob.to_account_id()),
+            //     Balances::free_balance(Keyring::Bob.to_account_id()),
             //     800
             // );
             // // since alice is identity, her account should not be killed even she lost currency below ED
             // System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Transfer {
-            //     from: AccountKeyring::Alice.to_account_id(),
-            //     to: AccountKeyring::Bob.to_account_id(),
+            //     from: Keyring::Alice.to_account_id(),
+            //     to: Keyring::Bob.to_account_id(),
             //     amount: 800,
             // }));
             // System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::DustLost {
-            //     account: AccountKeyring::Alice.to_account_id(),
+            //     account: Keyring::Alice.to_account_id(),
             //     amount: 100,
             // }));
             // System::assert_has_event(RuntimeEvent::System(frame_system::Event::NewAccount {
-            //     account: AccountKeyring::Bob.to_account_id(),
+            //     account: Keyring::Bob.to_account_id(),
             // }));
             // System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Endowed {
-            //     account: AccountKeyring::Bob.to_account_id(),
+            //     account: Keyring::Bob.to_account_id(),
             //     free_balance: 800,
             // }));
         })
@@ -319,7 +310,7 @@ fn test_remove_identity() {
         ));
         // since Dave does not have ED, his account is killed
         System::assert_has_event(RuntimeEvent::System(frame_system::Event::KilledAccount {
-            account: AccountKeyring::Dave.to_account_id(),
+            account: Keyring::Dave.to_account_id(),
         }));
     });
 }
@@ -329,37 +320,37 @@ fn test_remove_identity() {
 fn test_validate_identity_when_claim() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![
-            (AccountKeyring::Eve.to_account_id(), 2000),
-            (AccountKeyring::Ferdie.to_account_id(), 1000),
+            (Keyring::Eve.to_account_id(), 2000),
+            (Keyring::Ferdie.to_account_id(), 1000),
         ])
         .build()
         .execute_with(|| {
             run_to_block(1);
             // alice create identity for Eve
             assert_ok!(Identity::create_identity(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                AccountKeyring::Eve.to_account_id(),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                Keyring::Eve.to_account_id(),
             ));
             run_to_block(2);
             // eve confirms her identity
             assert_ok!(Identity::confirm_identity(
-                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
                 "Eeeeeveeeee".into(),
             ));
             run_to_block(3);
             // eve gets certified by bob and charlie
             assert_ok!(Certification::add_cert(
-                RuntimeOrigin::signed(AccountKeyring::Bob.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Bob.to_account_id()),
                 5
             ));
             assert_ok!(Certification::add_cert(
-                RuntimeOrigin::signed(AccountKeyring::Charlie.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Charlie.to_account_id()),
                 5
             ));
 
             // eve request distance evaluation for herself
             assert_ok!(Distance::request_distance_evaluation(
-                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
             ));
 
             // Pass 2nd evaluation period
@@ -368,7 +359,7 @@ fn test_validate_identity_when_claim() {
             // simulate an evaluation published by smith Alice
             assert_ok!(Distance::force_update_evaluation(
                 RuntimeOrigin::root(),
-                AccountKeyring::Alice.to_account_id(),
+                Keyring::Alice.to_account_id(),
                 pallet_distance::ComputationResult {
                     distances: vec![Perbill::one()],
                 }
@@ -386,7 +377,7 @@ fn test_validate_identity_when_claim() {
             // the following call does not exist anymore
             // assert_noop!(
             //     Membership::claim_membership(
-            //         RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
+            //         RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
             //     ),
             //     pallet_membership::Error::<Runtime>::AlreadyMember
             // );
@@ -408,17 +399,17 @@ fn test_validate_identity_when_claim() {
 fn test_identity_creation_workflow() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![
-            (AccountKeyring::Charlie.to_account_id(), 10_000), // necessary for evalation distance reserve
-            (AccountKeyring::Eve.to_account_id(), 2_000),
-            (AccountKeyring::Ferdie.to_account_id(), 1_000),
+            (Keyring::Charlie.to_account_id(), 10_000), // necessary for evalation distance reserve
+            (Keyring::Eve.to_account_id(), 2_000),
+            (Keyring::Ferdie.to_account_id(), 1_000),
         ])
         .build()
         .execute_with(|| {
             run_to_block(1);
             // alice create identity for Eve
             assert_ok!(Identity::create_identity(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                AccountKeyring::Eve.to_account_id(),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                Keyring::Eve.to_account_id(),
             ));
             assert_eq!(
                 Identity::identity(5),
@@ -426,7 +417,7 @@ fn test_identity_creation_workflow() {
                     data: Default::default(),
                     next_creatable_identity_on: 0u32,
                     old_owner_key: None,
-                    owner_key: AccountKeyring::Eve.to_account_id(),
+                    owner_key: Keyring::Eve.to_account_id(),
                     next_scheduled: 1 + 40,
                     status: pallet_identity::IdtyStatus::Unconfirmed,
                 })
@@ -434,7 +425,7 @@ fn test_identity_creation_workflow() {
             run_to_block(2);
             // eve confirms her identity
             assert_ok!(Identity::confirm_identity(
-                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
                 "Eeeeeveeeee".into(),
             ));
             assert_eq!(
@@ -443,7 +434,7 @@ fn test_identity_creation_workflow() {
                     data: Default::default(),
                     next_creatable_identity_on: 0u32,
                     old_owner_key: None,
-                    owner_key: AccountKeyring::Eve.to_account_id(),
+                    owner_key: Keyring::Eve.to_account_id(),
                     next_scheduled: 2 + 876600,
                     status: pallet_identity::IdtyStatus::Unvalidated,
                 })
@@ -451,23 +442,23 @@ fn test_identity_creation_workflow() {
             run_to_block(3);
             // eve gets certified by bob and charlie
             assert_ok!(Certification::add_cert(
-                RuntimeOrigin::signed(AccountKeyring::Bob.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Bob.to_account_id()),
                 5
             ));
             assert_ok!(Certification::add_cert(
-                RuntimeOrigin::signed(AccountKeyring::Charlie.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Charlie.to_account_id()),
                 5
             ));
             // charlie also request distance evaluation for eve
             // (could be done in batch)
             assert_ok!(Distance::request_distance_evaluation_for(
-                RuntimeOrigin::signed(AccountKeyring::Charlie.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Charlie.to_account_id()),
                 5
             ));
             // then the evaluation is pending
             assert_eq!(
                 Distance::pending_evaluation_request(5),
-                Some(AccountKeyring::Charlie.to_account_id(),)
+                Some(Keyring::Charlie.to_account_id(),)
             );
 
             // Pass 2nd evaluation period
@@ -476,7 +467,7 @@ fn test_identity_creation_workflow() {
             // simulate evaluation published by smith Alice
             assert_ok!(Distance::force_update_evaluation(
                 RuntimeOrigin::root(),
-                AccountKeyring::Alice.to_account_id(),
+                Keyring::Alice.to_account_id(),
                 pallet_distance::ComputationResult {
                     distances: vec![Perbill::one()],
                 }
@@ -509,7 +500,7 @@ fn test_identity_creation_workflow() {
                     },
                     next_creatable_identity_on: 0u32,
                     old_owner_key: None,
-                    owner_key: AccountKeyring::Eve.to_account_id(),
+                    owner_key: Keyring::Eve.to_account_id(),
                     next_scheduled: 0,
                     status: pallet_identity::IdtyStatus::Member,
                 })
@@ -525,13 +516,13 @@ fn test_identity_creation_workflow() {
                 },
             ));
             assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(
-                AccountKeyring::Eve.to_account_id()
+                Keyring::Eve.to_account_id()
             ),));
             System::assert_has_event(RuntimeEvent::UniversalDividend(
                 pallet_universal_dividend::Event::UdsClaimed {
                     count: (10 - first_eligible),
                     total: (10 - first_eligible as u64) * 1_000,
-                    who: AccountKeyring::Eve.to_account_id(),
+                    who: Keyring::Eve.to_account_id(),
                 },
             ));
         });
@@ -554,10 +545,7 @@ fn test_can_not_issue_cert_when_membership_lost() {
 
         // Bob can not issue a certification
         assert_noop!(
-            Certification::add_cert(
-                RuntimeOrigin::signed(AccountKeyring::Bob.to_account_id()),
-                3,
-            ),
+            Certification::add_cert(RuntimeOrigin::signed(Keyring::Bob.to_account_id()), 3,),
             pallet_duniter_wot::Error::<gdev_runtime::Runtime>::IssuerNotMember
         );
     });
@@ -609,13 +597,13 @@ fn test_membership_expiry_with_identity_removal() {
 #[test]
 fn test_membership_renewal() {
     ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 2000)])
+        .with_initial_balances(vec![(Keyring::Alice.to_account_id(), 2000)])
         .build()
         .execute_with(|| {
             // can not renew membership immediately
             assert_noop!(
                 Distance::request_distance_evaluation(RuntimeOrigin::signed(
-                    AccountKeyring::Alice.to_account_id()
+                    Keyring::Alice.to_account_id()
                 ),),
                 pallet_duniter_wot::Error::<Runtime>::MembershipRenewalPeriodNotRespected,
             );
@@ -623,7 +611,7 @@ fn test_membership_renewal() {
             // but ok after waiting 10 blocks delay
             run_to_block(11);
             assert_ok!(Distance::request_distance_evaluation(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
             ));
 
             // Pass 3rd evaluation period
@@ -631,7 +619,7 @@ fn test_membership_renewal() {
             run_to_block(3 * eval_period);
             assert_ok!(Distance::force_update_evaluation(
                 RuntimeOrigin::root(),
-                AccountKeyring::Alice.to_account_id(),
+                Keyring::Alice.to_account_id(),
                 pallet_distance::ComputationResult {
                     distances: vec![Perbill::one()],
                 }
@@ -651,7 +639,7 @@ fn test_membership_renewal() {
             // can not ask renewal when period is not respected
             assert_noop!(
                 Distance::request_distance_evaluation(RuntimeOrigin::signed(
-                    AccountKeyring::Alice.to_account_id()
+                    Keyring::Alice.to_account_id()
                 ),),
                 pallet_duniter_wot::Error::<Runtime>::MembershipRenewalPeriodNotRespected,
             );
@@ -679,8 +667,7 @@ fn test_revoke_identity_should_unlink() {
         Identity::do_revoke_identity(1, pallet_identity::RevocationReason::Root);
 
         assert_eq!(
-            frame_system::Pallet::<Runtime>::get(&AccountKeyring::Alice.to_account_id())
-                .linked_idty,
+            frame_system::Pallet::<Runtime>::get(&Keyring::Alice.to_account_id()).linked_idty,
             None
         );
     })
@@ -699,10 +686,7 @@ fn test_revoke_identity_after_one_ud() {
 
         // before UD, dave has 0 (initial amount)
         run_to_block(1);
-        assert_eq!(
-            Balances::free_balance(AccountKeyring::Dave.to_account_id()),
-            0
-        );
+        assert_eq!(Balances::free_balance(Keyring::Dave.to_account_id()), 0);
 
         // go after UD creation block
         run_to_block(
@@ -719,12 +703,12 @@ fn test_revoke_identity_after_one_ud() {
             pallet_universal_dividend::Event::UdsAutoPaid {
                 count: 1,
                 total: 1_000,
-                who: AccountKeyring::Dave.to_account_id(),
+                who: Keyring::Dave.to_account_id(),
             },
         ));
         // dave account actually received this UD
         System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Deposit {
-            who: AccountKeyring::Dave.to_account_id(),
+            who: Keyring::Dave.to_account_id(),
             amount: 1_000,
         }));
         // membership and identity were actually removed
@@ -742,10 +726,7 @@ fn test_revoke_identity_after_one_ud() {
         ));
 
         assert!(Identity::identity(4).is_some()); // identity still exists, but its status is revoked
-        assert_eq!(
-            Balances::free_balance(AccountKeyring::Dave.to_account_id()),
-            1_000
-        );
+        assert_eq!(Balances::free_balance(Keyring::Dave.to_account_id()), 1_000);
     });
 }
 
@@ -761,18 +742,12 @@ fn test_claim_ud_after_revoke() {
 
         // before UD, bob has 0 (initial amount)
         run_to_block(1);
-        assert_eq!(
-            Balances::free_balance(AccountKeyring::Bob.to_account_id()),
-            0
-        );
+        assert_eq!(Balances::free_balance(Keyring::Bob.to_account_id()), 0);
 
         // revoke identity
         Identity::do_revoke_identity(2, pallet_identity::RevocationReason::Root);
 
-        assert_eq!(
-            Balances::free_balance(AccountKeyring::Bob.to_account_id()),
-            1_000
-        );
+        assert_eq!(Balances::free_balance(Keyring::Bob.to_account_id()), 1_000);
 
         // go after UD creation block
         run_to_block(
@@ -781,22 +756,14 @@ fn test_claim_ud_after_revoke() {
                 + 1) as u32,
         );
 
-        assert_eq!(
-            Balances::free_balance(AccountKeyring::Bob.to_account_id()),
-            1_000
-        );
+        assert_eq!(Balances::free_balance(Keyring::Bob.to_account_id()), 1_000);
 
         assert_err!(
-            UniversalDividend::claim_uds(RuntimeOrigin::signed(
-                AccountKeyring::Bob.to_account_id()
-            )),
+            UniversalDividend::claim_uds(RuntimeOrigin::signed(Keyring::Bob.to_account_id())),
             pallet_universal_dividend::Error::<Runtime>::AccountNotAllowedToClaimUds,
         );
 
-        assert_eq!(
-            Balances::free_balance(AccountKeyring::Bob.to_account_id()),
-            1_000
-        );
+        assert_eq!(Balances::free_balance(Keyring::Bob.to_account_id()), 1_000);
     });
 }
 
@@ -816,10 +783,7 @@ fn test_ud_claimed_membership_on_and_off() {
             },
         ));
         // UD not claimed, still initial balance to initial 0
-        assert_eq!(
-            Balances::free_balance(AccountKeyring::Alice.to_account_id()),
-            0
-        );
+        assert_eq!(Balances::free_balance(Keyring::Alice.to_account_id()), 0);
 
         run_to_block(13);
         // alice identity expires
@@ -828,14 +792,11 @@ fn test_ud_claimed_membership_on_and_off() {
             pallet_universal_dividend::Event::UdsAutoPaid {
                 count: 1,
                 total: 1_000,
-                who: AccountKeyring::Alice.to_account_id(),
+                who: Keyring::Alice.to_account_id(),
             },
         ));
         // alice balances should be increased by 1 UD
-        assert_eq!(
-            Balances::free_balance(AccountKeyring::Alice.to_account_id()),
-            1000
-        );
+        assert_eq!(Balances::free_balance(Keyring::Alice.to_account_id()), 1000);
 
         // UD number 2
         run_to_block(14);
@@ -857,7 +818,7 @@ fn test_ud_claimed_membership_on_and_off() {
         // because the call does not exist anymore
         // assert_noop!(
         //     Membership::claim_membership(
-        //         RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
+        //         RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
         //     ),
         //     pallet_membership::Error::<Runtime>::AlreadyMember
         // );
@@ -882,17 +843,17 @@ fn test_ud_claimed_membership_on_and_off() {
         // one block later, alice claims her new UD
         run_to_block(25);
         assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(
-            AccountKeyring::Alice.to_account_id()
+            Keyring::Alice.to_account_id()
         )));
         System::assert_has_event(RuntimeEvent::UniversalDividend(
             pallet_universal_dividend::Event::UdsClaimed {
                 count: 1,
                 total: 1_000,
-                who: AccountKeyring::Alice.to_account_id(),
+                who: Keyring::Alice.to_account_id(),
             },
         ));
         assert_eq!(
-            Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+            Balances::free_balance(Keyring::Alice.to_account_id()),
             2000 // one more UD
         );
 
@@ -935,18 +896,12 @@ fn test_smith_certification() {
         run_to_block(1);
 
         assert_noop!(
-            SmithMembers::certify_smith(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                2
-            ),
+            SmithMembers::certify_smith(RuntimeOrigin::signed(Keyring::Alice.to_account_id()), 2),
             pallet_smith_members::Error::<Runtime>::CertificationAlreadyExists
         );
 
         assert_noop!(
-            SmithMembers::certify_smith(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                4
-            ),
+            SmithMembers::certify_smith(RuntimeOrigin::signed(Keyring::Alice.to_account_id()), 4),
             pallet_smith_members::Error::<Runtime>::CertificationReceiverMustHaveBeenInvited
         );
     });
@@ -965,15 +920,15 @@ fn create_dummy_session_keys() -> gdev_runtime::opaque::SessionKeys {
 #[test]
 fn test_smith_process() {
     ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![(AccountKeyring::Dave.to_account_id(), 1_000)])
+        .with_initial_balances(vec![(Keyring::Dave.to_account_id(), 1_000)])
         .build()
         .execute_with(|| {
             run_to_block(1);
 
-            let alice = AccountKeyring::Alice.to_account_id();
-            let bob = AccountKeyring::Bob.to_account_id();
-            let charlie = AccountKeyring::Charlie.to_account_id();
-            let dave = AccountKeyring::Dave.to_account_id();
+            let alice = Keyring::Alice.to_account_id();
+            let bob = Keyring::Bob.to_account_id();
+            let charlie = Keyring::Charlie.to_account_id();
+            let dave = Keyring::Dave.to_account_id();
             let dummy_session_keys = create_dummy_session_keys();
 
             // Eve can not request smith membership because not member of the smith wot
@@ -991,7 +946,7 @@ fn test_smith_process() {
             // Dave cannot (yet) set his session keys
             assert_err!(
                 AuthorityMembers::set_session_keys(
-                    RuntimeOrigin::signed(AccountKeyring::Dave.to_account_id()),
+                    RuntimeOrigin::signed(Keyring::Dave.to_account_id()),
                     dummy_session_keys.clone()
                 ),
                 pallet_authority_members::Error::<Runtime>::NotMember
@@ -1026,13 +981,13 @@ fn test_smith_process() {
 
             // Dave can set his (dummy) session keys
             assert_ok!(AuthorityMembers::set_session_keys(
-                RuntimeOrigin::signed(AccountKeyring::Dave.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Dave.to_account_id()),
                 dummy_session_keys
             ));
 
             // Dave can go online
             assert_ok!(AuthorityMembers::go_online(RuntimeOrigin::signed(
-                AccountKeyring::Dave.to_account_id()
+                Keyring::Dave.to_account_id()
             ),));
         })
 }
@@ -1132,7 +1087,7 @@ fn test_expired_smith_has_null_expires_on() {
 #[test]
 fn test_create_new_account() {
     ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 1_000)])
+        .with_initial_balances(vec![(Keyring::Alice.to_account_id(), 1_000)])
         .build()
         .execute_with(|| {
             run_to_block(2);
@@ -1140,49 +1095,43 @@ fn test_create_new_account() {
 
             // Should be able to transfer 5 units to a new account
             assert_ok!(Balances::transfer_allow_death(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                MultiAddress::Id(Keyring::Eve.to_account_id()),
                 500
             ));
             //println!("{:#?}", System::events());
             System::assert_has_event(RuntimeEvent::System(frame_system::Event::NewAccount {
-                account: AccountKeyring::Eve.to_account_id(),
+                account: Keyring::Eve.to_account_id(),
             }));
             System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Endowed {
-                account: AccountKeyring::Eve.to_account_id(),
+                account: Keyring::Eve.to_account_id(),
                 free_balance: 500,
             }));
             System::assert_has_event(RuntimeEvent::Balances(pallet_balances::Event::Transfer {
-                from: AccountKeyring::Alice.to_account_id(),
-                to: AccountKeyring::Eve.to_account_id(),
+                from: Keyring::Alice.to_account_id(),
+                to: Keyring::Eve.to_account_id(),
                 amount: 500,
             }));
 
             // The new account must be created immediately
-            assert_eq!(
-                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                500
-            );
+            assert_eq!(Balances::free_balance(Keyring::Eve.to_account_id()), 500);
             // 100 initial + no deposit (there is no account creation fee)
             assert_eq!(Balances::free_balance(Treasury::account_id()), 100);
 
             // can remove an account using transfer
             assert_ok!(Balances::transfer_allow_death(
-                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
-                MultiAddress::Id(AccountKeyring::Alice.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
+                MultiAddress::Id(Keyring::Alice.to_account_id()),
                 500
             ));
             // Account reaped
+            assert_eq!(Balances::free_balance(Keyring::Eve.to_account_id()), 0);
             assert_eq!(
-                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                0
-            );
-            assert_eq!(
-                frame_system::Pallet::<Runtime>::get(&AccountKeyring::Eve.to_account_id()),
+                frame_system::Pallet::<Runtime>::get(&Keyring::Eve.to_account_id()),
                 pallet_duniter_account::AccountData::default()
             );
             System::assert_has_event(RuntimeEvent::System(frame_system::Event::KilledAccount {
-                account: AccountKeyring::Eve.to_account_id(),
+                account: Keyring::Eve.to_account_id(),
             }));
         });
 }
@@ -1190,34 +1139,34 @@ fn test_create_new_account() {
 #[test]
 fn test_create_new_idty() {
     ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 1_000)])
+        .with_initial_balances(vec![(Keyring::Alice.to_account_id(), 1_000)])
         .build()
         .execute_with(|| {
             run_to_block(2);
 
             // Should be able to create an identity
             assert_ok!(Balances::transfer_allow_death(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                MultiAddress::Id(Keyring::Eve.to_account_id()),
                 200
             ));
             assert_noop!(
                 Identity::create_identity(
-                    RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                    AccountKeyring::Eve.to_account_id(),
+                    RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                    Keyring::Eve.to_account_id(),
                 ),
                 pallet_identity::Error::<Runtime>::InsufficientBalance
             );
 
             assert_ok!(Balances::transfer_allow_death(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                MultiAddress::Id(Keyring::Eve.to_account_id()),
                 200
             ));
 
             assert_ok!(Identity::create_identity(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                AccountKeyring::Eve.to_account_id(),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                Keyring::Eve.to_account_id(),
             ));
 
             // At next block, nothing should be preleved
@@ -1230,39 +1179,36 @@ fn test_create_new_idty() {
 #[test]
 fn test_create_new_idty_without_founds() {
     ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 1_000)])
+        .with_initial_balances(vec![(Keyring::Alice.to_account_id(), 1_000)])
         .build()
         .execute_with(|| {
             run_to_block(2);
-            assert_eq!(
-                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                0
-            );
+            assert_eq!(Balances::free_balance(Keyring::Eve.to_account_id()), 0);
 
             // Should not be able to create an identity without founds
             assert_noop!(
                 Identity::create_identity(
-                    RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                    AccountKeyring::Eve.to_account_id(),
+                    RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                    Keyring::Eve.to_account_id(),
                 ),
                 pallet_identity::Error::<Runtime>::AccountNotExist
             );
 
             // Deposit some founds on the account
             assert_ok!(Balances::transfer_allow_death(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                MultiAddress::Id(Keyring::Eve.to_account_id()),
                 500
             ));
 
             assert_ok!(Identity::create_identity(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                AccountKeyring::Eve.to_account_id(),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                Keyring::Eve.to_account_id(),
             ));
             System::assert_has_event(RuntimeEvent::Identity(
                 pallet_identity::Event::IdtyCreated {
                     idty_index: 5,
-                    owner_key: AccountKeyring::Eve.to_account_id(),
+                    owner_key: Keyring::Eve.to_account_id(),
                 },
             ));
 
@@ -1273,10 +1219,7 @@ fn test_create_new_idty_without_founds() {
 
             // At next block, nothing should be preleved
             run_to_block(4);
-            assert_eq!(
-                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                500
-            );
+            assert_eq!(Balances::free_balance(Keyring::Eve.to_account_id()), 500);
         });
 }
 
@@ -1285,10 +1228,10 @@ fn test_create_new_idty_without_founds() {
 fn test_validate_new_idty_after_few_uds() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![
-            (AccountKeyring::Alice.to_account_id(), 1_000),
-            (AccountKeyring::Bob.to_account_id(), 1_000),
-            (AccountKeyring::Charlie.to_account_id(), 1_000),
-            (AccountKeyring::Eve.to_account_id(), 1_000),
+            (Keyring::Alice.to_account_id(), 1_000),
+            (Keyring::Bob.to_account_id(), 1_000),
+            (Keyring::Charlie.to_account_id(), 1_000),
+            (Keyring::Eve.to_account_id(), 1_000),
         ])
         .build()
         .execute_with(|| {
@@ -1296,26 +1239,26 @@ fn test_validate_new_idty_after_few_uds() {
 
             // Should be able to create an identity
             assert_ok!(Balances::transfer_allow_death(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                MultiAddress::Id(Keyring::Eve.to_account_id()),
                 200
             ));
             assert_ok!(Identity::create_identity(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                AccountKeyring::Eve.to_account_id(),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                Keyring::Eve.to_account_id(),
             ));
 
             // At next block, the created identity should be confirmed by its owner
             run_to_block(22);
             assert_ok!(Identity::confirm_identity(
-                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
                 pallet_identity::IdtyName::from("Eve"),
             ));
 
             // At next block, Bob should be able to certify the new identity
             run_to_block(23);
             assert_ok!(Certification::add_cert(
-                RuntimeOrigin::signed(AccountKeyring::Bob.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Bob.to_account_id()),
                 5,
             ));
             // valid distance status should trigger identity validation
@@ -1327,7 +1270,7 @@ fn test_validate_new_idty_after_few_uds() {
             // because the call does not exist anymore
             // assert_noop!(
             //     Membership::claim_membership(
-            //         RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
+            //         RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
             //     ),
             //     pallet_membership::Error::<Runtime>::AlreadyMember
             // );
@@ -1350,10 +1293,10 @@ fn test_validate_new_idty_after_few_uds() {
 fn test_claim_memberhsip_after_few_uds() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![
-            (AccountKeyring::Alice.to_account_id(), 1_000),
-            (AccountKeyring::Bob.to_account_id(), 1_000),
-            (AccountKeyring::Charlie.to_account_id(), 1_000),
-            (AccountKeyring::Eve.to_account_id(), 1_000),
+            (Keyring::Alice.to_account_id(), 1_000),
+            (Keyring::Bob.to_account_id(), 1_000),
+            (Keyring::Charlie.to_account_id(), 1_000),
+            (Keyring::Eve.to_account_id(), 1_000),
         ])
         .build()
         .execute_with(|| {
@@ -1361,21 +1304,21 @@ fn test_claim_memberhsip_after_few_uds() {
 
             // Should be able to create an identity
             assert_ok!(Identity::create_identity(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                AccountKeyring::Eve.to_account_id(),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                Keyring::Eve.to_account_id(),
             ));
 
             // At next block, the created identity should be confirmed by its owner
             run_to_block(22);
             assert_ok!(Identity::confirm_identity(
-                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
                 pallet_identity::IdtyName::from("Eve"),
             ));
 
             // At next block, Bob should be able to certify the new identity
             run_to_block(23);
             assert_ok!(Certification::add_cert(
-                RuntimeOrigin::signed(AccountKeyring::Bob.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Bob.to_account_id()),
                 5,
             ));
 
@@ -1388,7 +1331,7 @@ fn test_claim_memberhsip_after_few_uds() {
             // because the call does not exist
             // assert_noop!(
             //     Membership::claim_membership(
-            //         RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
+            //         RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
             //     ),
             //     pallet_membership::Error::<Runtime>::AlreadyMember
             // );
@@ -1410,73 +1353,61 @@ fn test_claim_memberhsip_after_few_uds() {
 fn test_oneshot_accounts() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![
-            (AccountKeyring::Alice.to_account_id(), 1_000),
-            (AccountKeyring::Eve.to_account_id(), 1_000),
+            (Keyring::Alice.to_account_id(), 1_000),
+            (Keyring::Eve.to_account_id(), 1_000),
         ])
         .build()
         .execute_with(|| {
             run_to_block(6);
 
             assert_ok!(OneshotAccount::create_oneshot_account(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
-                MultiAddress::Id(AccountKeyring::Eve.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                MultiAddress::Id(Keyring::Eve.to_account_id()),
                 400
             ));
-            assert_eq!(
-                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
-                600
-            );
+            assert_eq!(Balances::free_balance(Keyring::Alice.to_account_id()), 600);
             run_to_block(7);
 
             assert_ok!(OneshotAccount::consume_oneshot_account_with_remaining(
-                RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
                 0,
                 pallet_oneshot_account::Account::Oneshot(MultiAddress::Id(
-                    AccountKeyring::Ferdie.to_account_id()
+                    Keyring::Ferdie.to_account_id()
                 )),
                 pallet_oneshot_account::Account::Normal(MultiAddress::Id(
-                    AccountKeyring::Alice.to_account_id()
+                    Keyring::Alice.to_account_id()
                 )),
                 300
             ));
-            assert_eq!(
-                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
-                700
-            );
+            assert_eq!(Balances::free_balance(Keyring::Alice.to_account_id()), 700);
             assert_noop!(
                 OneshotAccount::consume_oneshot_account(
-                    RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
+                    RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
                     0,
                     pallet_oneshot_account::Account::Oneshot(MultiAddress::Id(
-                        AccountKeyring::Ferdie.to_account_id()
+                        Keyring::Ferdie.to_account_id()
                     )),
                 ),
                 pallet_oneshot_account::Error::<Runtime>::OneshotAccountNotExist
             );
             run_to_block(8);
             // Oneshot account consumption should not increment the nonce
-            assert_eq!(
-                System::account(AccountKeyring::Eve.to_account_id()).nonce,
-                0
-            );
+            assert_eq!(System::account(Keyring::Eve.to_account_id()).nonce, 0);
 
             assert_ok!(OneshotAccount::consume_oneshot_account(
-                RuntimeOrigin::signed(AccountKeyring::Ferdie.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Ferdie.to_account_id()),
                 0,
                 pallet_oneshot_account::Account::Normal(MultiAddress::Id(
-                    AccountKeyring::Alice.to_account_id()
+                    Keyring::Alice.to_account_id()
                 )),
             ));
-            assert_eq!(
-                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
-                1000
-            );
+            assert_eq!(Balances::free_balance(Keyring::Alice.to_account_id()), 1000);
             assert_noop!(
                 OneshotAccount::consume_oneshot_account(
-                    RuntimeOrigin::signed(AccountKeyring::Eve.to_account_id()),
+                    RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
                     0,
                     pallet_oneshot_account::Account::Normal(MultiAddress::Id(
-                        AccountKeyring::Alice.to_account_id()
+                        Keyring::Alice.to_account_id()
                     )),
                 ),
                 pallet_oneshot_account::Error::<Runtime>::OneshotAccountNotExist
@@ -1488,14 +1419,14 @@ fn test_oneshot_accounts() {
 #[test]
 fn test_link_account() {
     ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![(AccountKeyring::Alice.to_account_id(), 8888)])
+        .with_initial_balances(vec![(Keyring::Alice.to_account_id(), 8888)])
         .build()
         .execute_with(|| {
             let genesis_hash = System::block_hash(0);
-            let alice = AccountKeyring::Alice.to_account_id();
-            let ferdie = AccountKeyring::Ferdie.to_account_id();
+            let alice = Keyring::Alice.to_account_id();
+            let ferdie = Keyring::Ferdie.to_account_id();
             let payload = (b"link", genesis_hash, 1u32, ferdie.clone()).encode();
-            let signature = AccountKeyring::Ferdie.sign(&payload);
+            let signature = Keyring::Ferdie.sign(&payload);
 
             // Ferdie's account cannot be linked to Alice identity because the account does not exist
             assert_noop!(
@@ -1525,14 +1456,14 @@ fn test_link_account() {
 #[test]
 fn test_change_owner_key_validator_online() {
     ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![(AccountKeyring::Ferdie.to_account_id(), 8888)])
+        .with_initial_balances(vec![(Keyring::Ferdie.to_account_id(), 8888)])
         .build()
         .execute_with(|| {
             let genesis_hash = System::block_hash(0);
-            let alice = AccountKeyring::Alice.to_account_id();
-            let ferdie = AccountKeyring::Ferdie.to_account_id();
+            let alice = Keyring::Alice.to_account_id();
+            let ferdie = Keyring::Ferdie.to_account_id();
             let payload = (b"icok", genesis_hash, 1u32, alice.clone()).encode();
-            let signature = AccountKeyring::Ferdie.sign(&payload);
+            let signature = Keyring::Ferdie.sign(&payload);
 
             // Alice is an online validator
             assert!(pallet_authority_members::OnlineAuthorities::<Runtime>::get().contains(&1));
@@ -1560,14 +1491,14 @@ fn test_change_owner_key_validator_online() {
 #[ignore = "long to go to ReportLongevity"]
 fn test_change_owner_key_offline() {
     ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![(AccountKeyring::Ferdie.to_account_id(), 8888)])
+        .with_initial_balances(vec![(Keyring::Ferdie.to_account_id(), 8888)])
         .build()
         .execute_with(|| {
             let genesis_hash = System::block_hash(0);
-            let charlie = AccountKeyring::Charlie.to_account_id();
-            let ferdie = AccountKeyring::Ferdie.to_account_id();
+            let charlie = Keyring::Charlie.to_account_id();
+            let ferdie = Keyring::Ferdie.to_account_id();
             let payload = (b"icok", genesis_hash, 3u32, charlie.clone()).encode();
-            let signature = AccountKeyring::Ferdie.sign(&payload);
+            let signature = Keyring::Ferdie.sign(&payload);
 
             // Charlie is an offline smith
             SmithMembers::on_smith_goes_offline(3);
@@ -1608,7 +1539,7 @@ fn test_change_owner_key_offline() {
 
             // Charlie can set its session_keys
             assert_ok!(AuthorityMembers::set_session_keys(
-                RuntimeOrigin::signed(AccountKeyring::Charlie.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Charlie.to_account_id()),
                 create_dummy_session_keys()
             ));
             assert_eq!(
@@ -1644,14 +1575,14 @@ fn test_change_owner_key_offline() {
 #[ignore = "long to go to ReportLongevity"]
 fn test_change_owner_key() {
     ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![(AccountKeyring::Ferdie.to_account_id(), 8888)])
+        .with_initial_balances(vec![(Keyring::Ferdie.to_account_id(), 8888)])
         .build()
         .execute_with(|| {
             let genesis_hash = System::block_hash(0);
-            let charlie = AccountKeyring::Charlie.to_account_id();
-            let ferdie = AccountKeyring::Ferdie.to_account_id();
+            let charlie = Keyring::Charlie.to_account_id();
+            let ferdie = Keyring::Ferdie.to_account_id();
             let payload = (b"icok", genesis_hash, 3u32, charlie.clone()).encode();
-            let signature = AccountKeyring::Ferdie.sign(&payload);
+            let signature = Keyring::Ferdie.sign(&payload);
 
             SmithMembers::on_smith_goes_offline(3);
             // Charlie is now offline smith
@@ -1734,11 +1665,11 @@ fn test_change_owner_key() {
             // Ferdie can set its session_keys and go online
             frame_system::Pallet::<Runtime>::inc_providers(&ferdie);
             assert_ok!(AuthorityMembers::set_session_keys(
-                RuntimeOrigin::signed(AccountKeyring::Ferdie.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Ferdie.to_account_id()),
                 create_dummy_session_keys()
             ));
             assert_ok!(AuthorityMembers::go_online(RuntimeOrigin::signed(
-                AccountKeyring::Ferdie.to_account_id()
+                Keyring::Ferdie.to_account_id()
             )));
 
             // Charlie is still an offline smith
@@ -1780,13 +1711,13 @@ fn test_smith_member_can_revoke_its_idty() {
         run_to_block(2);
 
         // Charlie goes online
-        frame_system::Pallet::<Runtime>::inc_providers(&AccountKeyring::Charlie.to_account_id());
+        frame_system::Pallet::<Runtime>::inc_providers(&Keyring::Charlie.to_account_id());
         assert_ok!(AuthorityMembers::set_session_keys(
-            RuntimeOrigin::signed(AccountKeyring::Charlie.to_account_id()),
+            RuntimeOrigin::signed(Keyring::Charlie.to_account_id()),
             create_dummy_session_keys()
         ));
         assert_ok!(AuthorityMembers::go_online(RuntimeOrigin::signed(
-            AccountKeyring::Charlie.to_account_id()
+            Keyring::Charlie.to_account_id()
         )));
 
         run_to_block(25);
@@ -1803,12 +1734,12 @@ fn test_smith_member_can_revoke_its_idty() {
             genesis_hash: System::block_hash(0),
         };
         let signature =
-            AccountKeyring::Charlie.sign(&(REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode());
+            Keyring::Charlie.sign(&(REVOCATION_PAYLOAD_PREFIX, revocation_payload).encode());
 
         assert_ok!(Identity::revoke_identity(
-            RuntimeOrigin::signed(AccountKeyring::Charlie.to_account_id()),
+            RuntimeOrigin::signed(Keyring::Charlie.to_account_id()),
             3,
-            AccountKeyring::Charlie.to_account_id(),
+            Keyring::Charlie.to_account_id(),
             signature.into()
         ));
         // membership should be removed
@@ -1844,11 +1775,11 @@ fn test_smith_member_can_revoke_its_idty() {
 #[test]
 fn test_genesis_account_of_identity_linked() {
     ExtBuilder::new(1, 3, 4)
-        .with_initial_balances(vec![(AccountKeyring::Eve.to_account_id(), 8888)])
+        .with_initial_balances(vec![(Keyring::Eve.to_account_id(), 8888)])
         .build()
         .execute_with(|| {
             // Alice account
-            let account_id = AccountKeyring::Alice.to_account_id();
+            let account_id = Keyring::Alice.to_account_id();
             // Alice identity index is 1
             assert_eq!(Identity::identity_index_of(&account_id), Some(1));
             // get account data
@@ -1856,8 +1787,7 @@ fn test_genesis_account_of_identity_linked() {
             assert_eq!(account_data.linked_idty, Some(1));
             // Eve is not member, her account has no linked identity
             assert_eq!(
-                frame_system::Pallet::<Runtime>::get(&AccountKeyring::Eve.to_account_id())
-                    .linked_idty,
+                frame_system::Pallet::<Runtime>::get(&Keyring::Eve.to_account_id()).linked_idty,
                 None
             );
         })
@@ -1867,13 +1797,13 @@ fn test_genesis_account_of_identity_linked() {
 #[test]
 fn test_unlink_identity() {
     ExtBuilder::new(1, 3, 4).build().execute_with(|| {
-        let alice_account = AccountKeyring::Alice.to_account_id();
+        let alice_account = Keyring::Alice.to_account_id();
         // check that Alice is 1
         assert_eq!(Identity::identity_index_of(&alice_account), Some(1));
 
         // Alice can unlink her identity from her account
         assert_ok!(Account::unlink_identity(RuntimeOrigin::signed(
-            AccountKeyring::Alice.to_account_id()
+            Keyring::Alice.to_account_id()
         ),));
 
         // Alice account has been unlinked
@@ -1889,19 +1819,19 @@ fn test_unlink_identity() {
 fn test_new_account_linked() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![
-            (AccountKeyring::Alice.to_account_id(), 1_000),
-            (AccountKeyring::Eve.to_account_id(), 1_000),
+            (Keyring::Alice.to_account_id(), 1_000),
+            (Keyring::Eve.to_account_id(), 1_000),
         ])
         .build()
         .execute_with(|| {
-            let eve_account = AccountKeyring::Eve.to_account_id();
+            let eve_account = Keyring::Eve.to_account_id();
             assert_eq!(
                 frame_system::Pallet::<Runtime>::get(&eve_account).linked_idty,
                 None
             );
             // Alice creates identity for Eve
             assert_ok!(Identity::create_identity(
-                RuntimeOrigin::signed(AccountKeyring::Alice.to_account_id()),
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
                 eve_account.clone(),
             ));
             // then eve account should be linked to her identity
@@ -1918,11 +1848,11 @@ fn test_new_account_linked() {
 #[test]
 fn test_killed_account() {
     ExtBuilder::new(1, 2, 4)
-        .with_initial_balances(vec![(AccountKeyring::Bob.to_account_id(), 1_000)])
+        .with_initial_balances(vec![(Keyring::Bob.to_account_id(), 1_000)])
         .build()
         .execute_with(|| {
-            let alice_account = AccountKeyring::Alice.to_account_id();
-            let bob_account = AccountKeyring::Bob.to_account_id();
+            let alice_account = Keyring::Alice.to_account_id();
+            let bob_account = Keyring::Bob.to_account_id();
             // check that Alice is 1 and Bob 2
             assert_eq!(Identity::identity_index_of(&alice_account), Some(1));
             assert_eq!(Identity::identity_index_of(&bob_account), Some(2));

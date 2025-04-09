@@ -15,10 +15,11 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use super::{gdev, gdev::runtime_types::pallet_balances, *};
-use sp_keyring::AccountKeyring;
-use subxt::{tx::PairSigner, utils::MultiAddress};
+use crate::common::pair_signer::PairSigner;
+use sp_keyring::sr25519::Keyring;
+use subxt::utils::MultiAddress;
 
-pub async fn set_balance(client: &FullClient, who: AccountKeyring, amount: u64) -> Result<()> {
+pub async fn set_balance(client: &FullClient, who: Keyring, amount: u64) -> Result<()> {
     let _events = create_block_with_extrinsic(
         &client.rpc,
         client
@@ -29,7 +30,7 @@ pub async fn set_balance(client: &FullClient, who: AccountKeyring, amount: u64) 
                     .sudo()
                     .sudo(gdev::runtime_types::gdev_runtime::RuntimeCall::Balances(
                         pallet_balances::pallet::Call::force_set_balance {
-                            who: MultiAddress::Id(who.to_account_id().into()),
+                            who: MultiAddress::Id(who.to_raw_public().into()),
                             new_free: amount,
                         },
                     )),
@@ -43,14 +44,9 @@ pub async fn set_balance(client: &FullClient, who: AccountKeyring, amount: u64) 
     Ok(())
 }
 
-pub async fn transfer(
-    client: &FullClient,
-    from: AccountKeyring,
-    amount: u64,
-    to: AccountKeyring,
-) -> Result<()> {
+pub async fn transfer(client: &FullClient, from: Keyring, amount: u64, to: Keyring) -> Result<()> {
     let from = PairSigner::new(from.pair());
-    let to = to.to_account_id();
+    let to = MultiAddress::Id(to.to_raw_public().into());
 
     let _events = create_block_with_extrinsic(
         &client.rpc,
@@ -58,9 +54,7 @@ pub async fn transfer(
             .client
             .tx()
             .create_signed(
-                &gdev::tx()
-                    .universal_dividend()
-                    .transfer_ud(to.clone().into(), amount),
+                &gdev::tx().universal_dividend().transfer_ud(to, amount),
                 &from,
                 SubstrateExtrinsicParamsBuilder::new().build(),
             )
@@ -71,13 +65,9 @@ pub async fn transfer(
     Ok(())
 }
 
-pub async fn transfer_all(
-    client: &FullClient,
-    from: AccountKeyring,
-    to: AccountKeyring,
-) -> Result<()> {
+pub async fn transfer_all(client: &FullClient, from: Keyring, to: Keyring) -> Result<()> {
     let from = PairSigner::new(from.pair());
-    let to = to.to_account_id();
+    let to = MultiAddress::Id(to.to_raw_public().into());
 
     let _events = create_block_with_extrinsic(
         &client.rpc,
@@ -85,7 +75,7 @@ pub async fn transfer_all(
             .client
             .tx()
             .create_signed(
-                &gdev::tx().balances().transfer_all(to.into(), false),
+                &gdev::tx().balances().transfer_all(to, false),
                 &from,
                 SubstrateExtrinsicParamsBuilder::new().build(),
             )
@@ -98,12 +88,11 @@ pub async fn transfer_all(
 
 pub async fn transfer_ud(
     client: &FullClient,
-    from: AccountKeyring,
+    from: Keyring,
     amount: u64,
-    to: AccountKeyring,
+    to: Keyring,
 ) -> Result<()> {
     let from = PairSigner::new(from.pair());
-    let to = to.to_account_id();
 
     let _events = create_block_with_extrinsic(
         &client.rpc,
@@ -113,7 +102,7 @@ pub async fn transfer_ud(
             .create_signed(
                 &gdev::tx()
                     .universal_dividend()
-                    .transfer_ud(to.clone().into(), amount),
+                    .transfer_ud(MultiAddress::Id(to.to_raw_public().into()), amount),
                 &from,
                 SubstrateExtrinsicParamsBuilder::new().build(),
             )

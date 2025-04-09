@@ -15,9 +15,12 @@
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
 use super::{gdev, gdev::runtime_types::pallet_identity, *};
-use crate::{gdev::runtime_types::pallet_identity::types::IdtyName, DuniterWorld};
-use sp_keyring::AccountKeyring;
-use subxt::tx::PairSigner;
+use crate::{
+    common::pair_signer::PairSigner, gdev::runtime_types::pallet_identity::types::IdtyName,
+    DuniterWorld,
+};
+use sp_keyring::sr25519::Keyring;
+use subxt::config::substrate::MultiAddress;
 
 type BlockNumber = u32;
 type AccountId = subxt::utils::AccountId32;
@@ -27,13 +30,9 @@ type IdtyValue =
 
 // submit extrinsics
 
-pub async fn create_identity(
-    client: &FullClient,
-    from: AccountKeyring,
-    to: AccountKeyring,
-) -> Result<()> {
+pub async fn create_identity(client: &FullClient, from: Keyring, to: Keyring) -> Result<()> {
     let from = PairSigner::new(from.pair());
-    let to = to.to_account_id();
+    let to = to.to_raw_public();
 
     let _events = create_block_with_extrinsic(
         &client.rpc,
@@ -52,11 +51,7 @@ pub async fn create_identity(
     Ok(())
 }
 
-pub async fn confirm_identity(
-    client: &FullClient,
-    from: AccountKeyring,
-    pseudo: String,
-) -> Result<()> {
+pub async fn confirm_identity(client: &FullClient, from: Keyring, pseudo: String) -> Result<()> {
     let from = PairSigner::new(from.pair());
     let pseudo: IdtyName = IdtyName(pseudo.as_bytes().to_vec());
 
@@ -79,9 +74,9 @@ pub async fn confirm_identity(
 
 // get identity index from account keyring name
 pub async fn get_identity_index(world: &DuniterWorld, account: String) -> Result<u32> {
-    let account: AccountId = AccountKeyring::from_str(&account)
+    let account: AccountId = Keyring::from_str(&account)
         .expect("unknown account")
-        .to_account_id()
+        .to_raw_public()
         .into();
 
     let identity_index = world

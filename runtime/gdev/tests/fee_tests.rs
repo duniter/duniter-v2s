@@ -21,35 +21,28 @@ mod common;
 use common::*;
 use frame_support::{assert_ok, pallet_prelude::DispatchClass};
 use gdev_runtime::*;
-use sp_keyring::AccountKeyring;
+use sp_keyring::sr25519::Keyring;
 
 /// This test checks that an almost empty block incurs no fees for an extrinsic.
 #[test]
 fn test_fees_empty() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![
-            (AccountKeyring::Alice.to_account_id(), 10_000),
-            (AccountKeyring::Eve.to_account_id(), 10_000),
+            (Keyring::Alice.to_account_id(), 10_000),
+            (Keyring::Eve.to_account_id(), 10_000),
         ])
         .build()
         .execute_with(|| {
             let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
-                dest: AccountKeyring::Eve.to_account_id().into(),
+                dest: Keyring::Eve.to_account_id().into(),
                 value: 500,
             });
 
-            let xt = common::get_unchecked_extrinsic(
-                call,
-                4u64,
-                8u64,
-                AccountKeyring::Alice,
-                0u64,
-                0u32,
-            );
+            let xt = common::get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Alice, 0u64, 0u32);
             assert_ok!(Executive::apply_extrinsic(xt));
             // The block is almost empty, so the extrinsic should incur no fee
             assert_eq!(
-                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                Balances::free_balance(Keyring::Alice.to_account_id()),
                 10_000 - 500
             );
         })
@@ -62,8 +55,8 @@ fn test_fees_empty() {
 fn test_fees_weight() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![
-            (AccountKeyring::Alice.to_account_id(), 10_000),
-            (AccountKeyring::Eve.to_account_id(), 10_000),
+            (Keyring::Alice.to_account_id(), 10_000),
+            (Keyring::Eve.to_account_id(), 10_000),
         ])
         .build()
         .execute_with(|| {
@@ -79,10 +72,10 @@ fn test_fees_weight() {
             let call = RuntimeCall::System(SystemCall::remark {
                 remark: vec![255u8; 1],
             });
-            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 0u64, 0);
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Alice, 0u64, 0);
             assert_ok!(Executive::apply_extrinsic(xt));
             assert_eq!(
-                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                Balances::free_balance(Keyring::Alice.to_account_id()),
                 10_000
             );
 
@@ -93,10 +86,10 @@ fn test_fees_weight() {
                 remark: vec![255u8; 1],
             });
 
-            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 0u64, 1u32);
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Alice, 0u64, 1u32);
             assert_ok!(Executive::apply_extrinsic(xt));
             assert_ne!(
-                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                Balances::free_balance(Keyring::Alice.to_account_id()),
                 10_000
             );
         })
@@ -109,8 +102,8 @@ fn test_fees_weight() {
 fn test_fees_length() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![
-            (AccountKeyring::Alice.to_account_id(), 10_000),
-            (AccountKeyring::Eve.to_account_id(), 10_000),
+            (Keyring::Alice.to_account_id(), 10_000),
+            (Keyring::Eve.to_account_id(), 10_000),
         ])
         .build()
         .execute_with(|| {
@@ -122,10 +115,10 @@ fn test_fees_length() {
             let call = RuntimeCall::System(SystemCall::remark {
                 remark: vec![255u8; 100],
             });
-            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 0u64, 0u32);
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Alice, 0u64, 0u32);
             assert_ok!(Executive::apply_extrinsic(xt));
             assert_eq!(
-                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                Balances::free_balance(Keyring::Alice.to_account_id()),
                 10_000
             );
 
@@ -134,10 +127,10 @@ fn test_fees_length() {
             let call = RuntimeCall::System(SystemCall::remark {
                 remark: vec![0u8; 147],
             });
-            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Alice, 0u64, 1u32);
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Alice, 0u64, 1u32);
             assert_ok!(Executive::apply_extrinsic(xt));
             assert_ne!(
-                Balances::free_balance(AccountKeyring::Alice.to_account_id()),
+                Balances::free_balance(Keyring::Alice.to_account_id()),
                 10_000
             );
 
@@ -151,12 +144,9 @@ fn test_fees_length() {
                 remark: vec![255u8; 1],
             });
 
-            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, AccountKeyring::Eve, 0u64, 0u32);
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Eve, 0u64, 0u32);
             assert_ok!(Executive::apply_extrinsic(xt));
-            assert_ne!(
-                Balances::free_balance(AccountKeyring::Eve.to_account_id()),
-                10_000
-            );
+            assert_ne!(Balances::free_balance(Keyring::Eve.to_account_id()), 10_000);
         })
 }
 
@@ -166,8 +156,8 @@ fn test_fees_length() {
 fn test_fees_multiplier_weight() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![
-            (AccountKeyring::Alice.to_account_id(), 10_000),
-            (AccountKeyring::Eve.to_account_id(), 10_000),
+            (Keyring::Alice.to_account_id(), 10_000),
+            (Keyring::Eve.to_account_id(), 10_000),
         ])
         .build()
         .execute_with(|| {
@@ -214,8 +204,8 @@ fn test_fees_multiplier_weight() {
 fn test_fees_multiplier_length() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![
-            (AccountKeyring::Alice.to_account_id(), 10_000),
-            (AccountKeyring::Eve.to_account_id(), 10_000),
+            (Keyring::Alice.to_account_id(), 10_000),
+            (Keyring::Eve.to_account_id(), 10_000),
         ])
         .build()
         .execute_with(|| {

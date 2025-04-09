@@ -103,6 +103,7 @@ impl ShouldEndSession<u64> for TestShouldEndSession {
 }
 
 impl pallet_session::Config for Test {
+    type DisablingStrategy = ();
     type Keys = MockSessionKeys;
     type NextSessionRotation = ();
     type RuntimeEvent = RuntimeEvent;

@@ -19,15 +19,13 @@ use super::{
     gdev::runtime_types::{pallet_balances, pallet_oneshot_account},
     *,
 };
-use sp_keyring::AccountKeyring;
-use subxt::{
-    tx::PairSigner,
-    utils::{AccountId32, MultiAddress},
-};
+use crate::common::pair_signer::PairSigner;
+use sp_keyring::sr25519::Keyring;
+use subxt::utils::{AccountId32, MultiAddress};
 
 pub enum Account {
-    Normal(AccountKeyring),
-    Oneshot(AccountKeyring),
+    Normal(Keyring),
+    Oneshot(Keyring),
 }
 
 impl Account {
@@ -35,24 +33,24 @@ impl Account {
         &self,
     ) -> pallet_oneshot_account::types::Account<MultiAddress<AccountId32, ()>> {
         match self {
-            Account::Normal(account) => {
-                pallet_oneshot_account::types::Account::Normal(account.to_account_id().into())
-            }
-            Account::Oneshot(account) => {
-                pallet_oneshot_account::types::Account::Oneshot(account.to_account_id().into())
-            }
+            Account::Normal(account) => pallet_oneshot_account::types::Account::Normal(
+                MultiAddress::Id(account.to_raw_public().into()),
+            ),
+            Account::Oneshot(account) => pallet_oneshot_account::types::Account::Oneshot(
+                MultiAddress::Id(account.to_raw_public().into()),
+            ),
         }
     }
 }
 
 pub async fn create_oneshot_account(
     client: &FullClient,
-    from: AccountKeyring,
+    from: Keyring,
     amount: u64,
-    to: AccountKeyring,
+    to: Keyring,
 ) -> Result<()> {
     let from = PairSigner::new(from.pair());
-    let to = to.to_account_id();
+    let to = MultiAddress::Id(to.to_raw_public().into());
 
     let _events = create_block_with_extrinsic(
         &client.rpc,
@@ -62,7 +60,7 @@ pub async fn create_oneshot_account(
             .create_signed(
                 &gdev::tx()
                     .oneshot_account()
-                    .create_oneshot_account(to.into(), amount),
+                    .create_oneshot_account(to, amount),
                 &from,
                 SubstrateExtrinsicParamsBuilder::new().build(),
             )
@@ -75,7 +73,7 @@ pub async fn create_oneshot_account(
 
 pub async fn consume_oneshot_account(
     client: &FullClient,
-    from: AccountKeyring,
+    from: Keyring,
     to: Account,
 ) -> Result<()> {
     let from = PairSigner::new(from.pair());
@@ -101,7 +99,7 @@ pub async fn consume_oneshot_account(
 #[allow(clippy::too_many_arguments)]
 pub async fn consume_oneshot_account_with_remaining(
     client: &FullClient,
-    from: AccountKeyring,
+    from: Keyring,
     amount: u64,
     to: Account,
     remaining_to: Account,
