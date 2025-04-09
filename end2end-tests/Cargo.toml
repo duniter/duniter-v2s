@@ -44,7 +44,6 @@ sp-core = { workspace = true }
 sp-keyring = { workspace = true }
 sp-runtime = { workspace = true }
 subxt = { workspace = true, features = [
-	"substrate-compat",
 	"native",
 	"jsonrpsee",
 ] }
