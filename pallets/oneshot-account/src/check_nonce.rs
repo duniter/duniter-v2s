@@ -74,7 +74,7 @@ where
         info: &DispatchInfoOf<T::RuntimeCall>,
         len: usize,
         self_implicit: Self::Implicit,
-        inherited_implication: &(impl Encode + sp_runtime::traits::Implication),
+        inherited_implication: &impl sp_runtime::traits::Implication,
         source: TransactionSource,
     ) -> ValidateResult<Self::Val, T::RuntimeCall> {
         self.0.validate(

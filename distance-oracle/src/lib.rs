@@ -76,14 +76,14 @@ pub mod runtime {}
 pub enum RuntimeConfig {}
 impl subxt::config::Config for RuntimeConfig {
     type AccountId = AccountId;
-    type Address = subxt::ext::sp_runtime::MultiAddress<Self::AccountId, u32>;
+    type Address = sp_runtime::MultiAddress<Self::AccountId, u32>;
     type AssetId = ();
     type ExtrinsicParams = subxt::config::substrate::SubstrateExtrinsicParams<Self>;
     type Hash = subxt::utils::H256;
     type Hasher = subxt::config::substrate::BlakeTwo256;
     type Header =
         subxt::config::substrate::SubstrateHeader<u32, subxt::config::substrate::BlakeTwo256>;
-    type Signature = subxt::ext::sp_runtime::MultiSignature;
+    type Signature = sp_runtime::MultiSignature;
 }
 
 /// Represents a tipping amount.

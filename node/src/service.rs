@@ -400,7 +400,7 @@ where
     ));
 
     // build network service from params
-    let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
+    let (network, system_rpc_tx, tx_handler_controller, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
             net_config,
@@ -776,8 +776,6 @@ where
         )
         .run(),
     );
-
-    network_starter.start_network();
 
     log::info!("***** Duniter has fully started *****");
 

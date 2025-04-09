@@ -90,6 +90,7 @@ macro_rules! pallets_config {
             pub const NoPreimagePostponement: Option<u32> = Some(10);
         }
         impl pallet_scheduler::Config for Runtime {
+            type BlockNumberProvider = frame_system::Pallet<Runtime>;
             type MaxScheduledPerBlock = MaxScheduledPerBlock;
             type MaximumWeight = MaximumSchedulerWeight;
             type OriginPrivilegeCmp = EqualPrivilegeOnly;
@@ -234,6 +235,8 @@ macro_rules! pallets_config {
             type RuntimeEvent = RuntimeEvent;
         }
         impl pallet_session::Config for Runtime {
+            type DisablingStrategy =
+                pallet_session::disabling::UpToLimitWithReEnablingDisablingStrategy;
             type Keys = opaque::SessionKeys;
             type NextSessionRotation = Babe;
             type RuntimeEvent = RuntimeEvent;
@@ -337,6 +340,7 @@ macro_rules! pallets_config {
         impl pallet_proxy::Config for Runtime {
             type AnnouncementDepositBase = AnnouncementDepositBase;
             type AnnouncementDepositFactor = AnnouncementDepositFactor;
+            type BlockNumberProvider = frame_system::Pallet<Runtime>;
             type CallHasher = BlakeTwo256;
             type Currency = Balances;
             type MaxPending = frame_support::traits::ConstU32<32>;
@@ -354,6 +358,7 @@ macro_rules! pallets_config {
             pub const DepositFactor: Balance = DEPOSIT_PER_BYTE * 32;
         }
         impl pallet_multisig::Config for Runtime {
+            type BlockNumberProvider = frame_system::Pallet<Runtime>;
             type Currency = Balances;
             type DepositBase = DepositBase;
             type DepositFactor = DepositFactor;

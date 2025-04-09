@@ -146,6 +146,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 #[derive(
     Copy,
     Clone,
+    codec::DecodeWithMemTracking,
     Eq,
     PartialEq,
     Ord,

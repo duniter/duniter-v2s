@@ -39,6 +39,7 @@ macro_rules! declare_session_keys {
     Clone,
     Encode,
     Decode,
+    DecodeWithMemTracking,
     Default,
     Eq,
     PartialEq,
@@ -62,6 +63,7 @@ impl From<IdtyData> for pallet_universal_dividend::FirstEligibleUd {
 #[derive(
     Encode,
     Decode,
+    DecodeWithMemTracking,
     Default,
     Clone,
     Copy,
