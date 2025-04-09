@@ -108,7 +108,7 @@ array-bytes = { version = "6.2.2", default-features = false }
 parking_lot = { version = "0.12.1" }
 
 # Subxt
-subxt = { git = 'https://github.com/duniter/subxt', branch = 'subxt-v0.41.0-duniter-substrate-v1.18.0', default-features = false }
+subxt = { git = 'https://github.com/paritytech/subxt', tags = '0.41.0', default-features = false }
 
 # local dependencies
 weight-analyzer = { path = "resources/weight_analyzer", default-features = false }

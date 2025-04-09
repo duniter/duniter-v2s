@@ -11,19 +11,7 @@ ParityTech frequently releases upgrades of the polkadot-sdk. For each upgrade, D
 * Rebase the branch, keeping only specific commits: "fix treasury benchmarks when no SpendOrigin", "allow manual seal to produce non-empty blocks with BABE", "add custom pallet-balance GenesisConfig", and "remove pallet-balances upgrade_account extrinsic", "remove all paritytech sdk dependencies".
 * Push the new branch: `git push`
 
-## 2. Upgrade duniter subxt
-
-* Clone the repository: `git clone git@github.com:duniter/subxt.git`
-* Set the upstream repository: `git remote add upstream git@github.com:paritytech/subxt.git`
-* If a new version compatible with the polkadot-sdk version used in duniter is available, upgrade Subxt using the same method as duniter-polkadot-sdk.
-* In the `Cargo.toml` file of duniter subxt, change the GitHub path pointing to the paritytech polkadot-sdk, or old duniter-polkadot-sdk to the new duniter-polkadot-sdk.
-* Run `cargo upgrade` and push the branch.
-
-## 3. Upgrade Dependencies
-
-Ensure that the dependencies for [Arkwork](https://github.com/duniter/arkworks-substrate) and [ring-vrf bandersnatch-vrfs](https://github.com/duniter/ring-vrf/) only depend on the duniter-polkadot-sdk. When upgrading these repositories, make sure to cherry-pick the "use duniter polkadot-sdk" commit.
-
-## 4. Upgrade repository
+## 2. Upgrade repository
 
 * In the `Cargo.toml` file of Duniter, change the version number from 1.8.0 to 1.9.0 for all polkadot-sdk dependencies. Also, change the version for Subxt. `find . -type f -name "Cargo.toml" -exec sed -i'' -e 's/polkadot-v1.8.0\/polkadot-v1.9.0/g' {} +`.
 * Upgrade the version number of all crateio dependencies to ensure compatibility with those used in the polkadot-sdk, see the node template at: [Node Template](https://github.com/paritytech/polkadot-sdk/blob/master/templates/solochain/node/Cargo.toml) (choose the correct branch/tag).
