@@ -3,16 +3,16 @@ use crate::endpoint_gossip::{
     PROPAGATE_TIMEOUT,
 };
 use codec::{Decode, Encode};
-use futures::{stream, FutureExt, Stream, StreamExt};
+use futures::{future, stream, FutureExt, Stream, StreamExt};
 use log::debug;
 use sc_network::{
     service::traits::{NotificationEvent, ValidationResult},
     utils::interval,
     NetworkEventStream, NetworkPeers, NetworkStateInfo, NotificationService, ObservedRole, PeerId,
 };
-use sc_utils::mpsc::{tracing_unbounded, TracingUnboundedReceiver, TracingUnboundedSender};
+use sc_utils::mpsc::{TracingUnboundedReceiver, TracingUnboundedSender};
 use sp_api::__private::BlockT;
-use std::{collections::HashMap, marker::PhantomData, pin::Pin};
+use std::{collections::HashMap, future::Future, marker::PhantomData, pin::Pin};
 
 pub fn build<
     B: BlockT + 'static,
@@ -34,15 +34,27 @@ pub fn build<
             .fuse(),
         network,
         peers: HashMap::new(),
-        command_rx: command_rx.unwrap_or_else(|| {
-            let (_tx, rx) = tracing_unbounded("mpsc_duniter_peering_rpc_command", 1_000);
-            rx
-        }),
+        command_rx: CommandHandler(command_rx),
         self_peering: Peering { endpoints },
         events_reporter: DuniterEventsReporter {
             sink: rpc_sink,
             local_peer_id,
         },
+    }
+}
+
+// Structure to avoid borrowing issues with the command receiver.
+struct CommandHandler(Option<TracingUnboundedReceiver<DuniterPeeringCommand>>);
+impl CommandHandler {
+    /// Wait for the next command to be received.
+    pub fn get_next_command(
+        &mut self,
+    ) -> Pin<Box<dyn Future<Output = Option<DuniterPeeringCommand>> + Send + '_>> {
+        match &mut self.0 {
+            Some(tx) => Box::pin(tx.next()),
+            // Cannot receive any command
+            None => Box::pin(future::pending()),
+        }
     }
 }
 
@@ -98,7 +110,7 @@ pub struct GossipsHandler<
     /// Internal sink to report events.
     events_reporter: DuniterEventsReporter,
     /// Receiver for external commands (tests/RPC methods).
-    command_rx: TracingUnboundedReceiver<DuniterPeeringCommand>,
+    command_rx: CommandHandler,
     /// Handle that is used to communicate with `sc_network::Notifications`.
     notification_service: Box<dyn NotificationService>,
 }
@@ -123,21 +135,19 @@ where
                 _ = self.propagate_timeout.next() => {
                     for (peer, peer_data) in self.peers.iter_mut() {
                         if !peer_data.sent_peering {
+                            debug!(target: "duniter-libp2p", "[{}] sending self peering to {}", self.network.local_peer_id(), peer);
                             match self.notification_service.send_async_notification(peer, self.self_peering.encode()).await {
                                 Ok(_) => {
                                     peer_data.sent_peering = true;
+                                    debug!(target: "duniter-libp2p", "[{}] self peering sent to {}", self.network.local_peer_id(), peer);
                                     self.events_reporter.report_event(DuniterPeeringEvent::SelfPeeringPropagationSuccess(*peer, self.self_peering.clone()));
                                 }
                                 Err(e) => {
+                                    debug!(target: "duniter-libp2p", "[{}] failed to send self peering to {}: {}", self.network.local_peer_id(), peer, e);
                                     self.events_reporter.report_event(DuniterPeeringEvent::SelfPeeringPropagationFailed(*peer, self.self_peering.clone(), e.to_string()));
                                 }
                             }
                         }
-                    }
-                },
-                command = self.command_rx.next().fuse() => {
-                    if let Some(command) = command {
-                        self.handle_command(command).await
                     }
                 },
                 event = self.notification_service.next_event().fuse() => {
@@ -147,7 +157,12 @@ where
                         // `Notifications` has seemingly closed. Closing as well.
                         return
                     }
-                }
+                },
+                command = self.command_rx.get_next_command().fuse() => {
+                    if let Some(command) = command {
+                        self.handle_command(command).await
+                    }
+                },
             }
         }
     }
@@ -160,12 +175,14 @@ where
                 result_tx,
                 ..
             } => {
+                debug!(target: "duniter-libp2p", "[{}] validating stream from {}", self.network.local_peer_id(), peer);
                 // only accept peers whose role can be determined
                 let result = self
                     .network
                     .peer_role(peer, handshake)
                     .map_or(ValidationResult::Reject, |_| ValidationResult::Accept);
                 let duniter_validation = DuniterStreamValidationResult::from(result);
+                debug!(target: "duniter-libp2p", "[{}] stream validation result for {}: {:?}", self.network.local_peer_id(), peer, duniter_validation);
                 self.events_reporter
                     .report_event(DuniterPeeringEvent::StreamValidation(
                         peer,
@@ -189,23 +206,28 @@ where
                     },
                 );
                 debug_assert!(_was_in.is_none());
+                debug!(target: "duniter-libp2p", "[{}] stream opened with {peer}", self.network.local_peer_id());
                 self.events_reporter
                     .report_event(DuniterPeeringEvent::StreamOpened(peer, role));
             }
             NotificationEvent::NotificationStreamClosed { peer } => {
                 let _peer = self.peers.remove(&peer);
                 debug_assert!(_peer.is_some());
+                debug!(target: "duniter-libp2p", "[{}] stream closed with {peer}", self.network.local_peer_id());
                 self.events_reporter
                     .report_event(DuniterPeeringEvent::StreamClosed(peer));
             }
             NotificationEvent::NotificationReceived { peer, notification } => {
+                debug!(target: "duniter-libp2p", "[{}] received gossip from {}", self.network.local_peer_id(), peer);
                 if let Ok(peering) = <Peering as Decode>::decode(&mut notification.as_ref()) {
                     self.events_reporter
                         .report_event(DuniterPeeringEvent::GossipReceived(peer, true));
+                    debug!(target: "duniter-libp2p", "[{}] received gossip from {}: {:?}", self.network.local_peer_id(), peer, peering);
                     self.on_peering(peer, peering);
                 } else {
                     self.events_reporter
                         .report_event(DuniterPeeringEvent::GossipReceived(peer, false));
+                    debug!(target: "duniter-libp2p", "[{}] received gossip from {} but couldn't decode it", self.network.local_peer_id(), peer);
                     self.network.report_peer(peer, rep::BAD_PEERING);
                 }
             }

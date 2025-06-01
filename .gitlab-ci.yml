@@ -177,6 +177,7 @@ tests:
   variables:
     DEBIAN_FRONTEND: noninteractive
   script:
+    - export RUST_MIN_STACK=16777216 # 16MB stack size otherwise CI fail during LLVM's Thin LTO (Link Time Optimization) phase
     - cargo tu
     - cargo tf
     - cargo cucumber-build

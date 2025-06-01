@@ -101,7 +101,7 @@ fn watch_events_and_wait_for_all_peerings(
             while let Some(event) = stream.next().await {
                 debug_event(event.clone(), local_peer_id);
                 if let DuniterPeeringEvent::GoodPeering(peer, _) = event {
-                    debug!(target: "duniter-libp2p", "[{}] Received peering from {}",local_peer_id, peer);
+                    warn!(target: "duniter-libp2p", "[{}] Received peering from {}",local_peer_id, peer);
                     identified += 1;
                     if identified == (total_peers - 1) {
                         // all peers identified
@@ -118,34 +118,34 @@ fn watch_events_and_wait_for_all_peerings(
 fn debug_event(event: DuniterPeeringEvent, local_peer_id: PeerId) {
     match event {
         DuniterPeeringEvent::StreamOpened(peer, role) => {
-            debug!(target: "duniter-libp2p", "[{}] Peer {peer} connected with role {}", local_peer_id, observed_role_to_str(role));
+            warn!(target: "duniter-libp2p", "[{}] Peer {peer} connected with role {}", local_peer_id, observed_role_to_str(role));
         }
         DuniterPeeringEvent::StreamValidation(peer, result) => {
-            debug!(target: "duniter-libp2p", "[{}] Validating inbound substream from {peer} with result {}", local_peer_id, result);
+            warn!(target: "duniter-libp2p", "[{}] Validating inbound substream from {peer} with result {}", local_peer_id, result);
         }
         DuniterPeeringEvent::StreamClosed(peer) => {
-            debug!(target: "duniter-libp2p", "[{}] Peer {peer} disconnected", local_peer_id);
+            warn!(target: "duniter-libp2p", "[{}] Peer {peer} disconnected", local_peer_id);
         }
         DuniterPeeringEvent::GossipReceived(peer, success) => {
             if success {
-                debug!(target: "duniter-libp2p", "[{}] Received peering message from {peer}", local_peer_id);
+                warn!(target: "duniter-libp2p", "[{}] Received peering message from {peer}", local_peer_id);
             } else {
-                debug!(target: "duniter-libp2p", "[{}] Failed to receive peering message from {peer}", local_peer_id);
+                warn!(target: "duniter-libp2p", "[{}] Failed to receive peering message from {peer}", local_peer_id);
             }
         }
         DuniterPeeringEvent::GoodPeering(peer, _) => {
-            debug!(target: "duniter-libp2p", "[{}] Received peering from {}", local_peer_id, peer);
+            warn!(target: "duniter-libp2p", "[{}] Received peering from {}", local_peer_id, peer);
         }
         DuniterPeeringEvent::AlreadyReceivedPeering(peer) => {
-            debug!(target: "duniter-libp2p", "[{}] Already received peering from {}", local_peer_id, peer);
+            warn!(target: "duniter-libp2p", "[{}] Already received peering from {}", local_peer_id, peer);
             panic!("Received peering from the same peer twice");
         }
         DuniterPeeringEvent::SelfPeeringPropagationFailed(peer, _peering, e) => {
-            debug!(target: "duniter-libp2p", "[{}] Failed to propagate self peering to {}: {}", local_peer_id, peer, e);
+            warn!(target: "duniter-libp2p", "[{}] Failed to propagate self peering to {}: {}", local_peer_id, peer, e);
             panic!("Failed to propagate self peering");
         }
         DuniterPeeringEvent::SelfPeeringPropagationSuccess(peer, _peering) => {
-            debug!(target: "duniter-libp2p", "[{}] Successfully propagated self peering to {}", local_peer_id, peer);
+            warn!(target: "duniter-libp2p", "[{}] Successfully propagated self peering to {}", local_peer_id, peer);
         }
     }
 }
