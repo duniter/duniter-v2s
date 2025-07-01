@@ -36,12 +36,12 @@ std = [
 	"pallet-timestamp/std",
 	"scale-info/std",
 	"serde/std",
+	"sp-api/std",
 	"sp-arithmetic/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
 ]
-### DOC ###
 
 [package.metadata.docs.rs]
 default-features = false
@@ -57,6 +57,7 @@ pallet-balances = { workspace = true }
 pallet-timestamp = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 serde = { workspace = true, features = ["derive"] }
+sp-api = { workspace = true }
 sp-arithmetic = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }

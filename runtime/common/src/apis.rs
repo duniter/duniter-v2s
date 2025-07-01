@@ -218,6 +218,13 @@ impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Ba
         TransactionPayment::length_to_fee(length)
     }
 }
+
+impl pallet_universal_dividend::UniversalDividendApi<Block, AccountId, Balance> for Runtime {
+    fn account_balances(account: AccountId) -> pallet_universal_dividend::AccountBalances<Balance> {
+        UniversalDividend::account_balances(&account)
+    }
+}
+
 impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
     fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
         frame_support::genesis_builder_helper::build_state::<RuntimeGenesisConfig>(config)

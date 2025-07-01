@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::mock::*;
-use frame_support::{assert_err, assert_ok, assert_storage_noop};
+use frame_support::{assert_err, assert_ok, assert_storage_noop, traits::ReservableCurrency};
 
 #[test]
 fn test_claim_uds() {
@@ -352,5 +352,53 @@ fn test_ud_creation() {
             },
         ));
         assert_eq!(UniversalDividend::total_money_created(), 25_671);
+    });
+}
+
+#[test]
+fn test_account_balances() {
+    new_test_ext(UniversalDividendConfig {
+        first_reeval: Some(48_000),
+        first_ud: Some(12_000),
+        initial_monetary_mass: 0,
+        initial_members: vec![1, 2, 3],
+        ud: 1_000,
+    })
+    .execute_with(|| {
+        // Initially, all accounts have zero balance
+        let balance_info = UniversalDividend::account_balances(&1);
+        assert_eq!(balance_info.transferable, 0);
+        assert_eq!(balance_info.total, 0);
+        assert_eq!(balance_info.unclaim_uds, 0);
+
+        // Create some UDs and claim them
+        run_to_block(2);
+        assert_ok!(UniversalDividend::claim_uds(RuntimeOrigin::signed(1)));
+
+        // Check balance after claiming
+        let balance_info = UniversalDividend::account_balances(&1);
+        assert_eq!(balance_info.transferable, 1000 - 10); // free (1000) + unclaim_uds (0) - existantial deposit (10)
+        assert_eq!(balance_info.total, 1000); // transferable + reserved
+        assert_eq!(balance_info.unclaim_uds, 0);
+
+        // Create more UDs but don't claim them
+        run_to_block(4);
+        let balance_info = UniversalDividend::account_balances(&1);
+        assert_eq!(balance_info.transferable, 1000 + 1000 - 10); // free (1000) + unclaim_uds (1000) - existantial deposit (10)
+        assert_eq!(balance_info.total, 2000); // transferable + reserved
+        assert_eq!(balance_info.unclaim_uds, 1000);
+
+        // Test with reserved balance
+        assert_ok!(Balances::reserve(&1, 500));
+        let balance_info = UniversalDividend::account_balances(&1);
+        assert_eq!(balance_info.transferable, 500 + 1000 - 10); // free (500) + unclaim_uds (1000) - existantial deposit (10)
+        assert_eq!(balance_info.total, 2000); // transferable + reserved
+        assert_eq!(balance_info.unclaim_uds, 1000);
+
+        // Test non-member account
+        let balance_info = UniversalDividend::account_balances(&4);
+        assert_eq!(balance_info.transferable, 0);
+        assert_eq!(balance_info.total, 0);
+        assert_eq!(balance_info.unclaim_uds, 0);
     });
 }

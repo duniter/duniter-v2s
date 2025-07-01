@@ -30,6 +30,7 @@
 
 mod benchmarking;
 mod compute_claim_uds;
+mod runtime_api;
 mod types;
 mod weights;
 
@@ -42,13 +43,14 @@ mod tests;
 use duniter_primitives::Idty;
 
 pub use pallet::*;
+pub use runtime_api::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
 use frame_support::traits::{
-    fungible::{self, Balanced, Mutate},
-    tokens::{Precision, Preservation},
-    OnTimestampSet,
+    fungible::{self, Balanced, Inspect, Mutate},
+    tokens::{Fortitude, Precision, Preservation},
+    OnTimestampSet, ReservableCurrency,
 };
 use sp_arithmetic::{
     per_things::Perbill,
@@ -83,7 +85,10 @@ pub mod pallet {
         type MomentIntoBalance: Convert<Self::Moment, BalanceOf<Self>>;
 
         /// The currency type used in this pallet.
-        type Currency: fungible::Balanced<Self::AccountId> + fungible::Mutate<Self::AccountId>;
+        type Currency: fungible::Balanced<Self::AccountId>
+            + fungible::Mutate<Self::AccountId>
+            + fungible::Inspect<Self::AccountId>
+            + ReservableCurrency<Self::AccountId>;
 
         /// Maximum number of past UD revaluations to keep in storage.
         #[pallet::constant]
@@ -480,6 +485,41 @@ pub mod pallet {
                 <T as pallet::Config>::WeightInfo::on_removed_member(first_ud_index as u32)
             } else {
                 <T as pallet::Config>::WeightInfo::on_removed_member(0)
+            }
+        }
+
+        /// Get the total balance information for an account
+        ///
+        /// Returns an object with three fields:
+        /// - `transferable`: sum of free + unclaim_uds
+        /// - `reserved`: reserved balance
+        /// - `unclaim_uds`: amount of unclaimed UDs computed by compute_claim_uds
+        pub fn account_balances(who: &T::AccountId) -> crate::AccountBalances<BalanceOf<T>> {
+            let total_balance = T::Currency::total_balance(who);
+            let reducible_balance =
+                T::Currency::reducible_balance(who, Preservation::Preserve, Fortitude::Polite);
+
+            // Calculate unclaimed UDs
+            let current_ud_index = CurrentUdIndex::<T>::get();
+            let maybe_first_eligible_ud = T::MembersStorage::get(who);
+
+            let unclaim_uds =
+                if let FirstEligibleUd(Some(ref first_ud_index)) = maybe_first_eligible_ud {
+                    let past_reevals = PastReevals::<T>::get();
+                    compute_claim_uds::compute_claim_uds(
+                        current_ud_index,
+                        first_ud_index.get(),
+                        past_reevals.into_iter(),
+                    )
+                    .1
+                } else {
+                    Zero::zero()
+                };
+
+            crate::AccountBalances {
+                total: total_balance.saturating_add(unclaim_uds),
+                transferable: reducible_balance.saturating_add(unclaim_uds),
+                unclaim_uds,
             }
         }
     }
