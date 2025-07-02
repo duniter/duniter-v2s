@@ -16,6 +16,7 @@
 
 use crate::mock::*;
 use frame_support::{assert_err, assert_ok, assert_storage_noop, traits::ReservableCurrency};
+use sp_runtime::{ArithmeticError, DispatchError};
 
 #[test]
 fn test_claim_uds() {
@@ -400,5 +401,238 @@ fn test_account_balances() {
         assert_eq!(balance_info.transferable, 0);
         assert_eq!(balance_info.total, 0);
         assert_eq!(balance_info.unclaim_uds, 0);
+    });
+}
+
+#[test]
+fn test_transfer_ud_overflow() {
+    new_test_ext(UniversalDividendConfig {
+        first_reeval: Some(48_000),
+        first_ud: Some(12_000),
+        initial_monetary_mass: 0,
+        initial_members: vec![1, 2, 3],
+        ud: 1_000,
+    })
+    .execute_with(|| {
+        // Give account 1 some balance to work with
+        let _ = mint_into(&1, 1_000_000);
+        assert_eq!(Balances::free_balance(1), 1_000_000);
+
+        // Test overflow scenario: try to transfer a very large value in milliUD
+        // that when multiplied by current_ud (1000) would overflow u64
+        let max_u64 = u64::MAX;
+        let overflow_value = max_u64 / 1000 + 1; // This will overflow when multiplied by 1000
+
+        assert_err!(
+            UniversalDividend::transfer_ud(RuntimeOrigin::signed(1), 2, overflow_value),
+            DispatchError::Arithmetic(ArithmeticError::Overflow),
+        );
+    });
+}
+
+#[test]
+fn test_transfer_ud_keep_alive_overflow() {
+    new_test_ext(UniversalDividendConfig {
+        first_reeval: Some(48_000),
+        first_ud: Some(12_000),
+        initial_monetary_mass: 0,
+        initial_members: vec![1, 2, 3],
+        ud: 1_000,
+    })
+    .execute_with(|| {
+        // Give account 1 some balance to work with
+        let _ = mint_into(&1, 1_000_000);
+        assert_eq!(Balances::free_balance(1), 1_000_000);
+
+        // Test overflow scenario: try to transfer a very large value in milliUD
+        // that when multiplied by current_ud (1000) would overflow u64
+        let max_u64 = u64::MAX;
+        let overflow_value = max_u64 / 1000 + 1; // This will overflow when multiplied by 1000
+
+        assert_err!(
+            UniversalDividend::transfer_ud_keep_alive(RuntimeOrigin::signed(1), 2, overflow_value),
+            DispatchError::Arithmetic(ArithmeticError::Overflow),
+        );
+    });
+}
+
+#[test]
+fn test_transfer_ud_underflow() {
+    new_test_ext(UniversalDividendConfig {
+        first_reeval: Some(48_000),
+        first_ud: Some(12_000),
+        initial_monetary_mass: 0,
+        initial_members: vec![1, 2, 3],
+        ud: 1_000,
+    })
+    .execute_with(|| {
+        // Give account 1 some balance to work with
+        let _ = mint_into(&1, 1_000_000);
+        assert_eq!(Balances::free_balance(1), 1_000_000);
+
+        // Test underflow scenario: try to transfer a value that when divided by 1000
+        // would result in 0 (which is not a valid transfer amount)
+        let underflow_value = 999; // 999 * 1000 / 1000 = 999, which is valid
+
+        // This should work because 999 milliUD = 999 actual units
+        assert_ok!(UniversalDividend::transfer_ud(
+            RuntimeOrigin::signed(1),
+            2,
+            underflow_value
+        ));
+        assert_eq!(Balances::free_balance(2), 999);
+
+        // Test with minimum valid value (1000 milliUD = 1 UD)
+        assert_ok!(UniversalDividend::transfer_ud(
+            RuntimeOrigin::signed(1),
+            2,
+            1000
+        ));
+        assert_eq!(Balances::free_balance(2), 1999); // 999 + 1000
+    });
+}
+
+#[test]
+fn test_transfer_ud_keep_alive_underflow() {
+    new_test_ext(UniversalDividendConfig {
+        first_reeval: Some(48_000),
+        first_ud: Some(12_000),
+        initial_monetary_mass: 0,
+        initial_members: vec![1, 2, 3],
+        ud: 1_000,
+    })
+    .execute_with(|| {
+        // Give account 1 some balance to work with
+        let _ = mint_into(&1, 1_000_000);
+        assert_eq!(Balances::free_balance(1), 1_000_000);
+
+        // Test underflow scenario: try to transfer a value that when divided by 1000
+        // would result in 0 (which is not a valid transfer amount)
+        let underflow_value = 999; // 999 * 1000 / 1000 = 999, which is valid
+
+        // This should work because 999 milliUD = 999 actual units
+        assert_ok!(UniversalDividend::transfer_ud_keep_alive(
+            RuntimeOrigin::signed(1),
+            2,
+            underflow_value
+        ));
+        assert_eq!(Balances::free_balance(2), 999);
+
+        // Test with minimum valid value (1000 milliUD = 1 UD)
+        assert_ok!(UniversalDividend::transfer_ud_keep_alive(
+            RuntimeOrigin::signed(1),
+            2,
+            1000
+        ));
+        assert_eq!(Balances::free_balance(2), 1999); // 999 + 1000
+    });
+}
+
+#[test]
+fn test_transfer_ud_edge_cases() {
+    new_test_ext(UniversalDividendConfig {
+        first_reeval: Some(48_000),
+        first_ud: Some(12_000),
+        initial_monetary_mass: 0,
+        initial_members: vec![1, 2, 3],
+        ud: 1_000,
+    })
+    .execute_with(|| {
+        // Give account 1 some balance to work with
+        let _ = mint_into(&1, 1_000_000);
+        assert_eq!(Balances::free_balance(1), 1_000_000);
+
+        // Test with zero value (should work - 0 * 1000 / 1000 = 0)
+        assert_ok!(UniversalDividend::transfer_ud(
+            RuntimeOrigin::signed(1),
+            2,
+            0
+        ));
+        assert_eq!(Balances::free_balance(2), 0);
+
+        // Test with very small values that should work
+        assert_ok!(UniversalDividend::transfer_ud(
+            RuntimeOrigin::signed(1),
+            2,
+            1000
+        )); // 1 UD
+        assert_eq!(Balances::free_balance(2), 1000);
+
+        assert_ok!(UniversalDividend::transfer_ud(
+            RuntimeOrigin::signed(1),
+            2,
+            1500
+        )); // 1.5 UD
+        assert_eq!(Balances::free_balance(2), 2500);
+    });
+}
+
+#[test]
+fn test_transfer_ud_keep_alive_edge_cases() {
+    new_test_ext(UniversalDividendConfig {
+        first_reeval: Some(48_000),
+        first_ud: Some(12_000),
+        initial_monetary_mass: 0,
+        initial_members: vec![1, 2, 3],
+        ud: 1_000,
+    })
+    .execute_with(|| {
+        // Give account 1 some balance to work with
+        let _ = mint_into(&1, 1_000_000);
+        assert_eq!(Balances::free_balance(1), 1_000_000);
+
+        // Test with zero value (should work - 0 * 1000 / 1000 = 0)
+        assert_ok!(UniversalDividend::transfer_ud_keep_alive(
+            RuntimeOrigin::signed(1),
+            2,
+            0
+        ));
+        assert_eq!(Balances::free_balance(2), 0);
+
+        // Test with very small values that should work
+        assert_ok!(UniversalDividend::transfer_ud_keep_alive(
+            RuntimeOrigin::signed(1),
+            2,
+            1000
+        )); // 1 UD
+        assert_eq!(Balances::free_balance(2), 1000);
+
+        assert_ok!(UniversalDividend::transfer_ud_keep_alive(
+            RuntimeOrigin::signed(1),
+            2,
+            1500
+        )); // 1.5 UD
+        assert_eq!(Balances::free_balance(2), 2500);
+    });
+}
+
+#[test]
+fn test_transfer_ud_insufficient_balance() {
+    new_test_ext(UniversalDividendConfig {
+        first_reeval: Some(48_000),
+        first_ud: Some(12_000),
+        initial_monetary_mass: 0,
+        initial_members: vec![1, 2, 3],
+        ud: 1_000,
+    })
+    .execute_with(|| {
+        // Give account 1 minimal balance
+        let _ = mint_into(&1, 100);
+        assert_eq!(Balances::free_balance(1), 100);
+
+        // Try to transfer more than available balance
+        assert_err!(
+            UniversalDividend::transfer_ud(RuntimeOrigin::signed(1), 2, 2000), // Would require 2000 balance
+            DispatchError::Arithmetic(ArithmeticError::Underflow),
+        );
+
+        // Try to transfer exactly the available balance
+        assert_ok!(UniversalDividend::transfer_ud(
+            RuntimeOrigin::signed(1),
+            2,
+            100
+        )); // 100 milliUD = 0.1 UD
+        assert_eq!(Balances::free_balance(2), 100);
+        assert_eq!(Balances::free_balance(1), 0);
     });
 }

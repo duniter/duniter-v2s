@@ -168,3 +168,8 @@ pub fn run_to_block(n: u64) {
         Timestamp::set_timestamp(System::block_number() * BLOCK_TIME);
     }
 }
+
+/// Helper function to mint tokens for testing purposes
+pub fn mint_into(who: &u32, amount: Balance) -> Result<Balance, sp_runtime::DispatchError> {
+    <Test as pallet_universal_dividend::Config>::Currency::mint_into(who, amount)
+}

@@ -54,7 +54,7 @@ use frame_support::traits::{
 };
 use sp_arithmetic::{
     per_things::Perbill,
-    traits::{One, Saturating, Zero},
+    traits::{EnsureMul, One, Saturating, Zero},
 };
 use sp_runtime::traits::{Get, MaybeSerializeDeserialize, StaticLookup};
 
@@ -365,7 +365,7 @@ pub mod pallet {
             T::Currency::transfer(
                 &who,
                 &dest,
-                value.saturating_mul(ud_amount) / 1_000u32.into(),
+                value.ensure_mul(ud_amount)? / 1_000u32.into(),
                 preservation,
             )?;
             Ok(().into())
