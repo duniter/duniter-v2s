@@ -12421,7 +12421,7 @@ dependencies = [
 [[package]]
 name = "subxt"
 version = "0.41.0"
-source = "git+https://github.com/paritytech/subxt#a8ae55a61b13902b83c0aaa4a42e7d5b0a3f13a7"
+source = "git+https://github.com/paritytech/subxt?tag=v0.41.0#4c32ee1e78c606f4d2f4da532575cf26e823bbf2"
 dependencies = [
  "async-trait",
  "derive-where",
@@ -12474,7 +12474,7 @@ dependencies = [
 [[package]]
 name = "subxt-codegen"
 version = "0.41.0"
-source = "git+https://github.com/paritytech/subxt#a8ae55a61b13902b83c0aaa4a42e7d5b0a3f13a7"
+source = "git+https://github.com/paritytech/subxt?tag=v0.41.0#4c32ee1e78c606f4d2f4da532575cf26e823bbf2"
 dependencies = [
  "heck 0.5.0",
  "parity-scale-codec",
@@ -12519,7 +12519,7 @@ dependencies = [
 [[package]]
 name = "subxt-core"
 version = "0.41.0"
-source = "git+https://github.com/paritytech/subxt#a8ae55a61b13902b83c0aaa4a42e7d5b0a3f13a7"
+source = "git+https://github.com/paritytech/subxt?tag=v0.41.0#4c32ee1e78c606f4d2f4da532575cf26e823bbf2"
 dependencies = [
  "base58",
  "blake2 0.10.6",
@@ -12565,7 +12565,7 @@ dependencies = [
 [[package]]
 name = "subxt-lightclient"
 version = "0.41.0"
-source = "git+https://github.com/paritytech/subxt#a8ae55a61b13902b83c0aaa4a42e7d5b0a3f13a7"
+source = "git+https://github.com/paritytech/subxt?tag=v0.41.0#4c32ee1e78c606f4d2f4da532575cf26e823bbf2"
 dependencies = [
  "futures 0.3.31",
  "futures-util",
@@ -12597,7 +12597,7 @@ dependencies = [
 [[package]]
 name = "subxt-macro"
 version = "0.41.0"
-source = "git+https://github.com/paritytech/subxt#a8ae55a61b13902b83c0aaa4a42e7d5b0a3f13a7"
+source = "git+https://github.com/paritytech/subxt?tag=v0.41.0#4c32ee1e78c606f4d2f4da532575cf26e823bbf2"
 dependencies = [
  "darling",
  "parity-scale-codec",
@@ -12626,7 +12626,7 @@ dependencies = [
 [[package]]
 name = "subxt-metadata"
 version = "0.41.0"
-source = "git+https://github.com/paritytech/subxt#a8ae55a61b13902b83c0aaa4a42e7d5b0a3f13a7"
+source = "git+https://github.com/paritytech/subxt?tag=v0.41.0#4c32ee1e78c606f4d2f4da532575cf26e823bbf2"
 dependencies = [
  "frame-decode 0.7.0",
  "frame-metadata 20.0.0",
@@ -12640,7 +12640,7 @@ dependencies = [
 [[package]]
 name = "subxt-rpcs"
 version = "0.41.0"
-source = "git+https://github.com/paritytech/subxt#a8ae55a61b13902b83c0aaa4a42e7d5b0a3f13a7"
+source = "git+https://github.com/paritytech/subxt?tag=v0.41.0#4c32ee1e78c606f4d2f4da532575cf26e823bbf2"
 dependencies = [
  "derive-where",
  "frame-metadata 20.0.0",
@@ -12703,7 +12703,7 @@ dependencies = [
 [[package]]
 name = "subxt-utils-fetchmetadata"
 version = "0.41.0"
-source = "git+https://github.com/paritytech/subxt#a8ae55a61b13902b83c0aaa4a42e7d5b0a3f13a7"
+source = "git+https://github.com/paritytech/subxt?tag=v0.41.0#4c32ee1e78c606f4d2f4da532575cf26e823bbf2"
 dependencies = [
  "hex",
  "parity-scale-codec",
