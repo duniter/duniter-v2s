@@ -379,7 +379,7 @@ g1_data:
     #  - cp -R $HOME/.config/duniter/1.8.7/data /tmp/backup-g1-duniter-1.8.7
     #  - tar -cvzf /tmp/backup-g1-duniter-1.8.7.tgz /tmp/backup-g1-duniter-1.8.7
     # Then the file is uploaded to dl.cgeek.fr manually
-    - curl https://dl.cgeek.fr/public/backup-g1-duniter-1.8.7.tgz -o g1-dump.tgz
+    - curl https://files.coinduf.eu/g1v1/bakcup-g1-1.8.7.tgz -o g1-dump.tgz
     - tar xvzf g1-dump.tgz
     - rm g1-dump.tgz
     - mv tmp/backup-g1-duniter-1.8.7 duniter_default
