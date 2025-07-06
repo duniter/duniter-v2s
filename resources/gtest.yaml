@@ -16,8 +16,9 @@ clique_smiths:
   - name: "1000i100"
   - name: "vit"
   - name: "cgeek"
+  - name: "Elois"
     # This smith will be the first author
-    session_keys: "0xec6d7141864ca265b1c31a164d258e907e044380ac110c57502135943904137f5a172f9a6759763f59a7e0a4d170b467b744eabb3adb454f38a2e7957fb9cd285a172f9a6759763f59a7e0a4d170b467b744eabb3adb454f38a2e7957fb9cd285a172f9a6759763f59a7e0a4d170b467b744eabb3adb454f38a2e7957fb9cd28"
+    session_keys: "0xbd6d9041890bbf56fa5cb30c3db1b41f7cbf07b04b8a5cf1fb63d79b2029751ecc668b4c0fedf4fd7ac8e44014ffbe16a03b5f55274ac0b94e04e3a0a1fda70ccc668b4c0fedf4fd7ac8e44014ffbe16a03b5f55274ac0b94e04e3a0a1fda70ccc668b4c0fedf4fd7ac8e44014ffbe16a03b5f55274ac0b94e04e3a0a1fda70c"
 
 # FIXME
 sudo_key: "5Hm8sBbwuLAU99dBezvgtnRmZCrUy9mhqmbQMFyGTaeATYg7"
@@ -26,4 +27,4 @@ sudo_key: "5Hm8sBbwuLAU99dBezvgtnRmZCrUy9mhqmbQMFyGTaeATYg7"
 treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"
 
 # The technical committee members, to act as sudo
-technical_committee: ["Pini", "moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek"]
+technical_committee: ["Pini", "moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "Elois"]
