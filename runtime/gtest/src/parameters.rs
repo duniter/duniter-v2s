@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use common_runtime::constants::*;
+use common_runtime::{constants::*, Moment};
 use frame_support::{parameter_types, weights::constants::WEIGHT_REF_TIME_PER_SECOND};
 use sp_runtime::transaction_validity::TransactionPriority;
 
@@ -25,7 +25,7 @@ parameter_types! {
     pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::with_sensible_defaults(Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND * 2u64, u64::MAX), NORMAL_DISPATCH_RATIO);
     pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
         ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-    pub const SS58Prefix: u16 = 42;
+    pub const SS58Prefix: u16 = 4450;
 }
 
 /*************/
@@ -54,7 +54,7 @@ parameter_types! {
 }
 
 // Babe
-pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = HOURS;
+pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 4 * HOURS;
 parameter_types! {
     pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS as u64;
     pub const ExpectedBlockTime: u64 = MILLISECS_PER_BLOCK;
@@ -84,8 +84,8 @@ parameter_types! {
 parameter_types! {
     // 0.002_381_440 = 0.0488^2
     pub const SquareMoneyGrowthRate: Perbill = Perbill::from_parts(2_381_440);
-    pub const UdCreationPeriod: BlockNumber = 86_400_000; // 1 day
-    pub const UdReevalPeriod: BlockNumber = 7 * 86_400_000; // 7 days
+    pub const UdCreationPeriod: Moment = 86_400_000; // 1 day
+    pub const UdReevalPeriod: Moment = 15_778_800_000; // 1/2 year
 }
 
 /*******/
@@ -102,7 +102,7 @@ parameter_types! {
 // Identity
 parameter_types! {
     pub const ChangeOwnerKeyPeriod: BlockNumber = MONTHS;
-    pub const ConfirmPeriod: BlockNumber = DAYS;
+    pub const ConfirmPeriod: BlockNumber = 2 * MONTHS;
     pub const IdtyCreationPeriod: BlockNumber = DAYS;
     pub const AutorevocationPeriod: BlockNumber = YEARS;
     pub const DeletionPeriod: BlockNumber = 10 * YEARS;
@@ -110,13 +110,13 @@ parameter_types! {
 
 // Membership
 parameter_types! {
-    pub const MembershipPeriod: BlockNumber = 73 * DAYS;
+    pub const MembershipPeriod: BlockNumber = YEARS;
     pub const MembershipRenewalPeriod: BlockNumber = 56 * DAYS;
 }
 
 // Certification
 parameter_types! {
-    pub const CertPeriod: BlockNumber = DAYS;
+    pub const CertPeriod: BlockNumber = 5 * DAYS;
     pub const MaxByIssuer: u32 = 100;
     pub const ValidityPeriod: BlockNumber = 146 * DAYS;
 }
@@ -128,7 +128,7 @@ parameter_types! {
 parameter_types! {
     pub const SmithWotMinCertForMembership: u32 = 3;
     pub const SmithMaxByIssuer: u32 = 100;
-    pub const SmithInactivityMaxDuration: u32 = 48;
+    pub const SmithInactivityMaxDuration: u32 = 8 * 90; // 3 months (there is 8 sessions per day)
 }
 
 /*************/

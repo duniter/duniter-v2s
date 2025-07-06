@@ -22,7 +22,7 @@ fn main() {
 
         #[cfg(feature = "metadata-hash")]
         substrate_wasm_builder::WasmBuilder::init_with_defaults()
-            .enable_metadata_hash("ĞD", 2)
+            .enable_metadata_hash("ĞT", 2)
             .build();
     }
 }

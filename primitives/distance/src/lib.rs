@@ -22,7 +22,7 @@
 use codec::{Decode, DecodeWithMemTracking, Encode};
 use frame_support::pallet_prelude::RuntimeDebug;
 use scale_info::TypeInfo;
-use sp_inherents::{InherentData, InherentIdentifier, IsFatalError};
+use sp_inherents::{InherentIdentifier, IsFatalError};
 use sp_runtime::Perbill;
 #[cfg(feature = "std")]
 use std::marker::PhantomData;
@@ -69,7 +69,7 @@ impl<IdtyIndex: Decode + Encode + PartialEq + TypeInfo + Send + Sync>
 {
     async fn provide_inherent_data(
         &self,
-        inherent_data: &mut InherentData,
+        inherent_data: &mut sp_inherents::InherentData,
     ) -> Result<(), sp_inherents::Error> {
         if let Some(computation_result) = &self.computation_result {
             inherent_data.put_data(INHERENT_IDENTIFIER, computation_result)?;
