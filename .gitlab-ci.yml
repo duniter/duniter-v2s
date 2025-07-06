@@ -308,7 +308,7 @@ build_network_runtime:
   needs: ["trigger_network_release"]
   rules:
     - <<: *is_network_branch
-  image: paritytech/srtool:1.77.0-0.15.0
+  image: paritytech/srtool:1.84.1-0.18.2
   variables:
     SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/network_srtool_output.json
   script:
@@ -333,7 +333,7 @@ build_runtime:
   needs: ["trigger_runtime_release"]
   rules:
     - <<: *is_runtime_branch
-  image: paritytech/srtool:1.77.0-0.15.0
+  image: paritytech/srtool:1.84.1-0.18.2
   script:
     - *define_release_runtime_vars
     - mkdir -p $CI_PROJECT_DIR/release
