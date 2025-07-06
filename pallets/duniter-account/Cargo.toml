@@ -35,12 +35,12 @@ std = [
 	"pallet-treasury/std",
 	"scale-info/std",
 	"serde/std",
+	"sp-api/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
 ]
 try-runtime = [
-	"duniter-primitives/try-runtime",
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
 	"pallet-balances/try-runtime",
@@ -68,6 +68,7 @@ scale-info = { workspace = true, features = ["derive"] }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
+sp-api = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }

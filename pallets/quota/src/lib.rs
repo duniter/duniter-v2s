@@ -37,8 +37,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod traits;
-pub mod weights;
+mod benchmarking;
+mod traits;
+mod weights;
 
 #[cfg(test)]
 mod mock;
@@ -46,17 +47,16 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-pub mod benchmarking;
-
-use crate::traits::*;
 use frame_support::{
     pallet_prelude::*,
     traits::{Currency, ExistenceRequirement},
 };
 use frame_system::pallet_prelude::*;
-pub use pallet::*;
 use scale_info::prelude::vec::Vec;
 use sp_runtime::traits::Zero;
+
+pub use pallet::*;
+pub use traits::*;
 pub use weights::WeightInfo;
 
 #[allow(unreachable_patterns)]
@@ -161,6 +161,25 @@ pub mod pallet {
     // Hooks are infallible by definition, so there are no error. To monitor no-ops
     // from inside the quota pallet, we use events as mentioned in
     // https://substrate.stackexchange.com/questions/9854/emitting-errors-from-hooks-like-on-initialize
+
+    // PUBLIC FUNCTIONS //
+
+    impl<T: Config> Pallet<T> {
+        /// Estimates the quota refund amount for an identity
+        /// The estimation simulate a refund request at the current block
+        pub fn estimate_quota_refund(idty_index: IdtyId<T>) -> BalanceOf<T> {
+            if is_eligible_for_refund::<T>(idty_index) {
+                if let Some(ref mut quota) = IdtyQuota::<T>::get(idty_index) {
+                    Self::update_quota(quota);
+                    quota.amount
+                } else {
+                    Zero::zero()
+                }
+            } else {
+                Zero::zero()
+            }
+        }
+    }
 
     // INTERNAL FUNCTIONS //
     impl<T: Config> Pallet<T> {

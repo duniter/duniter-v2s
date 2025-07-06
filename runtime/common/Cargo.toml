@@ -71,7 +71,6 @@ std = [
 	"sp-weights/std",
 ]
 try-runtime = [
-	"duniter-primitives/try-runtime",
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
 	"pallet-authority-members/try-runtime",

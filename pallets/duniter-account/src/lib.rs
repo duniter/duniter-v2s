@@ -31,19 +31,23 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod benchmarking;
-
-mod types;
 pub mod weights;
 
+mod benchmarking;
+mod runtime_api;
+mod types;
+
 pub use pallet::*;
+pub use runtime_api::*;
 pub use types::*;
 pub use weights::WeightInfo;
 
 use core::cmp;
+use duniter_primitives::GetSigner;
 #[cfg(feature = "runtime-benchmarks")]
 use frame_support::traits::tokens::fungible::Mutate;
 use frame_support::{
+    dispatch::{DispatchInfo, GetDispatchInfo},
     pallet_prelude::*,
     traits::{
         fungible,
@@ -53,13 +57,15 @@ use frame_support::{
     },
 };
 use frame_system::pallet_prelude::*;
-use pallet_quota::traits::RefundFee;
+use pallet_quota::RefundFee;
 use pallet_transaction_payment::OnChargeTransaction;
 use scale_info::prelude::{
     collections::{BTreeMap, BTreeSet},
     fmt::Debug,
 };
-use sp_runtime::traits::{DispatchInfoOf, PostDispatchInfoOf, Saturating};
+use sp_runtime::traits::{
+    DispatchInfoOf, Dispatchable, ExtrinsicLike, PostDispatchInfoOf, Saturating,
+};
 
 #[allow(unreachable_patterns)]
 #[frame_support::pallet]
@@ -98,7 +104,7 @@ pub mod pallet {
         type InnerOnChargeTransaction: OnChargeTransaction<Self>;
 
         /// A type that implements the refund behavior for transaction fees.
-        type Refund: pallet_quota::traits::RefundFee<Self>;
+        type Refund: pallet_quota::RefundFee<Self>;
     }
 
     // GENESIS STUFF //
@@ -184,6 +190,48 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             Self::do_unlink_identity(who);
             Ok(().into())
+        }
+    }
+
+    // PUBLIC FUNCTIONS //
+    impl<T: Config> Pallet<T> {
+        pub fn estimate_cost<Extrinsic>(
+            unchecked_extrinsic: Extrinsic,
+        ) -> EstimatedCost<BalanceOf<T>>
+        where
+            BalanceOf<T>: PartialOrd,
+            Extrinsic: Encode + ExtrinsicLike + GetDispatchInfo + GetSigner<T::Lookup>,
+            T::RuntimeCall: Dispatchable<Info = DispatchInfo>,
+            <T as pallet_transaction_payment::Config>::OnChargeTransaction:
+                pallet_transaction_payment::OnChargeTransaction<T, Balance = BalanceOf<T>>,
+        {
+            let signer = unchecked_extrinsic.get_signer();
+            let len = unchecked_extrinsic.encoded_size();
+            let fees: BalanceOf<T> = pallet_transaction_payment::Pallet::<T>::query_info(
+                unchecked_extrinsic,
+                len as u32,
+            )
+            .partial_fee;
+            let refund: BalanceOf<T> = if let Some(signer) = signer {
+                let account_data = frame_system::Pallet::<T>::get(&signer);
+                if let Some(idty_index) = account_data.linked_idty {
+                    pallet_quota::Pallet::<T>::estimate_quota_refund(idty_index)
+                } else {
+                    Zero::zero()
+                }
+            } else {
+                Zero::zero()
+            };
+
+            EstimatedCost {
+                cost: if fees > refund {
+                    fees - refund
+                } else {
+                    Zero::zero()
+                },
+                fees,
+                refund,
+            }
         }
     }
 

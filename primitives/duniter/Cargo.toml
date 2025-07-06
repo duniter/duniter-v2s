@@ -13,7 +13,11 @@ version.workspace = true
 default-features = false
 targets = ["x86_64-unknown-linux-gnu"]
 
+[dependencies]
+sp-runtime = { workspace = true }
+
 [features]
 default = ["std"]
-std = []
-try-runtime = []
+std = [
+	"sp-runtime/std",
+]

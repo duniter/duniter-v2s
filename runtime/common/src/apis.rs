@@ -219,6 +219,14 @@ impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Ba
     }
 }
 
+impl pallet_duniter_account::DuniterAccountApi<Block, Balance> for Runtime {
+    fn estimate_cost(
+        uxt: <Block as BlockT>::Extrinsic,
+    ) -> pallet_duniter_account::EstimatedCost<Balance> {
+        pallet_duniter_account::Pallet::<Runtime>::estimate_cost(uxt)
+    }
+}
+
 impl pallet_universal_dividend::UniversalDividendApi<Block, AccountId, Balance> for Runtime {
     fn account_balances(account: AccountId) -> pallet_universal_dividend::AccountBalances<Balance> {
         UniversalDividend::account_balances(&account)

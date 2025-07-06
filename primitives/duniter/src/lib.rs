@@ -27,6 +27,25 @@ pub fn validate_idty_name(idty_name: &[u8]) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || *c == b'-' || *c == b'_')
 }
 
+pub trait GetSigner<Lookup: sp_runtime::traits::StaticLookup> {
+    fn get_signer(&self) -> Option<Lookup::Target>;
+}
+
+impl<Address: Clone, Lookup, Call, Signature, Extension> GetSigner<Lookup>
+    for sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, Extension>
+where
+    Lookup: sp_runtime::traits::StaticLookup<Source = Address>,
+{
+    fn get_signer(&self) -> Option<Lookup::Target> {
+        match &self.preamble {
+            sp_runtime::generic::Preamble::Signed(signer, _, _) => {
+                Lookup::lookup(signer.clone()).ok()
+            }
+            _ => None,
+        }
+    }
+}
+
 /// trait used to go from index to owner key and reverse
 // replaces less explicit "Convert" implementations
 pub trait Idty<IdtyIndex, AccountId> {
