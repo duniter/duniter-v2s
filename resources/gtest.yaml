@@ -9,7 +9,6 @@ first_ud_reeval: null
 
 # Clique Smith WoT: each smith will certify by each other smith automatically on Genesis
 clique_smiths:
-  - name: "Pini"
   - name: "moul"
   - name: "HugoTrentesaux"
   - name: "tuxmain"
@@ -27,4 +26,4 @@ sudo_key: "5Hm8sBbwuLAU99dBezvgtnRmZCrUy9mhqmbQMFyGTaeATYg7"
 treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"
 
 # The technical committee members, to act as sudo
-technical_committee: ["Pini", "moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "Elois"]
+technical_committee: ["moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "Elois"]
