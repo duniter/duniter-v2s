@@ -9,8 +9,3 @@ telemetryEndpoints:
 properties:
   tokenDecimals: 2
   tokenSymbol: "ĞT"
-genesis:
-  runtimeGenesis:
-    patch:
-      - ":heappages": 4096
-
