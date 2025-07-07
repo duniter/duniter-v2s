@@ -22,6 +22,7 @@ workflow:
         - .gitlab-ci.yml
         - Cargo.toml
         - Cargo.lock
+        - resources/*.yaml
 
 .is_network_branch: &is_network_branch
   if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
