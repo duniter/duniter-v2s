@@ -197,7 +197,7 @@ substrate-frame-rpc-system = { workspace = true, default-features = true }
 
 [dev-dependencies]
 sc-network-test = { workspace = true, default-features = true }
-async-trait = { version = "0.1.79" }
+async-trait = { workspace = true }
 env_logger = "0.10.2"
 async-channel = "2.3.1"
 
