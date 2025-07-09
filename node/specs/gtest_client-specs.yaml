@@ -1,6 +1,7 @@
 name: "ĞTest"
 id: "gtest"
 chainType: "Live"
+protocolId: "gtest"
 bootNodes:
   - "/dns/gt.elo.tf/tcp/30333/p2p/12D3KooWNUyHfjozVWP2ne5BN7AEwFNzUQvtK6GULxmgBucnYtjG"
   - "/dns/gt.elo.tf/tcp/30334/p2p/12D3KooWRugKTSYDo4SKEWhzatSFQVm5vaG74NpZPmVkXE2W8pJU"
