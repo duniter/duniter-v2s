@@ -135,8 +135,9 @@ build_deb:
   variables:
     DEBIAN_FRONTEND: noninteractive
   script:
+    - export RUNTIME=$(echo $CI_COMMIT_BRANCH | grep -o "gdev\|gtest\|g1" || echo "gdev")
     - cargo install cargo-deb
-    - cargo build -Zgit=shallow-deps --release
+    - cargo build -Zgit=shallow-deps --release --features $RUNTIME --no-default-features
     - cargo deb --no-build -p duniter
   artifacts:
     paths:
@@ -156,8 +157,9 @@ build_rpm:
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
   script:
+    - export RUNTIME=$(echo $CI_COMMIT_BRANCH | grep -o "gdev\|gtest\|g1" || echo "gdev")
     - cargo install cargo-generate-rpm
-    - cargo build -Zgit=shallow-deps --release
+    - cargo build -Zgit=shallow-deps --release --features $RUNTIME --no-default-features
     - cargo generate-rpm -p node
   artifacts:
     paths:
