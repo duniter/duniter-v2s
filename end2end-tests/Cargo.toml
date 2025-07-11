@@ -33,7 +33,7 @@ clap = { workspace = true, features = ["derive", "cargo"] }
 codec = { workspace = true }
 ctrlc = { workspace = true }
 cucumber = { workspace = true, features = ["macros"] }
-distance-oracle = { workspace = true }
+distance-oracle = { workspace = true, features = ["gdev"] }
 env_logger = { workspace = true }
 hex = { workspace = true }
 notify = { workspace = true }
