@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cargo install subxt-cli --version 0.41.0
+cargo install subxt-cli --git https://github.com/duniter/subxt --branch subxt-v0.38.0-duniter-substrate-v1.17.0
 cargo build
 target/debug/duniter --dev&
 sleep 20
