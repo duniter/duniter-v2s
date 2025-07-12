@@ -983,11 +983,10 @@ fn smiths_and_technical_committee_checks(
             .values()
             .any(|(name, _)| name == tech_com_member);
         if inactive_commitee_member {
-            log::error!(
+            panic!(
                 "{} is an inactive technical commitee member",
                 tech_com_member
             );
-            assert!(!inactive_commitee_member);
         }
     }
     // no inactive smith

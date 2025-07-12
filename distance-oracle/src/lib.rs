@@ -70,7 +70,11 @@ use std::{io::Write, path::PathBuf};
 /// thereby preventing potential penalties.
 const VERSION_PREFIX: &str = "001-";
 
+#[cfg(feature = "gdev")]
 #[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
+pub mod runtime {}
+#[cfg(feature = "gtest")]
+#[subxt::subxt(runtime_metadata_path = "../resources/gtest_metadata.scale")]
 pub mod runtime {}
 
 pub enum RuntimeConfig {}

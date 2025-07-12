@@ -7,7 +7,7 @@ homepage.workspace = true
 license.workspace = true
 name = "duniter"
 repository.workspace = true
-version = "0.8.0"
+version = "0.11.0"
 default-run = "duniter"
 
 [package.metadata.docs.rs]
@@ -20,7 +20,8 @@ path = "src/main.rs"
 
 [features]
 default = ["distance-oracle", "gdev"]
-gdev = ["gdev-runtime", "std"]
+gdev = ["distance-oracle?/gdev", "gdev-runtime", "std"]
+gtest = ["distance-oracle?/gtest", "gtest-runtime", "std"]
 g1 = ["g1-runtime", "std"]
 constant-fees = [
 	"common-runtime/constant-fees",
@@ -28,7 +29,6 @@ constant-fees = [
 	"gdev-runtime/constant-fees",
 	"gtest-runtime/constant-fees",
 ]
-gtest = ["gtest-runtime", "std"]
 embed = []
 native = []
 runtime-benchmarks = [
@@ -197,7 +197,7 @@ substrate-frame-rpc-system = { workspace = true, default-features = true }
 
 [dev-dependencies]
 sc-network-test = { workspace = true, default-features = true }
-async-trait = { version = "0.1.79" }
+async-trait = { workspace = true }
 env_logger = "0.10.2"
 async-channel = "2.3.1"
 

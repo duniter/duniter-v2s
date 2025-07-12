@@ -22,6 +22,7 @@ workflow:
         - .gitlab-ci.yml
         - Cargo.toml
         - Cargo.lock
+        - resources/*.yaml
 
 .is_network_branch: &is_network_branch
   if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
@@ -134,8 +135,9 @@ build_deb:
   variables:
     DEBIAN_FRONTEND: noninteractive
   script:
+    - export RUNTIME=$(echo $CI_COMMIT_BRANCH | grep -o "gdev\|gtest\|g1" || echo "gdev")
     - cargo install cargo-deb
-    - cargo build -Zgit=shallow-deps --release
+    - cargo build -Zgit=shallow-deps --release --features $RUNTIME --no-default-features
     - cargo deb --no-build -p duniter
   artifacts:
     paths:
@@ -155,8 +157,9 @@ build_rpm:
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
   script:
-    - cargo install cargo-generate-rpm
-    - cargo build -Zgit=shallow-deps --release
+    - export RUNTIME=$(echo $CI_COMMIT_BRANCH | grep -o "gdev\|gtest\|g1" || echo "gdev")
+    - cargo install cargo-generate-rpm --version 0.16.1
+    - cargo build -Zgit=shallow-deps --release --features $RUNTIME --no-default-features
     - cargo generate-rpm -p node
   artifacts:
     paths:
@@ -308,7 +311,7 @@ build_network_runtime:
   needs: ["trigger_network_release"]
   rules:
     - <<: *is_network_branch
-  image: paritytech/srtool:1.77.0-0.15.0
+  image: paritytech/srtool:1.84.1-0.18.2
   variables:
     SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/network_srtool_output.json
   script:
@@ -333,7 +336,7 @@ build_runtime:
   needs: ["trigger_runtime_release"]
   rules:
     - <<: *is_runtime_branch
-  image: paritytech/srtool:1.77.0-0.15.0
+  image: paritytech/srtool:1.84.1-0.18.2
   script:
     - *define_release_runtime_vars
     - mkdir -p $CI_PROJECT_DIR/release
@@ -379,7 +382,7 @@ g1_data:
     #  - cp -R $HOME/.config/duniter/1.8.7/data /tmp/backup-g1-duniter-1.8.7
     #  - tar -cvzf /tmp/backup-g1-duniter-1.8.7.tgz /tmp/backup-g1-duniter-1.8.7
     # Then the file is uploaded to dl.cgeek.fr manually
-    - curl https://dl.cgeek.fr/public/backup-g1-duniter-1.8.7.tgz -o g1-dump.tgz
+    - curl https://files.coinduf.eu/g1v1/backup-1.8.7.tgz -o g1-dump.tgz
     - tar xvzf g1-dump.tgz
     - rm g1-dump.tgz
     - mv tmp/backup-g1-duniter-1.8.7 duniter_default
