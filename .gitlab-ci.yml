@@ -158,7 +158,7 @@ build_rpm:
     - when: manual
   script:
     - export RUNTIME=$(echo $CI_COMMIT_BRANCH | grep -o "gdev\|gtest\|g1" || echo "gdev")
-    - cargo install cargo-generate-rpm
+    - cargo install cargo-generate-rpm --version 0.16.1
     - cargo build -Zgit=shallow-deps --release --features $RUNTIME --no-default-features
     - cargo generate-rpm -p node
   artifacts:
