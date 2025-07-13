@@ -26,6 +26,9 @@ WORKDIR /root
 # Copy source tree
 COPY . .
 
+# Get runtime type (default to gdev)
+ARG runtime="gdev"
+
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y clang cmake protobuf-compiler
 
@@ -49,11 +52,10 @@ RUN set -x && \
     fi
 
 # Build
-ARG chain="gdev"
 RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
-    cargo build -Zgit=shallow-deps --locked $CARGO_OPTIONS --no-default-features $BENCH_OPTIONS --features $chain --target "$RUST_ARCH_TRIPLET" && \
+    cargo build -Zgit=shallow-deps --locked $CARGO_OPTIONS --no-default-features $BENCH_OPTIONS --features ${runtime},embed --target "$RUST_ARCH_TRIPLET" && \
     cargo build -Zgit=shallow-deps --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" --package distance-oracle && \
     mkdir -p build && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/ && \
