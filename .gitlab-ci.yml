@@ -223,7 +223,7 @@ tests:
   - echo $RELEASE_FILE_WASM
   - export RELEASE_FILE_RAW_SPEC=release/${RUNTIME}-raw.json
   - echo $RELEASE_FILE_RAW_SPEC
-  - export RELEASE_FILE_CLIENT_SPEC=release/gdev_client-specs.yaml
+  - export RELEASE_FILE_CLIENT_SPEC=release/gtest_client-specs.yaml
   - echo $RELEASE_FILE_CLIENT_SPEC
   - export CLIENT_RELEASE_NAME=$RUNTIME-$RUNTIME_VERSION-$CLIENT_VERSION
   - echo $CLIENT_RELEASE_NAME
