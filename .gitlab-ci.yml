@@ -58,7 +58,7 @@ check_metadata:
     - ./scripts/check_metadata.sh
 
 .env:
-  image: paritytech/ci-linux:production
+  image: paritytech/ci-unified:bullseye-1.88.0
   tags:
     - kepler
 
