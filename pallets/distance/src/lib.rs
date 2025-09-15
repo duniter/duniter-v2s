@@ -258,6 +258,11 @@ pub mod pallet {
             idty_index: T::IdtyIndex,
             distance: Perbill,
         },
+        /// No distance evaluation was provided.
+        NotEvaluated {
+            idty_index: T::IdtyIndex,
+            who: T::AccountId,
+        },
     }
 
     // ERRORS //
@@ -712,6 +717,10 @@ pub mod pallet {
                             <T as Config>::EvaluationPrice::get(),
                             Precision::Exact,
                         );
+                        Self::deposit_event(Event::NotEvaluated {
+                            idty_index: idty,
+                            who: requester,
+                        });
                         weight = weight.saturating_add(
                             <T as pallet::Config>::WeightInfo::do_evaluation_failure()
                                 .saturating_sub(

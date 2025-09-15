@@ -64,6 +64,15 @@ fn test_request_distance_evaluation_for() {
 
         // currency was reserved
         assert_eq!(Balances::reserved_balance(1), 1000);
+
+        // let the request expire
+        run_to_block(12);
+        System::assert_has_event(RuntimeEvent::Distance(Event::NotEvaluated {
+            idty_index: 5,
+            who: 1,
+        }));
+        assert_eq!(Balances::reserved_balance(1), 0);
+        assert_eq!(Balances::free_balance(1), 10_000);
     });
 }
 
