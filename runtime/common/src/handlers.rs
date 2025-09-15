@@ -198,19 +198,30 @@ impl<
         account_id: AccountId,
     ) -> Result<(), sp_runtime::DispatchError> {
         if let Some(smith) = pallet_smith_members::Pallet::<Runtime>::smiths(&idty_index) {
+            // last_online is None for both online validators and smiths who have never been online
             if let Some(last_online) = smith.last_online {
                 if last_online + ReportLongevity::get()
                     > frame_system::pallet::Pallet::<Runtime>::block_number()
                 {
                     return Err(pallet_identity::Error::<Runtime>::OwnerKeyInBound.into());
-                } else {
-                    pallet_authority_members::Pallet::<Runtime>::change_owner_key(
-                        idty_index, account_id,
-                    )
-                    .map_err(|e| e.error)?;
                 }
-            } else {
+            } else if pallet_authority_members::Pallet::<Runtime>::online().contains(&idty_index) {
                 return Err(pallet_identity::Error::<Runtime>::OwnerKeyUsedAsValidator.into());
+            }
+            match pallet_authority_members::Pallet::<Runtime>::change_owner_key(
+                idty_index, account_id,
+            ) {
+                // New or future smiths who have not yet set keys are not authority members
+                Err(sp_runtime::DispatchErrorWithPostInfo {
+                    error:
+                        sp_runtime::DispatchError::Module(sp_runtime::ModuleError {
+                            message: Some("MemberNotFound"),
+                            ..
+                        }),
+                    ..
+                }) => {}
+                Err(e) => return Err(e.error),
+                Ok(_) => {}
             }
         }
         Ok(())

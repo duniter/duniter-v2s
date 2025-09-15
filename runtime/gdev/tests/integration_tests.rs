@@ -1570,6 +1570,60 @@ fn test_change_owner_key_offline() {
         })
 }
 
+/// test change owner key for a smith who has never been online
+#[test]
+fn test_change_owner_key_never_been_online() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(Keyring::Ferdie.to_account_id(), 8888)])
+        .build()
+        .execute_with(|| {
+            let genesis_hash = System::block_hash(0);
+            let alice = Keyring::Alice.to_account_id();
+            let bob = Keyring::Bob.to_account_id();
+            let dave = Keyring::Dave.to_account_id();
+            let ferdie = Keyring::Ferdie.to_account_id();
+            let payload = (b"icok", genesis_hash, 4u32, dave.clone()).encode();
+            let signature = Keyring::Ferdie.sign(&payload);
+
+            // Dave is invited to become smith
+            assert_ok!(SmithMembers::invite_smith(
+                RuntimeOrigin::signed(alice.clone()),
+                4
+            ));
+            assert_ok!(SmithMembers::accept_invitation(RuntimeOrigin::signed(
+                dave.clone()
+            ),));
+
+            // Alice and Bob certify Dave
+            assert_ok!(SmithMembers::certify_smith(RuntimeOrigin::signed(alice), 4));
+            assert_ok!(SmithMembers::certify_smith(RuntimeOrigin::signed(bob), 4));
+
+            // Dave is an offline smith
+            assert_eq!(
+                SmithMembers::smiths(4),
+                Some(SmithMeta {
+                    status: SmithStatus::Smith,
+                    expires_on: Some(48),
+                    issued_certs: vec![],
+                    received_certs: vec![1, 2],
+                    last_online: None,
+                })
+            );
+
+            // Dave can change his owner key to Ferdie's a valid account
+            // with providers and balance
+            assert_ok!(Identity::change_owner_key(
+                RuntimeOrigin::signed(dave),
+                ferdie.clone(),
+                signature.into()
+            ));
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
+                Some(4)
+            );
+        })
+}
+
 /// test change owner key
 #[test]
 #[ignore = "long to go to ReportLongevity"]
