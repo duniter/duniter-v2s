@@ -54,7 +54,7 @@ parameter_types! {
 }
 
 // Babe
-pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 4 * HOURS;
+pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = HOURS;
 parameter_types! {
     pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS as u64;
     pub const ExpectedBlockTime: u64 = MILLISECS_PER_BLOCK;
@@ -118,7 +118,7 @@ parameter_types! {
 parameter_types! {
     pub const CertPeriod: BlockNumber = 5 * DAYS;
     pub const MaxByIssuer: u32 = 100;
-    pub const ValidityPeriod: BlockNumber = 146 * DAYS;
+    pub const ValidityPeriod: BlockNumber = 2 * YEARS;
 }
 
 /******************/
