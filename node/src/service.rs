@@ -16,14 +16,16 @@
 
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
+#![allow(clippy::result_large_err)]
+
 pub mod client;
 
 use self::client::{Client, ClientHandle, RuntimeApiCollection};
 use crate::{
     endpoint_gossip::{
+        DuniterEndpoint, DuniterEndpoints, Peering,
         rpc::state::DuniterPeeringsState,
         well_known_endpoint_types::{RPC, SQUID},
-        DuniterEndpoint, DuniterEndpoints, Peering,
     },
     rpc::DuniterPeeringRpcModuleDeps,
 };
@@ -31,12 +33,12 @@ use async_io::Timer;
 use common_runtime::Block;
 use futures::{Stream, StreamExt};
 use log::error;
-use sc_client_api::{client::BlockBackend, Backend};
+use sc_client_api::{Backend, client::BlockBackend};
 use sc_consensus_grandpa::{FinalityProofProvider, SharedVoterState};
-use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
+use sc_consensus_manual_seal::{EngineCommand, ManualSealParams, run_manual_seal};
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_service::{
-    error::Error as ServiceError, Configuration, PartialComponents, TaskManager, WarpSyncConfig,
+    Configuration, PartialComponents, TaskManager, WarpSyncConfig, error::Error as ServiceError,
 };
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::TransactionPool;
@@ -741,27 +743,25 @@ where
             .expect("Failed to read Duniter endpoints"),
     };
     // Then add through the specific options
-    if let Some(rpc_endoint) = duniter_options.public_rpc {
-        if duniter_endpoints
+    if let Some(rpc_endoint) = duniter_options.public_rpc
+        && duniter_endpoints
             .try_push(DuniterEndpoint {
                 protocol: RPC.into(),
                 address: rpc_endoint,
             })
             .is_err()
-        {
-            error!("Could not add RPC endpoint, too much endpoints already");
-        }
+    {
+        error!("Could not add RPC endpoint, too much endpoints already");
     }
-    if let Some(squid_endoint) = duniter_options.public_squid {
-        if duniter_endpoints
+    if let Some(squid_endoint) = duniter_options.public_squid
+        && duniter_endpoints
             .try_push(DuniterEndpoint {
                 protocol: SQUID.into(),
                 address: squid_endoint,
             })
             .is_err()
-        {
-            error!("Could not add SQUID endpoint, too much endpoints already");
-        }
+    {
+        error!("Could not add SQUID endpoint, too much endpoints already");
     }
 
     task_manager.spawn_handle().spawn_blocking(

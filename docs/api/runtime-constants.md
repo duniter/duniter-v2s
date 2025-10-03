@@ -1,6 +1,6 @@
 # Runtime Constant
 
-There are **69** constants from **35** pallets.
+There are **70** constants from **35** pallets.
 
 <ul>
 
@@ -57,7 +57,7 @@ value: U32(2400)
  The weight of runtime database operations the runtime can invoke.
 
 ```rust
-value: sp_weights::RuntimeDbWeight({ read: 14314000, write: 99642000 })
+value: sp_weights::RuntimeDbWeight({ read: 17460000, write: 143510000 })
 ```
 
 </details>
@@ -71,7 +71,7 @@ value: sp_weights::RuntimeDbWeight({ read: 14314000, write: 99642000 })
  Get the chain's in-code version.
 
 ```rust
-value: sp_version::RuntimeVersion({ spec_name: ("gdev"), impl_name: ("duniter-gdev"), authoring_version: 1, spec_version: 800, impl_version: 1, apis: ((((104, 122, 212, 74, 211, 127, 3, 194), 1), ((203, 202, 37, 227, 159, 20, 35, 135), 2), ((223, 106, 203, 104, 153, 7, 96, 155), 5), ((55, 227, 151, 252, 124, 145, 245, 228), 2), ((64, 254, 58, 212, 1, 248, 149, 154), 6), ((210, 188, 152, 151, 238, 208, 143, 21), 3), ((247, 139, 39, 139, 229, 63, 69, 76), 2), ((171, 60, 5, 114, 41, 31, 235, 139), 1), ((237, 153, 197, 172, 178, 94, 237, 245), 3), ((188, 157, 137, 144, 79, 91, 146, 63), 1), ((55, 200, 187, 19, 80, 169, 162, 168), 4), ((251, 197, 119, 185, 215, 71, 239, 214), 1))), transaction_version: 1, system_version: 1 })
+value: sp_version::RuntimeVersion({ spec_name: ("gdev"), impl_name: ("duniter-gdev"), authoring_version: 1, spec_version: 1000, impl_version: 1, apis: ((((104, 122, 212, 74, 211, 127, 3, 194), 1), ((203, 202, 37, 227, 159, 20, 35, 135), 2), ((223, 106, 203, 104, 153, 7, 96, 155), 5), ((55, 227, 151, 252, 124, 145, 245, 228), 2), ((64, 254, 58, 212, 1, 248, 149, 154), 6), ((210, 188, 152, 151, 238, 208, 143, 21), 3), ((247, 139, 39, 139, 229, 63, 69, 76), 2), ((171, 60, 5, 114, 41, 31, 235, 139), 1), ((237, 153, 197, 172, 178, 94, 237, 245), 3), ((188, 157, 137, 144, 79, 91, 146, 63), 1), ((55, 200, 187, 19, 80, 169, 162, 168), 4), ((80, 118, 17, 182, 87, 247, 70, 137), 1), ((231, 119, 33, 121, 137, 168, 157, 158), 1), ((251, 197, 119, 185, 215, 71, 239, 214), 1))), transaction_version: 1, system_version: 1 })
 ```
 
 </details>
@@ -1269,6 +1269,20 @@ value: U32(100)
 
 ```rust
 value: U32(10)
+```
+
+</details>
+</li>
+
+<li>
+<details>
+<summary>
+<code>pot_account</code>
+</summary>
+ Gets this pallet's derived pot account.
+
+```rust
+value: sp_core::crypto::AccountId32(((109, 111, 100, 108, 112, 121, 47, 116, 114, 115, 114, 121, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)))
 ```
 
 </details>

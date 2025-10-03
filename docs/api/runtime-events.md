@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **139** events from **35** pallets.
+There are **151** events from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -88,6 +88,19 @@ An upgrade was authorized.
 ```rust
 code_hash: T::Hash
 check_version: bool
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>RejectedInvalidAuthorizedUpgrade(code_hash, error)</code> - 7</summary>
+An invalid authorized upgrade was rejected while trying to apply it.
+
+```rust
+code_hash: T::Hash
+error: DispatchError
 ```
 
 </details>
@@ -242,6 +255,18 @@ The given task can never be executed since it is overweight.
 ```rust
 task: TaskAddress<BlockNumberFor<T>>
 id: Option<TaskName>
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>AgendaIncomplete(when)</code> - 9</summary>
+Agenda is incomplete from `when`.
+
+```rust
+when: BlockNumberFor<T>
 ```
 
 </details>
@@ -874,6 +899,30 @@ timeslot: OpaqueTimeSlot
 </li>
 <li>Historical - 14
 <ul>
+<li>
+<details>
+<summary>
+<code>RootStored(index)</code> - 0</summary>
+The merkle root of the validators of the said session were stored
+
+```rust
+index: SessionIndex
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>RootsPruned(up_to)</code> - 1</summary>
+The merkle roots of up to this session index were pruned
+
+```rust
+up_to: SessionIndex
+```
+
+</details>
+</li>
 </ul>
 </li>
 <li>Session - 15
@@ -887,6 +936,43 @@ block number as the type might suggest.
 
 ```rust
 session_index: SessionIndex
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>NewQueued()</code> - 1</summary>
+The `NewSession` event in the current block also implies a new validator set to be
+queued.
+
+```rust
+no args
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>ValidatorDisabled(validator)</code> - 2</summary>
+Validator has been disabled.
+
+```rust
+validator: T::ValidatorId
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>ValidatorReenabled(validator)</code> - 3</summary>
+Validator has been re-enabled.
+
+```rust
+validator: T::ValidatorId
 ```
 
 </details>
@@ -1608,6 +1694,21 @@ call_hash: CallHash
 
 </details>
 </li>
+<li>
+<details>
+<summary>
+<code>DepositPoked(who, call_hash, old_deposit, new_deposit)</code> - 4</summary>
+The deposit for a multisig operation has been updated/poked.
+
+```rust
+who: T::AccountId
+call_hash: CallHash
+old_deposit: BalanceOf<T>
+new_deposit: BalanceOf<T>
+```
+
+</details>
+</li>
 </ul>
 </li>
 <li>ProvideRandomness - 52
@@ -1674,7 +1775,22 @@ disambiguation_index: u16
 <li>
 <details>
 <summary>
-<code>Announced(real, proxy, call_hash)</code> - 2</summary>
+<code>PureKilled(pure, spawner, proxy_type, disambiguation_index)</code> - 2</summary>
+A pure proxy was killed by its spawner.
+
+```rust
+pure: T::AccountId
+spawner: T::AccountId
+proxy_type: T::ProxyType
+disambiguation_index: u16
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>Announced(real, proxy, call_hash)</code> - 3</summary>
 An announcement was placed to make a call in the future.
 
 ```rust
@@ -1688,7 +1804,7 @@ call_hash: CallHashOf<T>
 <li>
 <details>
 <summary>
-<code>ProxyAdded(delegator, delegatee, proxy_type, delay)</code> - 3</summary>
+<code>ProxyAdded(delegator, delegatee, proxy_type, delay)</code> - 4</summary>
 A proxy was added.
 
 ```rust
@@ -1703,7 +1819,7 @@ delay: BlockNumberFor<T>
 <li>
 <details>
 <summary>
-<code>ProxyRemoved(delegator, delegatee, proxy_type, delay)</code> - 4</summary>
+<code>ProxyRemoved(delegator, delegatee, proxy_type, delay)</code> - 5</summary>
 A proxy was removed.
 
 ```rust
@@ -1711,6 +1827,21 @@ delegator: T::AccountId
 delegatee: T::AccountId
 proxy_type: T::ProxyType
 delay: BlockNumberFor<T>
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>DepositPoked(who, kind, old_deposit, new_deposit)</code> - 6</summary>
+A deposit stored for proxies or announcements was poked / updated.
+
+```rust
+who: T::AccountId
+kind: DepositKind
+old_deposit: BalanceOf<T>
+new_deposit: BalanceOf<T>
 ```
 
 </details>
@@ -1789,6 +1920,30 @@ A call was dispatched.
 
 ```rust
 result: DispatchResult
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>IfElseMainSuccess()</code> - 6</summary>
+Main call was dispatched.
+
+```rust
+no args
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>IfElseFallbackCalled(main_error)</code> - 7</summary>
+The fallback call was dispatched.
+
+```rust
+main_error: DispatchError
 ```
 
 </details>
@@ -1897,8 +2052,8 @@ index: SpendIndex
 asset_kind: T::AssetKind
 amount: AssetBalanceOf<T, I>
 beneficiary: T::Beneficiary
-valid_from: BlockNumberFor<T>
-expire_at: BlockNumberFor<T>
+valid_from: BlockNumberFor<T, I>
+expire_at: BlockNumberFor<T, I>
 ```
 
 </details>

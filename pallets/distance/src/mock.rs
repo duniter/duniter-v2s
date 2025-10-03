@@ -25,11 +25,10 @@ use pallet_balances::AccountData;
 use pallet_session::ShouldEndSession;
 use sp_core::{ConstU32, H256};
 use sp_runtime::{
-    impl_opaque_keys,
+    BuildStorage, KeyTypeId, Perbill, impl_opaque_keys,
     key_types::DUMMY,
     testing::{TestSignature as SubtrateTestSignature, UintAuthorityId},
     traits::{BlakeTwo256, ConvertInto, IdentityLookup, IsMember, OpaqueKeys},
-    BuildStorage, KeyTypeId, Perbill,
 };
 
 type Balance = u64;
@@ -100,6 +99,7 @@ frame_support::construct_runtime!(
         Balances: pallet_balances,
         Identity: pallet_identity,
         Distance: pallet_distance,
+        Historical: pallet_session::historical,
     }
 );
 
@@ -147,7 +147,7 @@ const SESSION_LENGTH: u64 = 5;
 pub struct TestShouldEndSession;
 impl ShouldEndSession<u64> for TestShouldEndSession {
     fn should_end_session(now: u64) -> bool {
-        now % SESSION_LENGTH == 0
+        now.is_multiple_of(SESSION_LENGTH)
     }
 }
 
@@ -173,6 +173,7 @@ impl sp_runtime::traits::Convert<AccountId, Option<()>> for FullIdentificationOf
 impl pallet_session::historical::Config for Test {
     type FullIdentification = ();
     type FullIdentificationOf = FullIdentificationOfImpl;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 pub struct ConstantAuthor<T>(PhantomData<T>);
@@ -194,7 +195,7 @@ impl pallet_authorship::Config for Test {
 pub struct TestIsSmithMember;
 impl IsMember<u32> for TestIsSmithMember {
     fn is_member(member_id: &u32) -> bool {
-        member_id % 3 == 0
+        member_id.is_multiple_of(3)
     }
 }
 
@@ -217,7 +218,6 @@ impl pallet_authority_members::Config for Test {
     type OnNewSession = ();
     type OnOutgoingMember = ();
     type RemoveMemberOrigin = system::EnsureRoot<AccountId>;
-    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -275,7 +275,6 @@ impl pallet_identity::Config for Test {
     type OnKeyChange = ();
     type OnNewIdty = ();
     type OnRemoveIdty = ();
-    type RuntimeEvent = RuntimeEvent;
     type Signature = TestSignature;
     type Signer = UintAuthorityId;
     type ValidationPeriod = ValidationPeriod;
@@ -294,7 +293,6 @@ impl pallet_distance::Config for Test {
     type MinAccessibleReferees = MinAccessibleReferees;
     type OnUnbalanced = ();
     type OnValidDistanceStatus = ();
-    type RuntimeEvent = RuntimeEvent;
     type RuntimeHoldReason = RuntimeHoldReason;
     type WeightInfo = ();
 }

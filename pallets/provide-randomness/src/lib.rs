@@ -104,9 +104,6 @@ pub mod pallet {
         /// A safe source of randomness from one epoch ago.
         type RandomnessFromOneEpochAgo: Randomness<H256, BlockNumberFor<Self>>;
 
-        /// The overarching event type.
-        type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
         /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
     }

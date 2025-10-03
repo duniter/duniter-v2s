@@ -22,7 +22,7 @@ path = "src/main.rs"
 default = ["distance-oracle", "gdev"]
 gdev = ["distance-oracle?/gdev", "gdev-runtime", "std"]
 gtest = ["distance-oracle?/gtest", "gtest-runtime", "std"]
-g1 = ["g1-runtime", "std"]
+g1 = ["distance-oracle?/g1", "g1-runtime", "std"]
 constant-fees = [
 	"common-runtime/constant-fees",
 	"g1-runtime/constant-fees",

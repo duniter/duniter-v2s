@@ -23,10 +23,10 @@ use frame_benchmarking::{v2::*, whitelisted_caller};
 use frame_support::{
     ensure,
     pallet_prelude::IsType,
-    sp_runtime::{traits::One, Saturating},
-    traits::{fungible::Mutate, Get, OnInitialize},
+    sp_runtime::{Saturating, traits::One},
+    traits::{Get, OnInitialize, fungible::Mutate},
 };
-use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
+use frame_system::{RawOrigin, pallet_prelude::BlockNumberFor};
 use sp_core::H256;
 
 use crate::Pallet;
@@ -41,8 +41,8 @@ use crate::Pallet;
 mod benchmarks {
     use super::*;
 
-    fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
-        frame_system::Pallet::<T>::assert_has_event(generic_event.into());
+    fn assert_has_event<T: Config>(generic_event: <T as frame_system::Config>::RuntimeEvent) {
+        frame_system::Pallet::<T>::assert_has_event(generic_event);
     }
 
     fn add_requests_next_block<T: Config>(i: u32) -> Result<(), &'static str> {

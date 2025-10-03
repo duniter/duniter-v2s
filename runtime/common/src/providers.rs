@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{entities::IdtyData, AccountId, Balance, IdtyIndex};
+use crate::{AccountId, Balance, IdtyIndex, entities::IdtyData};
 use core::marker::PhantomData;
 use pallet_universal_dividend::FirstEligibleUd;
 
@@ -58,7 +58,7 @@ where
         f: impl FnOnce(&mut Option<FirstEligibleUd>) -> Result<R, E>,
     ) -> Result<R, E> {
         pallet_identity::Pallet::<T>::try_mutate_exists(key, |maybe_idty_data| {
-            if let Some(ref mut idty_data) = maybe_idty_data {
+            if let Some(idty_data) = maybe_idty_data {
                 let mut maybe_first_eligible_ud = Some(idty_data.first_eligible_ud.clone());
                 let result = f(&mut maybe_first_eligible_ud)?;
                 if let Some(first_eligible_ud) = maybe_first_eligible_ud {

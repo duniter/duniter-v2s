@@ -24,9 +24,9 @@ use sp_blockchain::{HeaderBackend, HeaderMetadata};
 use sp_consensus::BlockStatus;
 use sp_core::{Encode, Pair};
 use sp_runtime::{
+    Justifications, SaturatedConversion,
     generic::SignedBlock,
     traits::{BlakeTwo256, Block as BlockT},
-    Justifications, SaturatedConversion,
 };
 use sp_storage::{ChildInfo, StorageData, StorageKey};
 use std::sync::Arc;
@@ -518,8 +518,8 @@ impl sc_client_api::UsageProvider<Block> for Client {
 ///
 /// Not to be used outside of benchmarking since it returns mocked values.
 #[cfg(feature = "runtime-benchmarks")]
-pub fn benchmark_inherent_data(
-) -> std::result::Result<sp_inherents::InherentData, sp_inherents::Error> {
+pub fn benchmark_inherent_data()
+-> std::result::Result<sp_inherents::InherentData, sp_inherents::Error> {
     use sp_inherents::InherentDataProvider;
     let mut inherent_data = sp_inherents::InherentData::new();
 

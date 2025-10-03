@@ -1,14 +1,14 @@
 use crate::endpoint_gossip::{
-    types::validation_result::DuniterStreamValidationResult, DuniterEndpoints, Peer, Peering,
-    PROPAGATE_TIMEOUT,
+    DuniterEndpoints, PROPAGATE_TIMEOUT, Peer, Peering,
+    types::validation_result::DuniterStreamValidationResult,
 };
 use codec::{Decode, Encode};
-use futures::{future, stream, FutureExt, Stream, StreamExt};
+use futures::{FutureExt, Stream, StreamExt, future, stream};
 use log::debug;
 use sc_network::{
+    NetworkEventStream, NetworkPeers, NetworkStateInfo, NotificationService, ObservedRole, PeerId,
     service::traits::{NotificationEvent, ValidationResult},
     utils::interval,
-    NetworkEventStream, NetworkPeers, NetworkStateInfo, NotificationService, ObservedRole, PeerId,
 };
 use sc_utils::mpsc::{TracingUnboundedReceiver, TracingUnboundedSender};
 use sp_api::__private::BlockT;

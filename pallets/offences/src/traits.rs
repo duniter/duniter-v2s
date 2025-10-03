@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use sp_staking::{offence::OffenceDetails, SessionIndex};
+use sp_staking::{SessionIndex, offence::OffenceDetails};
 
 use crate::SlashStrategy;
 

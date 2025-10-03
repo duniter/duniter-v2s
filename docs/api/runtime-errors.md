@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **192** errors from **35** pallets.
+There are **193** errors from **35** pallets.
 
 <ul>
 <li>System - 0
@@ -912,91 +912,98 @@ Invalid payload signature.
 <li>
 <details>
 <summary>
-<code>InvalidRevocationKey</code> - 7</summary>
+<code>OwnerKeyUsedAsValidator</code> - 7</summary>
+Key used as validator.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>OwnerKeyInBound</code> - 8</summary>
+Key in bound period.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>InvalidRevocationKey</code> - 9</summary>
 Invalid revocation key.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>IssuerNotMember</code> - 8</summary>
+<code>IssuerNotMember</code> - 10</summary>
 Issuer is not member and can not perform this action.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>NotRespectIdtyCreationPeriod</code> - 9</summary>
+<code>NotRespectIdtyCreationPeriod</code> - 11</summary>
 Identity creation period is not respected.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>OwnerKeyAlreadyRecentlyChanged</code> - 10</summary>
+<code>OwnerKeyAlreadyRecentlyChanged</code> - 12</summary>
 Owner key already changed recently.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>OwnerKeyAlreadyUsed</code> - 11</summary>
+<code>OwnerKeyAlreadyUsed</code> - 13</summary>
 Owner key already used.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>ProhibitedToRevertToAnOldKey</code> - 12</summary>
+<code>ProhibitedToRevertToAnOldKey</code> - 14</summary>
 Reverting to an old key is prohibited.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>AlreadyRevoked</code> - 13</summary>
+<code>AlreadyRevoked</code> - 15</summary>
 Already revoked.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>CanNotRevokeUnconfirmed</code> - 14</summary>
+<code>CanNotRevokeUnconfirmed</code> - 16</summary>
 Can not revoke identity that never was member.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>CanNotRevokeUnvalidated</code> - 15</summary>
+<code>CanNotRevokeUnvalidated</code> - 17</summary>
 Can not revoke identity that never was member.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>AccountNotExist</code> - 16</summary>
+<code>AccountNotExist</code> - 18</summary>
 Cannot link to an inexisting account.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>InsufficientBalance</code> - 17</summary>
+<code>InsufficientBalance</code> - 19</summary>
 Insufficient balance to create an identity.
 </details>
 </li>
 <li>
 <details>
 <summary>
-<code>OwnerKeyUsedAsValidator</code> - 18</summary>
-Owner key currently used as validator.
-</details>
-</li>
-<li>
-<details>
-<summary>
-<code>InvalidLegacyRevocationFormat</code> - 19</summary>
+<code>InvalidLegacyRevocationFormat</code> - 20</summary>
 Legacy revocation document format is invalid
 </details>
 </li>
@@ -1283,14 +1290,15 @@ The sender was contained in the other signatories; it shouldn't be.
 <details>
 <summary>
 <code>NotFound</code> - 7</summary>
-Multisig operation not found when attempting to cancel.
+Multisig operation not found in storage.
 </details>
 </li>
 <li>
 <details>
 <summary>
 <code>NotOwner</code> - 8</summary>
-Only the account that originally created the multisig is able to cancel it.
+Only the account that originally created the multisig is able to cancel it or update
+its deposits.
 </details>
 </li>
 <li>

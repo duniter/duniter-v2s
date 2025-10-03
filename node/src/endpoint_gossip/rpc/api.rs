@@ -3,7 +3,7 @@
 //! Exposes the `duniter_peerings` RPC method.
 
 use crate::endpoint_gossip::rpc::{data::DuniterPeeringsData, state::DuniterPeeringsState};
-use jsonrpsee::{core::async_trait, proc_macros::rpc, Extensions};
+use jsonrpsee::{Extensions, core::async_trait, proc_macros::rpc};
 use sc_consensus_babe_rpc::Error;
 
 /// The exposed RPC methods

@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use codec::Decode;
 use core::hash::Hash;
-use frame_metadata::v15::{StorageEntryModifier, StorageEntryType};
-use scale_info::{form::PortableForm, PortableRegistry, Type, TypeDef};
+use frame_metadata::v16::{StorageEntryModifier, StorageEntryType};
+use scale_info::{PortableRegistry, Type, TypeDef, form::PortableForm};
 use serde::Serialize;
 use std::{
     collections::HashMap,
@@ -28,7 +28,7 @@ use std::{
     process::Command,
 };
 use tera::Tera;
-use weightanalyzer::{analyze_weight, MaxBlockWeight, WeightInfo};
+use weightanalyzer::{MaxBlockWeight, WeightInfo, analyze_weight};
 
 fn rename_key<K, V>(h: &mut HashMap<K, V>, old_key: &K, new_key: K)
 where
@@ -287,7 +287,7 @@ impl CallCategory {
 /// generate runtime calls documentation
 pub(super) fn gen_doc() -> Result<()> {
     // Read metadata
-    let mut file = std::fs::File::open("resources/metadata.scale")
+    let mut file = std::fs::File::open("resources/gdev_metadata.scale")
         .with_context(|| "Failed to open metadata file")?;
 
     let mut bytes = Vec::new();
@@ -300,10 +300,10 @@ pub(super) fn gen_doc() -> Result<()> {
     println!("Metadata successfully loaded!");
 
     let (mut runtime, max_weight) =
-        if let frame_metadata::RuntimeMetadata::V15(ref metadata_v15) = metadata.1 {
+        if let frame_metadata::RuntimeMetadata::V16(ref metadata_v16) = metadata.1 {
             (
-                get_from_metadata_v15(metadata_v15.clone())?,
-                get_max_weight_from_metadata_v15(metadata_v15.clone())?,
+                get_from_metadata_v16(metadata_v16.clone())?,
+                get_max_weight_from_metadata_v16(metadata_v16.clone())?,
             )
         } else {
             bail!("unsuported metadata version")
@@ -337,7 +337,7 @@ pub(super) fn gen_doc() -> Result<()> {
         pallet.calls.iter_mut().for_each(|call| {
             call.weight = weights
                 .get(&pallet.name)
-                .expect(&("No weight for ".to_owned() + &pallet.name))
+                .unwrap_or_else(|| panic!("{}", ("No weight for ".to_owned() + &pallet.name)))
                 .get(&call.name)
                 .map_or(-1f64, |weight| {
                     (weight.relative_weight * 10000.).round() / 10000.
@@ -405,12 +405,12 @@ pub(super) fn gen_doc() -> Result<()> {
     Ok(())
 }
 
-fn get_max_weight_from_metadata_v15(
-    metadata_v15: frame_metadata::v15::RuntimeMetadataV15,
+fn get_max_weight_from_metadata_v16(
+    metadata_v16: frame_metadata::v16::RuntimeMetadataV16,
 ) -> Result<u128> {
     // Extract the maximal weight available in one block
     // from the metadata.
-    let block_weights = metadata_v15
+    let block_weights = metadata_v16
         .pallets
         .iter()
         .find(|pallet| pallet.name == "System")
@@ -423,7 +423,7 @@ fn get_max_weight_from_metadata_v15(
     let block_weights = scale_value::scale::decode_as_type(
         &mut &*block_weights.value,
         &block_weights.ty.id,
-        &metadata_v15.types,
+        &metadata_v16.types,
     )
     .expect("Can't decode max_weight")
     .value;
@@ -541,7 +541,7 @@ fn format_generics(
 }
 
 fn parse_storage_entry(
-    variant: &frame_metadata::v15::StorageEntryMetadata<scale_info::form::PortableForm>,
+    variant: &frame_metadata::v16::StorageEntryMetadata<scale_info::form::PortableForm>,
     types: &PortableRegistry,
 ) -> Result<Storage> {
     match &variant.ty {
@@ -572,15 +572,15 @@ fn parse_storage_entry(
     }
 }
 
-fn get_from_metadata_v15(
-    metadata_v15: frame_metadata::v15::RuntimeMetadataV15,
+fn get_from_metadata_v16(
+    metadata_v16: frame_metadata::v16::RuntimeMetadataV16,
 ) -> Result<RuntimePallets> {
-    println!("Number of pallets: {}", metadata_v15.pallets.len());
+    println!("Number of pallets: {}", metadata_v16.pallets.len());
     let mut pallets = Vec::new();
-    for pallet in metadata_v15.pallets {
+    for pallet in metadata_v16.pallets {
         let mut type_name: String = Default::default();
         let calls_type_def = if let Some(calls) = pallet.calls {
-            let Some(calls_type) = metadata_v15.types.resolve(calls.ty.id) else {
+            let Some(calls_type) = metadata_v16.types.resolve(calls.ty.id) else {
                 bail!("Invalid metadata")
             };
             type_name = calls_type
@@ -595,7 +595,7 @@ fn get_from_metadata_v15(
             None
         };
         let events_type_def = if let Some(events) = pallet.event {
-            let Some(events_type) = metadata_v15.types.resolve(events.ty.id) else {
+            let Some(events_type) = metadata_v16.types.resolve(events.ty.id) else {
                 bail!("Invalid metadata")
             };
             Some(events_type.type_def.clone())
@@ -604,7 +604,7 @@ fn get_from_metadata_v15(
             None
         };
         let errors_type_def = if let Some(errors) = pallet.error {
-            let Some(errors_type) = metadata_v15.types.resolve(errors.ty.id) else {
+            let Some(errors_type) = metadata_v16.types.resolve(errors.ty.id) else {
                 bail!("Invalid metadata")
             };
             Some(errors_type.type_def.clone())
@@ -619,7 +619,7 @@ fn get_from_metadata_v15(
                 storage
                     .entries
                     .iter()
-                    .map(|v| parse_storage_entry(v, &metadata_v15.types))
+                    .map(|v| parse_storage_entry(v, &metadata_v16.types))
                     .collect::<Result<Vec<Storage>>>()
             })
             .unwrap_or_else(|| {
@@ -631,11 +631,11 @@ fn get_from_metadata_v15(
             .constants
             .iter()
             .map(|i| {
-                let type_value = resolve_type(i.ty.id, &metadata_v15.types)?;
+                let type_value = resolve_type(i.ty.id, &metadata_v16.types)?;
                 let value = scale_value::scale::decode_as_type(
                     &mut &*i.value,
                     &i.ty.id,
-                    &metadata_v15.types,
+                    &metadata_v16.types,
                 )
                 .map_err(|e| anyhow::anyhow!("{}", e))?;
                 Ok(Constant {

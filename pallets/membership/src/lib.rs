@@ -40,7 +40,7 @@ pub use weights::WeightInfo;
 
 use frame_support::pallet_prelude::{Weight, *};
 use scale_info::prelude::{collections::BTreeMap, vec::Vec};
-use sp_membership::{traits::*, MembershipData};
+use sp_membership::{MembershipData, traits::*};
 use sp_runtime::traits::Zero;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -110,9 +110,6 @@ pub mod pallet {
 
         /// Handler called when a membership is revoked or removed.
         type OnRemoveMembership: OnRemoveMembership<Self::IdtyId>;
-
-        /// The overarching event type.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;

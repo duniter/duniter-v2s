@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-#[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
+#[subxt::subxt(runtime_metadata_path = "../resources/gdev_metadata.scale")]
 pub mod gdev {}
 
 use countmap::CountMap;
-use sp_core::{blake2_128, crypto::AccountId32, ByteArray, H256};
+use sp_core::{ByteArray, H256, blake2_128, crypto::AccountId32};
 use std::collections::{HashMap, HashSet};
 use subxt::{backend::rpc::RpcClient, config::SubstrateConfig as GdevConfig};
 
@@ -282,15 +282,15 @@ mod verifier {
 
             for (idty_index, idty_value) in identities {
                 countmap.insert_or_increment(idty_value.owner_key.clone());
-                if let Some(count) = countmap.get_count(&idty_value.owner_key) {
-                    if count > 1 {
-                        self.error(format!(
-                            "address {} is the owner_key of {count} identities",
-                            idty_value.owner_key
-                        ));
-                        if count == 2 {
-                            duplicates.insert(idty_value.owner_key.clone());
-                        }
+                if let Some(count) = countmap.get_count(&idty_value.owner_key)
+                    && count > 1
+                {
+                    self.error(format!(
+                        "address {} is the owner_key of {count} identities",
+                        idty_value.owner_key
+                    ));
+                    if count == 2 {
+                        duplicates.insert(idty_value.owner_key.clone());
                     }
                 }
 

@@ -18,8 +18,8 @@ use core::str::FromStr;
 
 use crate::{mock::*, *};
 use codec::Encode;
-use frame_support::{assert_noop, assert_ok, dispatch::DispatchResultWithPostInfo};
-use sp_core::{sr25519::Pair as KeyPair, Pair};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult};
+use sp_core::{Pair, sr25519::Pair as KeyPair};
 use sp_runtime::{AccountId32, MultiSignature, MultiSigner};
 
 type IdtyVal = IdtyValue<u64, AccountId, ()>;
@@ -770,7 +770,7 @@ fn test_revocation_of_genesis_member() {
     });
 }
 
-fn revoke_self_identity(idty: GenesisIdty<Test>) -> DispatchResultWithPostInfo {
+fn revoke_self_identity(idty: GenesisIdty<Test>) -> DispatchResult {
     Identity::revoke_identity(
         RuntimeOrigin::signed(account(idty.index as u8).id),
         idty.index,

@@ -17,14 +17,14 @@
 mod common;
 
 use common::*;
-use cucumber::{given, then, when, StatsWriter, World};
+use cucumber::{StatsWriter, World, given, then, when};
 use sp_keyring::sr25519::Keyring;
 use std::{
     path::PathBuf,
     str::FromStr,
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     },
 };
 use subxt::backend::rpc::RpcClient;
@@ -218,11 +218,7 @@ async fn transfer(
         common::balances::transfer(world.full_client(), from, amount, to).await
     };
 
-    if world.ignore_errors() {
-        Ok(())
-    } else {
-        res
-    }
+    if world.ignore_errors() { Ok(()) } else { res }
 }
 
 #[allow(clippy::needless_pass_by_ref_mut)]
@@ -381,7 +377,7 @@ async fn treasury_should_contain(
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
     let who_account = world
-        .read_or_default(&gdev::storage().system().account(&who))
+        .read_or_default(&gdev::storage().system().account(who))
         .await
         .await?;
     assert_eq!(who_account.data.free, amount);
@@ -405,7 +401,7 @@ async fn should_have(
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
     let who_account = world
-        .read_or_default(&gdev::storage().system().account(&who))
+        .read_or_default(&gdev::storage().system().account(who))
         .await
         .await?;
     if reserved.is_empty() {
@@ -432,7 +428,7 @@ async fn should_have_oneshot(
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
     let oneshot_amount = world
-        .read(&gdev::storage().oneshot_account().oneshot_accounts(&who))
+        .read(&gdev::storage().oneshot_account().oneshot_accounts(who))
         .await
         .await?;
     assert_eq!(oneshot_amount.unwrap_or(0), amount);
@@ -486,11 +482,7 @@ async fn should_be_certified_by(
 
     // get corresponding identities index
     let issuer_index = world
-        .read(
-            &gdev::storage()
-                .identity()
-                .identity_index_of(&issuer_account),
-        )
+        .read(&gdev::storage().identity().identity_index_of(issuer_account))
         .await
         .await?
         .unwrap();
@@ -498,7 +490,7 @@ async fn should_be_certified_by(
         .read(
             &gdev::storage()
                 .identity()
-                .identity_index_of(&receiver_account),
+                .identity_index_of(receiver_account),
         )
         .await
         .await?

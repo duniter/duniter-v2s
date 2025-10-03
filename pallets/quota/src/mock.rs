@@ -23,10 +23,10 @@ use frame_support::{
     traits::{Everything, OnFinalize, OnInitialize},
 };
 use frame_system as system;
-use sp_core::{Pair, H256};
+use sp_core::{H256, Pair};
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentifyAccount, IdentityLookup, Verify},
     BuildStorage, MultiSignature, MultiSigner,
+    traits::{BlakeTwo256, IdentifyAccount, IdentityLookup, Verify},
 };
 
 type BlockNumber = u64;
@@ -66,7 +66,6 @@ impl Config for Test {
     type MaxQuota = MaxQuota;
     type RefundAccount = TreasuryAccountId;
     type ReloadRate = ReloadRate;
-    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -148,7 +147,6 @@ impl pallet_identity::Config for Test {
     type OnKeyChange = ();
     type OnNewIdty = ();
     type OnRemoveIdty = ();
-    type RuntimeEvent = RuntimeEvent;
     type Signature = Signature;
     type Signer = AccountPublic;
     type ValidationPeriod = ValidationPeriod;

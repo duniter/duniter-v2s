@@ -16,8 +16,8 @@
 
 use super::{gdev, gdev::runtime_types::pallet_identity, *};
 use crate::{
-    common::pair_signer::PairSigner, gdev::runtime_types::pallet_identity::types::IdtyName,
-    DuniterWorld,
+    DuniterWorld, common::pair_signer::PairSigner,
+    gdev::runtime_types::pallet_identity::types::IdtyName,
 };
 use sp_keyring::sr25519::Keyring;
 use subxt::config::substrate::MultiAddress;
@@ -80,7 +80,11 @@ pub async fn get_identity_index(world: &DuniterWorld, account: String) -> Result
         .into();
 
     let identity_index = world
-        .read(&gdev::storage().identity().identity_index_of(&account))
+        .read(
+            &gdev::storage()
+                .identity()
+                .identity_index_of(account.clone()),
+        )
         .await
         .await?
         .ok_or_else(|| anyhow::anyhow!("identity {} has no associated index", account))

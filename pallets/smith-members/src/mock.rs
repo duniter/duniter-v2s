@@ -20,12 +20,12 @@ use frame_support::{
     pallet_prelude::Hooks,
     parameter_types,
     traits::{ConstU32, ConstU64},
-    weights::{constants::RocksDbWeight, Weight},
+    weights::{Weight, constants::RocksDbWeight},
 };
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, ConvertInto, IdentityLookup, IsMember},
     BuildStorage, Perbill,
+    traits::{BlakeTwo256, ConvertInto, IdentityLookup, IsMember},
 };
 
 parameter_types! {
@@ -76,7 +76,6 @@ impl pallet_smith_members::Config for Runtime {
     type MemberId = u64;
     type MinCertForMembership = ConstU32<2>;
     type OnSmithDelete = ();
-    type RuntimeEvent = RuntimeEvent;
     type SmithInactivityMaxDuration = ConstU32<5>;
     type WeightInfo = ();
 }

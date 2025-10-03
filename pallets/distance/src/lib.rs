@@ -82,18 +82,18 @@ pub use types::*;
 pub use weights::WeightInfo;
 
 use frame_support::{
-    traits::{
-        fungible::{self, hold, Credit, Mutate, MutateHold},
-        tokens::Precision,
-        OnUnbalanced, StorageVersion,
-    },
     DefaultNoBound,
+    traits::{
+        OnUnbalanced, StorageVersion,
+        fungible::{self, Credit, Mutate, MutateHold, hold},
+        tokens::Precision,
+    },
 };
-use sp_distance::{InherentError, INHERENT_IDENTIFIER};
+use sp_distance::{INHERENT_IDENTIFIER, InherentError};
 use sp_inherents::{InherentData, InherentIdentifier};
 use sp_runtime::{
-    traits::{One, Zero},
     Saturating,
+    traits::{One, Zero},
 };
 
 type IdtyIndex = u32;
@@ -160,9 +160,6 @@ pub mod pallet {
 
         /// Handler for unbalanced reduction when invalid distance causes a slash.
         type OnUnbalanced: OnUnbalanced<Credit<Self::AccountId, Self::Currency>>;
-
-        /// The overarching event type.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
@@ -345,13 +342,13 @@ pub mod pallet {
         /// evaluation will result in slashing for the caller.
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::request_distance_evaluation())]
-        pub fn request_distance_evaluation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn request_distance_evaluation(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
             let idty = Self::check_request_distance_evaluation_self(&who)?;
 
             Pallet::<T>::do_request_distance_evaluation(&who, idty)?;
-            Ok(().into())
+            Ok(())
         }
 
         /// Request evaluation of a target identity's distance.
@@ -363,13 +360,13 @@ pub mod pallet {
         pub fn request_distance_evaluation_for(
             origin: OriginFor<T>,
             target: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
             Self::check_request_distance_evaluation_for(&who, target)?;
 
             Pallet::<T>::do_request_distance_evaluation(&who, target)?;
-            Ok(().into())
+            Ok(())
         }
 
         /// Push an evaluation result to the pool.

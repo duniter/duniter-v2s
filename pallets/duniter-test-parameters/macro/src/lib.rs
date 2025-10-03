@@ -19,7 +19,7 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::{quote, quote_spanned};
-use syn::{parse_macro_input, spanned::Spanned, Fields, Ident, ItemStruct, Type};
+use syn::{Fields, Ident, ItemStruct, Type, parse_macro_input, spanned::Spanned};
 
 fn snake_to_class_case(ident: &Ident) -> Ident {
     let span = ident.span();

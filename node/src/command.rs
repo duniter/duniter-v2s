@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![allow(clippy::result_large_err)]
 #![allow(unused_imports)]
 
 pub mod key;
@@ -24,14 +25,14 @@ use crate::{
     chain_spec,
     cli::{Cli, DuniterConfigExtension, Subcommand},
     service,
-    service::{runtime_executor::Executor, RuntimeType},
+    service::{RuntimeType, runtime_executor::Executor},
 };
 use clap::CommandFactory;
 #[cfg(feature = "runtime-benchmarks")]
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::SubstrateCli;
 #[cfg(feature = "runtime-benchmarks")]
-use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
+use sc_executor::{NativeExecutionDispatch, sp_wasm_interface::ExtendedHostFunctions};
 
 // TODO: create our own reference hardware
 /*
@@ -311,11 +312,15 @@ pub fn run() -> sc_cli::Result<()> {
 
             match &**cmd {
                 BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-                    let (client, backend, _, _) = service::new_chain_ops(&config, false)?;
+                    let (client, backend, ..) = service::new_chain_ops(&config, false)?;
                     let db = backend.expose_db();
                     let storage = backend.expose_storage();
+                    let shared_cache = backend.expose_shared_trie_cache();
 
-                    unwrap_client!(client, cmd.run(config, client.clone(), db, storage))
+                    unwrap_client!(
+                        client,
+                        cmd.run(config, client.clone(), db, storage, shared_cache)
+                    )
                 }),
                 BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
                     let (client, _, _, _) = service::new_chain_ops(&config, false)?;

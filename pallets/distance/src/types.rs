@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-pub use crate::{median::*, MAX_EVALUATIONS_PER_SESSION, MAX_EVALUATORS_PER_SESSION};
+pub use crate::{MAX_EVALUATIONS_PER_SESSION, MAX_EVALUATORS_PER_SESSION, median::*};
 pub use sp_distance::ComputationResult;
 
 use codec::{Decode, Encode};

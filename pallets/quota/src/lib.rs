@@ -82,9 +82,6 @@ pub mod pallet {
     pub trait Config:
         frame_system::Config + pallet_balances::Config + pallet_identity::Config
     {
-        /// The overarching event type.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
         /// Number of blocks after which the maximum quota is replenished.
         type ReloadRate: Get<BlockNumberFor<Self>>;
 
@@ -169,7 +166,7 @@ pub mod pallet {
         /// The estimation simulate a refund request at the current block
         pub fn estimate_quota_refund(idty_index: IdtyId<T>) -> BalanceOf<T> {
             if is_eligible_for_refund::<T>(idty_index) {
-                if let Some(ref mut quota) = IdtyQuota::<T>::get(idty_index) {
+                if let Some(quota) = IdtyQuota::<T>::get(idty_index).as_mut() {
                     Self::update_quota(quota);
                     quota.amount
                 } else {
@@ -281,7 +278,7 @@ pub mod pallet {
         /// Spends the quota of an identity by deducting the specified `amount` from its quota balance.
         pub fn spend_quota(idty_id: IdtyId<T>, amount: BalanceOf<T>) -> BalanceOf<T> {
             IdtyQuota::<T>::mutate_exists(idty_id, |quota| {
-                if let Some(ref mut quota) = quota {
+                if let Some(quota) = quota {
                     Self::update_quota(quota);
                     Self::do_spend_quota(quota, amount)
                 } else {

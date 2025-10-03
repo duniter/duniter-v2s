@@ -35,10 +35,9 @@ pub use weights::WeightInfo;
 use frame_support::{
     pallet_prelude::*,
     traits::{
-        fungible,
+        Imbalance, IsSubType, fungible,
         fungible::{Balanced, Credit, Inspect},
         tokens::{Fortitude, Precision, Preservation},
-        Imbalance, IsSubType,
     },
 };
 use frame_system::pallet_prelude::*;
@@ -66,9 +65,6 @@ pub mod pallet {
 
         /// A handler for charging transactions.
         type InnerOnChargeTransaction: OnChargeTransaction<Self>;
-
-        /// The overarching event type.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
@@ -332,10 +328,10 @@ impl<T: Config> OnChargeTransaction<T> for Pallet<T>
 where
     T::RuntimeCall: IsSubType<Call<T>>,
     T::InnerOnChargeTransaction: OnChargeTransaction<
-        T,
-        Balance = BalanceOf<T>,
-        LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>,
-    >,
+            T,
+            Balance = BalanceOf<T>,
+            LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>,
+        >,
 {
     type Balance = BalanceOf<T>;
     type LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>;
@@ -366,15 +362,15 @@ where
                 return Ok(None);
             }
 
-            if let Some(balance) = OneshotAccounts::<T>::get(who) {
-                if balance >= fee {
-                    OneshotAccounts::<T>::insert(who, balance.saturating_sub(fee));
-                    Self::deposit_event(Event::Withdraw {
-                        account: who.clone(),
-                        balance: fee,
-                    });
-                    return Ok(Some(Imbalance::zero()));
-                }
+            if let Some(balance) = OneshotAccounts::<T>::get(who)
+                && balance >= fee
+            {
+                OneshotAccounts::<T>::insert(who, balance.saturating_sub(fee));
+                Self::deposit_event(Event::Withdraw {
+                    account: who.clone(),
+                    balance: fee,
+                });
+                return Ok(Some(Imbalance::zero()));
             }
             Err(TransactionValidityError::Invalid(
                 InvalidTransaction::Payment,

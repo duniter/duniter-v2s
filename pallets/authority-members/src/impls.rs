@@ -24,9 +24,9 @@
 
 use super::pallet::*;
 use frame_support::{pallet_prelude::Weight, traits::Get};
-use pallet_offences::{traits::OnOffenceHandler, SlashStrategy};
+use pallet_offences::{SlashStrategy, traits::OnOffenceHandler};
 use sp_runtime::traits::Convert;
-use sp_staking::{offence::OffenceDetails, SessionIndex};
+use sp_staking::{SessionIndex, offence::OffenceDetails};
 
 impl<T: Config>
     OnOffenceHandler<T::AccountId, pallet_session::historical::IdentificationTuple<T>, Weight>

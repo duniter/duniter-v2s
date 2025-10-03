@@ -22,8 +22,8 @@ use frame_support::{
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
     BuildStorage,
+    traits::{BlakeTwo256, IdentityLookup},
 };
 
 type AccountId = u64;
@@ -77,7 +77,6 @@ impl pallet_certification::Config for Test {
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = ();
     type OnRemovedCert = ();
-    type RuntimeEvent = RuntimeEvent;
     type ValidityPeriod = ValidityPeriod;
     type WeightInfo = ();
 }

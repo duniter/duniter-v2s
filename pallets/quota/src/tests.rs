@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{mock::*, Weight};
+use crate::{Weight, mock::*};
 use frame_support::traits::fungible::Mutate;
 use sp_core::Get;
 

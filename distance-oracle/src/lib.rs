@@ -56,7 +56,7 @@ mod tests;
 #[cfg(test)]
 pub use mock as api;
 
-use api::{AccountId, EvaluationPool, IdtyIndex, H256};
+use api::{AccountId, EvaluationPool, H256, IdtyIndex};
 
 use codec::Encode;
 use fnv::{FnvHashMap, FnvHashSet};
@@ -71,10 +71,13 @@ use std::{io::Write, path::PathBuf};
 const VERSION_PREFIX: &str = "001-";
 
 #[cfg(feature = "gdev")]
-#[subxt::subxt(runtime_metadata_path = "../resources/metadata.scale")]
+#[subxt::subxt(runtime_metadata_path = "../resources/gdev_metadata.scale")]
 pub mod runtime {}
 #[cfg(feature = "gtest")]
 #[subxt::subxt(runtime_metadata_path = "../resources/gtest_metadata.scale")]
+pub mod runtime {}
+#[cfg(feature = "g1")]
+#[subxt::subxt(runtime_metadata_path = "../resources/g1_metadata.scale")]
 pub mod runtime {}
 
 pub enum RuntimeConfig {}
@@ -83,7 +86,6 @@ impl subxt::config::Config for RuntimeConfig {
     type Address = sp_runtime::MultiAddress<Self::AccountId, u32>;
     type AssetId = ();
     type ExtrinsicParams = subxt::config::substrate::SubstrateExtrinsicParams<Self>;
-    type Hash = subxt::utils::H256;
     type Hasher = subxt::config::substrate::BlakeTwo256;
     type Header =
         subxt::config::substrate::SubstrateHeader<u32, subxt::config::substrate::BlakeTwo256>;
@@ -179,9 +181,13 @@ pub async fn run(client: &api::Client, settings: &Settings) {
                 .file_name()
                 .to_str()
                 .and_then(|name| {
-                    name.split('-').last()?.parse::<u32>().ok().filter(|&pool| {
-                        pool != current_period_index && pool != current_period_index + 1
-                    })
+                    name.split('-')
+                        .next_back()?
+                        .parse::<u32>()
+                        .ok()
+                        .filter(|&pool| {
+                            pool != current_period_index && pool != current_period_index + 1
+                        })
                 })
                 .map(|_| entry.path())
         })

@@ -18,14 +18,13 @@ use super::*;
 use crate::{self as pallet_authority_members};
 use frame_support::{derive_impl, pallet_prelude::*, parameter_types, traits::Everything};
 use frame_system as system;
-use pallet_offences::{traits::OnOffenceHandler, SlashStrategy};
+use pallet_offences::{SlashStrategy, traits::OnOffenceHandler};
 use pallet_session::ShouldEndSession;
-use sp_core::{crypto::key_types::DUMMY, H256};
+use sp_core::{H256, crypto::key_types::DUMMY};
 use sp_runtime::{
-    impl_opaque_keys,
+    BuildStorage, KeyTypeId, impl_opaque_keys,
     testing::UintAuthorityId,
     traits::{BlakeTwo256, ConvertInto, IdentityLookup, IsMember, OpaqueKeys},
-    BuildStorage, KeyTypeId,
 };
 use sp_staking::offence::OffenceDetails;
 use sp_state_machine::BasicExternalities;
@@ -52,6 +51,7 @@ frame_support::construct_runtime!(
         System: frame_system,
         Session: pallet_session,
         AuthorityMembers: pallet_authority_members,
+        Historical: pallet_session::historical,
     }
 );
 
@@ -98,7 +98,7 @@ const SESSION_LENGTH: u64 = 5;
 pub struct TestShouldEndSession;
 impl ShouldEndSession<u64> for TestShouldEndSession {
     fn should_end_session(now: u64) -> bool {
-        now % SESSION_LENGTH == 0
+        now.is_multiple_of(SESSION_LENGTH)
     }
 }
 
@@ -124,12 +124,13 @@ impl sp_runtime::traits::Convert<AccountId, Option<()>> for FullIdentificationOf
 impl pallet_session::historical::Config for Test {
     type FullIdentification = ();
     type FullIdentificationOf = FullIdentificationOfImpl;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 pub struct TestIsSmithMember;
 impl IsMember<u64> for TestIsSmithMember {
     fn is_member(member_id: &u64) -> bool {
-        member_id % 3 == 0
+        member_id.is_multiple_of(3)
     }
 }
 
@@ -142,7 +143,6 @@ impl pallet_authority_members::Config for Test {
     type OnNewSession = ();
     type OnOutgoingMember = ();
     type RemoveMemberOrigin = system::EnsureRoot<u64>;
-    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -161,7 +161,7 @@ pub fn new_test_ext(initial_authorities_len: u64) -> sp_io::TestExternalities {
         .build_storage()
         .unwrap();
     BasicExternalities::execute_with_storage(&mut t, || {
-        for (ref k, ..) in &keys {
+        for (k, ..) in &keys {
             frame_system::Pallet::<Test>::inc_providers(k);
         }
         // Some dedicated test account

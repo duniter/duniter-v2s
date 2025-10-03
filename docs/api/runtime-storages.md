@@ -1,6 +1,6 @@
 # Runtime Storage
 
-There are **139** storages from **35** pallets.
+There are **151** storages from **35** pallets.
 
 <ul>
 
@@ -279,6 +279,26 @@ value: Option<frame_system::CodeUpgradeAuthorization<>>
 </details>
 </li>
 
+<li>
+<details>
+<summary>
+<code>ExtrinsicWeightReclaimed</code>
+</summary>
+ The weight reclaimed for the extrinsic.
+
+ This information is available until the end of the extrinsic execution.
+ More precisely this information is removed in `note_applied_extrinsic`.
+
+ Logic doing some post dispatch weight reduction must update this storage to avoid duplicate
+ reduction.
+
+```rust
+value: sp_weights::weight_v2::Weight
+```
+
+</details>
+</li>
+
 </ul>
 </li>
 
@@ -296,7 +316,7 @@ value: Option<frame_system::CodeUpgradeAuthorization<>>
 <summary>
 <code>IncompleteSince</code>
 </summary>
-
+ Block number at which the agenda began incomplete execution.
 
 ```rust
 value: Option<U32>
@@ -936,7 +956,7 @@ value: bounded_collections::bounded_vec::BoundedVec<pallet_quota::pallet::Refund
 
 ```rust
 key: U32
-value: pallet_smith_members::types::SmithMeta<U32>
+value: pallet_smith_members::types::SmithMeta<U32, U32>
 ```
 
 </details>
@@ -1215,7 +1235,7 @@ value: Vec<(sp_core::crypto::AccountId32, gdev_runtime::opaque::SessionKeys)>
  a new set of identities.
 
 ```rust
-value: Vec<U32>
+value: Vec<(U32, sp_staking::offence::OffenceSeverity)>
 ```
 
 </details>

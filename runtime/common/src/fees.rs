@@ -39,7 +39,7 @@ use pallet_transaction_payment::{Multiplier, MultiplierUpdate};
 use scale_info::prelude::marker::PhantomData;
 use sp_arithmetic::traits::{BaseArithmetic, Unsigned};
 use sp_core::Get;
-use sp_runtime::{traits::Convert, Perquintill};
+use sp_runtime::{Perquintill, traits::Convert};
 #[cfg(not(feature = "constant-fees"))]
 use {
     frame_support::pallet_prelude::DispatchClass,
@@ -48,10 +48,10 @@ use {
     },
     smallvec::smallvec,
     sp_arithmetic::MultiplyRational,
-    sp_runtime::traits::One,
     sp_runtime::Perbill,
     sp_runtime::SaturatedConversion,
     sp_runtime::Saturating,
+    sp_runtime::traits::One,
 };
 
 /// A structure to implement Length to Fee conversion.

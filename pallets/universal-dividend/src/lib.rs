@@ -48,9 +48,9 @@ pub use types::*;
 pub use weights::WeightInfo;
 
 use frame_support::traits::{
+    OnTimestampSet, ReservableCurrency,
     fungible::{self, Balanced, Inspect, Mutate},
     tokens::{Fortitude, Precision, Preservation},
-    OnTimestampSet, ReservableCurrency,
 };
 use sp_arithmetic::{
     per_things::Perbill,
@@ -99,9 +99,6 @@ pub mod pallet {
 
         /// Storage for mapping AccountId to their first eligible UD creation time.
         type MembersStorage: frame_support::traits::StoredMap<Self::AccountId, FirstEligibleUd>;
-
-        /// The overarching event type for this pallet.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Square of the money growth rate per UD reevaluation period.
         #[pallet::constant]
@@ -319,13 +316,12 @@ pub mod pallet {
         }
 
         /// claim all due universal dividend at a time
-        fn do_claim_uds(who: &T::AccountId) -> DispatchResultWithPostInfo {
+        fn do_claim_uds(who: &T::AccountId) -> DispatchResult {
             T::MembersStorage::try_mutate_exists(who, |maybe_first_eligible_ud| {
-                if let Some(FirstEligibleUd(Some(ref mut first_ud_index))) = maybe_first_eligible_ud
-                {
+                if let Some(FirstEligibleUd(Some(first_ud_index))) = maybe_first_eligible_ud {
                     let current_ud_index = CurrentUdIndex::<T>::get();
                     if first_ud_index.get() >= current_ud_index {
-                        DispatchResultWithPostInfo::Ok(().into())
+                        Ok(())
                     } else {
                         let (uds_count, uds_total) = compute_claim_uds::compute_claim_uds(
                             current_ud_index,
@@ -344,7 +340,7 @@ pub mod pallet {
                             total: actual_total,
                             who: who.clone(),
                         });
-                        Ok(().into())
+                        Ok(())
                     }
                 } else {
                     Err(Error::<T>::AccountNotAllowedToClaimUds.into())
@@ -358,7 +354,7 @@ pub mod pallet {
             dest: <T::Lookup as StaticLookup>::Source,
             value: BalanceOf<T>,
             preservation: Preservation,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             let who = ensure_signed(origin)?;
             let dest = T::Lookup::lookup(dest)?;
             let ud_amount = <CurrentUd<T>>::get();
@@ -368,7 +364,7 @@ pub mod pallet {
                 value.ensure_mul(ud_amount)? / 1_000u32.into(),
                 preservation,
             )?;
-            Ok(().into())
+            Ok(())
         }
 
         /// reevaluate the value of the universal dividend
@@ -431,7 +427,7 @@ pub mod pallet {
         /// Claim Universal Dividends.
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::claim_uds(T::MaxPastReeval::get()))]
-        pub fn claim_uds(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn claim_uds(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
             Self::do_claim_uds(&who)
         }
@@ -443,7 +439,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
             #[pallet::compact] value: BalanceOf<T>,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             Self::do_transfer_ud(origin, dest, value, Preservation::Expendable)
         }
 
@@ -454,7 +450,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             dest: <T::Lookup as StaticLookup>::Source,
             #[pallet::compact] value: BalanceOf<T>,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             Self::do_transfer_ud(origin, dest, value, Preservation::Preserve)
         }
     }

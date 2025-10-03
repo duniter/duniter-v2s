@@ -18,7 +18,7 @@ use crate::runtime::runtime_types::{
     pallet_distance::median::MedianAcc, sp_arithmetic::per_things::Perbill,
 };
 
-use dubp_wot::{data::rusty::RustyWebOfTrust, WebOfTrust, WotId};
+use dubp_wot::{WebOfTrust, WotId, data::rusty::RustyWebOfTrust};
 use std::collections::BTreeSet;
 
 pub struct Client {

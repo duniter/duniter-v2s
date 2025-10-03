@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{mock::*, Error, Event};
+use crate::{Error, Event, mock::*};
 use frame_support::{assert_noop, assert_ok};
 use maplit::btreemap;
 use scale_info::prelude::{collections::BTreeMap, vec};
@@ -228,7 +228,7 @@ fn test_cert_renewal() {
         // this certification should expire 10 blocks later (at block 12)
         assert_eq!(
             DefaultCertification::renew_cert(RuntimeOrigin::signed(1), 0),
-            Ok(().into())
+            Ok(())
         );
         System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRenewed {
             issuer: 1,
@@ -270,7 +270,7 @@ fn test_cert_renewal_cert_delay() {
         // renew certification from bob to alice
         assert_eq!(
             DefaultCertification::renew_cert(RuntimeOrigin::signed(1), 0),
-            Ok(().into())
+            Ok(())
         );
         System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRenewed {
             issuer: 1,
@@ -314,7 +314,7 @@ fn test_cert_renewal_expiration() {
         // this certification should expire 10 blocks later (at block 12)
         assert_eq!(
             DefaultCertification::renew_cert(RuntimeOrigin::signed(1), 0),
-            Ok(().into())
+            Ok(())
         );
         System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRenewed {
             issuer: 1,
@@ -326,7 +326,7 @@ fn test_cert_renewal_expiration() {
         // this certification should expire 10 blocks later (at block 14)
         assert_eq!(
             DefaultCertification::renew_cert(RuntimeOrigin::signed(1), 0),
-            Ok(().into())
+            Ok(())
         );
         System::assert_last_event(RuntimeEvent::DefaultCertification(Event::CertRenewed {
             issuer: 1,

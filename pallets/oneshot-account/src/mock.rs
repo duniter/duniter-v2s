@@ -20,8 +20,8 @@ use frame_system as system;
 use pallet_transaction_payment::FungibleAdapter;
 use sp_core::{ConstU32, H256};
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
     BuildStorage,
+    traits::{BlakeTwo256, IdentityLookup},
 };
 
 type Balance = u64;
@@ -95,7 +95,6 @@ impl pallet_transaction_payment::Config for Test {
 impl pallet_oneshot_account::Config for Test {
     type Currency = Balances;
     type InnerOnChargeTransaction = FungibleAdapter<Balances, ()>;
-    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 

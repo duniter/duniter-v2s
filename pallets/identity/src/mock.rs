@@ -21,11 +21,11 @@ use frame_support::{
     traits::{Everything, OnFinalize, OnInitialize},
 };
 use frame_system as system;
-use sp_core::{Pair, H256};
-use sp_keystore::{testing::MemoryKeystore, KeystoreExt};
+use sp_core::{H256, Pair};
+use sp_keystore::{KeystoreExt, testing::MemoryKeystore};
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
     BuildStorage, MultiSignature, MultiSigner,
+    traits::{BlakeTwo256, IdentityLookup},
 };
 use sp_state_machine::BasicExternalities;
 use std::sync::Arc;
@@ -104,7 +104,6 @@ impl pallet_identity::Config for Test {
     type OnKeyChange = ();
     type OnNewIdty = ();
     type OnRemoveIdty = ();
-    type RuntimeEvent = RuntimeEvent;
     type Signature = Signature;
     type Signer = AccountPublic;
     type ValidationPeriod = ValidationPeriod;

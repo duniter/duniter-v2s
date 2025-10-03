@@ -289,6 +289,7 @@ impl frame_benchmarking::Benchmark<Block> for Runtime {
         return (list, storage_info);
     }
 
+	#[allow(non_local_definitions)]
     fn dispatch_benchmark(
         config: frame_benchmarking::BenchmarkConfig,
     ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, scale_info::prelude::string::String> {

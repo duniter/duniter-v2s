@@ -21,13 +21,13 @@ mod get_changes;
 mod get_issues;
 mod get_release;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use serde::Deserialize;
 use std::fs;
 
 #[derive(Default, Deserialize)]
 struct Srtool {
-    gen: String,
+    r#gen: String,
     rustc: String,
     runtimes: SrtoolRuntimes,
 }
@@ -247,7 +247,7 @@ fn gen_release_notes(currency: String, srtool_output: String) -> Result<String> 
     // Fill template values
     let mut values = std::collections::HashMap::new();
     values.insert("currency".to_owned(), currency);
-    values.insert("srtool_version".to_owned(), srtool.gen);
+    values.insert("srtool_version".to_owned(), srtool.r#gen);
     values.insert("rustc_version".to_owned(), srtool.rustc);
     values.insert(
         "runtime_human_size".to_owned(),

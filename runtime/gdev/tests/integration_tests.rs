@@ -18,12 +18,11 @@ mod common;
 
 use common::*;
 use frame_support::{
-    assert_err, assert_noop, assert_ok,
+    StorageHasher, Twox128, assert_err, assert_noop, assert_ok,
     traits::{Get, PalletInfo, StorageInfo, StorageInfoTrait, StoredMap},
-    StorageHasher, Twox128,
 };
 use gdev_runtime::*;
-use pallet_identity::{RevocationPayload, REVOCATION_PAYLOAD_PREFIX};
+use pallet_identity::{REVOCATION_PAYLOAD_PREFIX, RevocationPayload};
 use pallet_membership::MembershipRemovalReason;
 use pallet_session::historical::SessionManager;
 use pallet_smith_members::{SmithMeta, SmithStatus};
@@ -1529,7 +1528,7 @@ fn test_change_owner_key_offline() {
                     .expire_on;
                 pallet_membership::MembershipsExpireOn::<Runtime>::take(expiration);
                 pallet_smith_members::Smiths::<Runtime>::mutate(i, |data| {
-                    if let Some(ref mut data) = data {
+                    if let Some(data) = data {
                         data.expires_on = None;
                     }
                 });
@@ -1682,7 +1681,7 @@ fn test_change_owner_key() {
                     .expire_on;
                 pallet_membership::MembershipsExpireOn::<Runtime>::take(expiration);
                 pallet_smith_members::Smiths::<Runtime>::mutate(i, |data| {
-                    if let Some(ref mut data) = data {
+                    if let Some(data) = data {
                         data.expires_on = Some(smith_expire_on);
                     }
                 });
@@ -1738,7 +1737,7 @@ fn test_change_owner_key() {
                 })
             );
 
-            run_to_block(((ReportLongevity::get() + 1 + 24) / 25) * 25);
+            run_to_block((ReportLongevity::get() + 1).div_ceil(25) * 25);
 
             System::assert_has_event(RuntimeEvent::AuthorityMembers(
                 pallet_authority_members::Event::IncomingAuthorities { members: vec![3] },

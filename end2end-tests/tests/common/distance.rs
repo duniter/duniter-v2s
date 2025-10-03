@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use super::{gdev, gdev::runtime_types::pallet_identity, *};
-use crate::{common::pair_signer::PairSigner, DuniterWorld};
+use crate::{DuniterWorld, common::pair_signer::PairSigner};
 use sp_keyring::sr25519::Keyring;
 use subxt::{backend::rpc::RpcClient, tx::Signer, utils::AccountId32};
 

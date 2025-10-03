@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{mock::*, Error, Event, MembershipRemovalReason};
+use crate::{Error, Event, MembershipRemovalReason, mock::*};
 use frame_support::{assert_noop, assert_ok};
 use maplit::btreemap;
-use sp_membership::{traits::*, MembershipData};
+use sp_membership::{MembershipData, traits::*};
 
 fn default_gen_conf() -> MembershipConfig {
     MembershipConfig {

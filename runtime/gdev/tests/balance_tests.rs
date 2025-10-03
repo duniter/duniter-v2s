@@ -155,8 +155,10 @@ fn test_transfer_all_linked_no_member() {
             ),);
             assert_eq!(Balances::free_balance(ferdie.clone()), 0);
             // During reaping the account is unlinked
-            assert!(frame_system::Pallet::<Runtime>::get(&ferdie)
-                .linked_idty
-                .is_none());
+            assert!(
+                frame_system::Pallet::<Runtime>::get(&ferdie)
+                    .linked_idty
+                    .is_none()
+            );
         })
 }

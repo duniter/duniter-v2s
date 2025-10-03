@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::mock::{new_test_ext, offence_reports, Offence, Offences, RuntimeEvent, System, KIND};
+use crate::mock::{KIND, Offence, Offences, RuntimeEvent, System, new_test_ext, offence_reports};
 use frame_system::{EventRecord, Phase};
 
 #[test]

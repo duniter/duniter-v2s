@@ -50,10 +50,9 @@ use frame_support::{
     dispatch::{DispatchInfo, GetDispatchInfo},
     pallet_prelude::*,
     traits::{
-        fungible,
+        IsSubType, StorageVersion, StoredMap, fungible,
         fungible::{Credit, Inspect},
         tokens::WithdrawConsequence,
-        IsSubType, StorageVersion, StoredMap,
     },
 };
 use frame_system::pallet_prelude::*;
@@ -94,9 +93,6 @@ pub mod pallet {
         + pallet_treasury::Config<Currency = pallet_balances::Pallet<Self>>
         + pallet_quota::Config
     {
-        /// The overarching event type.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
         /// Type representing the weight of this pallet.
         type WeightInfo: WeightInfo;
 
@@ -186,10 +182,10 @@ pub mod pallet {
         /// Unlink the identity associated with the account.
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::unlink_identity())]
-        pub fn unlink_identity(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn unlink_identity(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
             Self::do_unlink_identity(who);
-            Ok(().into())
+            Ok(())
         }
     }
 
@@ -380,10 +376,10 @@ impl<T: Config> OnChargeTransaction<T> for Pallet<T>
 where
     T::RuntimeCall: IsSubType<Call<T>>,
     T::InnerOnChargeTransaction: OnChargeTransaction<
-        T,
-        Balance = BalanceOf<T>,
-        LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>,
-    >,
+            T,
+            Balance = BalanceOf<T>,
+            LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>,
+        >,
 {
     type Balance = BalanceOf<T>;
     type LiquidityInfo = Option<Credit<T::AccountId, T::Currency>>;

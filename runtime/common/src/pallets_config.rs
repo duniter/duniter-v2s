@@ -110,7 +110,6 @@ macro_rules! pallets_config {
             type InnerOnChargeTransaction =
                 FungibleAdapter<Balances, HandleFees<TreasuryAccount, Balances>>;
             type Refund = Quota;
-            type RuntimeEvent = RuntimeEvent;
             type WeightInfo = weights::pallet_duniter_account::WeightInfo<Runtime>;
         }
 
@@ -124,7 +123,6 @@ macro_rules! pallets_config {
             type MaxQuota = MaxQuota;
             type RefundAccount = TreasuryAccount;
             type ReloadRate = ReloadRate;
-            type RuntimeEvent = RuntimeEvent;
             type WeightInfo = weights::pallet_quota::WeightInfo<Runtime>;
         }
 
@@ -190,7 +188,6 @@ macro_rules! pallets_config {
             type Currency = Balances;
             // when call is not oneshot account, fall back to duniter-account implementation
             type InnerOnChargeTransaction = Account;
-            type RuntimeEvent = RuntimeEvent;
             type WeightInfo = weights::pallet_oneshot_account::WeightInfo<Runtime>;
         }
 
@@ -208,7 +205,6 @@ macro_rules! pallets_config {
             type OnNewSession = OnNewSessionHandler<Runtime>;
             type OnOutgoingMember = SmithMembers;
             type RemoveMemberOrigin = EnsureRoot<Self::AccountId>;
-            type RuntimeEvent = RuntimeEvent;
             type WeightInfo = weights::pallet_authority_members::WeightInfo<Runtime>;
         }
         impl pallet_authorship::Config for Runtime {
@@ -232,7 +228,6 @@ macro_rules! pallets_config {
         impl pallet_offences::Config for Runtime {
             type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
             type OnOffenceHandler = AuthorityMembers;
-            type RuntimeEvent = RuntimeEvent;
         }
         impl pallet_session::Config for Runtime {
             type DisablingStrategy =
@@ -251,6 +246,7 @@ macro_rules! pallets_config {
         impl pallet_session::historical::Config for Runtime {
             type FullIdentification = ValidatorFullIdentification;
             type FullIdentificationOf = FullIdentificationOfImpl;
+            type RuntimeEvent = RuntimeEvent;
         }
         impl pallet_grandpa::Config for Runtime {
             type EquivocationReportSystem = pallet_grandpa::EquivocationReportSystem<
@@ -280,7 +276,6 @@ macro_rules! pallets_config {
 
         impl pallet_upgrade_origin::Config for Runtime {
             type Call = RuntimeCall;
-            type RuntimeEvent = RuntimeEvent;
             type UpgradableOrigin = pallet_collective::EnsureProportionAtLeast<
                 AccountId,
                 TechnicalCommitteeInstance,
@@ -325,7 +320,6 @@ macro_rules! pallets_config {
             type ParentBlockRandomness = pallet_babe::ParentBlockRandomness<Self>;
             type RandomnessFromOneEpochAgo = pallet_babe::RandomnessFromOneEpochAgo<Self>;
             type RequestPrice = frame_support::traits::ConstU64<2_000>;
-            type RuntimeEvent = RuntimeEvent;
             type WeightInfo = weights::pallet_provide_randomness::WeightInfo<Runtime>;
         }
 
@@ -418,7 +412,6 @@ macro_rules! pallets_config {
             type MembersCount = common_runtime::providers::MembersCount<Membership>;
             type MembersStorage = common_runtime::providers::UdMembersStorage<Runtime>;
             type MomentIntoBalance = sp_runtime::traits::ConvertInto;
-            type RuntimeEvent = RuntimeEvent;
             type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
             type UdCreationPeriod = UdCreationPeriod;
             type UdReevalPeriod = UdReevalPeriod;
@@ -452,7 +445,6 @@ macro_rules! pallets_config {
             type OnKeyChange = KeyChangeHandler<Runtime, ReportLongevity>;
             type OnNewIdty = OnNewIdtyHandler<Runtime>;
             type OnRemoveIdty = OnRemoveIdtyHandler<Runtime>;
-            type RuntimeEvent = RuntimeEvent;
             type Signature = Signature;
             type Signer = <Signature as sp_runtime::traits::Verify>::Signer;
             type ValidationPeriod = ValidationPeriod;
@@ -475,7 +467,6 @@ macro_rules! pallets_config {
             type MembershipRenewalPeriod = MembershipRenewalPeriod;
             type OnNewMembership = OnNewMembershipHandler<Runtime>;
             type OnRemoveMembership = OnRemoveMembershipHandler<Runtime>;
-            type RuntimeEvent = RuntimeEvent;
             type WeightInfo = weights::pallet_membership::WeightInfo<Runtime>;
         }
 
@@ -488,7 +479,6 @@ macro_rules! pallets_config {
             type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
             type OnNewcert = Wot;
             type OnRemovedCert = Wot;
-            type RuntimeEvent = RuntimeEvent;
             type ValidityPeriod = ValidityPeriod;
             type WeightInfo = weights::pallet_certification::WeightInfo<Runtime>;
         }
@@ -502,7 +492,6 @@ macro_rules! pallets_config {
             type MinAccessibleReferees = MinAccessibleReferees;
             type OnUnbalanced = HandleFees<TreasuryAccount, Balances>;
             type OnValidDistanceStatus = Wot;
-            type RuntimeEvent = RuntimeEvent;
             type RuntimeHoldReason = RuntimeHoldReason;
             type WeightInfo = weights::pallet_distance::WeightInfo<Runtime>;
         }
@@ -517,7 +506,6 @@ macro_rules! pallets_config {
             type MemberId = IdtyIndex;
             type MinCertForMembership = SmithWotMinCertForMembership;
             type OnSmithDelete = OnSmithDeletedHandler<Runtime>;
-            type RuntimeEvent = RuntimeEvent;
             type SmithInactivityMaxDuration = SmithInactivityMaxDuration;
             type WeightInfo = weights::pallet_smith_members::WeightInfo<Runtime>;
         }

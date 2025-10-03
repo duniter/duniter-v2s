@@ -30,8 +30,8 @@ use crate::Pallet;
 mod benchmarks {
     use super::*;
 
-    fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
-        frame_system::Pallet::<T>::assert_has_event(generic_event.into());
+    fn assert_has_event<T: Config>(generic_event: <T as frame_system::Config>::RuntimeEvent) {
+        frame_system::Pallet::<T>::assert_has_event(generic_event);
     }
 
     #[benchmark]

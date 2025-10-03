@@ -16,7 +16,7 @@
 
 #![allow(clippy::unnecessary_cast)]
 
-use frame_support::weights::{constants::RocksDbWeight, Weight};
+use frame_support::weights::{Weight, constants::RocksDbWeight};
 
 pub trait WeightInfo {
     fn create_identity() -> Weight;

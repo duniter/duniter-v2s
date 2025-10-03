@@ -17,7 +17,7 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
 
-use crate::chain_spec::{get_account_id_from_seed, get_from_seed, AccountPublic};
+use crate::chain_spec::{AccountPublic, get_account_id_from_seed, get_from_seed};
 use common_runtime::{
     constants::{DAYS, MILLISECS_PER_BLOCK},
     *,
@@ -25,14 +25,14 @@ use common_runtime::{
 use log::{error, warn};
 use num_format::{Locale, ToFormattedString};
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-use sp_core::{crypto::AccountId32, ed25519, sr25519, Decode, Encode};
+use sp_core::{Decode, Encode, crypto::AccountId32, ed25519, sr25519};
 use sp_runtime::{
-    traits::{IdentifyAccount, Verify},
     MultiSignature, Perbill,
+    traits::{IdentifyAccount, Verify},
 };
 use std::{
     collections::{BTreeMap, HashMap},
@@ -610,7 +610,8 @@ where
         {
             warn!(
                 "parameter `ud_creation_period` value ({} days) is different from Ğ1 value ({} days)",
-                common_parameters.universal_dividend_ud_creation_period as f32 / DAYS as f32, G1_DUNITER_V1_DT as f32 / DUNITER_V1_DAYS as f32
+                common_parameters.universal_dividend_ud_creation_period as f32 / DAYS as f32,
+                G1_DUNITER_V1_DT as f32 / DUNITER_V1_DAYS as f32
             )
         }
         if common_parameters.universal_dividend_ud_reeval_period as f32 / DAYS as f32
@@ -624,8 +625,8 @@ where
         }
         if common_parameters.distance_min_accessible_referees != g1_duniter_v1_xpercent {
             warn!(
-                "parameter `distance_min_accessible_referees` value ({}) is different from Ğ1 value ({})",
-                format!("{:?}", common_parameters.distance_min_accessible_referees), format!("{:?}", g1_duniter_v1_xpercent)
+                "parameter `distance_min_accessible_referees` value ({:?}) is different from {:?}",
+                common_parameters.distance_min_accessible_referees, g1_duniter_v1_xpercent
             )
         }
         if common_parameters.distance_max_depth != G1_DUNITER_V1_STEPMAX {
@@ -1816,13 +1817,13 @@ fn check_parameters_consistency(
         return Err(format!("Wallet {} is empty", account));
     }
 
-    if let (Some(first_ud), Some(first_reeval)) = (first_ud, first_reeval) {
-        if first_ud > first_reeval {
-            return Err(format!(
-                "`first_ud` ({}) should be lower than `first_ud_reeval` ({})",
-                first_ud, first_reeval
-            ));
-        }
+    if let (Some(first_ud), Some(first_reeval)) = (first_ud, first_reeval)
+        && first_ud > first_reeval
+    {
+        return Err(format!(
+            "`first_ud` ({}) should be lower than `first_ud_reeval` ({})",
+            first_ud, first_reeval
+        ));
     }
     if *ud == 0 {
         return Err("`ud` is expected to be > 0".to_owned());
@@ -1989,8 +1990,8 @@ fn seconds_to_blocs(seconds: u32) -> u32 {
 mod tests {
     use super::*;
     use sp_core::{
-        crypto::{Ss58AddressFormat, Ss58Codec},
         ByteArray,
+        crypto::{Ss58AddressFormat, Ss58Codec},
     };
     use std::str::FromStr;
 

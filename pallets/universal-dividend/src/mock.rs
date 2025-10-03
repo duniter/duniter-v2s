@@ -23,8 +23,8 @@ use frame_support::{
 use frame_system as system;
 use sp_core::{ConstU32, H256};
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
     BuildStorage,
+    traits::{BlakeTwo256, IdentityLookup},
 };
 
 pub const BLOCK_TIME: u64 = 6_000;
@@ -134,7 +134,6 @@ impl pallet_universal_dividend::Config for Test {
     type MembersCount = MembersCount;
     type MembersStorage = TestMembersStorage;
     type MomentIntoBalance = sp_runtime::traits::ConvertInto;
-    type RuntimeEvent = RuntimeEvent;
     type SquareMoneyGrowthRate = SquareMoneyGrowthRate;
     type UdCreationPeriod = UdCreationPeriod;
     type UdReevalPeriod = UdReevalPeriod;

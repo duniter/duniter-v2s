@@ -1,10 +1,10 @@
 use crate::endpoint_gossip::{
+    DuniterEndpoint, DuniterEndpoints,
     rpc::{
         api::{DuniterPeeringRpcApiImpl, DuniterPeeringRpcApiServer},
         state::{DuniterPeeringsState, PeeringWithId},
     },
     well_known_endpoint_types::{RPC, SQUID},
-    DuniterEndpoint, DuniterEndpoints,
 };
 use jsonrpsee::RpcModule;
 

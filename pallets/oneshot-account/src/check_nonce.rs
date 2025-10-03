@@ -20,16 +20,16 @@ use codec::{Decode, DecodeWithMemTracking, Encode};
 use frame_support::{dispatch::DispatchInfo, pallet_prelude::Weight, traits::IsSubType};
 //use frame_system::Config;
 use scale_info::{
-    prelude::fmt::{Debug, Formatter},
     TypeInfo,
+    prelude::fmt::{Debug, Formatter},
 };
 use sp_runtime::{
+    DispatchResult,
     traits::{
         AsSystemOriginSigner, DispatchInfoOf, Dispatchable, PostDispatchInfoOf,
         TransactionExtension, ValidateResult,
     },
     transaction_validity::{TransactionSource, TransactionValidityError},
-    DispatchResult,
 };
 
 /// Wrapper around `frame_system::CheckNonce<T>`.
@@ -46,7 +46,7 @@ impl<T: Config> From<frame_system::CheckNonce<T>> for CheckNonce<T> {
 impl<T: Config> Debug for CheckNonce<T> {
     #[cfg(feature = "std")]
     fn fmt(&self, f: &mut Formatter) -> scale_info::prelude::fmt::Result {
-        write!(f, "CheckNonce({})", self.0 .0)
+        write!(f, "CheckNonce({})", self.0.0)
     }
 
     #[cfg(not(feature = "std"))]

@@ -1,11 +1,11 @@
 use crate::endpoint_gossip::{
-    handler::DuniterPeeringEvent, rpc::data::DuniterPeeringsData, DuniterEndpoints,
+    DuniterEndpoints, handler::DuniterPeeringEvent, rpc::data::DuniterPeeringsData,
 };
 use codec::{Decode, Encode};
 use futures::StreamExt;
 use jsonrpsee::core::Serialize;
 use parking_lot::RwLock;
-use sc_utils::mpsc::{tracing_unbounded, TracingUnboundedSender};
+use sc_utils::mpsc::{TracingUnboundedSender, tracing_unbounded};
 use serde::Deserialize;
 use std::sync::Arc;
 

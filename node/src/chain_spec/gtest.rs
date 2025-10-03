@@ -16,9 +16,9 @@
 
 use super::*;
 use crate::chain_spec::gen_genesis_data::{CommonParameters, GenesisIdentity, SessionKeysProvider};
-use common_runtime::{constants::*, entities::IdtyData, GenesisIdty};
+use common_runtime::{GenesisIdty, constants::*, entities::IdtyData};
 use gtest_runtime::{
-    opaque::SessionKeys, pallet_universal_dividend, parameters, ImOnlineId, Runtime, WASM_BINARY,
+    ImOnlineId, Runtime, WASM_BINARY, opaque::SessionKeys, pallet_universal_dividend, parameters,
 };
 use jsonrpsee::core::JsonValue;
 use sc_consensus_grandpa::AuthorityId as GrandpaId;
@@ -28,7 +28,7 @@ use sc_telemetry::TelemetryEndpoints;
 use serde::Deserialize;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
-use sp_core::{sr25519, Get};
+use sp_core::{Get, sr25519};
 use std::{env, fs};
 
 pub type ChainSpec = sc_service::GenericChainSpec;

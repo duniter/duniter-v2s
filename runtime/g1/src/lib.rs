@@ -28,15 +28,18 @@ pub mod weights;
 pub use self::parameters::*;
 use common_runtime::IdtyNameValidatorImpl;
 pub use common_runtime::{
-    constants::*, entities::*, handlers::*, AccountId, Address, Balance, BlockNumber,
-    FullIdentificationOfImpl, GetCurrentEpochIndex, Hash, Header, IdtyIndex, Index, Signature,
+    AccountId, Address, Balance, BlockNumber, FullIdentificationOfImpl, GetCurrentEpochIndex, Hash,
+    Header, IdtyIndex, Index, Signature, constants::*, entities::*, handlers::*,
 };
-use frame_support::{traits::Contains, PalletId};
+use frame_support::{
+    PalletId,
+    traits::{Contains, InherentBuilder},
+};
 pub use frame_system::Call as SystemCall;
 use frame_system::EnsureRoot;
 pub use pallet_balances::Call as BalancesCall;
 use pallet_grandpa::{
-    fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
+    AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList, fg_primitives,
 };
 pub use pallet_identity::{IdtyStatus, IdtyValue};
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
@@ -50,10 +53,9 @@ use sp_core::OpaqueMetadata;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{
-    generic, impl_opaque_keys,
+    ApplyExtrinsicResult, Cow, Perquintill, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Cow, Perquintill,
 };
 pub use sp_runtime::{KeyTypeId, Perbill, Permill};
 #[cfg(feature = "std")]
@@ -64,13 +66,12 @@ pub use weights::paritydb_weights::constants::ParityDbWeight as DbWeight;
 // A few exports that help ease life for downstream crates.
 use frame_support::instances::Instance2;
 pub use frame_support::{
-    construct_runtime, parameter_types,
+    StorageValue, construct_runtime, parameter_types,
     traits::{EqualPrivilegeOnly, KeyOwnerProofSystem, Randomness},
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
         Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
     },
-    StorageValue,
 };
 
 // To learn more about runtime versioning and what each of the following value means:

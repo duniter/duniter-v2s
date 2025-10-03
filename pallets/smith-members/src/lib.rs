@@ -55,7 +55,7 @@ mod benchmarking;
 use codec::{Codec, Decode, Encode};
 use duniter_primitives::Idty;
 use frame_support::{
-    dispatch::DispatchResultWithPostInfo,
+    dispatch::DispatchResult,
     ensure,
     pallet_prelude::{Get, RuntimeDebug, Weight},
 };
@@ -64,8 +64,8 @@ use frame_system::{
     pallet_prelude::{BlockNumberFor, OriginFor},
 };
 use scale_info::{
-    prelude::{collections::BTreeMap, fmt::Debug, vec, vec::Vec},
     TypeInfo,
+    prelude::{collections::BTreeMap, fmt::Debug, vec, vec::Vec},
 };
 use sp_runtime::traits::{AtLeast32BitUnsigned, IsMember};
 
@@ -121,9 +121,6 @@ pub mod pallet {
         type IsWoTMember: IsMember<Self::IdtyIndex>;
 
         type OnSmithDelete: traits::OnSmithDelete<Self::IdtyIndex>;
-
-        /// The overarching event type for this pallet.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// A short identity index type.
         type IdtyIndex: Parameter
@@ -328,53 +325,44 @@ pub mod pallet {
         /// Invite a member of the Web of Trust to attempt becoming a Smith.
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::invite_smith())]
-        pub fn invite_smith(
-            origin: OriginFor<T>,
-            receiver: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
+        pub fn invite_smith(origin: OriginFor<T>, receiver: T::IdtyIndex) -> DispatchResult {
             let who = ensure_signed(origin.clone())?;
             let issuer =
                 T::IdtyAttr::idty_index(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
             Self::check_invite_smith(issuer, receiver)?;
             Self::do_invite_smith(issuer, receiver);
-            Ok(().into())
+            Ok(())
         }
 
         /// Accept an invitation to become a Smith (must have been invited first).
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::accept_invitation())]
-        pub fn accept_invitation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn accept_invitation(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin.clone())?;
             let receiver =
                 T::IdtyAttr::idty_index(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
             Self::check_accept_invitation(receiver)?;
             Self::do_accept_invitation(receiver)?;
-            Ok(().into())
+            Ok(())
         }
 
         /// Certify an invited Smith, which can lead the certified to become a Smith.
         #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::certify_smith())]
-        pub fn certify_smith(
-            origin: OriginFor<T>,
-            receiver: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
+        pub fn certify_smith(origin: OriginFor<T>, receiver: T::IdtyIndex) -> DispatchResult {
             let who = ensure_signed(origin)?;
             let issuer =
                 T::IdtyAttr::idty_index(who.clone()).ok_or(Error::<T>::OriginMustHaveAnIdentity)?;
             Self::check_certify_smith(issuer, receiver)?;
             Self::do_certify_smith(receiver, issuer);
-            Ok(().into())
+            Ok(())
         }
     }
 }
 
 impl<T: Config> Pallet<T> {
     /// Check conditions before inviting a potential Smith.
-    fn check_invite_smith(
-        issuer: T::IdtyIndex,
-        receiver: T::IdtyIndex,
-    ) -> DispatchResultWithPostInfo {
+    fn check_invite_smith(issuer: T::IdtyIndex, receiver: T::IdtyIndex) -> DispatchResult {
         let issuer = Smiths::<T>::get(issuer).ok_or(Error::<T>::OriginHasNeverBeenInvited)?;
         ensure!(
             issuer.status == SmithStatus::Smith,
@@ -395,7 +383,7 @@ impl<T: Config> Pallet<T> {
             Error::<T>::InvitationOfNonMember
         );
 
-        Ok(().into())
+        Ok(())
     }
 
     /// Perform the invitation of a potential Smith.
@@ -411,7 +399,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Check conditions before accepting an invitation to become a Smith.
-    fn check_accept_invitation(receiver: T::IdtyIndex) -> DispatchResultWithPostInfo {
+    fn check_accept_invitation(receiver: T::IdtyIndex) -> DispatchResult {
         let pretender_status = Smiths::<T>::get(receiver)
             .ok_or(Error::<T>::OriginHasNeverBeenInvited)?
             .status;
@@ -419,11 +407,11 @@ impl<T: Config> Pallet<T> {
             pretender_status == SmithStatus::Invited,
             Error::<T>::InvitationAlreadyAccepted
         );
-        Ok(().into())
+        Ok(())
     }
 
     /// Accept the invitation to become a Smith.
-    fn do_accept_invitation(receiver: T::IdtyIndex) -> DispatchResultWithPostInfo {
+    fn do_accept_invitation(receiver: T::IdtyIndex) -> DispatchResult {
         Smiths::<T>::mutate(receiver, |maybe_smith_meta| {
             if let Some(smith_meta) = maybe_smith_meta {
                 smith_meta.status = SmithStatus::Pending;
@@ -432,14 +420,14 @@ impl<T: Config> Pallet<T> {
         Self::deposit_event(Event::<T>::InvitationAccepted {
             idty_index: receiver,
         });
-        Ok(().into())
+        Ok(())
     }
 
     /// Check conditions before certifying a potential Smith.
     fn check_certify_smith(
         issuer_index: T::IdtyIndex,
         receiver_index: T::IdtyIndex,
-    ) -> DispatchResultWithPostInfo {
+    ) -> DispatchResult {
         ensure!(
             issuer_index != receiver_index,
             Error::<T>::CertificationOfSelfIsForbidden
@@ -476,7 +464,7 @@ impl<T: Config> Pallet<T> {
             Error::<T>::CertificationAlreadyExists
         );
 
-        Ok(().into())
+        Ok(())
     }
 
     /// Perform certification of a potential Smith by another Smith.
@@ -531,12 +519,11 @@ impl<T: Config> Pallet<T> {
     fn on_exclude_expired_smiths(at: SessionIndex) {
         if let Some(smiths_to_remove) = ExpiresOn::<T>::take(at) {
             for smith in smiths_to_remove {
-                if let Some(smith_meta) = Smiths::<T>::get(smith) {
-                    if let Some(expires_on) = smith_meta.expires_on {
-                        if expires_on == at {
-                            Self::_do_exclude_smith(smith, SmithRemovalReason::OfflineTooLong);
-                        }
-                    }
+                if let Some(smith_meta) = Smiths::<T>::get(smith)
+                    && let Some(expires_on) = smith_meta.expires_on
+                    && expires_on == at
+                {
+                    Self::_do_exclude_smith(smith, SmithRemovalReason::OfflineTooLong);
                 }
             }
         }
@@ -569,14 +556,14 @@ impl<T: Config> Pallet<T> {
         // We remove the lost certs from their issuer's stock
         for lost_cert_issuer in lost_certs {
             Smiths::<T>::mutate(lost_cert_issuer, |maybe_smith_meta| {
-                if let Some(smith_meta) = maybe_smith_meta {
-                    if let Ok(index) = smith_meta.issued_certs.binary_search(&receiver) {
-                        smith_meta.issued_certs.remove(index);
-                        Self::deposit_event(Event::<T>::SmithCertRemoved {
-                            issuer: lost_cert_issuer,
-                            receiver,
-                        });
-                    }
+                if let Some(smith_meta) = maybe_smith_meta
+                    && let Ok(index) = smith_meta.issued_certs.binary_search(&receiver)
+                {
+                    smith_meta.issued_certs.remove(index);
+                    Self::deposit_event(Event::<T>::SmithCertRemoved {
+                        issuer: lost_cert_issuer,
+                        receiver,
+                    });
                 }
             });
         }
@@ -590,12 +577,12 @@ impl<T: Config> Pallet<T> {
     /// Handle the event when a Smith goes online.
     pub fn on_smith_goes_online(idty_index: T::IdtyIndex) {
         Smiths::<T>::mutate(idty_index, |maybe_smith_meta| {
-            if let Some(smith_meta) = maybe_smith_meta {
-                if smith_meta.expires_on.is_some() {
-                    // As long as the smith is online, it cannot expire
-                    smith_meta.expires_on = None;
-                    smith_meta.last_online = None;
-                }
+            if let Some(smith_meta) = maybe_smith_meta
+                && smith_meta.expires_on.is_some()
+            {
+                // As long as the smith is online, it cannot expire
+                smith_meta.expires_on = None;
+                smith_meta.last_online = None;
             }
         });
     }
@@ -621,7 +608,7 @@ impl<T: Config> Pallet<T> {
 
     /// Provide whether the given identity index is a Smith.
     fn provide_is_member(idty_id: &T::IdtyIndex) -> bool {
-        Smiths::<T>::get(idty_id).map_or(false, |smith| smith.status == SmithStatus::Smith)
+        Smiths::<T>::get(idty_id).is_some_and(|smith| smith.status == SmithStatus::Smith)
     }
 }
 

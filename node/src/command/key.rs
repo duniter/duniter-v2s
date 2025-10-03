@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+#![allow(clippy::result_large_err)]
+
 use sc_cli::{
-    utils, with_crypto_scheme, CryptoScheme, Error, KeystoreParams, SharedParams, SubstrateCli,
+    CryptoScheme, Error, KeystoreParams, SharedParams, SubstrateCli, utils, with_crypto_scheme,
 };
 use sc_keystore::LocalKeystore;
 use sc_service::config::{BasePath, KeystoreConfig};

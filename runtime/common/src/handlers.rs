@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use super::{entities::*, AccountId, IdtyIndex};
+use super::{AccountId, IdtyIndex, entities::*};
 use frame_support::{
     pallet_prelude::Weight,
     traits::{Imbalance, UnfilteredDispatchable},
@@ -68,12 +68,12 @@ impl<Runtime: pallet_duniter_wot::Config + pallet_duniter_account::Config>
 /// OnNewMembership and implementing logic at the runtime level.
 pub struct OnNewMembershipHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<
-        Runtime: frame_system::Config<AccountId = AccountId>
-            + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
-            + pallet_duniter_wot::Config
-            + pallet_universal_dividend::Config
-            + pallet_quota::Config,
-    > sp_membership::traits::OnNewMembership<IdtyIndex> for OnNewMembershipHandler<Runtime>
+    Runtime: frame_system::Config<AccountId = AccountId>
+        + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
+        + pallet_duniter_wot::Config
+        + pallet_universal_dividend::Config
+        + pallet_quota::Config,
+> sp_membership::traits::OnNewMembership<IdtyIndex> for OnNewMembershipHandler<Runtime>
 {
     fn on_created(idty_index: &IdtyIndex) {
         // duniter-wot related actions
@@ -83,7 +83,7 @@ impl<
 
         // When main membership is acquired, it starts getting right to UD.
         pallet_identity::Identities::<Runtime>::mutate_exists(idty_index, |idty_val_opt| {
-            if let Some(ref mut idty_val) = idty_val_opt {
+            if let Some(idty_val) = idty_val_opt {
                 idty_val.data = IdtyData {
                     first_eligible_ud:
                         pallet_universal_dividend::Pallet::<Runtime>::init_first_eligible_ud(),
@@ -102,13 +102,13 @@ impl<
 /// done at the handler level.
 pub struct OnRemoveMembershipHandler<Runtime>(core::marker::PhantomData<Runtime>);
 impl<
-        Runtime: frame_system::Config
-            + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
-            + pallet_smith_members::Config<IdtyIndex = IdtyIndex>
-            + pallet_duniter_wot::Config
-            + pallet_quota::Config
-            + pallet_universal_dividend::Config,
-    > sp_membership::traits::OnRemoveMembership<IdtyIndex> for OnRemoveMembershipHandler<Runtime>
+    Runtime: frame_system::Config
+        + pallet_identity::Config<IdtyData = IdtyData, IdtyIndex = IdtyIndex>
+        + pallet_smith_members::Config<IdtyIndex = IdtyIndex>
+        + pallet_duniter_wot::Config
+        + pallet_quota::Config
+        + pallet_universal_dividend::Config,
+> sp_membership::traits::OnRemoveMembership<IdtyIndex> for OnRemoveMembershipHandler<Runtime>
 {
     fn on_removed(idty_index: &IdtyIndex) -> Weight {
         // duniter-wot related actions
@@ -118,13 +118,13 @@ impl<
         // - call on_removed_member handler which auto claims UD;
         // - set the first_eligible_ud to None so the identity cannot claim UD anymore.
         pallet_identity::Identities::<Runtime>::mutate(idty_index, |maybe_idty_value| {
-            if let Some(idty_value) = maybe_idty_value {
-                if let Some(first_ud_index) = idty_value.data.first_eligible_ud.0.take() {
-                    weight += pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
-                        first_ud_index.into(),
-                        &idty_value.owner_key,
-                    );
-                }
+            if let Some(idty_value) = maybe_idty_value
+                && let Some(first_ud_index) = idty_value.data.first_eligible_ud.0.take()
+            {
+                weight += pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
+                    first_ud_index.into(),
+                    &idty_value.owner_key,
+                );
             }
         });
         weight.saturating_add(pallet_quota::Pallet::<Runtime>::on_removed(idty_index));
@@ -176,12 +176,12 @@ pub struct KeyChangeHandler<Runtime, ReportLongevity>(
     core::marker::PhantomData<(Runtime, ReportLongevity)>,
 );
 impl<
-        Runtime: frame_system::Config<AccountId = AccountId>
-            + pallet_identity::Config<IdtyIndex = IdtyIndex>
-            + pallet_authority_members::Config<MemberId = IdtyIndex>
-            + pallet_smith_members::Config<IdtyIndex = IdtyIndex>,
-        ReportLongevity: Get<BlockNumberFor<Runtime>>,
-    > pallet_identity::traits::KeyChange<Runtime> for KeyChangeHandler<Runtime, ReportLongevity>
+    Runtime: frame_system::Config<AccountId = AccountId>
+        + pallet_identity::Config<IdtyIndex = IdtyIndex>
+        + pallet_authority_members::Config<MemberId = IdtyIndex>
+        + pallet_smith_members::Config<IdtyIndex = IdtyIndex>,
+    ReportLongevity: Get<BlockNumberFor<Runtime>>,
+> pallet_identity::traits::KeyChange<Runtime> for KeyChangeHandler<Runtime, ReportLongevity>
 {
     /// Handles the event when an identity's owner key is changed.
     ///

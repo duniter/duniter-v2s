@@ -24,7 +24,7 @@ use pallet_smith_members::SmithMeta;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::{AuthorityId as BabeId, Slot, VrfInput, VrfProof};
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-use sp_core::{crypto::IsWrappedBy, sr25519, Encode, Pair, Public, H256};
+use sp_core::{Encode, H256, Pair, Public, crypto::IsWrappedBy, sr25519};
 use sp_keyring::sr25519::Keyring;
 use sp_membership::MembershipData;
 use sp_runtime::{

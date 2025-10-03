@@ -1,14 +1,13 @@
 use crate::{
     endpoint_gossip,
     endpoint_gossip::{
-        duniter_peering_protocol_name,
+        DuniterEndpoint, DuniterEndpoints, Peering, duniter_peering_protocol_name,
         handler::{DuniterPeeringCommand, DuniterPeeringEvent},
         well_known_endpoint_types::RPC,
-        DuniterEndpoint, DuniterEndpoints, Peering,
     },
 };
 use async_channel::Receiver;
-use futures::{future, stream, FutureExt, StreamExt};
+use futures::{FutureExt, StreamExt, future, stream};
 use log::{debug, warn};
 use parking_lot::Mutex;
 use sc_consensus::{
@@ -19,7 +18,7 @@ use sc_network::{NetworkStateInfo, ObservedRole, PeerId};
 use sc_network_test::{
     Block, BlockImportAdapter, FullPeerConfig, PassThroughVerifier, PeersClient, TestNetFactory,
 };
-use sc_utils::mpsc::{tracing_unbounded, TracingUnboundedSender};
+use sc_utils::mpsc::{TracingUnboundedSender, tracing_unbounded};
 use sp_api::__private::BlockT;
 use sp_consensus::Error as ConsensusError;
 use sp_runtime::traits::Header;
@@ -63,11 +62,11 @@ fn ensure_only_one_peering_is_accepted(
     let already_received = async move {
         let mut stream1 = pin!(stream_1);
         while let Some(event) = stream1.next().await {
-            if let DuniterPeeringEvent::AlreadyReceivedPeering(peer) = event {
-                if peer == peer_id_0 {
-                    // We did receive the peering from peer 0
-                    break;
-                }
+            if let DuniterPeeringEvent::AlreadyReceivedPeering(peer) = event
+                && peer == peer_id_0
+            {
+                // We did receive the peering from peer 0
+                break;
             }
         }
     };
@@ -159,7 +158,10 @@ fn observed_role_to_str(role: ObservedRole) -> &'static str {
 }
 
 // Spawns duniter nodes. Returns a future to spawn on the runtime.
-fn start_network(net: &mut DuniterPeeringTestNet, peers: usize) -> impl Future<Output = ()> {
+fn start_network(
+    net: &mut DuniterPeeringTestNet,
+    peers: usize,
+) -> impl Future<Output = ()> + use<> {
     let nodes = stream::FuturesUnordered::new();
 
     for peer_id in 0..peers {
@@ -241,7 +243,7 @@ impl DuniterPeeringTestNet {
     fn add_authority_peer(&mut self) {
         self.add_full_peer_with_config(FullPeerConfig {
             notifications_protocols: vec![
-                format!("/{}", duniter_peering_protocol_name::NAME).into()
+                format!("/{}", duniter_peering_protocol_name::NAME).into(),
             ],
             is_authority: true,
             ..Default::default()
@@ -295,7 +297,7 @@ impl TestNetFactory for DuniterPeeringTestNet {
     fn add_full_peer(&mut self) {
         self.add_full_peer_with_config(FullPeerConfig {
             notifications_protocols: vec![
-                format!("/{}", duniter_peering_protocol_name::NAME).into()
+                format!("/{}", duniter_peering_protocol_name::NAME).into(),
             ],
             is_authority: false,
             ..Default::default()

@@ -172,7 +172,7 @@ fn process(
 
 #[cfg(test)]
 mod tests {
-    use crate::{analyze_weight, MaxBlockWeight};
+    use crate::{MaxBlockWeight, analyze_weight};
     use std::path::Path;
     #[test]
     fn should_works() {

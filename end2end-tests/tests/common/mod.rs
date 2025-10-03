@@ -23,7 +23,7 @@ pub mod identity;
 pub mod oneshot;
 
 #[subxt::subxt(
-    runtime_metadata_path = "../resources/metadata.scale",
+    runtime_metadata_path = "../resources/gdev_metadata.scale",
     derive_for_all_types = "Eq, PartialEq"
 )]
 pub mod gdev {}
@@ -42,8 +42,8 @@ use std::{
 };
 use subxt::{
     backend::rpc::RpcClient,
-    config::{substrate::SubstrateExtrinsicParamsBuilder, SubstrateExtrinsicParams},
-    ext::subxt_rpcs::client::{rpc_params, RpcParams},
+    config::{SubstrateExtrinsicParams, substrate::SubstrateExtrinsicParamsBuilder},
+    ext::subxt_rpcs::client::{RpcParams, rpc_params},
 };
 
 pub type Client = subxt::OnlineClient<GdevConfig>;
@@ -58,7 +58,6 @@ impl subxt::config::Config for GdevConfig {
     type Address = subxt::utils::MultiAddress<Self::AccountId, u32>;
     type AssetId = ();
     type ExtrinsicParams = SubstrateExtrinsicParams<Self>;
-    type Hash = subxt::utils::H256;
     type Hasher = subxt::config::substrate::BlakeTwo256;
     type Header =
         subxt::config::substrate::SubstrateHeader<u32, subxt::config::substrate::BlakeTwo256>;
@@ -343,15 +342,15 @@ pub fn spawn_distance_oracle(distance_oracle_binary_path: &str, duniter_rpc_port
 /// and where GdevConfig is the runtime configuration.
 mod pair_signer {
     use super::*;
-    use sp_core::{sr25519, Pair as _};
+    use sp_core::{Pair as _, sr25519};
     use sp_runtime::{
-        traits::{IdentifyAccount, Verify},
         MultiSignature as SpMultiSignature,
+        traits::{IdentifyAccount, Verify},
     };
     use subxt::{
+        Config,
         config::substrate::{AccountId32, MultiSignature},
         tx::Signer,
-        Config,
     };
 
     #[derive(Clone)]

@@ -19,16 +19,16 @@ use codec::Encode;
 use frame_support::{
     derive_impl, parameter_types,
     traits::{ConstU32, ConstU64},
-    weights::{constants::RocksDbWeight, Weight},
+    weights::{Weight, constants::RocksDbWeight},
 };
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
     BuildStorage, Perbill,
+    traits::{BlakeTwo256, IdentityLookup},
 };
 use sp_staking::{
-    offence::{Kind, OffenceDetails},
     SessionIndex,
+    offence::{Kind, OffenceDetails},
 };
 
 pub struct OnOffenceHandler;
@@ -80,7 +80,6 @@ impl frame_system::Config for Runtime {
 impl Config for Runtime {
     type IdentificationTuple = u64;
     type OnOffenceHandler = OnOffenceHandler;
-    type RuntimeEvent = RuntimeEvent;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

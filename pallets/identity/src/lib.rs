@@ -180,9 +180,6 @@ pub mod pallet {
             + Verify<Signer = Self::Signer>
             + From<sp_core::ed25519::Signature>;
 
-        /// The overarching event type.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
     }
@@ -343,10 +340,7 @@ pub mod pallet {
         /// The origin must be allowed to create an identity.
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::create_identity())]
-        pub fn create_identity(
-            origin: OriginFor<T>,
-            owner_key: T::AccountId,
-        ) -> DispatchResultWithPostInfo {
+        pub fn create_identity(origin: OriginFor<T>, owner_key: T::AccountId) -> DispatchResult {
             // Verification phase //
             let who = ensure_signed(origin)?;
 
@@ -356,7 +350,7 @@ pub mod pallet {
             // Apply phase //
             frame_system::Pallet::<T>::inc_sufficients(&owner_key);
             <Identities<T>>::mutate_exists(creator_index, |idty_val_opt| {
-                if let Some(ref mut idty_val) = idty_val_opt {
+                if let Some(idty_val) = idty_val_opt {
                     idty_val.next_creatable_identity_on =
                         block_number + T::IdtyCreationPeriod::get();
                 }
@@ -385,7 +379,7 @@ pub mod pallet {
             });
             T::AccountLinker::link_identity(&owner_key, idty_index)?;
             T::OnNewIdty::on_created(&idty_index, &creator_index);
-            Ok(().into())
+            Ok(())
         }
 
         /// Confirm the creation of an identity and give it a name
@@ -395,10 +389,7 @@ pub mod pallet {
         /// The identity must have been created using `create_identity` before it can be confirmed.
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::confirm_identity())]
-        pub fn confirm_identity(
-            origin: OriginFor<T>,
-            idty_name: IdtyName,
-        ) -> DispatchResultWithPostInfo {
+        pub fn confirm_identity(origin: OriginFor<T>, idty_name: IdtyName) -> DispatchResult {
             // Verification phase //
             let who = ensure_signed(origin)?;
 
@@ -431,7 +422,7 @@ pub mod pallet {
                 idty_index,
                 name: idty_name,
             });
-            Ok(().into())
+            Ok(())
         }
 
         /// Change identity owner key.
@@ -447,7 +438,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             new_key: T::AccountId,
             new_key_sig: T::Signature,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             // verification phase
             let who = ensure_signed(origin)?;
 
@@ -508,7 +499,7 @@ pub mod pallet {
                 new_owner_key: new_key,
             });
 
-            Ok(().into())
+            Ok(())
         }
 
         /// Revoke an identity using a revocation signature
@@ -526,7 +517,7 @@ pub mod pallet {
             idty_index: T::IdtyIndex,
             revocation_key: T::AccountId,
             revocation_sig: T::Signature,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             let _ = ensure_signed(origin)?;
 
             let idty_value = Identities::<T>::get(idty_index).ok_or(Error::<T>::IdtyNotFound)?;
@@ -567,7 +558,7 @@ pub mod pallet {
 
             // finally if all checks pass, remove identity
             Self::do_revoke_identity(idty_index, RevocationReason::User);
-            Ok(().into())
+            Ok(())
         }
 
         /// Revoke an identity using a legacy (DUBP) revocation document
@@ -580,7 +571,7 @@ pub mod pallet {
         pub fn revoke_identity_legacy(
             origin: OriginFor<T>,
             revocation_document: Vec<u8>,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             let _ = ensure_signed(origin)?;
 
             // Strip possible Unicode magic number that is not part of the protocol
@@ -678,7 +669,7 @@ pub mod pallet {
             // finally if all checks pass, remove identity
             Self::do_revoke_identity(idty_index, RevocationReason::User);
 
-            Ok(().into())
+            Ok(())
         }
 
         /// Remove identity names from storage.
@@ -693,14 +684,14 @@ pub mod pallet {
         pub fn prune_item_identities_names(
             origin: OriginFor<T>,
             names: Vec<IdtyName>,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             ensure_root(origin)?;
 
             for name in names {
                 <IdentitiesNames<T>>::remove(name);
             }
 
-            Ok(().into())
+            Ok(())
         }
 
         /// Change sufficient reference count for a given key.
@@ -718,7 +709,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             owner_key: T::AccountId,
             inc: bool,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             ensure_root(origin)?;
 
             if inc {
@@ -727,7 +718,7 @@ pub mod pallet {
                 frame_system::Pallet::<T>::dec_sufficients(&owner_key);
             }
 
-            Ok(().into())
+            Ok(())
         }
 
         /// Link an account to an identity.
@@ -747,7 +738,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             account_id: T::AccountId,
             payload_sig: T::Signature,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             // verif
             let who = ensure_signed(origin)?;
             let idty_index =
@@ -766,7 +757,7 @@ pub mod pallet {
             // apply
             T::AccountLinker::link_identity(&account_id, idty_index)?;
 
-            Ok(().into())
+            Ok(())
         }
     }
 
@@ -851,15 +842,15 @@ pub mod pallet {
         /// if the identity is currently a member, and if so, updates its status to `NotMember`.
         /// If the identity is already revoked, this function does nothing.
         pub fn membership_removed(idty_index: T::IdtyIndex) -> Weight {
-            if let Some(idty_value) = Identities::<T>::get(idty_index) {
-                if idty_value.status == IdtyStatus::Member {
-                    Self::update_identity_status(
-                        idty_index,
-                        idty_value,
-                        IdtyStatus::NotMember,
-                        T::AutorevocationPeriod::get(),
-                    );
-                }
+            if let Some(idty_value) = Identities::<T>::get(idty_index)
+                && idty_value.status == IdtyStatus::Member
+            {
+                Self::update_identity_status(
+                    idty_index,
+                    idty_value,
+                    IdtyStatus::NotMember,
+                    T::AutorevocationPeriod::get(),
+                );
             }
             T::WeightInfo::membership_removed()
             // else should not happen
@@ -954,7 +945,7 @@ pub mod pallet {
                                 );
                             }
                             IdtyStatus::Member => { // do not touch identities of member accounts
-                                 // this should not happen
+                                // this should not happen
                             }
                         }
                     } else {
@@ -1102,7 +1093,7 @@ where
         let result = f(&mut maybe_idty_data)?;
         if let Some(idty_index) = maybe_idty_index {
             Identities::<T>::mutate_exists(idty_index, |idty_val_opt| {
-                if let Some(ref mut idty_val) = idty_val_opt {
+                if let Some(idty_val) = idty_val_opt {
                     idty_val.data = maybe_idty_data.unwrap_or_default();
                 } else if maybe_idty_data.is_some() {
                     return Err(sp_runtime::DispatchError::Other(

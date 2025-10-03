@@ -18,14 +18,14 @@ use super::*;
 use crate::chain_spec::gen_genesis_data::{
     AuthorityKeys, CommonParameters, GenesisIdentity, SessionKeysProvider,
 };
-use common_runtime::{constants::*, entities::IdtyData, GenesisIdty};
+use common_runtime::{GenesisIdty, constants::*, entities::IdtyData};
 use g1_runtime::{
-    opaque::SessionKeys, pallet_universal_dividend, parameters, Runtime, RuntimeGenesisConfig,
-    WASM_BINARY,
+    Runtime, RuntimeGenesisConfig, WASM_BINARY, opaque::SessionKeys, pallet_universal_dividend,
+    parameters,
 };
 use sc_service::ChainType;
 use serde::Deserialize;
-use sp_core::{sr25519, Get};
+use sp_core::{Get, sr25519};
 use std::{env, fs};
 
 pub type ChainSpec = sc_service::GenericChainSpec;

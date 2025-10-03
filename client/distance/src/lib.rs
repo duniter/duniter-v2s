@@ -36,7 +36,7 @@
 
 use frame_support::pallet_prelude::*;
 use sc_client_api::{ProvideUncles, StorageKey, StorageProvider};
-use sp_runtime::{generic::BlockId, traits::Block as BlockT, AccountId32};
+use sp_runtime::{AccountId32, generic::BlockId, traits::Block as BlockT};
 use std::path::PathBuf;
 
 /// The file version that should match the distance oracle one.
@@ -167,7 +167,10 @@ where
         Err(e) => {
             match e.kind() {
                 std::io::ErrorKind::NotFound => {
-                    log::debug!("🧙 [distance inherent] Evaluation result file not found. Please ensure that the oracle version matches {}", VERSION_PREFIX);
+                    log::debug!(
+                        "🧙 [distance inherent] Evaluation result file not found. Please ensure that the oracle version matches {}",
+                        VERSION_PREFIX
+                    );
                 }
                 _ => {
                     log::error!(

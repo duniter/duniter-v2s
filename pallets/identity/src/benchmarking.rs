@@ -21,8 +21,8 @@ use super::*;
 use codec::Encode;
 use frame_benchmarking::{account, v2::*};
 use frame_support::traits::OnInitialize;
-use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
-use sp_core::{crypto::Ss58Codec, Get};
+use frame_system::{RawOrigin, pallet_prelude::BlockNumberFor};
+use sp_core::{Get, crypto::Ss58Codec};
 use sp_io::crypto::{sr25519_generate, sr25519_sign};
 use sp_runtime::{AccountId32, MultiSigner};
 
@@ -37,8 +37,8 @@ use crate::Pallet;
 mod benchmarks {
     use super::*;
 
-    fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
-        frame_system::Pallet::<T>::assert_has_event(generic_event.into());
+    fn assert_has_event<T: Config>(generic_event: T::RuntimeEvent) {
+        frame_system::Pallet::<T>::assert_has_event(generic_event);
     }
 
     struct Account<T: Config> {
@@ -67,13 +67,13 @@ mod benchmarks {
         let idty_index = IdentityIndexOf::<T>::get(&owner_key).unwrap();
         // make identity member
         <Identities<T>>::mutate_exists(idty_index, |idty_val_opt| {
-            if let Some(ref mut idty_val) = idty_val_opt {
+            if let Some(idty_val) = idty_val_opt {
                 idty_val.status = IdtyStatus::Member;
             }
         });
         // Reset next_creatable_identity_on to add more identities with Alice
         <Identities<T>>::mutate_exists(T::IdtyIndex::from(1u32), |idty_val_opt| {
-            if let Some(ref mut idty_val) = idty_val_opt {
+            if let Some(idty_val) = idty_val_opt {
                 idty_val.next_creatable_identity_on = BlockNumberFor::<T>::zero();
             }
         });
@@ -369,10 +369,12 @@ mod benchmarks {
                 id.old_owner_key = Some((new_identity, BlockNumberFor::<T>::zero()));
             }
         });
-        assert!(Identities::<T>::get(idty_index)
-            .unwrap()
-            .old_owner_key
-            .is_some());
+        assert!(
+            Identities::<T>::get(idty_index)
+                .unwrap()
+                .old_owner_key
+                .is_some()
+        );
 
         #[block]
         {
@@ -410,10 +412,12 @@ mod benchmarks {
                 id.old_owner_key = Some((new_identity, BlockNumberFor::<T>::zero()));
             }
         });
-        assert!(Identities::<T>::get(idty_index)
-            .unwrap()
-            .old_owner_key
-            .is_some());
+        assert!(
+            Identities::<T>::get(idty_index)
+                .unwrap()
+                .old_owner_key
+                .is_some()
+        );
 
         #[block]
         {
@@ -440,10 +444,12 @@ mod benchmarks {
                 id.old_owner_key = Some((new_identity, BlockNumberFor::<T>::zero()));
             }
         });
-        assert!(Identities::<T>::get(idty_index)
-            .unwrap()
-            .old_owner_key
-            .is_some());
+        assert!(
+            Identities::<T>::get(idty_index)
+                .unwrap()
+                .old_owner_key
+                .is_some()
+        );
 
         #[block]
         {

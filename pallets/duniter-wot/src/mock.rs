@@ -20,9 +20,9 @@ use frame_support::{derive_impl, parameter_types, traits::Everything};
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
+    BuildStorage,
     testing::{TestSignature as SubtrateTestSignature, UintAuthorityId},
     traits::{BlakeTwo256, IdentityLookup},
-    BuildStorage,
 };
 use sp_state_machine::BasicExternalities;
 use std::collections::BTreeMap;
@@ -160,7 +160,6 @@ impl pallet_identity::Config for Test {
     type OnKeyChange = ();
     type OnNewIdty = DuniterWot;
     type OnRemoveIdty = DuniterWot;
-    type RuntimeEvent = RuntimeEvent;
     type Signature = TestSignature;
     type Signer = UintAuthorityId;
     type ValidationPeriod = ValidationPeriod;
@@ -183,7 +182,6 @@ impl pallet_membership::Config for Test {
     type MembershipRenewalPeriod = MembershipRenewalPeriod;
     type OnNewMembership = DuniterWot;
     type OnRemoveMembership = DuniterWot;
-    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -204,7 +202,6 @@ impl pallet_certification::Config for Test {
     type MinReceivedCertToBeAbleToIssueCert = MinReceivedCertToBeAbleToIssueCert;
     type OnNewcert = DuniterWot;
     type OnRemovedCert = DuniterWot;
-    type RuntimeEvent = RuntimeEvent;
     type ValidityPeriod = ValidityPeriod;
     type WeightInfo = ();
 }

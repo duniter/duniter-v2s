@@ -52,9 +52,6 @@ pub mod pallet {
             + IsSubType<Call<Self>>
             + IsType<<Self as frame_system::Config>::RuntimeCall>;
 
-        /// The overarching event type.
-        type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
         /// The origin type required for performing upgradable operations.
         type UpgradableOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
@@ -91,6 +88,7 @@ pub mod pallet {
 				dispatch_info.class,
 			)
 		})]
+        #[allow(clippy::useless_conversion)]
         pub fn dispatch_as_root(
             origin: OriginFor<T>,
             call: Box<<T as Config>::Call>,
@@ -112,6 +110,7 @@ pub mod pallet {
         /// The weight of this call is defined by the caller.
         #[pallet::call_index(1)]
         #[pallet::weight((*weight, call.get_dispatch_info().class))]
+        #[allow(clippy::useless_conversion)]
         pub fn dispatch_as_root_unchecked_weight(
             origin: OriginFor<T>,
             call: Box<<T as Config>::Call>,

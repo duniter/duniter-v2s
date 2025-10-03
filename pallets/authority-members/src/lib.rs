@@ -117,9 +117,6 @@ pub mod pallet {
         /// Specifies the origin type required to remove a member.
         type RemoveMemberOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
-        /// The overarching event type.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
     }
@@ -150,11 +147,7 @@ pub mod pallet {
                 .iter()
                 .filter_map(
                     |(member_id, (_account_id, is_online))| {
-                        if *is_online {
-                            Some(*member_id)
-                        } else {
-                            None
-                        }
+                        if *is_online { Some(*member_id) } else { None }
                     },
                 )
                 .collect::<Vec<T::MemberId>>();
@@ -250,7 +243,7 @@ pub mod pallet {
         /// Request to leave the set of validators two sessions later.
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::go_offline())]
-        pub fn go_offline(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn go_offline(origin: OriginFor<T>) -> DispatchResult {
             // Verification phase //
             let who = ensure_signed(origin)?;
             let member_id = Self::verify_ownership_and_membership(&who)?;
@@ -273,13 +266,13 @@ pub mod pallet {
                 Self::insert_out(member_id);
             }
 
-            Ok(().into())
+            Ok(())
         }
 
         /// Request to join the set of validators two sessions later.
         #[pallet::call_index(1)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::go_online())]
-        pub fn go_online(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn go_online(origin: OriginFor<T>) -> DispatchResult {
             // Verification phase //
             let who = ensure_signed(origin)?;
             let member_id = Self::verify_ownership_and_membership(&who)?;
@@ -314,10 +307,11 @@ pub mod pallet {
                 Self::insert_in(member_id);
             }
 
-            Ok(().into())
+            Ok(())
         }
 
         /// Declare new session keys to replace current ones.
+        #[allow(clippy::useless_conversion)]
         #[pallet::call_index(2)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_session_keys())]
         pub fn set_session_keys(origin: OriginFor<T>, keys: T::Keys) -> DispatchResultWithPostInfo {
@@ -332,22 +326,19 @@ pub mod pallet {
 
             Members::<T>::insert(member_id, MemberData { owner_key: who });
 
-            Ok(().into())
+            Ok(Default::default())
         }
 
         /// Remove a member from the set of validators.
         #[pallet::call_index(3)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_member())]
-        pub fn remove_member(
-            origin: OriginFor<T>,
-            member_id: T::MemberId,
-        ) -> DispatchResultWithPostInfo {
+        pub fn remove_member(origin: OriginFor<T>, member_id: T::MemberId) -> DispatchResult {
             T::RemoveMemberOrigin::ensure_origin(origin)?;
 
             let member_data = Members::<T>::get(member_id).ok_or(Error::<T>::MemberNotFound)?;
             Self::do_remove_member(member_id, member_data.owner_key);
 
-            Ok(().into())
+            Ok(())
         }
 
         /// Remove a member from the blacklist.
@@ -357,13 +348,13 @@ pub mod pallet {
         pub fn remove_member_from_blacklist(
             origin: OriginFor<T>,
             member_id: T::MemberId,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             T::RemoveMemberOrigin::ensure_origin(origin)?;
             Blacklist::<T>::mutate(|members_ids| {
                 if let Ok(index) = members_ids.binary_search(&member_id) {
                     members_ids.remove(index);
                     Self::deposit_event(Event::MemberRemovedFromBlacklist { member: member_id });
-                    Ok(().into())
+                    Ok(())
                 } else {
                     Err(Error::<T>::MemberNotBlacklisted.into())
                 }
@@ -411,7 +402,7 @@ pub mod pallet {
             }
             .dispatch_bypass_filter(frame_system::RawOrigin::Signed(new_owner_key).into())?;
 
-            Ok(().into())
+            Ok(Default::default())
         }
 
         /// Get the number of authorities.

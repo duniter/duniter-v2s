@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-#![feature(let_chains)]
-
 mod gen_doc;
 mod gitlab;
 
@@ -96,9 +94,9 @@ async fn main() -> Result<()> {
         && exec_should_success(Command::new("rustup").args(["update", "stable"])).is_err()
     {
         eprintln!(
-                "Duniter requires stable Rust {} or higher. If you installed the Rust toolchain via rustup, please execute the command `rustup update stable`.",
-                MIN_RUST_VERSION
-            );
+            "Duniter requires stable Rust {} or higher. If you installed the Rust toolchain via rustup, please execute the command `rustup update stable`.",
+            MIN_RUST_VERSION
+        );
         std::process::exit(1);
     }
 

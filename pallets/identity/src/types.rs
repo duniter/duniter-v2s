@@ -18,7 +18,7 @@
 
 use codec::{Decode, DecodeWithMemTracking, Encode};
 use frame_support::pallet_prelude::*;
-use scale_info::{prelude::vec::Vec, TypeInfo};
+use scale_info::{TypeInfo, prelude::vec::Vec};
 use serde::{Deserialize, Serialize};
 
 /// Internal events related to identity.

@@ -18,7 +18,7 @@ use crate::{mock::*, pallet as pallet_duniter_wot};
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
 use pallet_identity::{
-    IdtyName, IdtyStatus, RevocationPayload, RevocationReason, REVOCATION_PAYLOAD_PREFIX,
+    IdtyName, IdtyStatus, REVOCATION_PAYLOAD_PREFIX, RevocationPayload, RevocationReason,
 };
 use pallet_membership::MembershipRemovalReason;
 
@@ -426,12 +426,12 @@ fn test_cert_can_not_be_issued() {
         assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(2), 3)); // +20
         assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(3), 4)); // +20
         assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(4), 1)); // +20
-                                                                   // --- BLOCK 4 ---
+        // --- BLOCK 4 ---
         run_to_block(4);
         assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(2), 4)); // +20
         assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(3), 2)); // +20
         assert_ok!(Cert::renew_cert(RuntimeOrigin::signed(4), 3)); // +20
-                                                                   // --- BLOCK 7 ---
+        // --- BLOCK 7 ---
         run_to_block(7);
         assert_ok!(Membership::try_renew_membership(1)); // + 8
         assert_ok!(Membership::try_renew_membership(2)); // + 8

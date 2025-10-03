@@ -19,7 +19,7 @@
 use crate::SmithStatus;
 use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;
-use scale_info::{prelude::vec::Vec, TypeInfo};
+use scale_info::{TypeInfo, prelude::vec::Vec};
 use sp_staking::SessionIndex;
 
 /// Represents a certification metadata attached to a Smith identity.

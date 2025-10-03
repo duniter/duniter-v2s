@@ -21,8 +21,8 @@ use super::*;
 
 use codec::Encode;
 use frame_benchmarking::v2::*;
-use frame_support::traits::{fungible::Mutate, Get, OnFinalize, OnInitialize};
-use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
+use frame_support::traits::{Get, OnFinalize, OnInitialize, fungible::Mutate};
+use frame_system::{RawOrigin, pallet_prelude::BlockNumberFor};
 use scale_info::prelude::vec;
 use sp_runtime::Perbill;
 
@@ -37,8 +37,8 @@ use crate::Pallet;
 mod benchmarks {
     use super::*;
 
-    fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
-        frame_system::Pallet::<T>::assert_has_event(generic_event.into());
+    fn assert_has_event<T: Config>(generic_event: <T as frame_system::Config>::RuntimeEvent) {
+        frame_system::Pallet::<T>::assert_has_event(generic_event);
     }
 
     fn populate_pool<T: Config>(i: u32) -> Result<(), &'static str> {

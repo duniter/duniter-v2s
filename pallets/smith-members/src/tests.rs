@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::mock::{new_test_ext, run_to_block, Runtime, RuntimeEvent, RuntimeOrigin, System};
+use crate::mock::{Runtime, RuntimeEvent, RuntimeOrigin, System, new_test_ext, run_to_block};
 use frame_support::{assert_err, assert_ok};
 
 use crate::SmithStatus::{Excluded, Invited, Pending, Smith};

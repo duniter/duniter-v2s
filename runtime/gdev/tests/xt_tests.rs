@@ -199,9 +199,11 @@ fn test_refund_reaped_linked_account() {
 
             assert_eq!(Balances::free_balance(ferdie.clone()), 0);
             // During reaping the account is unlinked
-            assert!(frame_system::Pallet::<Runtime>::get(&ferdie)
-                .linked_idty
-                .is_none());
+            assert!(
+                frame_system::Pallet::<Runtime>::get(&ferdie)
+                    .linked_idty
+                    .is_none()
+            );
 
             // since the account is reaped, it is not linked anymore and no refund is added to queue
             assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());

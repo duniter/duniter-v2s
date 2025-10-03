@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use dubp_wot::{
-    data::rusty::RustyWebOfTrust, operations::distance::DistanceCalculator, WebOfTrust,
+    WebOfTrust, data::rusty::RustyWebOfTrust, operations::distance::DistanceCalculator,
 };
 use flate2::read::ZlibDecoder;
 use sp_runtime::Perbill;

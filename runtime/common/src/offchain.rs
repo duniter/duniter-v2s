@@ -32,8 +32,12 @@ macro_rules! offchain_config {
         where
             RuntimeCall: From<LocalCall>,
         {
-            fn create_inherent(call: RuntimeCall) -> UncheckedExtrinsic {
+            fn create_bare(call: RuntimeCall) -> UncheckedExtrinsic {
                 generic::UncheckedExtrinsic::new_bare(call)
+            }
+
+            fn create_inherent(call: RuntimeCall) -> UncheckedExtrinsic {
+                generic::UncheckedExtrinsic::new_inherent(call)
             }
         }
 

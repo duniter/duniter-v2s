@@ -8,9 +8,9 @@ use crate::endpoint_gossip::duniter_peering_protocol_name::NAME;
 use codec::{Decode, Encode};
 use frame_benchmarking::__private::traits::ConstU32;
 use sc_network::{
+    MAX_RESPONSE_SIZE, NetworkBackend, NotificationMetrics, NotificationService,
     config::{PeerStoreProvider, SetConfig},
     types::ProtocolName,
-    NetworkBackend, NotificationMetrics, NotificationService, MAX_RESPONSE_SIZE,
 };
 use serde::{Deserialize, Serialize};
 use sp_api::__private::BlockT;

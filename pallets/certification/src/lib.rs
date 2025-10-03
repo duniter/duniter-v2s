@@ -102,9 +102,6 @@ pub mod pallet {
         /// A handler that is called when a certification is removed (`RemovedCert`).
         type OnRemovedCert: OnRemovedCert<Self::IdtyIndex>;
 
-        /// The overarching event type.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
 
@@ -182,10 +179,10 @@ pub mod pallet {
                         let issuer_next_issuable_on = removable_on
                             .saturating_add(T::CertPeriod::get())
                             .saturating_sub(T::ValidityPeriod::get());
-                        if let Some(cert_meta) = cert_meta_by_issuer.get_mut(issuer) {
-                            if cert_meta.next_issuable_on < issuer_next_issuable_on {
-                                cert_meta.next_issuable_on = issuer_next_issuable_on;
-                            }
+                        if let Some(cert_meta) = cert_meta_by_issuer.get_mut(issuer)
+                            && cert_meta.next_issuable_on < issuer_next_issuable_on
+                        {
+                            cert_meta.next_issuable_on = issuer_next_issuable_on;
                         }
                     }
                 }
@@ -303,29 +300,23 @@ pub mod pallet {
         /// Add a new certification.
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::add_cert())]
-        pub fn add_cert(
-            origin: OriginFor<T>,
-            receiver: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
+        pub fn add_cert(origin: OriginFor<T>, receiver: T::IdtyIndex) -> DispatchResult {
             let issuer = Self::origin_to_index(origin)?;
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             Self::check_add_cert(issuer, receiver, block_number)?;
             Self::try_add_cert(block_number, issuer, receiver)?;
-            Ok(().into())
+            Ok(())
         }
 
         /// Renew an existing certification.
         #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::renew_cert())]
-        pub fn renew_cert(
-            origin: OriginFor<T>,
-            receiver: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
+        pub fn renew_cert(origin: OriginFor<T>, receiver: T::IdtyIndex) -> DispatchResult {
             let issuer = Self::origin_to_index(origin)?;
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
             Self::check_renew_cert(issuer, receiver, block_number)?;
             Self::try_renew_cert(block_number, issuer, receiver)?;
-            Ok(().into())
+            Ok(())
         }
 
         /// Remove one certification given the issuer and the receiver.
@@ -337,10 +328,10 @@ pub mod pallet {
             origin: OriginFor<T>,
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             ensure_root(origin)?;
             Self::do_remove_cert(issuer, receiver, None);
-            Ok(().into())
+            Ok(())
         }
 
         /// Remove all certifications received by an identity.
@@ -351,10 +342,10 @@ pub mod pallet {
         pub fn remove_all_certs_received_by(
             origin: OriginFor<T>,
             idty_index: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             ensure_root(origin)?;
             let _ = Self::do_remove_all_certs_received_by(idty_index);
-            Ok(().into())
+            Ok(())
         }
     }
 
@@ -402,7 +393,7 @@ pub mod pallet {
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
             verify_rules: bool,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             let block_number = frame_system::pallet::Pallet::<T>::block_number();
 
             if verify_rules {
@@ -411,7 +402,7 @@ pub mod pallet {
             };
 
             Self::try_add_cert(block_number, issuer, receiver)?;
-            Ok(().into())
+            Ok(())
         }
 
         /// Perform certification addition if it does not already exist, otherwise return `CertAlreadyExists`.
@@ -420,7 +411,7 @@ pub mod pallet {
             block_number: BlockNumberFor<T>,
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             // Write CertsRemovableOn
             let removable_on = block_number + T::ValidityPeriod::get();
             <CertsRemovableOn<T>>::append(removable_on, (issuer, receiver));
@@ -463,7 +454,7 @@ pub mod pallet {
                 receiver,
                 receiver_received_count,
             );
-            Ok(().into())
+            Ok(())
         }
 
         /// Perform certification renewal if it exists, otherwise return an error indicating `CertDoesNotExist`.
@@ -473,7 +464,7 @@ pub mod pallet {
             block_number: BlockNumberFor<T>,
             issuer: T::IdtyIndex,
             receiver: T::IdtyIndex,
-        ) -> DispatchResultWithPostInfo {
+        ) -> DispatchResult {
             // Write CertsRemovableOn
             let removable_on = block_number + T::ValidityPeriod::get();
             <CertsRemovableOn<T>>::append(removable_on, (issuer, receiver));
@@ -495,7 +486,7 @@ pub mod pallet {
             });
             // emit CertRenewed event
             Self::deposit_event(Event::CertRenewed { issuer, receiver });
-            Ok(().into())
+            Ok(())
         }
 
         /// Remove certifications that are due to expire on the given block.

@@ -16,7 +16,7 @@
 
 #![allow(clippy::unnecessary_cast)]
 
-use frame_support::weights::{constants::RocksDbWeight, Weight};
+use frame_support::weights::{Weight, constants::RocksDbWeight};
 
 /// Weight functions needed for pallet_universal_dividend.
 pub trait WeightInfo {
