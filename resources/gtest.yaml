@@ -5,7 +5,7 @@ ud: 1148
 first_ud: null
 
 # FIXME: explain `null` meaning
-first_ud_reeval: null
+first_ud_reeval: 1766232000
 
 # Clique Smith WoT: each smith will certify by each other smith automatically on Genesis
 clique_smiths:
