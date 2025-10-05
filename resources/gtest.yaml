@@ -26,4 +26,4 @@ sudo_key: "5Hm8sBbwuLAU99dBezvgtnRmZCrUy9mhqmbQMFyGTaeATYg7"
 treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"
 
 # The technical committee members, to act as sudo
-technical_committee: ["moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "Elois"]
+technical_committee: ["moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "Elois", "poka"]
