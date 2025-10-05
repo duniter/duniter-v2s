@@ -15,7 +15,13 @@ clique_smiths:
   - name: "1000i100"
   - name: "vit"
   - name: "cgeek"
-  - name: "Elois"
+  - name: "poka"
+  - name: "Bulmananabelle"
+  - name: "gui_tooun"
+  - name: "vjrj"
+  - name: "Damery"
+  - name: "Nicolas80"
+  - name: "aya"
     # This smith will be the first author
     session_keys: "0xbd6d9041890bbf56fa5cb30c3db1b41f7cbf07b04b8a5cf1fb63d79b2029751ecc668b4c0fedf4fd7ac8e44014ffbe16a03b5f55274ac0b94e04e3a0a1fda70ccc668b4c0fedf4fd7ac8e44014ffbe16a03b5f55274ac0b94e04e3a0a1fda70ccc668b4c0fedf4fd7ac8e44014ffbe16a03b5f55274ac0b94e04e3a0a1fda70c"
 
