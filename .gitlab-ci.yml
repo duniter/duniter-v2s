@@ -259,17 +259,6 @@ trigger_runtime_release:
     - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$RUNTIME_MILESTONE"
     - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$RUNTIME_MILESTONE --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
 
-trigger_network_release:
-  stage: build
-  rules:
-    - <<: *is_network_branch
-      when: manual
-  script:
-    - *define_network_branch_vars
-    - echo "Vérification de l'absence de la release $NETWORK"
-    - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK"
-    - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
-
 trigger_client_release:
   stage: build
   rules:
@@ -354,58 +343,6 @@ build_runtime:
     - kepler
 
 ############## SPECS ##############
-
-build_g1-migrator:
-  stage: build
-  rules:
-    - <<: *is_network_branch
-  trigger:
-    project: tools/py-g1-migrator
-
-g1_data:
-  stage: build
-  needs: ["trigger_network_release", "build_g1-migrator"]
-  rules:
-    - <<: *is_network_branch
-  # following image already has g1-migrator and dependency embedded
-  image: registry.duniter.org/tools/py-g1-migrator:latest
-  variables:
-    LEVELDB_PATH: /dump/duniter_default/data/leveldb
-  script:
-    - *define_network_branch_vars
-    # Duniter 1.8.7 dump
-    - mkdir /dump
-    - cd /dump
-    # Export file constructed using Duniter 1.8.7:
-    #  - bin/duniter sync g1.cgeek.fr --store-txs --nointeractive --mdb 1.8.7
-    #  - mkdir -p /tmp/backup-g1-duniter-1.8.7
-    #  - cp -R $HOME/.config/duniter/1.8.7/data /tmp/backup-g1-duniter-1.8.7
-    #  - tar -cvzf /tmp/backup-g1-duniter-1.8.7.tgz /tmp/backup-g1-duniter-1.8.7
-    # Then the file is uploaded to dl.cgeek.fr manually
-    - curl https://files.coinduf.eu/g1v1/backup-1.8.7.tgz -o g1-dump.tgz
-    - tar xvzf g1-dump.tgz
-    - rm g1-dump.tgz
-    - mv tmp/backup-g1-duniter-1.8.7 duniter_default
-    # py-g1-migrator conversion
-    - cd /py-g1-migrator
-    # Export genesis file
-    - ./main.py # ./output/genesis.json
-    # Expore history files for squid
-    - ./squid-block.py # ./output/block_hist.json
-    - ./squid-cert.py # ./output/cert_hist.json
-    - ./squid-tx.py # ./output/tx_hist.json
-    # Make the exported file available for next jobs
-    - mkdir -p $CI_PROJECT_DIR/release/
-    - cp output/genesis.json $CI_PROJECT_DIR/$RELEASE_FILE_G1_DATA
-    - cp output/block_hist.json $CI_PROJECT_DIR/release/
-    - cp output/cert_hist.json $CI_PROJECT_DIR/release/
-    - cp output/tx_hist.json $CI_PROJECT_DIR/release/
-  artifacts:
-    expire_in: never
-    paths:
-      - $CI_PROJECT_DIR/release/
-  tags:
-    - kepler
 
 build_specs:
   stage: build

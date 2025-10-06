@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+mod g1_data;
 mod gen_doc;
 mod gitlab;
 
@@ -84,6 +85,12 @@ enum DuniterXTaskCommand {
     /// Execute unit tests and integration tests
     /// End2tests are skipped
     Test,
+    /// Generate G1 data using Docker and py-g1-migrator
+    G1Data {
+        /// URL du dump G1 à télécharger
+        #[clap(long)]
+        dump_url: String,
+    },
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -135,6 +142,7 @@ async fn main() -> Result<()> {
             asset_url,
         } => gitlab::create_asset_link(tag, asset_name, asset_url).await,
         DuniterXTaskCommand::Test => test(),
+        DuniterXTaskCommand::G1Data { dump_url } => g1_data::g1_data(dump_url).await,
     }
 }
 
