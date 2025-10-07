@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+mod build_network_specs;
 mod g1_data;
 mod gen_doc;
 mod gitlab;
@@ -91,6 +92,12 @@ enum DuniterXTaskCommand {
         #[clap(long)]
         dump_url: String,
     },
+    /// Build network specs (reprend la tâche build_specs de la CI)
+    BuildNetworkSpecs {
+        /// Runtime à utiliser (gdev, gtest, g1)
+        #[clap(long, default_value = "gdev")]
+        runtime: String,
+    },
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -143,6 +150,9 @@ async fn main() -> Result<()> {
         } => gitlab::create_asset_link(tag, asset_name, asset_url).await,
         DuniterXTaskCommand::Test => test(),
         DuniterXTaskCommand::G1Data { dump_url } => g1_data::g1_data(dump_url).await,
+        DuniterXTaskCommand::BuildNetworkSpecs { runtime } => {
+            build_network_specs::build_network_specs(runtime)
+        }
     }
 }
 
