@@ -294,32 +294,6 @@ docker_deploy:
 
 ############## SRTOOL ##############
 
-# The Network Runtime is only built when creating a network release (i.e.: genesis)
-build_network_runtime:
-  stage: build
-  needs: ["trigger_network_release"]
-  rules:
-    - <<: *is_network_branch
-  image: paritytech/srtool:1.88.0
-  variables:
-    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/network_srtool_output.json
-  script:
-    - *define_network_branch_vars
-    - echo "SRTOOL_OUTPUT = $SRTOOL_OUTPUT"
-    - mkdir -p $CI_PROJECT_DIR/release
-    # Copy sources to the expected directory of srtool
-    - cp -R * /build/
-    # Build the runtime
-    - /srtool/build --app --json -cM | tee -a $SRTOOL_OUTPUT
-    - mv /build/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/${RUNTIME}_runtime.compact.compressed.wasm $CI_PROJECT_DIR/release/
-  artifacts:
-    expire_in: never
-    name: "runtime"
-    paths:
-      - $CI_PROJECT_DIR/release
-  tags:
-    - kepler
-
 build_runtime:
   stage: build
   needs: ["trigger_runtime_release"]

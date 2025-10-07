@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+mod build_network_runtime;
 mod build_network_specs;
 mod g1_data;
 mod gen_doc;
@@ -98,6 +99,12 @@ enum DuniterXTaskCommand {
         #[clap(long, default_value = "gdev")]
         runtime: String,
     },
+    /// Build network runtime (reprend la tâche build_network_runtime de la CI)
+    BuildNetworkRuntime {
+        /// Runtime à utiliser (gdev, gtest, g1)
+        #[clap(long, default_value = "gdev")]
+        runtime: String,
+    },
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -152,6 +159,9 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::G1Data { dump_url } => g1_data::g1_data(dump_url).await,
         DuniterXTaskCommand::BuildNetworkSpecs { runtime } => {
             build_network_specs::build_network_specs(runtime)
+        }
+        DuniterXTaskCommand::BuildNetworkRuntime { runtime } => {
+            build_network_runtime::build_network_runtime(runtime)
         }
     }
 }
