@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::Result;
-use std::{fmt::format, process::Command};
+use std::process::Command;
 
 pub fn build_network_runtime(runtime: String) -> Result<()> {
     println!(
