@@ -31,13 +31,27 @@ pub fn build_network_specs(runtime: String) -> Result<()> {
         ));
     }
 
+    // Vérifier que le fichier WASM existe
+    let wasm_file = format!("release/{}_runtime.compact.compressed.wasm", runtime);
+    let wasm_path = std::path::Path::new(&wasm_file);
+    if !wasm_path.exists() {
+        return Err(anyhow::anyhow!(
+            "Le fichier WASM n'existe pas: {}. Exécutez d'abord 'cargo xtask build-network-runtime --runtime {}' pour générer le runtime.",
+            wasm_file,
+            runtime
+        ));
+    }
+
     // Définir les variables d'environnement comme dans la CI
     unsafe {
         std::env::set_var(
             "DUNITER_GENESIS_DATA",
             genesis_file.to_string_lossy().to_string(),
         );
+        std::env::set_var("WASM_FILE", &wasm_file);
     }
+
+    println!("📄 WASM_FILE = {}", wasm_file);
 
     // Construire les features comme dans la CI
     let features = format!("--features {} --no-default-features", runtime);
