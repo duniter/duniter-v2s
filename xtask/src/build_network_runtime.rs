@@ -55,10 +55,11 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
         /srtool/build --app --json -cM | tee -a {}
         # Déplacer le fichier WASM généré
         echo "📦 Déplacement du fichier WASM..."
-        mv /build/runtime/{}/target/srtool/release/wbuild/{}-runtime/{}_runtime.compact.compressed.wasm /workspace/release/
+        mv /build/runtime/{}/target/srtool/release/wbuild/{}-runtime/{}_runtime.compact.compressed.wasm /build/release/
+        mv /build/runtime/{}/target/srtool/release/wbuild/{}-runtime/{}_runtime.compact.wasm /build/release/
         echo "✅ Construction du runtime terminée!"
         "#,
-        runtime, srtool_output, srtool_output, runtime, runtime, runtime
+        runtime, srtool_output, srtool_output, runtime, runtime, runtime, runtime, runtime, runtime
     );
 
     // Exécuter le conteneur Docker avec srtool
