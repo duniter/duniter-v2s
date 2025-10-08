@@ -21,7 +21,7 @@ graphql_client = { workspace = true }
 hex = { workspace = true, features = ["alloc"] }
 memmap2 = { workspace = true }
 placeholder = { workspace = true }
-reqwest = { workspace = true, features = ["json"] }
+reqwest = { workspace = true, features = ["json", "multipart"] }
 scale-info = { workspace = true, features = ["bit-vec"] }
 scale-value = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

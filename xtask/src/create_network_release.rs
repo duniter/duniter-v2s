@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use std::path::Path;
 
 /// Crée une release réseau sur GitLab avec les assets nécessaires.
@@ -38,7 +38,7 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
     } else if network.contains("g1-") {
         "g1"
     } else {
-        return Err(anyhow::anyhow!(
+        return Err(anyhow!(
             "Impossible de déterminer le runtime pour le réseau: {}. Préfixez le nom de release par gdev-, gtest- ou g1-. Ex. : gtest-1000",
             network
         ));
@@ -57,7 +57,7 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
 
     for file in &required_files {
         if !Path::new(file).exists() {
-            return Err(anyhow::anyhow!(
+            return Err(anyhow!(
                 "Le fichier requis n'existe pas: {}. Assurez-vous d'avoir exécuté les étapes de build précédentes.",
                 file
             ));
@@ -69,48 +69,51 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
     println!("🌐 Création de la release GitLab...");
     crate::gitlab::release_network(network.clone(), branch.clone()).await?;
 
-    // Créer les liens d'assets comme dans la CI
-    println!("🔗 Création des liens d'assets...");
+    // Uploader les fichiers et créer les liens d'assets
+    println!("📤 Upload des fichiers vers GitLab...");
 
-    // Simuler les URLs d'assets comme dans la CI
-    // Dans un environnement réel, ces URLs seraient générées par GitLab CI
-    let base_url =
-        "https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/ARTIFACT_JOB_ID/artifacts";
+    // ID du projet GitLab (nodes/rust/duniter-v2s)
+    let project_id = "nodes%2Frust%2Fduniter-v2s".to_string();
 
-    let asset_links = vec![
+    let asset_files = vec![
         (
             "g1-data.json".to_string(),
-            format!("{}/release/genesis.json", base_url),
+            "release/genesis.json".to_string(),
         ),
         (
             format!("{}.yaml", runtime),
-            format!("{}/release/{}.yaml", base_url, runtime),
+            format!("release/{}.yaml", runtime),
         ),
         (
             format!("{}_runtime.compact.compressed.wasm", runtime),
-            format!(
-                "{}/release/{}_runtime.compact.compressed.wasm",
-                base_url, runtime
-            ),
+            format!("release/{}_runtime.compact.compressed.wasm", runtime),
         ),
         (
             format!("{}_runtime.compact.wasm", runtime),
-            format!("{}/release/{}_runtime.compact.wasm", base_url, runtime),
+            format!("release/{}_runtime.compact.wasm", runtime),
         ),
         (
             format!("{}.json", runtime),
-            format!("{}/release/{}.json", base_url, runtime),
+            format!("release/{}.json", runtime),
         ),
     ];
 
-    for (asset_name, asset_url) in &asset_links {
+    for (asset_name, file_path) in &asset_files {
+        let path = Path::new(file_path);
+        if !path.exists() {
+            return Err(anyhow!("Le fichier d'asset n'existe pas: {}", file_path));
+        }
+
+        println!("📤 Upload de {}...", asset_name);
+        let asset_url =
+            crate::gitlab::upload_file(project_id.clone(), path, asset_name.clone()).await?;
+
         println!(
             "📎 Création du lien d'asset: {} -> {}",
             asset_name, asset_url
         );
         // Créer le lien d'asset via GitLab
-        crate::gitlab::create_asset_link(network.clone(), asset_name.clone(), asset_url.clone())
-            .await?;
+        crate::gitlab::create_asset_link(network.clone(), asset_name.clone(), asset_url).await?;
     }
 
     println!("✅ Release réseau créée avec succès pour: {}", network);
@@ -118,7 +121,7 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
     println!("   - Réseau: {}", network);
     println!("   - Runtime: {}", runtime);
     println!("   - Branche: {}", branch);
-    println!("   - Assets: {} fichiers", asset_links.len());
+    println!("   - Assets: {} fichiers", asset_files.len());
 
     Ok(())
 }
