@@ -22,6 +22,7 @@ mod build_rpm;
 mod build_runtime;
 mod create_client_release;
 mod create_network_release;
+mod create_runtime_release;
 mod docker_deploy;
 mod g1_data;
 mod gen_doc;
@@ -151,6 +152,13 @@ enum DuniterXTaskCommand {
         /// Runtime à construire (gdev, gtest, g1)
         runtime: String,
     },
+    /// Create runtime release (reprend la tâche create_runtime_release de la CI)
+    CreateRuntimeRelease {
+        /// Runtime à publier (gdev, gtest, g1)
+        runtime: String,
+        /// Branche Git à utiliser
+        branch: String,
+    },
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -220,6 +228,9 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::BuildRpm { network } => build_rpm::build_rpm(network),
         DuniterXTaskCommand::BuildDeb { network } => build_deb::build_deb(network),
         DuniterXTaskCommand::BuildRuntime { runtime } => build_runtime::build_runtime(runtime),
+        DuniterXTaskCommand::CreateRuntimeRelease { runtime, branch } => {
+            create_runtime_release::create_runtime_release(runtime, branch).await
+        }
     }
 }
 
