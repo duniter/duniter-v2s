@@ -213,30 +213,6 @@ trigger_runtime_release:
     - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$RUNTIME_MILESTONE"
     - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$RUNTIME_MILESTONE --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
 
-############## SRTOOL ##############
-
-build_runtime:
-  stage: build
-  needs: ["trigger_runtime_release"]
-  rules:
-    - <<: *is_runtime_branch
-  image: paritytech/srtool:1.84.1-0.18.2
-  script:
-    - *define_release_runtime_vars
-    - mkdir -p $CI_PROJECT_DIR/release
-    # Copy sources to the expected directory of srtool
-    - cp -R * /build/
-    # Build the runtime
-    - /srtool/build --app --json -cM | tee -a $SRTOOL_OUTPUT
-    - mv /build/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/${RUNTIME}_runtime.compact.compressed.wasm $CI_PROJECT_DIR/release/
-  artifacts:
-    expire_in: never
-    name: "runtime"
-    paths:
-      - $CI_PROJECT_DIR/release
-  tags:
-    - kepler
-
 ############## RELEASE ##############
 
 create_runtime_release:
