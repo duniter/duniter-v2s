@@ -20,6 +20,7 @@ mod create_release;
 mod get_changes;
 mod get_issues;
 mod get_release;
+mod upload_file;
 
 use anyhow::{Context, Result, anyhow};
 use serde::Deserialize;
@@ -284,4 +285,14 @@ pub(crate) async fn create_asset_link(
     create_asset_link::create_asset_link(gitlab_token, tag, asset_name, asset_url).await?;
 
     Ok(())
+}
+
+pub(crate) async fn upload_file(
+    project_id: String,
+    file_path: &std::path::Path,
+    filename: String,
+) -> Result<String> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    upload_file::upload_file(gitlab_token, project_id, file_path, filename).await
 }
