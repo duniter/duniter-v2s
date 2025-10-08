@@ -143,28 +143,6 @@ build_deb:
     paths:
       - target/debian/duniter*.deb
 
-build_rpm:
-  stage: deploy
-  extends: .env
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
-      when: manual
-    - if: $CI_COMMIT_TAG
-      when: never
-    - <<: *is_network_branch
-      needs: ["build_raw_specs"]
-      when: always
-    - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
-    - when: manual
-  script:
-    - export RUNTIME=$(echo $CI_COMMIT_BRANCH | grep -o "gdev\|gtest\|g1" || echo "gdev")
-    - cargo install cargo-generate-rpm --version 0.16.1
-    - cargo build -Zgit=shallow-deps --release --features $RUNTIME --no-default-features
-    - cargo generate-rpm -p node
-  artifacts:
-    paths:
-      - target/generate-rpm/duniter*.rpm
-
 tests:
   stage: tests
   extends: .env
