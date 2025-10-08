@@ -169,22 +169,20 @@ fn add_srtool_notes(network: String, release_notes: &mut String) -> Result<()> {
     // Generate release notes
     let currency = network.clone();
     let env_var = "SRTOOL_OUTPUT".to_string();
+    let sr_tool_output_file =
+        std::env::var(env_var).unwrap_or_else(|_| "release/network_srtool_output.json".to_string());
 
-    if let Ok(sr_tool_output_file) = std::env::var(env_var) {
-        let read = fs::read_to_string(sr_tool_output_file);
-        match read {
-            Ok(sr_tool_output) => {
-                release_notes.push_str(
-                    gen_release_notes(currency.to_string(), sr_tool_output)
-                        .with_context(|| {
-                            format!("Fail to generate release notes for {}", currency)
-                        })?
-                        .as_str(),
-                );
-            }
-            Err(e) => {
-                eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
-            }
+    let read = fs::read_to_string(sr_tool_output_file);
+    match read {
+        Ok(sr_tool_output) => {
+            release_notes.push_str(
+                gen_release_notes(currency.to_string(), sr_tool_output)
+                    .with_context(|| format!("Fail to generate release notes for {}", currency))?
+                    .as_str(),
+            );
+        }
+        Err(e) => {
+            eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
         }
     }
     Ok(())
@@ -213,13 +211,13 @@ fn gen_release_notes(currency: String, srtool_output: String) -> Result<String> 
     println!("Read srtool output… ");
 
     // Read the srtool json output
-    let srtool: Srtool = serde_json::from_str(
-        srtool_output
-            .lines()
-            .last()
-            .ok_or_else(|| anyhow!("empty srtool output"))?,
-    )
-    .with_context(|| "Fail to parse srtool json output")?;
+    let srtool_str = srtool_output
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .last()
+        .ok_or_else(|| anyhow!("empty srtool output"));
+    let srtool: Srtool =
+        serde_json::from_str(srtool_str?).with_context(|| "Fail to parse srtool json output")?;
 
     // Read template file
     let template = String::from(

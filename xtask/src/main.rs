@@ -16,6 +16,7 @@
 
 mod build_network_runtime;
 mod build_network_specs;
+mod create_network_release;
 mod g1_data;
 mod gen_doc;
 mod gitlab;
@@ -105,6 +106,13 @@ enum DuniterXTaskCommand {
         #[clap(long, default_value = "gdev")]
         runtime: String,
     },
+    /// Create network release (reprend la tâche create_network_release de la CI)
+    CreateNetworkRelease {
+        /// Nom du réseau (ex: gdev, gtest, g1)
+        network: String,
+        /// Branche Git à utiliser
+        branch: String,
+    },
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -162,6 +170,9 @@ async fn main() -> Result<()> {
         }
         DuniterXTaskCommand::BuildNetworkRuntime { runtime } => {
             build_network_runtime::build_network_runtime(runtime)
+        }
+        DuniterXTaskCommand::CreateNetworkRelease { network, branch } => {
+            create_network_release::create_network_release(network, branch).await
         }
     }
 }

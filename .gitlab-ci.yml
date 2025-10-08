@@ -383,34 +383,6 @@ build_raw_specs:
 
 ############## RELEASE ##############
 
-create_network_release:
-  stage: release
-  needs: ["build_specs"]
-  rules:
-    - <<: *is_network_branch
-  image: rust:1-bullseye
-  variables:
-    # Used by `release-network` command
-    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/network_srtool_output.json
-  script:
-    - *define_network_branch_vars
-    # Release creation
-    - cargo xtask release-network $NETWORK_RELEASE $CI_COMMIT_BRANCH
-    # g1-data (initial data)
-    - cargo xtask create-asset-link $NETWORK_RELEASE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_G1_DATA
-    # ${RUNTIME}.yaml (spec configuration)
-    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC_CONFIG
-    # initial runtime
-    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
-    # the result: ${RUNTIME}.json (genesis)
-    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC
-  artifacts:
-    expire_in: never
-    paths:
-      - $CI_PROJECT_DIR/release/
-  tags:
-    - kepler
-
 create_client_release:
   stage: release
   needs: ["build_raw_specs"]
