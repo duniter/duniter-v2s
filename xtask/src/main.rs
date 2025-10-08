@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+mod build_deb;
 mod build_network_runtime;
 mod build_network_specs;
 mod build_raw_specs;
@@ -139,6 +140,11 @@ enum DuniterXTaskCommand {
         /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
         network: String,
     },
+    /// Build DEB (reprend la tâche build_deb de la CI)
+    BuildDeb {
+        /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+        network: String,
+    },
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -206,6 +212,7 @@ async fn main() -> Result<()> {
             create_client_release::create_client_release(network, branch).await
         }
         DuniterXTaskCommand::BuildRpm { network } => build_rpm::build_rpm(network),
+        DuniterXTaskCommand::BuildDeb { network } => build_deb::build_deb(network),
     }
 }
 
