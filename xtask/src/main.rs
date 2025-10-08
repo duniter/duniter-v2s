@@ -17,6 +17,7 @@
 mod build_network_runtime;
 mod build_network_specs;
 mod build_raw_specs;
+mod create_client_release;
 mod create_network_release;
 mod docker_deploy;
 mod g1_data;
@@ -125,6 +126,13 @@ enum DuniterXTaskCommand {
         /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
         network: String,
     },
+    /// Create client release (reprend la tâche create_client_release de la CI)
+    CreateClientRelease {
+        /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+        network: String,
+        /// Branche Git à utiliser
+        branch: String,
+    },
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -188,6 +196,9 @@ async fn main() -> Result<()> {
         }
         DuniterXTaskCommand::BuildRawSpecs { network } => build_raw_specs::build_raw_specs(network),
         DuniterXTaskCommand::DockerDeploy { network } => docker_deploy::docker_deploy(network),
+        DuniterXTaskCommand::CreateClientRelease { network, branch } => {
+            create_client_release::create_client_release(network, branch).await
+        }
     }
 }
 
