@@ -24,12 +24,6 @@ workflow:
         - Cargo.lock
         - resources/*.yaml
 
-.is_network_branch: &is_network_branch
-  if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
-
-.is_runtime_branch: &is_runtime_branch
-  if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(runtime\/).+/
-
 sanity_tests:
   extends: .env
   rules:
@@ -69,8 +63,6 @@ fmt_and_clippy:
       when: manual
     - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH == "master"'
       when: never
-    - <<: *is_network_branch
-      when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: always
     - when: manual
@@ -87,8 +79,6 @@ run_benchmarks:
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
-    - <<: *is_network_branch
-      when: never
     - if: $CI_COMMIT_TAG
       when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
@@ -104,8 +94,6 @@ gtest_build:
   stage: build
   extends: .env
   rules:
-    - <<: *is_network_branch
-      when: never
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
     - if: $CI_COMMIT_TAG
@@ -127,8 +115,6 @@ tests:
       when: manual
     - if: $CI_COMMIT_TAG
       when: never
-    - <<: *is_network_branch
-      when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
   variables:
@@ -139,98 +125,3 @@ tests:
     - cargo tf
     - cargo cucumber-build
     - cargo cucumber
-
-.network_branch_vars: &define_network_branch_vars
-  - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
-  - echo "NETWORK = $NETWORK"
-  - export RUNTIME=$(echo $NETWORK | grep -Po "gdev|gtest|g1")
-  - echo "RUNTIME = $RUNTIME"
-  # srtool specific
-  - export RUNTIME_DIR=runtime/$RUNTIME
-  - echo "RUNTIME_DIR = $RUNTIME_DIR"
-  # srtool specific
-  - export PACKAGE=$RUNTIME-runtime
-  - echo "PACKAGE = $PACKAGE"
-  # GitLab milestone : used for both GitLab and Docker releases. Milestone must match source code's runtime version to fetch the git changes for release notes.
-  - export CLIENT_VERSION=$(cat node/Cargo.toml | grep version | sed "s/version = \"//g" | sed "s/\"//")
-  - echo $CLIENT_VERSION
-  - export RUNTIME_VERSION=$(cat runtime/$RUNTIME/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
-  - echo $RUNTIME_VERSION
-  - export CLIENT_MILESTONE="client-$CLIENT_VERSION"
-  - echo $CLIENT_MILESTONE
-  - export NETWORK_RELEASE="$NETWORK"
-  - echo $NETWORK_RELEASE
-  - export DOCKER_TAG="$RUNTIME_VERSION-$CLIENT_VERSION"
-  # Tags for Docker images
-  - export IMAGE_NAME="duniter/duniter-v2s-$NETWORK"
-  - echo $IMAGE_NAME
-  - export MANIFEST=localhost/manifest-$IMAGE_NAME:$DOCKER_TAG
-  - echo $MANIFEST
-  # Files to be pushed in a release
-  - export RELEASE_FILE_G1_DATA=release/genesis.json
-  - echo $RELEASE_FILE_G1_DATA
-  - export RELEASE_FILE_SPEC_CONFIG=release/${RUNTIME}.yaml
-  - echo $RELEASE_FILE_SPEC_CONFIG
-  - export RELEASE_FILE_SPEC=release/${RUNTIME}.json
-  - echo $RELEASE_FILE_SPEC
-  - export RELEASE_FILE_WASM=release/${RUNTIME}_runtime.compact.compressed.wasm
-  - echo $RELEASE_FILE_WASM
-  - export RELEASE_FILE_RAW_SPEC=release/${RUNTIME}-raw.json
-  - echo $RELEASE_FILE_RAW_SPEC
-  - export RELEASE_FILE_CLIENT_SPEC=release/${RUNTIME}_client-specs.yaml
-  - echo $RELEASE_FILE_CLIENT_SPEC
-  - export CLIENT_RELEASE_NAME=$RUNTIME-$RUNTIME_VERSION-$CLIENT_VERSION
-  - echo $CLIENT_RELEASE_NAME
-
-.release_runtime_vars: &define_release_runtime_vars
-  - export BRANCH_ENDNAME=$(echo $CI_COMMIT_BRANCH | sed -e "s/runtime\///g")
-  - echo "BRANCH_ENDNAME = $BRANCH_ENDNAME"
-  - export RUNTIME=$(echo $BRANCH_ENDNAME | grep -o "gdev\|gtest\|g1")
-  - echo "RUNTIME = $RUNTIME"
-  - export RUNTIME_VERSION=$(cat runtime/$RUNTIME/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
-  - echo $RUNTIME_VERSION
-  - export RUNTIME_MILESTONE="runtime-$RUNTIME_VERSION"
-  - echo $RUNTIME_MILESTONE
-  - export SRTOOL_OUTPUT=$CI_PROJECT_DIR/release/srtool_output_$RUNTIME.json
-  - echo "SRTOOL_OUTPUT = $SRTOOL_OUTPUT"
-  - export RELEASE_FILE_WASM=release/${RUNTIME}_runtime.compact.compressed.wasm
-  - echo $RELEASE_FILE_WASM
-  # srtool specific
-  - export RUNTIME_DIR=runtime/$RUNTIME
-  - echo "RUNTIME_DIR = $RUNTIME_DIR"
-  # srtool specific
-  - export PACKAGE=$RUNTIME-runtime
-  - echo "PACKAGE = $PACKAGE"
-
-trigger_runtime_release:
-  stage: build
-  rules:
-    - <<: *is_runtime_branch
-      when: manual
-  script:
-    - *define_release_runtime_vars
-    - echo "Vérification de l'absence de la release $RUNTIME_MILESTONE"
-    - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$RUNTIME_MILESTONE"
-    - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$RUNTIME_MILESTONE --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
-
-############## RELEASE ##############
-
-create_runtime_release:
-  stage: release
-  needs: ["build_runtime"]
-  rules:
-    - <<: *is_runtime_branch
-  image: rust:1-bullseye
-  script:
-    - *define_release_runtime_vars
-    # Create the GitLab release page + tag and associate the milestone.
-    # Note: the release name = the release tag = runtime milesone ($RUNTIME_MILESTONE)
-    - cargo xtask release-runtime $RUNTIME_MILESTONE $RUNTIME $CI_COMMIT_BRANCH $RUNTIME_MILESTONE
-    - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
-    # In the future: also build gtest and g1 runtimes and atach them
-  artifacts:
-    expire_in: never
-    paths:
-      - $CI_PROJECT_DIR/release/
-  tags:
-    - kepler
