@@ -19,6 +19,7 @@ mod build_network_runtime;
 mod build_network_specs;
 mod build_raw_specs;
 mod build_rpm;
+mod build_runtime;
 mod create_client_release;
 mod create_network_release;
 mod docker_deploy;
@@ -145,6 +146,11 @@ enum DuniterXTaskCommand {
         /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
         network: String,
     },
+    /// Build runtime (reprend la tâche build_runtime de la CI)
+    BuildRuntime {
+        /// Runtime à construire (gdev, gtest, g1)
+        runtime: String,
+    },
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -213,6 +219,7 @@ async fn main() -> Result<()> {
         }
         DuniterXTaskCommand::BuildRpm { network } => build_rpm::build_rpm(network),
         DuniterXTaskCommand::BuildDeb { network } => build_deb::build_deb(network),
+        DuniterXTaskCommand::BuildRuntime { runtime } => build_runtime::build_runtime(runtime),
     }
 }
 
