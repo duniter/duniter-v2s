@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::{Result, anyhow};
-use std::{path::Path, process::Command};
+use std::{fs, path::Path, process::Command};
 
 /// Crée une release client sur GitLab avec les assets nécessaires.
 /// Cette fonction reproduit l'étape de CI create_client_release qui :
@@ -73,6 +73,17 @@ pub async fn create_client_release(network: String, branch: String) -> Result<()
         println!("✅ Fichier trouvé: {}", file);
     }
 
+    // Rechercher les fichiers .deb et .rpm dans target
+    let package_files = find_package_files()?;
+    if !package_files.is_empty() {
+        println!("📦 Packages trouvés:");
+        for (asset_name, file_path) in &package_files {
+            println!("   - {} ({})", asset_name, file_path);
+        }
+    } else {
+        println!("⚠️  Aucun package .deb ou .rpm trouvé dans target/");
+    }
+
     // Étape 1: Créer la release client via GitLab
     println!("🌐 Création de la release client GitLab...");
     crate::gitlab::release_client(
@@ -88,7 +99,7 @@ pub async fn create_client_release(network: String, branch: String) -> Result<()
     // ID du projet GitLab (nodes/rust/duniter-v2s)
     let project_id = "nodes%2Frust%2Fduniter-v2s".to_string();
 
-    let asset_files = vec![
+    let mut asset_files = vec![
         (
             format!("{}_client-specs.yaml", runtime),
             format!("release/client/{}_client-specs.yaml", runtime),
@@ -98,6 +109,9 @@ pub async fn create_client_release(network: String, branch: String) -> Result<()
             format!("release/client/{}-raw.json", runtime),
         ),
     ];
+
+    // Ajouter les packages .deb et .rpm
+    asset_files.extend(package_files);
 
     for (asset_name, file_path) in &asset_files {
         let path = Path::new(file_path);
@@ -181,4 +195,53 @@ fn get_runtime_version(runtime: &str) -> Result<String> {
         .trim();
 
     Ok(version.to_string())
+}
+
+/// Recherche les fichiers .deb et .rpm dans les répertoires spécifiques
+fn find_package_files() -> Result<Vec<(String, String)>> {
+    let mut packages = Vec::new();
+
+    // Rechercher les fichiers .deb dans target/debian
+    let debian_dir = Path::new("target/debian");
+    if debian_dir.exists() {
+        if let Ok(entries) = fs::read_dir(debian_dir) {
+            for entry in entries {
+                if let Ok(entry) = entry {
+                    let path = entry.path();
+                    if let Some(file_name) = path.file_name() {
+                        if let Some(name_str) = file_name.to_str() {
+                            if name_str.ends_with(".deb") {
+                                let asset_name = name_str.to_string();
+                                let file_path = path.to_string_lossy().to_string();
+                                packages.push((asset_name, file_path));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Rechercher les fichiers .rpm dans target/generte-rpm
+    let rpm_dir = Path::new("target/generate-rpm");
+    if rpm_dir.exists() {
+        if let Ok(entries) = fs::read_dir(rpm_dir) {
+            for entry in entries {
+                if let Ok(entry) = entry {
+                    let path = entry.path();
+                    if let Some(file_name) = path.file_name() {
+                        if let Some(name_str) = file_name.to_str() {
+                            if name_str.ends_with(".rpm") {
+                                let asset_name = name_str.to_string();
+                                let file_path = path.to_string_lossy().to_string();
+                                packages.push((asset_name, file_path));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(packages)
 }
