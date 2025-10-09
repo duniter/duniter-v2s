@@ -94,58 +94,58 @@ enum DuniterXTaskCommand {
         dump_url: Option<String>,
     },
     /// Build network specs (reprend la tâche build_specs de la CI)
-    BuildNetworkSpecs {
+    NetworkBuildSpecs {
         /// Runtime à utiliser (gdev, gtest, g1)
         #[clap(long, default_value = "gdev")]
         runtime: String,
     },
     /// Build network runtime (reprend la tâche build_network_runtime de la CI)
-    BuildNetworkRuntime {
+    NetworkBuildRuntime {
         /// Runtime à utiliser (gdev, gtest, g1)
         #[clap(long, default_value = "gdev")]
         runtime: String,
     },
     /// Create network release (reprend la tâche create_network_release de la CI)
-    CreateNetworkRelease {
+    NetworkCreateRelease {
         /// Nom du réseau (ex: gdev, gtest, g1)
         network: String,
         /// Branche Git à utiliser
         branch: String,
     },
     /// Build raw specs (reprend la tâche build_raw_specs de la CI)
-    BuildRawSpecs {
+    ClientBuildRawSpecs {
         /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
         network: String,
     },
     /// Docker deploy (reprend la tâche docker_deploy de la CI)
-    DockerDeploy {
+    ClientDockerDeploy {
         /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
         network: String,
     },
     /// Create client release (reprend la tâche create_client_release de la CI)
-    CreateClientRelease {
+    ClientCreateRelease {
         /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
         network: String,
         /// Branche Git à utiliser
         branch: String,
     },
     /// Build RPM (reprend la tâche build_rpm de la CI)
-    BuildRpm {
+    ClientBuildRpm {
         /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
         network: String,
     },
     /// Build DEB (reprend la tâche build_deb de la CI)
-    BuildDeb {
+    ClientBuildDeb {
         /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
         network: String,
     },
     /// Build runtime (reprend la tâche build_runtime de la CI)
-    BuildRuntime {
+    RuntimeBuild {
         /// Runtime à construire (gdev, gtest, g1)
         runtime: String,
     },
     /// Create runtime release (reprend la tâche create_runtime_release de la CI)
-    CreateRuntimeRelease {
+    RuntimeCreateRelease {
         /// Runtime à publier (gdev, gtest, g1)
         runtime: String,
         /// Branche Git à utiliser
@@ -203,30 +203,30 @@ async fn main() -> Result<()> {
         } => gitlab::create_asset_link(tag, asset_name, asset_url).await,
         DuniterXTaskCommand::Test => test(),
         DuniterXTaskCommand::G1Data { dump_url } => network::g1_data::g1_data(dump_url).await,
-        DuniterXTaskCommand::BuildNetworkSpecs { runtime } => {
+        DuniterXTaskCommand::NetworkBuildSpecs { runtime } => {
             network::build_network_specs::build_network_specs(runtime)
         }
-        DuniterXTaskCommand::BuildNetworkRuntime { runtime } => {
+        DuniterXTaskCommand::NetworkBuildRuntime { runtime } => {
             network::build_network_runtime::build_network_runtime(runtime)
         }
-        DuniterXTaskCommand::CreateNetworkRelease { network, branch } => {
+        DuniterXTaskCommand::NetworkCreateRelease { network, branch } => {
             network::create_network_release::create_network_release(network, branch).await
         }
-        DuniterXTaskCommand::BuildRawSpecs { network } => {
+        DuniterXTaskCommand::ClientBuildRawSpecs { network } => {
             client::build_raw_specs::build_raw_specs(network)
         }
-        DuniterXTaskCommand::DockerDeploy { network } => {
+        DuniterXTaskCommand::ClientDockerDeploy { network } => {
             client::docker_deploy::docker_deploy(network)
         }
-        DuniterXTaskCommand::CreateClientRelease { network, branch } => {
+        DuniterXTaskCommand::ClientCreateRelease { network, branch } => {
             client::create_client_release::create_client_release(network, branch).await
         }
-        DuniterXTaskCommand::BuildRpm { network } => client::build_rpm::build_rpm(network),
-        DuniterXTaskCommand::BuildDeb { network } => client::build_deb::build_deb(network),
-        DuniterXTaskCommand::BuildRuntime { runtime } => {
+        DuniterXTaskCommand::ClientBuildRpm { network } => client::build_rpm::build_rpm(network),
+        DuniterXTaskCommand::ClientBuildDeb { network } => client::build_deb::build_deb(network),
+        DuniterXTaskCommand::RuntimeBuild { runtime } => {
             runtime::build_runtime::build_runtime(runtime)
         }
-        DuniterXTaskCommand::CreateRuntimeRelease { runtime, branch } => {
+        DuniterXTaskCommand::RuntimeCreateRelease { runtime, branch } => {
             runtime::create_runtime_release::create_runtime_release(runtime, branch).await
         }
     }
