@@ -24,15 +24,18 @@ pub fn build_network_specs(runtime: String) -> Result<()> {
     );
 
     // Vérifier que le fichier genesis.json existe
-    let genesis_file = std::path::Path::new("output/genesis.json");
+    let genesis_file = std::path::Path::new("release/network/genesis.json");
     if !genesis_file.exists() {
         return Err(anyhow::anyhow!(
-            "Le fichier output/genesis.json n'existe pas. Exécutez d'abord 'cargo xtask g1-data' pour générer les données G1."
+            "Le fichier release/network/genesis.json n'existe pas. Exécutez d'abord 'cargo xtask g1-data' pour générer les données G1."
         ));
     }
 
     // Vérifier que le fichier WASM existe
-    let wasm_file = format!("release/{}_runtime.compact.compressed.wasm", runtime);
+    let wasm_file = format!(
+        "release/network/{}_runtime.compact.compressed.wasm",
+        runtime
+    );
     let wasm_path = std::path::Path::new(&wasm_file);
     if !wasm_path.exists() {
         return Err(anyhow::anyhow!(
@@ -42,15 +45,6 @@ pub fn build_network_specs(runtime: String) -> Result<()> {
         ));
     }
 
-    // Définir les variables d'environnement comme dans la CI
-    unsafe {
-        std::env::set_var(
-            "DUNITER_GENESIS_DATA",
-            genesis_file.to_string_lossy().to_string(),
-        );
-        std::env::set_var("WASM_FILE", &wasm_file);
-    }
-
     println!("📄 WASM_FILE = {}", wasm_file);
 
     // Construire les features comme dans la CI
@@ -58,7 +52,7 @@ pub fn build_network_specs(runtime: String) -> Result<()> {
     println!("🔧 Features: {}", features);
 
     // Créer le répertoire release s'il n'existe pas
-    std::fs::create_dir_all("release")?;
+    std::fs::create_dir_all("release/network/")?;
 
     // Construire le binaire avec les features appropriées
     println!("🔨 Construction du binaire...");
@@ -69,7 +63,7 @@ pub fn build_network_specs(runtime: String) -> Result<()> {
     )?;
 
     // Générer le fichier de spécification
-    let spec_file = format!("release/{}.json", runtime);
+    let spec_file = format!("release/network/{}.json", runtime);
     println!("📄 Génération du fichier de spécification: {}", spec_file);
 
     let chain_arg = format!("{}_live", runtime);
@@ -82,12 +76,13 @@ pub fn build_network_specs(runtime: String) -> Result<()> {
                 "DUNITER_GENESIS_DATA",
                 genesis_file.to_string_lossy().to_string(),
             )
+            .env("WASM_FILE", wasm_path.to_string_lossy().to_string())
             .stdout(std::fs::File::create(&spec_file)?),
     )?;
 
     // Copier le fichier de configuration YAML comme dans la CI
     let config_src = format!("resources/{}.yaml", runtime);
-    let config_dst = format!("release/{}.yaml", runtime);
+    let config_dst = format!("release/network/ll{}.yaml", runtime);
 
     if std::path::Path::new(&config_src).exists() {
         println!(
@@ -100,7 +95,7 @@ pub fn build_network_specs(runtime: String) -> Result<()> {
     }
 
     println!("✅ Spécifications réseau générées avec succès!");
-    println!("📁 Fichiers disponibles dans le répertoire 'release/':");
+    println!("📁 Fichiers disponibles dans le répertoire 'release/network/':");
     println!("   - {}", spec_file);
     if std::path::Path::new(&config_dst).exists() {
         println!("   - {}", config_dst);

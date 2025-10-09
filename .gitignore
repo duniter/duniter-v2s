@@ -31,3 +31,4 @@ tmp
 # Ignore output folder
 output/
 g1-dump.tgz
+/release/

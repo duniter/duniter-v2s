@@ -30,16 +30,23 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
         ));
     }
 
+    // Répertoire de travail
+    let current_dir = std::env::current_dir()?;
+    let work_dir = current_dir.join("release/network");
+
     // Créer le répertoire release s'il n'existe pas
-    std::fs::create_dir_all("release")?;
+    std::fs::create_dir_all(work_dir.clone())?;
 
     // Définir les variables comme dans la CI
-    let srtool_output = "release/network_srtool_output.json";
-    println!("📄 SRTOOL_OUTPUT = {}", srtool_output);
+    let srtool_output = work_dir.join("network_srtool_output.json");
+    let srtool_output_filename = srtool_output.file_name().unwrap().to_string_lossy();
+    println!("📄 SRTOOL_OUTPUT = {}", srtool_output.to_string_lossy());
 
-    // Utiliser le répertoire courant
-    let current_dir = std::env::current_dir()?;
-    let work_dir = current_dir;
+    // Supprimer le fichier network_srtool_output.json s'il existe
+    if srtool_output.exists() {
+        std::fs::remove_file(srtool_output.clone())?;
+        println!("🗑️  Fichier {} supprimé", srtool_output.to_string_lossy());
+    }
 
     // Préparer les arguments Docker pour srtool
     let script_content = format!(
@@ -52,18 +59,26 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
         cd /build
         # Construire le runtime avec srtool
         echo "🔨 Construction du runtime avec srtool..."
-        /srtool/build --app --json -cM | tee -a {}
+        /srtool/build --app --json -cM | tee -a release/network/{}
         # Déplacer le fichier WASM généré
         echo "📦 Déplacement du fichier WASM..."
-        mv /build/runtime/{}/target/srtool/release/wbuild/{}-runtime/{}_runtime.compact.compressed.wasm /build/release/
-        mv /build/runtime/{}/target/srtool/release/wbuild/{}-runtime/{}_runtime.compact.wasm /build/release/
+        mv /build/runtime/{}/target/srtool/release/wbuild/{}-runtime/{}_runtime.compact.compressed.wasm /build/release/network/
+        mv /build/runtime/{}/target/srtool/release/wbuild/{}-runtime/{}_runtime.compact.wasm /build/release/network/
         echo "✅ Construction du runtime terminée!"
         "#,
-        runtime, srtool_output, srtool_output, runtime, runtime, runtime, runtime, runtime, runtime
+        runtime,
+        srtool_output_filename,
+        srtool_output_filename,
+        runtime,
+        runtime,
+        runtime,
+        runtime,
+        runtime,
+        runtime
     );
 
     // Exécuter le conteneur Docker avec srtool
-    let build_volume = format!("{}:/build", work_dir.to_string_lossy());
+    let build_volume = format!("{}:/build", current_dir.to_string_lossy());
     let package = format!("PACKAGE={}-runtime", runtime);
     let runtime_dir = format!("RUNTIME_DIR=runtime/{}", runtime);
     let docker_args = vec![
@@ -134,7 +149,10 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
     }
 
     // Vérifier que le fichier WASM a été généré
-    let wasm_file = format!("release/{}_runtime.compact.compressed.wasm", runtime);
+    let wasm_file = format!(
+        "release/network/{}_runtime.compact.compressed.wasm",
+        runtime
+    );
     if !std::path::Path::new(&wasm_file).exists() {
         return Err(anyhow::anyhow!(
             "Le fichier WASM n'a pas été généré: {}",
@@ -143,10 +161,10 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
     }
 
     println!("✅ Runtime réseau généré avec succès!");
-    println!("📁 Fichiers disponibles dans le répertoire 'release/':");
+    println!("📁 Fichiers disponibles dans le répertoire 'release/network':");
     println!("   - {}", wasm_file);
-    if std::path::Path::new(srtool_output).exists() {
-        println!("   - {}", srtool_output);
+    if srtool_output.exists() {
+        println!("   - {}", srtool_output.to_string_lossy());
     }
 
     Ok(())

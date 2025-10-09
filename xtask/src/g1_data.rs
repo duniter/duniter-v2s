@@ -15,10 +15,27 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::Result;
+use chrono::{NaiveDateTime, NaiveTime, Utc};
 use std::{process::Command, time::Instant};
 
-pub async fn g1_data(dump_url: String) -> Result<()> {
+pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
     println!("🚀 Génération des données G1 avec Docker...");
+
+    // Générer l'URL du dump si elle n'est pas fournie
+    let dump_url = match dump_url {
+        Some(url) => url,
+        None => {
+            let now = Utc::now();
+            let today = now.date_naive();
+            let midnight = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+            let today_midnight = NaiveDateTime::new(today, midnight);
+            let date_str = today_midnight.format("%Y-%m-%d_%H-%M").to_string();
+            format!(
+                "https://dl.cgeek.fr/public/auto-backup-g1-duniter-1.8.7_{}.tgz",
+                date_str
+            )
+        }
+    };
 
     // Vérifier que Docker est disponible
     if !Command::new("docker").arg("--version").status()?.success() {
@@ -29,9 +46,8 @@ pub async fn g1_data(dump_url: String) -> Result<()> {
 
     // Utiliser le répertoire courant
     let current_dir = std::env::current_dir()?;
-    let work_dir = current_dir;
-    let output_dir = work_dir.join("output");
-    std::fs::create_dir_all(&output_dir)?;
+    let work_dir = current_dir.join("release/network");
+    std::fs::create_dir_all(&work_dir)?;
 
     // Vérifier si le fichier existe déjà
     let dump_file_path = work_dir.join("g1-dump.tgz");
@@ -76,7 +92,7 @@ pub async fn g1_data(dump_url: String) -> Result<()> {
 
     // Préparer les arguments Docker avec des variables pour éviter les problèmes de durée de vie
     let dump_file_str = work_dir.join("g1-dump.tgz").to_string_lossy().to_string();
-    let output_dir_str = output_dir.to_string_lossy().to_string();
+    let output_dir_str = work_dir.to_string_lossy().to_string();
     let script_content = r#"
         set -e
         echo "📦 Extraction du dump..."
@@ -171,17 +187,16 @@ pub async fn g1_data(dump_url: String) -> Result<()> {
     }
 
     // Copier les fichiers générés vers le répertoire courant
-    let files_to_copy = vec![
+    let expected_files = vec![
         "genesis.json",
         "block_hist.json",
         "cert_hist.json",
         "tx_hist.json",
     ];
 
-    for src in files_to_copy {
-        let src_path = output_dir.join(src);
+    for src in expected_files {
+        let src_path = work_dir.join(src);
         if src_path.exists() {
-            std::fs::copy(&src_path, &src_path)?;
             println!("📄 Généré: {} -> {}", src, src_path.display());
         } else {
             println!("⚠️ Fichier non trouvé: {}", src);
@@ -189,7 +204,7 @@ pub async fn g1_data(dump_url: String) -> Result<()> {
     }
 
     println!("✅ Génération des données G1 terminée avec succès!");
-    println!("📁 Fichiers disponibles dans: {}", output_dir.display());
+    println!("📁 Fichiers disponibles dans: {}", work_dir.display());
 
     Ok(())
 }
