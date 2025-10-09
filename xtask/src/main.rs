@@ -14,19 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-mod build_deb;
-mod build_network_runtime;
-mod build_network_specs;
-mod build_raw_specs;
-mod build_rpm;
-mod build_runtime;
-mod create_client_release;
-mod create_network_release;
-mod create_runtime_release;
-mod docker_deploy;
-mod g1_data;
+mod client;
 mod gen_doc;
 mod gitlab;
+mod network;
+mod runtime;
 
 use anyhow::{Context, Result};
 use clap::Parser;
@@ -210,26 +202,32 @@ async fn main() -> Result<()> {
             asset_url,
         } => gitlab::create_asset_link(tag, asset_name, asset_url).await,
         DuniterXTaskCommand::Test => test(),
-        DuniterXTaskCommand::G1Data { dump_url } => g1_data::g1_data(dump_url).await,
+        DuniterXTaskCommand::G1Data { dump_url } => network::g1_data::g1_data(dump_url).await,
         DuniterXTaskCommand::BuildNetworkSpecs { runtime } => {
-            build_network_specs::build_network_specs(runtime)
+            network::build_network_specs::build_network_specs(runtime)
         }
         DuniterXTaskCommand::BuildNetworkRuntime { runtime } => {
-            build_network_runtime::build_network_runtime(runtime)
+            network::build_network_runtime::build_network_runtime(runtime)
         }
         DuniterXTaskCommand::CreateNetworkRelease { network, branch } => {
-            create_network_release::create_network_release(network, branch).await
+            network::create_network_release::create_network_release(network, branch).await
         }
-        DuniterXTaskCommand::BuildRawSpecs { network } => build_raw_specs::build_raw_specs(network),
-        DuniterXTaskCommand::DockerDeploy { network } => docker_deploy::docker_deploy(network),
+        DuniterXTaskCommand::BuildRawSpecs { network } => {
+            client::build_raw_specs::build_raw_specs(network)
+        }
+        DuniterXTaskCommand::DockerDeploy { network } => {
+            client::docker_deploy::docker_deploy(network)
+        }
         DuniterXTaskCommand::CreateClientRelease { network, branch } => {
-            create_client_release::create_client_release(network, branch).await
+            client::create_client_release::create_client_release(network, branch).await
         }
-        DuniterXTaskCommand::BuildRpm { network } => build_rpm::build_rpm(network),
-        DuniterXTaskCommand::BuildDeb { network } => build_deb::build_deb(network),
-        DuniterXTaskCommand::BuildRuntime { runtime } => build_runtime::build_runtime(runtime),
+        DuniterXTaskCommand::BuildRpm { network } => client::build_rpm::build_rpm(network),
+        DuniterXTaskCommand::BuildDeb { network } => client::build_deb::build_deb(network),
+        DuniterXTaskCommand::BuildRuntime { runtime } => {
+            runtime::build_runtime::build_runtime(runtime)
+        }
         DuniterXTaskCommand::CreateRuntimeRelease { runtime, branch } => {
-            create_runtime_release::create_runtime_release(runtime, branch).await
+            runtime::create_runtime_release::create_runtime_release(runtime, branch).await
         }
     }
 }
