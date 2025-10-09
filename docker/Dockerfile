@@ -1,5 +1,5 @@
 # Workaround for https://github.com/containers/buildah/issues/4742
-FROM debian:bullseye-slim AS target
+FROM --platform=$BUILDPLATFORM docker.io/library/debian:bullseye-slim AS target
 
 # ------------------------------------------------------------------------------
 # Build Stage
@@ -7,7 +7,7 @@ FROM debian:bullseye-slim AS target
 
 # When building for a foreign arch, use cross-compilation
 # https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
-FROM --platform=$BUILDPLATFORM rust:1-bullseye AS build
+FROM --platform=$BUILDPLATFORM docker.io/library/rust:1-bullseye AS build
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
