@@ -86,7 +86,7 @@ pub fn build_runtime(runtime: String) -> Result<()> {
         runtime_dir.as_str(),
         "-e",
         package.as_str(),
-        "paritytech/srtool:1.84.1-0.18.2",
+        "paritytech/srtool:1.88.0",
         "sh",
         "-c",
         &script_content,
