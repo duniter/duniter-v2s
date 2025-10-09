@@ -2601,7 +2601,7 @@ dependencies = [
 
 [[package]]
 name = "duniter"
-version = "0.11.0"
+version = "0.11.0-test"
 dependencies = [
  "array-bytes 6.2.3",
  "async-channel 2.5.0",
@@ -15441,6 +15441,7 @@ name = "xtask"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "clap",
  "frame-metadata 23.0.0",
  "graphql_client",

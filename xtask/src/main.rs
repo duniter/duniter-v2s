@@ -99,7 +99,7 @@ enum DuniterXTaskCommand {
     G1Data {
         /// URL du dump G1 à télécharger
         #[clap(long)]
-        dump_url: String,
+        dump_url: Option<String>,
     },
     /// Build network specs (reprend la tâche build_specs de la CI)
     BuildNetworkSpecs {

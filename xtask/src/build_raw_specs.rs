@@ -46,6 +46,9 @@ pub fn build_raw_specs(network: String) -> Result<()> {
 
     println!("📦 Runtime: {}", runtime);
 
+    // Créer le répertoire release s'il n'existe pas
+    std::fs::create_dir_all("release/client/")?;
+
     // Vérifier que les fichiers nécessaires existent
     let required_files = vec![format!("node/specs/{}_client-specs.yaml", runtime)];
 
@@ -55,16 +58,23 @@ pub fn build_raw_specs(network: String) -> Result<()> {
                 "Le fichier requis n'existe pas: {}. Assurez-vous d'avoir les spécifications client.",
                 file
             ));
+        } else {
+            // Copier le fichier dans la release
+            println!("✅ Fichier trouvé: {}", file);
+            std::fs::copy(
+                file,
+                format!(
+                    "release/client/{}",
+                    Path::new(file).file_name().unwrap().to_string_lossy()
+                ),
+            )?;
+            println!("📋 Fichier copié dans release/client/: {}", file);
         }
-        println!("✅ Fichier trouvé: {}", file);
     }
 
-    // Créer le répertoire release s'il n'existe pas
-    std::fs::create_dir_all("release")?;
-
     // Étape 1: Imprimer les spécifications réseau
-    println!("📄 Impression des spécifications réseau...");
-    let printed_spec_file = format!("{}-printed.json", runtime);
+    println!("📄 Téléchargement des spécifications réseau...");
+    let printed_spec_file = format!("release/client/{}-printed.json", runtime);
     exec_should_success(
         Command::new("cargo")
             .args(["xtask", "print-spec", &network])
@@ -78,11 +88,11 @@ pub fn build_raw_specs(network: String) -> Result<()> {
     if Command::new("yq").arg("--version").status().is_err() {
         println!("📥 yq non trouvé, téléchargement...");
         exec_should_success(Command::new("wget").args([
-            "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_arm64",
+            "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_amd64",
             "-O",
-            "yq",
+            "release/client/yq",
         ]))?;
-        exec_should_success(Command::new("chmod").args(["+x", "yq"]))?;
+        exec_should_success(Command::new("chmod").args(["+x", "release/client/yq"]))?;
     }
 
     // Vérifier si jq est disponible
@@ -96,11 +106,11 @@ pub fn build_raw_specs(network: String) -> Result<()> {
 
     // Étape 3: Convertir YAML -> JSON pour les spécifications client
     println!("🔄 Conversion YAML -> JSON des spécifications client...");
-    let client_specs_json = format!("node/specs/{}_client-specs.json", runtime);
+    let client_specs_json = format!("release/client/{}_client-specs.json", runtime);
 
     // Utiliser yq (local ou système)
-    let yq_cmd = if Path::new("yq").exists() {
-        "./yq"
+    let yq_cmd = if Path::new("release/client/yq").exists() {
+        "./release/client/yq"
     } else {
         "yq"
     };
@@ -126,28 +136,15 @@ pub fn build_raw_specs(network: String) -> Result<()> {
     // Étape 5: Générer le fichier raw spec
     println!("🔨 Génération du fichier raw spec...");
     let features = format!("--features {} --no-default-features", runtime);
-    let raw_spec_file = format!("release/{}-raw.json", runtime);
+    let raw_spec_file = format!("release/client/{}-raw.json", runtime);
 
     exec_should_success(
         Command::new("cargo")
             .args(["run", "-Zgit=shallow-deps"])
             .args(features.split_whitespace())
-            .args([
-                "--",
-                "build-spec",
-                "--chain",
-                &final_spec_file,
-                "--disable-default-bootnode",
-                "--raw",
-            ])
+            .args(["--", "build-spec", "--chain", &final_spec_file, "--raw"])
             .stdout(std::fs::File::create(&raw_spec_file)?),
     )?;
-
-    // Nettoyer les fichiers temporaires
-    println!("🧹 Nettoyage des fichiers temporaires...");
-    let _ = std::fs::remove_file(&printed_spec_file);
-    let _ = std::fs::remove_file(&client_specs_json);
-    let _ = std::fs::remove_file(&final_spec_file);
 
     println!("✅ Spécifications raw générées avec succès!");
     println!("📁 Fichier généré: {}", raw_spec_file);
@@ -155,6 +152,12 @@ pub fn build_raw_specs(network: String) -> Result<()> {
     println!("   - Réseau: {}", network);
     println!("   - Runtime: {}", runtime);
     println!("   - Fichier raw spec: {}", raw_spec_file);
+
+    // Copier le fichier dans specs/
+    std::fs::create_dir_all("node/specs/")?;
+    let dest_path = format!("node/specs/{}-raw.json", runtime);
+    std::fs::copy(&raw_spec_file, &dest_path)?;
+    println!("📋 Fichier copié dans node/specs/: {}", dest_path);
 
     Ok(())
 }

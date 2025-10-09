@@ -54,13 +54,13 @@ pub async fn create_client_release(network: String, branch: String) -> Result<()
 
     println!("📦 Version client: {}", client_version);
     println!("📦 Version runtime: {}", runtime_version);
-    println!("🏷️  Milestone: {}", client_milestone);
+    println!("🏷️ Milestone: {}", client_milestone);
     println!("📋 Nom de release: {}", client_release_name);
 
     // Vérifier que les fichiers nécessaires existent
     let required_files = vec![
-        format!("release/{}-raw.json", runtime),
-        format!("release/{}_client-specs.yaml", runtime),
+        format!("release/client/{}-raw.json", runtime),
+        format!("release/client/{}_client-specs.yaml", runtime),
     ];
 
     for file in &required_files {
@@ -91,11 +91,11 @@ pub async fn create_client_release(network: String, branch: String) -> Result<()
     let asset_files = vec![
         (
             format!("{}_client-specs.yaml", runtime),
-            format!("release/{}_client-specs.yaml", runtime),
+            format!("release/client/{}_client-specs.yaml", runtime),
         ),
         (
             format!("{}-raw.json", runtime),
-            format!("release/{}-raw.json", runtime),
+            format!("release/client/{}-raw.json", runtime),
         ),
     ];
 
@@ -154,7 +154,6 @@ fn get_client_version() -> Result<String> {
         .next()
         .ok_or_else(|| anyhow!("Format de version invalide dans node/Cargo.toml"))?;
 
-    println!("📦 Version client détectée: {}", version);
     Ok(version.to_string())
 }
 
@@ -181,6 +180,5 @@ fn get_runtime_version(runtime: &str) -> Result<String> {
         .ok_or_else(|| anyhow!("Format de version invalide dans {}", runtime_file))?
         .trim();
 
-    println!("📦 Version runtime détectée: {}", version);
     Ok(version.to_string())
 }
