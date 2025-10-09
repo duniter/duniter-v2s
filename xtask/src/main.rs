@@ -54,28 +54,6 @@ enum DuniterXTaskCommand {
         /// Raw spec filepath
         raw_spec: PathBuf,
     },
-    /// Release a new network
-    ReleaseNetwork { network: String, branch: String },
-    /// Release a new runtime
-    ReleaseRuntime {
-        /// Name of the release + tag to be applied
-        name: String,
-        /// Name of the network to be put in the release notes title of the srtool part
-        network: String,
-        /// Branch on which the tag `name` will be created during the release
-        branch: String,
-        /// Name of the milestone to add this release to
-        milestone: String,
-    },
-    /// Release a new client for a network
-    ReleaseClient {
-        /// Name of the release + tag to be applied
-        name: String,
-        /// Branch on which the tag `name` will be created during the release
-        branch: String,
-        /// Name of the milestone to add this release to
-        milestone: String,
-    },
     /// Print the chainSpec published on given Network Release
     PrintSpec { network: String },
     /// Create asset in a release
@@ -88,7 +66,7 @@ enum DuniterXTaskCommand {
     /// End2tests are skipped
     Test,
     /// Generate G1 data using Docker and py-g1-migrator
-    G1Data {
+    NetworkG1Data {
         /// URL du dump G1 à télécharger
         #[clap(long)]
         dump_url: Option<String>,
@@ -181,20 +159,6 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::InjectRuntimeCode { runtime, raw_spec } => {
             inject_runtime_code(&raw_spec, &runtime)
         }
-        DuniterXTaskCommand::ReleaseNetwork { network, branch } => {
-            gitlab::release_network(network, branch).await
-        }
-        DuniterXTaskCommand::ReleaseRuntime {
-            name,
-            network,
-            branch,
-            milestone,
-        } => gitlab::release_runtime(name, network, branch, milestone).await,
-        DuniterXTaskCommand::ReleaseClient {
-            name,
-            branch,
-            milestone,
-        } => gitlab::release_client(name, branch, milestone).await,
         DuniterXTaskCommand::PrintSpec { network } => gitlab::print_spec(network).await,
         DuniterXTaskCommand::CreateAssetLink {
             tag,
@@ -202,7 +166,9 @@ async fn main() -> Result<()> {
             asset_url,
         } => gitlab::create_asset_link(tag, asset_name, asset_url).await,
         DuniterXTaskCommand::Test => test(),
-        DuniterXTaskCommand::G1Data { dump_url } => network::g1_data::g1_data(dump_url).await,
+        DuniterXTaskCommand::NetworkG1Data { dump_url } => {
+            network::g1_data::g1_data(dump_url).await
+        }
         DuniterXTaskCommand::NetworkBuildSpecs { runtime } => {
             network::build_network_specs::build_network_specs(runtime)
         }
