@@ -48,11 +48,14 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
 
     // Vérifier que les fichiers nécessaires existent
     let required_files = vec![
-        format!("release/genesis.json"),
-        format!("release/{}.yaml", runtime),
-        format!("release/{}.json", runtime),
-        format!("release/{}_runtime.compact.compressed.wasm", runtime),
-        format!("release/{}_runtime.compact.wasm", runtime),
+        format!("release/network/genesis.json"),
+        format!("release/network/{}.yaml", runtime),
+        format!("release/network/{}.json", runtime),
+        format!(
+            "release/network/{}_runtime.compact.compressed.wasm",
+            runtime
+        ),
+        format!("release/network/{}_runtime.compact.wasm", runtime),
     ];
 
     for file in &required_files {
@@ -78,23 +81,26 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
     let asset_files = vec![
         (
             "g1-data.json".to_string(),
-            "release/genesis.json".to_string(),
+            "release/network/genesis.json".to_string(),
         ),
         (
             format!("{}.yaml", runtime),
-            format!("release/{}.yaml", runtime),
+            format!("release/network/{}.yaml", runtime),
         ),
         (
             format!("{}_runtime.compact.compressed.wasm", runtime),
-            format!("release/{}_runtime.compact.compressed.wasm", runtime),
+            format!(
+                "release/network/{}_runtime.compact.compressed.wasm",
+                runtime
+            ),
         ),
         (
             format!("{}_runtime.compact.wasm", runtime),
-            format!("release/{}_runtime.compact.wasm", runtime),
+            format!("release/network/{}_runtime.compact.wasm", runtime),
         ),
         (
             format!("{}.json", runtime),
-            format!("release/{}.json", runtime),
+            format!("release/network/{}.json", runtime),
         ),
     ];
 

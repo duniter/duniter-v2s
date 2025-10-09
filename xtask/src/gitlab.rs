@@ -170,8 +170,8 @@ fn add_srtool_notes(network: String, release_notes: &mut String) -> Result<()> {
     // Generate release notes
     let currency = network.clone();
     let env_var = "SRTOOL_OUTPUT".to_string();
-    let sr_tool_output_file =
-        std::env::var(env_var).unwrap_or_else(|_| "release/network_srtool_output.json".to_string());
+    let sr_tool_output_file = std::env::var(env_var)
+        .unwrap_or_else(|_| "release/network/network_srtool_output.json".to_string());
 
     let read = fs::read_to_string(sr_tool_output_file);
     match read {
