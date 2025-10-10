@@ -72,17 +72,9 @@ enum DuniterXTaskCommand {
         dump_url: Option<String>,
     },
     /// Build network specs (reprend la tâche build_specs de la CI)
-    NetworkBuildSpecs {
-        /// Runtime à utiliser (gdev, gtest, g1)
-        #[clap(long, default_value = "gdev")]
-        runtime: String,
-    },
+    NetworkBuildSpecs { runtime: String },
     /// Build network runtime (reprend la tâche build_network_runtime de la CI)
-    NetworkBuildRuntime {
-        /// Runtime à utiliser (gdev, gtest, g1)
-        #[clap(long, default_value = "gdev")]
-        runtime: String,
-    },
+    NetworkBuildRuntime { runtime: String },
     /// Create network release (reprend la tâche create_network_release de la CI)
     NetworkCreateRelease {
         /// Nom du réseau (ex: gdev, gtest, g1)

@@ -2,9 +2,13 @@
 
 This document describes the steps required for the different releasing processes related to a Duniter based network:
 
-* network release (boostrap a new network)
-* client release (duniter-v2s binary on bootstrap or update)
-* runtime release (WASM runtime on bootstrap or update)
+* **network** release (boostrap a new network)
+* **client** release (duniter-v2s binary on bootstrap or update)
+* **runtime** release (WASM runtime on bootstrap or update)
+
+## Philosophy
+
+The release process will produce artifacts according to your **local basecode** (i.e. the code on your machine), not the code on GitLab.
 
 ## Prerequisites
 
@@ -55,8 +59,8 @@ To create the network release, run:
 
 ```bash
 cargo xtask network-g1-data
-cargo xtask network-build-runtime
-cargo xtask network-build-specs
+cargo xtask network-build-runtime <network>
+cargo xtask network-build-specs <network>
 cargo xtask network-create-release <network>-<runtime-initial-version> network/<network>-<runtime-initial-version>
 ```
 
@@ -65,8 +69,8 @@ Example :
 ```bash
 export GITLAB_TOKEN=your_token_here
 cargo xtask network-g1-data
-cargo xtask network-build-runtime
-cargo xtask network-build-specs
+cargo xtask network-build-runtime gdev
+cargo xtask network-build-specs gdev
 cargo xtask network-create-release gdev-1000 network/gdev-1000
 ```
 
@@ -93,6 +97,7 @@ You must know:
 You must have:
 
 * set the Client version in the `node/Cargo.toml` file (as `version = "<client-version>"`) on the network branch (not on `master`)
+* edited the file `node/specs/<network>_client-specs.yaml` with the network parameters (commitee members, token symbol, etc.)
 * a GitLab milestone named `client-<client-version>` (e.g. `client-0.11.1`)
 * set the `GITLAB_TOKEN` environment variable with your GitLab token
 * set the `DUNITERTEAM_PASSWD` environment variable set with the DockerHub password of the Duniter organization
