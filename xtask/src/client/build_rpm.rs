@@ -98,14 +98,12 @@ fn find_rpm_files() -> Result<Vec<String>> {
     for entry in entries {
         let entry = entry?;
         let path = entry.path();
-        if path.is_file() {
-            if let Some(extension) = path.extension() {
-                if extension == "rpm" {
-                    if let Some(file_name) = path.file_name() {
-                        rpm_files.push(file_name.to_string_lossy().to_string());
-                    }
-                }
-            }
+        if path.is_file()
+            && let Some(extension) = path.extension()
+            && extension == "rpm"
+            && let Some(file_name) = path.file_name()
+        {
+            rpm_files.push(file_name.to_string_lossy().to_string());
         }
     }
 

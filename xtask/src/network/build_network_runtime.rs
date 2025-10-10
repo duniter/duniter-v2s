@@ -112,10 +112,8 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
         std::thread::spawn(move || {
             use std::io::{BufRead, BufReader};
             let reader = BufReader::new(stdout);
-            for line in reader.lines() {
-                if let Ok(line) = line {
-                    println!("{}", line);
-                }
+            for line in reader.lines().map_while(Result::ok) {
+                println!("{}", line);
             }
         })
     } else {
@@ -126,10 +124,8 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
         std::thread::spawn(move || {
             use std::io::{BufRead, BufReader};
             let reader = BufReader::new(stderr);
-            for line in reader.lines() {
-                if let Ok(line) = line {
-                    eprintln!("{}", line);
-                }
+            for line in reader.lines().map_while(Result::ok) {
+                eprintln!("{}", line);
             }
         })
     } else {

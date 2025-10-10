@@ -37,7 +37,7 @@ pub(super) async fn upload_file(
         );
 
     let response = client
-        .post(&format!(
+        .post(format!(
             "https://git.duniter.org/api/v4/projects/{}/uploads",
             project_id
         ))

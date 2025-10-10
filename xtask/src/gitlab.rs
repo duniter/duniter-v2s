@@ -215,7 +215,7 @@ fn gen_release_notes(currency: String, srtool_output: String) -> Result<String> 
     let srtool_str = srtool_output
         .lines()
         .filter(|line| !line.trim().is_empty())
-        .last()
+        .next_back()
         .ok_or_else(|| anyhow!("empty srtool output"));
     let srtool: Srtool =
         serde_json::from_str(srtool_str?).with_context(|| "Fail to parse srtool json output")?;

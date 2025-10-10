@@ -203,42 +203,36 @@ fn find_package_files() -> Result<Vec<(String, String)>> {
 
     // Rechercher les fichiers .deb dans target/debian
     let debian_dir = Path::new("target/debian");
-    if debian_dir.exists() {
-        if let Ok(entries) = fs::read_dir(debian_dir) {
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    let path = entry.path();
-                    if let Some(file_name) = path.file_name() {
-                        if let Some(name_str) = file_name.to_str() {
-                            if name_str.ends_with(".deb") {
-                                let asset_name = name_str.to_string();
-                                let file_path = path.to_string_lossy().to_string();
-                                packages.push((asset_name, file_path));
-                            }
-                        }
-                    }
-                }
+    if debian_dir.exists()
+        && let Ok(entries) = fs::read_dir(debian_dir)
+    {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if let Some(file_name) = path.file_name()
+                && let Some(name_str) = file_name.to_str()
+                && name_str.ends_with(".deb")
+            {
+                let asset_name = name_str.to_string();
+                let file_path = path.to_string_lossy().to_string();
+                packages.push((asset_name, file_path));
             }
         }
     }
 
-    // Rechercher les fichiers .rpm dans target/generte-rpm
+    // Rechercher les fichiers .rpm dans target/generate-rpm
     let rpm_dir = Path::new("target/generate-rpm");
-    if rpm_dir.exists() {
-        if let Ok(entries) = fs::read_dir(rpm_dir) {
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    let path = entry.path();
-                    if let Some(file_name) = path.file_name() {
-                        if let Some(name_str) = file_name.to_str() {
-                            if name_str.ends_with(".rpm") {
-                                let asset_name = name_str.to_string();
-                                let file_path = path.to_string_lossy().to_string();
-                                packages.push((asset_name, file_path));
-                            }
-                        }
-                    }
-                }
+    if rpm_dir.exists()
+        && let Ok(entries) = fs::read_dir(rpm_dir)
+    {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if let Some(file_name) = path.file_name()
+                && let Some(name_str) = file_name.to_str()
+                && name_str.ends_with(".rpm")
+            {
+                let asset_name = name_str.to_string();
+                let file_path = path.to_string_lossy().to_string();
+                packages.push((asset_name, file_path));
             }
         }
     }
