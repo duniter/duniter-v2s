@@ -2,18 +2,21 @@
 title: Installation
 ---
 
-This page will guide you through the steps needed to prepare a computer for development with the
-Duniter Substrate Node. Since Substrate is built with
-[the Rust programming language](https://www.rust-lang.org/), the first thing you will need to do is
-prepare the computer for Rust development - these steps will vary based on the computer's operating
-system. Once Rust is configured, you will use its toolchains to interact with Rust projects; the
-commands for Rust's toolchains will be the same for all supported, Unix-based operating systems.
+This page will guide you through the steps needed to prepare a computer for
+development with the Duniter Substrate Node. Since Substrate is built with
+[the Rust programming language](https://www.rust-lang.org/), the first thing you
+will need to do is prepare the computer for Rust development - these steps will
+vary based on the computer's operating system. Once Rust is configured, you will
+use its toolchains to interact with Rust projects; the commands for Rust's
+toolchains will be the same for all supported, Unix-based operating systems.
 
 ## Unix-Based Operating Systems
 
-Substrate development is easiest on Unix-based operating systems like macOS or Linux. The examples
-in the Substrate [Tutorials](https://substrate.dev/tutorials) and [Recipes](https://substrate.dev/recipes/)
-use Unix-style terminals to demonstrate how to interact with Substrate from the command line.
+Substrate development is easiest on Unix-based operating systems like macOS or
+Linux. The examples in the Substrate
+[Tutorials](https://substrate.dev/tutorials) and
+[Recipes](https://substrate.dev/recipes/) use Unix-style terminals to
+demonstrate how to interact with Substrate from the command line.
 
 ### macOS
 
@@ -25,7 +28,7 @@ Open the Terminal application and execute the following commands:
 
 # Make sure Homebrew is up-to-date, install openssl and cmake
 brew update
-brew install openssl cmake
+brew install openssl cmake protobuf
 ```
 
 ### Ubuntu/Debian
@@ -61,8 +64,8 @@ sudo dnf install cmake pkgconfig rocksdb rocksdb-devel llvm git libcurl libcurl-
 
 ## Rust Developer Environment
 
-This project uses [`rustup`](https://rustup.rs/) to help manage the Rust toolchain. First install
-and configure `rustup`:
+This project uses [`rustup`](https://rustup.rs/) to help manage the Rust
+toolchain. First install and configure `rustup`:
 
 ```bash
 # Install
@@ -80,10 +83,11 @@ rustup update stable
 rustup target add wasm32-unknown-unknown --toolchain nightly
 ```
 
-
 ### Installing mold linker to decrease build time
 
-Mold (modern linker) (https://github.com/rui314/mold) decreases the build time. Install it through your system package for example then add the following to your `~/.cargo/config`:
+Mold (modern linker) (https://github.com/rui314/mold) decreases the build time.
+Install it through your system package for example then add the following to
+your `~/.cargo/config`:
 
 ```toml
 [target.x86_64-unknown-linux-gnu]
