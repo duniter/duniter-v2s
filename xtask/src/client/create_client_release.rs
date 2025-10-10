@@ -48,7 +48,7 @@ pub async fn create_client_release(network: String, branch: String) -> Result<()
 
     // Calculer les versions et noms comme dans la CI
     let client_version = get_client_version()?;
-    let runtime_version = get_runtime_version(runtime)?;
+    let runtime_version = extract_runtime_version_from_network(&network)?;
     let client_milestone = format!("client-{}", client_version);
     let client_release_name = format!("{}-{}-{}", runtime, runtime_version, client_version);
 
@@ -171,28 +171,29 @@ fn get_client_version() -> Result<String> {
     Ok(version.to_string())
 }
 
-fn get_runtime_version(runtime: &str) -> Result<String> {
-    let runtime_file = format!("runtime/{}/src/lib.rs", runtime);
-    let output = Command::new("grep")
-        .args(["spec_version:", &runtime_file])
-        .output()?;
+/// Extract runtime version from network name (e.g., "gtest-1100" -> "1100")
+fn extract_runtime_version_from_network(network: &str) -> Result<String> {
+    // The network name format is expected to be: {runtime}-{version}
+    // e.g., gtest-1100, g1-1000, gdev-1000
+    let parts: Vec<&str> = network.split('-').collect();
 
-    if !output.status.success() {
+    if parts.len() < 2 {
         return Err(anyhow!(
-            "Impossible de lire la version du runtime depuis {}",
-            runtime_file
+            "Le nom du réseau '{}' doit être au format {{runtime}}-{{version}} (ex: gtest-1100)",
+            network
         ));
     }
 
-    let version_line = String::from_utf8(output.stdout)?;
-    let version = version_line
-        .split("spec_version: ")
-        .nth(1)
-        .ok_or_else(|| anyhow!("Format de version invalide dans {}", runtime_file))?
-        .split(',')
-        .next()
-        .ok_or_else(|| anyhow!("Format de version invalide dans {}", runtime_file))?
-        .trim();
+    let version = parts[1];
+
+    // Validate that it's a number
+    if version.parse::<u32>().is_err() {
+        return Err(anyhow!(
+            "La version extraite '{}' du réseau '{}' n'est pas un nombre valide",
+            version,
+            network
+        ));
+    }
 
     Ok(version.to_string())
 }
