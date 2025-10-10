@@ -82,7 +82,7 @@ pub fn build_network_specs(runtime: String) -> Result<()> {
 
     // Copier le fichier de configuration YAML comme dans la CI
     let config_src = format!("resources/{}.yaml", runtime);
-    let config_dst = format!("release/network/ll{}.yaml", runtime);
+    let config_dst = format!("release/network/{}.yaml", runtime);
 
     if std::path::Path::new(&config_src).exists() {
         println!(
