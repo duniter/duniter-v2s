@@ -91,14 +91,12 @@ fn find_deb_files() -> Result<Vec<String>> {
     for entry in entries {
         let entry = entry?;
         let path = entry.path();
-        if path.is_file() {
-            if let Some(extension) = path.extension() {
-                if extension == "deb" {
-                    if let Some(file_name) = path.file_name() {
-                        deb_files.push(file_name.to_string_lossy().to_string());
-                    }
-                }
-            }
+        if path.is_file()
+            && let Some(extension) = path.extension()
+            && extension == "deb"
+            && let Some(file_name) = path.file_name()
+        {
+            deb_files.push(file_name.to_string_lossy().to_string());
         }
     }
 

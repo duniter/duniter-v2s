@@ -25,8 +25,8 @@ use std::path::Path;
 /// # Arguments
 /// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
 /// * `branch` - La branche GitLab à partir de laquelle créer la release (ex: network/gtest-1000).
-///              Doit exister sur GitLab. Peut-être n'importe quelle branche, mais préférer créer
-///              une branche dédiée par réseau comme `network/gtest-1000`.
+///   Doit exister sur GitLab. Peut-être n'importe quelle branche, mais préférer créer
+///   une branche dédiée par réseau comme `network/gtest-1000`.
 pub async fn create_network_release(network: String, branch: String) -> Result<()> {
     println!("🚀 Création de la release réseau pour: {}", network);
 
