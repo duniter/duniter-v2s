@@ -486,7 +486,8 @@ macro_rules! pallets_config {
         impl pallet_distance::Config for Runtime {
             type CheckRequestDistanceEvaluation = Wot;
             type Currency = Balances;
-            type EvaluationPeriod = frame_support::traits::ConstU32<7>;
+            // With approx. 10% of validators running an oracle, a period of 40 blocks means approx. 99% chance of successful evaluation.
+            type EvaluationPeriod = frame_support::traits::ConstU32<40>;
             type EvaluationPrice = frame_support::traits::ConstU64<1000>;
             type MaxRefereeDistance = MaxRefereeDistance;
             type MinAccessibleReferees = MinAccessibleReferees;

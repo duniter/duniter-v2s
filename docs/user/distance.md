@@ -4,6 +4,14 @@ The [distance rule](https://duniter.org/blog/duniter-deep-dive-wot/) is computat
 
 Distance evaluation is operated on a voluntary basis by individual smiths. Since evaluators can lie or make errors, the result considered for applying the distance rule is the median of results published by the different evaluators.
 
+## How it works
+
+Online validators who run a distance oracle will compute the distance rule for any distance evaluation request. However, they can publish their result only when writing a block. This is why distance evaluation is a probabilistic process, that may fail to provide a result if there are not enough validators running an oracle.
+
+For an evaluation period of N blocks, in order to guarantee a probability less or equal to P that evaluation fails, the network needs at least the following proportion of validators to run an oracle: 1-P^(1/N).
+
+In case no evaluation is submitted, the identity is not validated, but the requester is fully refunded and can try again without additional cost or restriction.
+
 ## Running distance evaluation
 
 Any smith member authoring blocks can run a distance evaluation oracle. It is better to have a machine more powerful than the reference machine.
