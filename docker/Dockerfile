@@ -53,7 +53,7 @@ ARG chain="gdev"
 RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
-    cargo build -Zgit=shallow-deps --locked $CARGO_OPTIONS --no-default-features $BENCH_OPTIONS --features $chain --target "$RUST_ARCH_TRIPLET" && \
+    cargo build -Zgit=shallow-deps --locked $CARGO_OPTIONS --no-default-features $BENCH_OPTIONS --features ${chain},embed --target "$RUST_ARCH_TRIPLET" && \
     cargo build -Zgit=shallow-deps --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" --package distance-oracle && \
     mkdir -p build && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/ && \
