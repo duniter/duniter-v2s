@@ -83,13 +83,28 @@ pub fn docker_deploy(network: String) -> Result<()> {
         .args(["manifest", "rm", &manifest])
         .status();
 
-    // Étape 3: Construire l'image multi-architecture
-    println!("🔨 Construction de l'image multi-architecture...");
+    // Étape 3: Construire l'image multi-architecture (séquentiellement pour économiser la RAM)
+    println!("🔨 Construction de l'image pour linux/amd64...");
     exec_should_success(Command::new("podman").args([
         "build",
         "--layers",
         "--platform",
-        "linux/amd64,linux/arm64",
+        "linux/amd64",
+        "--manifest",
+        &manifest,
+        "-f",
+        "docker/Dockerfile",
+        "--build-arg",
+        &format!("chain={}", runtime),
+        ".",
+    ]))?;
+
+    println!("🔨 Construction de l'image pour linux/arm64...");
+    exec_should_success(Command::new("podman").args([
+        "build",
+        "--layers",
+        "--platform",
+        "linux/arm64",
         "--manifest",
         &manifest,
         "-f",
