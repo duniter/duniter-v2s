@@ -177,13 +177,19 @@ cargo xtask release client trigger-builds gdev-1000 network/gdev-1000
 This command will:
 
 - Trigger a CI pipeline on the specified branch
-- Start 4 release jobs (Debian/RPM × ARM/x64)
+- Start 7 release jobs:
+  - 4 package builds (Debian/RPM × ARM/x64)
+  - 2 Docker builds (one per architecture on dedicated runners)
+  - 1 manifest creation job (combines both Docker images into a single tag)
 - Monitor their execution
-- Download artifacts from successful jobs
+- Download artifacts from successful jobs (.deb and .rpm)
 - Upload .deb and .rpm files to the release
 
-**Note:** Docker images are currently not built in CI (require privileged mode).
-Build them locally after CI completes (see below).
+**Docker images:** The CI builds Docker images in parallel on ARM and x64
+runners, then creates a **single multi-arch manifest** (e.g.,
+`duniter/duniter-v2s-gtest:1100-0.12.0`) that works automatically on both
+architectures. The `DUNITERTEAM_PASSWD` variable must be set in the GitLab CI/CD
+variables.
 
 #### Option B: Manual local builds
 
@@ -213,9 +219,10 @@ cargo xtask release client create gdev-1000 network/gdev-1000 --upload-packages
 To build for multiple architectures, you need to use cross-compilation tools or
 run the commands on different machines.
 
-### Step 3: Build and push Docker images
+### Step 3: Build and push Docker images (Optional - for local testing)
 
-Docker images must be built locally (not in CI) due to technical requirements:
+Docker images are normally built automatically by the CI (Option A). However,
+you can also build them locally for testing:
 
 ```bash
 export DUNITERTEAM_PASSWD=your_dockerhub_password_here
@@ -232,6 +239,10 @@ cargo xtask release client docker gdev-1000
 This builds a multi-architecture image (amd64 + arm64) and pushes it to
 DockerHub. The build system automatically detects whether to use Docker or
 Podman.
+
+**Note:** The `--arch` flag can be used to build for a specific architecture
+only (e.g., `--arch amd64`), which pushes an image with the architecture in the
+tag (e.g., `1100-0.12.0-amd64`). This is mainly for CI use or testing.
 
 ## Runtime release
 

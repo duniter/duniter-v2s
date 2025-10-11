@@ -82,6 +82,7 @@ pub async fn trigger_release_builds(
         JobConfig::new("release_rpm_x64", vec!["target/generate-rpm/*.rpm"]),
         JobConfig::new("release_docker_arm", vec![]),
         JobConfig::new("release_docker_x64", vec![]),
+        JobConfig::new("release_docker_manifest", vec![]), // Creates multi-arch manifest
     ];
 
     // Step 1: Trigger the pipeline

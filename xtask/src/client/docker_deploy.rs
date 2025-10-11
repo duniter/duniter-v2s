@@ -114,7 +114,7 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
                 &format!("linux/{}", arch),
                 "--tag",
                 &format!("{}:{}", image_name, docker_tag),
-                "--load",
+                "--push", // Push directly for single-arch (needed for manifest creation)
                 "-f",
                 "docker/Dockerfile",
                 "--build-arg",
@@ -173,17 +173,8 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
         }
     }
 
-    // Étape 4: Pousser l'image (seulement pour Podman ou Docker single-arch)
-    if container_tool == "docker" {
-        if let Some(_) = arch {
-            // Pour Docker single-arch, on push après load
-            println!("📤 Poussée de l'image avec le tag spécifique...");
-            exec_should_success(
-                Command::new("docker").args(["push", &format!("{}:{}", image_name, docker_tag)]),
-            )?;
-        }
-        // Pour Docker multi-arch, le push est déjà fait avec --push dans buildx
-    } else {
+    // Étape 4: Pousser l'image (seulement pour Podman, Docker a déjà push avec --push)
+    if container_tool == "podman" {
         // Podman: utiliser manifest push
         println!("📤 Poussée de l'image avec le tag spécifique...");
         exec_should_success(Command::new(container_tool).args([

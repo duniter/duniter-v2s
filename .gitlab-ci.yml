@@ -104,6 +104,52 @@ release_docker_x64:
   variables:
     ARCH: amd64
 
+release_docker_manifest:
+  extends: .release_rules
+  stage: release
+  needs:
+    - release_docker_arm
+    - release_docker_x64
+  tags:
+    - kepler
+  image: docker:latest
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
+  before_script:
+    - apk add --no-cache bash grep
+  script:
+    - docker login -u duniterteam -p $DUNITERTEAM_PASSWD docker.io
+    - |
+      # Extract runtime from NETWORK (e.g., gtest-1100 -> gtest)
+      RUNTIME=$(echo $NETWORK | sed 's/-[0-9].*//')
+      
+      # Get client version from node/Cargo.toml
+      CLIENT_VERSION=$(grep '^version = ' node/Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+      
+      # Get runtime version from runtime/$RUNTIME/src/lib.rs
+      RUNTIME_VERSION=$(grep 'spec_version:' runtime/$RUNTIME/src/lib.rs | sed 's/.*spec_version: \([0-9]*\).*/\1/')
+      
+      IMAGE_NAME="duniter/duniter-v2s-${NETWORK}"
+      TAG="${RUNTIME_VERSION}-${CLIENT_VERSION}"
+      
+      echo "Creating multi-arch manifest for ${IMAGE_NAME}:${TAG}"
+      
+      # Create multi-arch manifest from arch-specific images
+      docker manifest create ${IMAGE_NAME}:${TAG} \
+        --amend ${IMAGE_NAME}:${TAG}-amd64 \
+        --amend ${IMAGE_NAME}:${TAG}-arm64
+      
+      docker manifest push ${IMAGE_NAME}:${TAG}
+      
+      # Also push as latest
+      docker manifest create ${IMAGE_NAME}:latest \
+        --amend ${IMAGE_NAME}:${TAG}-amd64 \
+        --amend ${IMAGE_NAME}:${TAG}-arm64
+      
+      docker manifest push ${IMAGE_NAME}:latest
+      
+      echo "✅ Multi-arch manifest created: ${IMAGE_NAME}:${TAG}"
+
 workflow:
   rules:
     - changes:
