@@ -48,7 +48,7 @@ struct JobResult {
     job_name: String,
     job_id: u64,
     status: String,
-    artifacts: Vec<PathBuf>,
+    artifact_patterns: Vec<String>,
 }
 
 /// Triggers release builds on GitLab CI and uploads artifacts to release
@@ -74,8 +74,28 @@ pub async fn trigger_release_builds(
         computed_tag
     };
 
-    // Define the jobs to run
-    let jobs = vec![
+    // Step 0: Check existing release assets to skip already completed jobs
+    println!("\n🔍 Step 0: Checking existing release assets...");
+    let existing_assets = match crate::gitlab::get_release_assets(release_tag.clone()).await {
+        Ok(assets) => {
+            println!("   Found {} existing assets", assets.len());
+            for (name, _) in &assets {
+                println!("     - {}", name);
+            }
+            assets
+        }
+        Err(e) => {
+            println!(
+                "   ⚠️  Could not fetch release assets (release may not exist yet): {}",
+                e
+            );
+            println!("   All jobs will be executed.");
+            Vec::new()
+        }
+    };
+
+    // Define all possible jobs
+    let all_jobs = vec![
         JobConfig::new("release_debian_arm", vec!["target/debian/*.deb"]),
         JobConfig::new("release_debian_x64", vec!["target/debian/*.deb"]),
         JobConfig::new("release_rpm_arm", vec!["target/generate-rpm/*.rpm"]),
@@ -84,6 +104,43 @@ pub async fn trigger_release_builds(
         JobConfig::new("release_docker_x64", vec![]),
         JobConfig::new("release_docker_manifest", vec![]), // Creates multi-arch manifest
     ];
+
+    // Filter jobs based on existing assets
+    let jobs: Vec<_> = all_jobs
+        .into_iter()
+        .filter(|job| {
+            let job_has_assets = match job.name.as_str() {
+                "release_debian_arm" | "release_debian_x64" => {
+                    existing_assets.iter().any(|(name, _)| {
+                        name.ends_with(".deb") && name.contains("arm64") == job.name.contains("arm")
+                    })
+                }
+                "release_rpm_arm" | "release_rpm_x64" => existing_assets.iter().any(|(name, _)| {
+                    name.ends_with(".rpm") && name.contains("arm64") == job.name.contains("arm")
+                }),
+                "release_docker_arm" | "release_docker_x64" | "release_docker_manifest" => {
+                    // Docker jobs don't upload artifacts, always run them
+                    false
+                }
+                _ => false,
+            };
+
+            if job_has_assets {
+                println!("   ⏭️  Skipping {} (assets already exist)", job.name);
+                false
+            } else {
+                println!("   ✅ Will run: {}", job.name);
+                true
+            }
+        })
+        .collect();
+
+    if jobs.is_empty() {
+        println!("\n✅ All assets already exist, nothing to build!");
+        return Ok(());
+    }
+
+    println!("   {} job(s) to execute", jobs.len());
 
     // Step 1: Trigger the pipeline
     println!("\n📡 Step 1: Triggering CI pipeline...");
@@ -181,12 +238,31 @@ pub async fn trigger_release_builds(
 
     let mut all_artifacts = Vec::new();
     for result in &job_results {
-        if result.status == "success" && !result.artifacts.is_empty() {
+        println!(
+            "   Job: {} - Status: {} - Has artifact patterns: {}",
+            result.job_name,
+            result.status,
+            !result.artifact_patterns.is_empty()
+        );
+
+        if result.status == "success" && !result.artifact_patterns.is_empty() {
             println!("   Downloading artifacts from job: {}", result.job_name);
             let downloaded = download_job_artifacts(result, &artifacts_dir).await?;
+            println!(
+                "   Downloaded {} files from {}",
+                downloaded.len(),
+                result.job_name
+            );
             all_artifacts.extend(downloaded);
+        } else if result.status == "success" && result.artifact_patterns.is_empty() {
+            println!(
+                "   ⚠️  Job {} succeeded but has no artifact patterns defined",
+                result.job_name
+            );
         }
     }
+
+    println!("   Total artifacts collected: {}", all_artifacts.len());
 
     // Step 7: Upload artifacts to GitLab release
     println!("\n📤 Step 6: Uploading artifacts to GitLab release...");
@@ -282,7 +358,7 @@ async fn monitor_jobs(pipeline_id: &u64, job_configs: &[JobConfig]) -> Result<Ve
                                 job_name: config.name.clone(),
                                 job_id: job.id,
                                 status: "success".to_string(),
-                                artifacts: Vec::new(),
+                                artifact_patterns: config.artifact_patterns.clone(),
                             },
                         );
                     }
@@ -294,7 +370,7 @@ async fn monitor_jobs(pipeline_id: &u64, job_configs: &[JobConfig]) -> Result<Ve
                                 job_name: config.name.clone(),
                                 job_id: job.id,
                                 status: "failed".to_string(),
-                                artifacts: Vec::new(),
+                                artifact_patterns: Vec::new(),
                             },
                         );
                     }
@@ -306,7 +382,7 @@ async fn monitor_jobs(pipeline_id: &u64, job_configs: &[JobConfig]) -> Result<Ve
                                 job_name: config.name.clone(),
                                 job_id: job.id,
                                 status: "canceled".to_string(),
-                                artifacts: Vec::new(),
+                                artifact_patterns: Vec::new(),
                             },
                         );
                     }
@@ -318,7 +394,7 @@ async fn monitor_jobs(pipeline_id: &u64, job_configs: &[JobConfig]) -> Result<Ve
                                 job_name: config.name.clone(),
                                 job_id: job.id,
                                 status: "skipped".to_string(),
-                                artifacts: Vec::new(),
+                                artifact_patterns: Vec::new(),
                             },
                         );
                     }

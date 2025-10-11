@@ -202,9 +202,9 @@ pub(super) async fn print_spec(network: String) -> Result<()> {
         }
     };
     let assets = get_release::get_release(network).await?;
-    if let Some(gdev_spec) = assets.iter().find(|asset| asset.ends_with(spec_file)) {
+    if let Some((_, url)) = assets.iter().find(|(name, _)| name.ends_with(spec_file)) {
         let client = reqwest::Client::new();
-        let res = client.get(gdev_spec).send().await?;
+        let res = client.get(url).send().await?;
         let spec = String::from_utf8(res.bytes().await?.to_vec())?;
         println!("{}", spec);
     }
@@ -346,6 +346,11 @@ pub(crate) async fn download_job_artifacts(
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
     download_artifact::download_job_artifacts(gitlab_token, project_id, job_id, output_path).await
+}
+
+/// Get release assets (name, URL) from a GitLab release
+pub(crate) async fn get_release_assets(tag: String) -> Result<Vec<(String, String)>> {
+    get_release::get_release(tag).await
 }
 
 pub(crate) fn extract_zip(zip_path: &std::path::Path, output_dir: &std::path::Path) -> Result<()> {
