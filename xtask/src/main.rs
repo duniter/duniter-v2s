@@ -45,6 +45,11 @@ enum DuniterXTaskCommand {
     },
     /// Generate documentation (calls and events)
     GenDoc,
+    /// Release management commands (client, network, runtime)
+    Release {
+        #[clap(subcommand)]
+        command: ReleaseCommand,
+    },
     /// Inject runtime code in raw specs
     InjectRuntimeCode {
         #[clap(short, long)]
@@ -136,6 +141,106 @@ enum DuniterXTaskCommand {
     },
 }
 
+#[derive(Debug, clap::Subcommand)]
+enum ReleaseCommand {
+    /// Client release commands
+    #[clap(subcommand)]
+    Client(ClientReleaseCommand),
+    /// Network release commands
+    #[clap(subcommand)]
+    Network(NetworkReleaseCommand),
+    /// Runtime release commands
+    #[clap(subcommand)]
+    Runtime(RuntimeReleaseCommand),
+}
+
+#[derive(Debug, clap::Subcommand)]
+enum ClientReleaseCommand {
+    /// Build raw specs for a network
+    BuildRawSpecs {
+        /// Format: <network>-<runtime-version> (ex: gtest-1100, g1-1000, gdev-1000)
+        network: String,
+    },
+    /// Create GitLab release with specs files
+    Create {
+        /// Format: <network>-<runtime-version> (ex: gtest-1100, gdev-1000)
+        network: String,
+        /// Format: network/<network>-<runtime-version> (ex: network/gtest-1100)
+        branch: String,
+    },
+    /// Build DEB package for current architecture
+    BuildDeb {
+        /// Format: <network>-<runtime-version> (ex: gtest-1100, gdev-1000)
+        network: String,
+    },
+    /// Build RPM package for current architecture
+    BuildRpm {
+        /// Format: <network>-<runtime-version> (ex: gtest-1100, gdev-1000)
+        network: String,
+    },
+    /// Build and push Docker image (multi-arch by default)
+    Docker {
+        /// Format: <network>-<runtime-version> (ex: gtest-1100, gdev-1000)
+        network: String,
+        /// Target architecture: amd64 or arm64 (omit for multi-arch)
+        #[clap(long)]
+        arch: Option<String>,
+    },
+    /// Trigger CI builds and upload artifacts to release
+    TriggerBuilds {
+        /// Format: <network>-<runtime-version> (ex: gtest-1100, gdev-1000)
+        network: String,
+        /// Format: network/<network>-<runtime-version> (ex: network/gtest-1100)
+        branch: String,
+        /// Release tag (auto-computed if omitted)
+        #[clap(long)]
+        release_tag: Option<String>,
+    },
+}
+
+#[derive(Debug, clap::Subcommand)]
+enum NetworkReleaseCommand {
+    /// Build network specs for bootstrapping
+    BuildSpecs {
+        /// Network name (ex: gdev, gtest, g1)
+        runtime: String,
+    },
+    /// Build network runtime WASM for bootstrapping
+    BuildRuntime {
+        /// Network name (ex: gdev, gtest, g1)
+        runtime: String,
+    },
+    /// Create network release on GitLab
+    Create {
+        /// Format: <network>-<runtime-version> (ex: gtest-1000, gdev-1000)
+        network: String,
+        /// Format: network/<network>-<runtime-version> (ex: network/gtest-1000)
+        branch: String,
+    },
+    /// Generate G1 migration data
+    G1Data {
+        /// Custom G1 dump URL (optional)
+        #[clap(long)]
+        dump_url: Option<String>,
+    },
+}
+
+#[derive(Debug, clap::Subcommand)]
+enum RuntimeReleaseCommand {
+    /// Build runtime WASM binary
+    Build {
+        /// Runtime name (ex: gdev, gtest, g1)
+        runtime: String,
+    },
+    /// Create runtime release on GitLab
+    Create {
+        /// Runtime name (ex: gdev, gtest, g1)
+        runtime: String,
+        /// Format: runtime/<network>-<new-runtime-version> (ex: runtime/gtest-1100)
+        branch: String,
+    },
+}
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     let args = DuniterXTask::parse();
@@ -161,6 +266,55 @@ async fn main() -> Result<()> {
     match args.command {
         DuniterXTaskCommand::Build { production } => build(production),
         DuniterXTaskCommand::GenDoc => gen_doc::gen_doc(),
+        DuniterXTaskCommand::Release { command } => match command {
+            ReleaseCommand::Client(cmd) => match cmd {
+                ClientReleaseCommand::BuildRawSpecs { network } => {
+                    client::build_raw_specs::build_raw_specs(network)
+                }
+                ClientReleaseCommand::Create { network, branch } => {
+                    client::create_client_release::create_client_release(network, branch).await
+                }
+                ClientReleaseCommand::BuildDeb { network } => client::build_deb::build_deb(network),
+                ClientReleaseCommand::BuildRpm { network } => client::build_rpm::build_rpm(network),
+                ClientReleaseCommand::Docker { network, arch } => {
+                    client::docker_deploy::docker_deploy(network, arch)
+                }
+                ClientReleaseCommand::TriggerBuilds {
+                    network,
+                    branch,
+                    release_tag,
+                } => {
+                    client::trigger_release_builds::trigger_release_builds(
+                        network,
+                        branch,
+                        release_tag,
+                    )
+                    .await
+                }
+            },
+            ReleaseCommand::Network(cmd) => match cmd {
+                NetworkReleaseCommand::BuildSpecs { runtime } => {
+                    network::build_network_specs::build_network_specs(runtime)
+                }
+                NetworkReleaseCommand::BuildRuntime { runtime } => {
+                    network::build_network_runtime::build_network_runtime(runtime)
+                }
+                NetworkReleaseCommand::Create { network, branch } => {
+                    network::create_network_release::create_network_release(network, branch).await
+                }
+                NetworkReleaseCommand::G1Data { dump_url } => {
+                    network::g1_data::g1_data(dump_url).await
+                }
+            },
+            ReleaseCommand::Runtime(cmd) => match cmd {
+                RuntimeReleaseCommand::Build { runtime } => {
+                    runtime::build_runtime::build_runtime(runtime)
+                }
+                RuntimeReleaseCommand::Create { runtime, branch } => {
+                    runtime::create_runtime_release::create_runtime_release(runtime, branch).await
+                }
+            },
+        },
         DuniterXTaskCommand::InjectRuntimeCode { runtime, raw_spec } => {
             inject_runtime_code(&raw_spec, &runtime)
         }
