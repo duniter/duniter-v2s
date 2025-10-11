@@ -126,10 +126,10 @@ pub fn build_raw_specs(network: String) -> Result<()> {
 
     // Étape 4: Fusionner les spécifications
     println!("🔗 Fusion des spécifications...");
-    let final_spec_file = format!("{}.json", runtime);
+    let final_spec_file = format!("release/client/{}.json", runtime);
     exec_should_success(
         Command::new("jq")
-            .args(["-s", ".[0] * .[1]", &client_specs_json, &printed_spec_file])
+            .args(["-s", ".[0] * .[1]", &printed_spec_file, &client_specs_json])
             .stdout(std::fs::File::create(&final_spec_file)?),
     )?;
 
