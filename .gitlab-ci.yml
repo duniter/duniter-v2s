@@ -11,6 +11,99 @@ stages:
   - deploy
   - deploy_readme
 
+# Job templates for release builds (without tags/image, set by jobs)
+.release_rules:
+  stage: release
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH =~ /^network\//
+      when: manual
+    - when: never
+
+.debian_build_template:
+  extends: .release_rules
+  before_script:
+    # Install build dependencies
+    - apt-get update -qq && apt-get install -y -qq protobuf-compiler clang libclang-dev
+  script:
+    - cargo xtask client-build-deb $NETWORK
+
+.rpm_build_template:
+  extends: .release_rules
+  before_script:
+    # Install RPM build tools and dependencies
+    - apt-get update -qq && apt-get install -y -qq rpm protobuf-compiler clang libclang-dev
+  script:
+    - cargo xtask client-build-rpm $NETWORK
+
+.docker_deploy_template:
+  extends: .release_rules
+  image: docker:latest
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
+  before_script:
+    # Install Rust and build dependencies
+    - apk add --no-cache curl bash gcc musl-dev
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
+    - source $HOME/.cargo/env
+    - docker info
+  script:
+    - cargo xtask client-docker-deploy $NETWORK --arch $ARCH
+
+# Release build jobs
+release_debian_arm:
+  extends:
+    - .env_arm
+    - .debian_build_template
+  needs: []
+  artifacts:
+    paths:
+      - target/debian/*.deb
+
+release_debian_x64:
+  extends:
+    - .env
+    - .debian_build_template
+  needs: []
+  artifacts:
+    paths:
+      - target/debian/*.deb
+
+release_rpm_arm:
+  extends:
+    - .env_arm
+    - .rpm_build_template
+  needs: []
+  artifacts:
+    paths:
+      - target/generate-rpm/*.rpm
+
+release_rpm_x64:
+  extends:
+    - .env
+    - .rpm_build_template
+  needs: []
+  artifacts:
+    paths:
+      - target/generate-rpm/*.rpm
+
+release_docker_arm:
+  extends: .docker_deploy_template
+  needs: []
+  tags:
+    - linuxARM
+  variables:
+    ARCH: arm64
+
+release_docker_x64:
+  extends: .docker_deploy_template
+  needs: []
+  tags:
+    - kepler
+  variables:
+    ARCH: amd64
+
 workflow:
   rules:
     - changes:
@@ -55,6 +148,11 @@ check_metadata:
   image: paritytech/ci-unified:bullseye-1.88.0
   tags:
     - kepler
+
+.env_arm:
+  image: rust:latest  # Rust image for ARM builds
+  tags:
+    - linuxARM
 
 fmt_and_clippy:
   extends: .env
