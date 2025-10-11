@@ -74,23 +74,32 @@ pub async fn trigger_release_builds(
         computed_tag
     };
 
-    // Step 0: Check existing release assets to skip already completed jobs
-    println!("\n🔍 Step 0: Checking existing release assets...");
+    // Step 0: Check that the release exists
+    println!("\n🔍 Step 0: Checking GitLab release...");
     let existing_assets = match crate::gitlab::get_release_assets(release_tag.clone()).await {
         Ok(assets) => {
+            println!("   ✅ Release '{}' found", release_tag);
             println!("   Found {} existing assets", assets.len());
-            for (name, _) in &assets {
-                println!("     - {}", name);
+            if !assets.is_empty() {
+                for (name, _) in &assets {
+                    println!("     - {}", name);
+                }
             }
             assets
         }
         Err(e) => {
-            println!(
-                "   ⚠️  Could not fetch release assets (release may not exist yet): {}",
+            return Err(anyhow!(
+                "❌ GitLab release '{}' does not exist!\n\
+                \n\
+                You must create the release first using:\n\
+                  cargo xtask release client create {} {}\n\
+                \n\
+                Error details: {}",
+                release_tag,
+                network,
+                branch,
                 e
-            );
-            println!("   All jobs will be executed.");
-            Vec::new()
+            ));
         }
     };
 
