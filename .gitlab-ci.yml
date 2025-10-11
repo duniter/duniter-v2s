@@ -11,6 +11,90 @@ stages:
   - deploy
   - deploy_readme
 
+# Job templates for release builds
+.debian_build_template:
+  extends: .env
+  stage: release
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH =~ /^network\//
+      when: manual
+    - when: never
+  script:
+    - cargo xtask client-build-deb $NETWORK
+
+.rpm_build_template:
+  extends: .env
+  stage: release
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH =~ /^network\//
+      when: manual
+    - when: never
+  script:
+    - cargo xtask client-build-rpm $NETWORK
+
+.docker_deploy_template:
+  extends: .env
+  stage: release
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH =~ /^network\//
+      when: manual
+    - when: never
+  script:
+    - cargo xtask client-docker-deploy $NETWORK --arch $ARCH
+
+# Release build jobs
+release_debian_arm:
+  extends: .debian_build_template
+  tags:
+    - linuxARM
+  artifacts:
+    paths:
+      - target/debian/*.deb
+
+release_debian_x64:
+  extends: .debian_build_template
+  tags:
+    - docker
+  artifacts:
+    paths:
+      - target/debian/*.deb
+
+release_rpm_arm:
+  extends: .rpm_build_template
+  tags:
+    - linuxARM
+  artifacts:
+    paths:
+      - target/generate-rpm/*.rpm
+
+release_rpm_x64:
+  extends: .rpm_build_template
+  tags:
+    - docker
+  artifacts:
+    paths:
+      - target/generate-rpm/*.rpm
+
+release_docker_arm:
+  extends: .docker_deploy_template
+  tags:
+    - linuxARM
+  variables:
+    ARCH: arm64
+
+release_docker_x64:
+  extends: .docker_deploy_template
+  tags:
+    - docker
+  variables:
+    ARCH: amd64
+
 workflow:
   rules:
     - changes:

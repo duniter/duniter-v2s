@@ -17,9 +17,12 @@
 mod create_asset_link;
 mod create_network_release;
 mod create_release;
+mod download_artifact;
 mod get_changes;
 mod get_issues;
+mod get_pipeline_status;
 mod get_release;
+mod trigger_pipeline;
 mod upload_file;
 
 use anyhow::{Context, Result, anyhow};
@@ -295,4 +298,56 @@ pub(crate) async fn upload_file(
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
     upload_file::upload_file(gitlab_token, project_id, file_path, filename).await
+}
+
+pub(crate) async fn trigger_pipeline(
+    project_id: String,
+    branch: String,
+    variables: Vec<(String, String)>,
+) -> Result<trigger_pipeline::PipelineResponse> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    trigger_pipeline::trigger_pipeline(gitlab_token, project_id, branch, variables).await
+}
+
+#[allow(dead_code)]
+pub(crate) async fn get_pipeline_status(
+    project_id: String,
+    pipeline_id: u64,
+) -> Result<get_pipeline_status::PipelineStatus> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    get_pipeline_status::get_pipeline_status(gitlab_token, project_id, pipeline_id).await
+}
+
+pub(crate) async fn get_pipeline_jobs(
+    project_id: String,
+    pipeline_id: u64,
+) -> Result<Vec<get_pipeline_status::JobStatus>> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    get_pipeline_status::get_pipeline_jobs(gitlab_token, project_id, pipeline_id).await
+}
+
+pub(crate) async fn play_job(
+    project_id: String,
+    job_id: u64,
+) -> Result<get_pipeline_status::JobStatus> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    get_pipeline_status::play_job(gitlab_token, project_id, job_id).await
+}
+
+pub(crate) async fn download_job_artifacts(
+    project_id: String,
+    job_id: u64,
+    output_path: &std::path::Path,
+) -> Result<()> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    download_artifact::download_job_artifacts(gitlab_token, project_id, job_id, output_path).await
+}
+
+pub(crate) fn extract_zip(zip_path: &std::path::Path, output_dir: &std::path::Path) -> Result<()> {
+    download_artifact::extract_zip(zip_path, output_dir)
 }

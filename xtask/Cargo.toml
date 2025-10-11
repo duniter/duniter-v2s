@@ -31,6 +31,7 @@ tera = { workspace = true }
 tokio = { workspace = true, features = ["macros"] }
 version_check = { workspace = true }
 weight-analyzer = { workspace = true }
+zip = "2.2"
 
 [features]
 std = []

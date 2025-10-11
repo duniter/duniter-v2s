@@ -91,6 +91,9 @@ enum DuniterXTaskCommand {
     ClientDockerDeploy {
         /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
         network: String,
+        /// Architecture cible (amd64, arm64) ou None pour multi-arch
+        #[clap(long)]
+        arch: Option<String>,
     },
     /// Create client release (reprend la tâche create_client_release de la CI)
     ClientCreateRelease {
@@ -108,6 +111,15 @@ enum DuniterXTaskCommand {
     ClientBuildDeb {
         /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
         network: String,
+    },
+    /// Trigger release builds on GitLab CI and upload artifacts to release
+    ClientTriggerReleaseBuilds {
+        /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+        network: String,
+        /// Branche Git à utiliser
+        branch: String,
+        /// Tag de la release où uploader les artifacts
+        release_tag: String,
     },
     /// Build runtime (reprend la tâche build_runtime de la CI)
     RuntimeBuild {
@@ -173,14 +185,22 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::ClientBuildRawSpecs { network } => {
             client::build_raw_specs::build_raw_specs(network)
         }
-        DuniterXTaskCommand::ClientDockerDeploy { network } => {
-            client::docker_deploy::docker_deploy(network)
+        DuniterXTaskCommand::ClientDockerDeploy { network, arch } => {
+            client::docker_deploy::docker_deploy(network, arch)
         }
         DuniterXTaskCommand::ClientCreateRelease { network, branch } => {
             client::create_client_release::create_client_release(network, branch).await
         }
         DuniterXTaskCommand::ClientBuildRpm { network } => client::build_rpm::build_rpm(network),
         DuniterXTaskCommand::ClientBuildDeb { network } => client::build_deb::build_deb(network),
+        DuniterXTaskCommand::ClientTriggerReleaseBuilds {
+            network,
+            branch,
+            release_tag,
+        } => {
+            client::trigger_release_builds::trigger_release_builds(network, branch, release_tag)
+                .await
+        }
         DuniterXTaskCommand::RuntimeBuild { runtime } => {
             runtime::build_runtime::build_runtime(runtime)
         }

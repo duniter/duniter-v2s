@@ -97,15 +97,17 @@ every day at midnight.
 A client release is required to distribute a new version of the `duniter-v2s`
 binary. It will be released under three flavors:
 
-- DEB package for Debian x86 based systems
-- RPM package for Fedora x86 based systems
-- Docker image (both for amd64 and arm64 architectures)
+- DEB package for Debian (x86_64 and ARM64 architectures)
+- RPM package for Fedora (x86_64 and ARM64 architectures)
+- Docker image (amd64 and arm64 architectures)
 
 ### Prerequisites
 
 You must know:
 
 - the network name (e.g. `gdev`) refered as `<network>` in the following
+- the runtime version (e.g. `1000`) refered as `<runtime-version>` in the
+  following
 - the client version (e.g. `0.11.1`) refered as `<client-version>` in the
   following
 
@@ -117,32 +119,88 @@ You must have:
   parameters (commitee members, token symbol, etc.)
 - a GitLab milestone named `client-<client-version>` (e.g. `client-0.11.1`)
 - set the `GITLAB_TOKEN` environment variable with your GitLab token
-- set the `DUNITERTEAM_PASSWD` environment variable set with the DockerHub
-  password of the Duniter organization
+- set the `DUNITERTEAM_PASSWD` environment variable with the DockerHub password
+  of the Duniter organization (only for manual Docker deployment)
 
-### Commands
+### Step 1: Build raw specs and create GitLab release
 
-To create the client release, run:
+First, build the raw specs and create the GitLab release:
 
 ```bash
-cargo xtask client-build-raw-specs <network>-<runtime-initial-version>
-cargo xtask client-build-deb <network>-<runtime-initial-version>
-cargo xtask client-build-rpm <network>-<runtime-initial-version>
-cargo xtask client-docker-deploy <network>-<runtime-initial-version>
-cargo xtask client-create-release <network>-<runtime-initial-version> network/<network>-<runtime-initial-version>
+cargo xtask client-build-raw-specs <network>-<runtime-version>
+cargo xtask client-create-release <network>-<runtime-version> network/<network>-<runtime-version>
 ```
 
-Example :
+Example:
+
+```bash
+export GITLAB_TOKEN=your_token_here
+cargo xtask client-build-raw-specs gdev-1000
+cargo xtask client-create-release gdev-1000 network/gdev-1000
+```
+
+This creates the GitLab release with the basic specs files.
+
+### Step 2: Build client packages and Docker images
+
+You have **two options** to build and publish the client packages:
+
+#### Option A: Automated CI builds (Recommended)
+
+This method triggers the CI builds on GitLab runners, which will build all
+packages (DEB, RPM, Docker) for both x86_64 and ARM64 architectures, then
+automatically upload them to the release.
+
+```bash
+cargo xtask client-trigger-release-builds <network>-<runtime-version> network/<network>-<runtime-version> <release-tag>
+```
+
+The `<release-tag>` is the release name created in Step 1, in the format:
+`<network>-<runtime-version>-<client-version>` (e.g., `gdev-1000-0.11.1`).
+
+Example:
+
+```bash
+export GITLAB_TOKEN=your_token_here
+cargo xtask client-trigger-release-builds gdev-1000 network/gdev-1000 gdev-1000-0.11.1
+```
+
+This command will:
+
+- Trigger a CI pipeline on the specified branch
+- Start all 6 release jobs (Debian/RPM × ARM/x64 + Docker × ARM/x64)
+- Monitor their execution
+- Download artifacts from successful jobs
+- Upload .deb and .rpm files to the release
+
+**Note:** The Docker images will be pushed to DockerHub automatically by the CI
+jobs. The `DUNITERTEAM_PASSWD` variable must be set in the GitLab CI/CD
+variables.
+
+#### Option B: Manual local builds
+
+If you prefer to build packages locally (e.g., for testing or if CI is
+unavailable), you can run these commands:
+
+```bash
+cargo xtask client-build-deb <network>-<runtime-version>
+cargo xtask client-build-rpm <network>-<runtime-version>
+cargo xtask client-docker-deploy <network>-<runtime-version>
+```
+
+Example:
 
 ```bash
 export GITLAB_TOKEN=your_token_here
 export DUNITERTEAM_PASSWD=your_dockerhub_password_here
-cargo xtask client-build-raw-specs gdev-1000
 cargo xtask client-build-deb gdev-1000
 cargo xtask client-build-rpm gdev-1000
 cargo xtask client-docker-deploy gdev-1000
-cargo xtask client-create-release gdev-1000 network/gdev-1000
 ```
+
+**Note:** Manual builds will only create packages for your local architecture.
+To build for multiple architectures, you need to use cross-compilation tools or
+run the commands on different machines.
 
 ## Runtime release
 
