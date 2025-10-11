@@ -21,11 +21,16 @@ use std::{fs, path::Path, process::Command};
 /// Cette fonction reproduit l'étape de CI create_client_release qui :
 /// 1. Crée la release GitLab avec le milestone
 /// 2. Upload les fichiers client-specs.yaml et raw.json
-/// 3. Crée les liens d'assets pour la release
+/// 3. Optionnellement upload les packages .deb et .rpm locaux
 /// # Arguments
 /// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
 /// * `branch` - La branche Git à utiliser
-pub async fn create_client_release(network: String, branch: String) -> Result<()> {
+/// * `upload_packages` - Si true, upload aussi les packages .deb/.rpm trouvés localement
+pub async fn create_client_release(
+    network: String,
+    branch: String,
+    upload_packages: bool,
+) -> Result<()> {
     println!(
         "🚀 Création de la release client pour le réseau: {}",
         network
@@ -73,16 +78,26 @@ pub async fn create_client_release(network: String, branch: String) -> Result<()
         println!("✅ Fichier trouvé: {}", file);
     }
 
-    // Rechercher les fichiers .deb et .rpm dans target
-    let package_files = find_package_files()?;
-    if !package_files.is_empty() {
-        println!("📦 Packages trouvés:");
-        for (asset_name, file_path) in &package_files {
-            println!("   - {} ({})", asset_name, file_path);
+    // Rechercher les fichiers .deb et .rpm dans target (seulement si demandé)
+    let package_files = if upload_packages {
+        let packages = find_package_files()?;
+        if !packages.is_empty() {
+            println!("📦 Packages trouvés (seront uploadés):");
+            for (asset_name, file_path) in &packages {
+                println!("   - {} ({})", asset_name, file_path);
+            }
+        } else {
+            println!(
+                "⚠️  Option --upload-packages activée mais aucun package .deb ou .rpm trouvé dans target/"
+            );
         }
+        packages
     } else {
-        println!("⚠️  Aucun package .deb ou .rpm trouvé dans target/");
-    }
+        println!(
+            "ℹ️  Les packages locaux ne seront pas uploadés (utilisez --upload-packages pour les inclure)"
+        );
+        Vec::new()
+    };
 
     // Étape 1: Créer la release client via GitLab
     println!("🌐 Création de la release client GitLab...");

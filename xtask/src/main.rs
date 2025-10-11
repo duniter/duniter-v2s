@@ -106,6 +106,9 @@ enum DuniterXTaskCommand {
         network: String,
         /// Branche Git à utiliser
         branch: String,
+        /// Also upload local DEB/RPM packages to the release
+        #[clap(long)]
+        upload_packages: bool,
     },
     /// Build RPM (reprend la tâche build_rpm de la CI)
     ClientBuildRpm {
@@ -167,6 +170,9 @@ enum ClientReleaseCommand {
         network: String,
         /// Format: network/<network>-<runtime-version> (ex: network/gtest-1100)
         branch: String,
+        /// Also upload local DEB/RPM packages to the release (default: false)
+        #[clap(long)]
+        upload_packages: bool,
     },
     /// Build DEB package for current architecture
     BuildDeb {
@@ -271,8 +277,17 @@ async fn main() -> Result<()> {
                 ClientReleaseCommand::BuildRawSpecs { network } => {
                     client::build_raw_specs::build_raw_specs(network)
                 }
-                ClientReleaseCommand::Create { network, branch } => {
-                    client::create_client_release::create_client_release(network, branch).await
+                ClientReleaseCommand::Create {
+                    network,
+                    branch,
+                    upload_packages,
+                } => {
+                    client::create_client_release::create_client_release(
+                        network,
+                        branch,
+                        upload_packages,
+                    )
+                    .await
                 }
                 ClientReleaseCommand::BuildDeb { network } => client::build_deb::build_deb(network),
                 ClientReleaseCommand::BuildRpm { network } => client::build_rpm::build_rpm(network),
@@ -343,8 +358,13 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::ClientDockerDeploy { network, arch } => {
             client::docker_deploy::docker_deploy(network, arch)
         }
-        DuniterXTaskCommand::ClientCreateRelease { network, branch } => {
-            client::create_client_release::create_client_release(network, branch).await
+        DuniterXTaskCommand::ClientCreateRelease {
+            network,
+            branch,
+            upload_packages,
+        } => {
+            client::create_client_release::create_client_release(network, branch, upload_packages)
+                .await
         }
         DuniterXTaskCommand::ClientBuildRpm { network } => client::build_rpm::build_rpm(network),
         DuniterXTaskCommand::ClientBuildDeb { network } => client::build_deb::build_deb(network),

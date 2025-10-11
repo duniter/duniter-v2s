@@ -74,20 +74,20 @@ You must have:
 To create the network release, run:
 
 ```bash
-cargo xtask network-g1-data
-cargo xtask network-build-runtime <network>
-cargo xtask network-build-specs <network>
-cargo xtask network-create-release <network>-<runtime-initial-version> network/<network>-<runtime-initial-version>
+cargo xtask release network g1-data
+cargo xtask release network build-runtime <network>
+cargo xtask release network build-specs <network>
+cargo xtask release network create <network>-<runtime-initial-version> network/<network>-<runtime-initial-version>
 ```
 
 Example :
 
 ```bash
 export GITLAB_TOKEN=your_token_here
-cargo xtask network-g1-data
-cargo xtask network-build-runtime gdev
-cargo xtask network-build-specs gdev
-cargo xtask network-create-release gdev-1000 network/gdev-1000
+cargo xtask release network g1-data
+cargo xtask release network build-runtime gdev
+cargo xtask release network build-specs gdev
+cargo xtask release network create gdev-1000 network/gdev-1000
 ```
 
 ### Notes
@@ -130,19 +130,24 @@ You must have:
 First, build the raw specs and create the GitLab release:
 
 ```bash
-cargo xtask client-build-raw-specs <network>-<runtime-version>
-cargo xtask client-create-release <network>-<runtime-version> network/<network>-<runtime-version>
+cargo xtask release client build-raw-specs <network>-<runtime-version>
+cargo xtask release client create <network>-<runtime-version> network/<network>-<runtime-version>
 ```
 
 Example:
 
 ```bash
 export GITLAB_TOKEN=your_token_here
-cargo xtask client-build-raw-specs gdev-1000
-cargo xtask client-create-release gdev-1000 network/gdev-1000
+cargo xtask release client build-raw-specs gdev-1000
+cargo xtask release client create gdev-1000 network/gdev-1000
 ```
 
-This creates the GitLab release with the basic specs files.
+This creates the GitLab release with the specs files
+(`<network>_client-specs.yaml` and `<network>-raw.json`).
+
+**Note:** By default, this command only uploads the specs files. If you want to
+also upload local DEB/RPM packages, use the `--upload-packages` flag. However,
+it's recommended to use the automated CI builds (Step 2, Option A) instead.
 
 ### Step 2: Build client packages and Docker images
 
@@ -155,7 +160,7 @@ packages (DEB, RPM, Docker) for both x86_64 and ARM64 architectures, then
 automatically upload them to the release.
 
 ```bash
-cargo xtask client-trigger-release-builds <network>-<runtime-version> network/<network>-<runtime-version>
+cargo xtask release client trigger-builds <network>-<runtime-version> network/<network>-<runtime-version>
 ```
 
 The release tag is automatically computed from the network name and client
@@ -166,20 +171,19 @@ Example:
 
 ```bash
 export GITLAB_TOKEN=your_token_here
-cargo xtask client-trigger-release-builds gdev-1000 network/gdev-1000
+cargo xtask release client trigger-builds gdev-1000 network/gdev-1000
 ```
 
 This command will:
 
 - Trigger a CI pipeline on the specified branch
-- Start all 6 release jobs (Debian/RPM × ARM/x64 + Docker × ARM/x64)
+- Start 4 release jobs (Debian/RPM × ARM/x64)
 - Monitor their execution
 - Download artifacts from successful jobs
 - Upload .deb and .rpm files to the release
 
-**Note:** The Docker images will be pushed to DockerHub automatically by the CI
-jobs. The `DUNITERTEAM_PASSWD` variable must be set in the GitLab CI/CD
-variables.
+**Note:** Docker images are currently not built in CI (require privileged mode).
+Build them locally after CI completes (see below).
 
 #### Option B: Manual local builds
 
@@ -187,24 +191,47 @@ If you prefer to build packages locally (e.g., for testing or if CI is
 unavailable), you can run these commands:
 
 ```bash
-cargo xtask client-build-deb <network>-<runtime-version>
-cargo xtask client-build-rpm <network>-<runtime-version>
-cargo xtask client-docker-deploy <network>-<runtime-version>
+cargo xtask release client build-deb <network>-<runtime-version>
+cargo xtask release client build-rpm <network>-<runtime-version>
 ```
 
 Example:
 
 ```bash
+cargo xtask release client build-deb gdev-1000
+cargo xtask release client build-rpm gdev-1000
+```
+
+Then upload them to the release:
+
+```bash
 export GITLAB_TOKEN=your_token_here
-export DUNITERTEAM_PASSWD=your_dockerhub_password_here
-cargo xtask client-build-deb gdev-1000
-cargo xtask client-build-rpm gdev-1000
-cargo xtask client-docker-deploy gdev-1000
+cargo xtask release client create gdev-1000 network/gdev-1000 --upload-packages
 ```
 
 **Note:** Manual builds will only create packages for your local architecture.
 To build for multiple architectures, you need to use cross-compilation tools or
 run the commands on different machines.
+
+### Step 3: Build and push Docker images
+
+Docker images must be built locally (not in CI) due to technical requirements:
+
+```bash
+export DUNITERTEAM_PASSWD=your_dockerhub_password_here
+cargo xtask release client docker <network>-<runtime-version>
+```
+
+Example:
+
+```bash
+export DUNITERTEAM_PASSWD=your_dockerhub_password_here
+cargo xtask release client docker gdev-1000
+```
+
+This builds a multi-architecture image (amd64 + arm64) and pushes it to
+DockerHub. The build system automatically detects whether to use Docker or
+Podman.
 
 ## Runtime release
 
@@ -233,14 +260,14 @@ You must have:
 To create the runtime release, run:
 
 ```bash
-cargo xtask runtime-build <network>
-cargo xtask runtime-create-release <network>> runtime/<network>-<new-runtime-version>
+cargo xtask release runtime build <network>
+cargo xtask release runtime create <network> runtime/<network>-<new-runtime-version>
 ```
 
 Example :
 
 ```bash
 export GITLAB_TOKEN=your_token_here
-cargo xtask runtime-build gdev
-cargo xtask runtime-create-release gdev runtime/gdev-1100
+cargo xtask release runtime build gdev
+cargo xtask release runtime create gdev runtime/gdev-1100
 ```
