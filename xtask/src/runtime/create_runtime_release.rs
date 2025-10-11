@@ -47,12 +47,30 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
     let wasm_file = format!("release/{}_runtime.compact.compressed.wasm", runtime);
     if !Path::new(&wasm_file).exists() {
         return Err(anyhow!(
-            "Le fichier WASM n'existe pas: {}. Exécutez d'abord 'cargo xtask build-runtime --runtime {}' pour générer le runtime.",
+            "Le fichier WASM n'existe pas: {}. Exécutez d'abord 'cargo xtask release runtime build {}' pour générer le runtime.",
             wasm_file,
             runtime
         ));
     }
     println!("✅ Fichier WASM trouvé: {}", wasm_file);
+
+    // Vérifier que les fichiers d'historique existent
+    let history_files = vec![
+        "release/network/genesis.json",
+        "release/network/block_hist.json",
+        "release/network/cert_hist.json",
+        "release/network/tx_hist.json",
+    ];
+
+    for file in &history_files {
+        if !Path::new(file).exists() {
+            return Err(anyhow!(
+                "Le fichier d'historique n'existe pas: {}. Exécutez d'abord 'cargo xtask release network g1-data' pour générer les données G1.",
+                file
+            ));
+        }
+        println!("✅ Fichier d'historique trouvé: {}", file);
+    }
 
     // Étape 1: Créer la release runtime via GitLab
     println!("🌐 Création de la release runtime GitLab...");
@@ -64,24 +82,51 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
     )
     .await?;
 
-    // Étape 2: Uploader le fichier WASM et créer le lien d'asset
-    println!("📤 Upload du fichier WASM vers GitLab...");
+    // Étape 2: Uploader les fichiers (WASM + historiques) et créer les liens d'assets
+    println!("📤 Upload des fichiers vers GitLab...");
 
     // ID du projet GitLab (nodes/rust/duniter-v2s)
     let project_id = "nodes%2Frust%2Fduniter-v2s".to_string();
 
-    let wasm_path = Path::new(&wasm_file);
-    let asset_name = format!("{}_runtime.compact.compressed.wasm", runtime);
+    // Liste des assets à uploader (nom dans la release, chemin du fichier)
+    let asset_files = vec![
+        (
+            format!("{}_runtime.compact.compressed.wasm", runtime),
+            wasm_file.clone(),
+        ),
+        (
+            "genesis.json".to_string(),
+            "release/network/genesis.json".to_string(),
+        ),
+        (
+            "block_hist.json".to_string(),
+            "release/network/block_hist.json".to_string(),
+        ),
+        (
+            "cert_hist.json".to_string(),
+            "release/network/cert_hist.json".to_string(),
+        ),
+        (
+            "tx_hist.json".to_string(),
+            "release/network/tx_hist.json".to_string(),
+        ),
+    ];
 
-    println!("📤 Upload de {}...", asset_name);
-    let asset_url = crate::gitlab::upload_file(project_id, wasm_path, asset_name.clone()).await?;
+    for (asset_name, file_path) in &asset_files {
+        let path = Path::new(file_path);
 
-    println!(
-        "📎 Création du lien d'asset: {} -> {}",
-        asset_name, asset_url
-    );
-    // Créer le lien d'asset via GitLab
-    crate::gitlab::create_asset_link(runtime_milestone.clone(), asset_name, asset_url).await?;
+        println!("📤 Upload de {}...", asset_name);
+        let asset_url =
+            crate::gitlab::upload_file(project_id.clone(), path, asset_name.clone()).await?;
+
+        println!(
+            "📎 Création du lien d'asset: {} -> {}",
+            asset_name, asset_url
+        );
+        // Créer le lien d'asset via GitLab
+        crate::gitlab::create_asset_link(runtime_milestone.clone(), asset_name.clone(), asset_url)
+            .await?;
+    }
 
     println!("✅ Release runtime créée avec succès!");
     println!("📋 Résumé:");
@@ -89,7 +134,12 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
     println!("   - Version: {}", runtime_version);
     println!("   - Branche: {}", branch);
     println!("   - Release: {}", runtime_milestone);
-    println!("   - Fichier WASM: {}", wasm_file);
+    println!("   - Assets uploadés:");
+    println!("     • {}_runtime.compact.compressed.wasm", runtime);
+    println!("     • genesis.json");
+    println!("     • block_hist.json");
+    println!("     • cert_hist.json");
+    println!("     • tx_hist.json");
 
     Ok(())
 }
