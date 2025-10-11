@@ -95,7 +95,7 @@ pub fn docker_deploy(network: String) -> Result<()> {
         "-f",
         "docker/Dockerfile",
         "--build-arg",
-        &format!("chain={},embed", runtime),
+        &format!("chain={}", runtime),
         ".",
     ]))?;
 
