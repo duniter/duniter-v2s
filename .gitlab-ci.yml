@@ -105,14 +105,18 @@ release_docker_x64:
     ARCH: amd64
 
 release_docker_manifest:
-  extends: .release_rules
   stage: release
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH =~ /^network\//
+      when: on_success  # Auto-start when dependencies succeed
+    - when: never
   needs:
     - job: release_docker_arm
       optional: false
     - job: release_docker_x64
       optional: false
-  when: on_success  # Override manual trigger from .release_rules
   tags:
     - kepler
   image: docker:latest
@@ -137,21 +141,22 @@ release_docker_manifest:
       
       echo "Creating multi-arch manifest for ${IMAGE_NAME}:${TAG}"
       
-      # Create multi-arch manifest from arch-specific images
-      docker manifest create ${IMAGE_NAME}:${TAG} \
-        --amend ${IMAGE_NAME}:${TAG}-amd64 \
-        --amend ${IMAGE_NAME}:${TAG}-arm64
+      # Use buildx imagetools to create multi-arch tags from existing images
+      # This works even if the source images are manifest lists
+      docker buildx imagetools create \
+        --tag ${IMAGE_NAME}:${TAG} \
+        ${IMAGE_NAME}:${TAG}-amd64 \
+        ${IMAGE_NAME}:${TAG}-arm64
       
-      docker manifest push ${IMAGE_NAME}:${TAG}
+      echo "✅ Multi-arch tag created: ${IMAGE_NAME}:${TAG}"
       
-      # Also push as latest
-      docker manifest create ${IMAGE_NAME}:latest \
-        --amend ${IMAGE_NAME}:${TAG}-amd64 \
-        --amend ${IMAGE_NAME}:${TAG}-arm64
+      # Also create :latest tag
+      docker buildx imagetools create \
+        --tag ${IMAGE_NAME}:latest \
+        ${IMAGE_NAME}:${TAG}-amd64 \
+        ${IMAGE_NAME}:${TAG}-arm64
       
-      docker manifest push ${IMAGE_NAME}:latest
-      
-      echo "✅ Multi-arch manifest created: ${IMAGE_NAME}:${TAG}"
+      echo "✅ Multi-arch tag created: ${IMAGE_NAME}:latest"
 
 workflow:
   rules:

@@ -111,20 +111,24 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
             let arch_tag = format!("{}-{}", docker_tag, arch);
             let image_tag = format!("{}:{}", image_name, arch_tag);
 
-            // Use --output type=image to create a simple image (not a manifest list)
+            // Use classic docker build (not buildx) for single-arch to avoid manifest creation
+            // Build the image
             exec_should_success(Command::new("docker").args([
-                "buildx",
                 "build",
                 "--platform",
                 &format!("linux/{}", arch),
-                "--output",
-                &format!("type=image,name={},push=true", image_tag),
+                "--tag",
+                &image_tag,
                 "-f",
                 "docker/Dockerfile",
                 "--build-arg",
                 &format!("chain={}", runtime),
                 ".",
             ]))?;
+
+            // Push the image
+            println!("📤 Pushing image {}...", image_tag);
+            exec_should_success(Command::new("docker").args(["push", &image_tag]))?;
         } else {
             println!("🔨 Construction de l'image multi-architecture...");
             exec_should_success(Command::new("docker").args([
