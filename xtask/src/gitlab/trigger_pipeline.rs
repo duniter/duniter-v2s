@@ -86,4 +86,3 @@ pub async fn trigger_pipeline(
         ))
     }
 }
-

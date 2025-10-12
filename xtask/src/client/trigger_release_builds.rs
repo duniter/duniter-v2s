@@ -423,7 +423,7 @@ async fn monitor_jobs(pipeline_id: &u64, job_configs: &[JobConfig]) -> Result<Ve
                     }
                     status => {
                         // Job is still running (pending, created, running, etc.)
-                        if poll_count % 5 == 0 {
+                        if poll_count.is_multiple_of(5) {
                             // Print status every 5 polls
                             println!(
                                 "   ⏳ Job in progress: {} (status: {})",

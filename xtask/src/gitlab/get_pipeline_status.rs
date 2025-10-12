@@ -101,11 +101,7 @@ pub async fn get_pipeline_jobs(
 }
 
 /// Play (trigger) a manual job
-pub async fn play_job(
-    gitlab_token: String,
-    project_id: String,
-    job_id: u64,
-) -> Result<JobStatus> {
+pub async fn play_job(gitlab_token: String, project_id: String, job_id: u64) -> Result<JobStatus> {
     let client = reqwest::Client::new();
 
     let response = client
@@ -130,4 +126,3 @@ pub async fn play_job(
         ))
     }
 }
-
