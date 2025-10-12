@@ -119,14 +119,18 @@ pub async fn trigger_release_builds(
         .into_iter()
         .filter(|job| {
             let job_has_assets = match job.name.as_str() {
-                "release_debian_arm" | "release_debian_x64" => {
-                    existing_assets.iter().any(|(name, _)| {
-                        name.ends_with(".deb") && name.contains("arm64") == job.name.contains("arm")
-                    })
-                }
-                "release_rpm_arm" | "release_rpm_x64" => existing_assets.iter().any(|(name, _)| {
-                    name.ends_with(".rpm") && name.contains("arm64") == job.name.contains("arm")
-                }),
+                "release_debian_arm" => existing_assets
+                    .iter()
+                    .any(|(name, _)| name.ends_with(".deb") && name.contains("arm64")),
+                "release_debian_x64" => existing_assets
+                    .iter()
+                    .any(|(name, _)| name.ends_with(".deb") && name.contains("amd64")),
+                "release_rpm_arm" => existing_assets
+                    .iter()
+                    .any(|(name, _)| name.ends_with(".rpm") && name.contains("aarch64")),
+                "release_rpm_x64" => existing_assets
+                    .iter()
+                    .any(|(name, _)| name.ends_with(".rpm") && name.contains("x86_64")),
                 "release_docker_arm" | "release_docker_x64" | "release_docker_manifest" => {
                     // Docker jobs don't upload artifacts, always run them
                     false
@@ -176,8 +180,18 @@ pub async fn trigger_release_builds(
     tokio::time::sleep(Duration::from_secs(5)).await;
 
     // Step 4: Play (trigger) each manual job
+    // Note: release_docker_manifest will start automatically when its dependencies complete
     println!("\n▶️  Step 3: Triggering release jobs...");
     for (job_name, job_id) in &job_ids {
+        // Skip the manifest job as it starts automatically via needs/when: on_success
+        if job_name == "release_docker_manifest" {
+            println!(
+                "   ⏭️  Skipping {} (will start automatically after Docker builds)",
+                job_name
+            );
+            continue;
+        }
+
         println!("   Starting job: {} (ID: {})", job_name, job_id);
 
         // Try multiple times to play the job

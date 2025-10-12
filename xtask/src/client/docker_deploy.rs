@@ -107,14 +107,18 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
         // Docker buildx approach
         if let Some(ref arch) = arch {
             println!("🔨 Construction de l'image pour architecture {}...", arch);
+            // For single-arch builds, tag with architecture suffix
+            let arch_tag = format!("{}-{}", docker_tag, arch);
+            let image_tag = format!("{}:{}", image_name, arch_tag);
+
+            // Use --output type=image to create a simple image (not a manifest list)
             exec_should_success(Command::new("docker").args([
                 "buildx",
                 "build",
                 "--platform",
                 &format!("linux/{}", arch),
-                "--tag",
-                &format!("{}:{}", image_name, docker_tag),
-                "--push", // Push directly for single-arch (needed for manifest creation)
+                "--output",
+                &format!("type=image,name={},push=true", image_tag),
                 "-f",
                 "docker/Dockerfile",
                 "--build-arg",
@@ -210,11 +214,10 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
     println!("   - Runtime: {}", runtime);
     if let Some(ref arch_val) = arch {
         println!("   - Architecture: {}", arch_val);
+        println!("   - Image: {}:{}-{}", image_name, docker_tag, arch_val);
     } else {
         println!("   - Architecture: multi-arch (amd64, arm64)");
-    }
-    println!("   - Image: {}:{}", image_name, docker_tag);
-    if arch.is_none() {
+        println!("   - Image: {}:{}", image_name, docker_tag);
         println!("   - Image latest: {}:latest", image_name);
     }
 

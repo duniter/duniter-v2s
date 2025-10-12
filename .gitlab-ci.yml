@@ -108,15 +108,18 @@ release_docker_manifest:
   extends: .release_rules
   stage: release
   needs:
-    - release_docker_arm
-    - release_docker_x64
+    - job: release_docker_arm
+      optional: false
+    - job: release_docker_x64
+      optional: false
+  when: on_success  # Override manual trigger from .release_rules
   tags:
     - kepler
   image: docker:latest
   variables:
     DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
-    - apk add --no-cache bash grep
+    - apk add --no-cache bash grep sed
   script:
     - docker login -u duniterteam -p $DUNITERTEAM_PASSWD docker.io
     - |
