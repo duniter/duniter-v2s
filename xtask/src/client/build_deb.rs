@@ -48,7 +48,7 @@ pub fn build_deb(network: String) -> Result<()> {
 
     // Étape 2: Construire le binaire avec les features appropriées
     println!("🔨 Construction du binaire...");
-    let features = format!("--features {} --no-default-features", runtime);
+    let features = format!("--features {},embed --no-default-features", runtime);
     exec_should_success(
         Command::new("cargo")
             .args(["build", "-Zgit=shallow-deps", "--release"])

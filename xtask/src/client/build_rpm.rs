@@ -65,7 +65,7 @@ pub fn build_rpm(network: String) -> Result<()> {
 
     // Step 2: Build the binary with appropriate features
     println!("🔨 Building binary...");
-    let features = format!("--features {} --no-default-features", runtime);
+    let features = format!("--features {},embed --no-default-features", runtime);
     exec_should_success(
         Command::new("cargo")
             .args(["build", "-Zgit=shallow-deps", "--release"])
