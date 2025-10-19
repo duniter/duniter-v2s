@@ -619,7 +619,7 @@ async fn main() {
 
     let summarize = DuniterWorld::cucumber()
         .fail_on_skipped()
-        .max_concurrent_scenarios(4)
+        .max_concurrent_scenarios(2)
         .before(move |feature, _rule, scenario, world| {
             let mut genesis_conf_file_path = PathBuf::new();
             genesis_conf_file_path.push("cucumber-genesis");

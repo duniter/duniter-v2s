@@ -1,3 +1,5 @@
+> WARNING: this document is probably outdated. Please refer to [release.md](./release.md) for the latest release instructions.
+
 # How to launch a live network
 
 Launching a new live network is more difficult than spawning a local blockchain. Follow this process if you know what you are doing and you already experimented a bit with local blockchains. Part of this process is automated with Rust scripts, including interaction with GitLab's GraphQL API. Do not hesitate to improve and complete it (see TODOs inside `xtask/**/*.rs` files).

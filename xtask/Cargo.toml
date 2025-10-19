@@ -14,6 +14,7 @@ name = "xtask"
 
 [dependencies]
 anyhow = { workspace = true, features = ["std"] }
+chrono = { version = "0.4", features = ["serde"] }
 clap = { workspace = true, features = ["derive"] }
 codec = { workspace = true, features = ["derive", "full", "bit-vec"] }
 frame-metadata = { workspace = true, features = ["current", "std"] }
@@ -21,7 +22,7 @@ graphql_client = { workspace = true }
 hex = { workspace = true, features = ["alloc"] }
 memmap2 = { workspace = true }
 placeholder = { workspace = true }
-reqwest = { workspace = true, features = ["json"] }
+reqwest = { workspace = true, features = ["json", "multipart"] }
 scale-info = { workspace = true, features = ["bit-vec"] }
 scale-value = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
@@ -30,6 +31,7 @@ tera = { workspace = true }
 tokio = { workspace = true, features = ["macros"] }
 version_check = { workspace = true }
 weight-analyzer = { workspace = true }
+zip = "2.2"
 
 [features]
 std = []

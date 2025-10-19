@@ -17,9 +17,13 @@
 mod create_asset_link;
 mod create_network_release;
 mod create_release;
+mod download_artifact;
 mod get_changes;
 mod get_issues;
+mod get_pipeline_status;
 mod get_release;
+mod trigger_pipeline;
+mod upload_file;
 
 use anyhow::{Context, Result, anyhow};
 use serde::Deserialize;
@@ -169,22 +173,20 @@ fn add_srtool_notes(network: String, release_notes: &mut String) -> Result<()> {
     // Generate release notes
     let currency = network.clone();
     let env_var = "SRTOOL_OUTPUT".to_string();
+    let sr_tool_output_file = std::env::var(env_var)
+        .unwrap_or_else(|_| "release/network/network_srtool_output.json".to_string());
 
-    if let Ok(sr_tool_output_file) = std::env::var(env_var) {
-        let read = fs::read_to_string(sr_tool_output_file);
-        match read {
-            Ok(sr_tool_output) => {
-                release_notes.push_str(
-                    gen_release_notes(currency.to_string(), sr_tool_output)
-                        .with_context(|| {
-                            format!("Fail to generate release notes for {}", currency)
-                        })?
-                        .as_str(),
-                );
-            }
-            Err(e) => {
-                eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
-            }
+    let read = fs::read_to_string(sr_tool_output_file);
+    match read {
+        Ok(sr_tool_output) => {
+            release_notes.push_str(
+                gen_release_notes(currency.to_string(), sr_tool_output)
+                    .with_context(|| format!("Fail to generate release notes for {}", currency))?
+                    .as_str(),
+            );
+        }
+        Err(e) => {
+            eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
         }
     }
     Ok(())
@@ -200,9 +202,9 @@ pub(super) async fn print_spec(network: String) -> Result<()> {
         }
     };
     let assets = get_release::get_release(network).await?;
-    if let Some(gdev_spec) = assets.iter().find(|asset| asset.ends_with(spec_file)) {
+    if let Some((_, url)) = assets.iter().find(|(name, _)| name.ends_with(spec_file)) {
         let client = reqwest::Client::new();
-        let res = client.get(gdev_spec).send().await?;
+        let res = client.get(url).send().await?;
         let spec = String::from_utf8(res.bytes().await?.to_vec())?;
         println!("{}", spec);
     }
@@ -213,13 +215,13 @@ fn gen_release_notes(currency: String, srtool_output: String) -> Result<String> 
     println!("Read srtool output… ");
 
     // Read the srtool json output
-    let srtool: Srtool = serde_json::from_str(
-        srtool_output
-            .lines()
-            .last()
-            .ok_or_else(|| anyhow!("empty srtool output"))?,
-    )
-    .with_context(|| "Fail to parse srtool json output")?;
+    let srtool_str = srtool_output
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .next_back()
+        .ok_or_else(|| anyhow!("empty srtool output"));
+    let srtool: Srtool =
+        serde_json::from_str(srtool_str?).with_context(|| "Fail to parse srtool json output")?;
 
     // Read template file
     let template = String::from(
@@ -286,4 +288,71 @@ pub(crate) async fn create_asset_link(
     create_asset_link::create_asset_link(gitlab_token, tag, asset_name, asset_url).await?;
 
     Ok(())
+}
+
+pub(crate) async fn upload_file(
+    project_id: String,
+    file_path: &std::path::Path,
+    filename: String,
+) -> Result<String> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    upload_file::upload_file(gitlab_token, project_id, file_path, filename).await
+}
+
+pub(crate) async fn trigger_pipeline(
+    project_id: String,
+    branch: String,
+    variables: Vec<(String, String)>,
+) -> Result<trigger_pipeline::PipelineResponse> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    trigger_pipeline::trigger_pipeline(gitlab_token, project_id, branch, variables).await
+}
+
+#[allow(dead_code)]
+pub(crate) async fn get_pipeline_status(
+    project_id: String,
+    pipeline_id: u64,
+) -> Result<get_pipeline_status::PipelineStatus> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    get_pipeline_status::get_pipeline_status(gitlab_token, project_id, pipeline_id).await
+}
+
+pub(crate) async fn get_pipeline_jobs(
+    project_id: String,
+    pipeline_id: u64,
+) -> Result<Vec<get_pipeline_status::JobStatus>> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    get_pipeline_status::get_pipeline_jobs(gitlab_token, project_id, pipeline_id).await
+}
+
+pub(crate) async fn play_job(
+    project_id: String,
+    job_id: u64,
+) -> Result<get_pipeline_status::JobStatus> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    get_pipeline_status::play_job(gitlab_token, project_id, job_id).await
+}
+
+pub(crate) async fn download_job_artifacts(
+    project_id: String,
+    job_id: u64,
+    output_path: &std::path::Path,
+) -> Result<()> {
+    let gitlab_token =
+        std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
+    download_artifact::download_job_artifacts(gitlab_token, project_id, job_id, output_path).await
+}
+
+/// Get release assets (name, URL) from a GitLab release
+pub(crate) async fn get_release_assets(tag: String) -> Result<Vec<(String, String)>> {
+    get_release::get_release(tag).await
+}
+
+pub(crate) fn extract_zip(zip_path: &std::path::Path, output_dir: &std::path::Path) -> Result<()> {
+    download_artifact::extract_zip(zip_path, output_dir)
 }

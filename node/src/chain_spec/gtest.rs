@@ -156,7 +156,8 @@ pub struct ClientSpec {
     chain_type: ChainType,
     boot_nodes: Vec<MultiaddrWithPeerId>,
     telemetry_endpoints: Option<TelemetryEndpoints>,
-    // protocol_id: Option<String>,
+    #[serde(default = "Default::default", skip_serializing_if = "Option::is_none")]
+    protocol_id: Option<String>,
     // #[serde(default = "Default::default", skip_serializing_if = "Option::is_none")]
     // fork_id: Option<String>,
     properties: Option<serde_json::Map<std::string::String, JsonValue>>,

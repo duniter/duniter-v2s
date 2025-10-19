@@ -11,6 +11,153 @@ stages:
   - deploy
   - deploy_readme
 
+# Job templates for release builds (without tags/image, set by jobs)
+.release_rules:
+  stage: release
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH =~ /^network\//
+      when: manual
+    - when: never
+
+.debian_build_template:
+  extends: .release_rules
+  before_script:
+    # Install build dependencies
+    - apt-get update -qq && apt-get install -y -qq protobuf-compiler clang libclang-dev
+  script:
+    - cargo xtask client-build-deb $NETWORK
+
+.rpm_build_template:
+  extends: .release_rules
+  before_script:
+    # Install RPM build tools and dependencies
+    - apt-get update -qq && apt-get install -y -qq rpm protobuf-compiler clang libclang-dev
+  script:
+    - cargo xtask client-build-rpm $NETWORK
+
+.docker_deploy_template:
+  extends: .release_rules
+  image: docker:latest
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
+  before_script:
+    # Install Rust and build dependencies
+    - apk add --no-cache curl bash gcc musl-dev
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
+    - source $HOME/.cargo/env
+    - docker info
+  script:
+    - cargo xtask client-docker-deploy $NETWORK --arch $ARCH
+
+# Release build jobs
+release_debian_arm:
+  extends:
+    - .env_arm
+    - .debian_build_template
+  needs: []
+  artifacts:
+    paths:
+      - target/debian/*.deb
+
+release_debian_x64:
+  extends:
+    - .env
+    - .debian_build_template
+  needs: []
+  artifacts:
+    paths:
+      - target/debian/*.deb
+
+release_rpm_arm:
+  extends:
+    - .env_arm
+    - .rpm_build_template
+  needs: []
+  artifacts:
+    paths:
+      - target/generate-rpm/*.rpm
+
+release_rpm_x64:
+  extends:
+    - .env
+    - .rpm_build_template
+  needs: []
+  artifacts:
+    paths:
+      - target/generate-rpm/*.rpm
+
+release_docker_arm:
+  extends: .docker_deploy_template
+  needs: []
+  tags:
+    - linuxARM
+  variables:
+    ARCH: arm64
+
+release_docker_x64:
+  extends: .docker_deploy_template
+  needs: []
+  tags:
+    - kepler
+  variables:
+    ARCH: amd64
+
+release_docker_manifest:
+  stage: release
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH =~ /^network\//
+      when: on_success  # Auto-start when dependencies succeed
+    - when: never
+  needs:
+    - job: release_docker_arm
+      optional: false
+    - job: release_docker_x64
+      optional: false
+  tags:
+    - kepler
+  image: docker:latest
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
+  before_script:
+    - apk add --no-cache bash grep sed
+  script:
+    - docker login -u duniterteam -p $DUNITERTEAM_PASSWD docker.io
+    - |
+      # Extract runtime from NETWORK (e.g., gtest-1100 -> gtest)
+      RUNTIME=$(echo $NETWORK | sed 's/-[0-9].*//')
+      
+      # Get client version from node/Cargo.toml
+      CLIENT_VERSION=$(grep '^version = ' node/Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+      
+      # Get runtime version from runtime/$RUNTIME/src/lib.rs
+      RUNTIME_VERSION=$(grep 'spec_version:' runtime/$RUNTIME/src/lib.rs | sed 's/.*spec_version: \([0-9]*\).*/\1/')
+      
+      IMAGE_NAME="duniter/duniter-v2s-${NETWORK}"
+      TAG="${RUNTIME_VERSION}-${CLIENT_VERSION}"
+      
+      echo "Creating multi-arch manifest for ${IMAGE_NAME}:${TAG}"
+      
+      # Use buildx imagetools to create multi-arch tags from existing images
+      # This works even if the source images are manifest lists
+      docker buildx imagetools create \
+        --tag ${IMAGE_NAME}:${TAG} \
+        ${IMAGE_NAME}:${TAG}-amd64 \
+        ${IMAGE_NAME}:${TAG}-arm64
+      
+      echo "✅ Multi-arch tag created: ${IMAGE_NAME}:${TAG}"
+      
+      # Also create :latest tag
+      docker buildx imagetools create \
+        --tag ${IMAGE_NAME}:latest \
+        ${IMAGE_NAME}:${TAG}-amd64 \
+        ${IMAGE_NAME}:${TAG}-arm64
+      
+      echo "✅ Multi-arch tag created: ${IMAGE_NAME}:latest"
+
 workflow:
   rules:
     - changes:
@@ -23,12 +170,6 @@ workflow:
         - Cargo.toml
         - Cargo.lock
         - resources/*.yaml
-
-.is_network_branch: &is_network_branch
-  if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(network\/).+/
-
-.is_runtime_branch: &is_runtime_branch
-  if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ /^(runtime\/).+/
 
 sanity_tests:
   extends: .env
@@ -62,14 +203,17 @@ check_metadata:
   tags:
     - kepler
 
+.env_arm:
+  image: rust:latest  # Rust image for ARM builds
+  tags:
+    - linuxARM
+
 fmt_and_clippy:
   extends: .env
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
     - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH == "master"'
-      when: never
-    - <<: *is_network_branch
       when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: always
@@ -87,8 +231,6 @@ run_benchmarks:
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
-    - <<: *is_network_branch
-      when: never
     - if: $CI_COMMIT_TAG
       when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
@@ -104,8 +246,6 @@ gtest_build:
   stage: build
   extends: .env
   rules:
-    - <<: *is_network_branch
-      when: never
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
     - if: $CI_COMMIT_TAG
@@ -119,52 +259,6 @@ gtest_build:
   script:
     - cargo build -Zgit=shallow-deps --no-default-features --features gtest
 
-build_deb:
-  stage: deploy
-  extends: .env
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
-      when: manual
-    - if: $CI_COMMIT_TAG
-      when: never
-    - <<: *is_network_branch
-      needs: ["build_raw_specs"]
-      when: always
-    - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
-    - when: manual
-  variables:
-    DEBIAN_FRONTEND: noninteractive
-  script:
-    - export RUNTIME=$(echo $CI_COMMIT_BRANCH | grep -o "gdev\|gtest\|g1" || echo "gdev")
-    - cargo install cargo-deb
-    - cargo build -Zgit=shallow-deps --release --features $RUNTIME --no-default-features
-    - cargo deb --no-build -p duniter
-  artifacts:
-    paths:
-      - target/debian/duniter*.deb
-
-build_rpm:
-  stage: deploy
-  extends: .env
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
-      when: manual
-    - if: $CI_COMMIT_TAG
-      when: never
-    - <<: *is_network_branch
-      needs: ["build_raw_specs"]
-      when: always
-    - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
-    - when: manual
-  script:
-    - export RUNTIME=$(echo $CI_COMMIT_BRANCH | grep -o "gdev\|gtest\|g1" || echo "gdev")
-    - cargo install cargo-generate-rpm --version 0.16.1
-    - cargo build -Zgit=shallow-deps --release --features $RUNTIME --no-default-features
-    - cargo generate-rpm -p node
-  artifacts:
-    paths:
-      - target/generate-rpm/duniter*.rpm
-
 tests:
   stage: tests
   extends: .env
@@ -172,8 +266,6 @@ tests:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
     - if: $CI_COMMIT_TAG
-      when: never
-    - <<: *is_network_branch
       when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
@@ -185,357 +277,3 @@ tests:
     - cargo tf
     - cargo cucumber-build
     - cargo cucumber
-
-.network_branch_vars: &define_network_branch_vars
-  - export NETWORK=$(echo $CI_COMMIT_BRANCH | sed -e "s/network\///g")
-  - echo "NETWORK = $NETWORK"
-  - export RUNTIME=$(echo $NETWORK | grep -Po "gdev|gtest|g1")
-  - echo "RUNTIME = $RUNTIME"
-  # srtool specific
-  - export RUNTIME_DIR=runtime/$RUNTIME
-  - echo "RUNTIME_DIR = $RUNTIME_DIR"
-  # srtool specific
-  - export PACKAGE=$RUNTIME-runtime
-  - echo "PACKAGE = $PACKAGE"
-  # GitLab milestone : used for both GitLab and Docker releases. Milestone must match source code's runtime version to fetch the git changes for release notes.
-  - export CLIENT_VERSION=$(cat node/Cargo.toml | grep version | sed "s/version = \"//g" | sed "s/\"//")
-  - echo $CLIENT_VERSION
-  - export RUNTIME_VERSION=$(cat runtime/$RUNTIME/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
-  - echo $RUNTIME_VERSION
-  - export CLIENT_MILESTONE="client-$CLIENT_VERSION"
-  - echo $CLIENT_MILESTONE
-  - export NETWORK_RELEASE="$NETWORK"
-  - echo $NETWORK_RELEASE
-  - export DOCKER_TAG="$RUNTIME_VERSION-$CLIENT_VERSION"
-  # Tags for Docker images
-  - export IMAGE_NAME="duniter/duniter-v2s-$NETWORK"
-  - echo $IMAGE_NAME
-  - export MANIFEST=localhost/manifest-$IMAGE_NAME:$DOCKER_TAG
-  - echo $MANIFEST
-  # Files to be pushed in a release
-  - export RELEASE_FILE_G1_DATA=release/genesis.json
-  - echo $RELEASE_FILE_G1_DATA
-  - export RELEASE_FILE_SPEC_CONFIG=release/${RUNTIME}.yaml
-  - echo $RELEASE_FILE_SPEC_CONFIG
-  - export RELEASE_FILE_SPEC=release/${RUNTIME}.json
-  - echo $RELEASE_FILE_SPEC
-  - export RELEASE_FILE_WASM=release/${RUNTIME}_runtime.compact.compressed.wasm
-  - echo $RELEASE_FILE_WASM
-  - export RELEASE_FILE_RAW_SPEC=release/${RUNTIME}-raw.json
-  - echo $RELEASE_FILE_RAW_SPEC
-  - export RELEASE_FILE_CLIENT_SPEC=release/${RUNTIME}_client-specs.yaml
-  - echo $RELEASE_FILE_CLIENT_SPEC
-  - export CLIENT_RELEASE_NAME=$RUNTIME-$RUNTIME_VERSION-$CLIENT_VERSION
-  - echo $CLIENT_RELEASE_NAME
-
-.release_runtime_vars: &define_release_runtime_vars
-  - export BRANCH_ENDNAME=$(echo $CI_COMMIT_BRANCH | sed -e "s/runtime\///g")
-  - echo "BRANCH_ENDNAME = $BRANCH_ENDNAME"
-  - export RUNTIME=$(echo $BRANCH_ENDNAME | grep -o "gdev\|gtest\|g1")
-  - echo "RUNTIME = $RUNTIME"
-  - export RUNTIME_VERSION=$(cat runtime/$RUNTIME/src/lib.rs | grep "spec_version:" | sed "s/ *spec_version. //g" | sed "s/,//g")
-  - echo $RUNTIME_VERSION
-  - export RUNTIME_MILESTONE="runtime-$RUNTIME_VERSION"
-  - echo $RUNTIME_MILESTONE
-  - export SRTOOL_OUTPUT=$CI_PROJECT_DIR/release/srtool_output_$RUNTIME.json
-  - echo "SRTOOL_OUTPUT = $SRTOOL_OUTPUT"
-  - export RELEASE_FILE_WASM=release/${RUNTIME}_runtime.compact.compressed.wasm
-  - echo $RELEASE_FILE_WASM
-  # srtool specific
-  - export RUNTIME_DIR=runtime/$RUNTIME
-  - echo "RUNTIME_DIR = $RUNTIME_DIR"
-  # srtool specific
-  - export PACKAGE=$RUNTIME-runtime
-  - echo "PACKAGE = $PACKAGE"
-
-trigger_runtime_release:
-  stage: build
-  rules:
-    - <<: *is_runtime_branch
-      when: manual
-  script:
-    - *define_release_runtime_vars
-    - echo "Vérification de l'absence de la release $RUNTIME_MILESTONE"
-    - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$RUNTIME_MILESTONE"
-    - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$RUNTIME_MILESTONE --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
-
-trigger_network_release:
-  stage: build
-  rules:
-    - <<: *is_network_branch
-      when: manual
-  script:
-    - *define_network_branch_vars
-    - echo "Vérification de l'absence de la release $NETWORK"
-    - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK"
-    - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && (echo "Release déjà présente" && exit 1) || echo "Release absente"
-
-trigger_client_release:
-  stage: build
-  rules:
-    - <<: *is_network_branch
-      when: manual
-  script:
-    - *define_network_branch_vars
-    - echo "Vérification de la présence de la release $NETWORK"
-    - echo "Contrôle de l'URL https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK"
-    - curl -s https://git.duniter.org/api/v4/projects/$CI_PROJECT_ID/releases/$NETWORK --fail 1>/dev/null && echo "Release présente" || (echo "Release absente" && exit 1)
-
-docker_deploy:
-  stage: release
-  needs: ["build_raw_specs"]
-  rules:
-    - <<: *is_network_branch
-    - when: never
-  before_script:
-    - sh -c "[ -n '$DUNITERTEAM_PASSWD' ] || ( echo No access to environment variable 'DUNITERTEAM_PASSWD'; exit 1 )"
-    - podman login -u "duniterteam" -p "$DUNITERTEAM_PASSWD" docker.io
-  script:
-    - *define_network_branch_vars
-    - podman manifest rm "$MANIFEST" 2>/dev/null || true
-    - podman build --layers --platform linux/amd64,linux/arm64 --manifest "$MANIFEST" -f docker/Dockerfile --build-arg chain=$RUNTIME .
-    - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:$DOCKER_TAG"
-    - podman manifest push --all "$MANIFEST" "docker://docker.io/$IMAGE_NAME:latest"
-  after_script:
-    - *define_network_branch_vars
-    - echo $MANIFEST
-    - podman manifest rm "$MANIFEST"
-  tags:
-    - podman
-
-############## SRTOOL ##############
-
-# The Network Runtime is only built when creating a network release (i.e.: genesis)
-build_network_runtime:
-  stage: build
-  needs: ["trigger_network_release"]
-  rules:
-    - <<: *is_network_branch
-  image: paritytech/srtool:1.88.0
-  variables:
-    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/network_srtool_output.json
-  script:
-    - *define_network_branch_vars
-    - echo "SRTOOL_OUTPUT = $SRTOOL_OUTPUT"
-    - mkdir -p $CI_PROJECT_DIR/release
-    # Copy sources to the expected directory of srtool
-    - cp -R * /build/
-    # Build the runtime
-    - /srtool/build --app --json -cM | tee -a $SRTOOL_OUTPUT
-    - mv /build/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/${RUNTIME}_runtime.compact.compressed.wasm $CI_PROJECT_DIR/release/
-  artifacts:
-    expire_in: never
-    name: "runtime"
-    paths:
-      - $CI_PROJECT_DIR/release
-  tags:
-    - kepler
-
-build_runtime:
-  stage: build
-  needs: ["trigger_runtime_release"]
-  rules:
-    - <<: *is_runtime_branch
-  image: paritytech/srtool:1.84.1-0.18.2
-  script:
-    - *define_release_runtime_vars
-    - mkdir -p $CI_PROJECT_DIR/release
-    # Copy sources to the expected directory of srtool
-    - cp -R * /build/
-    # Build the runtime
-    - /srtool/build --app --json -cM | tee -a $SRTOOL_OUTPUT
-    - mv /build/runtime/$RUNTIME/target/srtool/release/wbuild/$RUNTIME-runtime/${RUNTIME}_runtime.compact.compressed.wasm $CI_PROJECT_DIR/release/
-  artifacts:
-    expire_in: never
-    name: "runtime"
-    paths:
-      - $CI_PROJECT_DIR/release
-  tags:
-    - kepler
-
-############## SPECS ##############
-
-build_g1-migrator:
-  stage: build
-  rules:
-    - <<: *is_network_branch
-  trigger:
-    project: tools/py-g1-migrator
-
-g1_data:
-  stage: build
-  needs: ["trigger_network_release", "build_g1-migrator"]
-  rules:
-    - <<: *is_network_branch
-  # following image already has g1-migrator and dependency embedded
-  image: registry.duniter.org/tools/py-g1-migrator:latest
-  variables:
-    LEVELDB_PATH: /dump/duniter_default/data/leveldb
-  script:
-    - *define_network_branch_vars
-    # Duniter 1.8.7 dump
-    - mkdir /dump
-    - cd /dump
-    # Export file constructed using Duniter 1.8.7:
-    #  - bin/duniter sync g1.cgeek.fr --store-txs --nointeractive --mdb 1.8.7
-    #  - mkdir -p /tmp/backup-g1-duniter-1.8.7
-    #  - cp -R $HOME/.config/duniter/1.8.7/data /tmp/backup-g1-duniter-1.8.7
-    #  - tar -cvzf /tmp/backup-g1-duniter-1.8.7.tgz /tmp/backup-g1-duniter-1.8.7
-    # Then the file is uploaded to dl.cgeek.fr manually
-    - curl https://files.coinduf.eu/g1v1/backup-1.8.7.tgz -o g1-dump.tgz
-    - tar xvzf g1-dump.tgz
-    - rm g1-dump.tgz
-    - mv tmp/backup-g1-duniter-1.8.7 duniter_default
-    # py-g1-migrator conversion
-    - cd /py-g1-migrator
-    # Export genesis file
-    - ./main.py # ./output/genesis.json
-    # Expore history files for squid
-    - ./squid-block.py # ./output/block_hist.json
-    - ./squid-cert.py # ./output/cert_hist.json
-    - ./squid-tx.py # ./output/tx_hist.json
-    # Make the exported file available for next jobs
-    - mkdir -p $CI_PROJECT_DIR/release/
-    - cp output/genesis.json $CI_PROJECT_DIR/$RELEASE_FILE_G1_DATA
-    - cp output/block_hist.json $CI_PROJECT_DIR/release/
-    - cp output/cert_hist.json $CI_PROJECT_DIR/release/
-    - cp output/tx_hist.json $CI_PROJECT_DIR/release/
-  artifacts:
-    expire_in: never
-    paths:
-      - $CI_PROJECT_DIR/release/
-  tags:
-    - kepler
-
-build_specs:
-  stage: build
-  needs: ["build_network_runtime", "g1_data"]
-  rules:
-    - <<: *is_network_branch
-  extends: .env
-  variables:
-    DEBIAN_FRONTEND: noninteractive
-  script:
-    - *define_network_branch_vars
-    - export FEATURES="--features $RUNTIME --no-default-features"
-    - echo "FEATURES = $FEATURES"
-    - export WASM_FILE="$CI_PROJECT_DIR/$RELEASE_FILE_WASM"
-    - echo "WASM_FILE = $WASM_FILE"
-    - export DUNITER_GENESIS_DATA=$CI_PROJECT_DIR/$RELEASE_FILE_G1_DATA
-    - echo "DUNITER_GENESIS_DATA = $DUNITER_GENESIS_DATA"
-    - apt-get update
-    - apt-get install -y clang cmake protobuf-compiler
-    # Build the spec file (including the G1 data), e.g.: "release/${RUNTIME}.json"
-    - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}_live > $RELEASE_FILE_SPEC
-    # Save spec configuration file for release
-    - cp resources/${RUNTIME}.yaml $RELEASE_FILE_SPEC_CONFIG
-  artifacts:
-    expire_in: never
-    name: "runtime"
-    paths:
-      - $CI_PROJECT_DIR/release
-  tags:
-    - kepler
-
-build_raw_specs:
-  stage: build
-  needs: ["trigger_client_release"]
-  rules:
-    - <<: *is_network_branch
-  image: rust:1-bullseye
-  script:
-    - *define_network_branch_vars
-    - export FEATURES="--features $RUNTIME --no-default-features"
-    - echo "FEATURES = $FEATURES"
-    - apt-get update
-    - apt-get install -y clang cmake protobuf-compiler jq
-    # Print chainspec to file
-    - cargo xtask print-spec $NETWORK_RELEASE > ${RUNTIME}-printed.json
-    # Merge client specs into chainspec file (to update bootnodes for example)
-    # 1. Download yq to create a json client spec file
-    - wget https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_arm64 -O yq
-    - chmod +x ./yq
-    # 2. YML -> JSON for the client specs
-    - cat node/specs/${RUNTIME}_client-specs.yaml | ./yq --output-format json > node/specs/${RUNTIME}_client-specs.json
-    # 3. Merge the client spec file into chainspec file and create the final spec file (e.g. ${RUNTIME}.json)
-    - jq -s '.[0] * .[1]' node/specs/${RUNTIME}_client-specs.json ${RUNTIME}-printed.json > ${RUNTIME}.json
-    # Produce raw spec file
-    - mkdir -p $CI_PROJECT_DIR/release
-    - cargo run -Zgit=shallow-deps ${FEATURES} -- build-spec --chain=${RUNTIME}.json --disable-default-bootnode --raw > $RELEASE_FILE_RAW_SPEC
-  artifacts:
-    expire_in: never
-    name: "runtime"
-    paths:
-      - $CI_PROJECT_DIR/release
-  tags:
-    - kepler
-
-############## RELEASE ##############
-
-create_network_release:
-  stage: release
-  needs: ["build_specs"]
-  rules:
-    - <<: *is_network_branch
-  image: rust:1-bullseye
-  variables:
-    # Used by `release-network` command
-    SRTOOL_OUTPUT: $CI_PROJECT_DIR/release/network_srtool_output.json
-  script:
-    - *define_network_branch_vars
-    # Release creation
-    - cargo xtask release-network $NETWORK_RELEASE $CI_COMMIT_BRANCH
-    # g1-data (initial data)
-    - cargo xtask create-asset-link $NETWORK_RELEASE g1-data.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_G1_DATA
-    # ${RUNTIME}.yaml (spec configuration)
-    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC_CONFIG
-    # initial runtime
-    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
-    # the result: ${RUNTIME}.json (genesis)
-    - cargo xtask create-asset-link $NETWORK_RELEASE ${RUNTIME}.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_SPEC
-  artifacts:
-    expire_in: never
-    paths:
-      - $CI_PROJECT_DIR/release/
-  tags:
-    - kepler
-
-create_client_release:
-  stage: release
-  needs: ["build_raw_specs"]
-  rules:
-    - <<: *is_network_branch
-  image: rust:1-bullseye
-  script:
-    - *define_network_branch_vars
-    # Create the GitLab release page + tag and associate the milestone
-    - cargo xtask release-client $CLIENT_RELEASE_NAME $CI_COMMIT_BRANCH $CLIENT_MILESTONE
-    # Add the client assets
-    - cargo xtask create-asset-link $CLIENT_RELEASE_NAME ${RUNTIME}_client-specs.yaml https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_CLIENT_SPEC
-    - cargo xtask create-asset-link $CLIENT_RELEASE_NAME ${RUNTIME}-raw.json https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_RAW_SPEC
-  artifacts:
-    expire_in: never
-    paths:
-      - $CI_PROJECT_DIR/release/
-  tags:
-    - kepler
-
-create_runtime_release:
-  stage: release
-  needs: ["build_runtime"]
-  rules:
-    - <<: *is_runtime_branch
-  image: rust:1-bullseye
-  script:
-    - *define_release_runtime_vars
-    # Create the GitLab release page + tag and associate the milestone.
-    # Note: the release name = the release tag = runtime milesone ($RUNTIME_MILESTONE)
-    - cargo xtask release-runtime $RUNTIME_MILESTONE $RUNTIME $CI_COMMIT_BRANCH $RUNTIME_MILESTONE
-    - cargo xtask create-asset-link $RUNTIME_MILESTONE ${RUNTIME}_runtime.compact.compressed.wasm https://nodes.pages.duniter.org/-/rust/duniter-v2s/-/jobs/$CI_JOB_ID/artifacts/$RELEASE_FILE_WASM
-    # In the future: also build gtest and g1 runtimes and atach them
-  artifacts:
-    expire_in: never
-    paths:
-      - $CI_PROJECT_DIR/release/
-  tags:
-    - kepler

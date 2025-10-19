@@ -42,7 +42,7 @@ pub(super) async fn create_network_release(
     let client = reqwest::Client::new();
     let res = client
         .post("https://git.duniter.org/api/graphql")
-        .header("PRIVATE-TOKEN", gitlab_token)
+        .header("Authorization", format!("Bearer {}", gitlab_token))
         .json(&request_body)
         .send()
         .await?;

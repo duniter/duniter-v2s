@@ -15,57 +15,56 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::{Result, anyhow};
-use graphql_client::{GraphQLQuery, Response};
+use serde::Deserialize;
 
-#[derive(GraphQLQuery)]
-#[graphql(
-    schema_path = "res/schema.gql",
-    query_path = "res/get_release.gql",
-    response_derives = "Debug"
-)]
-pub struct GetReleaseOfProjectQuery;
+#[derive(Debug, Deserialize)]
+struct ReleaseResponse {
+    assets: Assets,
+}
 
-pub(super) async fn get_release(tag: String) -> Result<Vec<String>> {
-    // this is the important line
-    let request_body =
-        GetReleaseOfProjectQuery::build_query(get_release_of_project_query::Variables { tag });
+#[derive(Debug, Deserialize)]
+struct Assets {
+    links: Vec<AssetLink>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AssetLink {
+    name: String,
+    url: String,
+}
+
+/// Get release assets (name and URL) using GitLab REST API
+pub(super) async fn get_release(tag: String) -> Result<Vec<(String, String)>> {
+    let gitlab_token = std::env::var("GITLAB_TOKEN")
+        .map_err(|_| anyhow!("GITLAB_TOKEN environment variable not set"))?;
 
     let client = reqwest::Client::new();
+    let project_id = "nodes%2Frust%2Fduniter-v2s";
+
     let res = client
-        .post("https://git.duniter.org/api/graphql")
-        .json(&request_body)
+        .get(format!(
+            "https://git.duniter.org/api/v4/projects/{}/releases/{}",
+            project_id, tag
+        ))
+        .header("PRIVATE-TOKEN", gitlab_token)
         .send()
         .await?;
-    let response_body: Response<get_release_of_project_query::ResponseData> = res.json().await?;
 
-    if let Some(data) = response_body.data {
-        Ok(data
-            .project
-            .expect("should have project")
-            .release
-            .expect("should have release")
+    if res.status().is_success() {
+        let release: ReleaseResponse = res.json().await?;
+        Ok(release
             .assets
-            .expect("should have assets")
             .links
-            .expect("should have links")
-            .edges
-            .expect("should have edges")
             .into_iter()
-            .map(|edge| {
-                edge.expect("should have edge")
-                    .node
-                    .expect("should have node")
-                    .direct_asset_url
-                    .expect("should have directAssetUrl")
-            })
+            .map(|link| (link.name, link.url))
             .collect())
-    } else if let Some(errors) = response_body.errors {
-        println!("{} errors:", errors.len());
-        for error in errors {
-            println!("{}", error);
-        }
-        Err(anyhow!("GraphQL errors"))
     } else {
-        Err(anyhow!("Invalid response: no data nor errors"))
+        let status = res.status();
+        let error_text = res.text().await?;
+        Err(anyhow!(
+            "Failed to fetch release (status {}): {}",
+            status,
+            error_text
+        ))
     }
 }

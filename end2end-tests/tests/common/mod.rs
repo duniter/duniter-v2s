@@ -156,10 +156,45 @@ pub async fn spawn_node(
         opt_process = Some(process);
         the_rpc_port = rpc_port;
     }
-    let rpc = RpcClient::from_url(format!("ws://127.0.0.1:{}", the_rpc_port))
-        .await
-        .expect("Failed to create the rpc backend");
-    let client = Client::from_rpc_client(rpc.clone()).await.unwrap();
+    // Retry RPC connection up to 5 times with 5 seconds between attempts
+    // This is needed in CI where resource contention can slow down node startup
+    let mut retry_count = 0;
+    let max_retries = 5;
+    let (rpc, client) = loop {
+        match RpcClient::from_url(format!("ws://127.0.0.1:{}", the_rpc_port)).await {
+            Ok(rpc) => match Client::from_rpc_client(rpc.clone()).await {
+                Ok(client) => break (rpc, client),
+                Err(e) => {
+                    retry_count += 1;
+                    if retry_count >= max_retries {
+                        panic!(
+                            "Failed to create client after {} retries: {:?}",
+                            max_retries, e
+                        );
+                    }
+                    eprintln!(
+                        "Failed to create client (attempt {}/{}): {:?}. Retrying in 5 seconds...",
+                        retry_count, max_retries, e
+                    );
+                    tokio::time::sleep(Duration::from_secs(5)).await;
+                }
+            },
+            Err(e) => {
+                retry_count += 1;
+                if retry_count >= max_retries {
+                    panic!(
+                        "Failed to create the rpc backend after {} retries: {:?}",
+                        max_retries, e
+                    );
+                }
+                eprintln!(
+                    "Failed to create RPC client (attempt {}/{}): {:?}. Retrying in 5 seconds...",
+                    retry_count, max_retries, e
+                );
+                tokio::time::sleep(Duration::from_secs(5)).await;
+            }
+        }
+    };
 
     (FullClient { rpc, client }, opt_process, the_rpc_port)
 }
