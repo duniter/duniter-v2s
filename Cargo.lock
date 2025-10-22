@@ -4323,6 +4323,7 @@ dependencies = [
  "sp-distance",
  "sp-genesis-builder",
  "sp-inherents",
+ "sp-io",
  "sp-membership",
  "sp-offchain",
  "sp-runtime",

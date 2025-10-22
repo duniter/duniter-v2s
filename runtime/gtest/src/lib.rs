@@ -22,6 +22,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+pub mod migrations;
 pub mod parameters;
 pub mod weights;
 
@@ -85,7 +86,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 1000,
+    spec_version: 1110,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -126,7 +127,15 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    Migrations,
 >;
+
+/// All migrations that should be executed on runtime upgrade.
+/// They are executed in order from top to bottom.
+pub type Migrations = (
+    // v1110: Fix the NextReeval date for Universal Dividend
+    migrations::v1110::FixUdReevalDate<Runtime>,
+);
 
 pub type TechnicalCommitteeInstance = Instance2;
 
