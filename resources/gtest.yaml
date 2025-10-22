@@ -4,8 +4,8 @@ ud: 1148
 # FIXME: explain `null` meaning
 first_ud: null
 
-# FIXME: explain `null` meaning
-first_ud_reeval: 1766232000
+# Date of the first UD reevaluation in milliseconds: 2025-12-20
+first_ud_reeval: 1766232000000
 
 # Clique Smith WoT: each smith will certify by each other smith automatically on Genesis
 clique_smiths:
