@@ -29,6 +29,14 @@
 //!
 //! This migration sets `NextReeval` to the correct value: 1766232000000 milliseconds
 //! (December 20, 2025 at 13:00:00 UTC).
+//!
+//! ## Idempotence
+//!
+//! The migration only runs if `NextReeval` is set to the buggy value (1766232000).
+//! This ensures it won't overwrite the value if:
+//! - It has already been fixed by a previous run
+//! - It has evolved naturally (e.g., after June 2026)
+//! - It was manually corrected
 
 extern crate alloc;
 
@@ -49,26 +57,52 @@ where
     T: pallet_universal_dividend::Config<Moment = u64> + frame_system::Config,
 {
     fn on_runtime_upgrade() -> Weight {
-        log::info!("🔧 Migration v1110: Fixing Universal Dividend NextReeval date");
+        log::info!("🔧 Migration v1110: Checking Universal Dividend NextReeval date");
+
+        // The buggy value (seconds instead of milliseconds)
+        const BUGGY_VALUE: u64 = 1_766_232_000;
 
         // The correct value: December 20, 2025 at 13:00:00 UTC in milliseconds
         const CORRECT_NEXT_REEVAL_MS: u64 = 1_766_232_000_000;
 
-        // Get the current (incorrect) value
-        let old_value = pallet_universal_dividend::NextReeval::<T>::get();
-        log::info!(
-            "  Old NextReeval value: {:?}",
-            old_value.unwrap_or_default()
-        );
+        // Get the current value
+        let current_value = pallet_universal_dividend::NextReeval::<T>::get();
 
-        // Set the correct value
-        pallet_universal_dividend::NextReeval::<T>::put(CORRECT_NEXT_REEVAL_MS);
+        match current_value {
+            Some(value) if value == BUGGY_VALUE => {
+                // Only fix if the value is exactly the buggy one
+                log::info!(
+                    "  ⚠️  Found buggy NextReeval value: {} (should be {})",
+                    value,
+                    CORRECT_NEXT_REEVAL_MS
+                );
 
-        log::info!("  New NextReeval value: {}", CORRECT_NEXT_REEVAL_MS);
-        log::info!("✅ Migration v1110: NextReeval successfully updated");
+                pallet_universal_dividend::NextReeval::<T>::put(CORRECT_NEXT_REEVAL_MS);
 
-        // Return weight: 1 read + 1 write
-        T::DbWeight::get().reads_writes(1, 1)
+                log::info!(
+                    "  ✅ NextReeval fixed: {} → {}",
+                    value,
+                    CORRECT_NEXT_REEVAL_MS
+                );
+                log::info!("✅ Migration v1110: NextReeval successfully updated");
+
+                // 1 read + 1 write
+                T::DbWeight::get().reads_writes(1, 1)
+            }
+            Some(value) => {
+                log::info!(
+                    "  ℹ️  NextReeval is already at a different value: {} (migration not needed)",
+                    value
+                );
+                // 1 read only
+                T::DbWeight::get().reads(1)
+            }
+            None => {
+                log::warn!("  ⚠️  NextReeval is not set! This should not happen on gtest.");
+                // 1 read only
+                T::DbWeight::get().reads(1)
+            }
+        }
     }
 
     #[cfg(feature = "try-runtime")]

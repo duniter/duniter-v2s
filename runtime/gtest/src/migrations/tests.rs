@@ -66,6 +66,30 @@ fn build_test_externalities_correct() -> sp_io::TestExternalities {
     sp_io::TestExternalities::new(storage)
 }
 
+/// Build a test externalities with a future NextReeval value
+/// (simulating the value after it has naturally evolved, e.g., after June 2026)
+#[cfg(test)]
+fn build_test_externalities_future() -> sp_io::TestExternalities {
+    use sp_runtime::BuildStorage;
+
+    let mut storage = frame_system::GenesisConfig::<Runtime>::default()
+        .build_storage()
+        .unwrap();
+
+    // Initialize Universal Dividend with a future value (e.g., next reeval after June 2026)
+    // June 20, 2026 at 13:00:00 UTC = 1_782_010_800_000 ms
+    pallet_universal_dividend::GenesisConfig::<Runtime> {
+        first_reeval: Some(1_782_010_800_000), // Future: June 20, 2026 in milliseconds
+        first_ud: Some(1_766_232_000_000),
+        initial_monetary_mass: 0,
+        ud: 1000,
+    }
+    .assimilate_storage(&mut storage)
+    .unwrap();
+
+    sp_io::TestExternalities::new(storage)
+}
+
 #[test]
 fn test_migration_v1110_fixes_incorrect_next_reeval() {
     build_test_externalities_with_bug().execute_with(|| {
@@ -158,6 +182,45 @@ fn test_migration_v1110_with_already_correct_value() {
         assert_eq!(
             initial_value, updated_value,
             "Value should not change if already correct"
+        );
+    });
+}
+
+#[test]
+fn test_migration_v1110_preserves_future_value() {
+    build_test_externalities_future().execute_with(|| {
+        // Initial value is in the future (naturally evolved after June 2026)
+        let initial_value = pallet_universal_dividend::NextReeval::<Runtime>::get()
+            .expect("NextReeval should be set");
+
+        // June 20, 2026 at 13:00:00 UTC = 1_782_010_800_000 ms
+        assert_eq!(
+            initial_value, 1_782_010_800_000,
+            "Initial value should be the future date"
+        );
+
+        println!(
+            "Initial NextReeval (future value): {} (June 20, 2026)",
+            initial_value
+        );
+
+        // Execute migration
+        let weight = v1110::FixUdReevalDate::<Runtime>::on_runtime_upgrade();
+        println!("Migration weight: {:?}", weight);
+
+        // Verify value is UNCHANGED (migration should NOT overwrite future values)
+        let updated_value = pallet_universal_dividend::NextReeval::<Runtime>::get()
+            .expect("NextReeval should still be set");
+
+        println!("Updated NextReeval: {}", updated_value);
+
+        assert_eq!(
+            updated_value, 1_782_010_800_000,
+            "Future value should be preserved"
+        );
+        assert_eq!(
+            initial_value, updated_value,
+            "Migration should not overwrite naturally evolved values"
         );
     });
 }
