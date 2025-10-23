@@ -54,7 +54,8 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
     }
     println!("✅ Fichier WASM trouvé: {}", wasm_file);
 
-    // Vérifier que les fichiers d'historique existent
+    // Vérifier la présence des fichiers d'historique (optionnels pour runtime upgrade)
+    // Ces fichiers sont nécessaires uniquement pour le bootstrap d'un nouveau réseau
     let history_files = vec![
         "release/network/genesis.json",
         "release/network/block_hist.json",
@@ -62,14 +63,21 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
         "release/network/tx_hist.json",
     ];
 
+    let mut available_history_files = Vec::new();
+    let mut has_all_history_files = true;
+
     for file in &history_files {
-        if !Path::new(file).exists() {
-            return Err(anyhow!(
-                "Le fichier d'historique n'existe pas: {}. Exécutez d'abord 'cargo xtask release network g1-data' pour générer les données G1.",
-                file
-            ));
+        if Path::new(file).exists() {
+            println!("✅ Fichier d'historique trouvé: {}", file);
+            available_history_files.push(file.to_string());
+        } else {
+            has_all_history_files = false;
         }
-        println!("✅ Fichier d'historique trouvé: {}", file);
+    }
+
+    if !has_all_history_files {
+        println!("⚠️  Fichiers d'historique G1 non trouvés (optionnel pour runtime upgrade)");
+        println!("   Pour un bootstrap réseau, exécutez: cargo xtask release network g1-data");
     }
 
     // Étape 1: Créer la release runtime via GitLab
@@ -82,35 +90,39 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
     )
     .await?;
 
-    // Étape 2: Uploader les fichiers (WASM + historiques) et créer les liens d'assets
+    // Étape 2: Uploader les fichiers (WASM + historiques si disponibles) et créer les liens d'assets
     println!("📤 Upload des fichiers vers GitLab...");
 
     // ID du projet GitLab (nodes/rust/duniter-v2s)
     let project_id = "nodes%2Frust%2Fduniter-v2s".to_string();
 
     // Liste des assets à uploader (nom dans la release, chemin du fichier)
-    let asset_files = vec![
-        (
-            format!("{}_runtime.compact.compressed.wasm", runtime),
-            wasm_file.clone(),
-        ),
-        (
-            "genesis.json".to_string(),
-            "release/network/genesis.json".to_string(),
-        ),
-        (
-            "block_hist.json".to_string(),
-            "release/network/block_hist.json".to_string(),
-        ),
-        (
-            "cert_hist.json".to_string(),
-            "release/network/cert_hist.json".to_string(),
-        ),
-        (
-            "tx_hist.json".to_string(),
-            "release/network/tx_hist.json".to_string(),
-        ),
-    ];
+    let mut asset_files = vec![(
+        format!("{}_runtime.compact.compressed.wasm", runtime),
+        wasm_file.clone(),
+    )];
+
+    // Ajouter les fichiers d'historique seulement s'ils sont disponibles
+    if has_all_history_files {
+        asset_files.extend(vec![
+            (
+                "genesis.json".to_string(),
+                "release/network/genesis.json".to_string(),
+            ),
+            (
+                "block_hist.json".to_string(),
+                "release/network/block_hist.json".to_string(),
+            ),
+            (
+                "cert_hist.json".to_string(),
+                "release/network/cert_hist.json".to_string(),
+            ),
+            (
+                "tx_hist.json".to_string(),
+                "release/network/tx_hist.json".to_string(),
+            ),
+        ]);
+    }
 
     for (asset_name, file_path) in &asset_files {
         let path = Path::new(file_path);
@@ -135,11 +147,9 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
     println!("   - Branche: {}", branch);
     println!("   - Release: {}", runtime_milestone);
     println!("   - Assets uploadés:");
-    println!("     • {}_runtime.compact.compressed.wasm", runtime);
-    println!("     • genesis.json");
-    println!("     • block_hist.json");
-    println!("     • cert_hist.json");
-    println!("     • tx_hist.json");
+    for (asset_name, _) in &asset_files {
+        println!("     • {}", asset_name);
+    }
 
     Ok(())
 }
