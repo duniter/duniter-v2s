@@ -70,10 +70,9 @@ fn build_test_externalities_correct() -> sp_io::TestExternalities {
 fn test_migration_v1110_fixes_incorrect_next_reeval() {
     build_test_externalities_with_bug().execute_with(|| {
         // Verify initial state: NextReeval is incorrect (in the past)
-        let initial_next_reeval = pallet_universal_dividend::NextReeval::<Runtime>::get()
+        let initial_value = pallet_universal_dividend::NextReeval::<Runtime>::get()
             .expect("NextReeval should be set");
 
-        let initial_value: u64 = initial_next_reeval.into();
         println!("Initial NextReeval: {}", initial_value);
 
         // The bug: value is 1_766_232_000 (Jan 21, 1970 in milliseconds)
@@ -87,10 +86,9 @@ fn test_migration_v1110_fixes_incorrect_next_reeval() {
         println!("Migration weight: {:?}", weight);
 
         // Verify post-migration state: NextReeval is correct
-        let updated_next_reeval = pallet_universal_dividend::NextReeval::<Runtime>::get()
+        let updated_value = pallet_universal_dividend::NextReeval::<Runtime>::get()
             .expect("NextReeval should still be set");
 
-        let updated_value: u64 = updated_next_reeval.into();
         println!("Updated NextReeval: {}", updated_value);
 
         // The fix: value should now be 1_766_232_000_000 (Dec 20, 2025 in milliseconds)
@@ -115,22 +113,20 @@ fn test_migration_v1110_is_idempotent() {
 
         let first_run_value = pallet_universal_dividend::NextReeval::<Runtime>::get()
             .expect("NextReeval should be set");
-        let first_run_u64: u64 = first_run_value.into();
 
         // Run migration second time (should be idempotent)
         v1110::FixUdReevalDate::<Runtime>::on_runtime_upgrade();
 
         let second_run_value = pallet_universal_dividend::NextReeval::<Runtime>::get()
             .expect("NextReeval should be set");
-        let second_run_u64: u64 = second_run_value.into();
 
         // Both runs should result in the same value
         assert_eq!(
-            first_run_u64, second_run_u64,
+            first_run_value, second_run_value,
             "Migration should be idempotent"
         );
         assert_eq!(
-            second_run_u64, 1_766_232_000_000,
+            second_run_value, 1_766_232_000_000,
             "Value should still be correct"
         );
     });
@@ -140,10 +136,9 @@ fn test_migration_v1110_is_idempotent() {
 fn test_migration_v1110_with_already_correct_value() {
     build_test_externalities_correct().execute_with(|| {
         // Initial value is already correct
-        let initial_next_reeval = pallet_universal_dividend::NextReeval::<Runtime>::get()
+        let initial_value = pallet_universal_dividend::NextReeval::<Runtime>::get()
             .expect("NextReeval should be set");
 
-        let initial_value: u64 = initial_next_reeval.into();
         assert_eq!(
             initial_value, 1_766_232_000_000,
             "Initial value should already be correct"
@@ -153,10 +148,9 @@ fn test_migration_v1110_with_already_correct_value() {
         v1110::FixUdReevalDate::<Runtime>::on_runtime_upgrade();
 
         // Verify value is still correct (unchanged)
-        let updated_next_reeval = pallet_universal_dividend::NextReeval::<Runtime>::get()
+        let updated_value = pallet_universal_dividend::NextReeval::<Runtime>::get()
             .expect("NextReeval should still be set");
 
-        let updated_value: u64 = updated_next_reeval.into();
         assert_eq!(
             updated_value, 1_766_232_000_000,
             "Value should remain correct"
