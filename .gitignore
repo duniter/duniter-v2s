@@ -32,3 +32,7 @@ tmp
 output/
 g1-dump.tgz
 /release/
+
+node/specs/gdev-raw.json
+node/specs/gtest-raw.json
+node/specs/g1-raw.json

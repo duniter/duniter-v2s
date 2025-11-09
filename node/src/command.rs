@@ -88,7 +88,14 @@ impl SubstrateCli for Cli {
 
             // Local testnet with G1 data, Gdev configuration (parameters & Smiths), and Alice as a validator.
             // Optionally, load configuration from DUNITER_GENESIS_CONFIG file to override default Gdev configuration.
-            #[cfg(feature = "gdev")]
+            #[cfg(all(feature = "gdev", not(feature = "embed")))]
+            "gdev" => Box::new(chain_spec::gdev::gdev_development_chain_spec(
+                "resources/gdev.yaml".to_string(),
+            )?),
+
+            // Generate development chainspecs with Alice as a validator.
+            // Provide the DUNITER_GENESIS_CONFIG environment variable to build genesis from JSON; otherwise, a local testnet with generated genesis will be used.
+            #[cfg(all(feature = "gdev", not(feature = "embed")))]
             "gdev_dev" => Box::new(chain_spec::gdev::gdev_development_chain_spec(
                 "resources/gdev.yaml".to_string(),
             )?),
@@ -114,7 +121,7 @@ impl SubstrateCli for Cli {
             }
 
             // Hardcoded raw chainspecs with previously generated values, resulting in a needlessly heavy binary due to hexadecimal-text-encoded values.
-            #[cfg(feature = "gdev")]
+            #[cfg(all(feature = "gdev", feature = "embed"))]
             "gdev" => Box::new(chain_spec::gdev::ChainSpec::from_json_bytes(
                 &include_bytes!("../specs/gdev-raw.json")[..],
             )?),

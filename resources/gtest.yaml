@@ -4,8 +4,8 @@ ud: 1148
 # FIXME: explain `null` meaning
 first_ud: null
 
-# FIXME: explain `null` meaning
-first_ud_reeval: null
+# Date of the first UD reevaluation in milliseconds: 2025-12-20
+first_ud_reeval: 1766232000000
 
 # Clique Smith WoT: each smith will certify by each other smith automatically on Genesis
 clique_smiths:
@@ -15,9 +15,15 @@ clique_smiths:
   - name: "1000i100"
   - name: "vit"
   - name: "cgeek"
-  - name: "Elois"
+  - name: "aya"
+  - name: "Bulmananabelle"
+  - name: "gui_tooun"
+  - name: "vjrj"
+  - name: "Damery"
+  - name: "Nicolas80"
+  - name: "poka"
     # This smith will be the first author
-    session_keys: "0xbd6d9041890bbf56fa5cb30c3db1b41f7cbf07b04b8a5cf1fb63d79b2029751ecc668b4c0fedf4fd7ac8e44014ffbe16a03b5f55274ac0b94e04e3a0a1fda70ccc668b4c0fedf4fd7ac8e44014ffbe16a03b5f55274ac0b94e04e3a0a1fda70ccc668b4c0fedf4fd7ac8e44014ffbe16a03b5f55274ac0b94e04e3a0a1fda70c"
+    session_keys: "0x82867972a7b580ceb5ad9b3239f85e64333ac2642f10c2f8d9e2a30aced44b92c8b62bb991bef705712429203444e9500ed84fbb5d7e5ef230410558d6d43233c8b62bb991bef705712429203444e9500ed84fbb5d7e5ef230410558d6d43233c8b62bb991bef705712429203444e9500ed84fbb5d7e5ef230410558d6d43233"
 
 # FIXME
 sudo_key: "5Hm8sBbwuLAU99dBezvgtnRmZCrUy9mhqmbQMFyGTaeATYg7"
@@ -26,4 +32,4 @@ sudo_key: "5Hm8sBbwuLAU99dBezvgtnRmZCrUy9mhqmbQMFyGTaeATYg7"
 treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"
 
 # The technical committee members, to act as sudo
-technical_committee: ["moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "Elois"]
+technical_committee: ["moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "Elois", "poka"]
