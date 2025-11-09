@@ -1939,6 +1939,7 @@ pub struct CommonParameters {
     pub smith_cert_max_by_issuer: u32,
     pub smith_inactivity_max_duration: u32,
     pub treasury_spend_period: u32,
+    pub distance_evaluation_period: u32,
     // TODO: replace u32 by BlockNumber when appropriate
     pub currency_name: String,
     pub decimals: usize,

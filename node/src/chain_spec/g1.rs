@@ -87,6 +87,7 @@ fn get_parameters(_parameters_from_file: &Option<GenesisParameters>) -> CommonPa
         smith_inactivity_max_duration: parameters::SmithInactivityMaxDuration::get(),
         smith_cert_max_by_issuer: parameters::SmithMaxByIssuer::get(),
         cert_cert_period: parameters::CertPeriod::get(),
+        distance_evaluation_period: parameters::EvaluationPeriod::get(),
         treasury_spend_period: <Runtime as pallet_treasury::Config>::SpendPeriod::get(),
     }
 }

@@ -93,6 +93,7 @@ fn get_parameters(parameters_from_file: &Option<GenesisParameters>) -> CommonPar
         smith_cert_max_by_issuer: parameters_from_file.smith_cert_max_by_issuer,
         smith_inactivity_max_duration: parameters_from_file.smith_inactivity_max_duration,
         cert_cert_period: parameters_from_file.cert_period,
+        distance_evaluation_period: parameters::EvaluationPeriod::get(),
         treasury_spend_period: <Runtime as pallet_treasury::Config>::SpendPeriod::get(),
     }
 }
@@ -344,6 +345,7 @@ fn get_local_chain_parameters() -> Option<GenesisParameters> {
         wot_first_cert_issuable_on: 20,
         wot_min_cert_for_create_idty_right: 2,
         wot_min_cert_for_membership: 2,
+        evaluation_period: 7,
     })
 }
 

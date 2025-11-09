@@ -226,6 +226,7 @@ pub type SmithWotMinCertForMembership =
     pallet_duniter_test_parameters::SmithWotMinCertForMembership<Runtime>;
 pub type SmithInactivityMaxDuration =
     pallet_duniter_test_parameters::SmithInactivityMaxDuration<Runtime>;
+pub type EvaluationPeriod = pallet_duniter_test_parameters::EvaluationPeriod<Runtime>;
 
 impl pallet_duniter_test_parameters::Config for Runtime {
     type BlockNumber = u32;

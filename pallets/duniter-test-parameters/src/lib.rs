@@ -63,6 +63,7 @@ pub mod types {
         pub wot_first_cert_issuable_on: BlockNumber,
         pub wot_min_cert_for_create_idty_right: CertCount,
         pub wot_min_cert_for_membership: CertCount,
+        pub evaluation_period: BlockNumber,
     }
 }
 

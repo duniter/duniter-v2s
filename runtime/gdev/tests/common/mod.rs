@@ -112,6 +112,7 @@ impl ExtBuilder {
                 wot_first_cert_issuable_on: 20,
                 wot_min_cert_for_create_idty_right: 2,
                 wot_min_cert_for_membership: 2,
+                evaluation_period: 7,
             },
         }
     }
