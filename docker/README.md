@@ -69,8 +69,8 @@ volumes:
 | `DUNITER_DISABLE_TELEMETRY`  | Boolean to disable connecting to the Substrate telemetry server.                                                                                                                                                                                                                                                                                     | `false`                                                                                     |
 | `DUNITER_PRUNING_PROFILE`    | _ `default`<br> _ `archive`: keep all blocks and state blocks<br> \* `light`: keep only last 256 state blocks and last 14400 blocks (one day duration)                                                                                                                                                                                               | `default`                                                                                   |
 | `DUNITER_PUBLIC_RPC`         | The public RPC endpoint to gossip on the network and make available in the apps. | None |
-| `DUNITER_PUBLIC_SQUID`       | The public Squid graphql endpoint to gossip on the network and make available in the apps. | None |
-| `DUNITER_PUBLIC_ENDPOINTS`   | Path to a JSON file containing public endpoints to gossip on the network. The file should use the following format:<br>```{"endpoints": [  { "protocol": "rpc", "address": "wss://gdev.example.com" },  { "protocol": "squid", "address": "gdev.example.com/graphql/v1" }]}``` | None |
+| `DUNITER_PUBLIC_SQUID`       | The public Squid graphql endpoint to gossip on the network and make available in the apps. Convention: `<domain.tld>/v1/graphql` | None |
+| `DUNITER_PUBLIC_ENDPOINTS`   | Path to a JSON file containing public endpoints to gossip on the network. The file should use the following format:<br>```{"endpoints": [  { "protocol": "rpc", "address": "wss://gdev.example.com" },  { "protocol": "squid", "address": "gdev.example.com/v1/graphql" }]}``` | None |
 
 ## Other Duniter options
 

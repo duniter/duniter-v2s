@@ -41,7 +41,7 @@ pub struct DuniterConfigExtension {
     #[arg(long)]
     pub public_rpc: Option<String>,
 
-    /// Public Squid graphql endpoint to gossip on the network and make available in the apps.
+    /// Public Squid graphql endpoint to gossip on the network and make available in the apps. Convention: `<domain.tld>/v1/graphql`
     #[arg(long)]
     pub public_squid: Option<String>,
 
@@ -52,7 +52,7 @@ pub struct DuniterConfigExtension {
     /// {
     ///     "endpoints": [
     ///         { "protocol": "rpc", "address": "wss://gdev.example.com" },
-    ///         { "protocol": "squid", "address": "gdev.example.com/graphql/v1" },
+    ///         { "protocol": "squid", "address": "gdev.example.com/v1/graphql" },
     ///         { "protocol": "other", "address": "gdev.example.com/other" }
     ///     ]
     /// }

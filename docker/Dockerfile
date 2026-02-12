@@ -38,7 +38,7 @@ RUN if [ "$debug" = 0 ]; then \
         echo "TARGET_FOLDER=debug" >>/root/dynenv; \
     fi
 
-# Configure cross-build environment if need be
+# Configure cross-build environment if needed to be
 RUN set -x && \
     if [ "$TARGETPLATFORM" != "$BUILDPLATFORM" ]; then \
         . /root/dynenv && \
@@ -77,7 +77,7 @@ FROM target
 
 LABEL maintainer="Gilles Filippini <gilles.filippini@pini.fr>"
 LABEL version="0.0.0"
-LABEL description="Crypto-currency software (based on Substrate framework) to operate Ğ1 libre currency"
+LABEL description="Crypto-currency software (based on Polkadot SDK framework) to operate Ğ1 libre currency"
 
 # Required certificates for RPC connections
 RUN apt-get update \
@@ -94,7 +94,7 @@ VOLUME /var/lib/duniter
 ENTRYPOINT ["docker-entrypoint"]
 USER duniter
 
-# Intall
+# Install
 COPY --from=build /root/build /usr/local/bin/
 COPY --from=build /root/dynenv /var/lib/duniter
 COPY docker/docker-entrypoint /usr/local/bin/
