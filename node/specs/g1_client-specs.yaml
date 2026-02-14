@@ -1,0 +1,11 @@
+name: "Ğ1"
+id: "g1"
+chainType: "Live"
+protocolId: "g1"
+bootNodes:
+  - "/dns/g1.duniter.cgeek.fr/tcp/30333/p2p/12D3KooW_TODO_REPLACE_WITH_PEER_ID"
+telemetryEndpoints:
+  - ["/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]
+properties:
+  tokenDecimals: 2
+  tokenSymbol: "Ğ1"

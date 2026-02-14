@@ -171,6 +171,40 @@ impl SubstrateCli for Cli {
             #[cfg(feature = "g1")]
             "dev" => Box::new(chain_spec::g1::local_testnet_config(1, 5, 6)?),
 
+            // Generate development chainspecs with Alice as a validator.
+            // Provide the DUNITER_GENESIS_CONFIG environment variable to build genesis from JSON; otherwise, a local testnet with generated genesis will be used.
+            #[cfg(all(feature = "g1", not(feature = "embed")))]
+            "g1_dev" => Box::new(chain_spec::g1::development_chainspecs(
+                "resources/g1.yaml".to_string(),
+            )?),
+
+            // Chainspecs for the live network.
+            // Required files in the ./node/specs folder or override with environment variables:
+            // - g1.json / DUNITER_G1_GENESIS
+            // - g1_client-specs.yaml / DUNITER_CLIENT_SPEC
+            #[cfg(feature = "g1")]
+            "g1_live" => {
+                const CLIENT_SPEC: &str = "./node/specs/g1_client-specs.yaml";
+                let client_spec: chain_spec::g1::ClientSpec = serde_yaml::from_slice(
+                    &std::fs::read(
+                        std::env::var("DUNITER_CLIENT_SPEC")
+                            .unwrap_or_else(|_| CLIENT_SPEC.to_string()),
+                    )
+                    .map_err(|e| format!("failed to read {CLIENT_SPEC} {e}"))?[..],
+                )
+                .map_err(|e| format!("failed to parse {e}"))?;
+                Box::new(chain_spec::g1::live_chainspecs(
+                    client_spec,
+                    "resources/g1.yaml".to_string(),
+                )?)
+            }
+
+            // Return hardcoded live chainspecs, only with the embed feature enabled.
+            #[cfg(all(feature = "g1", feature = "embed"))]
+            "g1" => Box::new(chain_spec::g1::ChainSpec::from_json_bytes(
+                &include_bytes!("../specs/g1-raw.json")[..],
+            )?),
+
             path => {
                 let path = std::path::PathBuf::from(path);
 
