@@ -28,6 +28,8 @@ export DUNITERTEAM_PASSWD="..."  # Docker Hub org duniter
 
 ## Procédure de lancement
 
+> **Prérequis :** Avant de commencer, les actions de la checklist `g1-launch-checklist.md` (section « En amont du jour J ») doivent être réalisées : clique smiths, comité technique, clés de session bootstrap, clés réseau bootnodes, client specs.
+
 ### Étape 1 — Branche réseau
 
 ```bash
@@ -56,32 +58,7 @@ jq '.identities | length' release/network/genesis.json
 jq '.initial_monetary_mass' release/network/genesis.json
 ```
 
-### Étape 3 — Génération des clés de session bootstrap
-
-> **Note :** On utilise le binaire compilé à l'étape précédente (l'image Docker n'existe pas encore à ce stade).
-
-```bash
-# Générer une phrase secrète + clé publique SS58
-./target/release/duniter key generate
-# → noter la phrase secrète et la clé publique SS58
-
-# Générer les clés de session à partir de la phrase secrète
-# (--chain dev suffit : les clés dépendent de la phrase, pas du chain spec)
-./target/release/duniter key generate-session-keys --chain dev --suri "<phrase secrète>"
-# → coller le résultat hex (Session Keys: 0x...) dans resources/g1.yaml, champ session_keys
-```
-
-### Étape 4 — Fichiers de configuration réseau
-
-Insérer les clés de session dans `resources/g1.yaml` :
-
-```yaml
-clique_smiths:
-  - name: "forgeron_bootstrap"
-    session_keys: "0x..."         # généré à l'étape 3
-```
-
-### Étape 5 — Build du runtime WASM
+### Étape 3 — Build du runtime WASM
 
 ```bash
 cargo xtask release network build-runtime g1
@@ -90,7 +67,7 @@ cp release/g1_runtime.compact.compressed.wasm release/network/
 
 Utilise `srtool` (Docker `paritytech/srtool:1.88.0`) pour un build reproductible. Le hash SHA256 est dans `release/srtool_output_g1.json`.
 
-### Étape 6 — Génération des specs réseau
+### Étape 4 — Génération des specs réseau
 
 ```bash
 cargo xtask release network build-specs g1
@@ -105,7 +82,7 @@ cargo run --release --features g1 --no-default-features build-spec --chain g1_li
 
 Résultat : `release/network/g1.json`
 
-### Étape 7 — Release réseau GitLab
+### Étape 5 — Release réseau GitLab
 
 ```bash
 cargo xtask release network create g1-1000 network/g1-1000
@@ -113,7 +90,7 @@ cargo xtask release network create g1-1000 network/g1-1000
 
 Upload sur GitLab : genesis.json, g1.json, g1.yaml, WASM, fichiers Squid.
 
-### Étape 8 — Release client
+### Étape 6 — Release client
 
 ```bash
 cargo xtask release client build-raw-specs g1-1000
@@ -125,7 +102,7 @@ La dernière commande déclenche la CI GitLab (DEB/RPM x64+ARM, Docker amd64+arm
 
 Image Docker résultante : `duniter/duniter-v2s-g1-1000:1000-<client_version>`
 
-### Étape 9 — Déploiement du nœud bootstrap
+### Étape 7 — Déploiement du nœud bootstrap
 
 ```yaml
 # docker-compose.yml sur le serveur bootstrap
@@ -167,7 +144,7 @@ docker compose logs duniter-g1-smith | grep "Local node identity"
 # → noter le Peer ID (12D3KooW...) pour g1_client-specs.yaml
 ```
 
-### Étape 10 — Rotation des clés de session
+### Étape 8 — Rotation des clés de session
 
 Les clés du genesis viennent de la machine de build. Les roter sur le serveur :
 
@@ -179,7 +156,7 @@ curl -H "Content-Type: application/json" \
 
 Puis soumettre on-chain via `session.setKeys` (polkadot.js/apps ou subxt). Prise d'effet après une epoch (4h).
 
-### Étape 11 — Forgerons additionnels
+### Étape 9 — Forgerons additionnels
 
 Chaque forgeron : même docker-compose adapté (nom, adresse publique) + bootnode du bootstrap. Puis :
 
@@ -193,7 +170,7 @@ curl -H "Content-Type: application/json" \
 
 Alternative Debian : `dpkg -i duniter.deb` + configurer `/etc/duniter/env_file` + `systemctl start duniter-smith distance-oracle`.
 
-### Étape 12 — Nœuds miroirs
+### Étape 10 — Nœuds miroirs
 
 ```yaml
 services:

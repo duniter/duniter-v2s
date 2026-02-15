@@ -71,7 +71,28 @@ rm /tmp/node-key
 
 ---
 
-### A4. Définir les `bootNodes` dans `node/specs/g1_client-specs.yaml`
+@### A4. Générer les clés de session du forgeron bootstrap
+
+**Pourquoi :** Le forgeron bootstrap est le seul à produire des blocs au lancement. Ses clés de session doivent être générées et insérées dans `resources/g1.yaml` avant le build des specs.
+
+**Action :**
+
+```bash
+# Générer une phrase secrète + clé publique SS58
+./target/release/duniter key generate
+# → noter la phrase secrète et la clé publique SS58
+
+# Générer les clés de session à partir de la phrase secrète
+# (--chain dev suffit : les clés dépendent de la phrase, pas du chain spec)
+./target/release/duniter key generate-session-keys --chain dev --suri "<phrase secrète>"
+# → coller le résultat hex (Session Keys: 0x...) dans resources/g1.yaml, champ session_keys
+```
+
+**⚠️ Conserver précieusement la phrase secrète.** Elle sera nécessaire pour la rotation des clés (étape 10).
+
+---
+
+### A5. Définir les `bootNodes` dans `node/specs/g1_client-specs.yaml`
 
 **Pourquoi :** Ce sont les nœuds auxquels les clients se connecteront pour rejoindre le réseau. Les Peer ID proviennent des clés réseau générées en A3.
 
