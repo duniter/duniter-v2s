@@ -84,7 +84,7 @@ frame_support::parameter_types! {
 }
 #[cfg(not(feature = "runtime-benchmarks"))]
 frame_support::parameter_types! {
-    pub const ExistentialDeposit: Balance = 200;
+    pub const ExistentialDeposit: Balance = 100;
     pub const MaxLocks: u32 = 50;
 }
 
