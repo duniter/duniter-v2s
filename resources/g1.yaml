@@ -5,7 +5,8 @@
 ud: 1148
 
 # null = computed automatically from migration data
-first_ud: null
+# 1772967600000 = 2026-03-08T12:00:00 UTC
+first_ud: 1772967600000
 
 # Date of the first UD reevaluation in milliseconds: 2026-03-21T17:00:00 UTC
 first_ud_reeval: 1774112400000

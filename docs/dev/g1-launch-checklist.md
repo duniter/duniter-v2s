@@ -46,57 +46,43 @@ Organisée par étape de la procédure `g1-production-launch.md`.
 
 ---
 
-### A3. Définir les `bootNodes` dans `node/specs/g1_client-specs.yaml`
+### A3. Générer les clés réseau (node keys) des bootnodes
 
-**Pourquoi :** Ce sont les nœuds auxquels les clients se connecteront pour rejoindre le réseau. Ils doivent être opérationnels dès le lancement du réseau, et leur Peer ID doit être renseigné dans les specs pour que les clients puissent s'y connecter.
-
-**Action :**
-
-1. Décider de la composition des bootnodes
-2. Reporter les noms dans `node/specs/g1_client-specs.yaml` :
-   ```yaml
-   bootNodes:
-     - "/dns/g1-boot1.duniter.org/tcp/30333/p2p/<PEER_ID>"
-     - "/dns/g1-boot2.duniter.org/tcp/30333/p2p/<PEER_ID>"
-     - "/dns/g1-boot3.duniter.org/tcp/30333/p2p/<PEER_ID>"
-   ```
-
----
-
-## Étape 3 — Fichiers de configuration réseau
-
-### 3.1. Fixer `first_ud` dans `resources/g1.yaml`
-
-**Pourquoi :** Si laissé à `null`, le premier DU sera créé exactement 24h après le timestamp du premier bloc. Hors, le lancement peut avoir lieu à n'importe quelle heure. Pour conserver la cohérence avec la Ğ1 v1 (DU créé chaque jour à heure fixe), il faut fixer explicitement ce timestamp.
+**Pourquoi :** Le Peer ID d'un nœud est dérivé de sa clé réseau (Ed25519). Il faut la générer en amont pour pouvoir renseigner les Peer ID dans les client specs **avant** le build-specs (étape 6), sans avoir à lancer de nœud.
 
 **Action :**
 
-Reporter dans `resources/g1.yaml` :
-```yaml
-first_ud: 1772967600000
+Chaque opérateur de bootnode génère sa clé réseau :
+```bash
+# Génère une clé réseau + affiche le Peer ID
+./target/release/duniter key generate-node-key --chain dev
+# Ligne 1 = Peer ID (12D3KooW...)
+# Ligne 2 = clé privée réseau (hex, 64 caractères)
+```
+
+**⚠️ Conserver précieusement la clé privée.** Elle sera injectée dans le nœud au démarrage via `--node-key <hex>` ou un fichier.
+
+Pour retrouver le Peer ID à partir d'une clé existante :
+```bash
+echo "<clé privée hex>" > /tmp/node-key
+./target/release/duniter key inspect-node-key --file /tmp/node-key
+rm /tmp/node-key
 ```
 
 ---
 
-## Étape 6 — Génération des specs réseau
+### A4. Définir les `bootNodes` dans `node/specs/g1_client-specs.yaml`
 
-### 6.1. Compléter `node/specs/g1_client-specs.yaml`
+**Pourquoi :** Ce sont les nœuds auxquels les clients se connecteront pour rejoindre le réseau. Les Peer ID proviennent des clés réseau générées en A3.
 
-**Pourquoi :** Ce fichier contient le Peer ID du nœud bootstrap, qui n'est connu qu'après le déploiement du bootstrap (étape 9). Cependant, pour un premier build de test, un Peer ID temporaire peut être utilisé.
+**Action :**
 
-**Action (jour J, après étape 9) :**
-
-1. Récupérer le Peer ID du nœud bootstrap :
-   ```bash
-   docker compose logs duniter-g1-smith | grep "Local node identity"
-   ```
-2. Mettre à jour `node/specs/g1_client-specs.yaml` :
+1. Collecter les Peer ID de chaque bootnode (générés en A3)
+2. Reporter dans `node/specs/g1_client-specs.yaml` :
    ```yaml
    bootNodes:
      - "/dns/g1-boot1.duniter.org/tcp/30333/p2p/12D3KooW..."
+     - "/dns/g1-boot2.duniter.org/tcp/30333/p2p/12D3KooW..."
    ```
-3. Relancer `cargo xtask release network build-specs g1` pour régénérer les specs avec le bon bootnode.
 
 ---
-
-*Ajouter les prochaines étapes au fur et à mesure de la préparation.*
