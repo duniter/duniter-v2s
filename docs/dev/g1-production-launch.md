@@ -80,44 +80,7 @@ jq '.identities | length' release/network/genesis.json
 jq '.initial_monetary_mass' release/network/genesis.json
 ```
 
-### Étape 3 — Fichiers de configuration réseau
-
-Créer `resources/g1.yaml` (modèle : `resources/gtest.yaml`) :
-
-```yaml
-ud: 1148                          # DU initial en centièmes de Ğ1
-first_ud: null
-first_ud_reeval: 1766232000000    # ms depuis epoch, à ajuster
-
-clique_smiths:
-  - name: "forgeron1"
-  - name: "forgeron2"
-  - name: "forgeron3"
-  - name: "forgeron_bootstrap"
-    session_keys: "0x..."         # généré à l'étape 4.1
-
-sudo_key: "5..."
-treasury_funder_pubkey: "..."
-technical_committee: ["forgeron1", "forgeron2", "forgeron3", "forgeron_bootstrap"]
-```
-
-Créer `node/specs/g1_client-specs.yaml` (modèle : `node/specs/gtest_client-specs.yaml`) :
-
-```yaml
-name: "Ğ1"
-id: "g1"
-chainType: "Live"
-protocolId: "g1"
-bootNodes:
-  - "/dns/g1-boot1.duniter.org/tcp/30333/p2p/<PEER_ID>"
-telemetryEndpoints:
-  - ["/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]
-properties:
-  tokenDecimals: 2
-  tokenSymbol: "Ğ"
-```
-
-### Étape 4 — Génération des clés de session bootstrap
+### Étape 3 — Génération des clés de session bootstrap
 
 > **Note :** On utilise le binaire compilé à l'étape précédente (l'image Docker n'existe pas encore à ce stade).
 
@@ -130,6 +93,16 @@ properties:
 # (--chain dev suffit : les clés dépendent de la phrase, pas du chain spec)
 ./target/release/duniter key generate-session-keys --chain dev --suri "<phrase secrète>"
 # → coller le résultat hex (Session Keys: 0x...) dans resources/g1.yaml, champ session_keys
+```
+
+### Étape 4 — Fichiers de configuration réseau
+
+Insérer les clés de session dans `resources/g1.yaml` :
+
+```yaml
+clique_smiths:
+  - name: "forgeron_bootstrap"
+    session_keys: "0x..."         # généré à l'étape 3
 ```
 
 ### Étape 5 — Build du runtime WASM
