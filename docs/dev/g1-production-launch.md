@@ -119,13 +119,17 @@ properties:
 
 ### Étape 4 — Génération des clés de session bootstrap
 
-```bash
-docker run --rm duniter/duniter-v2s-g1-1000:latest -- key generate
-# → noter la phrase secrète + clé publique SS58
+> **Note :** On utilise le binaire compilé à l'étape précédente (l'image Docker n'existe pas encore à ce stade).
 
-docker run --rm duniter/duniter-v2s-g1-1000:latest -- \
-  key generate-session-keys --chain g1_local --suri "<phrase secrète>"
-# → coller le résultat hex dans resources/g1.yaml, champ session_keys
+```bash
+# Générer une phrase secrète + clé publique SS58
+./target/release/duniter key generate
+# → noter la phrase secrète et la clé publique SS58
+
+# Générer les clés de session à partir de la phrase secrète
+# (--chain dev suffit : les clés dépendent de la phrase, pas du chain spec)
+./target/release/duniter key generate-session-keys --chain dev --suri "<phrase secrète>"
+# → coller le résultat hex (Session Keys: 0x...) dans resources/g1.yaml, champ session_keys
 ```
 
 ### Étape 5 — Build du runtime WASM
