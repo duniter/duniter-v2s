@@ -26,30 +26,6 @@ export DUNITERTEAM_PASSWD="..."  # Docker Hub org duniter
 
 ---
 
-## Lacunes identifiées (à corriger avant le jour J)
-
-> Ces 4 points **bloquent** le lancement g1 en l'état actuel du code.
-
-### 1. `g1_live` absent de `command.rs`
-
-`xtask/src/network/build_network_specs.rs:69` utilise `--chain g1_live`, mais `node/src/command.rs` ne gère pas ce chain ID (contrairement à `gtest_live` ligne 145 et `gdev_live` ligne 107).
-
-**Fix** : Ajouter dans `command.rs` un bloc `"g1_live" => { ... }` calqué sur `gtest_live`, et dans `chain_spec/g1.rs` les fonctions `live_chainspecs()` et la struct `ClientSpec` (calquées sur `gtest.rs`).
-
-### 2. `resources/g1.yaml` manquant
-
-Pas de fichier de configuration réseau g1 (forgerons, sudo, comité technique). Seuls `gdev.yaml` et `gtest.yaml` existent.
-
-### 3. `node/specs/g1_client-specs.yaml` manquant
-
-Pas de client specs g1 (bootnodes, télémétrie, token symbol).
-
-### 4. `chain_spec/g1.rs` incomplet
-
-Manquent `ClientSpec`, `live_chainspecs()`, `development_chainspecs()` (présentes dans `gtest.rs`).
-
----
-
 ## Procédure de lancement
 
 ### Étape 1 — Branche réseau
