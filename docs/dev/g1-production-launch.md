@@ -89,7 +89,7 @@ Résultat : `release/network/g1.json`
 cargo xtask release network create g1-1000 network/g1-1000
 ```
 
-Upload sur GitLab : genesis.json, g1.json, g1.yaml, WASM, block_hist.json, cert_hist.json, tx_hist.json.
+Upload sur GitLab : genesis.json, g1.json, g1.yaml, WASM, block_hist.json.gz, cert_hist.json.gz, tx_hist.json.gz.
 
 ### Étape 6 — Release client
 
