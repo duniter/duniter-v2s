@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::{Result, anyhow};
-use std::path::Path;
+use std::{path::Path, process::Command};
 
 /// Crée une release réseau sur GitLab avec les assets nécessaires.
 /// Une release réseau = produire et publier le genesis.json et le runtime wasm.
@@ -56,9 +56,6 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
             runtime
         ),
         format!("release/network/{}_runtime.compact.wasm", runtime),
-        "release/network/block_hist.json".to_string(),
-        "release/network/cert_hist.json".to_string(),
-        "release/network/tx_hist.json".to_string(),
     ];
 
     for file in &required_files {
@@ -105,19 +102,6 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
             format!("{}.json", runtime),
             format!("release/network/{}.json", runtime),
         ),
-        // Fichiers historiques pour Squid (indexeur)
-        (
-            "block_hist.json".to_string(),
-            "release/network/block_hist.json".to_string(),
-        ),
-        (
-            "cert_hist.json".to_string(),
-            "release/network/cert_hist.json".to_string(),
-        ),
-        (
-            "tx_hist.json".to_string(),
-            "release/network/tx_hist.json".to_string(),
-        ),
     ];
 
     for (asset_name, file_path) in &asset_files {
@@ -134,8 +118,32 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
             "📎 Création du lien d'asset: {} -> {}",
             asset_name, asset_url
         );
-        // Créer le lien d'asset via GitLab
         crate::gitlab::create_asset_link(network.clone(), asset_name.clone(), asset_url).await?;
+    }
+
+    // Fichiers historiques pour Squid (indexeur) — compressés car trop volumineux pour GitLab
+    let squid_files = vec!["block_hist.json", "cert_hist.json", "tx_hist.json"];
+    for filename in &squid_files {
+        let src = format!("release/network/{}", filename);
+        if !Path::new(&src).exists() {
+            return Err(anyhow!("Le fichier Squid n'existe pas: {}", src));
+        }
+        let gz_path = format!("{}.gz", src);
+        let gz_name = format!("{}.gz", filename);
+        println!("🗜️  Compression de {}...", filename);
+        let status = Command::new("gzip").args(["-k", "-f", &src]).status()?;
+        if !status.success() {
+            return Err(anyhow!("Échec de la compression de {}", src));
+        }
+        println!("📤 Upload de {}...", gz_name);
+        let asset_url = crate::gitlab::upload_file(
+            project_id.clone(),
+            Path::new(&gz_path),
+            gz_name.clone(),
+        )
+        .await?;
+        println!("📎 Création du lien d'asset: {} -> {}", gz_name, asset_url);
+        crate::gitlab::create_asset_link(network.clone(), gz_name, asset_url).await?;
     }
 
     println!("✅ Release réseau créée avec succès pour: {}", network);
