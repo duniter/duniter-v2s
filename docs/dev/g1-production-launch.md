@@ -148,14 +148,23 @@ volumes:
 ```
 
 ```bash
+# Injecter les clés de session dans le keystore (avant le premier démarrage)
+# Le '--' initial bypasse l'entrypoint Docker pour exécuter la commande directement
+docker compose run --rm duniter-g1-smith -- key generate-session-keys \
+  --chain g1 -d /var/lib/duniter --suri "<phrase secrète de l'étape A4>"
+
+# Démarrer le nœud (les clés sont déjà en place)
 docker compose up -d
+
+# Vérifier
 docker compose logs duniter-g1-smith | grep "Local node identity"
 # → noter le Peer ID (12D3KooW...) pour g1_client-specs.yaml
+docker compose logs -f duniter-g1-smith | grep "Prepared block"
 ```
 
-### Étape 8 — Rotation des clés de session
+### Étape 9 — Rotation des clés de session (optionnel)
 
-Les clés du genesis viennent de la machine de build. Les roter sur le serveur :
+Les clés du genesis viennent de la machine de build. Pour les remplacer par des clés générées directement sur le serveur :
 
 ```bash
 curl -H "Content-Type: application/json" \
@@ -165,7 +174,7 @@ curl -H "Content-Type: application/json" \
 
 Puis soumettre on-chain via `session.setKeys` (polkadot.js/apps ou subxt). Prise d'effet après une epoch (4h).
 
-### Étape 9 — Forgerons additionnels
+### Étape 10 — Forgerons additionnels
 
 Chaque forgeron : même docker-compose adapté (nom, adresse publique) + bootnode du bootstrap. Puis :
 
@@ -179,7 +188,7 @@ curl -H "Content-Type: application/json" \
 
 Alternative Debian : `dpkg -i duniter.deb` + configurer `/etc/duniter/env_file` + `systemctl start duniter-smith distance-oracle`.
 
-### Étape 10 — Nœuds miroirs
+### Étape 11 — Nœuds miroirs
 
 ```yaml
 services:
