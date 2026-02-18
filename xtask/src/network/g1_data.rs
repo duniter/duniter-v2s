@@ -156,7 +156,6 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
         cd /dump
         cp /g1-dump.tgz /dump
         tar xvzf g1-dump.tgz
-        mv tmp/* duniter_default
         echo "🔄 Conversion avec py-g1-migrator..."
         cd /py-g1-migrator
         echo "🔧 Génération main (1/4)..."
@@ -186,7 +185,7 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
         "-v",
         &output_volume,
         "-e",
-        "LEVELDB_PATH=/dump/duniter_default/data/duniter_default/data/leveldb",
+        "LEVELDB_PATH=/dump/duniter_default/data/leveldb",
         "registry.duniter.org/tools/py-g1-migrator:latest",
         "sh",
         "-c",
