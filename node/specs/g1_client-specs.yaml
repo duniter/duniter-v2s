@@ -4,7 +4,7 @@ chainType: "Live"
 protocolId: "g1"
 bootNodes:
   # TODO: replace with actual Peer ID after bootstrap deployment (step 9)
-  - "/dns/g1.duniter.cgeek.fr/tcp/30333/p2p/12D3KooWRsoY1uWFh5manQ7qjYt6bNiLTfJr9fAgcLz3mxwJY79y"
+  - "/dns/g1.p2p.legal/tcp/30333/p2p/12D3KooWLgBR61rqD38Q9XhU2ygaD3TKzDjLVR5dZ21Qe6nqL2sf"
 telemetryEndpoints:
   - ["/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]
 properties:
