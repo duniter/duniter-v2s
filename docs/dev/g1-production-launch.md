@@ -45,7 +45,7 @@ Vérifier `spec_version: 1000` dans `runtime/g1/src/lib.rs` et la version dans `
 ```bash
 cargo xtask release network g1-data
 # ou avec un dump spécifique :
-cargo xtask release network g1-data --dump-url "https://dl.cgeek.fr/public/auto-backup-g1-duniter-1.8.7_YYYY-MM-DD_00-00.tgz"
+cargo xtask release network g1-data --dump-url "https://dl.cgeek.fr/public/auto-backup-g1-duniter-1.8.7_YYYY-MM-DD_23-00.tgz"
 ```
 
 Utilise Docker avec `py-g1-migrator` pour extraire identités, soldes, certifications depuis le dump LevelDB de Duniter v1.
