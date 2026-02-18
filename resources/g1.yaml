@@ -13,15 +13,24 @@ first_ud_reeval: 1774112400000
 
 # Clique Smith WoT: each smith will certify each other smith automatically on Genesis
 clique_smiths:
-  - name: "cgeek"
-    # This smith will be the first author
-    session_keys: "0xfe4e64b41ee958de0d1bd00dc83cc41136b0b1a0c13170eccd5a4631729fc68afe772daa4ebd7dd4dba6735163c3fbbb774c3f9aaaef14c74d3795d09829a659fe772daa4ebd7dd4dba6735163c3fbbb774c3f9aaaef14c74d3795d09829a659fe772daa4ebd7dd4dba6735163c3fbbb774c3f9aaaef14c74d3795d09829a659"
   - name: "moul"
   - name: "HugoTrentesaux"
+  - name: "tuxmain"
+  - name: "1000i100"
+  - name: "vit"
+  - name: "cgeek"
+  - name: "aya"
+  - name: "Bulmananabelle"
+  - name: "gui_tooun"
+  - name: "vjrj"
+  - name: "Damery"
+  - name: "Nicolas80"
   - name: "poka"
+    # This smith will be the first author
+    session_keys: "0x9222f5d87e21b67be5070be61e5291ed2ef302fdeebd816a5967fac9bcb04355d6ebcdcc0d9fd14fce64b74a6ec867ee400f044635b536615a7b89c7c5498832d6ebcdcc0d9fd14fce64b74a6ec867ee400f044635b536615a7b89c7c5498832d6ebcdcc0d9fd14fce64b74a6ec867ee400f044635b536615a7b89c7c5498832"
 
 # The address which will automatically transfer 1,00 Ğ1 on Genesis to the Treasury
 treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"
 
 # The technical committee members, to act as sudo
-technical_committee: ["cgeek", "moul", "HugoTrentesaux", "poka"]
+technical_committee: ["moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "Elois", "poka"]
