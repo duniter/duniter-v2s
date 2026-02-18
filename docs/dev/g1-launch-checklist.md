@@ -71,7 +71,7 @@ rm /tmp/node-key
 
 ---
 
-@### A4. Générer les clés de session du forgeron bootstrap
+### A4. Générer les clés de session du forgeron bootstrap
 
 **Pourquoi :** Le forgeron bootstrap est le seul à produire des blocs au lancement. Ses clés de session doivent être générées et insérées dans `resources/g1.yaml` avant le build des specs.
 

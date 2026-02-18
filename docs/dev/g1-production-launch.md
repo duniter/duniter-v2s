@@ -62,10 +62,11 @@ jq '.initial_monetary_mass' release/network/genesis.json
 
 ```bash
 cargo xtask release network build-runtime g1
-cp release/g1_runtime.compact.compressed.wasm release/network/
 ```
 
-Utilise `srtool` (Docker `paritytech/srtool:1.88.0`) pour un build reproductible. Le hash SHA256 est dans `release/srtool_output_g1.json`.
+Utilise `srtool` (Docker `paritytech/srtool:1.88.0`) pour un build reproductible. Le fichier WASM est généré directement dans `release/network/`. Le hash SHA256 est dans `release/network/network_srtool_output.json`.
+
+> **Note ARM (Mac M1/M2/M3/M4) :** L'image srtool est amd64 uniquement. Le build tournera sous émulation et sera très lent. Allouez au moins 16 Go de RAM dans Docker Desktop. Pour un build plus rapide, utilisez une machine Linux x86_64 ou déléguez à la CI GitLab.
 
 ### Étape 4 — Génération des specs réseau
 
