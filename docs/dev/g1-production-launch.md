@@ -93,6 +93,14 @@ Upload sur GitLab : genesis.json, g1.json, g1.yaml, WASM, fichiers Squid.
 
 ### Étape 6 — Release client
 
+Créer le jalon GitLab correspondant à la version client **avant** de lancer la release :
+
+1. Ouvrir https://git.duniter.org/nodes/rust/duniter-v2s/-/milestones/new
+2. Titre : `client-<version>` (ex : `client-0.13.0`, la version est dans `node/Cargo.toml`)
+3. Cliquer "Create milestone"
+
+Puis lancer les commandes :
+
 ```bash
 cargo xtask release client build-raw-specs g1-1000
 cargo xtask release client create g1-1000 network/g1-1000
