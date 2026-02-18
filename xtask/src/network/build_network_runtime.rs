@@ -78,12 +78,24 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
     );
 
     // Exécuter le conteneur Docker avec srtool
+    // srtool n'est disponible qu'en amd64 : forcer la plateforme pour compatibilité ARM (Mac M1/M2/M3/M4)
+    let is_arm = std::env::consts::ARCH == "aarch64";
+    if is_arm {
+        eprintln!("⚠️  Architecture ARM détectée. L'image srtool est amd64 uniquement.");
+        eprintln!("   Le build tournera sous émulation (Rosetta/QEMU) et sera très lent.");
+        eprintln!("   Assurez-vous que Docker Desktop a au moins 16 Go de RAM allouée.");
+        eprintln!("   Pour un build plus rapide, utilisez une machine Linux x86_64.");
+    }
+
     let build_volume = format!("{}:/build", current_dir.to_string_lossy());
     let package = format!("PACKAGE={}-runtime", runtime);
     let runtime_dir = format!("RUNTIME_DIR=runtime/{}", runtime);
-    let docker_args = vec![
-        "run",
-        "--rm",
+    let mut docker_args = vec!["run", "--rm"];
+    // Forcer la plateforme amd64 pour que Docker utilise l'émulation sur ARM
+    if is_arm {
+        docker_args.extend_from_slice(&["--platform", "linux/amd64"]);
+    }
+    docker_args.extend_from_slice(&[
         "-v",
         &build_volume,
         "-e",
@@ -94,7 +106,7 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
         "sh",
         "-c",
         &script_content,
-    ];
+    ]);
 
     println!("🐳 Lancement du conteneur srtool...");
     let mut docker_cmd = Command::new("docker");
