@@ -89,7 +89,7 @@ Résultat : `release/network/g1.json`
 cargo xtask release network create g1-1000 network/g1-1000
 ```
 
-Upload sur GitLab : genesis.json, g1.json, g1.yaml, WASM, fichiers Squid.
+Upload sur GitLab : genesis.json, g1.json, g1.yaml, WASM, block_hist.json, cert_hist.json, tx_hist.json.
 
 ### Étape 6 — Release client
 
@@ -162,7 +162,7 @@ docker compose logs duniter-g1-smith | grep "Local node identity"
 docker compose logs -f duniter-g1-smith | grep "Prepared block"
 ```
 
-### Étape 9 — Rotation des clés de session (optionnel)
+### Étape 8 — Rotation des clés de session (optionnel)
 
 Les clés du genesis viennent de la machine de build. Pour les remplacer par des clés générées directement sur le serveur :
 
@@ -174,7 +174,7 @@ curl -H "Content-Type: application/json" \
 
 Puis soumettre on-chain via `session.setKeys` (polkadot.js/apps ou subxt). Prise d'effet après une epoch (4h).
 
-### Étape 10 — Forgerons additionnels
+### Étape 9 — Forgerons additionnels
 
 Chaque forgeron : même docker-compose adapté (nom, adresse publique) + bootnode du bootstrap. Puis :
 
@@ -188,7 +188,7 @@ curl -H "Content-Type: application/json" \
 
 Alternative Debian : `dpkg -i duniter.deb` + configurer `/etc/duniter/env_file` + `systemctl start duniter-smith distance-oracle`.
 
-### Étape 11 — Nœuds miroirs
+### Étape 10 — Nœuds miroirs
 
 ```yaml
 services:
