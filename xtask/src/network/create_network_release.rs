@@ -56,6 +56,9 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
             runtime
         ),
         format!("release/network/{}_runtime.compact.wasm", runtime),
+        "release/network/block_hist.json".to_string(),
+        "release/network/cert_hist.json".to_string(),
+        "release/network/tx_hist.json".to_string(),
     ];
 
     for file in &required_files {
@@ -101,6 +104,19 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
         (
             format!("{}.json", runtime),
             format!("release/network/{}.json", runtime),
+        ),
+        // Fichiers historiques pour Squid (indexeur)
+        (
+            "block_hist.json".to_string(),
+            "release/network/block_hist.json".to_string(),
+        ),
+        (
+            "cert_hist.json".to_string(),
+            "release/network/cert_hist.json".to_string(),
+        ),
+        (
+            "tx_hist.json".to_string(),
+            "release/network/tx_hist.json".to_string(),
         ),
     ];
 
