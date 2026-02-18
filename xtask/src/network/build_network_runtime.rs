@@ -90,6 +90,22 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
     let build_volume = format!("{}:/build", current_dir.to_string_lossy());
     let package = format!("PACKAGE={}-runtime", runtime);
     let runtime_dir = format!("RUNTIME_DIR=runtime/{}", runtime);
+    // Volume Docker nommé pour le cache srtool : évite les problèmes de permissions
+    // VirtioFS (UID mapping) tout en persistant le cache entre les runs
+    let cache_volume_name = format!("srtool-cache-{}", runtime);
+    let cache_volume = format!(
+        "{}:/build/runtime/{}/target/srtool",
+        cache_volume_name, runtime
+    );
+    // Initialiser les permissions du volume (créé root:root par défaut)
+    // pour que l'utilisateur builder (1001) puisse écrire dedans
+    let init_volume = format!("{}:/srtool-cache", cache_volume_name);
+    let init_status = Command::new("docker")
+        .args(["run", "--rm", "-v", &init_volume, "alpine", "chown", "1001:1001", "/srtool-cache"])
+        .status()?;
+    if !init_status.success() {
+        eprintln!("⚠️  Impossible d'initialiser les permissions du volume cache");
+    }
     let mut docker_args = vec!["run", "--rm"];
     // Forcer la plateforme amd64 pour que Docker utilise l'émulation sur ARM
     if is_arm {
@@ -98,6 +114,8 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
     docker_args.extend_from_slice(&[
         "-v",
         &build_volume,
+        "-v",
+        &cache_volume,
         "-e",
         runtime_dir.as_str(),
         "-e",
