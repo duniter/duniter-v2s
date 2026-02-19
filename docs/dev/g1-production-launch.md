@@ -28,7 +28,7 @@ export DUNITERTEAM_PASSWD="..."  # Docker Hub org duniter
 
 ## Procédure de lancement
 
-> **Prérequis :** Avant de commencer, les actions de la checklist `g1-launch-checklist.md` (section « En amont du jour J ») doivent être réalisées : clique smiths, comité technique, clés de session bootstrap, clés réseau bootnodes, client specs.
+> **Prérequis :** Les actions de la checklist `g1-launch-checklist.md` (section « En amont du jour J ») doivent être réalisées.
 
 ### Étape 1 — Branche réseau
 
@@ -44,13 +44,7 @@ Vérifier `spec_version: 1000` dans `runtime/g1/src/lib.rs` et la version dans `
 
 ```bash
 cargo xtask release network g1-data
-# ou avec un dump spécifique :
-cargo xtask release network g1-data --dump-url "https://dl.cgeek.fr/public/auto-backup-g1-duniter-1.8.7_YYYY-MM-DD_23-00.tgz"
 ```
-
-Utilise Docker avec `py-g1-migrator` pour extraire identités, soldes, certifications depuis le dump LevelDB de Duniter v1.
-
-Fichiers générés dans `release/network/` : `genesis.json`, `block_hist.json`, `cert_hist.json`, `tx_hist.json`.
 
 ```bash
 # Vérification
@@ -58,15 +52,25 @@ jq '.identities | length' release/network/genesis.json
 jq '.initial_monetary_mass' release/network/genesis.json
 ```
 
+<details><summary>Options et fichiers produits</summary>
+
+Dump spécifique : `cargo xtask release network g1-data --dump-url "https://...tgz"`
+
+Fichiers générés dans `release/network/` : `genesis.json`, `block_hist.json`, `cert_hist.json`, `tx_hist.json`.
+</details>
+
 ### Étape 3 — Build du runtime WASM
 
 ```bash
 cargo xtask release network build-runtime g1
 ```
 
-Utilise `srtool` (Docker `paritytech/srtool:1.88.0`) pour un build reproductible. Le fichier WASM est généré directement dans `release/network/`. Le hash SHA256 est dans `release/network/network_srtool_output.json`.
+> **Note ARM :** L'image srtool est amd64 uniquement. Sur Mac ARM, allouez 16 Go+ à Docker Desktop ou utilisez une machine x86_64.
 
-> **Note ARM (Mac M1/M2/M3/M4) :** L'image srtool est amd64 uniquement. Le build tournera sous émulation et sera très lent. Allouez au moins 16 Go de RAM dans Docker Desktop. Pour un build plus rapide, utilisez une machine Linux x86_64 ou déléguez à la CI GitLab.
+<details><summary>Fonctionnement</summary>
+
+Build reproductible via `srtool` (Docker `paritytech/srtool:1.88.0`). Le WASM est généré dans `release/network/` et le hash SHA256 dans `release/network/network_srtool_output.json`.
+</details>
 
 ### Étape 4 — Génération des specs réseau
 
@@ -74,14 +78,16 @@ Utilise `srtool` (Docker `paritytech/srtool:1.88.0`) pour un build reproductible
 cargo xtask release network build-specs g1
 ```
 
+<details><summary>Fonctionnement</summary>
+
 Exécute en interne :
 ```bash
 DUNITER_GENESIS_DATA=release/network/genesis.json \
 WASM_FILE=release/network/g1_runtime.compact.compressed.wasm \
 cargo run --release --features g1 --no-default-features build-spec --chain g1_live
 ```
-
 Résultat : `release/network/g1.json`
+</details>
 
 ### Étape 5 — Release réseau GitLab
 
@@ -89,17 +95,18 @@ Résultat : `release/network/g1.json`
 cargo xtask release network create g1-1000 network/g1-1000
 ```
 
-Upload sur GitLab : genesis.json, g1.json, g1.yaml, WASM, block_hist.json.gz, cert_hist.json.gz, tx_hist.json.gz.
+<details><summary>Assets uploadés</summary>
+
+genesis.json, g1.json, g1.yaml, WASM, block_hist.json.gz, cert_hist.json.gz, tx_hist.json.gz.
+</details>
 
 ### Étape 6 — Release client
 
-Créer le jalon GitLab correspondant à la version client **avant** de lancer la release :
+Créer le jalon GitLab **avant** de lancer la release :
 
 1. Ouvrir https://git.duniter.org/nodes/rust/duniter-v2s/-/milestones/new
 2. Titre : `client-<version>` (ex : `client-0.13.0`, la version est dans `node/Cargo.toml`)
 3. Cliquer "Create milestone"
-
-Puis lancer les commandes :
 
 ```bash
 cargo xtask release client build-raw-specs g1-1000
@@ -107,15 +114,16 @@ cargo xtask release client create g1-1000 network/g1-1000
 cargo xtask release client trigger-builds g1-1000 network/g1-1000
 ```
 
-- `build-raw-specs` génère le fichier `g1-raw.json` dans `release/client/` et `node/specs/` (usage local uniquement, le fichier est gitignored).
-- `create` upload `g1-raw.json` vers la release GitLab.
-- `trigger-builds` récupère l'URL du fichier depuis la release et la passe aux jobs CI via la variable `RAW_SPEC_URL`. Chaque job télécharge le fichier avant compilation.
-
-La dernière commande déclenche la CI GitLab (DEB/RPM x64+ARM, Docker amd64+arm64, manifest multi-arch).
-
 Image Docker résultante : `duniter/duniter-v2s-g1-1000:1000-<client_version>`
 
-### Étape 7 — Déploiement du nœud bootstrap
+<details><summary>Rôle de chaque commande</summary>
+
+- `build-raw-specs` : génère `g1-raw.json` localement (gitignored).
+- `create` : upload les specs vers la release GitLab.
+- `trigger-builds` : passe l'URL de `g1-raw.json` aux jobs CI via `RAW_SPEC_URL`, déclenche DEB/RPM x64+ARM, Docker amd64+arm64, manifest multi-arch.
+</details>
+
+### Étape 7 — Déploiement du noeud bootstrap
 
 ```yaml
 # docker-compose.yml sur le serveur bootstrap
@@ -152,23 +160,30 @@ volumes:
 ```
 
 ```bash
-# Injecter les clés de session dans le keystore (avant le premier démarrage)
-# Le '--' initial bypasse l'entrypoint Docker pour exécuter la commande directement
+# Injecter les clés de session (avant le premier démarrage)
+# Le '--' bypasse l'entrypoint Docker
 docker compose run --rm duniter-g1-smith -- key generate-session-keys \
   --chain g1 -d /var/lib/duniter --suri "<phrase secrète de l'étape A4>"
 
-# Démarrer le nœud (les clés sont déjà en place)
+# Démarrer
 docker compose up -d
 
-# Vérifier
+# Vérifier (noter le Peer ID 12D3KooW... pour g1_client-specs.yaml)
 docker compose logs duniter-g1-smith | grep "Local node identity"
-# → noter le Peer ID (12D3KooW...) pour g1_client-specs.yaml
 docker compose logs -f duniter-g1-smith | grep "Prepared block"
 ```
 
+<details><summary>Variables d'environnement du docker-compose</summary>
+
+- `DUNITER_VALIDATOR: "true"` : active le mode forgeron (production de blocs + GRANDPA).
+- `DUNITER_PRUNING_PROFILE: light` : conserve uniquement les 256 derniers blocs d'état (suffisant pour un forgeron). Utiliser `archive` pour un miroir/indexeur.
+- `DUNITER_PUBLIC_ADDR` : adresse P2P annoncée aux autres noeuds, doit correspondre au DNS public du serveur.
+- `ORACLE_EXECUTION_INTERVAL: 1800` : l'oracle de distance s'exécute toutes les 30 min.
+</details>
+
 ### Étape 8 — Rotation des clés de session (optionnel)
 
-Les clés du genesis viennent de la machine de build. Pour les remplacer par des clés générées directement sur le serveur :
+Pour remplacer les clés du genesis par des clés générées sur le serveur :
 
 ```bash
 curl -H "Content-Type: application/json" \
@@ -178,12 +193,16 @@ curl -H "Content-Type: application/json" \
 
 Puis soumettre on-chain via `session.setKeys` (polkadot.js/apps ou subxt). Prise d'effet après une epoch (4h).
 
+<details><summary>Pourquoi faire la rotation</summary>
+
+Les clés injectées à l'étape 7 proviennent de la machine de build. La rotation génère de nouvelles clés directement sur le serveur de production, ce qui évite que la phrase secrète de build ait un pouvoir de validation permanent.
+</details>
+
 ### Étape 9 — Forgerons additionnels
 
-Chaque forgeron : même docker-compose adapté (nom, adresse publique) + bootnode du bootstrap. Puis :
+Même docker-compose adapté (nom, adresse publique) + bootnode du bootstrap. Puis :
 
 ```bash
-# Générer les clés de session
 curl -H "Content-Type: application/json" \
   -d '{"id":1,"jsonrpc":"2.0","method":"author_rotateKeys","params":[]}' \
   http://127.0.0.1:9944
@@ -192,7 +211,7 @@ curl -H "Content-Type: application/json" \
 
 Alternative Debian : `dpkg -i duniter.deb` + configurer `/etc/duniter/env_file` + `systemctl start duniter-smith distance-oracle`.
 
-### Étape 10 — Nœuds miroirs
+### Étape 10 — Noeuds miroirs
 
 ```yaml
 services:
@@ -207,7 +226,7 @@ services:
     volumes: [g1-mirror:/var/lib/duniter]
 ```
 
-Reverse proxy nginx pour WSS :
+<details><summary>Reverse proxy nginx pour WSS</summary>
 
 ```nginx
 server {
@@ -223,6 +242,9 @@ server {
 }
 ```
 
+Le `proxy_read_timeout 86400` (24h) est nécessaire pour les connexions WebSocket longue durée.
+</details>
+
 ---
 
 ## Vérifications post-lancement
@@ -237,7 +259,6 @@ curl -s -d '{"id":1,"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[
   -H "Content-Type: application/json" http://127.0.0.1:9944
 ```
 
-Checklist :
 - [ ] Blocs produits régulièrement
 - [ ] Finalisation active
 - [ ] Forgerons connectés et en ligne
