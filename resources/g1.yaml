@@ -33,4 +33,5 @@ clique_smiths:
 treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"
 
 # The technical committee members, to act as sudo
-technical_committee: ["moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "Elois", "poka"]
+technical_committee:
+  ["moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "poka", aya]
