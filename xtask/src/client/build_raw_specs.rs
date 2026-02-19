@@ -146,41 +146,14 @@ pub fn build_raw_specs(network: String) -> Result<()> {
     println!("   - Runtime: {}", runtime);
     println!("   - Fichier raw spec: {}", raw_spec_file);
 
-    // Copier le fichier dans specs/
+    // Copier le fichier dans node/specs/ pour utilisation locale
+    // (include_bytes! requiert ce fichier à la compilation avec la feature 'embed')
+    // En CI, ce fichier est téléchargé depuis la release GitLab par ensure_raw_spec.
     std::fs::create_dir_all("node/specs/")?;
     let dest_path = format!("node/specs/{}-raw.json", runtime);
     std::fs::copy(&raw_spec_file, &dest_path)?;
     println!("📋 Fichier copié dans node/specs/: {}", dest_path);
-
-    // Commiter et pousser le fichier raw spec (force add : le fichier est dans .gitignore)
-    // Nécessaire car include_bytes! dans le code source requiert ce fichier à la compilation CI
-    let git_add = Command::new("git")
-        .args(["add", "-f", &dest_path])
-        .status()?;
-    if !git_add.success() {
-        return Err(anyhow!("Impossible d'ajouter {} au suivi git", dest_path));
-    }
-    println!("📌 Fichier ajouté au suivi git: {}", dest_path);
-
-    let commit_msg = format!("chore: commit raw spec for network {}", network);
-    let git_commit = Command::new("git")
-        .args(["commit", "-m", &commit_msg, "--", &dest_path])
-        .status()?;
-    if !git_commit.success() {
-        return Err(anyhow!(
-            "Impossible de commiter {}. Vérifiez l'état du dépôt git.",
-            dest_path
-        ));
-    }
-    println!("✅ Commit créé: {}", commit_msg);
-
-    let git_push = Command::new("git").args(["push"]).status()?;
-    if !git_push.success() {
-        return Err(anyhow!(
-            "Impossible de pousser le commit. Vérifiez vos droits d'accès au dépôt distant."
-        ));
-    }
-    println!("🚀 Commit poussé sur la branche distante");
+    println!("   (Ce fichier est gitignored et sera téléchargé en CI depuis la release GitLab)");
 
     Ok(())
 }

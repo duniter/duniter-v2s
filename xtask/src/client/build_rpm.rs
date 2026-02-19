@@ -54,6 +54,9 @@ pub fn build_rpm(network: String) -> Result<()> {
 
     println!("📦 Runtime: {}", runtime);
 
+    // Step 0: Ensure the raw spec file exists (download from release if needed)
+    super::ensure_raw_spec::ensure_raw_spec(&network)?;
+
     // Step 1: Install cargo-generate-rpm
     println!("📥 Installing cargo-generate-rpm...");
     exec_should_success(Command::new("cargo").args([

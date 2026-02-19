@@ -24,16 +24,16 @@ stages:
 .debian_build_template:
   extends: .release_rules
   before_script:
-    # Install build dependencies
-    - apt-get update -qq && apt-get install -y -qq protobuf-compiler clang libclang-dev
+    # Install build dependencies (curl needed to download raw spec from GitLab release)
+    - apt-get update -qq && apt-get install -y -qq protobuf-compiler clang libclang-dev curl
   script:
     - cargo xtask client-build-deb $NETWORK
 
 .rpm_build_template:
   extends: .release_rules
   before_script:
-    # Install RPM build tools and dependencies
-    - apt-get update -qq && apt-get install -y -qq rpm protobuf-compiler clang libclang-dev
+    # Install RPM build tools and dependencies (curl needed to download raw spec from GitLab release)
+    - apt-get update -qq && apt-get install -y -qq rpm protobuf-compiler clang libclang-dev curl
   script:
     - cargo xtask client-build-rpm $NETWORK
 

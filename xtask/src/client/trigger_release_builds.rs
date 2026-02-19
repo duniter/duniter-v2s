@@ -155,12 +155,32 @@ pub async fn trigger_release_builds(
 
     println!("   {} job(s) to execute", jobs.len());
 
+    // Find the raw spec URL from existing release assets
+    let runtime = super::ensure_raw_spec::extract_runtime(&network)?;
+    let raw_spec_name = format!("{}-raw.json", runtime);
+    let raw_spec_url = existing_assets
+        .iter()
+        .find(|(name, _)| name == &raw_spec_name)
+        .map(|(_, url)| url.clone())
+        .ok_or_else(|| {
+            anyhow!(
+                "Asset '{}' not found in release '{}'.\n\
+                 Make sure 'cargo xtask release client create' was run before trigger-builds.",
+                raw_spec_name,
+                release_tag
+            )
+        })?;
+    println!("   Raw spec URL: {}", raw_spec_url);
+
     // Step 1: Trigger the pipeline
     println!("\n📡 Step 1: Triggering CI pipeline...");
     let pipeline = crate::gitlab::trigger_pipeline(
         PROJECT_ID.to_string(),
         branch.clone(),
-        vec![("NETWORK".to_string(), network.clone())],
+        vec![
+            ("NETWORK".to_string(), network.clone()),
+            ("RAW_SPEC_URL".to_string(), raw_spec_url),
+        ],
     )
     .await?;
 
