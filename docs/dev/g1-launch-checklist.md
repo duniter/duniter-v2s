@@ -92,7 +92,24 @@ rm /tmp/node-key
 
 ---
 
-### A5. Définir les `bootNodes` dans `node/specs/g1_client-specs.yaml`
+### A5. Vérifier les paramètres économiques dans `resources/g1.yaml`
+
+**Pourquoi :** Ces valeurs sont inscrites dans le bloc genesis et ne sont plus modifiables après lancement.
+
+**Action :** Vérifier/ajuster dans `resources/g1.yaml` :
+
+```yaml
+ud: 1148                        # Montant du DU en centièmes (11,48 Ğ1)
+first_ud: 1772967600000         # Timestamp ms du 1er DU (null = auto depuis migration)
+first_ud_reeval: 1774112400000  # Timestamp ms de la 1ère réévaluation du DU
+treasury_funder_pubkey: "2ny7..." # Clé publique v1 qui financera la trésorerie (1,00 Ğ1)
+```
+
+**Contrainte :** `first_ud` < `first_ud_reeval` et `ud` > 0 (vérifié au build).
+
+---
+
+### A6. Définir les `bootNodes` dans `node/specs/g1_client-specs.yaml`
 
 **Pourquoi :** Ce sont les nœuds auxquels les clients se connecteront pour rejoindre le réseau. Les Peer ID proviennent des clés réseau générées en A3.
 
