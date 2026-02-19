@@ -101,7 +101,16 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
     // pour que l'utilisateur builder (1001) puisse écrire dedans
     let init_volume = format!("{}:/srtool-cache", cache_volume_name);
     let init_status = Command::new("docker")
-        .args(["run", "--rm", "-v", &init_volume, "alpine", "chown", "1001:1001", "/srtool-cache"])
+        .args([
+            "run",
+            "--rm",
+            "-v",
+            &init_volume,
+            "alpine",
+            "chown",
+            "1001:1001",
+            "/srtool-cache",
+        ])
         .status()?;
     if !init_status.success() {
         eprintln!("⚠️  Impossible d'initialiser les permissions du volume cache");
