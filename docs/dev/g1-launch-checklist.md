@@ -52,21 +52,19 @@ Organisée par étape de la procédure `g1-production-launch.md`.
 
 **Action :**
 
-Chaque opérateur de bootnode génère sa clé réseau :
+Chaque opérateur de bootnode génère sa clé réseau (sur la machine de build) :
 ```bash
-# Génère une clé réseau + affiche le Peer ID
-./target/release/duniter key generate-node-key --chain dev
-# Ligne 1 = Peer ID (12D3KooW...)
-# Ligne 2 = clé privée réseau (hex, 64 caractères)
+# Génère le fichier node.key + affiche le Peer ID
+./target/release/duniter key generate-node-key --chain dev --file node.key
+# → noter le Peer ID affiché (12D3KooW...) pour l'étape A6
+# → transférer node.key sur le serveur bootstrap
 ```
 
-**⚠️ Conserver précieusement la clé privée.** Elle sera injectée dans le nœud au démarrage via `--node-key <hex>` ou un fichier.
+**⚠️ Le fichier `node.key` doit être déployé sur le serveur** et monté dans le docker-compose (étape 7). Sans cela, l'entrypoint Docker génère une nouvelle clé et le Peer ID ne correspondra plus aux bootNodes des specs embarquées.
 
 Pour retrouver le Peer ID à partir d'une clé existante :
 ```bash
-echo "<clé privée hex>" > /tmp/node-key
-./target/release/duniter key inspect-node-key --file /tmp/node-key
-rm /tmp/node-key
+./target/release/duniter key inspect-node-key --file node.key
 ```
 
 ---

@@ -143,6 +143,7 @@ services:
       DUNITER_LISTEN_ADDR: /ip4/0.0.0.0/tcp/30333
     volumes:
       - g1-data:/var/lib/duniter
+      - ./node.key:/var/lib/duniter/node.key:ro  # clé réseau générée en A3
 
   distance-oracle:
     image: duniter/duniter-v2s-g1-1000:1000-0.12.0
@@ -159,6 +160,8 @@ volumes:
   g1-data:
 ```
 
+**Prérequis :** le fichier `node.key` (généré en A3) doit être présent à côté du `docker-compose.yml`.
+
 ```bash
 # Injecter les clés de session (avant le premier démarrage)
 # Le '--' bypasse l'entrypoint Docker
@@ -168,7 +171,7 @@ docker compose run --rm duniter-g1-smith -- key generate-session-keys \
 # Démarrer
 docker compose up -d
 
-# Vérifier (noter le Peer ID 12D3KooW... pour g1_client-specs.yaml)
+# Vérifier que le Peer ID correspond à celui des specs (étape A6)
 docker compose logs duniter-g1-smith | grep "Local node identity"
 docker compose logs -f duniter-g1-smith | grep "Prepared block"
 ```
