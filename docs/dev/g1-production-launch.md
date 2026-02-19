@@ -38,7 +38,7 @@ git checkout -b network/g1-1000
 rm -rf release/*
 ```
 
-Vérifier `spec_version: 1000` dans `runtime/g1/src/lib.rs` et la version dans `node/Cargo.toml`.
+Vérifier `spec_version: 1000` dans `runtime/g1/src/lib.rs` et bumper la **version client** dans `node/Cargo.toml` (ex : `version = "0.13.0"`). Cette version client est distincte du `spec_version` runtime : elle identifie le binaire du nœud et apparaît dans le tag Docker (`1000-<client_version>`) et le nom de la release GitLab.
 
 Vérifier que les fichiers modifiés par la checklist (section « En amont du jour J ») sont bien présents :
 
