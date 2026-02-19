@@ -22,16 +22,30 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
     println!("🚀 Génération des données G1 avec Docker...");
 
     // Générer l'URL du dump si elle n'est pas fournie
-    // Le backup cgeek est généré chaque jour à 23h00 UTC, donc on prend la veille
+    // Le backup cgeek est généré chaque jour à 23h00 UTC
+    // On essaie d'abord la date du jour, puis la veille si le dump n'est pas encore disponible
     let dump_url = match dump_url {
         Some(url) => url,
         None => {
-            let yesterday = Utc::now().date_naive() - chrono::Duration::days(1);
-            let date_str = yesterday.format("%Y-%m-%d").to_string();
-            format!(
+            let today = Utc::now().date_naive();
+            let today_url = format!(
                 "https://dl.cgeek.fr/public/auto-backup-g1-duniter-1.8.7_{}_23-00.tgz",
-                date_str
-            )
+                today.format("%Y-%m-%d")
+            );
+            if url_exists(&today_url) {
+                today_url
+            } else {
+                let yesterday = today - chrono::Duration::days(1);
+                let yesterday_url = format!(
+                    "https://dl.cgeek.fr/public/auto-backup-g1-duniter-1.8.7_{}_23-00.tgz",
+                    yesterday.format("%Y-%m-%d")
+                );
+                println!(
+                    "⚠️  Dump du jour non disponible, utilisation de la veille ({})",
+                    yesterday.format("%Y-%m-%d")
+                );
+                yesterday_url
+            }
         }
     };
 
@@ -261,6 +275,15 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
     println!("📁 Fichiers disponibles dans: {}", work_dir.display());
 
     Ok(())
+}
+
+/// Vérifie qu'une URL distante existe via HTTP HEAD (code 200)
+fn url_exists(url: &str) -> bool {
+    Command::new("curl")
+        .args(["--silent", "--head", "--fail", "--location", "--output", "/dev/null", url])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false)
 }
 
 /// Récupère la taille d'un fichier distant via HTTP HEAD
