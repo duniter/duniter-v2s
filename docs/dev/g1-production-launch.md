@@ -107,6 +107,10 @@ cargo xtask release client create g1-1000 network/g1-1000
 cargo xtask release client trigger-builds g1-1000 network/g1-1000
 ```
 
+- `build-raw-specs` génère le fichier `g1-raw.json` dans `release/client/` et `node/specs/` (usage local uniquement, le fichier est gitignored).
+- `create` upload `g1-raw.json` vers la release GitLab.
+- `trigger-builds` récupère l'URL du fichier depuis la release et la passe aux jobs CI via la variable `RAW_SPEC_URL`. Chaque job télécharge le fichier avant compilation.
+
 La dernière commande déclenche la CI GitLab (DEB/RPM x64+ARM, Docker amd64+arm64, manifest multi-arch).
 
 Image Docker résultante : `duniter/duniter-v2s-g1-1000:1000-<client_version>`

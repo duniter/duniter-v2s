@@ -43,6 +43,10 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
 
     println!("📦 Runtime: {}", runtime);
 
+    // Étape 0: S'assurer que le fichier raw spec existe dans le contexte Docker
+    // (sera copié dans le container via COPY . . dans le Dockerfile)
+    super::ensure_raw_spec::ensure_raw_spec(&network)?;
+
     // Detect which container tool is available (podman or docker)
     let container_tool = if Command::new("podman").arg("--version").status().is_ok() {
         "podman"
