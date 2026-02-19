@@ -280,7 +280,15 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
 /// Vérifie qu'une URL distante existe via HTTP HEAD (code 200)
 fn url_exists(url: &str) -> bool {
     Command::new("curl")
-        .args(["--silent", "--head", "--fail", "--location", "--output", "/dev/null", url])
+        .args([
+            "--silent",
+            "--head",
+            "--fail",
+            "--location",
+            "--output",
+            "/dev/null",
+            url,
+        ])
         .status()
         .map(|s| s.success())
         .unwrap_or(false)
