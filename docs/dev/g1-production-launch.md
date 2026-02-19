@@ -40,6 +40,20 @@ rm -rf release/*
 
 Vérifier `spec_version: 1000` dans `runtime/g1/src/lib.rs` et la version dans `node/Cargo.toml`.
 
+Vérifier que les fichiers modifiés par la checklist (section « En amont du jour J ») sont bien présents :
+
+- `resources/g1.yaml` (clique_smiths, technical_committee, paramètres économiques)
+- `node/specs/g1_client-specs.yaml` (bootNodes avec les Peer ID de l'étape A3)
+
+```bash
+# Committer les changements et pousser la branche
+git add resources/g1.yaml node/specs/g1_client-specs.yaml runtime/g1/src/lib.rs node/Cargo.toml
+git commit -m "chore(g1): configure network/g1-1000"
+git push -u origin network/g1-1000
+```
+
+> **Important :** La branche doit exister sur GitLab **avant** l'étape 5, car la release réseau crée un tag à partir de cette branche. La CI déclenchée à l'étape 6 compilera également le code depuis cette branche.
+
 ### Étape 2 — Données de migration Ğ1 v1
 
 ```bash
