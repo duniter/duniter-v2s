@@ -136,12 +136,9 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
             return Err(anyhow!("Échec de la compression de {}", src));
         }
         println!("📤 Upload de {}...", gz_name);
-        let asset_url = crate::gitlab::upload_file(
-            project_id.clone(),
-            Path::new(&gz_path),
-            gz_name.clone(),
-        )
-        .await?;
+        let asset_url =
+            crate::gitlab::upload_file(project_id.clone(), Path::new(&gz_path), gz_name.clone())
+                .await?;
         println!("📎 Création du lien d'asset: {} -> {}", gz_name, asset_url);
         crate::gitlab::create_asset_link(network.clone(), gz_name, asset_url).await?;
     }
