@@ -262,6 +262,35 @@ server {
 Le `proxy_read_timeout 86400` (24h) est nécessaire pour les connexions WebSocket longue durée.
 </details>
 
+### Étape 11 — Build des images Docker squid (indexeur)
+
+> **Prérequis :** Un noeud miroir avec RPC public (étape 10) doit être accessible, car le pipeline squid récupère les métadonnées substrate depuis le endpoint RPC configuré (ex : `wss://g1.p2p.legal/ws`).
+
+```bash
+cargo xtask release squid trigger-builds g1-1000
+```
+
+Cette commande déclenche le pipeline CI du projet [duniter-squid](https://git.duniter.org/nodes/duniter-squid) qui :
+1. Télécharge les données genesis depuis la release `g1-1000`
+2. Génère le fichier `genesis.json` et récupère les métadonnées substrate depuis le RPC public
+3. Build et push trois images Docker multi-arch (amd64+arm64) sur Docker Hub :
+   - `duniter/squid-app-g1:<squid-version>` — processeur squid (indexeur blockchain)
+   - `duniter/squid-graphile-g1:<squid-version>` — serveur GraphQL (PostGraphile)
+   - `duniter/squid-postgres-g1:<squid-version>` — PostgreSQL avec wal2json
+
+La version des images est celle du `package.json` du projet duniter-squid (ex : `0.5.8`), ou celle du tag git si le pipeline est déclenché par un push de tag (ex : `v0.5.8` → `0.5.8`).
+
+<details><summary>Prérequis et variantes</summary>
+
+- La variable `DOCKERHUB_TOKEN` doit être configurée dans les CI/CD variables du projet duniter-squid sur GitLab
+- La variable `RELEASE_TAG` doit être configurée dans les CI/CD variables du projet duniter-squid (ex : `g1-1000`) pour le flow par push de tag. Le xtask la transmet automatiquement lors du déclenchement par API.
+- Le `GITLAB_TOKEN` local doit avoir accès au projet `nodes/duniter-squid`
+
+Pour builder depuis une branche spécifique du squid : `cargo xtask release squid trigger-builds g1-1000 --branch my-branch`
+
+Le pipeline peut aussi être déclenché par un push de tag (ex : `v0.5.8`) sur le repo squid. Dans ce cas, les jobs démarrent automatiquement et utilisent le tag comme version Docker.
+</details>
+
 ---
 
 ## Vérifications post-lancement
@@ -285,6 +314,7 @@ curl -s -d '{"id":1,"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[
 - [ ] DU créé après 24h
 - [ ] RPC public accessible
 - [ ] Télémétrie visible
+- [ ] Images Docker squid publiées sur Docker Hub
 
 ---
 

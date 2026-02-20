@@ -19,6 +19,7 @@ mod gen_doc;
 mod gitlab;
 mod network;
 mod runtime;
+mod squid;
 
 use anyhow::{Context, Result};
 use clap::Parser;
@@ -142,6 +143,14 @@ enum DuniterXTaskCommand {
         /// Branche Git à utiliser
         branch: String,
     },
+    /// Trigger squid CI builds (Docker images pushed to Docker Hub)
+    SquidTriggerBuilds {
+        /// Release tag from duniter-v2s (e.g., g1-1000)
+        release_tag: String,
+        /// Squid Git branch (default: main)
+        #[clap(long, default_value = "main")]
+        branch: String,
+    },
 }
 
 #[derive(Debug, clap::Subcommand)]
@@ -155,6 +164,9 @@ enum ReleaseCommand {
     /// Runtime release commands
     #[clap(subcommand)]
     Runtime(RuntimeReleaseCommand),
+    /// Squid indexer release commands
+    #[clap(subcommand)]
+    Squid(SquidReleaseCommand),
 }
 
 #[derive(Debug, clap::Subcommand)]
@@ -247,6 +259,18 @@ enum RuntimeReleaseCommand {
     },
 }
 
+#[derive(Debug, clap::Subcommand)]
+enum SquidReleaseCommand {
+    /// Trigger squid CI pipeline to build and push Docker images to Docker Hub
+    TriggerBuilds {
+        /// Release tag from duniter-v2s (e.g., g1-1000)
+        release_tag: String,
+        /// Squid Git branch to build from (default: main)
+        #[clap(long, default_value = "main")]
+        branch: String,
+    },
+}
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     let args = DuniterXTask::parse();
@@ -262,7 +286,13 @@ async fn main() -> Result<()> {
     }
 
     match &args.command {
-        DuniterXTaskCommand::PrintSpec { .. } => { /* no print */ }
+        DuniterXTaskCommand::PrintSpec { .. }
+        | DuniterXTaskCommand::SquidTriggerBuilds { .. }
+        | DuniterXTaskCommand::Release {
+            command: ReleaseCommand::Squid(_),
+        } => {
+            /* API-only commands, no Rust toolchain needed */
+        }
         _ => {
             Command::new("rustc").arg("--version").status()?;
             Command::new("cargo").arg("--version").status()?;
@@ -329,6 +359,14 @@ async fn main() -> Result<()> {
                     runtime::create_runtime_release::create_runtime_release(runtime, branch).await
                 }
             },
+            ReleaseCommand::Squid(cmd) => match cmd {
+                SquidReleaseCommand::TriggerBuilds {
+                    release_tag,
+                    branch,
+                } => {
+                    squid::trigger_squid_builds::trigger_squid_builds(release_tag, branch).await
+                }
+            },
         },
         DuniterXTaskCommand::InjectRuntimeCode { runtime, raw_spec } => {
             inject_runtime_code(&raw_spec, &runtime)
@@ -382,6 +420,10 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::RuntimeCreateRelease { runtime, branch } => {
             runtime::create_runtime_release::create_runtime_release(runtime, branch).await
         }
+        DuniterXTaskCommand::SquidTriggerBuilds {
+            release_tag,
+            branch,
+        } => squid::trigger_squid_builds::trigger_squid_builds(release_tag, branch).await,
     }
 }
 
