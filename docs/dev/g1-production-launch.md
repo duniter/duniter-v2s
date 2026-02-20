@@ -268,11 +268,14 @@ Le `proxy_read_timeout 86400` (24h) est nécessaire pour les connexions WebSocke
 
 ```bash
 cargo xtask release squid trigger-builds g1-1000
+
+# Ou avec un noeud RPC spécifique (surcharge le défaut wss://g1.p2p.legal/ws) :
+cargo xtask release squid trigger-builds g1-1000 --rpc-url wss://g1-rpc.mon-serveur.fr/ws
 ```
 
 Cette commande déclenche le pipeline CI du projet [duniter-squid](https://git.duniter.org/nodes/duniter-squid) qui :
 1. Télécharge les données genesis depuis la release `g1-1000`
-2. Génère le fichier `genesis.json` et récupère les métadonnées substrate depuis le RPC public
+2. Génère le fichier `genesis.json` et récupère les métadonnées substrate depuis le RPC (défaut par réseau, ou `--rpc-url`)
 3. Build et push trois images Docker multi-arch (amd64+arm64) sur Docker Hub :
    - `duniter/squid-app-g1:<squid-version>` — processeur squid (indexeur blockchain)
    - `duniter/squid-graphile-g1:<squid-version>` — serveur GraphQL (PostGraphile)
@@ -287,6 +290,8 @@ La version des images est celle du `package.json` du projet duniter-squid (ex : 
 - Le `GITLAB_TOKEN` local doit avoir accès au projet `nodes/duniter-squid`
 
 Pour builder depuis une branche spécifique du squid : `cargo xtask release squid trigger-builds g1-1000 --branch my-branch`
+
+Pour utiliser un noeud RPC différent du défaut : `--rpc-url wss://mon-noeud.example.com/ws`. En déclenchement manuel depuis GitLab, ajouter la variable `RPC_URL` sur le job `prepare`.
 
 Le pipeline peut aussi être déclenché par un push de tag (ex : `v0.5.8`) sur le repo squid. Dans ce cas, les jobs démarrent automatiquement et utilisent le tag comme version Docker.
 </details>
