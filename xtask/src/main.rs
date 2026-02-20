@@ -150,6 +150,9 @@ enum DuniterXTaskCommand {
         /// Squid Git branch (default: main)
         #[clap(long, default_value = "main")]
         branch: String,
+        /// Custom RPC endpoint for metadata fetching (overrides default per network)
+        #[clap(long)]
+        rpc_url: Option<String>,
     },
 }
 
@@ -268,6 +271,9 @@ enum SquidReleaseCommand {
         /// Squid Git branch to build from (default: main)
         #[clap(long, default_value = "main")]
         branch: String,
+        /// Custom RPC endpoint for metadata fetching (overrides default per network)
+        #[clap(long)]
+        rpc_url: Option<String>,
     },
 }
 
@@ -363,8 +369,12 @@ async fn main() -> Result<()> {
                 SquidReleaseCommand::TriggerBuilds {
                     release_tag,
                     branch,
+                    rpc_url,
                 } => {
-                    squid::trigger_squid_builds::trigger_squid_builds(release_tag, branch).await
+                    squid::trigger_squid_builds::trigger_squid_builds(
+                        release_tag, branch, rpc_url,
+                    )
+                    .await
                 }
             },
         },
@@ -423,7 +433,8 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::SquidTriggerBuilds {
             release_tag,
             branch,
-        } => squid::trigger_squid_builds::trigger_squid_builds(release_tag, branch).await,
+            rpc_url,
+        } => squid::trigger_squid_builds::trigger_squid_builds(release_tag, branch, rpc_url).await,
     }
 }
 

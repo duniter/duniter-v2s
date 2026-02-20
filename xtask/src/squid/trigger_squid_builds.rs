@@ -36,7 +36,12 @@ const BUILD_JOBS: &[&str] = &["build:squid", "build:graphile", "build:postgres"]
 /// # Arguments
 /// * `release_tag` - The duniter-v2s release tag (e.g., "g1-1000")
 /// * `branch` - The squid Git branch to build from (e.g., "main")
-pub async fn trigger_squid_builds(release_tag: String, branch: String) -> Result<()> {
+/// * `rpc_url` - Optional RPC endpoint override for metadata fetching
+pub async fn trigger_squid_builds(
+    release_tag: String,
+    branch: String,
+    rpc_url: Option<String>,
+) -> Result<()> {
     // Validate release_tag format (e.g., g1-1000, gtest-1000, gdev-800)
     let network = release_tag
         .split('-')
@@ -60,13 +65,20 @@ pub async fn trigger_squid_builds(release_tag: String, branch: String) -> Result
     );
     println!("   Network: {}", network);
     println!("   Branch: {}", branch);
+    if let Some(ref url) = rpc_url {
+        println!("   RPC override: {}", url);
+    }
 
     // Step 1: Trigger the pipeline
     println!("\n📡 Step 1: Triggering squid CI pipeline...");
+    let mut variables = vec![("RELEASE_TAG".to_string(), release_tag.clone())];
+    if let Some(url) = rpc_url {
+        variables.push(("RPC_URL".to_string(), url));
+    }
     let pipeline = crate::gitlab::trigger_pipeline(
         SQUID_PROJECT_ID.to_string(),
         branch.clone(),
-        vec![("RELEASE_TAG".to_string(), release_tag.clone())],
+        variables,
     )
     .await?;
 
