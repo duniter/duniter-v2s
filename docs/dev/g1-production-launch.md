@@ -198,6 +198,79 @@ docker compose logs -f duniter-g1-smith | grep "Prepared block"
 - `ORACLE_EXECUTION_INTERVAL: 1800` : l'oracle de distance s'exécute toutes les 30 min.
 </details>
 
+<details><summary>Alternative : build et lancement depuis les sources (sans Docker)</summary>
+
+Si vous préférez ne pas utiliser Docker, vous pouvez compiler le binaire et lancer le nœud directement. Cette méthode ne nécessite ni les commandes xtask, ni de GitLab token.
+
+**1. Récupérer la branche réseau et le rawspec :**
+
+```bash
+git fetch origin network/g1-1000:network/g1-1000
+git checkout network/g1-1000
+
+# Télécharger le rawspec depuis la page des releases GitLab
+# URL disponible sur https://git.duniter.org/nodes/rust/duniter-v2s/-/releases
+curl -o node/specs/g1-raw.json \
+  "https://git.duniter.org/-/project/520/uploads/<hash>/g1-raw.json"
+```
+
+**2. Compiler le nœud et l'oracle de distance :**
+
+```bash
+cargo build --release -Zgit=shallow-deps --features g1,embed --no-default-features
+cargo build --release -Zgit=shallow-deps -p distance-oracle --features g1,standalone,std --no-default-features
+```
+
+Le feature `embed` intègre le fichier `node/specs/g1-raw.json` dans le binaire à la compilation — il doit donc être présent **avant** le build. Cela permet d'utiliser `--chain g1` au lancement sans avoir le fichier JSON sur le serveur.
+
+Le flag `-Zgit=shallow-deps` accélère la compilation (shallow-clone des dépendances git). Il nécessite la toolchain nightly (déjà configurée via `rust-toolchain.toml`).
+
+**3. Injecter les clés de session :**
+
+```bash
+./target/release/duniter key generate-session-keys \
+  --chain g1 \
+  -d /var/lib/duniter/g1 \
+  --suri "<phrase secrète de l'étape A4>"
+```
+
+**4. Lancer en mode forgeron :**
+
+```bash
+./target/release/duniter \
+  --chain g1 \
+  -d /var/lib/duniter/g1 \
+  --node-key-file /var/lib/duniter/g1/validator.key \
+  --public-addr /dns/g1-boot1.duniter.org/tcp/30333/p2p/<PEER_ID> \
+  --validator \
+  --name g1-bootstrap \
+  --state-pruning 1024 \
+  --rpc-cors all \
+  --rpc-methods unsafe \
+  --no-telemetry \
+  --no-prometheus
+```
+
+**5. Lancer l'oracle de distance** (dans un second terminal ou via systemd) :
+
+```bash
+while true; do
+  ./target/release/distance-oracle \
+    --evaluation-result-dir /var/lib/duniter/g1/chains/g1/distance/ \
+    --rpc-url ws://127.0.0.1:9944
+  echo "Attente 1800s avant prochaine exécution..."
+  sleep 1800
+done
+```
+
+Options notables :
+- `--validator` : active le mode forgeron (équivalent de `DUNITER_VALIDATOR=true`).
+- `--state-pruning 1024` : conserve les 1024 derniers blocs d'état. Utiliser `archive` pour un miroir/indexeur.
+- `--rpc-methods unsafe` : nécessaire pour l'injection de clés et `author_rotateKeys`. Peut être retiré après la rotation.
+- `--no-telemetry --no-prometheus` : optionnel, désactive la télémétrie et les métriques Prometheus.
+- `-d /var/lib/duniter/g1` : répertoire de données du nœud. Le chemin de l'oracle (`--evaluation-result-dir`) doit pointer vers le sous-dossier `chains/g1/distance/` de ce répertoire.
+</details>
+
 ### Étape 8 — Rotation des clés de session (optionnel)
 
 Pour remplacer les clés du genesis par des clés générées sur le serveur :
@@ -227,6 +300,27 @@ curl -H "Content-Type: application/json" \
 ```
 
 Alternative Debian : `dpkg -i duniter.deb` + configurer `/etc/duniter/env_file` + `systemctl start duniter-smith distance-oracle`.
+
+<details><summary>Alternative : lancement depuis les sources</summary>
+
+Même procédure de build que l'étape 7 (section « depuis les sources »), en adaptant `--name`, `--public-addr` et en ajoutant un bootnode :
+
+```bash
+./target/release/duniter \
+  --chain g1 \
+  -d /var/lib/duniter/g1 \
+  --node-key-file /var/lib/duniter/g1/validator.key \
+  --public-addr /dns/g1-smith2.duniter.org/tcp/30333/p2p/<PEER_ID> \
+  --bootnodes /dns/g1-boot1.duniter.org/tcp/30333/p2p/<BOOT_PEER_ID> \
+  --validator \
+  --name g1-smith-2 \
+  --state-pruning 1024 \
+  --rpc-cors all \
+  --rpc-methods unsafe
+```
+
+Ne pas oublier de lancer l'oracle de distance en parallèle (voir étape 7).
+</details>
 
 ### Étape 10 — Noeuds miroirs
 
@@ -260,6 +354,25 @@ server {
 ```
 
 Le `proxy_read_timeout 86400` (24h) est nécessaire pour les connexions WebSocket longue durée.
+</details>
+
+<details><summary>Alternative : lancement depuis les sources</summary>
+
+Même procédure de build que l'étape 7 (section « depuis les sources »). Un nœud miroir ne nécessite ni `--validator`, ni oracle de distance, ni injection de clés de session.
+
+```bash
+./target/release/duniter \
+  --chain g1 \
+  -d /var/lib/duniter/g1 \
+  --bootnodes /dns/g1-boot1.duniter.org/tcp/30333/p2p/<BOOT_PEER_ID> \
+  --name g1-mirror \
+  --state-pruning archive \
+  --rpc-cors all \
+  --rpc-external
+```
+
+- `--state-pruning archive` : conserve l'intégralité de l'état (nécessaire pour servir les requêtes RPC).
+- `--rpc-external` : expose le RPC sur toutes les interfaces (nécessaire derrière un reverse proxy).
 </details>
 
 ### Étape 11 — Build des images Docker squid (indexeur)
