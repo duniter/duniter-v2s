@@ -296,9 +296,7 @@ async fn main() -> Result<()> {
         | DuniterXTaskCommand::SquidTriggerBuilds { .. }
         | DuniterXTaskCommand::Release {
             command: ReleaseCommand::Squid(_),
-        } => {
-            /* API-only commands, no Rust toolchain needed */
-        }
+        } => { /* API-only commands, no Rust toolchain needed */ }
         _ => {
             Command::new("rustc").arg("--version").status()?;
             Command::new("cargo").arg("--version").status()?;
@@ -371,10 +369,8 @@ async fn main() -> Result<()> {
                     branch,
                     rpc_url,
                 } => {
-                    squid::trigger_squid_builds::trigger_squid_builds(
-                        release_tag, branch, rpc_url,
-                    )
-                    .await
+                    squid::trigger_squid_builds::trigger_squid_builds(release_tag, branch, rpc_url)
+                        .await
                 }
             },
         },

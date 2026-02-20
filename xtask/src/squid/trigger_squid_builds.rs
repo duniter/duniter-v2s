@@ -75,12 +75,9 @@ pub async fn trigger_squid_builds(
     if let Some(url) = rpc_url {
         variables.push(("RPC_URL".to_string(), url));
     }
-    let pipeline = crate::gitlab::trigger_pipeline(
-        SQUID_PROJECT_ID.to_string(),
-        branch.clone(),
-        variables,
-    )
-    .await?;
+    let pipeline =
+        crate::gitlab::trigger_pipeline(SQUID_PROJECT_ID.to_string(), branch.clone(), variables)
+            .await?;
 
     println!("   Pipeline ID: {}", pipeline.id);
     println!("   Pipeline URL: {}", pipeline.web_url);
