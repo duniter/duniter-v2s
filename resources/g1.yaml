@@ -22,16 +22,18 @@ clique_smiths:
   - name: "aya"
   - name: "Bulmananabelle"
   - name: "gui_tooun"
+  - name: "JosselinFERREIRA"
+  - name: "SyoulAnuanua"
   - name: "vjrj"
   - name: "Damery"
   - name: "Nicolas80"
   - name: "poka"
     # This smith will be the first author
-    session_keys: "0x9222f5d87e21b67be5070be61e5291ed2ef302fdeebd816a5967fac9bcb04355d6ebcdcc0d9fd14fce64b74a6ec867ee400f044635b536615a7b89c7c5498832d6ebcdcc0d9fd14fce64b74a6ec867ee400f044635b536615a7b89c7c5498832d6ebcdcc0d9fd14fce64b74a6ec867ee400f044635b536615a7b89c7c5498832"
+    session_keys: "0xa5558f52a8ed117e03a00e5551232d9fa0c67ec494865f721875dcd9bd0cc56f80986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b91180986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b91180986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b911"
 
 # The address which will automatically transfer 1,00 Ğ1 on Genesis to the Treasury
 treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"
 
 # The technical committee members, to act as sudo
 technical_committee:
-  ["moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "poka", aya]
+  ["moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "poka", "aya"]
