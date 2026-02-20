@@ -38,12 +38,13 @@ git checkout -b network/g1-1000
 rm -rf release/*
 ```
 
-Vérifier `spec_version: 1000` dans `runtime/g1/src/lib.rs` et bumper la **version client** dans `node/Cargo.toml` (ex : `version = "0.13.0"`). Cette version client est distincte du `spec_version` runtime : elle identifie le binaire du nœud et apparaît dans le tag Docker (`1000-<client_version>`) et le nom de la release GitLab.
+Vérifier `spec_version: 1000` dans `runtime/g1/src/lib.rs` et vérifier que la **version client** dans `node/Cargo.toml` a bien été bumpée (checklist A6, ex : `version = "1.0.0"`). Cette version client est distincte du `spec_version` runtime : elle identifie le binaire du nœud et apparaît dans le tag Docker (`1000-<client_version>`) et le nom de la release GitLab.
 
 Vérifier que les fichiers modifiés par la checklist (section « En amont du jour J ») sont bien présents :
 
 - `resources/g1.yaml` (clique_smiths, technical_committee, paramètres économiques)
 - `node/specs/g1_client-specs.yaml` (bootNodes avec les Peer ID de l'étape A3)
+- `node/Cargo.toml` (version client bumpée en checklist A6)
 
 ```bash
 # Committer les changements et pousser la branche
@@ -119,7 +120,7 @@ genesis.json, g1.json, g1.yaml, WASM, block_hist.json.gz, cert_hist.json.gz, tx_
 Créer le jalon GitLab **avant** de lancer la release :
 
 1. Ouvrir https://git.duniter.org/nodes/rust/duniter-v2s/-/milestones/new
-2. Titre : `client-<version>` (ex : `client-0.13.0`, la version est dans `node/Cargo.toml`)
+2. Titre : `client-<version>` (ex : `client-1.0.0`, la version est dans `node/Cargo.toml`)
 3. Cliquer "Create milestone"
 
 ```bash
@@ -143,7 +144,7 @@ Image Docker résultante : `duniter/duniter-v2s-g1-1000:1000-<client_version>`
 # docker-compose.yml sur le serveur bootstrap
 services:
   duniter-g1-smith:
-    image: duniter/duniter-v2s-g1-1000:1000-0.12.0
+    image: duniter/duniter-v2s-g1-1000:1000-1.0.0
     restart: unless-stopped
     ports:
       - 127.0.0.1:9944:9944   # RPC local uniquement !
@@ -160,7 +161,7 @@ services:
       - ./node.key:/var/lib/duniter/node.key:ro  # clé réseau générée en A3
 
   distance-oracle:
-    image: duniter/duniter-v2s-g1-1000:1000-0.12.0
+    image: duniter/duniter-v2s-g1-1000:1000-1.0.0
     restart: unless-stopped
     entrypoint: docker-distance-entrypoint
     environment:
@@ -185,7 +186,7 @@ docker compose run --rm duniter-g1-smith -- key generate-session-keys \
 # Démarrer
 docker compose up -d
 
-# Vérifier que le Peer ID correspond à celui des specs (étape A6)
+# Vérifier que le Peer ID correspond à celui des specs (étape A7)
 docker compose logs duniter-g1-smith | grep "Local node identity"
 docker compose logs -f duniter-g1-smith | grep "Prepared block"
 ```
@@ -327,7 +328,7 @@ Ne pas oublier de lancer l'oracle de distance en parallèle (voir étape 7).
 ```yaml
 services:
   duniter-g1-mirror:
-    image: duniter/duniter-v2s-g1-1000:1000-0.12.0
+    image: duniter/duniter-v2s-g1-1000:1000-1.0.0
     ports: ["9944:9944", "30333:30333"]
     environment:
       DUNITER_NODE_NAME: g1-mirror

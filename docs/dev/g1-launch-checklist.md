@@ -56,7 +56,7 @@ Chaque opérateur de bootnode génère sa clé réseau (sur la machine de build)
 ```bash
 # Génère le fichier node.key + affiche le Peer ID
 ./target/release/duniter key generate-node-key --chain dev --file node.key
-# → noter le Peer ID affiché (12D3KooW...) pour l'étape A6
+# → noter le Peer ID affiché (12D3KooW...) pour l'étape A7
 # → transférer node.key sur le serveur bootstrap
 ```
 
@@ -107,7 +107,18 @@ treasury_funder_pubkey: "2ny7..." # Clé publique v1 qui financera la trésoreri
 
 ---
 
-### A6. Définir les `bootNodes` dans `node/specs/g1_client-specs.yaml`
+### A6. Bumper la version client dans `node/Cargo.toml`
+
+**Pourquoi :** La version client identifie le binaire du nœud. Elle apparaît dans le tag Docker (`1000-<client_version>`) et le nom de la release GitLab. Pour le lancement Ğ1 v2, la version doit être `1.0.0`.
+
+**Action :**
+
+1. Ouvrir `node/Cargo.toml`
+2. Modifier `version = "..."` en `version = "1.0.0"`
+
+---
+
+### A7. Définir les `bootNodes` dans `node/specs/g1_client-specs.yaml`
 
 **Pourquoi :** Ce sont les nœuds auxquels les clients se connecteront pour rejoindre le réseau. Les Peer ID proviennent des clés réseau générées en A3.
 
@@ -120,5 +131,3 @@ treasury_funder_pubkey: "2ny7..." # Clé publique v1 qui financera la trésoreri
      - "/dns/g1-boot1.duniter.org/tcp/30333/p2p/12D3KooW..."
      - "/dns/g1-boot2.duniter.org/tcp/30333/p2p/12D3KooW..."
    ```
-
----
