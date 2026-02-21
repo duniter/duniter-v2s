@@ -29,7 +29,7 @@ clique_smiths:
   - name: "Nicolas80"
   - name: "poka"
     # This smith will be the first author
-    session_keys: "0xa5558f52a8ed117e03a00e5551232d9fa0c67ec494865f721875dcd9bd0cc56f80986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b91180986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b91180986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b911"
+    session_keys: "0xb12d5fcaf361f6c07056575ad6946130fd1800c5d3b622563ef3b9b37a7328e052c5da7ee65339efafd8293accc9fe24ba25598e8a4eceaadb388248e52f575752c5da7ee65339efafd8293accc9fe24ba25598e8a4eceaadb388248e52f575752c5da7ee65339efafd8293accc9fe24ba25598e8a4eceaadb388248e52f5757"
 
 # The address which will automatically transfer 1,00 Ğ1 on Genesis to the Treasury
 treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"

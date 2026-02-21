@@ -4,7 +4,7 @@ chainType: "Live"
 protocolId: "g1"
 bootNodes:
   # TODO: replace with actual Peer ID after bootstrap deployment (step 9)
-  - "/dns/g1-poka-validator.p2p.legal/tcp/30333/p2p/12D3KooWDYP81FvyZD1JNYV8B9DE5JNby9CaAZ3a3Gp5on9SmCBs"
+  - "/dns/g1-poka-validator.p2p.legal/tcp/30333/p2p/12D3KooWCCuZrkrErFL2co4foH2t2UPzuJRSUxmpwxe51RCr4dkD"
 telemetryEndpoints:
   - ["/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]
 properties:
