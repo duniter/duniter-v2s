@@ -34,7 +34,7 @@ parameter_types! {
 
 // Authority discovery
 parameter_types! {
-    pub const MaxAuthorities: u32 = 100;
+    pub const MaxAuthorities: u32 = 32;
 }
 
 // Authorship
@@ -55,7 +55,7 @@ parameter_types! {
 }
 
 // Babe
-pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 4 * HOURS;
+pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = HOURS;
 parameter_types! {
     pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS as u64;
     pub const ExpectedBlockTime: u64 = MILLISECS_PER_BLOCK;
@@ -90,8 +90,8 @@ frame_support::parameter_types! {
 
 // Universal dividend
 parameter_types! {
-    // 0.002_381_440 = 0.0488^2
-    pub const SquareMoneyGrowthRate: Perbill = Perbill::from_parts(2_381_440);
+    // (1.1**0.5-1)**2 = 0.0023823036
+    pub const SquareMoneyGrowthRate: Perbill = Perbill::from_parts(2_382_304);
     pub const UdCreationPeriod: Moment = 86_400_000; // 1 day
     pub const UdReevalPeriod: Moment = 15_778_800_000; // 1/2 year
 }
@@ -101,17 +101,16 @@ parameter_types! {
 /*******/
 
 parameter_types! {
-    pub const WotFirstCertIssuableOn: BlockNumber = 30 * DAYS;
+    pub const WotFirstCertIssuableOn: BlockNumber = 0;
     pub const WotMinCertForMembership: u32 = 5;
     pub const WotMinCertForCreateIdtyRight: u32 = 5;
 }
 
 // Identity
 parameter_types! {
-    pub const ChangeOwnerKeyPeriod: BlockNumber = 6 * MONTHS;
-    pub const ConfirmPeriod: BlockNumber = 14 * DAYS;
-    pub const IdtyCreationPeriod: BlockNumber = MONTHS;
-    pub const ValidationPeriod: BlockNumber = YEARS;
+    pub const ChangeOwnerKeyPeriod: BlockNumber = MONTHS;
+    pub const ConfirmPeriod: BlockNumber = 2 * MONTHS;
+    pub const IdtyCreationPeriod: BlockNumber = DAYS;
     pub const AutorevocationPeriod: BlockNumber = YEARS;
     pub const DeletionPeriod: BlockNumber = 10 * YEARS;
 }
@@ -137,7 +136,7 @@ parameter_types! {
 parameter_types! {
     pub const SmithWotMinCertForMembership: u32 = 3;
     pub const SmithMaxByIssuer: u32 = 12;
-    pub const SmithInactivityMaxDuration: u32 = 48;
+    pub const SmithInactivityMaxDuration: u32 = 3 * 24 * 30; // 3 months (24 sessions/day)
 }
 
 /*************/

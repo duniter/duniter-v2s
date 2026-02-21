@@ -83,8 +83,8 @@ parameter_types! {
 
 // Universal dividend
 parameter_types! {
-    // 0.002_381_440 = 0.0488^2
-    pub const SquareMoneyGrowthRate: Perbill = Perbill::from_parts(2_381_440);
+    // (1.1**0.5-1)**2 = 0.0023823036
+    pub const SquareMoneyGrowthRate: Perbill = Perbill::from_parts(2_382_304);
     pub const UdCreationPeriod: Moment = 86_400_000; // 1 day
     pub const UdReevalPeriod: Moment = 15_778_800_000; // 1/2 year
 }
@@ -94,7 +94,7 @@ parameter_types! {
 /*******/
 
 parameter_types! {
-    pub const WotFirstCertIssuableOn: BlockNumber = DAYS;
+    pub const WotFirstCertIssuableOn: BlockNumber = 0;
     pub const WotMinCertForMembership: u32 = 5;
     pub const MinReceivedCertToBeAbleToIssueCert: u32 = 5;
     pub const WotMinCertForCreateIdtyRight: u32 = 5;
@@ -129,7 +129,7 @@ parameter_types! {
 parameter_types! {
     pub const SmithWotMinCertForMembership: u32 = 3;
     pub const SmithMaxByIssuer: u32 = 100;
-    pub const SmithInactivityMaxDuration: u32 = 8 * 90; // 3 months (there is 8 sessions per day)
+    pub const SmithInactivityMaxDuration: u32 = 3 * 24 * 30; // 3 months (24 sessions/day)
 }
 
 /*************/
