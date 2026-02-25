@@ -1,21 +1,21 @@
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 49.1.0
-//! DATE: 2025-08-26 (Y/M/D)
-//! HOSTNAME: `bgallois-ms7d43`, CPU: `12th Gen Intel(R) Core(TM) i3-12100F`
+//! DATE: 2026-02-23 (Y/M/D)
+//! HOSTNAME: `aynuc`, CPU: `Raspberry Pi 4 Model B Rev 1.4`
 //!
 //! DATABASE: `ParityDb`, RUNTIME: `ĞTest Local Testnet`
 //! BLOCK-NUM: `BlockId::Number(0)`
 //! SKIP-WRITE: `false`, SKIP-READ: `false`, WARMUPS: `1`
 //! STATE-VERSION: `V1`, STATE-CACHE-SIZE: ``
 //! WEIGHT-PATH: `./runtime/gtest/src/weights/`
-//! METRIC: `Average`, WEIGHT-MUL: `2.0`, WEIGHT-ADD: `0`
+//! METRIC: `Average`, WEIGHT-MUL: `3.0`, WEIGHT-ADD: `0`
 
 // Executed Command:
 //   target/release/duniter
 //   benchmark
 //   storage
 //   --dev
-//   --mul=2
+//   --mul=3
 //   --weight-path=./runtime/gtest/src/weights/
 //   --state-version=1
 //   --database=paritydb
@@ -33,34 +33,34 @@ pub mod constants {
 		/// are available for brave runtime engineers who may want to try this out as default.
 		pub const ParityDbWeight: RuntimeDbWeight = RuntimeDbWeight {
 			/// Time to read one storage item.
-			/// Calculated by multiplying the *Average* of all values with `2.0` and adding `0`.
+			/// Calculated by multiplying the *Average* of all values with `3.0` and adding `0`.
 			///
 			/// Stats nanoseconds:
-			///   Min, Max: 332, 1_140_276
-			///   Average:  8_385
-			///   Median:   914
-			///   Std-Dev:  90628.51
+			///   Min, Max: 2_185, 6_013_963
+			///   Average:  43_706
+			///   Median:   5_352
+			///   Std-Dev:  478007.55
 			///
 			/// Percentiles nanoseconds:
-			///   99th: 8_589
-			///   95th: 2_046
-			///   75th: 1_380
-			read: 16_770 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			///   99th: 20_740
+			///   95th: 8_408
+			///   75th: 6_389
+			read: 131_118 * constants::WEIGHT_REF_TIME_PER_NANOS,
 
 			/// Time to write one storage item.
-			/// Calculated by multiplying the *Average* of all values with `2.0` and adding `0`.
+			/// Calculated by multiplying the *Average* of all values with `3.0` and adding `0`.
 			///
 			/// Stats nanoseconds:
-			///   Min, Max: 3_103, 3_103
-			///   Average:  3_103
-			///   Median:   3_103
+			///   Min, Max: 319_145, 319_145
+			///   Average:  319_145
+			///   Median:   319_145
 			///   Std-Dev:  0.0
 			///
 			/// Percentiles nanoseconds:
-			///   99th: 3_103
-			///   95th: 3_103
-			///   75th: 3_103
-			write: 6_206 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			///   99th: 319_145
+			///   95th: 319_145
+			///   75th: 319_145
+			write: 957_435 * constants::WEIGHT_REF_TIME_PER_NANOS,
 		};
 	}
 
