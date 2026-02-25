@@ -78,14 +78,53 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
     );
 
     // Exécuter le conteneur Docker avec srtool
+    // srtool n'est disponible qu'en amd64 : forcer la plateforme pour compatibilité ARM (Mac M1/M2/M3/M4)
+    let is_arm = std::env::consts::ARCH == "aarch64";
+    if is_arm {
+        eprintln!("⚠️  Architecture ARM détectée. L'image srtool est amd64 uniquement.");
+        eprintln!("   Le build tournera sous émulation (Rosetta/QEMU) et sera très lent.");
+        eprintln!("   Assurez-vous que Docker Desktop a au moins 16 Go de RAM allouée.");
+        eprintln!("   Pour un build plus rapide, utilisez une machine Linux x86_64.");
+    }
+
     let build_volume = format!("{}:/build", current_dir.to_string_lossy());
     let package = format!("PACKAGE={}-runtime", runtime);
     let runtime_dir = format!("RUNTIME_DIR=runtime/{}", runtime);
-    let docker_args = vec![
-        "run",
-        "--rm",
+    // Volume Docker nommé pour le cache srtool : évite les problèmes de permissions
+    // VirtioFS (UID mapping) tout en persistant le cache entre les runs
+    let cache_volume_name = format!("srtool-cache-{}", runtime);
+    let cache_volume = format!(
+        "{}:/build/runtime/{}/target/srtool",
+        cache_volume_name, runtime
+    );
+    // Initialiser les permissions du volume (créé root:root par défaut)
+    // pour que l'utilisateur builder (1001) puisse écrire dedans
+    let init_volume = format!("{}:/srtool-cache", cache_volume_name);
+    let init_status = Command::new("docker")
+        .args([
+            "run",
+            "--rm",
+            "-v",
+            &init_volume,
+            "alpine",
+            "chown",
+            "1001:1001",
+            "/srtool-cache",
+        ])
+        .status()?;
+    if !init_status.success() {
+        eprintln!("⚠️  Impossible d'initialiser les permissions du volume cache");
+    }
+    let mut docker_args = vec!["run", "--rm"];
+    // Forcer la plateforme amd64 pour que Docker utilise l'émulation sur ARM
+    if is_arm {
+        docker_args.extend_from_slice(&["--platform", "linux/amd64"]);
+    }
+    docker_args.extend_from_slice(&[
         "-v",
         &build_volume,
+        "-v",
+        &cache_volume,
         "-e",
         runtime_dir.as_str(),
         "-e",
@@ -94,7 +133,7 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
         "sh",
         "-c",
         &script_content,
-    ];
+    ]);
 
     println!("🐳 Lancement du conteneur srtool...");
     let mut docker_cmd = Command::new("docker");

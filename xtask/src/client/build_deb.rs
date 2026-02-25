@@ -42,6 +42,9 @@ pub fn build_deb(network: String) -> Result<()> {
 
     println!("📦 Runtime: {}", runtime);
 
+    // Étape 0: S'assurer que le fichier raw spec existe (téléchargement depuis release si besoin)
+    super::ensure_raw_spec::ensure_raw_spec(&network)?;
+
     // Étape 1: Installer cargo-deb
     println!("📥 Installation de cargo-deb...");
     exec_should_success(Command::new("cargo").args(["install", "cargo-deb"]))?;

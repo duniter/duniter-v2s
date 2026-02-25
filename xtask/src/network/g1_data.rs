@@ -15,25 +15,37 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::Result;
-use chrono::{NaiveDateTime, NaiveTime, Utc};
+use chrono::Utc;
 use std::{process::Command, time::Instant};
 
 pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
     println!("🚀 Génération des données G1 avec Docker...");
 
     // Générer l'URL du dump si elle n'est pas fournie
+    // Le backup cgeek est généré chaque jour à 23h00 UTC
+    // On essaie d'abord la date du jour, puis la veille si le dump n'est pas encore disponible
     let dump_url = match dump_url {
         Some(url) => url,
         None => {
-            let now = Utc::now();
-            let today = now.date_naive();
-            let midnight = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
-            let today_midnight = NaiveDateTime::new(today, midnight);
-            let date_str = today_midnight.format("%Y-%m-%d_%H-%M").to_string();
-            format!(
-                "https://dl.cgeek.fr/public/auto-backup-g1-duniter-1.8.7_{}.tgz",
-                date_str
-            )
+            let today = Utc::now().date_naive();
+            let today_url = format!(
+                "https://dl.cgeek.fr/public/auto-backup-g1-duniter-1.8.7_{}_23-00.tgz",
+                today.format("%Y-%m-%d")
+            );
+            if url_exists(&today_url) {
+                today_url
+            } else {
+                let yesterday = today - chrono::Duration::days(1);
+                let yesterday_url = format!(
+                    "https://dl.cgeek.fr/public/auto-backup-g1-duniter-1.8.7_{}_23-00.tgz",
+                    yesterday.format("%Y-%m-%d")
+                );
+                println!(
+                    "⚠️  Dump du jour non disponible, utilisation de la veille ({})",
+                    yesterday.format("%Y-%m-%d")
+                );
+                yesterday_url
+            }
         }
     };
 
@@ -44,50 +56,108 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
         ));
     }
 
+    // Vérifier que curl est disponible (pour le téléchargement avec reprise)
+    if !Command::new("curl").arg("--version").status()?.success() {
+        return Err(anyhow::anyhow!(
+            "curl n'est pas installé. Veuillez installer curl pour continuer."
+        ));
+    }
+
     // Utiliser le répertoire courant
     let current_dir = std::env::current_dir()?;
     let work_dir = current_dir.join("release/network");
     std::fs::create_dir_all(&work_dir)?;
 
-    // Vérifier si le fichier existe déjà
+    // Vérifier si le fichier existe déjà et est complet
     let dump_file_path = work_dir.join("g1-dump.tgz");
-    if dump_file_path.exists() {
-        println!("📁 Fichier existant trouvé: {}", dump_file_path.display());
-        println!("⏭️  Utilisation du fichier existant, téléchargement ignoré.");
-    } else {
-        // Télécharger le dump G1 localement
-        println!("📥 Téléchargement du dump G1 depuis: {}", dump_url);
+    let need_download = if dump_file_path.exists() {
+        // Vérifier la taille attendue via HTTP HEAD
+        let expected_size = get_remote_file_size(&dump_url);
+        let local_size = std::fs::metadata(&dump_file_path)?.len();
 
-        // Télécharger avec wget dans un conteneur Alpine
-        println!("📥 Téléchargement avec wget dans un conteneur Alpine...");
+        match expected_size {
+            Some(expected) if local_size == expected => {
+                println!(
+                    "📁 Fichier complet trouvé: {} ({:.0} Mo)",
+                    dump_file_path.display(),
+                    local_size as f64 / (1024.0 * 1024.0)
+                );
+                println!("⏭️  Utilisation du fichier existant, téléchargement ignoré.");
+                false
+            }
+            Some(expected) => {
+                println!(
+                    "⚠️  Fichier incomplet trouvé: {:.0} Mo / {:.0} Mo attendus",
+                    local_size as f64 / (1024.0 * 1024.0),
+                    expected as f64 / (1024.0 * 1024.0)
+                );
+                println!("📥 Reprise du téléchargement...");
+                true
+            }
+            None => {
+                println!(
+                    "📁 Fichier trouvé: {} ({:.0} Mo), impossible de vérifier la taille distante",
+                    dump_file_path.display(),
+                    local_size as f64 / (1024.0 * 1024.0)
+                );
+                println!("⏭️  Utilisation du fichier existant.");
+                false
+            }
+        }
+    } else {
+        true
+    };
+
+    if need_download {
+        println!("📥 Téléchargement du dump G1 depuis: {}", dump_url);
         let start_time = Instant::now();
 
-        let download_result = download_with_wget(&dump_url, &dump_file_path)?;
+        // Télécharger avec curl directement sur le host (supporte la reprise avec -C -)
+        let status = Command::new("curl")
+            .args([
+                "--fail",
+                "--location",
+                "--continue-at",
+                "-",
+                "--output",
+                &dump_file_path.to_string_lossy(),
+                &dump_url,
+            ])
+            .status()?;
+
         let download_time = start_time.elapsed();
 
-        if !download_result.success() {
-            eprintln!("❌ Erreur lors du téléchargement avec wget:");
-            eprintln!("💡 Conseil: Vérifiez votre connexion internet et réessayez");
-            return Err(anyhow::anyhow!("Échec du téléchargement avec wget"));
+        if !status.success() {
+            // Supprimer le fichier partiel si curl a échoué complètement
+            if dump_file_path.exists() {
+                let size = std::fs::metadata(&dump_file_path)?.len();
+                if size == 0 {
+                    std::fs::remove_file(&dump_file_path)?;
+                }
+            }
+            return Err(anyhow::anyhow!(
+                "Échec du téléchargement. Vérifiez l'URL et votre connexion.\n\
+                URL: {}\n\
+                💡 Relancez la commande pour reprendre le téléchargement.",
+                dump_url
+            ));
         }
 
-        // Calculer et afficher les statistiques de téléchargement
         let file_size = std::fs::metadata(&dump_file_path)?.len();
         let file_size_mb = file_size as f64 / (1024.0 * 1024.0);
-        let download_speed = if download_time.as_secs() > 0 {
-            file_size as f64 / download_time.as_secs() as f64
+        let speed_mbps = if download_time.as_secs() > 0 {
+            file_size_mb / download_time.as_secs_f64()
         } else {
-            file_size as f64
+            0.0
         };
-        let speed_mbps = download_speed / (1024.0 * 1024.0);
 
-        println!("\n✅ Téléchargement terminé: {}", dump_file_path.display());
-        println!("📏 Taille du fichier: {:.2} MB", file_size_mb);
+        println!("✅ Téléchargement terminé: {}", dump_file_path.display());
+        println!("📏 Taille du fichier: {:.0} Mo", file_size_mb);
         println!(
-            "⏱️  Temps de téléchargement: {:.2}s",
+            "⏱️  Temps de téléchargement: {:.0}s",
             download_time.as_secs_f64()
         );
-        println!("🚀 Débit moyen: {:.2} MB/s", speed_mbps);
+        println!("🚀 Débit moyen: {:.1} Mo/s", speed_mbps);
     }
 
     // Préparer les arguments Docker avec des variables pour éviter les problèmes de durée de vie
@@ -100,7 +170,6 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
         cd /dump
         cp /g1-dump.tgz /dump
         tar xvzf g1-dump.tgz
-        mv tmp/* duniter_default
         echo "🔄 Conversion avec py-g1-migrator..."
         cd /py-g1-migrator
         echo "🔧 Génération main (1/4)..."
@@ -119,20 +188,23 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
     let output_volume = format!("{}:/py-g1-migrator/output", output_dir_str);
 
     // Exécuter le conteneur Docker avec py-g1-migrator
-    let docker_args = vec![
-        "run",
-        "--rm",
+    // L'image est amd64 uniquement : forcer la plateforme pour compatibilité ARM
+    let mut docker_args = vec!["run", "--rm"];
+    if std::env::consts::ARCH == "aarch64" {
+        docker_args.extend_from_slice(&["--platform", "linux/amd64"]);
+    }
+    docker_args.extend_from_slice(&[
         "-v",
         &dump_volume,
         "-v",
         &output_volume,
         "-e",
-        "LEVELDB_PATH=/dump/duniter_default/data/duniter_default/data/leveldb",
+        "LEVELDB_PATH=/dump/duniter_default/data/leveldb",
         "registry.duniter.org/tools/py-g1-migrator:latest",
         "sh",
         "-c",
-        &script_content,
-    ];
+        script_content,
+    ]);
 
     println!("🐳 Lancement du conteneur Docker...");
     let mut docker_cmd = Command::new("docker");
@@ -205,65 +277,38 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
     Ok(())
 }
 
-/// Télécharge un fichier avec wget dans un conteneur Alpine
-fn download_with_wget(
-    url: &str,
-    output_path: &std::path::Path,
-) -> Result<std::process::ExitStatus> {
-    let output_dir = output_path.parent().unwrap();
-    let filename = output_path.file_name().unwrap().to_string_lossy();
+/// Vérifie qu'une URL distante existe via HTTP HEAD (code 200)
+fn url_exists(url: &str) -> bool {
+    Command::new("curl")
+        .args([
+            "--silent",
+            "--head",
+            "--fail",
+            "--location",
+            "--output",
+            "/dev/null",
+            url,
+        ])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false)
+}
 
-    let mut docker_cmd = Command::new("docker");
-    docker_cmd.args([
-        "run",
-        "--rm",
-        "-v",
-        &format!("{}:/download", output_dir.to_string_lossy()),
-        "alpine:latest",
-        "wget",
-        format!("--output-document=/download/{}", filename.as_ref()).as_str(),
-        url,
-    ]);
+/// Récupère la taille d'un fichier distant via HTTP HEAD
+fn get_remote_file_size(url: &str) -> Option<u64> {
+    let output = Command::new("curl")
+        .args(["--silent", "--head", "--location", url])
+        .output()
+        .ok()?;
 
-    docker_cmd.stdout(std::process::Stdio::piped());
-    docker_cmd.stderr(std::process::Stdio::piped());
-
-    let mut child = docker_cmd.spawn()?;
-
-    // Lire stdout et stderr en parallèle avec des threads
-    let stdout = child.stdout.take();
-    let stderr = child.stderr.take();
-
-    let stdout_handle = if let Some(stdout) = stdout {
-        std::thread::spawn(move || {
-            use std::io::{BufRead, BufReader};
-            let reader = BufReader::new(stdout);
-            for line in reader.lines().map_while(Result::ok) {
-                println!("{}", line);
-            }
-        })
-    } else {
-        std::thread::spawn(|| {})
-    };
-
-    let stderr_handle = if let Some(stderr) = stderr {
-        std::thread::spawn(move || {
-            use std::io::{BufRead, BufReader};
-            let reader = BufReader::new(stderr);
-            for line in reader.lines().map_while(Result::ok) {
-                eprintln!("{}", line);
-            }
-        })
-    } else {
-        std::thread::spawn(|| {})
-    };
-
-    // Attendre que le processus se termine
-    let status = child.wait()?;
-
-    // Attendre que les threads de lecture se terminent
-    let _ = stdout_handle.join();
-    let _ = stderr_handle.join();
-
-    Ok(status)
+    let headers = String::from_utf8_lossy(&output.stdout);
+    for line in headers.lines() {
+        if let Some(value) = line.strip_prefix("content-length:") {
+            return value.trim().parse().ok();
+        }
+        if let Some(value) = line.strip_prefix("Content-Length:") {
+            return value.trim().parse().ok();
+        }
+    }
+    None
 }

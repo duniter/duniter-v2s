@@ -86,13 +86,12 @@ pub fn build_raw_specs(network: String) -> Result<()> {
 
     // Vérifier si yq est disponible
     if Command::new("yq").arg("--version").status().is_err() {
-        println!("📥 yq non trouvé, téléchargement...");
-        exec_should_success(Command::new("wget").args([
-            "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_amd64",
-            "-O",
-            "release/client/yq",
-        ]))?;
-        exec_should_success(Command::new("chmod").args(["+x", "release/client/yq"]))?;
+        return Err(anyhow!(
+            "yq n'est pas installé. Veuillez installer yq pour continuer.\n\
+            Sur macOS: brew install yq\n\
+            Sur Ubuntu/Debian: sudo apt-get install yq\n\
+            Ou télécharger depuis https://github.com/mikefarah/yq/releases"
+        ));
     }
 
     // Vérifier si jq est disponible
@@ -108,14 +107,8 @@ pub fn build_raw_specs(network: String) -> Result<()> {
     println!("🔄 Conversion YAML -> JSON des spécifications client...");
     let client_specs_json = format!("release/client/{}_client-specs.json", runtime);
 
-    // Utiliser yq (local ou système)
-    let yq_cmd = if Path::new("release/client/yq").exists() {
-        "./release/client/yq"
-    } else {
-        "yq"
-    };
     exec_should_success(
-        Command::new(yq_cmd)
+        Command::new("yq")
             .args(["--output-format", "json"])
             .stdin(std::fs::File::open(format!(
                 "node/specs/{}_client-specs.yaml",
@@ -153,11 +146,14 @@ pub fn build_raw_specs(network: String) -> Result<()> {
     println!("   - Runtime: {}", runtime);
     println!("   - Fichier raw spec: {}", raw_spec_file);
 
-    // Copier le fichier dans specs/
+    // Copier le fichier dans node/specs/ pour utilisation locale
+    // (include_bytes! requiert ce fichier à la compilation avec la feature 'embed')
+    // En CI, ce fichier est téléchargé depuis la release GitLab par ensure_raw_spec.
     std::fs::create_dir_all("node/specs/")?;
     let dest_path = format!("node/specs/{}-raw.json", runtime);
     std::fs::copy(&raw_spec_file, &dest_path)?;
     println!("📋 Fichier copié dans node/specs/: {}", dest_path);
+    println!("   (Ce fichier est gitignored et sera téléchargé en CI depuis la release GitLab)");
 
     Ok(())
 }

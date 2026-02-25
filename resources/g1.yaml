@@ -1,0 +1,39 @@
+# ===== Ğ1 Network Genesis Configuration =====
+# Minimal config for build validation — to be completed before real launch
+
+# Ğ1 per UD (in centièmes)
+ud: 1148
+
+# null = computed automatically from migration data
+# 1772967600000 = 2026-03-08T12:00:00 UTC
+first_ud: 1772967600000
+
+# Date of the first UD reevaluation in milliseconds: 2026-03-21T17:00:00 UTC
+first_ud_reeval: 1774112400000
+
+# Clique Smith WoT: each smith will certify each other smith automatically on Genesis
+clique_smiths:
+  - name: "moul"
+  - name: "HugoTrentesaux"
+  - name: "tuxmain"
+  - name: "1000i100"
+  - name: "vit"
+  - name: "cgeek"
+  - name: "aya"
+  - name: "Bulmananabelle"
+  - name: "gui_tooun"
+  - name: "JosselinFERREIRA"
+  - name: "SyoulAnuanua"
+  - name: "vjrj"
+  - name: "Damery"
+  - name: "Nicolas80"
+  - name: "poka"
+    # This smith will be the first author
+    session_keys: "0xa5558f52a8ed117e03a00e5551232d9fa0c67ec494865f721875dcd9bd0cc56f80986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b91180986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b91180986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b911"
+
+# The address which will automatically transfer 1,00 Ğ1 on Genesis to the Treasury
+treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"
+
+# The technical committee members, to act as sudo
+technical_committee:
+  ["moul", "HugoTrentesaux", "tuxmain", "1000i100", "vit", "cgeek", "poka", "aya"]

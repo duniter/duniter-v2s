@@ -43,6 +43,10 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
 
     println!("📦 Runtime: {}", runtime);
 
+    // Étape 0: S'assurer que le fichier raw spec existe dans le contexte Docker
+    // (sera copié dans le container via COPY . . dans le Dockerfile)
+    super::ensure_raw_spec::ensure_raw_spec(&network)?;
+
     // Detect which container tool is available (podman or docker)
     let container_tool = if Command::new("podman").arg("--version").status().is_ok() {
         "podman"
@@ -107,9 +111,7 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
         // Docker buildx approach
         if let Some(ref arch) = arch {
             println!("🔨 Construction de l'image pour architecture {}...", arch);
-            // For single-arch builds, tag with architecture suffix
-            let arch_tag = format!("{}-{}", docker_tag, arch);
-            let image_tag = format!("{}:{}", image_name, arch_tag);
+            let image_tag = format!("{}:{}", image_name, docker_tag);
 
             // Use classic docker build (not buildx) for single-arch to avoid manifest creation
             // Build the image

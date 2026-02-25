@@ -353,6 +353,7 @@ where
     let (was_fatal, mut monetary_mass, mut accounts, invalid_wallets) =
         v1_wallets_to_v2_accounts(genesis_data.wallets, &common_parameters);
     if was_fatal {
+        eprintln!("DEBUG: fatal after v1_wallets_to_v2_accounts");
         fatal = true;
     }
 
@@ -362,7 +363,7 @@ where
         if let Some(identity) = &identities_v2.get(name) {
             technical_committee_members.push(identity.owner_key.clone());
         } else {
-            log::error!("Identity '{}' does not exist", name);
+            eprintln!("Identity '{}' does not exist", name);
             fatal = true;
         }
     }
@@ -378,6 +379,7 @@ where
         &common_parameters,
     )?;
     if was_fatal {
+        eprintln!("DEBUG: fatal after feed_identities");
         fatal = true;
     }
 
@@ -385,6 +387,7 @@ where
     // counter for certifications
     let (was_fatal, counter_cert) = feed_certs_by_receiver(&mut certs_by_receiver, &identities_v2);
     if was_fatal {
+        eprintln!("DEBUG: fatal after feed_certs_by_receiver");
         fatal = true;
     }
 
@@ -413,6 +416,7 @@ where
         &clique_smiths,
     )?;
     if was_fatal {
+        eprintln!("DEBUG: fatal after create_smith_wot");
         fatal = true;
     }
 
@@ -422,7 +426,7 @@ where
             let name = identity_index.get(idty_index).unwrap();
             let identity = identities_v2.get(&(*name).clone()).unwrap();
             if identity.membership_expire_on != 0 {
-                log::error!(
+                eprintln!(
                     "[{}] has received only {}/{} certifications",
                     name,
                     receiver_certs.len(),
@@ -436,7 +440,7 @@ where
     // Verify smith certifications coherence
     for (idty_index, (_online, certs)) in &initial_smiths_wot {
         if certs.len() < common_parameters.smith_sub_wot_min_cert_for_membership as usize {
-            log::error!(
+            eprintln!(
                 "[{}] has received only {}/{} smith certifications",
                 identity_index.get(idty_index).unwrap(),
                 certs.len(),
@@ -448,7 +452,7 @@ where
 
     // check number of online authorities
     if maybe_force_authority.is_none() && counter_online_authorities != 1 {
-        log::error!("one and only one smith must be online, not {counter_online_authorities}");
+        eprintln!("one and only one smith must be online, not {counter_online_authorities}");
     }
 
     // check monetary mass
@@ -461,7 +465,7 @@ where
                 .to_formatted_string(&Locale::en)
         );
         if monetary_mass > genesis_data.initial_monetary_mass {
-            log::error!("money has been created");
+            eprintln!("money has been created");
             fatal = true;
         }
     }
@@ -482,10 +486,9 @@ where
         treasury_balance = common_parameters.balances_existential_deposit;
     }
     if treasury_balance < common_parameters.balances_existential_deposit {
-        log::error!(
+        eprintln!(
             "Treasury balance {} is inferior to existential deposit {}",
-            treasury_balance,
-            common_parameters.balances_existential_deposit
+            treasury_balance, common_parameters.balances_existential_deposit
         );
         fatal = true;
     }
@@ -663,7 +666,16 @@ where
 
     // check the logs to see all the fatal error preventing from starting gtest currency
     if fatal {
-        log::error!("some previously logged error prevent from building a sane genesis");
+        eprintln!("some previously logged error prevent from building a sane genesis");
+        eprintln!("FATAL: some previously logged error prevent from building a sane genesis");
+        eprintln!(
+            "DEBUG: identities={}, accounts={}, smiths={}, authorities={}, certs_by_receiver={}",
+            identities.len(),
+            accounts.len(),
+            initial_smiths_wot.len(),
+            initial_authorities.len(),
+            certs_by_receiver.len()
+        );
         panic!();
     }
 
@@ -1021,7 +1033,7 @@ fn create_smith_wot<SK: Decode>(
         // check that smith exists
         let identities_v2_clone = identities_v2.clone();
         if let Some(identity) = identities_v2.get(&smith.name.clone()) {
-            counter_online_authorities = set_smith_session_keys_and_authority_status(
+            counter_online_authorities += set_smith_session_keys_and_authority_status(
                 initial_authorities,
                 &mut session_keys_map,
                 &smith,
@@ -1037,7 +1049,7 @@ fn create_smith_wot<SK: Decode>(
                 &identities_v2_clone,
             )?;
         } else {
-            log::error!(
+            eprintln!(
                 "Smith '{}' does not correspond to exising identity",
                 &smith.name
             );
@@ -1083,7 +1095,7 @@ fn v1_wallets_to_v2_accounts(
     for (pubkey, balance) in wallets {
         // check existential deposit
         if balance < common_parameters.balances_existential_deposit {
-            log::error!(
+            eprintln!(
                 "wallet {pubkey} has {balance} cǦT which is below {}",
                 common_parameters.balances_existential_deposit
             );
@@ -1190,7 +1202,7 @@ fn check_genesis_data_and_filter_expired_certs_since_export(
             );
         }
         if i.owner_pubkey.is_none() && i.owner_address.is_none() {
-            log::error!("{} neither has a pubkey and an address defined", name);
+            eprintln!("{} neither has a pubkey and an address defined", name);
         }
     });
 }
@@ -1328,7 +1340,7 @@ fn feed_identities(
         // Money
         // check that wallet with same owner_key does not exist
         if accounts.get(&identity.owner_key).is_some() {
-            log::error!(
+            eprintln!(
                 "{name} owner_key {} already exists as a simple wallet",
                 identity.owner_key
             );
@@ -1349,7 +1361,7 @@ fn feed_identities(
         // insert identity
         // check that index does not already exist
         if let Some(other_name) = identity_index.get(&identity.index) {
-            log::error!(
+            eprintln!(
                 "{other_name} already has identity index {} of {name}",
                 identity.index
             );
@@ -1520,7 +1532,7 @@ fn feed_certs_by_receiver(
                 certs.insert(issuer.index, Some(*expire_on));
                 counter_cert += 1;
             } else {
-                log::error!("Identity '{}' does not exist", issuer);
+                eprintln!("Identity '{}' does not exist", issuer);
                 fatal = true;
             };
         }

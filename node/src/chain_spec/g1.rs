@@ -23,7 +23,10 @@ use g1_runtime::{
     Runtime, RuntimeGenesisConfig, WASM_BINARY, opaque::SessionKeys, pallet_universal_dividend,
     parameters,
 };
+use jsonrpsee::core::JsonValue;
+use sc_network::config::MultiaddrWithPeerId;
 use sc_service::ChainType;
+use sc_telemetry::TelemetryEndpoints;
 use serde::Deserialize;
 use sp_core::{Get, sr25519};
 use std::{env, fs};
@@ -132,6 +135,85 @@ pub fn local_testnet_config(
         .expect("must be a map")
         .clone(),
     )
+    .build())
+}
+
+// === client specifications ===
+
+/// emulate client specifications to get them from json
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
+pub struct ClientSpec {
+    name: String,
+    id: String,
+    chain_type: ChainType,
+    boot_nodes: Vec<MultiaddrWithPeerId>,
+    telemetry_endpoints: Option<TelemetryEndpoints>,
+    #[serde(default = "Default::default", skip_serializing_if = "Option::is_none")]
+    protocol_id: Option<String>,
+    properties: Option<serde_json::Map<std::string::String, JsonValue>>,
+}
+
+// === development chainspecs ===
+
+/// generate development chainspec with Alice validator
+pub fn development_chainspecs(config_file_path: String) -> Result<ChainSpec, String> {
+    Ok(ChainSpec::builder(
+        &get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?,
+        None,
+    )
+    .with_name("Ğ1 Development")
+    .with_id("g1_dev")
+    .with_chain_type(ChainType::Development)
+    .with_genesis_config_patch({
+        let genesis_data = gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, G1SKP>(
+            config_file_path.clone(),
+            get_parameters,
+            Some("Alice".to_owned()),
+        )
+        .expect("Genesis Data must be buildable");
+        genesis_data_to_g1_genesis_conf(genesis_data)
+    })
+    .with_properties(
+        serde_json::json!({
+            "tokenDecimals": TOKEN_DECIMALS,
+            "tokenSymbol": TOKEN_SYMBOL,
+        })
+        .as_object()
+        .expect("must be a map")
+        .clone(),
+    )
+    .build())
+}
+
+// === live chainspecs ===
+
+/// live chainspecs
+// one smith must have session keys
+pub fn live_chainspecs(
+    client_spec: ClientSpec,
+    config_file_path: String,
+) -> Result<ChainSpec, String> {
+    Ok(ChainSpec::builder(
+        &get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?,
+        None,
+    )
+    .with_name(client_spec.name.as_str())
+    .with_id(client_spec.id.as_str())
+    .with_chain_type(client_spec.chain_type)
+    .with_genesis_config_patch({
+        let genesis_data = gen_genesis_data::generate_genesis_data::<_, _, SessionKeys, G1SKP>(
+            config_file_path.clone(),
+            get_parameters,
+            None,
+        )
+        .expect("Genesis Data must be buildable");
+        genesis_data_to_g1_genesis_conf(genesis_data)
+    })
+    .with_telemetry_endpoints(client_spec.telemetry_endpoints.unwrap())
+    .with_properties(client_spec.properties.unwrap())
+    .with_boot_nodes(client_spec.boot_nodes)
     .build())
 }
 
