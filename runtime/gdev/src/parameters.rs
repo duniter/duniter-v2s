@@ -59,7 +59,9 @@ parameter_types! {
 // Babe
 parameter_types! {
     pub const ExpectedBlockTime: u64 = MILLISECS_PER_BLOCK;
-    pub const ReportLongevity: BlockNumber = 168 * HOURS;
+    // Keep offence/equivocation reports valid long enough to tolerate network delays
+    // and temporary outages, reducing missed-slash risk from short reporting windows.
+    pub const ReportLongevity: BlockNumber = 28 * 24 * HOURS;
 }
 // ImOnline
 parameter_types! {

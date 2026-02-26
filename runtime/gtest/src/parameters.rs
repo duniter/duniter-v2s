@@ -59,7 +59,9 @@ pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = HOURS;
 parameter_types! {
     pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS as u64;
     pub const ExpectedBlockTime: u64 = MILLISECS_PER_BLOCK;
-    pub const ReportLongevity: BlockNumber = 168 * EPOCH_DURATION_IN_SLOTS;
+    // Keep offence/equivocation reports valid long enough to tolerate network delays
+    // and temporary outages, reducing missed-slash risk from short reporting windows.
+    pub const ReportLongevity: BlockNumber = 28 * 24 * EPOCH_DURATION_IN_SLOTS;
 }
 
 // ImOnline
@@ -102,9 +104,9 @@ parameter_types! {
 
 // Identity
 parameter_types! {
-    pub const ChangeOwnerKeyPeriod: BlockNumber = MONTHS;
+    pub const ChangeOwnerKeyPeriod: BlockNumber = 6 * MONTHS;
     pub const ConfirmPeriod: BlockNumber = 2 * MONTHS;
-    pub const IdtyCreationPeriod: BlockNumber = DAYS;
+    pub const IdtyCreationPeriod: BlockNumber = 5 * DAYS;
     pub const AutorevocationPeriod: BlockNumber = YEARS;
     pub const DeletionPeriod: BlockNumber = 10 * YEARS;
 }
