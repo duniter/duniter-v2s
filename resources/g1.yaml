@@ -11,23 +11,54 @@ first_ud: 1772967600000
 # Date of the first UD reevaluation in milliseconds: 2026-03-21T17:00:00 UTC
 first_ud_reeval: 1774112400000
 
-# Clique Smith WoT: each smith will certify each other smith automatically on Genesis
-clique_smiths:
-  - name: "moul"
-  - name: "HugoTrentesaux"
-  - name: "tuxmain"
-  - name: "1000i100"
-  - name: "vit"
-  - name: "cgeek"
-  - name: "aya"
-  - name: "Bulmananabelle"
-  - name: "gui_tooun"
-  - name: "JosselinFERREIRA"
-  - name: "SyoulAnuanua"
-  - name: "vjrj"
-  - name: "Damery"
-  - name: "Nicolas80"
-  - name: "poka"
+# Explicit smith WoT (manual mode):
+# Update `certs_received` with the intended final cert graph before launch.
+smiths:
+  "moul":
+    name: "moul"
+    certs_received: ["HugoTrentesaux", "tuxmain", "1000i100"]
+  "HugoTrentesaux":
+    name: "HugoTrentesaux"
+    certs_received: ["tuxmain", "1000i100", "vit"]
+  "tuxmain":
+    name: "tuxmain"
+    certs_received: ["1000i100", "vit", "cgeek"]
+  "1000i100":
+    name: "1000i100"
+    certs_received: ["vit", "cgeek", "aya"]
+  "vit":
+    name: "vit"
+    certs_received: ["cgeek", "aya", "Bulmananabelle"]
+  "cgeek":
+    name: "cgeek"
+    certs_received: ["aya", "Bulmananabelle", "gui_tooun"]
+  "aya":
+    name: "aya"
+    certs_received: ["Bulmananabelle", "gui_tooun", "JosselinFERREIRA"]
+  "Bulmananabelle":
+    name: "Bulmananabelle"
+    certs_received: ["gui_tooun", "JosselinFERREIRA", "SyoulAnuanua"]
+  "gui_tooun":
+    name: "gui_tooun"
+    certs_received: ["JosselinFERREIRA", "SyoulAnuanua", "vjrj"]
+  "JosselinFERREIRA":
+    name: "JosselinFERREIRA"
+    certs_received: ["SyoulAnuanua", "vjrj", "Damery"]
+  "SyoulAnuanua":
+    name: "SyoulAnuanua"
+    certs_received: ["vjrj", "Damery", "Nicolas80"]
+  "vjrj":
+    name: "vjrj"
+    certs_received: ["Damery", "Nicolas80", "poka"]
+  "Damery":
+    name: "Damery"
+    certs_received: ["Nicolas80", "poka", "moul"]
+  "Nicolas80":
+    name: "Nicolas80"
+    certs_received: ["poka", "moul", "HugoTrentesaux"]
+  "poka":
+    name: "poka"
+    certs_received: ["moul", "HugoTrentesaux", "tuxmain"]
     # This smith will be the first author
     session_keys: "0xa5558f52a8ed117e03a00e5551232d9fa0c67ec494865f721875dcd9bd0cc56f80986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b91180986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b91180986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b911"
 

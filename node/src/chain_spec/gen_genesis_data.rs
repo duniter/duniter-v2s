@@ -2006,7 +2006,11 @@ mod tests {
         ByteArray,
         crypto::{Ss58AddressFormat, Ss58Codec},
     };
-    use std::str::FromStr;
+    use std::{
+        fs,
+        str::FromStr,
+        time::{SystemTime, UNIX_EPOCH},
+    };
 
     #[test]
     fn test_timestamp_to_relative_blocs() {
@@ -2044,5 +2048,80 @@ mod tests {
         let pubkey = bs58::encode(account.as_slice()).into_vec();
         let pubkey = String::from_utf8(pubkey).expect("valid conversion");
         assert_eq!(pubkey, "FHNpKmJrUtusuvKPGomAygQqeiks98bdV6yD61Stb6vg");
+    }
+
+    #[test]
+    fn test_parse_yaml_with_explicit_smiths_wot() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be after epoch")
+            .as_nanos();
+        let file_path = std::env::temp_dir().join(format!("g1-smiths-{}.yaml", unique));
+        let yaml = r#"
+ud: 1148
+first_ud: null
+first_ud_reeval: null
+smiths:
+  "alice":
+    name: "alice"
+    certs_received: ["bob", "charlie"]
+  "bob":
+    name: "bob"
+    session_keys: "0x111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+    certs_received: ["alice"]
+technical_committee: ["alice"]
+"#;
+        fs::write(&file_path, yaml).expect("must write temporary yaml config");
+
+        let input = get_genesis_input::<serde_json::Value>(
+            file_path
+                .to_str()
+                .expect("temporary path should be valid unicode")
+                .to_owned(),
+        )
+        .expect("yaml with explicit smiths should parse");
+
+        let smiths = input
+            .smith_identities
+            .expect("smiths section should be parsed");
+        assert_eq!(smiths.len(), 2);
+        assert!(input.clique_smiths.is_none());
+        assert_eq!(smiths.get("alice").expect("alice exists").name, "alice");
+        assert_eq!(
+            smiths
+                .get("alice")
+                .expect("alice exists")
+                .certs_received
+                .as_slice(),
+            ["bob".to_owned(), "charlie".to_owned()]
+        );
+        assert_eq!(
+            smiths
+                .get("bob")
+                .expect("bob exists")
+                .certs_received
+                .as_slice(),
+            ["alice".to_owned()]
+        );
+        assert!(
+            smiths
+                .get("alice")
+                .expect("alice exists")
+                .session_keys
+                .is_none()
+        );
+        let bob_session_keys = smiths
+            .get("bob")
+            .expect("bob exists")
+            .session_keys
+            .as_ref()
+            .expect("bob must keep explicit session keys");
+        assert!(!bob_session_keys.is_empty());
+        assert_ne!(
+            bob_session_keys,
+            "0x0000000000000000000000000000000000000000000000000000000000000000"
+        );
+
+        fs::remove_file(file_path).expect("must remove temporary yaml config");
     }
 }
