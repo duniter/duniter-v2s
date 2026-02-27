@@ -280,7 +280,8 @@ mod benchmarks {
         create_identities::<T>(i)?;
 
         let mut names = Vec::<IdtyName>::new();
-        for k in 1..i {
+        // Keep names count aligned with benchmark component `i`.
+        for k in 1..=i {
             let name: IdtyName = IdtyName((k + identities_count).to_le_bytes().into());
             assert!(
                 IdentitiesNames::<T>::contains_key(&name),

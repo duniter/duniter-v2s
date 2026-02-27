@@ -29,9 +29,19 @@ use crate::Pallet;
 )]
 mod benchmarks {
     use super::*;
+    use crate::types::SmithMeta;
+    use scale_info::prelude::vec::Vec;
 
     fn assert_has_event<T: Config>(generic_event: <T as frame_system::Config>::RuntimeEvent) {
         frame_system::Pallet::<T>::assert_has_event(generic_event);
+    }
+
+    fn near_limit_issued_certs<T: Config>(receiver: T::IdtyIndex) -> Vec<T::IdtyIndex> {
+        let near_limit = T::MaxByIssuer::get().max(1) - 1;
+        (0..near_limit)
+            .map(|i| (10_000 + i).into())
+            .filter(|id| *id != receiver)
+            .collect()
     }
 
     #[benchmark]
@@ -90,6 +100,13 @@ mod benchmarks {
         Pallet::<T>::accept_invitation(caller_origin)?;
         let issuer: T::IdtyIndex = 1.into();
         let caller: T::AccountId = T::IdtyAttr::owner_key(issuer).unwrap();
+        // Keep issuer very close to MaxByIssuer to benchmark near-bound insertion/sort costs.
+        Smiths::<T>::mutate(issuer, |maybe_smith_meta| {
+            if let Some(smith_meta) = maybe_smith_meta {
+                smith_meta.issued_certs = near_limit_issued_certs::<T>(receiver);
+                smith_meta.issued_certs.sort();
+            }
+        });
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller), receiver);
@@ -101,7 +118,38 @@ mod benchmarks {
     #[benchmark]
     fn on_removed_wot_member() {
         let idty: T::IdtyIndex = 1.into();
-        assert!(Smiths::<T>::get(idty).is_some());
+        let max = T::MaxByIssuer::get().max(1);
+        let mut issuers = Vec::new();
+        for i in 0..max {
+            let issuer: T::IdtyIndex = (20_000 + i).into();
+            issuers.push(issuer);
+            // Keep `receiver` present while filling the issuer close to MaxByIssuer.
+            // Sorting puts `receiver` first, making remove(index) shift the most elements.
+            let mut issued_certs = near_limit_issued_certs::<T>(idty);
+            issued_certs.push(idty);
+            issued_certs.sort();
+            Smiths::<T>::insert(
+                issuer,
+                SmithMeta {
+                    status: SmithStatus::Smith,
+                    expires_on: None,
+                    issued_certs,
+                    received_certs: Vec::new(),
+                    last_online: None,
+                },
+            );
+        }
+        // Build a dense received list so exclusion loops over many issuers and prunes issued_certs.
+        Smiths::<T>::insert(
+            idty,
+            SmithMeta {
+                status: SmithStatus::Smith,
+                expires_on: None,
+                issued_certs: Vec::new(),
+                received_certs: issuers,
+                last_online: None,
+            },
+        );
 
         #[block]
         {
