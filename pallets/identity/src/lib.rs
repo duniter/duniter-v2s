@@ -1030,6 +1030,13 @@ pub mod pallet {
                 Error::<T>::IdtyAlreadyCreated
             );
 
+            // 4. receiver account must already exist
+            ensure!(
+                (frame_system::Account::<T>::get(receiver_key).providers >= 1)
+                    || (frame_system::Account::<T>::get(receiver_key).sufficients >= 1),
+                Error::<T>::AccountNotExist
+            );
+
             // --- other checks depend on other pallets
             // run checks for identity creation
             T::CheckIdtyCallAllowed::check_create_identity(creator_index)?;
