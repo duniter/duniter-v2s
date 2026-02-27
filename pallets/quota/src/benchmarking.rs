@@ -121,9 +121,8 @@ mod benchmarks {
     fn do_refund() {
         let account: T::AccountId = account("Alice", 1, 1);
         let _ = CurrencyOf::<T>::set_balance(&T::RefundAccount::get(), u32::MAX.into());
-        // The worst-case scenario is when the refund fails
-        // and can only be triggered if the account is dead,
-        // in this case by having no balance in the account.
+        // Worst branch for do_refund: withdraw succeeds, then resolve_into_existing fails
+        // because the destination account does not exist.
         let refund = Refund {
             account: account.clone(),
             identity: 1u32.into(),
@@ -132,7 +131,7 @@ mod benchmarks {
 
         #[block]
         {
-            Pallet::<T>::try_refund(refund);
+            Pallet::<T>::do_refund(refund, 10u64.into());
         }
 
         assert_has_event::<T>(Event::<T>::RefundFailed(account).into());
