@@ -208,20 +208,13 @@ impl<
             } else if pallet_authority_members::Pallet::<Runtime>::online().contains(&idty_index) {
                 return Err(pallet_identity::Error::<Runtime>::OwnerKeyUsedAsValidator.into());
             }
-            match pallet_authority_members::Pallet::<Runtime>::change_owner_key(
-                idty_index, account_id,
-            ) {
-                // New or future smiths who have not yet set keys are not authority members
-                Err(sp_runtime::DispatchErrorWithPostInfo {
-                    error:
-                        sp_runtime::DispatchError::Module(sp_runtime::ModuleError {
-                            message: Some("MemberNotFound"),
-                            ..
-                        }),
-                    ..
-                }) => {}
-                Err(e) => return Err(e.error),
-                Ok(_) => {}
+            // New or future smiths who have not yet set keys are not authority members.
+            // In that case, only the identity owner key changes and authority data is untouched.
+            if pallet_authority_members::Members::<Runtime>::contains_key(idty_index) {
+                pallet_authority_members::Pallet::<Runtime>::change_owner_key(
+                    idty_index, account_id,
+                )
+                .map_err(|e| e.error)?;
             }
         }
         Ok(())
