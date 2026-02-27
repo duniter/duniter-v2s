@@ -152,6 +152,21 @@ fn test_create_identity_ok() {
 }
 
 #[test]
+fn test_create_identity_fails_for_non_existing_account() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice()],
+    })
+    .execute_with(|| {
+        run_to_block(1);
+
+        assert_noop!(
+            Identity::create_identity(RuntimeOrigin::signed(account(1).id), account(4).id),
+            Error::<Test>::AccountNotExist
+        );
+    });
+}
+
+#[test]
 fn test_create_identity_but_not_confirm_it() {
     new_test_ext(IdentityConfig {
         identities: vec![alice()],

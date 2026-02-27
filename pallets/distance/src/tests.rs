@@ -46,6 +46,8 @@ fn test_request_distance_evaluation_for() {
         run_to_block(1);
         // give enough for reserve
         Balances::set_balance(&1, 10_000);
+        // ensure account exists before creating an identity for it
+        Balances::set_balance(&5, 10_000);
         assert_ok!(Identity::create_identity(RuntimeOrigin::signed(1), 5));
         assert_ok!(Identity::confirm_identity(
             RuntimeOrigin::signed(5),
