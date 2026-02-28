@@ -3907,6 +3907,7 @@ name = "gdev-runtime"
 version = "1.0.0"
 dependencies = [
  "common-runtime",
+ "finality-grandpa",
  "frame-benchmarking",
  "frame-executive",
  "frame-metadata-hash-extension",

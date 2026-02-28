@@ -16,7 +16,9 @@
 
 mod common;
 
+use codec::{Decode, Encode};
 use common::*;
+use finality_grandpa::{Equivocation as GrandpaEquivocation, Message as GrandpaMessage, Prevote};
 use frame_support::{
     assert_ok,
     traits::{ValidatorSet, ValidatorSetWithIdentification},
@@ -25,8 +27,44 @@ use gdev_runtime::*;
 use pallet_im_online as im_online;
 use pallet_im_online::UnresponsivenessOffence;
 use pallet_session::historical::IdentificationTuple;
+use sp_core::{
+    H256, Pair,
+    offchain::{OffchainWorkerExt, TransactionPoolExt, testing},
+};
 use sp_runtime::traits::Convert;
 use sp_staking::offence::ReportOffence;
+
+fn generate_grandpa_equivocation_proof(
+    set_id: sp_consensus_grandpa::SetId,
+    round: sp_consensus_grandpa::RoundNumber,
+    target_1: (H256, u32),
+    target_2: (H256, u32),
+    offender: &sp_consensus_grandpa::AuthorityPair,
+) -> sp_consensus_grandpa::EquivocationProof<H256, u32> {
+    let signed_prevote = |target_hash, target_number| {
+        let prevote = Prevote {
+            target_hash,
+            target_number,
+        };
+        let prevote_msg = GrandpaMessage::Prevote(prevote.clone());
+        let payload = sp_consensus_grandpa::localized_payload(round, set_id, &prevote_msg);
+        let signature = offender.sign(&payload);
+        (prevote, signature)
+    };
+
+    let (prevote1, signed1) = signed_prevote(target_1.0, target_1.1);
+    let (prevote2, signed2) = signed_prevote(target_2.0, target_2.1);
+
+    sp_consensus_grandpa::EquivocationProof::new(
+        set_id,
+        sp_consensus_grandpa::Equivocation::Prevote(GrandpaEquivocation {
+            round_number: round,
+            identity: offender.public(),
+            first: (prevote1, signed1),
+            second: (prevote2, signed2),
+        }),
+    )
+}
 
 #[test]
 fn test_imonline_offence() {
@@ -151,5 +189,61 @@ fn test_babe_offence() {
             pallet_authority_members::Event::MemberAddedToBlacklist { member: 1 },
         ));
         assert_eq!(AuthorityMembers::blacklist().len(), 1);
+    })
+}
+
+#[test]
+fn test_grandpa_runtime_api_submit_report_equivocation_unsigned_extrinsic() {
+    let mut ext = ExtBuilder::new(1, 3, 4).build();
+    let (offchain, _offchain_state) = testing::TestOffchainExt::new();
+    let (pool, pool_state) = testing::TestTransactionPoolExt::new();
+    ext.register_extension(OffchainWorkerExt::new(offchain));
+    ext.register_extension(TransactionPoolExt::new(pool));
+
+    ext.execute_with(|| {
+        run_to_block(1);
+
+        let set_id = Grandpa::current_set_id();
+        let offender_pair = sp_consensus_grandpa::AuthorityPair::from_string("//Alice", None)
+            .expect("static seed should be valid");
+        let offender_id: sp_consensus_grandpa::AuthorityId = offender_pair.public();
+
+        let key_owner_proof = gdev_runtime::api::dispatch(
+            "GrandpaApi_generate_key_ownership_proof",
+            (set_id, offender_id).encode().as_slice(),
+        )
+        .expect("runtime api should return bytes");
+        let key_owner_proof: Option<sp_consensus_grandpa::OpaqueKeyOwnershipProof> =
+            Decode::decode(&mut key_owner_proof.as_slice())
+                .expect("runtime api output should decode");
+        let key_owner_proof = key_owner_proof.expect("key ownership proof should exist");
+
+        let equivocation_proof = generate_grandpa_equivocation_proof(
+            set_id,
+            1,
+            (H256::repeat_byte(1), 1),
+            (H256::repeat_byte(2), 2),
+            &offender_pair,
+        );
+
+        let submitted = gdev_runtime::api::dispatch(
+            "GrandpaApi_submit_report_equivocation_unsigned_extrinsic",
+            (equivocation_proof, key_owner_proof).encode().as_slice(),
+        )
+        .expect("runtime api should return bytes");
+        let submitted: Option<()> =
+            Decode::decode(&mut submitted.as_slice()).expect("runtime api output should decode");
+        assert_eq!(submitted, Some(()));
+
+        // The runtime API should submit exactly one unsigned extrinsic in the local pool.
+        let txs = &pool_state.read().transactions;
+        assert_eq!(txs.len(), 1);
+
+        let xt = UncheckedExtrinsic::decode(&mut txs[0].as_slice())
+            .expect("submitted transaction should decode");
+        assert!(matches!(
+            xt.function,
+            RuntimeCall::Grandpa(pallet_grandpa::Call::report_equivocation_unsigned { .. })
+        ));
     })
 }
