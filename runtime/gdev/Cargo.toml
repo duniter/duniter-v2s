@@ -178,6 +178,7 @@ try-runtime = [
 ]
 
 [dev-dependencies]
+finality-grandpa = { version = "0.16.3" }
 sp-io = { workspace = true }
 sp-keyring = { workspace = true }
 sp-staking = { workspace = true }
