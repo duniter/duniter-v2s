@@ -114,7 +114,7 @@ parameter_types! {
 // Membership
 parameter_types! {
     pub const MembershipPeriod: BlockNumber = YEARS;
-    pub const MembershipRenewalPeriod: BlockNumber = 56 * DAYS;
+    pub const MembershipRenewalPeriod: BlockNumber = 2 * MONTHS;
 }
 
 // Certification
