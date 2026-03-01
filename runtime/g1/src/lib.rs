@@ -157,6 +157,7 @@ pub enum ProxyType {
     AlmostAny = 0,
     TransferOnly = 1,
     CancelProxy = 2,
+    TechnicalCommitteePropose = 3,
 }
 impl Default for ProxyType {
     fn default() -> Self {
@@ -185,6 +186,12 @@ impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
                 matches!(
                     c,
                     RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
+                )
+            }
+            ProxyType::TechnicalCommitteePropose => {
+                matches!(
+                    c,
+                    RuntimeCall::TechnicalCommittee(pallet_collective::Call::propose { .. })
                 )
             }
         }
