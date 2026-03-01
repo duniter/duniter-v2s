@@ -55,7 +55,7 @@ Notez ce hash, c'est la référence de votre compilation locale.
 
 ## Etape 3 : Vérifier la preimage de la proposal
 
-Sur Polkadot.js Apps connecté au réseau concerné :
+Sur [Duniter Portal](https://duniter-portal.axiom-team.fr/) connecté au réseau concerné :
 
 1. Allez dans **Governance > Tech. committee > Proposals**
 2. Identifiez la proposal de runtime upgrade

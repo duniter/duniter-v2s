@@ -114,7 +114,7 @@ The runtime upgrade is applied through `pallet_upgrade_origin` which requires a
 
 ### 7a. Create the preimage
 
-On [Polkadot.js Apps](https://polkadot.js.org/apps) connected to the network:
+On [Duniter Portal](https://duniter-portal.axiom-team.fr/) connected to the network:
 
 1. **Governance > Preimages > Add preimage**
 2. Select `upgradeOrigin` > `dispatchAsRootUncheckedWeight`

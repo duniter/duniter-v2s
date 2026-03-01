@@ -282,7 +282,7 @@ curl -H "Content-Type: application/json" \
   http://127.0.0.1:9944
 ```
 
-Puis soumettre on-chain via `session.setKeys` (polkadot.js/apps ou subxt). Prise d'effet après une epoch (4h).
+Puis soumettre on-chain via `session.setKeys` ([Duniter Portal](https://duniter-portal.axiom-team.fr/) ou subxt). Prise d'effet après une epoch (4h).
 
 <details><summary>Pourquoi faire la rotation</summary>
 

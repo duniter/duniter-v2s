@@ -54,7 +54,7 @@ This will take about **2 minutes** to download dependencies plus between 5 and *
 cargo run -- --dev --tmp # here, --dev means --chain=dev which selects the gdev runtime
 ```
 
-When you see the logs, the blockchain is running and you can connect to it with polkadotjs app: [https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944). You should see blocks being added every 6 seconds. You can use Alice, Bob, etc test accounts to submit extrinsics.
+When you see the logs, the blockchain is running and you can connect to it with [Duniter Portal](https://duniter-portal.axiom-team.fr/?rpc=ws://127.0.0.1:9944). You should see blocks being added every 6 seconds. You can use Alice, Bob, etc test accounts to submit extrinsics.
 
 ## Autocompletion
 
