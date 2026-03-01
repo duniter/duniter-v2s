@@ -88,5 +88,6 @@ voter en confiance.
 
 ## Voir aussi
 
-- [Procédure de release](./release.md) pour la création de la release GitLab
-- [Post du forum](https://forum.duniter.org/t/technical-committee-check-runtime-upgrade-hash-compliance/13418) avec la procédure originale
+- [Runtime upgrade](./runtime-upgrade.md) — Procédure complète de bout en bout
+- [Release](./release.md) — Build et publication des artifacts sur GitLab
+- [Post du forum](https://forum.duniter.org/t/technical-committee-check-runtime-upgrade-hash-compliance/13418) — Procédure originale de vérification

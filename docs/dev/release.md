@@ -285,38 +285,9 @@ cargo xtask release runtime create gdev runtime/gdev-1100
 
 ### Submitting the runtime upgrade on-chain
 
-Runtime upgrades are submitted through the **Technical Committee** via
-`pallet_upgrade_origin`, which requires a **2/3 supermajority** vote.
+Once the GitLab release is created, the runtime must be submitted on-chain
+through the Technical Committee (2/3 supermajority vote via
+`pallet_upgrade_origin`).
 
-#### Step 1: Create a preimage
-
-On [Polkadot.js Apps](https://polkadot.js.org/apps) connected to the target
-network:
-
-1. Go to **Governance > Preimages > Add preimage**
-2. Select `upgradeOrigin` > `dispatchAsRootUncheckedWeight`
-3. Inside, select `system` > `setCode`
-4. Upload the compiled WASM file
-   (`release/<network>_runtime.compact.compressed.wasm`)
-5. Copy the **preimage hash** and submit
-
-#### Step 2: Propose via Technical Committee
-
-1. Go to **Governance > Tech. committee > Proposals > Submit proposal**
-2. Select `upgradeOrigin` > `dispatchAsRootUncheckedWeight` >
-   `system` > `setCode`
-3. Use the preimage hash from step 1
-4. Set an appropriate `lengthBound` (the WASM file size in bytes)
-5. Submit the proposal
-
-#### Step 3: Technical Committee vote
-
-Each TC member should:
-
-1. **Verify the runtime hash** before voting
-   (see [verify-runtime-code.md](./verify-runtime-code.md))
-2. Vote `Aye` on the proposal via **Governance > Tech. committee > Proposals**
-3. Once the 2/3 threshold is reached, close the motion
-
-The runtime upgrade takes effect at the **next block** after the motion is
-executed.
+See [runtime-upgrade.md](./runtime-upgrade.md) for the complete end-to-end
+procedure (preimage, TC proposal, vote, verification).
