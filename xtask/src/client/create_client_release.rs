@@ -31,10 +31,7 @@ pub async fn create_client_release(
     branch: String,
     upload_packages: bool,
 ) -> Result<()> {
-    println!(
-        "🚀 Création de la release client pour le réseau: {}",
-        network
-    );
+    println!("🚀 Création de la release client pour le réseau: {network}");
 
     let runtime = if network.starts_with("g1") {
         "g1"
@@ -49,18 +46,18 @@ pub async fn create_client_release(
         ));
     };
 
-    println!("📦 Runtime: {}", runtime);
+    println!("📦 Runtime: {runtime}");
 
     // Calculer les versions et noms comme dans la CI
     let client_version = get_client_version()?;
     let runtime_version = extract_runtime_version_from_network(&network)?;
-    let client_milestone = format!("client-{}", client_version);
-    let client_release_name = format!("{}-{}-{}", runtime, runtime_version, client_version);
+    let client_milestone = format!("client-{client_version}");
+    let client_release_name = format!("{runtime}-{runtime_version}-{client_version}");
 
-    println!("📦 Version client: {}", client_version);
-    println!("📦 Version runtime: {}", runtime_version);
-    println!("🏷️ Milestone: {}", client_milestone);
-    println!("📋 Nom de release: {}", client_release_name);
+    println!("📦 Version client: {client_version}");
+    println!("📦 Version runtime: {runtime_version}");
+    println!("🏷️ Milestone: {client_milestone}");
+    println!("📋 Nom de release: {client_release_name}");
 
     // Vérifier que les fichiers nécessaires existent
     let required_files = vec![
@@ -75,7 +72,7 @@ pub async fn create_client_release(
                 file
             ));
         }
-        println!("✅ Fichier trouvé: {}", file);
+        println!("✅ Fichier trouvé: {file}");
     }
 
     // Rechercher les fichiers .deb et .rpm dans target (seulement si demandé)
@@ -84,7 +81,7 @@ pub async fn create_client_release(
         if !packages.is_empty() {
             println!("📦 Packages trouvés (seront uploadés):");
             for (asset_name, file_path) in &packages {
-                println!("   - {} ({})", asset_name, file_path);
+                println!("   - {asset_name} ({file_path})");
             }
         } else {
             println!(
@@ -116,12 +113,12 @@ pub async fn create_client_release(
 
     let mut asset_files = vec![
         (
-            format!("{}_client-specs.yaml", runtime),
-            format!("release/client/{}_client-specs.yaml", runtime),
+            format!("{runtime}_client-specs.yaml"),
+            format!("release/client/{runtime}_client-specs.yaml"),
         ),
         (
-            format!("{}-raw.json", runtime),
-            format!("release/client/{}-raw.json", runtime),
+            format!("{runtime}-raw.json"),
+            format!("release/client/{runtime}-raw.json"),
         ),
     ];
 
@@ -134,14 +131,11 @@ pub async fn create_client_release(
             return Err(anyhow!("Le fichier d'asset n'existe pas: {}", file_path));
         }
 
-        println!("📤 Upload de {}...", asset_name);
+        println!("📤 Upload de {asset_name}...");
         let asset_url =
             crate::gitlab::upload_file(project_id.clone(), path, asset_name.clone()).await?;
 
-        println!(
-            "📎 Création du lien d'asset: {} -> {}",
-            asset_name, asset_url
-        );
+        println!("📎 Création du lien d'asset: {asset_name} -> {asset_url}");
         // Créer le lien d'asset via GitLab
         crate::gitlab::create_asset_link(
             client_release_name.clone(),
@@ -153,11 +147,11 @@ pub async fn create_client_release(
 
     println!("✅ Release client créée avec succès!");
     println!("📋 Résumé:");
-    println!("   - Réseau: {}", network);
-    println!("   - Runtime: {}", runtime);
-    println!("   - Branche: {}", branch);
-    println!("   - Release: {}", client_release_name);
-    println!("   - Milestone: {}", client_milestone);
+    println!("   - Réseau: {network}");
+    println!("   - Runtime: {runtime}");
+    println!("   - Branche: {branch}");
+    println!("   - Release: {client_release_name}");
+    println!("   - Milestone: {client_milestone}");
     println!("   - Assets: {} fichiers", asset_files.len());
 
     Ok(())

@@ -75,7 +75,7 @@ pub(super) async fn release_network(network: String, branch: String) -> Result<(
     );
     add_srtool_notes(network.clone(), &mut release_notes)?;
 
-    println!("{}", release_notes);
+    println!("{release_notes}");
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
     create_network_release::create_network_release(
@@ -154,7 +154,7 @@ async fn release(
         )
         .as_str(),
     );
-    println!("{}", release_notes);
+    println!("{release_notes}");
     let gitlab_token =
         std::env::var("GITLAB_TOKEN").with_context(|| "missing env var GITLAB_TOKEN")?;
     create_release::create_release(
@@ -181,12 +181,12 @@ fn add_srtool_notes(network: String, release_notes: &mut String) -> Result<()> {
         Ok(sr_tool_output) => {
             release_notes.push_str(
                 gen_release_notes(currency.to_string(), sr_tool_output)
-                    .with_context(|| format!("Fail to generate release notes for {}", currency))?
+                    .with_context(|| format!("Fail to generate release notes for {currency}"))?
                     .as_str(),
             );
         }
         Err(e) => {
-            eprintln!("srtool JSON output could not be read ({}). Skipped.", e)
+            eprintln!("srtool JSON output could not be read ({e}). Skipped.")
         }
     }
     Ok(())
@@ -206,7 +206,7 @@ pub(super) async fn print_spec(network: String) -> Result<()> {
         let client = reqwest::Client::new();
         let res = client.get(url).send().await?;
         let spec = String::from_utf8(res.bytes().await?.to_vec())?;
-        println!("{}", spec);
+        println!("{spec}");
     }
     Ok(())
 }
@@ -265,7 +265,7 @@ fn gen_release_notes(currency: String, srtool_output: String) -> Result<String> 
     );
     values.insert(
         "compression_percent".to_owned(),
-        format!("{:.2}", compression_percent),
+        format!("{compression_percent:.2}"),
     );
     values.insert(
         "metadata_version".to_owned(),

@@ -196,13 +196,11 @@ pub mod pallet {
             for (issuer, cert_meta) in cert_meta_by_issuer {
                 assert!(
                     !cert_meta.issued_count >= T::MaxByIssuer::get(),
-                    "Identity n°{:?} exceed MaxByIssuer.",
-                    issuer
+                    "Identity n°{issuer:?} exceed MaxByIssuer."
                 );
                 assert!(
                     !cert_meta.received_count >= T::MinReceivedCertToBeAbleToIssueCert::get(),
-                    "Identity n°{:?} not respect MinReceivedCertToBeAbleToIssueCert.",
-                    issuer
+                    "Identity n°{issuer:?} not respect MinReceivedCertToBeAbleToIssueCert."
                 );
                 StorageIdtyCertMeta::<T>::insert(issuer, cert_meta);
             }

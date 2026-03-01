@@ -378,29 +378,29 @@ pub(super) fn gen_doc() -> Result<()> {
         .expect("cargo doc failed to execute");
 
     let mut file = File::create(CALLS_DOC_FILEPATH)
-        .with_context(|| format!("Failed to create file '{}'", CALLS_DOC_FILEPATH))?;
+        .with_context(|| format!("Failed to create file '{CALLS_DOC_FILEPATH}'"))?;
     file.write_all(call_doc.as_bytes())
-        .with_context(|| format!("Failed to write to file '{}'", CALLS_DOC_FILEPATH))?;
+        .with_context(|| format!("Failed to write to file '{CALLS_DOC_FILEPATH}'"))?;
     let mut file = File::create(EVENTS_DOC_FILEPATH)
-        .with_context(|| format!("Failed to create file '{}'", EVENTS_DOC_FILEPATH))?;
+        .with_context(|| format!("Failed to create file '{EVENTS_DOC_FILEPATH}'"))?;
     file.write_all(event_doc.as_bytes())
-        .with_context(|| format!("Failed to write to file '{}'", EVENTS_DOC_FILEPATH))?;
+        .with_context(|| format!("Failed to write to file '{EVENTS_DOC_FILEPATH}'"))?;
     let mut file = File::create(ERRORS_DOC_FILEPATH)
-        .with_context(|| format!("Failed to create file '{}'", ERRORS_DOC_FILEPATH))?;
+        .with_context(|| format!("Failed to create file '{ERRORS_DOC_FILEPATH}'"))?;
     file.write_all(error_doc.as_bytes())
-        .with_context(|| format!("Failed to write to file '{}'", ERRORS_DOC_FILEPATH))?;
+        .with_context(|| format!("Failed to write to file '{ERRORS_DOC_FILEPATH}'"))?;
     let mut file = File::create(STORAGES_DOC_FILEPATH)
-        .with_context(|| format!("Failed to create file '{}'", STORAGES_DOC_FILEPATH))?;
+        .with_context(|| format!("Failed to create file '{STORAGES_DOC_FILEPATH}'"))?;
     file.write_all(storage_doc.as_bytes())
-        .with_context(|| format!("Failed to write to file '{}'", STORAGES_DOC_FILEPATH))?;
+        .with_context(|| format!("Failed to write to file '{STORAGES_DOC_FILEPATH}'"))?;
     let mut file = File::create(CONSTANTS_DOC_FILEPATH)
-        .with_context(|| format!("Failed to create file '{}'", CONSTANTS_DOC_FILEPATH))?;
+        .with_context(|| format!("Failed to create file '{CONSTANTS_DOC_FILEPATH}'"))?;
     file.write_all(constant_doc.as_bytes())
-        .with_context(|| format!("Failed to write to file '{}'", CONSTANTS_DOC_FILEPATH))?;
+        .with_context(|| format!("Failed to write to file '{CONSTANTS_DOC_FILEPATH}'"))?;
     let mut file = File::create(ERRORS_PO_FILEPATH)
-        .with_context(|| format!("Failed to create file '{}'", ERRORS_PO_FILEPATH))?;
+        .with_context(|| format!("Failed to create file '{ERRORS_PO_FILEPATH}'"))?;
     file.write_all(error_po.as_bytes())
-        .with_context(|| format!("Failed to write to file '{}'", ERRORS_PO_FILEPATH))?;
+        .with_context(|| format!("Failed to write to file '{ERRORS_PO_FILEPATH}'"))?;
 
     Ok(())
 }
@@ -464,15 +464,15 @@ fn format_type(ty: &Type<PortableForm>, types: &PortableRegistry) -> Result<Stri
     match &ty.type_def {
         TypeDef::Composite(_) => {
             let generics = format_generics(&ty.type_params, types)?;
-            Ok(format!("{}{}", path, generics))
+            Ok(format!("{path}{generics}"))
         }
         TypeDef::Variant(_) => {
             let generics = format_generics(&ty.type_params, types)?;
-            Ok(format!("{}{}", path, generics))
+            Ok(format!("{path}{generics}"))
         }
         TypeDef::Sequence(seq) => {
             let element_type = resolve_type(seq.type_param.id, types)?;
-            Ok(format!("Vec<{}>", element_type))
+            Ok(format!("Vec<{element_type}>"))
         }
         TypeDef::Array(arr) => {
             let element_type = resolve_type(arr.type_param.id, types)?;
@@ -486,10 +486,10 @@ fn format_type(ty: &Type<PortableForm>, types: &PortableRegistry) -> Result<Stri
                 .collect::<Result<Vec<String>>>()?;
             Ok(format!("({})", elements.join(", ")))
         }
-        TypeDef::Primitive(primitive) => Ok(format!("{:?}", primitive)),
+        TypeDef::Primitive(primitive) => Ok(format!("{primitive:?}")),
         TypeDef::Compact(compact) => {
             let inner_type = resolve_type(compact.type_param.id, types)?;
-            Ok(format!("Compact<{}>", inner_type))
+            Ok(format!("Compact<{inner_type}>"))
         }
         TypeDef::BitSequence(_) => Ok(String::default()),
     }
@@ -558,7 +558,7 @@ fn parse_storage_entry(
         StorageEntryType::Plain(v) => {
             let type_value = resolve_type(v.id, types)?;
             let type_value = if let StorageEntryModifier::Optional = &variant.modifier {
-                format!("Option<{}>", type_value)
+                format!("Option<{type_value}>")
             } else {
                 type_value
             };
@@ -751,7 +751,7 @@ fn print_runtime(pallets: RuntimePallets) -> (String, String, String, String, St
     let tera = match Tera::new(TEMPLATES_GLOB) {
         Ok(t) => t,
         Err(e) => {
-            println!("Parsing error(s): {}", e);
+            println!("Parsing error(s): {e}");
             ::std::process::exit(1);
         }
     };

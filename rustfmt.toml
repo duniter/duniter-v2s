@@ -1,4 +1,1 @@
-imports_granularity = "Crate"
-reorder_impl_items = true
-error_on_unformatted = true
-format_macro_matchers = true
+# Intentionally empty: keep rustfmt on stable-supported defaults.

@@ -48,8 +48,7 @@ pub async fn get_pipeline_status(
 
     let response = client
         .get(format!(
-            "https://git.duniter.org/api/v4/projects/{}/pipelines/{}",
-            project_id, pipeline_id
+            "https://git.duniter.org/api/v4/projects/{project_id}/pipelines/{pipeline_id}"
         ))
         .header("PRIVATE-TOKEN", gitlab_token)
         .send()
@@ -79,8 +78,7 @@ pub async fn get_pipeline_jobs(
 
     let response = client
         .get(format!(
-            "https://git.duniter.org/api/v4/projects/{}/pipelines/{}/jobs",
-            project_id, pipeline_id
+            "https://git.duniter.org/api/v4/projects/{project_id}/pipelines/{pipeline_id}/jobs"
         ))
         .header("PRIVATE-TOKEN", gitlab_token)
         .send()
@@ -106,8 +104,7 @@ pub async fn play_job(gitlab_token: String, project_id: String, job_id: u64) -> 
 
     let response = client
         .post(format!(
-            "https://git.duniter.org/api/v4/projects/{}/jobs/{}/play",
-            project_id, job_id
+            "https://git.duniter.org/api/v4/projects/{project_id}/jobs/{job_id}/play"
         ))
         .header("PRIVATE-TOKEN", gitlab_token)
         .send()

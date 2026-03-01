@@ -25,7 +25,7 @@ use std::{path::Path, process::Command};
 /// # Arguments
 /// * `runtime` - Le runtime à construire (gdev, gtest, g1)
 pub fn build_runtime(runtime: String) -> Result<()> {
-    println!("🚀 Construction du runtime avec srtool: {}", runtime);
+    println!("🚀 Construction du runtime avec srtool: {runtime}");
 
     // Vérifier que le runtime est valide
     if !["gdev", "gtest", "g1"].contains(&runtime.as_str()) {
@@ -46,8 +46,8 @@ pub fn build_runtime(runtime: String) -> Result<()> {
     std::fs::create_dir_all("release")?;
 
     // Définir les variables comme dans la CI
-    let srtool_output = format!("release/srtool_output_{}.json", runtime);
-    println!("📄 SRTOOL_OUTPUT = {}", srtool_output);
+    let srtool_output = format!("release/srtool_output_{runtime}.json");
+    println!("📄 SRTOOL_OUTPUT = {srtool_output}");
 
     // Utiliser le répertoire courant
     let current_dir = std::env::current_dir()?;
@@ -59,18 +59,17 @@ pub fn build_runtime(runtime: String) -> Result<()> {
         set -e
         echo "🚀 Démarrage de srtool..."
         echo "📁 Répertoire de travail: /build"
-        echo "🔧 Runtime: {}"
-        echo "📄 Sortie: {}"
+        echo "🔧 Runtime: {runtime}"
+        echo "📄 Sortie: {srtool_output}"
         cd /build
         # Construire le runtime avec srtool
         echo "🔨 Construction du runtime avec srtool..."
-        /srtool/build --app --json -cM | tee -a {}
+        /srtool/build --app --json -cM | tee -a {srtool_output}
         # Déplacer le fichier WASM généré
         echo "📦 Déplacement du fichier WASM..."
-        mv /build/runtime/{}/target/srtool/release/wbuild/{}-runtime/{}_runtime.compact.compressed.wasm /build/release/
+        mv /build/runtime/{runtime}/target/srtool/release/wbuild/{runtime}-runtime/{runtime}_runtime.compact.compressed.wasm /build/release/
         echo "✅ Construction du runtime terminée!"
-        "#,
-        runtime, srtool_output, srtool_output, runtime, runtime, runtime
+        "#
     );
 
     // Exécuter le conteneur Docker avec srtool
@@ -84,8 +83,8 @@ pub fn build_runtime(runtime: String) -> Result<()> {
     }
 
     let build_volume = format!("{}:/build", work_dir.to_string_lossy());
-    let package = format!("PACKAGE={}-runtime", runtime);
-    let runtime_dir = format!("RUNTIME_DIR=runtime/{}", runtime);
+    let package = format!("PACKAGE={runtime}-runtime");
+    let runtime_dir = format!("RUNTIME_DIR=runtime/{runtime}");
     let mut docker_args = vec!["run", "--rm"];
     // Forcer la plateforme amd64 pour que Docker utilise l'émulation sur ARM
     if is_arm {
@@ -121,7 +120,7 @@ pub fn build_runtime(runtime: String) -> Result<()> {
             use std::io::{BufRead, BufReader};
             let reader = BufReader::new(stdout);
             for line in reader.lines().map_while(Result::ok) {
-                println!("{}", line);
+                println!("{line}");
             }
         })
     } else {
@@ -133,7 +132,7 @@ pub fn build_runtime(runtime: String) -> Result<()> {
             use std::io::{BufRead, BufReader};
             let reader = BufReader::new(stderr);
             for line in reader.lines().map_while(Result::ok) {
-                eprintln!("{}", line);
+                eprintln!("{line}");
             }
         })
     } else {
@@ -150,7 +149,7 @@ pub fn build_runtime(runtime: String) -> Result<()> {
     }
 
     // Vérifier que les fichiers ont été générés
-    let wasm_file = format!("release/{}_runtime.compact.compressed.wasm", runtime);
+    let wasm_file = format!("release/{runtime}_runtime.compact.compressed.wasm");
     if !Path::new(&wasm_file).exists() {
         return Err(anyhow!("Le fichier WASM n'a pas été généré: {}", wasm_file));
     }
@@ -164,9 +163,9 @@ pub fn build_runtime(runtime: String) -> Result<()> {
 
     println!("✅ Runtime construit avec succès!");
     println!("📋 Résumé:");
-    println!("   - Runtime: {}", runtime);
-    println!("   - Fichier WASM: {}", wasm_file);
-    println!("   - Output srtool: {}", srtool_output);
+    println!("   - Runtime: {runtime}");
+    println!("   - Fichier WASM: {wasm_file}");
+    println!("   - Output srtool: {srtool_output}");
 
     Ok(())
 }

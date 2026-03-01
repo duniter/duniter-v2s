@@ -434,8 +434,7 @@ pub mod pallet {
             ) {
                 log::error!(
                     target: "runtime::authority_members",
-                    "Logic error: fail to purge session keys in do_remove_member(): {:?}",
-                    e
+                    "Logic error: fail to purge session keys in do_remove_member(): {e:?}"
                 );
             }
 

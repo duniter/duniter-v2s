@@ -1,13 +1,13 @@
 [alias]
-sanity-gdev = "test -Zgit=shallow-deps -p duniter-live-tests --test sanity_gdev -- --nocapture"
-tu = "test -Zgit=shallow-deps --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features constant-fees" # Unit tests with constant-fees
-tf = "test -Zgit=shallow-deps --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests test_fee" # Custom fee model tests
+sanity-gdev = "test -p duniter-live-tests --test sanity_gdev -- --nocapture"
+tu = "test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features constant-fees" # Unit tests with constant-fees
+tf = "test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests test_fee" # Custom fee model tests
 # `te` and `cucumber` are synonyms
 te = "test -p duniter-end2end-tests --test cucumber_tests --features constant-fees --"
-cucumber-build = "build -Zgit=shallow-deps --features constant-fees"
-cucumber = "test -Zgit=shallow-deps -p duniter-end2end-tests --test cucumber_tests --"
-ta = "test -Zgit=shallow-deps --workspace --exclude duniter-live-tests --features constant-fees"
-tb = "test -Zgit=shallow-deps --features runtime-benchmarks -p"
-rbp = "run -Zgit=shallow-deps --release --features runtime-benchmarks -- benchmark pallet --chain=dev --steps=50 --repeat=20 --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=. --pallet"
-xtask = "run -Zgit=shallow-deps --package xtask --"
-cucumber-node = "run -Zgit=shallow-deps -- --chain=gdev_dev --execution=Native --sealing=manual --force-authoring --rpc-cors=all --tmp --rpc-port 9944 --alice --features constant-fees"
+cucumber-build = "build --features constant-fees"
+cucumber = "test -p duniter-end2end-tests --test cucumber_tests --"
+ta = "test --workspace --exclude duniter-live-tests --features constant-fees"
+tb = "test --features runtime-benchmarks -p"
+rbp = "run --release --features runtime-benchmarks -- benchmark pallet --chain=dev --steps=50 --repeat=20 --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=. --pallet"
+xtask = "run --package xtask --"
+cucumber-node = "run -- --chain=gdev_dev --execution=Native --sealing=manual --force-authoring --rpc-cors=all --tmp --rpc-port 9944 --alice --features constant-fees"

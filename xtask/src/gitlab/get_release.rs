@@ -43,8 +43,7 @@ pub(super) async fn get_release(tag: String) -> Result<Vec<(String, String)>> {
 
     let res = client
         .get(format!(
-            "https://git.duniter.org/api/v4/projects/{}/releases/{}",
-            project_id, tag
+            "https://git.duniter.org/api/v4/projects/{project_id}/releases/{tag}"
         ))
         .header("PRIVATE-TOKEN", gitlab_token)
         .send()

@@ -15,7 +15,7 @@ let
   };
   nixpkgs = import pinned { overlays = [ mozillaOverlay ]; };
   rust-nightly = with nixpkgs; ((rustChannelOf { date = "2022-04-20"; channel = "nightly"; }).rust.override {
-    targets = [ "wasm32-unknown-unknown" ];
+    targets = [ "wasm32v1-none" ];
   });
 in
 with nixpkgs; pkgs.mkShell {

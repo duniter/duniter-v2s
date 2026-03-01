@@ -61,15 +61,15 @@ pub async fn current_pool(
         .at(parent_hash)
         .fetch(&match current_pool_index {
             0 => {
-                debug!("Looking at Pool1 for pool index {}", current_pool_index);
+                debug!("Looking at Pool1 for pool index {current_pool_index}");
                 runtime::storage().distance().evaluation_pool1()
             }
             1 => {
-                debug!("Looking at Pool2 for pool index {}", current_pool_index);
+                debug!("Looking at Pool2 for pool index {current_pool_index}");
                 runtime::storage().distance().evaluation_pool2()
             }
             2 => {
-                debug!("Looking at Pool0 for pool index {}", current_pool_index);
+                debug!("Looking at Pool0 for pool index {current_pool_index}");
                 runtime::storage().distance().evaluation_pool0()
             }
             _ => unreachable!("n<3"),

@@ -59,14 +59,11 @@ pub async fn trigger_squid_builds(
         }
     }
 
-    println!(
-        "🦑 Starting squid build process for release: {}",
-        release_tag
-    );
-    println!("   Network: {}", network);
-    println!("   Branch: {}", branch);
+    println!("🦑 Starting squid build process for release: {release_tag}");
+    println!("   Network: {network}");
+    println!("   Branch: {branch}");
     if let Some(ref url) = rpc_url {
-        println!("   RPC override: {}", url);
+        println!("   RPC override: {url}");
     }
 
     // Step 1: Trigger the pipeline
@@ -150,11 +147,11 @@ pub async fn trigger_squid_builds(
                 if let Some(job) = jobs.iter().find(|j| j.name == *job_name) {
                     match job.status.as_str() {
                         "success" => {
-                            println!("   ✅ {}", job_name);
+                            println!("   ✅ {job_name}");
                             success_count += 1;
                         }
                         status => {
-                            println!("   ❌ {} ({})", job_name, status);
+                            println!("   ❌ {job_name} ({status})");
                             failed_jobs.push(job_name.to_string());
                         }
                     }
@@ -168,9 +165,9 @@ pub async fn trigger_squid_builds(
 
     // Summary
     println!("\n📋 Summary:");
-    println!("   - Release tag: {}", release_tag);
-    println!("   - Network: {}", network);
-    println!("   - Branch: {}", branch);
+    println!("   - Release tag: {release_tag}");
+    println!("   - Network: {network}");
+    println!("   - Branch: {branch}");
     println!("   - Pipeline: {}", pipeline.web_url);
     println!(
         "   - Build jobs: {}/{} succeeded",
@@ -187,9 +184,9 @@ pub async fn trigger_squid_builds(
     }
 
     println!("\n✅ Squid Docker images built and pushed to Docker Hub!");
-    println!("   - duniter/squid-app-{}", network);
-    println!("   - duniter/squid-graphile-{}", network);
-    println!("   - duniter/squid-postgres-{}", network);
+    println!("   - duniter/squid-app-{network}");
+    println!("   - duniter/squid-graphile-{network}");
+    println!("   - duniter/squid-postgres-{network}");
 
     Ok(())
 }
@@ -242,21 +239,15 @@ async fn play_job_with_retries(job_name: &str, job_id: u64) -> Result<()> {
     for attempt in 1..=3 {
         match crate::gitlab::play_job(SQUID_PROJECT_ID.to_string(), job_id).await {
             Ok(_) => {
-                println!("   ✅ Started: {}", job_name);
+                println!("   ✅ Started: {job_name}");
                 return Ok(());
             }
             Err(e) => {
                 if attempt < 3 {
-                    println!(
-                        "   ⏳ {} not ready yet (attempt {}/3), waiting...",
-                        job_name, attempt
-                    );
+                    println!("   ⏳ {job_name} not ready yet (attempt {attempt}/3), waiting...");
                     tokio::time::sleep(Duration::from_secs(5)).await;
                 } else {
-                    println!(
-                        "   ⚠️  Warning: Failed to start {} after 3 attempts: {}",
-                        job_name, e
-                    );
+                    println!("   ⚠️  Warning: Failed to start {job_name} after 3 attempts: {e}");
                     println!("   You may need to start this job manually on GitLab");
                 }
             }

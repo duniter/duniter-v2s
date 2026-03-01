@@ -166,7 +166,7 @@ where
         };
         if let Err(e) = call.dispatch_bypass_filter(frame_system::Origin::<Runtime>::Root.into()) {
             #[cfg(feature = "std")]
-            println!("faid to remove member: {:?}", e)
+            println!("faid to remove member: {e:?}")
         }
     }
 }

@@ -44,16 +44,16 @@ pub fn extract_runtime(network: &str) -> Result<&str> {
 /// 3. Otherwise, fail with a helpful error message.
 pub fn ensure_raw_spec(network: &str) -> Result<()> {
     let runtime = extract_runtime(network)?;
-    let raw_spec_path = format!("node/specs/{}-raw.json", runtime);
+    let raw_spec_path = format!("node/specs/{runtime}-raw.json");
 
     if Path::new(&raw_spec_path).exists() {
-        println!("   Raw spec already exists: {}", raw_spec_path);
+        println!("   Raw spec already exists: {raw_spec_path}");
         return Ok(());
     }
 
     // Try downloading from RAW_SPEC_URL (set by trigger_release_builds in CI)
     if let Ok(url) = std::env::var("RAW_SPEC_URL") {
-        println!("   Downloading {}-raw.json from release...", runtime);
+        println!("   Downloading {runtime}-raw.json from release...");
 
         std::fs::create_dir_all("node/specs/")?;
 

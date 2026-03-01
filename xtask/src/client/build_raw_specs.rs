@@ -26,10 +26,7 @@ use std::{path::Path, process::Command};
 /// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
 /// * `runtime` - Le runtime à utiliser (gdev, gtest, g1)
 pub fn build_raw_specs(network: String) -> Result<()> {
-    println!(
-        "🚀 Construction des spécifications raw pour le réseau: {}",
-        network
-    );
+    println!("🚀 Construction des spécifications raw pour le réseau: {network}");
 
     let runtime = if network.starts_with("g1") {
         "g1"
@@ -44,7 +41,7 @@ pub fn build_raw_specs(network: String) -> Result<()> {
         ));
     };
 
-    println!("📦 Runtime: {}", runtime);
+    println!("📦 Runtime: {runtime}");
 
     // Créer le répertoire release s'il n'existe pas
     std::fs::create_dir_all("release/client/")?;
@@ -60,7 +57,7 @@ pub fn build_raw_specs(network: String) -> Result<()> {
             ));
         } else {
             // Copier le fichier dans la release
-            println!("✅ Fichier trouvé: {}", file);
+            println!("✅ Fichier trouvé: {file}");
             std::fs::copy(
                 file,
                 format!(
@@ -68,18 +65,18 @@ pub fn build_raw_specs(network: String) -> Result<()> {
                     Path::new(file).file_name().unwrap().to_string_lossy()
                 ),
             )?;
-            println!("📋 Fichier copié dans release/client/: {}", file);
+            println!("📋 Fichier copié dans release/client/: {file}");
         }
     }
 
     // Étape 1: Imprimer les spécifications réseau
     println!("📄 Téléchargement des spécifications réseau...");
-    let printed_spec_file = format!("release/client/{}-printed.json", runtime);
-    exec_should_success(
-        Command::new("cargo")
-            .args(["xtask", "print-spec", &network])
-            .stdout(std::fs::File::create(&printed_spec_file)?),
-    )?;
+    let printed_spec_file = format!("release/client/{runtime}-printed.json");
+    let mut print_spec_cmd = Command::new("cargo");
+    apply_vendor_config_if_present(&mut print_spec_cmd)
+        .args(["xtask", "print-spec", &network])
+        .stdout(std::fs::File::create(&printed_spec_file)?);
+    exec_should_success(&mut print_spec_cmd)?;
 
     // Étape 2: Vérifier et installer les outils nécessaires
     println!("🔧 Vérification des outils nécessaires...");
@@ -105,21 +102,20 @@ pub fn build_raw_specs(network: String) -> Result<()> {
 
     // Étape 3: Convertir YAML -> JSON pour les spécifications client
     println!("🔄 Conversion YAML -> JSON des spécifications client...");
-    let client_specs_json = format!("release/client/{}_client-specs.json", runtime);
+    let client_specs_json = format!("release/client/{runtime}_client-specs.json");
 
     exec_should_success(
         Command::new("yq")
             .args(["--output-format", "json"])
             .stdin(std::fs::File::open(format!(
-                "node/specs/{}_client-specs.yaml",
-                runtime
+                "node/specs/{runtime}_client-specs.yaml"
             ))?)
             .stdout(std::fs::File::create(&client_specs_json)?),
     )?;
 
     // Étape 4: Fusionner les spécifications
     println!("🔗 Fusion des spécifications...");
-    let final_spec_file = format!("release/client/{}.json", runtime);
+    let final_spec_file = format!("release/client/{runtime}.json");
     exec_should_success(
         Command::new("jq")
             .args(["-s", ".[0] * .[1]", &printed_spec_file, &client_specs_json])
@@ -128,31 +124,31 @@ pub fn build_raw_specs(network: String) -> Result<()> {
 
     // Étape 5: Générer le fichier raw spec
     println!("🔨 Génération du fichier raw spec...");
-    let features = format!("--features {} --no-default-features", runtime);
-    let raw_spec_file = format!("release/client/{}-raw.json", runtime);
+    let features = format!("--features {runtime} --no-default-features");
+    let raw_spec_file = format!("release/client/{runtime}-raw.json");
 
-    exec_should_success(
-        Command::new("cargo")
-            .args(["run", "-Zgit=shallow-deps"])
-            .args(features.split_whitespace())
-            .args(["--", "build-spec", "--chain", &final_spec_file, "--raw"])
-            .stdout(std::fs::File::create(&raw_spec_file)?),
-    )?;
+    let mut build_spec_cmd = Command::new("cargo");
+    apply_vendor_config_if_present(&mut build_spec_cmd)
+        .args(["run"])
+        .args(features.split_whitespace())
+        .args(["--", "build-spec", "--chain", &final_spec_file, "--raw"])
+        .stdout(std::fs::File::create(&raw_spec_file)?);
+    exec_should_success(&mut build_spec_cmd)?;
 
     println!("✅ Spécifications raw générées avec succès!");
-    println!("📁 Fichier généré: {}", raw_spec_file);
+    println!("📁 Fichier généré: {raw_spec_file}");
     println!("📋 Résumé:");
-    println!("   - Réseau: {}", network);
-    println!("   - Runtime: {}", runtime);
-    println!("   - Fichier raw spec: {}", raw_spec_file);
+    println!("   - Réseau: {network}");
+    println!("   - Runtime: {runtime}");
+    println!("   - Fichier raw spec: {raw_spec_file}");
 
     // Copier le fichier dans node/specs/ pour utilisation locale
     // (include_bytes! requiert ce fichier à la compilation avec la feature 'embed')
     // En CI, ce fichier est téléchargé depuis la release GitLab par ensure_raw_spec.
     std::fs::create_dir_all("node/specs/")?;
-    let dest_path = format!("node/specs/{}-raw.json", runtime);
+    let dest_path = format!("node/specs/{runtime}-raw.json");
     std::fs::copy(&raw_spec_file, &dest_path)?;
-    println!("📋 Fichier copié dans node/specs/: {}", dest_path);
+    println!("📋 Fichier copié dans node/specs/: {dest_path}");
     println!("   (Ce fichier est gitignored et sera téléchargé en CI depuis la release GitLab)");
 
     Ok(())
@@ -164,4 +160,11 @@ fn exec_should_success(command: &mut Command) -> Result<()> {
     } else {
         Ok(())
     }
+}
+
+fn apply_vendor_config_if_present(command: &mut Command) -> &mut Command {
+    if Path::new("vendor-config.toml").exists() {
+        command.args(["--config", "vendor-config.toml", "--frozen", "--offline"]);
+    }
+    command
 }

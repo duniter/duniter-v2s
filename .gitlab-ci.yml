@@ -2,14 +2,19 @@
 # - podman: use 'podman' to build multiplatform images
 
 stages:
-  - schedule
   - labels
+  - dependencies
+  - schedule
   - quality
   - build
   - tests
   - release
   - deploy
   - deploy_readme
+
+variables:
+  CI_UNIFIED_IMAGE: paritytech/ci-unified:bullseye-1.88.0
+  DUNITER_POLKADOT_SDK_URL: https://github.com/duniter/duniter-polkadot-sdk
 
 # Job templates for release builds (without tags/image, set by jobs)
 .release_rules:
@@ -22,41 +27,47 @@ stages:
     - when: never
 
 .debian_build_template:
-  extends: .release_rules
+  extends:
+    - .release_rules
+    - .with_dependencies
   before_script:
     # Install build dependencies (curl needed to download raw spec from GitLab release)
     - apt-get update -qq && apt-get install -y -qq protobuf-compiler clang libclang-dev curl
   script:
-    - cargo xtask client-build-deb $NETWORK
+    - ./scripts/cargo_with_vendor.sh xtask client-build-deb $NETWORK
 
 .rpm_build_template:
-  extends: .release_rules
+  extends:
+    - .release_rules
+    - .with_dependencies
   before_script:
     # Install RPM build tools and dependencies (curl needed to download raw spec from GitLab release)
     - apt-get update -qq && apt-get install -y -qq rpm protobuf-compiler clang libclang-dev curl
   script:
-    - cargo xtask client-build-rpm $NETWORK
+    - ./scripts/cargo_with_vendor.sh xtask client-build-rpm $NETWORK
 
 .docker_deploy_template:
-  extends: .release_rules
+  extends:
+    - .release_rules
+    - .with_dependencies
   image: docker:latest
   variables:
     DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
     # Install Rust and build dependencies
     - apk add --no-cache curl bash gcc musl-dev
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
+    - export RUST_STABLE_VERSION="${CI_UNIFIED_IMAGE##*-}"
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain "${RUST_STABLE_VERSION}" --profile minimal
     - source $HOME/.cargo/env
     - docker info
   script:
-    - cargo xtask client-docker-deploy $NETWORK --arch $ARCH
+    - ./scripts/cargo_with_vendor.sh xtask client-docker-deploy $NETWORK --arch $ARCH
 
 # Release build jobs
 release_debian_arm:
   extends:
     - .env_arm
     - .debian_build_template
-  needs: []
   artifacts:
     paths:
       - target/debian/*.deb
@@ -65,7 +76,6 @@ release_debian_x64:
   extends:
     - .env
     - .debian_build_template
-  needs: []
   artifacts:
     paths:
       - target/debian/*.deb
@@ -74,7 +84,6 @@ release_rpm_arm:
   extends:
     - .env_arm
     - .rpm_build_template
-  needs: []
   artifacts:
     paths:
       - target/generate-rpm/*.rpm
@@ -83,14 +92,12 @@ release_rpm_x64:
   extends:
     - .env
     - .rpm_build_template
-  needs: []
   artifacts:
     paths:
       - target/generate-rpm/*.rpm
 
 release_docker_arm:
   extends: .docker_deploy_template
-  needs: []
   tags:
     - linuxARM
   variables:
@@ -98,7 +105,6 @@ release_docker_arm:
 
 release_docker_x64:
   extends: .docker_deploy_template
-  needs: []
   tags:
     - kepler
   variables:
@@ -129,33 +135,33 @@ release_docker_manifest:
     - |
       # Extract runtime from NETWORK (e.g., gtest-1100 -> gtest)
       RUNTIME=$(echo $NETWORK | sed 's/-[0-9].*//')
-      
+
       # Get client version from node/Cargo.toml
       CLIENT_VERSION=$(grep '^version = ' node/Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
-      
+
       # Get runtime version from runtime/$RUNTIME/src/lib.rs
       RUNTIME_VERSION=$(grep 'spec_version:' runtime/$RUNTIME/src/lib.rs | sed 's/.*spec_version: \([0-9]*\).*/\1/')
-      
+
       IMAGE_NAME="duniter/duniter-v2s-${NETWORK}"
       TAG="${RUNTIME_VERSION}-${CLIENT_VERSION}"
-      
+
       echo "Creating multi-arch manifest for ${IMAGE_NAME}:${TAG}"
-      
+
       # Use buildx imagetools to create multi-arch tags from existing images
       # This works even if the source images are manifest lists
       docker buildx imagetools create \
         --tag ${IMAGE_NAME}:${TAG} \
         ${IMAGE_NAME}:${TAG}-amd64 \
         ${IMAGE_NAME}:${TAG}-arm64
-      
+
       echo "✅ Multi-arch tag created: ${IMAGE_NAME}:${TAG}"
-      
+
       # Also create :latest tag
       docker buildx imagetools create \
         --tag ${IMAGE_NAME}:latest \
         ${IMAGE_NAME}:${TAG}-amd64 \
         ${IMAGE_NAME}:${TAG}-arm64
-      
+
       echo "✅ Multi-arch tag created: ${IMAGE_NAME}:latest"
 
 workflow:
@@ -167,18 +173,22 @@ workflow:
         - pallets/**/*
         - runtime/**/*
         - .gitlab-ci.yml
+        - .cargo/config.toml
         - Cargo.toml
         - Cargo.lock
+        - scripts/**/*
         - resources/*.yaml
 
 sanity_tests:
-  extends: .env
+  extends:
+    - .env
+    - .with_dependencies
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TOPIC=="sanity-tests"'
     - when: never
   stage: schedule
   script:
-    - cargo sanity-${CURRENCY}
+    - ./scripts/cargo_with_vendor.sh sanity-${CURRENCY}
 
 check_labels:
   extends: .env
@@ -198,18 +208,60 @@ check_metadata:
   script:
     - ./scripts/check_metadata.sh
 
+toolchain_sync_check:
+  extends: .env
+  stage: dependencies
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - when: never
+  script:
+    - ./scripts/check_toolchain_sync.sh "$CI_UNIFIED_IMAGE"
+
+sdk_resolve:
+  extends: .env
+  stage: dependencies
+  needs:
+    - job: toolchain_sync_check
+      artifacts: false
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - when: never
+  script:
+    - ./scripts/prepare_local_polkadot_sdk.sh Cargo.lock duniter-polkadot-sdk.git
+    - du -sh duniter-polkadot-sdk.git || true
+  artifacts:
+    when: always
+    expire_in: 1 day
+    paths:
+      - duniter-polkadot-sdk.git/
+      - local-sdk.env
+
 .env:
-  image: paritytech/ci-unified:bullseye-1.88.0
+  image: $CI_UNIFIED_IMAGE
   tags:
     - kepler
 
+.with_dependencies:
+  needs:
+    - job: toolchain_sync_check
+    - job: sdk_resolve
+      artifacts: true
+
 .env_arm:
-  image: rust:latest  # Rust image for ARM builds
+  image: rust:1.88.0  # Pinned to match CI unified image Rust version
   tags:
     - linuxARM
 
 fmt_and_clippy:
-  extends: .env
+  extends:
+    - .env
+    - .with_dependencies
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
@@ -220,13 +272,15 @@ fmt_and_clippy:
     - when: manual
   stage: quality
   script:
-    - cargo fmt -- --version
-    - cargo fmt -- --check
-    - cargo clippy -- -V
-    - cargo clippy -Zgit=shallow-deps --features runtime-benchmarks --all --tests -- -D warnings
+    - ./scripts/cargo_with_vendor.sh fmt -- --version
+    - ./scripts/cargo_with_vendor.sh fmt -- --check
+    - ./scripts/cargo_with_vendor.sh clippy -- -V
+    - ./scripts/cargo_with_vendor.sh clippy --features runtime-benchmarks --all --tests -- -D warnings
 
 run_benchmarks:
-  extends: .env
+  extends:
+    - .env
+    - .with_dependencies
   stage: tests
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
@@ -236,15 +290,17 @@ run_benchmarks:
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
   script:
-    - cargo build -Zgit=shallow-deps --release --features runtime-benchmarks
+    - ./scripts/cargo_with_vendor.sh build --release --features runtime-benchmarks
     - target/release/duniter benchmark storage --chain=dev --mul=2 --state-version=1 --weight-path=./runtime/g1/src/weights/ --batch-size=100
     - target/release/duniter benchmark overhead --chain=dev --wasm-execution=compiled --warmup=1 --repeat=100 --weight-path=./runtime/g1/src/weights/
     - target/release/duniter benchmark pallet --chain=dev --steps=5 --repeat=2 --pallet="*" --extrinsic="*" --wasm-execution=compiled --output=./runtime/g1/src/weights/
-    - cargo build -Zgit=shallow-deps --release --features runtime-benchmarks # Check if autogenerated weights work
+    - ./scripts/cargo_with_vendor.sh build --release --features runtime-benchmarks # Check if autogenerated weights work
 
 gtest_build:
   stage: build
-  extends: .env
+  extends:
+    - .env
+    - .with_dependencies
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
@@ -257,11 +313,13 @@ gtest_build:
   variables:
     DEBIAN_FRONTEND: noninteractive
   script:
-    - cargo build -Zgit=shallow-deps --no-default-features --features gtest
+    - ./scripts/cargo_with_vendor.sh build --no-default-features --features gtest
 
 tests:
   stage: tests
-  extends: .env
+  extends:
+    - .env
+    - .with_dependencies
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
@@ -273,7 +331,7 @@ tests:
     DEBIAN_FRONTEND: noninteractive
   script:
     - export RUST_MIN_STACK=16777216 # 16MB stack size otherwise CI fail during LLVM's Thin LTO (Link Time Optimization) phase
-    - cargo tu
-    - cargo tf
-    - cargo cucumber-build
-    - cargo cucumber
+    - ./scripts/cargo_with_vendor.sh tu
+    - ./scripts/cargo_with_vendor.sh tf
+    - ./scripts/cargo_with_vendor.sh cucumber-build
+    - ./scripts/cargo_with_vendor.sh cucumber

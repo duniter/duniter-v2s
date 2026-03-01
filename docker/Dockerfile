@@ -29,6 +29,10 @@ COPY . .
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y clang cmake protobuf-compiler
 
+# Prepare a local mirror for duniter-polkadot-sdk and force cargo to use it.
+RUN chmod +x scripts/prepare_local_polkadot_sdk.sh scripts/cargo_with_vendor.sh && \
+    ./scripts/prepare_local_polkadot_sdk.sh Cargo.lock duniter-polkadot-sdk.git
+
 # build duniter
 ARG debug=0
 RUN if [ "$debug" = 0 ]; then \
@@ -53,8 +57,8 @@ ARG chain="gdev"
 RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
-    cargo build -Zgit=shallow-deps --locked $CARGO_OPTIONS --no-default-features $BENCH_OPTIONS --features ${chain},embed --target "$RUST_ARCH_TRIPLET" && \
-    cargo build -Zgit=shallow-deps --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" --package distance-oracle && \
+    ./scripts/cargo_with_vendor.sh build --locked $CARGO_OPTIONS --no-default-features $BENCH_OPTIONS --features ${chain},embed --target "$RUST_ARCH_TRIPLET" && \
+    ./scripts/cargo_with_vendor.sh build --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" --package distance-oracle && \
     mkdir -p build && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/ && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/distance-oracle build/
@@ -62,8 +66,8 @@ RUN set -x && \
 # Run tests if requested, except when cross-building
 ARG cucumber=0
 RUN if [ "$cucumber" != 0 ] && [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then \
-        cargo ta && \
-        cargo test -Zgit=shallow-deps --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features=runtime-benchmarks,constant-fees \
+        ./scripts/cargo_with_vendor.sh ta && \
+        ./scripts/cargo_with_vendor.sh test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features=runtime-benchmarks,constant-fees && \
         cd target/debug/deps/ && \
         rm cucumber_tests-*.d && \
         mv cucumber_tests* ../../../build/duniter-cucumber; \

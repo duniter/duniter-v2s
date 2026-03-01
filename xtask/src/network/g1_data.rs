@@ -109,7 +109,7 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
     };
 
     if need_download {
-        println!("📥 Téléchargement du dump G1 depuis: {}", dump_url);
+        println!("📥 Téléchargement du dump G1 depuis: {dump_url}");
         let start_time = Instant::now();
 
         // Télécharger avec curl directement sur le host (supporte la reprise avec -C -)
@@ -152,12 +152,12 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
         };
 
         println!("✅ Téléchargement terminé: {}", dump_file_path.display());
-        println!("📏 Taille du fichier: {:.0} Mo", file_size_mb);
+        println!("📏 Taille du fichier: {file_size_mb:.0} Mo");
         println!(
             "⏱️  Temps de téléchargement: {:.0}s",
             download_time.as_secs_f64()
         );
-        println!("🚀 Débit moyen: {:.1} Mo/s", speed_mbps);
+        println!("🚀 Débit moyen: {speed_mbps:.1} Mo/s");
     }
 
     // Préparer les arguments Docker avec des variables pour éviter les problèmes de durée de vie
@@ -184,8 +184,8 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
     "#;
 
     // Préparer les arguments de volume Docker
-    let dump_volume = format!("{}:/g1-dump.tgz", dump_file_str);
-    let output_volume = format!("{}:/py-g1-migrator/output", output_dir_str);
+    let dump_volume = format!("{dump_file_str}:/g1-dump.tgz");
+    let output_volume = format!("{output_dir_str}:/py-g1-migrator/output");
 
     // Exécuter le conteneur Docker avec py-g1-migrator
     // L'image est amd64 uniquement : forcer la plateforme pour compatibilité ARM
@@ -223,7 +223,7 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
             use std::io::{BufRead, BufReader};
             let reader = BufReader::new(stdout);
             for line in reader.lines().map_while(Result::ok) {
-                println!("{}", line);
+                println!("{line}");
             }
         })
     } else {
@@ -235,7 +235,7 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
             use std::io::{BufRead, BufReader};
             let reader = BufReader::new(stderr);
             for line in reader.lines().map_while(Result::ok) {
-                eprintln!("{}", line);
+                eprintln!("{line}");
             }
         })
     } else {
@@ -267,7 +267,7 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
         if src_path.exists() {
             println!("📄 Généré: {} -> {}", src, src_path.display());
         } else {
-            println!("⚠️ Fichier non trouvé: {}", src);
+            println!("⚠️ Fichier non trouvé: {src}");
         }
     }
 

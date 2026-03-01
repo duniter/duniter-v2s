@@ -15,7 +15,10 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::{Result, anyhow};
-use std::process::{Command, Stdio};
+use std::{
+    path::Path,
+    process::{Command, Stdio},
+};
 
 /// Builds an RPM package for a given network.
 /// This function reproduces the CI build_rpm step which:
@@ -25,7 +28,7 @@ use std::process::{Command, Stdio};
 /// # Arguments
 /// * `network` - The network name (e.g., gtest-1000, g1-1000, gdev-1000)
 pub fn build_rpm(network: String) -> Result<()> {
-    println!("📦 Building RPM package for network: {}", network);
+    println!("📦 Building RPM package for network: {network}");
 
     // Check if rpm command is available
     if Command::new("which").arg("rpm").output().is_err()
@@ -52,7 +55,7 @@ pub fn build_rpm(network: String) -> Result<()> {
         ));
     };
 
-    println!("📦 Runtime: {}", runtime);
+    println!("📦 Runtime: {runtime}");
 
     // Step 0: Ensure the raw spec file exists (download from release if needed)
     super::ensure_raw_spec::ensure_raw_spec(&network)?;
@@ -68,12 +71,12 @@ pub fn build_rpm(network: String) -> Result<()> {
 
     // Step 2: Build the binary with appropriate features
     println!("🔨 Building binary...");
-    let features = format!("--features {},embed --no-default-features", runtime);
-    exec_should_success(
-        Command::new("cargo")
-            .args(["build", "-Zgit=shallow-deps", "--release"])
-            .args(features.split_whitespace()),
-    )?;
+    let features = format!("--features {runtime},embed --no-default-features");
+    let mut build_cmd = Command::new("cargo");
+    apply_vendor_config_if_present(&mut build_cmd)
+        .args(["build", "--release"])
+        .args(features.split_whitespace());
+    exec_should_success(&mut build_cmd)?;
 
     // Step 3: Generate the RPM package
     // Note: We disable automatic dependency resolution (--auto-req disabled) because
@@ -98,11 +101,11 @@ pub fn build_rpm(network: String) -> Result<()> {
 
     println!("✅ RPM package generated successfully!");
     println!("📋 Summary:");
-    println!("   - Network: {}", network);
-    println!("   - Runtime: {}", runtime);
+    println!("   - Network: {network}");
+    println!("   - Runtime: {runtime}");
     println!("   - Generated RPM files:");
     for rpm_file in &rpm_files {
-        println!("     - {}", rpm_file);
+        println!("     - {rpm_file}");
     }
 
     Ok(())
@@ -149,4 +152,11 @@ fn exec_should_success(command: &mut Command) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn apply_vendor_config_if_present(command: &mut Command) -> &mut Command {
+    if Path::new("vendor-config.toml").exists() {
+        command.args(["--config", "vendor-config.toml", "--frozen", "--offline"]);
+    }
+    command
 }

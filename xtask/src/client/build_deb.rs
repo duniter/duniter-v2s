@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::{Result, anyhow};
-use std::process::Command;
+use std::{path::Path, process::Command};
 
 /// Construit un package DEB pour un réseau donné.
 /// Cette fonction reproduit l'étape de CI build_deb qui :
@@ -25,7 +25,7 @@ use std::process::Command;
 /// # Arguments
 /// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
 pub fn build_deb(network: String) -> Result<()> {
-    println!("📦 Construction du package DEB pour le réseau: {}", network);
+    println!("📦 Construction du package DEB pour le réseau: {network}");
 
     let runtime = if network.starts_with("g1") {
         "g1"
@@ -40,7 +40,7 @@ pub fn build_deb(network: String) -> Result<()> {
         ));
     };
 
-    println!("📦 Runtime: {}", runtime);
+    println!("📦 Runtime: {runtime}");
 
     // Étape 0: S'assurer que le fichier raw spec existe (téléchargement depuis release si besoin)
     super::ensure_raw_spec::ensure_raw_spec(&network)?;
@@ -51,12 +51,12 @@ pub fn build_deb(network: String) -> Result<()> {
 
     // Étape 2: Construire le binaire avec les features appropriées
     println!("🔨 Construction du binaire...");
-    let features = format!("--features {},embed --no-default-features", runtime);
-    exec_should_success(
-        Command::new("cargo")
-            .args(["build", "-Zgit=shallow-deps", "--release"])
-            .args(features.split_whitespace()),
-    )?;
+    let features = format!("--features {runtime},embed --no-default-features");
+    let mut build_cmd = Command::new("cargo");
+    apply_vendor_config_if_present(&mut build_cmd)
+        .args(["build", "--release"])
+        .args(features.split_whitespace());
+    exec_should_success(&mut build_cmd)?;
 
     // Étape 3: Générer le package DEB
     println!("📦 Génération du package DEB...");
@@ -70,11 +70,11 @@ pub fn build_deb(network: String) -> Result<()> {
 
     println!("✅ Package DEB généré avec succès!");
     println!("📋 Résumé:");
-    println!("   - Réseau: {}", network);
-    println!("   - Runtime: {}", runtime);
+    println!("   - Réseau: {network}");
+    println!("   - Runtime: {runtime}");
     println!("   - Fichiers DEB générés:");
     for deb_file in &deb_files {
-        println!("     - {}", deb_file);
+        println!("     - {deb_file}");
     }
 
     Ok(())
@@ -112,4 +112,11 @@ fn exec_should_success(command: &mut Command) -> Result<()> {
     } else {
         Ok(())
     }
+}
+
+fn apply_vendor_config_if_present(command: &mut Command) -> &mut Command {
+    if Path::new("vendor-config.toml").exists() {
+        command.args(["--config", "vendor-config.toml", "--frozen", "--offline"]);
+    }
+    command
 }
