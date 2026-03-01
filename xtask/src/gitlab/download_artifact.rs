@@ -33,8 +33,7 @@ pub async fn download_job_artifacts(
 
     let response = client
         .get(format!(
-            "https://git.duniter.org/api/v4/projects/{}/jobs/{}/artifacts",
-            project_id, job_id
+            "https://git.duniter.org/api/v4/projects/{project_id}/jobs/{job_id}/artifacts"
         ))
         .header("PRIVATE-TOKEN", gitlab_token)
         .send()

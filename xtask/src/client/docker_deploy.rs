@@ -26,7 +26,7 @@ use std::process::Command;
 /// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
 /// * `arch` - L'architecture cible (amd64, arm64) ou None pour multi-arch
 pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
-    println!("🐳 Déploiement Docker pour le réseau: {}", network);
+    println!("🐳 Déploiement Docker pour le réseau: {network}");
 
     let runtime = if network.starts_with("g1") {
         "g1"
@@ -41,7 +41,7 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
         ));
     };
 
-    println!("📦 Runtime: {}", runtime);
+    println!("📦 Runtime: {runtime}");
 
     // Étape 0: S'assurer que le fichier raw spec existe dans le contexte Docker
     // (sera copié dans le container via COPY . . dans le Dockerfile)
@@ -60,7 +60,7 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
         ));
     };
 
-    println!("🔧 Using container tool: {}", container_tool);
+    println!("🔧 Using container tool: {container_tool}");
 
     // Vérifier que les variables d'environnement nécessaires sont présentes
     let docker_password = std::env::var("DUNITERTEAM_PASSWD")
@@ -72,19 +72,19 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
 
     // Add architecture suffix to tag if building for specific arch
     let docker_tag = if let Some(ref arch) = arch {
-        format!("{}-{}-{}", runtime_version, client_version, arch)
+        format!("{runtime_version}-{client_version}-{arch}")
     } else {
-        format!("{}-{}", runtime_version, client_version)
+        format!("{runtime_version}-{client_version}")
     };
 
-    let image_name = format!("duniter/duniter-v2s-{}", network);
-    let manifest = format!("localhost/manifest-{}:{}", image_name, docker_tag);
+    let image_name = format!("duniter/duniter-v2s-{network}");
+    let manifest = format!("localhost/manifest-{image_name}:{docker_tag}");
 
-    println!("🏷️  Tag Docker: {}", docker_tag);
-    println!("📦 Nom de l'image: {}", image_name);
-    println!("📋 Manifest: {}", manifest);
+    println!("🏷️  Tag Docker: {docker_tag}");
+    println!("📦 Nom de l'image: {image_name}");
+    println!("📋 Manifest: {manifest}");
     if let Some(ref arch) = arch {
-        println!("🏗️  Architecture: {}", arch);
+        println!("🏗️  Architecture: {arch}");
     } else {
         println!("🏗️  Architecture: multi-arch (amd64, arm64)");
     }
@@ -110,26 +110,26 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
     if container_tool == "docker" {
         // Docker buildx approach
         if let Some(ref arch) = arch {
-            println!("🔨 Construction de l'image pour architecture {}...", arch);
-            let image_tag = format!("{}:{}", image_name, docker_tag);
+            println!("🔨 Construction de l'image pour architecture {arch}...");
+            let image_tag = format!("{image_name}:{docker_tag}");
 
             // Use classic docker build (not buildx) for single-arch to avoid manifest creation
             // Build the image
             exec_should_success(Command::new("docker").args([
                 "build",
                 "--platform",
-                &format!("linux/{}", arch),
+                &format!("linux/{arch}"),
                 "--tag",
                 &image_tag,
                 "-f",
                 "docker/Dockerfile",
                 "--build-arg",
-                &format!("chain={}", runtime),
+                &format!("chain={runtime}"),
                 ".",
             ]))?;
 
             // Push the image
-            println!("📤 Pushing image {}...", image_tag);
+            println!("📤 Pushing image {image_tag}...");
             exec_should_success(Command::new("docker").args(["push", &image_tag]))?;
         } else {
             println!("🔨 Construction de l'image multi-architecture...");
@@ -139,30 +139,30 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
                 "--platform",
                 "linux/amd64,linux/arm64",
                 "--tag",
-                &format!("{}:{}", image_name, docker_tag),
+                &format!("{image_name}:{docker_tag}"),
                 "--push",
                 "-f",
                 "docker/Dockerfile",
                 "--build-arg",
-                &format!("chain={}", runtime),
+                &format!("chain={runtime}"),
                 ".",
             ]))?;
         }
     } else {
         // Podman approach with manifest
         if let Some(ref arch) = arch {
-            println!("🔨 Construction de l'image pour architecture {}...", arch);
+            println!("🔨 Construction de l'image pour architecture {arch}...");
             exec_should_success(Command::new(container_tool).args([
                 "build",
                 "--layers",
                 "--platform",
-                &format!("linux/{}", arch),
+                &format!("linux/{arch}"),
                 "--manifest",
                 &manifest,
                 "-f",
                 "docker/Dockerfile",
                 "--build-arg",
-                &format!("chain={}", runtime),
+                &format!("chain={runtime}"),
                 ".",
             ]))?;
         } else {
@@ -177,7 +177,7 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
                 "-f",
                 "docker/Dockerfile",
                 "--build-arg",
-                &format!("chain={}", runtime),
+                &format!("chain={runtime}"),
                 ".",
             ]))?;
         }
@@ -192,7 +192,7 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
             "push",
             "--all",
             &manifest,
-            &format!("docker://docker.io/{}:{}", image_name, docker_tag),
+            &format!("docker://docker.io/{image_name}:{docker_tag}"),
         ]))?;
 
         // Étape 5: Pousser l'image avec le tag latest (only for multi-arch builds)
@@ -203,7 +203,7 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
                 "push",
                 "--all",
                 &manifest,
-                &format!("docker://docker.io/{}:latest", image_name),
+                &format!("docker://docker.io/{image_name}:latest"),
             ]))?;
         }
 
@@ -216,15 +216,15 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
 
     println!("✅ Déploiement Docker terminé avec succès!");
     println!("📋 Résumé:");
-    println!("   - Réseau: {}", network);
-    println!("   - Runtime: {}", runtime);
+    println!("   - Réseau: {network}");
+    println!("   - Runtime: {runtime}");
     if let Some(ref arch_val) = arch {
-        println!("   - Architecture: {}", arch_val);
-        println!("   - Image: {}:{}-{}", image_name, docker_tag, arch_val);
+        println!("   - Architecture: {arch_val}");
+        println!("   - Image: {image_name}:{docker_tag}-{arch_val}");
     } else {
         println!("   - Architecture: multi-arch (amd64, arm64)");
-        println!("   - Image: {}:{}", image_name, docker_tag);
-        println!("   - Image latest: {}:latest", image_name);
+        println!("   - Image: {image_name}:{docker_tag}");
+        println!("   - Image latest: {image_name}:latest");
     }
 
     Ok(())
@@ -250,12 +250,12 @@ fn get_client_version() -> Result<String> {
         .next()
         .ok_or_else(|| anyhow!("Format de version invalide dans node/Cargo.toml"))?;
 
-    println!("📦 Version client détectée: {}", version);
+    println!("📦 Version client détectée: {version}");
     Ok(version.to_string())
 }
 
 fn get_runtime_version(runtime: &str) -> Result<String> {
-    let runtime_file = format!("runtime/{}/src/lib.rs", runtime);
+    let runtime_file = format!("runtime/{runtime}/src/lib.rs");
     let output = Command::new("grep")
         .args(["spec_version:", &runtime_file])
         .output()?;
@@ -277,7 +277,7 @@ fn get_runtime_version(runtime: &str) -> Result<String> {
         .ok_or_else(|| anyhow!("Format de version invalide dans {}", runtime_file))?
         .trim();
 
-    println!("📦 Version runtime détectée: {}", version);
+    println!("📦 Version runtime détectée: {version}");
     Ok(version.to_string())
 }
 

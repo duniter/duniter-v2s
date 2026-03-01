@@ -28,9 +28,8 @@ If you reopen your terminal, it will give you access to the `rustup`,  `rustc` a
 
 ```bash
 rustup default stable
-rustup update nightly
 rustup update stable
-rustup target add wasm32-unknown-unknown --toolchain nightly
+rustup target add wasm32v1-none --toolchain stable
 ```
 
 This can take about **2 minutes**.

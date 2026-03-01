@@ -539,7 +539,7 @@ where
                                 sc_consensus_manual_seal::consensus::timestamp::SlotTimestampProvider::new_babe(
                                     client.clone(),
                                 )
-                                .map_err(|err| format!("{:?}", err))?;
+                                .map_err(|err| format!("{err:?}"))?;
                             let babe = InherentDataProvider::new(
                                 timestamp.slot(),
                             );

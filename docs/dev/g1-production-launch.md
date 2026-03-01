@@ -8,7 +8,7 @@ Guide opérationnel pour le lancement du réseau Ğ1 sur Duniter-v2S.
 
 - Linux (Ubuntu 22.04), 16 Go RAM, 8 CPU, 50 Go disque
 - Docker ou Podman (`podman machine set --memory 16384 --cpus 8`)
-- Rust (toolchain nightly-2025-08-07 via `rust-toolchain.toml`)
+- Rust (toolchain 1.88.0 via `rust-toolchain.toml`)
 - Outils : `cmake pkg-config libssl-dev git build-essential clang protobuf-compiler jq`
 
 ### Credentials
@@ -218,13 +218,13 @@ curl -o node/specs/g1-raw.json \
 **2. Compiler le nœud et l'oracle de distance :**
 
 ```bash
-cargo build --release -Zgit=shallow-deps --features g1,embed --no-default-features
-cargo build --release -Zgit=shallow-deps -p distance-oracle --features g1,standalone,std --no-default-features
+cargo build --release --features g1,embed --no-default-features
+cargo build --release -p distance-oracle --features g1,standalone,std --no-default-features
 ```
 
 Le feature `embed` intègre le fichier `node/specs/g1-raw.json` dans le binaire à la compilation — il doit donc être présent **avant** le build. Cela permet d'utiliser `--chain g1` au lancement sans avoir le fichier JSON sur le serveur.
 
-Le flag `-Zgit=shallow-deps` accélère la compilation (shallow-clone des dépendances git). Il nécessite la toolchain nightly (déjà configurée via `rust-toolchain.toml`).
+En CI, les builds utilisent désormais des dépendances vendored pour limiter l'usage réseau et disque sans dépendre de `-Zgit=shallow-deps`.
 
 **3. Injecter les clés de session :**
 

@@ -65,8 +65,7 @@ pub async fn trigger_pipeline(
 
     let response = client
         .post(format!(
-            "https://git.duniter.org/api/v4/projects/{}/pipeline",
-            project_id
+            "https://git.duniter.org/api/v4/projects/{project_id}/pipeline"
         ))
         .header("PRIVATE-TOKEN", gitlab_token)
         .json(&request)

@@ -363,7 +363,7 @@ where
         if let Some(identity) = &identities_v2.get(name) {
             technical_committee_members.push(identity.owner_key.clone());
         } else {
-            eprintln!("Identity '{}' does not exist", name);
+            eprintln!("Identity '{name}' does not exist");
             fatal = true;
         }
     }
@@ -603,10 +603,7 @@ where
             )
         }
         if c != g1_duniter_v1_c {
-            warn!(
-                "parameter `c` value ({}) is different from Ğ1 value ({})",
-                c, g1_duniter_v1_c
-            )
+            warn!("parameter `c` value ({c}) is different from Ğ1 value ({g1_duniter_v1_c})")
         }
         if common_parameters.universal_dividend_ud_creation_period as f32 / DAYS as f32
             != G1_DUNITER_V1_DT as f32 / DUNITER_V1_DAYS as f32
@@ -966,7 +963,7 @@ fn diviser_to_unit(value_in_ms: f32, qty: f32) -> String {
         "second".to_string()
     };
     let plural = if qty > 1f32 { "s" } else { "" };
-    format!("{}{}", unit, plural)
+    format!("{unit}{plural}")
 }
 
 fn get_best_diviser(ms_value: f32) -> f32 {
@@ -996,10 +993,7 @@ fn smiths_and_technical_committee_checks(
             .values()
             .any(|(name, _)| name == tech_com_member);
         if inactive_commitee_member {
-            panic!(
-                "{} is an inactive technical commitee member",
-                tech_com_member
-            );
+            panic!("{tech_com_member} is an inactive technical commitee member");
         }
     }
     // no inactive smith
@@ -1010,7 +1004,7 @@ fn smiths_and_technical_committee_checks(
             .collect();
         inactive_smiths
             .iter()
-            .for_each(|(name, _)| log::warn!("Smith {} is inactive", name));
+            .for_each(|(name, _)| log::warn!("Smith {name} is inactive"));
         assert_eq!(inactive_smiths.len(), 0);
     }
 }
@@ -1149,7 +1143,7 @@ fn check_identities_v2(
         .for_each(|(name, i)| {
             let nb_certs = i.certs_received.len() as u32;
             if nb_certs < common_parameters.wot_min_cert_for_membership {
-                log::warn!("{} has only {} valid certifications", name, nb_certs);
+                log::warn!("{name} has only {nb_certs} valid certifications");
             }
         });
 }
@@ -1167,7 +1161,7 @@ fn check_genesis_data_and_filter_expired_certs_since_export(
             i.certs_received.retain(|issuer, v| {
                 let retain = (v.0 as u64) >= genesis_timestamp;
                 if !retain {
-                    log::warn!("{} -> {} cert expired since export", issuer, receiver);
+                    log::warn!("{issuer} -> {receiver} cert expired since export");
                 }
                 retain
             });
@@ -1176,7 +1170,7 @@ fn check_genesis_data_and_filter_expired_certs_since_export(
     genesis_data.identities.iter_mut().for_each(|(name, i)| {
         if (i.membership_expire_on.0 as u64) < genesis_timestamp {
             if (i.membership_expire_on.0 as u64) >= genesis_data.current_block.median_time {
-                log::warn!("{} membership expired since export", name);
+                log::warn!("{name} membership expired since export");
             }
             i.membership_expire_on = TimestampV1(0);
         }
@@ -1187,22 +1181,16 @@ fn check_genesis_data_and_filter_expired_certs_since_export(
             && i.certs_received.len() < common_parameters.wot_min_cert_for_membership as usize
         {
             i.membership_expire_on = TimestampV1(0);
-            log::warn!(
-                "{} lost membership because of lost certifications since export",
-                name
-            );
+            log::warn!("{name} lost membership because of lost certifications since export");
         }
     });
 
     genesis_data.identities.iter().for_each(|(name, i)| {
         if i.owner_pubkey.is_some() && i.owner_address.is_some() {
-            log::warn!(
-                "{} both has a pubkey and an address defined - address will be used",
-                name
-            );
+            log::warn!("{name} both has a pubkey and an address defined - address will be used");
         }
         if i.owner_pubkey.is_none() && i.owner_address.is_none() {
-            eprintln!("{} neither has a pubkey and an address defined", name);
+            eprintln!("{name} neither has a pubkey and an address defined");
         }
     });
 }
@@ -1222,7 +1210,7 @@ fn genesis_data_to_identities_v2(
                 })
                 .unwrap_or_else(|| {
                     i.owner_address.unwrap_or_else(|| {
-                        panic!("neither pubkey nor address is defined for {}", name)
+                        panic!("neither pubkey nor address is defined for {name}")
                     })
                 });
             let owner_key = legacy_account.clone();
@@ -1509,7 +1497,7 @@ fn feed_smith_certs_by_receiver(
         for issuer in &smith.certs_received {
             let issuer_index = &identities_v2
                 .get(issuer)
-                .ok_or(format!("Identity '{}' does not exist", issuer))?
+                .ok_or(format!("Identity '{issuer}' does not exist"))?
                 .index;
             certs.push(*issuer_index);
             counter_smith_cert += 1;
@@ -1532,7 +1520,7 @@ fn feed_certs_by_receiver(
                 certs.insert(issuer.index, Some(*expire_on));
                 counter_cert += 1;
             } else {
-                eprintln!("Identity '{}' does not exist", issuer);
+                eprintln!("Identity '{issuer}' does not exist");
                 fatal = true;
             };
         }
@@ -1548,7 +1536,7 @@ fn check_authority_exists_in_both_wots(
 ) {
     identities_v2
         .get(name)
-        .ok_or(format!("Identity '{}' not exist", name))
+        .ok_or(format!("Identity '{name}' not exist"))
         .expect("Initial authority must have an identity");
     smiths
         .iter()
@@ -1826,15 +1814,14 @@ fn check_parameters_consistency(
 ) -> Result<(), String> {
     // No empty wallet
     if let Some((account, _)) = wallets.iter().find(|(_, amount)| **amount == 0) {
-        return Err(format!("Wallet {} is empty", account));
+        return Err(format!("Wallet {account} is empty"));
     }
 
     if let (Some(first_ud), Some(first_reeval)) = (first_ud, first_reeval)
         && first_ud > first_reeval
     {
         return Err(format!(
-            "`first_ud` ({}) should be lower than `first_ud_reeval` ({})",
-            first_ud, first_reeval
+            "`first_ud` ({first_ud}) should be lower than `first_ud_reeval` ({first_reeval})"
         ));
     }
     if *ud == 0 {
@@ -1849,41 +1836,33 @@ fn get_genesis_input<P: Default + DeserializeOwned>(
     // We mmap the file into memory first, as this is *a lot* faster than using
     // `serde_json::from_reader`. See https://github.com/serde-rs/json/issues/160
     let file = std::fs::File::open(&config_file_path)
-        .map_err(|e| format!("Error opening gen conf file `{}`: {}", config_file_path, e))?;
+        .map_err(|e| format!("Error opening gen conf file `{config_file_path}`: {e}"))?;
     // SAFETY: `mmap` is fundamentally unsafe since technically the file can change
     //         underneath us while it is mapped; in practice it's unlikely to be a problem
     let bytes = unsafe {
         memmap2::Mmap::map(&file)
-            .map_err(|e| format!("Error mmaping gen conf file `{}`: {}", config_file_path, e))?
+            .map_err(|e| format!("Error mmaping gen conf file `{config_file_path}`: {e}"))?
     };
     if config_file_path.ends_with(".json") {
         serde_json::from_slice::<GenesisInput<P>>(&bytes)
-            .map_err(|e| format!("Error parsing JSON gen conf file: {}", e))
+            .map_err(|e| format!("Error parsing JSON gen conf file: {e}"))
     } else {
         serde_yaml::from_slice::<GenesisInput<P>>(&bytes)
-            .map_err(|e| format!("Error parsing YAML gen conf file: {}", e))
+            .map_err(|e| format!("Error parsing YAML gen conf file: {e}"))
     }
 }
 
 fn get_genesis_migration_data() -> Result<GenesisMigrationData, String> {
     let json_file_path = std::env::var("DUNITER_GENESIS_DATA")
         .unwrap_or_else(|_| "./resources/g1-data.json".to_owned());
-    let file = std::fs::File::open(&json_file_path).map_err(|e| {
-        format!(
-            "Error opening gen migration file `{}`: {}",
-            json_file_path, e
-        )
-    })?;
+    let file = std::fs::File::open(&json_file_path)
+        .map_err(|e| format!("Error opening gen migration file `{json_file_path}`: {e}"))?;
     let bytes = unsafe {
-        memmap2::Mmap::map(&file).map_err(|e| {
-            format!(
-                "Error mmaping gen migration file `{}`: {}",
-                json_file_path, e
-            )
-        })?
+        memmap2::Mmap::map(&file)
+            .map_err(|e| format!("Error mmaping gen migration file `{json_file_path}`: {e}"))?
     };
     serde_json::from_slice::<GenesisMigrationData>(&bytes)
-        .map_err(|e| format!("Error parsing gen migration file: {}", e))
+        .map_err(|e| format!("Error parsing gen migration file: {e}"))
 }
 
 fn get_genesis_timestamp() -> Result<u64, String> {
@@ -2056,7 +2035,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("clock should be after epoch")
             .as_nanos();
-        let file_path = std::env::temp_dir().join(format!("g1-smiths-{}.yaml", unique));
+        let file_path = std::env::temp_dir().join(format!("g1-smiths-{unique}.yaml"));
         let yaml = r#"
 ud: 1148
 first_ud: null

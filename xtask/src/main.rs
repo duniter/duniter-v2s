@@ -285,8 +285,7 @@ async fn main() -> Result<()> {
         && exec_should_success(Command::new("rustup").args(["update", "stable"])).is_err()
     {
         eprintln!(
-            "Duniter requires stable Rust {} or higher. If you installed the Rust toolchain via rustup, please execute the command `rustup update stable`.",
-            MIN_RUST_VERSION
+            "Duniter requires stable Rust {MIN_RUST_VERSION} or higher. If you installed the Rust toolchain via rustup, please execute the command `rustup update stable`."
         );
         std::process::exit(1);
     }

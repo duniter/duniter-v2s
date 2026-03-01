@@ -26,7 +26,7 @@ use std::{path::Path, process::Command};
 /// * `runtime` - Le runtime à publier (gdev, gtest, g1)
 /// * `branch` - La branche Git à utiliser
 pub async fn create_runtime_release(runtime: String, branch: String) -> Result<()> {
-    println!("🚀 Création de la release runtime pour: {}", runtime);
+    println!("🚀 Création de la release runtime pour: {runtime}");
 
     // Vérifier que le runtime est valide
     if !["gdev", "gtest", "g1"].contains(&runtime.as_str()) {
@@ -38,13 +38,13 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
 
     // Calculer les versions et noms comme dans la CI
     let runtime_version = get_runtime_version(&runtime)?;
-    let runtime_milestone = format!("runtime-{}", runtime_version);
+    let runtime_milestone = format!("runtime-{runtime_version}");
 
-    println!("📦 Version runtime: {}", runtime_version);
-    println!("🏷️  Milestone: {}", runtime_milestone);
+    println!("📦 Version runtime: {runtime_version}");
+    println!("🏷️  Milestone: {runtime_milestone}");
 
     // Vérifier que le fichier WASM existe
-    let wasm_file = format!("release/{}_runtime.compact.compressed.wasm", runtime);
+    let wasm_file = format!("release/{runtime}_runtime.compact.compressed.wasm");
     if !Path::new(&wasm_file).exists() {
         return Err(anyhow!(
             "Le fichier WASM n'existe pas: {}. Exécutez d'abord 'cargo xtask release runtime build {}' pour générer le runtime.",
@@ -52,7 +52,7 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
             runtime
         ));
     }
-    println!("✅ Fichier WASM trouvé: {}", wasm_file);
+    println!("✅ Fichier WASM trouvé: {wasm_file}");
 
     // Vérifier que les fichiers d'historique existent
     let history_files = vec![
@@ -69,7 +69,7 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
                 file
             ));
         }
-        println!("✅ Fichier d'historique trouvé: {}", file);
+        println!("✅ Fichier d'historique trouvé: {file}");
     }
 
     // Étape 1: Créer la release runtime via GitLab
@@ -91,7 +91,7 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
     // Liste des assets à uploader (nom dans la release, chemin du fichier)
     let asset_files = vec![
         (
-            format!("{}_runtime.compact.compressed.wasm", runtime),
+            format!("{runtime}_runtime.compact.compressed.wasm"),
             wasm_file.clone(),
         ),
         (
@@ -115,14 +115,11 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
     for (asset_name, file_path) in &asset_files {
         let path = Path::new(file_path);
 
-        println!("📤 Upload de {}...", asset_name);
+        println!("📤 Upload de {asset_name}...");
         let asset_url =
             crate::gitlab::upload_file(project_id.clone(), path, asset_name.clone()).await?;
 
-        println!(
-            "📎 Création du lien d'asset: {} -> {}",
-            asset_name, asset_url
-        );
+        println!("📎 Création du lien d'asset: {asset_name} -> {asset_url}");
         // Créer le lien d'asset via GitLab
         crate::gitlab::create_asset_link(runtime_milestone.clone(), asset_name.clone(), asset_url)
             .await?;
@@ -130,12 +127,12 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
 
     println!("✅ Release runtime créée avec succès!");
     println!("📋 Résumé:");
-    println!("   - Runtime: {}", runtime);
-    println!("   - Version: {}", runtime_version);
-    println!("   - Branche: {}", branch);
-    println!("   - Release: {}", runtime_milestone);
+    println!("   - Runtime: {runtime}");
+    println!("   - Version: {runtime_version}");
+    println!("   - Branche: {branch}");
+    println!("   - Release: {runtime_milestone}");
     println!("   - Assets uploadés:");
-    println!("     • {}_runtime.compact.compressed.wasm", runtime);
+    println!("     • {runtime}_runtime.compact.compressed.wasm");
     println!("     • genesis.json");
     println!("     • block_hist.json");
     println!("     • cert_hist.json");
@@ -145,7 +142,7 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
 }
 
 fn get_runtime_version(runtime: &str) -> Result<String> {
-    let runtime_file = format!("runtime/{}/src/lib.rs", runtime);
+    let runtime_file = format!("runtime/{runtime}/src/lib.rs");
     let output = Command::new("grep")
         .args(["spec_version:", &runtime_file])
         .output()?;
@@ -167,6 +164,6 @@ fn get_runtime_version(runtime: &str) -> Result<String> {
         .ok_or_else(|| anyhow!("Format de version invalide dans {}", runtime_file))?
         .trim();
 
-    println!("📦 Version runtime détectée: {}", version);
+    println!("📦 Version runtime détectée: {version}");
     Ok(version.to_string())
 }

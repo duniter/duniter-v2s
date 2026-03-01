@@ -78,9 +78,8 @@ Finally, configure the Rust toolchain:
 
 ```bash
 rustup default stable
-rustup update nightly
 rustup update stable
-rustup target add wasm32-unknown-unknown --toolchain nightly
+rustup target add wasm32v1-none --toolchain stable
 ```
 
 ### Installing mold linker to decrease build time

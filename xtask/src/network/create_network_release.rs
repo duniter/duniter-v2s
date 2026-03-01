@@ -28,7 +28,7 @@ use std::{path::Path, process::Command};
 ///   Doit exister sur GitLab. Peut-être n'importe quelle branche, mais préférer créer
 ///   une branche dédiée par réseau comme `network/gtest-1000`.
 pub async fn create_network_release(network: String, branch: String) -> Result<()> {
-    println!("🚀 Création de la release réseau pour: {}", network);
+    println!("🚀 Création de la release réseau pour: {network}");
 
     // Déterminer le runtime basé sur le réseau
     let runtime = if network.starts_with("gdev-") {
@@ -44,7 +44,7 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
         ));
     };
 
-    println!("📦 Runtime détecté: {}", runtime);
+    println!("📦 Runtime détecté: {runtime}");
 
     // Vérifier que les fichiers nécessaires existent
     let required_files = vec![
@@ -65,7 +65,7 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
                 file
             ));
         }
-        println!("✅ Fichier trouvé: {}", file);
+        println!("✅ Fichier trouvé: {file}");
     }
 
     // Créer la release réseau via GitLab
@@ -84,23 +84,20 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
             "release/network/genesis.json".to_string(),
         ),
         (
-            format!("{}.yaml", runtime),
-            format!("release/network/{}.yaml", runtime),
+            format!("{runtime}.yaml"),
+            format!("release/network/{runtime}.yaml"),
         ),
         (
-            format!("{}_runtime.compact.compressed.wasm", runtime),
-            format!(
-                "release/network/{}_runtime.compact.compressed.wasm",
-                runtime
-            ),
+            format!("{runtime}_runtime.compact.compressed.wasm"),
+            format!("release/network/{runtime}_runtime.compact.compressed.wasm"),
         ),
         (
-            format!("{}_runtime.compact.wasm", runtime),
-            format!("release/network/{}_runtime.compact.wasm", runtime),
+            format!("{runtime}_runtime.compact.wasm"),
+            format!("release/network/{runtime}_runtime.compact.wasm"),
         ),
         (
-            format!("{}.json", runtime),
-            format!("release/network/{}.json", runtime),
+            format!("{runtime}.json"),
+            format!("release/network/{runtime}.json"),
         ),
     ];
 
@@ -110,44 +107,41 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
             return Err(anyhow!("Le fichier d'asset n'existe pas: {}", file_path));
         }
 
-        println!("📤 Upload de {}...", asset_name);
+        println!("📤 Upload de {asset_name}...");
         let asset_url =
             crate::gitlab::upload_file(project_id.clone(), path, asset_name.clone()).await?;
 
-        println!(
-            "📎 Création du lien d'asset: {} -> {}",
-            asset_name, asset_url
-        );
+        println!("📎 Création du lien d'asset: {asset_name} -> {asset_url}");
         crate::gitlab::create_asset_link(network.clone(), asset_name.clone(), asset_url).await?;
     }
 
     // Fichiers historiques pour Squid (indexeur) — compressés car trop volumineux pour GitLab
     let squid_files = vec!["block_hist.json", "cert_hist.json", "tx_hist.json"];
     for filename in &squid_files {
-        let src = format!("release/network/{}", filename);
+        let src = format!("release/network/{filename}");
         if !Path::new(&src).exists() {
             return Err(anyhow!("Le fichier Squid n'existe pas: {}", src));
         }
-        let gz_path = format!("{}.gz", src);
-        let gz_name = format!("{}.gz", filename);
-        println!("🗜️  Compression de {}...", filename);
+        let gz_path = format!("{src}.gz");
+        let gz_name = format!("{filename}.gz");
+        println!("🗜️  Compression de {filename}...");
         let status = Command::new("gzip").args(["-k", "-f", &src]).status()?;
         if !status.success() {
             return Err(anyhow!("Échec de la compression de {}", src));
         }
-        println!("📤 Upload de {}...", gz_name);
+        println!("📤 Upload de {gz_name}...");
         let asset_url =
             crate::gitlab::upload_file(project_id.clone(), Path::new(&gz_path), gz_name.clone())
                 .await?;
-        println!("📎 Création du lien d'asset: {} -> {}", gz_name, asset_url);
+        println!("📎 Création du lien d'asset: {gz_name} -> {asset_url}");
         crate::gitlab::create_asset_link(network.clone(), gz_name, asset_url).await?;
     }
 
-    println!("✅ Release réseau créée avec succès pour: {}", network);
+    println!("✅ Release réseau créée avec succès pour: {network}");
     println!("📋 Résumé:");
-    println!("   - Réseau: {}", network);
-    println!("   - Runtime: {}", runtime);
-    println!("   - Branche: {}", branch);
+    println!("   - Réseau: {network}");
+    println!("   - Runtime: {runtime}");
+    println!("   - Branche: {branch}");
     println!("   - Assets: {} fichiers", asset_files.len());
 
     Ok(())

@@ -61,16 +61,16 @@ pub async fn trigger_release_builds(
     branch: String,
     release_tag: Option<String>,
 ) -> Result<()> {
-    println!("🚀 Starting release build process for network: {}", network);
-    println!("   Branch: {}", branch);
+    println!("🚀 Starting release build process for network: {network}");
+    println!("   Branch: {branch}");
 
     // Compute release tag if not provided
     let release_tag = if let Some(tag) = release_tag {
-        println!("   Release tag: {} (provided)", tag);
+        println!("   Release tag: {tag} (provided)");
         tag
     } else {
         let computed_tag = compute_release_tag(&network)?;
-        println!("   Release tag: {} (computed)", computed_tag);
+        println!("   Release tag: {computed_tag} (computed)");
         computed_tag
     };
 
@@ -78,11 +78,11 @@ pub async fn trigger_release_builds(
     println!("\n🔍 Step 0: Checking GitLab release...");
     let existing_assets = match crate::gitlab::get_release_assets(release_tag.clone()).await {
         Ok(assets) => {
-            println!("   ✅ Release '{}' found", release_tag);
+            println!("   ✅ Release '{release_tag}' found");
             println!("   Found {} existing assets", assets.len());
             if !assets.is_empty() {
                 for (name, _) in &assets {
-                    println!("     - {}", name);
+                    println!("     - {name}");
                 }
             }
             assets
@@ -157,7 +157,7 @@ pub async fn trigger_release_builds(
 
     // Find the raw spec URL from existing release assets
     let runtime = super::ensure_raw_spec::extract_runtime(&network)?;
-    let raw_spec_name = format!("{}-raw.json", runtime);
+    let raw_spec_name = format!("{runtime}-raw.json");
     let raw_spec_url = existing_assets
         .iter()
         .find(|(name, _)| name == &raw_spec_name)
@@ -170,7 +170,7 @@ pub async fn trigger_release_builds(
                 release_tag
             )
         })?;
-    println!("   Raw spec URL: {}", raw_spec_url);
+    println!("   Raw spec URL: {raw_spec_url}");
 
     // Step 1: Trigger the pipeline
     println!("\n📡 Step 1: Triggering CI pipeline...");
@@ -205,30 +205,26 @@ pub async fn trigger_release_builds(
     for (job_name, job_id) in &job_ids {
         // Skip the manifest job as it starts automatically via needs/when: on_success
         if job_name == "release_docker_manifest" {
-            println!(
-                "   ⏭️  Skipping {} (will start automatically after Docker builds)",
-                job_name
-            );
+            println!("   ⏭️  Skipping {job_name} (will start automatically after Docker builds)");
             continue;
         }
 
-        println!("   Starting job: {} (ID: {})", job_name, job_id);
+        println!("   Starting job: {job_name} (ID: {job_id})");
 
         // Try multiple times to play the job
         for attempt in 1..=3 {
             match crate::gitlab::play_job(PROJECT_ID.to_string(), *job_id).await {
                 Ok(_) => {
-                    println!("   ✅ Job {} started", job_name);
+                    println!("   ✅ Job {job_name} started");
                     break;
                 }
                 Err(e) => {
                     if attempt < 3 {
-                        println!("   ⏳ Attempt {}/3: Job not ready yet, waiting...", attempt);
+                        println!("   ⏳ Attempt {attempt}/3: Job not ready yet, waiting...");
                         tokio::time::sleep(Duration::from_secs(3)).await;
                     } else {
                         println!(
-                            "   ⚠️  Warning: Failed to start job {} after 3 attempts: {}",
-                            job_name, e
+                            "   ⚠️  Warning: Failed to start job {job_name} after 3 attempts: {e}"
                         );
                         println!("   You may need to start this job manually on GitLab");
                     }
@@ -253,9 +249,9 @@ pub async fn trigger_release_builds(
     if success_count == 0 {
         println!("\n❌ Release build process failed!");
         println!("📋 Summary:");
-        println!("   - Network: {}", network);
-        println!("   - Branch: {}", branch);
-        println!("   - Release tag: {}", release_tag);
+        println!("   - Network: {network}");
+        println!("   - Branch: {branch}");
+        println!("   - Release tag: {release_tag}");
         println!("   - Pipeline: {}", pipeline.web_url);
         println!(
             "   - Jobs succeeded: {}/{}",
@@ -263,10 +259,10 @@ pub async fn trigger_release_builds(
             job_results.len()
         );
         if failed_count > 0 {
-            println!("   - Jobs failed: {}", failed_count);
+            println!("   - Jobs failed: {failed_count}");
         }
         if canceled_count > 0 {
-            println!("   - Jobs canceled: {}", canceled_count);
+            println!("   - Jobs canceled: {canceled_count}");
         }
         return Err(anyhow!(
             "No jobs completed successfully. Please check the pipeline: {}",
@@ -314,9 +310,9 @@ pub async fn trigger_release_builds(
     // Step 8: Summary
     println!("\n✅ Release build process completed successfully!");
     println!("📋 Summary:");
-    println!("   - Network: {}", network);
-    println!("   - Branch: {}", branch);
-    println!("   - Release tag: {}", release_tag);
+    println!("   - Network: {network}");
+    println!("   - Branch: {branch}");
+    println!("   - Release tag: {release_tag}");
     println!("   - Pipeline: {}", pipeline.web_url);
 
     println!(
@@ -325,10 +321,10 @@ pub async fn trigger_release_builds(
         job_results.len()
     );
     if failed_count > 0 {
-        println!("   - Jobs failed: {}", failed_count);
+        println!("   - Jobs failed: {failed_count}");
     }
     if canceled_count > 0 {
-        println!("   - Jobs canceled: {}", canceled_count);
+        println!("   - Jobs canceled: {canceled_count}");
     }
     if failed_count > 0 || canceled_count > 0 {
         println!("   ⚠️  Some jobs did not complete, but successful artifacts were uploaded");
@@ -499,13 +495,13 @@ async fn download_job_artifacts(
                     Ok(artifacts)
                 }
                 Err(e) => {
-                    println!("      ⚠️  Warning: Failed to extract artifacts: {}", e);
+                    println!("      ⚠️  Warning: Failed to extract artifacts: {e}");
                     Ok(Vec::new())
                 }
             }
         }
         Err(e) => {
-            println!("      ⚠️  Warning: Failed to download artifacts: {}", e);
+            println!("      ⚠️  Warning: Failed to download artifacts: {e}");
             Ok(Vec::new())
         }
     }
@@ -541,14 +537,14 @@ async fn upload_artifacts_to_release(release_tag: &str, artifacts: &[PathBuf]) -
             continue;
         }
 
-        println!("   Uploading: {}", file_name);
+        println!("   Uploading: {file_name}");
 
         // Upload file to GitLab
         match crate::gitlab::upload_file(PROJECT_ID.to_string(), artifact_path, file_name.clone())
             .await
         {
             Ok(asset_url) => {
-                println!("      Uploaded: {}", asset_url);
+                println!("      Uploaded: {asset_url}");
 
                 // Create asset link in release
                 match crate::gitlab::create_asset_link(
@@ -559,10 +555,10 @@ async fn upload_artifacts_to_release(release_tag: &str, artifacts: &[PathBuf]) -
                 .await
                 {
                     Ok(_) => println!("      ✅ Asset link created"),
-                    Err(e) => println!("      ⚠️  Warning: Failed to create asset link: {}", e),
+                    Err(e) => println!("      ⚠️  Warning: Failed to create asset link: {e}"),
                 }
             }
-            Err(e) => println!("      ⚠️  Warning: Failed to upload file: {}", e),
+            Err(e) => println!("      ⚠️  Warning: Failed to upload file: {e}"),
         }
     }
 
@@ -578,7 +574,7 @@ fn compute_release_tag(network: &str) -> Result<String> {
 
     // Release tag = network name + client version
     // Example: gtest-1100 + 0.12.0 = gtest-1100-0.12.0
-    Ok(format!("{}-{}", network, client_version))
+    Ok(format!("{network}-{client_version}"))
 }
 
 fn get_client_version() -> Result<String> {

@@ -1,4 +1,4 @@
-FROM rust:latest
+FROM rust:1.88.0
 
 RUN dpkg --add-architecture armhf && \
   apt-get update && apt-get upgrade -y && \
@@ -14,14 +14,9 @@ RUN dpkg --add-architecture armhf && \
   libclang-dev \
   libssl-dev:armhf
 
-# Install nightly with armv7 and  w32-u-u
-RUN rustup install nightly-2022-04-20-x86_64-unknown-linux-gnu && \
-  rustup target add armv7-unknown-linux-gnueabihf --toolchain \
-  nightly-2022-04-20-x86_64-unknown-linux-gnu && \
-  rustup target add wasm32-unknown-unknown --toolchain \
-  nightly-2022-04-20-x86_64-unknown-linux-gnu && \
-  cargo +nightly-2022-04-20-x86_64-unknown-linux-gnu install --git \
-  https://github.com/alexcrichton/wasm-gc --force
+# Install required targets on stable
+RUN rustup target add armv7-unknown-linux-gnueabihf && \
+  rustup target add wasm32v1-none
 
 ENV CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER arm-linux-gnueabihf-gcc
 ENV PKG_CONFIG_ALLOW_CROSS 1
@@ -42,4 +37,7 @@ ENV ZLIB_NO_PKG_CONFIG 1
 # RUN aptitude install -y libasound2-dev:armhf libgtk-3-dev:armhf libsdl2-dev:armhf
 
 RUN useradd rust --user-group --create-home --shell /bin/bash --groups sudo
+COPY docker/cross-arm-entrypoint /usr/local/bin/cross-arm-entrypoint
+RUN chmod +x /usr/local/bin/cross-arm-entrypoint
 WORKDIR /home/rust/src
+ENTRYPOINT ["/usr/local/bin/cross-arm-entrypoint"]

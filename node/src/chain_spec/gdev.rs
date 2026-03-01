@@ -361,7 +361,7 @@ fn get_env<T: std::str::FromStr>(env_var_name: &'static str, default_value: T) -
 /// Goal: allow to provide the WASM built with srtool, which is reproductible.
 fn get_wasm_binary() -> Option<Vec<u8>> {
     let wasm_bytes_from_file = if let Ok(file_path) = env::var("WASM_FILE") {
-        Some(fs::read(file_path).unwrap_or_else(|e| panic!("Could not read wasm file: {}", e)))
+        Some(fs::read(file_path).unwrap_or_else(|e| panic!("Could not read wasm file: {e}")))
     } else {
         None
     };

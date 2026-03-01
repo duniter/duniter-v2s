@@ -168,8 +168,7 @@ where
             match e.kind() {
                 std::io::ErrorKind::NotFound => {
                     log::debug!(
-                        "🧙 [distance inherent] Evaluation result file not found. Please ensure that the oracle version matches {}",
-                        VERSION_PREFIX
+                        "🧙 [distance inherent] Evaluation result file not found. Please ensure that the oracle version matches {VERSION_PREFIX}"
                     );
                 }
                 _ => {

@@ -189,7 +189,7 @@ mod tests {
                 .len()
                 == 10
         ); // 8 extrinsics in pallet
-        println!("{:?}", weight_by_pallet); // cargo test  -- --nocapture
+        println!("{weight_by_pallet:?}"); // cargo test  -- --nocapture
     }
     #[test]
     #[should_panic]

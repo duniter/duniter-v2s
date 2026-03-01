@@ -193,7 +193,7 @@ pub async fn run(client: &api::Client, settings: &Settings) {
         })
         .for_each(|path| {
             std::fs::remove_file(&path)
-                .unwrap_or_else(|e| warn!("Cannot remove file `{:?}`: {:?}", path, e));
+                .unwrap_or_else(|e| warn!("Cannot remove file `{path:?}`: {e:?}"));
         });
 }
 
@@ -212,7 +212,7 @@ pub async fn compute_distance_evaluation(
     let (evaluation_block, current_period_index, evaluation_pool, evaluation_result_path) =
         prepare_evaluation_context(client, settings).await?;
 
-    info!("Evaluating distance for period {}", current_period_index);
+    info!("Evaluating distance for period {current_period_index}");
 
     let max_depth = api::max_referee_distance(client).await;
 
@@ -390,7 +390,7 @@ fn distance_rule(
     depth: u32,
     idty: IdtyIndex,
 ) -> sp_runtime::Perbill {
-    debug!("Evaluating distance for idty {}", idty);
+    debug!("Evaluating distance for idty {idty}");
     let mut accessible_referees =
         FnvHashSet::<IdtyIndex>::with_capacity_and_hasher(referees.len(), Default::default());
     let mut known_idties =

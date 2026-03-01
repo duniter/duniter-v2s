@@ -67,7 +67,7 @@ async fn main() -> anyhow::Result<()> {
 
     let maybe_block_hash = if let Ok(block_number) = std::env::var("AT_BLOCK_NUMBER") {
         let block_number: BlockNumber = block_number.parse()?;
-        println!("Run sanity tests against ĞDev at block #{}.", block_number);
+        println!("Run sanity tests against ĞDev at block #{block_number}.");
         // FIXME
         // client.at(block_number).await?
         None
@@ -217,7 +217,7 @@ mod verifier {
                 Ok(())
             } else {
                 for error in &self.errors {
-                    println!("{}", error);
+                    println!("{error}");
                 }
                 Err(anyhow::anyhow!(
                     "Storage corrupted: {} errors.",
@@ -245,16 +245,13 @@ mod verifier {
                     // Rule 1: If the account is not sufficient, it should have at least one provider
                     self.assert(
                         account_info.providers > 0,
-                        format!("Account {} has no providers nor sufficients.", account_id),
+                        format!("Account {account_id} has no providers nor sufficients."),
                     );
                     // Rule 2: If the account is not sufficient, it should comply to the existential deposit
                     self.assert(
                         (account_info.data.free + account_info.data.reserved)
                             >= EXISTENTIAL_DEPOSIT,
-                        format!(
-                            "Account {} not respect existential deposit rule.",
-                            account_id
-                        ),
+                        format!("Account {account_id} not respect existential deposit rule."),
                     );
                 }
 
@@ -263,7 +260,7 @@ mod verifier {
                     // Rule 1: If the account is not sufficient [...]
                     self.assert(
                         account_info.providers > 0,
-                        format!("Account {} has no providers nor sufficients.", account_id),
+                        format!("Account {account_id} has no providers nor sufficients."),
                     );
                 }
             }
@@ -298,7 +295,7 @@ mod verifier {
                 let maybe_account = accounts.get(&idty_value.owner_key);
                 self.assert(
                     maybe_account.is_some(),
-                    format!("Identity {} has no account.", idty_index),
+                    format!("Identity {idty_index} has no account."),
                 );
 
                 if let Some(account) = maybe_account {
@@ -306,8 +303,7 @@ mod verifier {
                     self.assert(
                         account.sufficients > 0,
                         format!(
-                            "Identity {} is corrupted: idty_account.sufficients == 0",
-                            idty_index
+                            "Identity {idty_index} is corrupted: idty_account.sufficients == 0"
                         ),
                     );
                 }
@@ -346,8 +342,7 @@ mod verifier {
                 self.assert(
                     maybe_idty_value.is_some(),
                     format!(
-                        "Identity {} not exist, but still referenced in IdentityIndexOf.",
-                        idty_index
+                        "Identity {idty_index} not exist, but still referenced in IdentityIndexOf."
                     ),
                 );
 
@@ -356,10 +351,7 @@ mod verifier {
                     // identity owner key
                     self.assert(
                         blake2_128_owner_key == &blake2_128(idty_value.owner_key.as_slice()),
-                        format!(
-                            "Identity {} is referenced in IdentityIndexOf with an invalid key hash.",
-                            idty_index
-                        ),
+                        format!("Identity {idty_index} is referenced in IdentityIndexOf with an invalid key hash."),
                     );
                 }
             }

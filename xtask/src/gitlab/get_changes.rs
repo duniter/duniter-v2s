@@ -62,7 +62,7 @@ pub(super) async fn get_changes(milestone: String) -> Result<String> {
     } else if let Some(errors) = response_body.errors {
         println!("{} errors:", errors.len());
         for error in errors {
-            println!("{}", error);
+            println!("{error}");
         }
         Err(anyhow!("GraphQL errors"))
     } else {

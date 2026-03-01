@@ -38,8 +38,7 @@ pub(super) async fn upload_file(
 
     let response = client
         .post(format!(
-            "https://git.duniter.org/api/v4/projects/{}/uploads",
-            project_id
+            "https://git.duniter.org/api/v4/projects/{project_id}/uploads"
         ))
         .header("PRIVATE-TOKEN", gitlab_token)
         .multipart(form)

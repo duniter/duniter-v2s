@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -f "Cargo.lock" && -f "Cargo.toml" && -f "scripts/prepare_local_polkadot_sdk.sh" && -f "scripts/cargo_with_vendor.sh" ]]; then
+  chmod +x scripts/prepare_local_polkadot_sdk.sh scripts/cargo_with_vendor.sh
+  ./scripts/prepare_local_polkadot_sdk.sh Cargo.lock duniter-polkadot-sdk.git
+fi
+
+if [[ "${1:-}" == "cargo" ]]; then
+  shift
+  exec ./scripts/cargo_with_vendor.sh "$@"
+fi
+
+exec "$@"

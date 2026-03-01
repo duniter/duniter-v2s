@@ -373,7 +373,7 @@ pub fn run() -> sc_cli::Result<()> {
                     let wrapped = client.clone();
 
                     let inherent_data = crate::service::client::benchmark_inherent_data()
-                        .map_err(|e| format!("generating inherent data: {:?}", e))?;
+                        .map_err(|e| format!("generating inherent data: {e:?}"))?;
 
                     unwrap_client!(
                         client,

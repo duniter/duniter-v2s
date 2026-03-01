@@ -117,7 +117,7 @@ pub async fn spawn_node(
     maybe_genesis_conf_file: Option<PathBuf>,
     no_spawn: bool,
 ) -> (FullClient, Option<Process>, u16) {
-    println!("maybe_genesis_conf_file={:?}", maybe_genesis_conf_file);
+    println!("maybe_genesis_conf_file={maybe_genesis_conf_file:?}");
     let duniter_binary_path = std::env::var("DUNITER_BINARY_PATH").unwrap_or_else(|_| {
         if std::path::Path::new(DUNITER_DOCKER_PATH).exists() {
             DUNITER_DOCKER_PATH.to_owned()
@@ -161,20 +161,16 @@ pub async fn spawn_node(
     let mut retry_count = 0;
     let max_retries = 5;
     let (rpc, client) = loop {
-        match RpcClient::from_url(format!("ws://127.0.0.1:{}", the_rpc_port)).await {
+        match RpcClient::from_url(format!("ws://127.0.0.1:{the_rpc_port}")).await {
             Ok(rpc) => match Client::from_rpc_client(rpc.clone()).await {
                 Ok(client) => break (rpc, client),
                 Err(e) => {
                     retry_count += 1;
                     if retry_count >= max_retries {
-                        panic!(
-                            "Failed to create client after {} retries: {:?}",
-                            max_retries, e
-                        );
+                        panic!("Failed to create client after {max_retries} retries: {e:?}");
                     }
                     eprintln!(
-                        "Failed to create client (attempt {}/{}): {:?}. Retrying in 5 seconds...",
-                        retry_count, max_retries, e
+                        "Failed to create client (attempt {retry_count}/{max_retries}): {e:?}. Retrying in 5 seconds..."
                     );
                     tokio::time::sleep(Duration::from_secs(5)).await;
                 }
@@ -182,14 +178,10 @@ pub async fn spawn_node(
             Err(e) => {
                 retry_count += 1;
                 if retry_count >= max_retries {
-                    panic!(
-                        "Failed to create the rpc backend after {} retries: {:?}",
-                        max_retries, e
-                    );
+                    panic!("Failed to create the rpc backend after {max_retries} retries: {e:?}");
                 }
                 eprintln!(
-                    "Failed to create RPC client (attempt {}/{}): {:?}. Retrying in 5 seconds...",
-                    retry_count, max_retries, e
+                    "Failed to create RPC client (attempt {retry_count}/{max_retries}): {e:?}. Retrying in 5 seconds..."
                 );
                 tokio::time::sleep(Duration::from_secs(5)).await;
             }
@@ -247,7 +239,7 @@ fn spawn_full_node(
     }
 
     // Logs
-    let log_file_path = format!("duniter-v2s-{}.log", rpc_port);
+    let log_file_path = format!("duniter-v2s-{rpc_port}.log");
     let log_file = std::fs::File::create(&log_file_path).expect("fail to create log file");
 
     // Command
@@ -336,7 +328,7 @@ fn wait_until_log_line(expected_log_line: &str, log_file_path: &str, timeout: Du
                     }
                 }
                 Err(err) => {
-                    eprintln!("Error: {:?}", err);
+                    eprintln!("Error: {err:?}");
                     std::process::exit(1);
                 }
             }

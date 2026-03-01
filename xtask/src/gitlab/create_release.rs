@@ -44,7 +44,7 @@ pub(super) async fn create_release(
     let client = reqwest::Client::new();
     let res = client
         .post("https://git.duniter.org/api/graphql")
-        .header("Authorization", format!("Bearer {}", gitlab_token))
+        .header("Authorization", format!("Bearer {gitlab_token}"))
         .json(&request_body)
         .send()
         .await?;
@@ -57,7 +57,7 @@ pub(super) async fn create_release(
             } else {
                 println!("{} errors:", release_create.errors.len());
                 for error in release_create.errors {
-                    println!("{}", error);
+                    println!("{error}");
                 }
                 Err(anyhow!("Logic errors"))
             }
@@ -69,7 +69,7 @@ pub(super) async fn create_release(
     } else if let Some(errors) = response_body.errors {
         println!("{} errors:", errors.len());
         for error in errors {
-            println!("{}", error);
+            println!("{error}");
         }
         Err(anyhow!("GraphQL errors"))
     } else {
