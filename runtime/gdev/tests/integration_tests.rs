@@ -1623,6 +1623,51 @@ fn test_change_owner_key_never_been_online() {
         })
 }
 
+#[test]
+fn test_change_owner_key_with_batch_all_claim_transfer_all() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(Keyring::Dave.to_account_id(), 1_000)])
+        .build()
+        .execute_with(|| {
+            run_to_block(4);
+
+            let genesis_hash = System::block_hash(0);
+            let dave = Keyring::Dave.to_account_id();
+            let ferdie = Keyring::Ferdie.to_account_id();
+            let dave_initial_balance = Balances::free_balance(dave.clone());
+            let payload = (b"icok", genesis_hash, 4u32, dave.clone()).encode();
+            let signature = Keyring::Ferdie.sign(&payload);
+
+            assert_eq!(Identity::identity_index_of(&dave), Some(4));
+            assert_eq!(Identity::identity_index_of(&ferdie), None);
+            assert_eq!(Balances::free_balance(ferdie.clone()), 0);
+
+            assert_ok!(Utility::batch_all(
+                RuntimeOrigin::signed(dave.clone()),
+                vec![
+                    RuntimeCall::UniversalDividend(pallet_universal_dividend::Call::claim_uds {}),
+                    RuntimeCall::Balances(pallet_balances::Call::transfer_all {
+                        dest: MultiAddress::Id(ferdie.clone()),
+                        keep_alive: false,
+                    }),
+                    RuntimeCall::Identity(pallet_identity::Call::change_owner_key {
+                        new_key: ferdie.clone(),
+                        new_key_sig: signature.into(),
+                    }),
+                ],
+            ));
+
+            assert_eq!(Identity::identity_index_of(&dave), None);
+            assert_eq!(Identity::identity_index_of(&ferdie), Some(4));
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
+                Some(4)
+            );
+            assert_eq!(Balances::free_balance(dave), 0);
+            assert!(Balances::free_balance(ferdie) >= dave_initial_balance);
+        })
+}
+
 /// test change owner key
 #[test]
 #[ignore = "long to go to ReportLongevity"]

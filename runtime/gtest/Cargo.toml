@@ -173,6 +173,8 @@ try-runtime = [
 ]
 
 [dev-dependencies]
+sp-io = { workspace = true }
+sp-keyring = { workspace = true }
 sp-staking = { workspace = true }
 
 [build-dependencies]
