@@ -425,7 +425,26 @@ where
         // if account can be exonerated, add it to a refund queue
         let account_data = frame_system::Pallet::<T>::get(who);
         if let Some(idty_index) = account_data.linked_idty {
-            T::Refund::request_refund(who.clone(), idty_index, corrected_fee.saturating_sub(tip));
+            let current_block = frame_system::Pallet::<T>::block_number();
+            let refund_account = pallet_identity::Pallet::<T>::identity(idty_index)
+                .and_then(|idty_value| {
+                    idty_value
+                        .old_owner_key
+                        .and_then(|(old_owner_key, last_change)| {
+                            if old_owner_key == *who && last_change == current_block {
+                                Some(idty_value.owner_key)
+                            } else {
+                                None
+                            }
+                        })
+                })
+                .unwrap_or_else(|| who.clone());
+
+            T::Refund::request_refund(
+                refund_account,
+                idty_index,
+                corrected_fee.saturating_sub(tip),
+            );
         }
         Ok(())
     }
