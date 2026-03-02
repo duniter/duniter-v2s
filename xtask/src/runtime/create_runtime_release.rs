@@ -23,33 +23,33 @@ use std::{path::Path, process::Command};
 /// 2. Upload le fichier WASM runtime
 /// 3. Crée le lien d'asset pour la release
 /// # Arguments
-/// * `runtime` - Le runtime à publier (gdev, gtest, g1)
+/// * `network` - Le réseau cible (gdev, gtest, g1)
 /// * `branch` - La branche Git à utiliser
-pub async fn create_runtime_release(runtime: String, branch: String) -> Result<()> {
-    println!("🚀 Création de la release runtime pour: {runtime}");
+pub async fn create_runtime_release(network: String, branch: String) -> Result<()> {
+    println!("🚀 Création de la release runtime pour: {network}");
 
-    // Vérifier que le runtime est valide
-    if !["gdev", "gtest", "g1"].contains(&runtime.as_str()) {
+    // Vérifier que le réseau est valide
+    if !["gdev", "gtest", "g1"].contains(&network.as_str()) {
         return Err(anyhow!(
-            "Runtime invalide: {}. Les runtimes supportés sont gdev, gtest, g1.",
-            runtime
+            "Réseau invalide: {}. Les réseaux supportés sont gdev, gtest, g1.",
+            network
         ));
     }
 
     // Calculer les versions et noms comme dans la CI
-    let runtime_version = get_runtime_version(&runtime)?;
-    let runtime_milestone = format!("runtime-{runtime_version}");
+    let runtime_version = get_runtime_version(&network)?;
+    let runtime_milestone = format!("runtime-{network}-{runtime_version}");
 
     println!("📦 Version runtime: {runtime_version}");
     println!("🏷️  Milestone: {runtime_milestone}");
 
     // Vérifier que le fichier WASM existe
-    let wasm_file = format!("release/{runtime}_runtime.compact.compressed.wasm");
+    let wasm_file = format!("release/{network}_runtime.compact.compressed.wasm");
     if !Path::new(&wasm_file).exists() {
         return Err(anyhow!(
             "Le fichier WASM n'existe pas: {}. Exécutez d'abord 'cargo xtask release runtime build {}' pour générer le runtime.",
             wasm_file,
-            runtime
+            network
         ));
     }
     println!("✅ Fichier WASM trouvé: {wasm_file}");
@@ -76,7 +76,7 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
     println!("🌐 Création de la release runtime GitLab...");
     crate::gitlab::release_runtime(
         runtime_milestone.clone(),
-        runtime.clone(),
+        network.clone(),
         branch.clone(),
         runtime_milestone.clone(),
     )
@@ -91,7 +91,7 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
     // Liste des assets à uploader (nom dans la release, chemin du fichier)
     let asset_files = vec![
         (
-            format!("{runtime}_runtime.compact.compressed.wasm"),
+            format!("{network}_runtime.compact.compressed.wasm"),
             wasm_file.clone(),
         ),
         (
@@ -127,12 +127,12 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
 
     println!("✅ Release runtime créée avec succès!");
     println!("📋 Résumé:");
-    println!("   - Runtime: {runtime}");
+    println!("   - Réseau: {network}");
     println!("   - Version: {runtime_version}");
     println!("   - Branche: {branch}");
     println!("   - Release: {runtime_milestone}");
     println!("   - Assets uploadés:");
-    println!("     • {runtime}_runtime.compact.compressed.wasm");
+    println!("     • {network}_runtime.compact.compressed.wasm");
     println!("     • genesis.json");
     println!("     • block_hist.json");
     println!("     • cert_hist.json");
@@ -141,8 +141,8 @@ pub async fn create_runtime_release(runtime: String, branch: String) -> Result<(
     Ok(())
 }
 
-fn get_runtime_version(runtime: &str) -> Result<String> {
-    let runtime_file = format!("runtime/{runtime}/src/lib.rs");
+fn get_runtime_version(network: &str) -> Result<String> {
+    let runtime_file = format!("runtime/{network}/src/lib.rs");
     let output = Command::new("grep")
         .args(["spec_version:", &runtime_file])
         .output()?;

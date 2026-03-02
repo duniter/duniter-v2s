@@ -263,7 +263,8 @@ You must have:
   `runtime/gdev-1100`)
 - set the new runtime version in the `runtime/<network>/src/lib.rs` file for the
   `spec_version` variable on that branch (not on `master`)
-- a GitLab milestone named `runtime-<new-runtime-version>` (e.g. `runtime-1100`)
+- a GitLab milestone named `runtime-<network>-<new-runtime-version>` (e.g.
+  `runtime-gdev-1100`)
 - set the `GITLAB_TOKEN` environment variable with your GitLab token
 
 ### Commands
