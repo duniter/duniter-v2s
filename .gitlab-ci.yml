@@ -226,6 +226,7 @@ sdk_resolve:
   needs:
     - job: toolchain_sync_check
       artifacts: false
+      optional: true
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_PIPELINE_SOURCE == "push"
@@ -250,8 +251,10 @@ sdk_resolve:
 .with_dependencies:
   needs:
     - job: toolchain_sync_check
+      optional: true
     - job: sdk_resolve
       artifacts: true
+      optional: true
 
 .env_arm:
   image: rust:1.88.0  # Pinned to match CI unified image Rust version
