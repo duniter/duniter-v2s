@@ -216,6 +216,7 @@ toolchain_sync_check:
     - if: $CI_PIPELINE_SOURCE == "push"
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "api"
     - when: never
   script:
     - ./scripts/check_toolchain_sync.sh "$CI_UNIFIED_IMAGE"
@@ -231,6 +232,7 @@ sdk_resolve:
     - if: $CI_PIPELINE_SOURCE == "push"
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "api"
     - when: never
   script:
     - ./scripts/prepare_local_polkadot_sdk.sh Cargo.lock duniter-polkadot-sdk.git
