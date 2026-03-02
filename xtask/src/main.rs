@@ -138,8 +138,8 @@ enum DuniterXTaskCommand {
     },
     /// Create runtime release (reprend la tâche create_runtime_release de la CI)
     RuntimeCreateRelease {
-        /// Runtime à publier (gdev, gtest, g1)
-        runtime: String,
+        /// Réseau cible (gdev, gtest, g1)
+        network: String,
         /// Branche Git à utiliser
         branch: String,
     },
@@ -255,8 +255,8 @@ enum RuntimeReleaseCommand {
     },
     /// Create runtime release on GitLab
     Create {
-        /// Runtime name (ex: gdev, gtest, g1)
-        runtime: String,
+        /// Network name (ex: gdev, gtest, g1)
+        network: String,
         /// Format: runtime/<network>-<new-runtime-version> (ex: runtime/gtest-1100)
         branch: String,
     },
@@ -358,8 +358,8 @@ async fn main() -> Result<()> {
                 RuntimeReleaseCommand::Build { runtime } => {
                     runtime::build_runtime::build_runtime(runtime)
                 }
-                RuntimeReleaseCommand::Create { runtime, branch } => {
-                    runtime::create_runtime_release::create_runtime_release(runtime, branch).await
+                RuntimeReleaseCommand::Create { network, branch } => {
+                    runtime::create_runtime_release::create_runtime_release(network, branch).await
                 }
             },
             ReleaseCommand::Squid(cmd) => match cmd {
@@ -422,8 +422,8 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::RuntimeBuild { runtime } => {
             runtime::build_runtime::build_runtime(runtime)
         }
-        DuniterXTaskCommand::RuntimeCreateRelease { runtime, branch } => {
-            runtime::create_runtime_release::create_runtime_release(runtime, branch).await
+        DuniterXTaskCommand::RuntimeCreateRelease { network, branch } => {
+            runtime::create_runtime_release::create_runtime_release(network, branch).await
         }
         DuniterXTaskCommand::SquidTriggerBuilds {
             release_tag,
