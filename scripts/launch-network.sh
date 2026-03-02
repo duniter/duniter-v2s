@@ -28,6 +28,15 @@ DEPLOY_DIR="deploy-bootstrap"
 DUNITER_BIN="./target/release/duniter"
 SECRETS_FILE=""
 
+# yq compatibility: Python yq (v3) needs -r for raw output, mikefarah/yq (v4) does not
+YQ_RAW=""
+if yq --version 2>&1 | grep -qE "^yq [0-3]\.|jq"; then
+  YQ_RAW="-r"  # Python yq (jq wrapper)
+fi
+
+# Wrapper: yq_raw <expression> <file> — outputs raw strings (no JSON quotes)
+yq_raw() { yq $YQ_RAW "$1" "$2"; }
+
 # ============================================================================
 # 1. Utilities
 # ============================================================================
@@ -293,7 +302,7 @@ validate_g1_yaml() {
 
   # Check that at least one smith has session_keys
   local has_session_keys
-  has_session_keys=$(yq '[.smiths[].session_keys // empty] | length' "$yaml_file")
+  has_session_keys=$(yq '[.smiths[] | select(.session_keys)] | length' "$yaml_file")
   [ "$has_session_keys" -ge 1 ] || die "At least one smith must have session_keys in $yaml_file (the bootstrap smith)."
   ok "Bootstrap smith with session_keys found."
 
@@ -454,12 +463,12 @@ for entry in keys_list:
   # --- Session keys (checklist A4) — always regenerate ---
   # Find which smith currently has session_keys (the bootstrap smith)
   local bootstrap_smith
-  bootstrap_smith=$(yq -r '[.smiths | to_entries[] | select(.value.session_keys) | .key] | first // ""' "$yaml_file")
+  bootstrap_smith=$(yq_raw '.smiths | to_entries | map(select(.value.session_keys)) | .[0].key // ""' "$yaml_file")
 
   if [ -z "$bootstrap_smith" ]; then
     # No smith has session_keys yet — ask which one is the bootstrap
     local smith_list
-    smith_list=$(yq -r '.smiths | keys | .[]' "$yaml_file")
+    smith_list=$(yq_raw '.smiths | keys | .[]' "$yaml_file")
     echo ""
     info "Which smith is the bootstrap (first block producer)?"
     echo "$smith_list" | nl -ba
@@ -1513,11 +1522,11 @@ main() {
   echo ""
   echo -e "${BOLD}Initial smiths${NC}  (${yaml_file})${BOLD}:${NC}"
   local smith_names
-  smith_names=$(yq -r '.smiths | keys | .[]' "$yaml_file")
+  smith_names=$(yq_raw '.smiths | keys | .[]' "$yaml_file")
   local bootstrap_smith=""
   while IFS= read -r name; do
     local has_keys
-    has_keys=$(yq -r ".smiths.\"${name}\".session_keys // empty" "$yaml_file")
+    has_keys=$(yq_raw ".smiths.\"${name}\".session_keys // \"\"" "$yaml_file")
     if [ -n "$has_keys" ]; then
       echo -e "  - ${name} ${GREEN}(bootstrap)${NC}"
       bootstrap_smith="$name"
@@ -1531,7 +1540,7 @@ main() {
   echo ""
   echo -e "${BOLD}Technical committee${NC}  (${yaml_file})${BOLD}:${NC}"
   local tc_members
-  tc_members=$(yq -r '.technical_committee[]' "$yaml_file")
+  tc_members=$(yq_raw '.technical_committee[]' "$yaml_file")
   while IFS= read -r member; do
     echo "  - ${member}"
   done <<< "$tc_members"
