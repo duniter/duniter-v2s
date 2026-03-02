@@ -36,3 +36,7 @@ g1-dump.tgz
 node/specs/gdev-raw.json
 node/specs/gtest-raw.json
 node/specs/g1-raw.json
+
+# Launch script generated files
+deploy-bootstrap/
+launch-secrets-*.txt
