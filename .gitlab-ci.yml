@@ -216,6 +216,7 @@ toolchain_sync_check:
     - if: $CI_PIPELINE_SOURCE == "push"
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "api"
     - when: never
   script:
     - ./scripts/check_toolchain_sync.sh "$CI_UNIFIED_IMAGE"
@@ -226,12 +227,12 @@ sdk_resolve:
   needs:
     - job: toolchain_sync_check
       artifacts: false
-      optional: true
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_PIPELINE_SOURCE == "push"
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "api"
     - when: never
   script:
     - ./scripts/prepare_local_polkadot_sdk.sh Cargo.lock duniter-polkadot-sdk.git
@@ -251,10 +252,8 @@ sdk_resolve:
 .with_dependencies:
   needs:
     - job: toolchain_sync_check
-      optional: true
     - job: sdk_resolve
       artifacts: true
-      optional: true
 
 .env_arm:
   image: rust:1.88.0  # Pinned to match CI unified image Rust version
