@@ -1,8 +1,8 @@
-# duniter/duniter-v2s
+# duniter/duniter
 
 Duniter is the software that supports the [Ğ1 libre-currency blockchain](https://duniter.org/).
 
-[Duniter v2s](https://git.duniter.org/nodes/rust/duniter-v2s) is a complete rewrite of Duniter based on the Substrate / Polkadot framework. **This is alpha state work in progress.**
+[Duniter](https://git.duniter.org/nodes/rust/duniter-v2s) is a crypto-currency software based on the Polkadot SDK framework to operate the libre currency.
 
 ## Minimal docker-compose file for an mirror node
 
@@ -11,7 +11,7 @@ version: "3.5"
 
 services:
   duniter-mirror:
-    image: duniter/duniter-v2s-gdev:latest
+    image: duniter/duniter-gdev:latest
     restart: unless-stopped
     ports:
       # Prometheus endpoint
@@ -37,7 +37,7 @@ version: "3.5"
 
 services:
   duniter-validator:
-    image: duniter/duniter-v2s-gdev:latest
+    image: duniter/duniter-gdev:latest
     restart: unless-stopped
     ports:
       # Prometheus endpoint
@@ -61,7 +61,7 @@ volumes:
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `DUNITER_NODE_NAME`          | The node name. This name will appear on the Substrate telemetry server when telemetry is enabled.                                                                                                                                                                                                                                                    | Random name                                                                                 |
 | `DUNITER_CHAIN_NAME`         | The currency to process. "gdev" uses the embeded chainspec. A path allows to use a local json raw chainspec.                                                                                                                                                                                                                                         | `dev` (development mode)                                                                    |
-| `DUNITER_PUBLIC_ADDR`        | The libp2p public address base. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when the node is behind a reverse proxy with its ports not directly exposed.<br>Note: the `p2p/<peer_id>` part of the address shouldn't be set in this variable. It is automatically added by Duniter. | duniter-v2s guesses one from the node's IPv4 address.                                       |
+| `DUNITER_PUBLIC_ADDR`        | The libp2p public address base. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when the node is behind a reverse proxy with its ports not directly exposed.<br>Note: the `p2p/<peer_id>` part of the address shouldn't be set in this variable. It is automatically added by Duniter. | duniter guesses one from the node's IPv4 address.                                       |
 | `DUNITER_LISTEN_ADDR`        | The libp2p listen address. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when running a validator node behind a reverse proxy, to force the P2P end point in websocket mode with:<br> `DUNITER_LISTEN_ADDR=/ip4/0.0.0.0/tcp/30333/ws`                                                | Non validator node: `/ip4/0.0.0.0/tcp/30333/ws`<br>Validator node: `/ip4/0.0.0.0/tcp/30333` |
 | `DUNITER_RPC_CORS`           | Value of the polkadot `--rpc-cors` option.                                                                                                                                                                                                                                                                                                           | `all`                                                                                       |
 | `DUNITER_VALIDATOR`          | Boolean (`true` / `false`) to run the node in validator mode. Configure the polkadot options `--validator --rpc-methods Unsafe`.                                                                                                                                                                                                                     | `false`                                                                                     |
@@ -96,6 +96,6 @@ docker compose up -d
 To run duniter from the command line without the default configuration detailed in the "Environment variables" section use `--` as the first argument. For example:
 
 ```
-$ docker run --rm duniter/duniter-v2s-gdev:latest -- key generate
-$ docker run --rm duniter/duniter-v2s-gdev:latest -- --chain gdev ...
+$ docker run --rm duniter/duniter-gdev:latest -- key generate
+$ docker run --rm duniter/duniter-gdev:latest -- --chain gdev ...
 ```

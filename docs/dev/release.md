@@ -4,7 +4,7 @@ This document describes the steps required for the different releasing processes
 related to a Duniter based network:
 
 - **network** release (boostrap a new network)
-- **client** release (duniter-v2s binary on bootstrap or update)
+- **client** release (duniter binary on bootstrap or update)
 - **runtime** release (WASM runtime on bootstrap or update)
 
 ## Philosophy
@@ -97,7 +97,7 @@ every day at midnight.
 
 ## Client release
 
-A client release is required to distribute a new version of the `duniter-v2s`
+A client release is required to distribute a new version of the `duniter`
 binary. It will be released under three flavors:
 
 - DEB package for Debian (x86_64 and ARM64 architectures)
@@ -187,7 +187,7 @@ This command will:
 
 **Docker images:** The CI builds Docker images in parallel on ARM and x64
 runners, then creates a **single multi-arch manifest** (e.g.,
-`duniter/duniter-v2s-gtest:1100-0.12.0`) that works automatically on both
+`duniter/duniter-gtest:1100-2.0.0`) that works automatically on both
 architectures. The `DUNITERTEAM_PASSWD` variable must be set in the GitLab CI/CD
 variables.
 
@@ -242,7 +242,7 @@ Podman.
 
 **Note:** The `--arch` flag can be used to build for a specific architecture
 only (e.g., `--arch amd64`), which pushes an image with the architecture in the
-tag (e.g., `1100-0.12.0-amd64`). This is mainly for CI use or testing.
+tag (e.g., `1100-2.0.0-amd64`). This is mainly for CI use or testing.
 
 ## Runtime release
 

@@ -109,12 +109,12 @@ treasury_funder_pubkey: "2ny7..." # Clé publique v1 qui financera la trésoreri
 
 ### A6. Bumper la version client dans `node/Cargo.toml`
 
-**Pourquoi :** La version client identifie le binaire du nœud. Elle apparaît dans le tag Docker (`1000-<client_version>`) et le nom de la release GitLab. Pour le lancement Ğ1 v2, la version doit être `1.0.0`.
+**Pourquoi :** La version client identifie le binaire du nœud. Elle apparaît dans le tag Docker (`1100-<client_version>`) et le nom de la release GitLab. Pour le lancement Ğ1 v2, la version doit être `2.0.0` afin de pouvoir réutiliser le même nom de paquet Debian que pour Duniter v1.
 
 **Action :**
 
 1. Ouvrir `node/Cargo.toml`
-2. Modifier `version = "..."` en `version = "1.0.0"`
+2. Modifier `version = "..."` en `version = "2.0.0"`
 
 ---
 

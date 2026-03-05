@@ -1,4 +1,4 @@
-# How to build duniter-v2s for arm
+# How to build duniter for arm
 
 Cross-compile Duniter to arm (e.g. Raspberry Pi).
 
@@ -7,10 +7,10 @@ Cross-compile Duniter to arm (e.g. Raspberry Pi).
 1. Create a docker image that contains the build environment
 
 ```bash
-docker build -t duniter-v2s-arm-builder -f docker/cross-arm.Dockerfile .
+docker build -t duniter-arm-builder -f docker/cross-arm.Dockerfile .
 ```
 
-2. Use this docker image to cross-compile duniter-v2s for armv7
+2. Use this docker image to cross-compile duniter for armv7
 
 ```bash
 ./scripts/cross-build-arm.sh

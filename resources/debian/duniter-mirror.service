@@ -4,7 +4,7 @@ Description=Duniter mirror node.
 
 [Service]
 EnvironmentFile=/etc/duniter/env_file
-ExecStart=/usr/bin/duniter2 --chain ${DUNITER_CHAIN_NAME} --name ${DUNITER_NODE_NAME}_mirror --listen-addr ${DUNITER_LISTEN_ADDR} --rpc-cors ${DUNITER_RPC_CORS} --state-pruning ${DUNITER_PRUNING_PROFILE} --base-path ${BASE_PATH}
+ExecStart=/usr/bin/duniter --chain ${DUNITER_CHAIN_NAME} --name ${DUNITER_NODE_NAME}_mirror --listen-addr ${DUNITER_LISTEN_ADDR} --rpc-cors ${DUNITER_RPC_CORS} --state-pruning ${DUNITER_PRUNING_PROFILE} --base-path ${BASE_PATH}
 User=duniter
 Group=duniter
 Restart=always

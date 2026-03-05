@@ -157,7 +157,7 @@ detect_client_version() {
 derive_names() {
   NETWORK_TAG="${RUNTIME}-${SPEC_VERSION}"
   NETWORK_BRANCH="network/${NETWORK_TAG}"
-  DOCKER_IMAGE="duniter/duniter-v2s-${NETWORK_TAG}"
+  DOCKER_IMAGE="duniter/duniter-${NETWORK_TAG}"
   DOCKER_TAG="${SPEC_VERSION}-${CLIENT_VERSION}"
   CLIENT_MILESTONE="client-${CLIENT_VERSION}"
 

@@ -1,11 +1,11 @@
 # This is a minimal docker-compose.yml template for running a Duniter mirror node
 # For more detailed examples, look at docker/compose folder
 services:
-  duniter-v2s-mirror:
-    container_name: duniter-v2s-mirror
+  duniter-mirror:
+    container_name: duniter-mirror
     # the image tells which network you are connecting to
     # here it is gdev network
-    image: duniter/duniter-v2s-gdev-800:latest
+    image: duniter/duniter-gdev-800:latest
     ports:
       # prometheus telemetry to monitor resource use
       - 9615:9615
