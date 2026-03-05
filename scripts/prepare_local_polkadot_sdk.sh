@@ -69,6 +69,10 @@ git -C "$MIRROR_DIR" remote add origin "$SDK_URL"
 git -C "$MIRROR_DIR" fetch --depth 1 origin "$SDK_BRANCH"
 BRANCH_HEAD_COMMIT="$(git -C "$MIRROR_DIR" rev-parse FETCH_HEAD)"
 
+# Make the bare mirror directly cloneable by setting a local branch + HEAD.
+git -C "$MIRROR_DIR" update-ref "refs/heads/${SDK_BRANCH}" "$BRANCH_HEAD_COMMIT"
+git -C "$MIRROR_DIR" symbolic-ref HEAD "refs/heads/${SDK_BRANCH}"
+
 if [[ "$SDK_COMMIT" != "$BRANCH_HEAD_COMMIT" ]]; then
   echo "Cargo.lock uses SDK commit $SDK_COMMIT, but branch '$SDK_BRANCH' tip is $BRANCH_HEAD_COMMIT." >&2
   echo "Update Cargo.lock to the latest branch commit before running CI." >&2
