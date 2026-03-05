@@ -22,6 +22,9 @@ default = ["std"]
 metadata-hash = ["substrate-wasm-builder/metadata-hash"]
 constant-fees = ["common-runtime/constant-fees"]
 runtime-benchmarks = [
+	"dep:frame-benchmarking",
+	"dep:frame-system-benchmarking",
+	"dep:pallet-session-benchmarking",
 	"common-runtime/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
@@ -62,13 +65,13 @@ runtime-benchmarks = [
 std = [
 	"codec/std",
 	"common-runtime/std",
-	"frame-benchmarking/std",
+	"frame-benchmarking?/std",
 	"frame-executive/std",
 	"frame-support/std",
-	"frame-system-benchmarking/std",
+	"frame-system-benchmarking?/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
-	"frame-try-runtime/std",
+	"frame-try-runtime?/std",
 	"log/std",
 	"node-primitives/std",
 	"pallet-atomic-swap/std",
@@ -94,7 +97,7 @@ std = [
 	"pallet-proxy/std",
 	"pallet-quota/std",
 	"pallet-scheduler/std",
-	"pallet-session-benchmarking/std",
+	"pallet-session-benchmarking?/std",
 	"pallet-session/std",
 	"pallet-smith-members/std",
 	"pallet-sudo/std",
@@ -157,7 +160,7 @@ try-runtime = [
 	"pallet-proxy/try-runtime",
 	"pallet-quota/try-runtime",
 	"pallet-scheduler/try-runtime",
-	"pallet-session-benchmarking/try-runtime",
+	"pallet-session-benchmarking?/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-smith-members/try-runtime",
 	"pallet-sudo/try-runtime",
@@ -189,7 +192,7 @@ frame-system-rpc-runtime-api = { workspace = true }
 frame-try-runtime = { workspace = true, optional = true }
 frame-metadata-hash-extension = { workspace = true }
 hex-literal = { workspace = true, optional = true }
-pallet-session-benchmarking = { workspace = true }
+pallet-session-benchmarking = { workspace = true, optional = true }
 log = { workspace = true }
 pallet-atomic-swap = { workspace = true }
 pallet-authority-discovery = { workspace = true }
@@ -200,8 +203,8 @@ pallet-balances = { workspace = true }
 pallet-certification = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-distance = { workspace = true }
-frame-benchmarking = { workspace = true }
-frame-system-benchmarking = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
+frame-system-benchmarking = { workspace = true, optional = true }
 pallet-duniter-account = { workspace = true }
 pallet-duniter-wot = { workspace = true }
 pallet-grandpa = { workspace = true }

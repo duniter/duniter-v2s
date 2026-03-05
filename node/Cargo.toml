@@ -20,26 +20,28 @@ path = "src/main.rs"
 
 [features]
 default = ["distance-oracle", "gdev"]
-gdev = ["distance-oracle?/gdev", "gdev-runtime", "std"]
-gtest = ["distance-oracle?/gtest", "gtest-runtime", "std"]
-g1 = ["distance-oracle?/g1", "g1-runtime", "std"]
+gdev = ["distance-oracle?/gdev", "gdev-runtime", "gdev-runtime/std", "std"]
+gtest = ["distance-oracle?/gtest", "gtest-runtime", "gtest-runtime/std", "std"]
+g1 = ["distance-oracle?/g1", "g1-runtime", "g1-runtime/std", "std"]
 constant-fees = [
 	"common-runtime/constant-fees",
-	"g1-runtime/constant-fees",
-	"gdev-runtime/constant-fees",
-	"gtest-runtime/constant-fees",
+	"g1-runtime?/constant-fees",
+	"gdev-runtime?/constant-fees",
+	"gtest-runtime?/constant-fees",
 ]
 embed = []
 native = []
 runtime-benchmarks = [
+	"dep:frame-benchmarking",
+	"dep:frame-benchmarking-cli",
 	"common-runtime/runtime-benchmarks",
 	"dc-distance?/runtime-benchmarks",
 	"frame-benchmarking-cli/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"g1-runtime/runtime-benchmarks",
-	"gdev-runtime/runtime-benchmarks",
-	"gtest-runtime/runtime-benchmarks",
+	"g1-runtime?/runtime-benchmarks",
+	"gdev-runtime?/runtime-benchmarks",
+	"gtest-runtime?/runtime-benchmarks",
 	"pallet-grandpa/runtime-benchmarks",
 	"pallet-oneshot-account/runtime-benchmarks",
 	"pallet-im-online/runtime-benchmarks",
@@ -55,9 +57,9 @@ try-runtime = [
 	"dc-distance?/try-runtime",
 	"distance-oracle?/try-runtime",
 	"frame-system/try-runtime",
-	"g1-runtime/try-runtime",
-	"gdev-runtime/try-runtime",
-	"gtest-runtime/try-runtime",
+	"g1-runtime?/try-runtime",
+	"gdev-runtime?/try-runtime",
+	"gtest-runtime?/try-runtime",
 	"pallet-grandpa/try-runtime",
 	"pallet-oneshot-account/try-runtime",
 	"pallet-im-online/try-runtime",
@@ -72,12 +74,9 @@ std = [
 	"common-runtime/std",
 	"dc-distance/std",
 	"distance-oracle?/std",
-	"frame-benchmarking/std",
+	"frame-benchmarking?/std",
 	"frame-system/std",
 	"futures/std",
-	"g1-runtime/std",
-	"gdev-runtime/std",
-	"gtest-runtime/std",
 	"hex/std",
 	"log/std",
 	"num-format/std",
@@ -117,8 +116,8 @@ async-io = { workspace = true }
 bs58 = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 clap_complete = { workspace = true }
-frame-benchmarking = { workspace = true }
-frame-benchmarking-cli = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
+frame-benchmarking-cli = { workspace = true, optional = true }
 frame-system = { workspace = true }
 frame-metadata-hash-extension = { workspace = true, default-features = true }
 futures = { workspace = true, features = ["compat"] }

@@ -413,11 +413,9 @@ pub fn run() -> sc_cli::Result<()> {
             }
         }
         #[cfg(not(feature = "runtime-benchmarks"))]
-        Some(Subcommand::Benchmark(_cmd)) => {
-            Err("Benchmark wasn't enabled when building the node. \
+        Some(Subcommand::Benchmark) => Err("Benchmark wasn't enabled when building the node. \
             You can enable it with `--features runtime-benchmarks`."
-                .into())
-        }
+            .into()),
         None => {
             let runner = cli.create_runner(&cli.run)?;
             let duniter_options: DuniterConfigExtension = cli.duniter_options;

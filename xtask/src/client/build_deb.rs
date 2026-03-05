@@ -51,10 +51,10 @@ pub fn build_deb(network: String) -> Result<()> {
 
     // Étape 2: Construire le binaire avec les features appropriées
     println!("🔨 Construction du binaire...");
-    let features = format!("--features {runtime},embed --no-default-features");
+    let features = format!("--features {runtime},embed,distance-oracle --no-default-features");
     let mut build_cmd = Command::new("cargo");
     apply_vendor_config_if_present(&mut build_cmd)
-        .args(["build", "--release"])
+        .args(["build", "--release", "-p", "duniter"])
         .args(features.split_whitespace());
     exec_should_success(&mut build_cmd)?;
 
