@@ -80,7 +80,7 @@ RUN if [ "$cucumber" != 0 ] && [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then \
 FROM target
 
 LABEL maintainer="Gilles Filippini <gilles.filippini@pini.fr>"
-LABEL version="0.0.0"
+LABEL version="2.0.0"
 LABEL description="Crypto-currency software (based on Polkadot SDK framework) to operate Ğ1 libre currency"
 
 # Required certificates for RPC connections

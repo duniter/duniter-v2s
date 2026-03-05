@@ -34,11 +34,11 @@ export DUNITERTEAM_PASSWD="..."  # Docker Hub org duniter
 
 ```bash
 git checkout master && git pull
-git checkout -b network/g1-1000
+git checkout -b network/g1-1100
 rm -rf release/*
 ```
 
-Vérifier `spec_version: 1000` dans `runtime/g1/src/lib.rs` et vérifier que la **version client** dans `node/Cargo.toml` a bien été bumpée (checklist A6, ex : `version = "1.0.0"`). Cette version client est distincte du `spec_version` runtime : elle identifie le binaire du nœud et apparaît dans le tag Docker (`1000-<client_version>`) et le nom de la release GitLab.
+Vérifier `spec_version: 1100` dans `runtime/g1/src/lib.rs` et vérifier que la **version client** dans `node/Cargo.toml` a bien été bumpée (checklist A6, ex : `version = "2.0.0"`). Cette version client est distincte du `spec_version` runtime : elle identifie le binaire du nœud et apparaît dans le tag Docker (`1100-<client_version>`) et le nom de la release GitLab.
 
 Vérifier que les fichiers modifiés par la checklist (section « En amont du jour J ») sont bien présents :
 
@@ -49,8 +49,8 @@ Vérifier que les fichiers modifiés par la checklist (section « En amont du jo
 ```bash
 # Committer les changements et pousser la branche
 git add resources/g1.yaml node/specs/g1_client-specs.yaml runtime/g1/src/lib.rs node/Cargo.toml
-git commit -m "chore(g1): configure network/g1-1000"
-git push -u origin network/g1-1000
+git commit -m "chore(g1): configure network/g1-1100"
+git push -u origin network/g1-1100
 ```
 
 > **Important :** La branche doit exister sur GitLab **avant** l'étape 5, car la release réseau crée un tag à partir de cette branche. La CI déclenchée à l'étape 6 compilera également le code depuis cette branche.
@@ -107,7 +107,7 @@ Résultat : `release/network/g1.json`
 ### Étape 5 — Release réseau GitLab
 
 ```bash
-cargo xtask release network create g1-1000 network/g1-1000
+cargo xtask release network create g1-1100 network/g1-1100
 ```
 
 <details><summary>Assets uploadés</summary>
@@ -120,16 +120,16 @@ genesis.json, g1.json, g1.yaml, WASM, block_hist.json.gz, cert_hist.json.gz, tx_
 Créer le jalon GitLab **avant** de lancer la release :
 
 1. Ouvrir https://git.duniter.org/nodes/rust/duniter-v2s/-/milestones/new
-2. Titre : `client-<version>` (ex : `client-1.0.0`, la version est dans `node/Cargo.toml`)
+2. Titre : `client-<version>` (ex : `client-2.0.0`, la version est dans `node/Cargo.toml`)
 3. Cliquer "Create milestone"
 
 ```bash
-cargo xtask release client build-raw-specs g1-1000
-cargo xtask release client create g1-1000 network/g1-1000
-cargo xtask release client trigger-builds g1-1000 network/g1-1000
+cargo xtask release client build-raw-specs g1-1100
+cargo xtask release client create g1-1100 network/g1-1100
+cargo xtask release client trigger-builds g1-1100 network/g1-1100
 ```
 
-Image Docker résultante : `duniter/duniter-v2s-g1-1000:1000-<client_version>`
+Image Docker résultante : `duniter/duniter-g1-1100:1100-<client_version>`
 
 <details><summary>Rôle de chaque commande</summary>
 
@@ -144,7 +144,7 @@ Image Docker résultante : `duniter/duniter-v2s-g1-1000:1000-<client_version>`
 # docker-compose.yml sur le serveur bootstrap
 services:
   duniter-g1-smith:
-    image: duniter/duniter-v2s-g1-1000:1000-1.0.0
+    image: duniter/duniter-g1-1100:1100-2.0.0
     restart: unless-stopped
     ports:
       - 127.0.0.1:9944:9944   # RPC local uniquement !
@@ -161,7 +161,7 @@ services:
       - ./node.key:/var/lib/duniter/node.key:ro  # clé réseau générée en A3
 
   distance-oracle:
-    image: duniter/duniter-v2s-g1-1000:1000-1.0.0
+    image: duniter/duniter-g1-1100:1100-2.0.0
     restart: unless-stopped
     entrypoint: docker-distance-entrypoint
     environment:
@@ -206,8 +206,8 @@ Si vous préférez ne pas utiliser Docker, vous pouvez compiler le binaire et la
 **1. Récupérer la branche réseau et le rawspec :**
 
 ```bash
-git fetch origin network/g1-1000:network/g1-1000
-git checkout network/g1-1000
+git fetch origin network/g1-1100:network/g1-1100
+git checkout network/g1-1100
 
 # Télécharger le rawspec depuis la page des releases GitLab
 # URL disponible sur https://git.duniter.org/nodes/rust/duniter-v2s/-/releases
@@ -328,7 +328,7 @@ Ne pas oublier de lancer l'oracle de distance en parallèle (voir étape 7).
 ```yaml
 services:
   duniter-g1-mirror:
-    image: duniter/duniter-v2s-g1-1000:1000-1.0.0
+    image: duniter/duniter-g1-1100:1100-2.0.0
     ports: ["9944:9944", "30333:30333"]
     environment:
       DUNITER_NODE_NAME: g1-mirror
@@ -381,14 +381,14 @@ Même procédure de build que l'étape 7 (section « depuis les sources »). Un 
 > **Prérequis :** Un noeud miroir avec RPC public (étape 10) doit être accessible, car le pipeline squid récupère les métadonnées substrate depuis le endpoint RPC configuré (ex : `wss://g1.p2p.legal/ws`).
 
 ```bash
-cargo xtask release squid trigger-builds g1-1000
+cargo xtask release squid trigger-builds g1-1100
 
 # Ou avec un noeud RPC spécifique (surcharge le défaut wss://g1.p2p.legal/ws) :
-cargo xtask release squid trigger-builds g1-1000 --rpc-url wss://g1-rpc.mon-serveur.fr/ws
+cargo xtask release squid trigger-builds g1-1100 --rpc-url wss://g1-rpc.mon-serveur.fr/ws
 ```
 
 Cette commande déclenche le pipeline CI du projet [duniter-squid](https://git.duniter.org/nodes/duniter-squid) qui :
-1. Télécharge les données genesis depuis la release `g1-1000`
+1. Télécharge les données genesis depuis la release `g1-1100`
 2. Génère le fichier `genesis.json` et récupère les métadonnées substrate depuis le RPC (défaut par réseau, ou `--rpc-url`)
 3. Build et push trois images Docker multi-arch (amd64+arm64) sur Docker Hub :
    - `duniter/squid-app-g1:<squid-version>` — processeur squid (indexeur blockchain)
@@ -400,10 +400,10 @@ La version des images est celle du `package.json` du projet duniter-squid (ex : 
 <details><summary>Prérequis et variantes</summary>
 
 - La variable `DOCKERHUB_TOKEN` doit être configurée dans les CI/CD variables du projet duniter-squid sur GitLab
-- La variable `RELEASE_TAG` doit être configurée dans les CI/CD variables du projet duniter-squid (ex : `g1-1000`) pour le flow par push de tag. Le xtask la transmet automatiquement lors du déclenchement par API.
+- La variable `RELEASE_TAG` doit être configurée dans les CI/CD variables du projet duniter-squid (ex : `g1-1100`) pour le flow par push de tag. Le xtask la transmet automatiquement lors du déclenchement par API.
 - Le `GITLAB_TOKEN` local doit avoir accès au projet `nodes/duniter-squid`
 
-Pour builder depuis une branche spécifique du squid : `cargo xtask release squid trigger-builds g1-1000 --branch my-branch`
+Pour builder depuis une branche spécifique du squid : `cargo xtask release squid trigger-builds g1-1100 --branch my-branch`
 
 Pour utiliser un noeud RPC différent du défaut : `--rpc-url wss://mon-noeud.example.com/ws`. En déclenchement manuel depuis GitLab, ajouter la variable `RPC_URL` sur le job `prepare`.
 

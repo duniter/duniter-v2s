@@ -4,7 +4,7 @@ Description=Duniter smith node.
 
 [Service]
 EnvironmentFile=/etc/duniter/env_file
-ExecStart=/usr/bin/duniter2 --chain ${DUNITER_CHAIN_NAME} --name ${DUNITER_NODE_NAME}_smith --listen-addr ${DUNITER_LISTEN_ADDR} --rpc-cors ${DUNITER_RPC_CORS} --state-pruning ${DUNITER_PRUNING_PROFILE} --base-path ${BASE_PATH} --rpc-methods Unsafe --validator
+ExecStart=/usr/bin/duniter --chain ${DUNITER_CHAIN_NAME} --name ${DUNITER_NODE_NAME}_smith --listen-addr ${DUNITER_LISTEN_ADDR} --rpc-cors ${DUNITER_RPC_CORS} --state-pruning ${DUNITER_PRUNING_PROFILE} --base-path ${BASE_PATH} --rpc-methods Unsafe --validator
 User=duniter
 Group=duniter
 Restart=always

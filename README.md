@@ -62,7 +62,7 @@ The easiest way is to use the docker image.
 Minimal command to deploy a temporary mirror peer:
 
 ```docker
-docker run -it -p9944:9944 -e DUNITER_CHAIN_NAME=gdev duniter/duniter-v2s-gdev-800:latest
+docker run -it -p9944:9944 -e DUNITER_CHAIN_NAME=gdev duniter/duniter-gdev-800:latest
 ```
 
 To go further, read [How to deploy a permanent mirror node on ĞDev network 🔗](https://duniter.org/wiki/duniter-v2/#run-a-mirror-node).
@@ -72,7 +72,7 @@ To go further, read [How to deploy a permanent mirror node on ĞDev network 🔗
 It can be useful to deploy your local blockchain, for instance to have a controlled environment to develop/test an application that interacts with the blockchain.
 
 ```docker
-docker run -it -p9944:9944 duniter/duniter-v2s-gdev-800:latest
+docker run -it -p9944:9944 duniter/duniter-gdev-800:latest
 ```
 
 Or use the [`docker-compose.yml`](./docker-compose.yml) at the root of this repository.

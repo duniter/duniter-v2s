@@ -77,7 +77,7 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
         format!("{runtime_version}-{client_version}")
     };
 
-    let image_name = format!("duniter/duniter-v2s-{network}");
+    let image_name = format!("duniter/duniter-{network}");
     let manifest = format!("localhost/manifest-{image_name}:{docker_tag}");
 
     println!("🏷️  Tag Docker: {docker_tag}");
