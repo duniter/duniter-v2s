@@ -163,7 +163,7 @@ release_docker_manifest:
       # Get runtime version from runtime/$RUNTIME/src/lib.rs
       RUNTIME_VERSION=$(grep 'spec_version:' runtime/$RUNTIME/src/lib.rs | sed 's/.*spec_version: \([0-9]*\).*/\1/')
 
-      IMAGE_NAME="duniter/duniter-${NETWORK}"
+      IMAGE_NAME="duniter/duniter-fake-${NETWORK}"
       TAG="${RUNTIME_VERSION}-${CLIENT_VERSION}"
 
       echo "Creating multi-arch manifest for ${IMAGE_NAME}:${TAG}"
