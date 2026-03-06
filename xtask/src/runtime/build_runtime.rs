@@ -53,19 +53,40 @@ pub fn build_runtime(runtime: String) -> Result<()> {
     let current_dir = std::env::current_dir()?;
     let work_dir = current_dir;
 
-    // Préparer les arguments Docker pour srtool
+    // Récupérer l'UID:GID de l'utilisateur hôte
+    let uid_output = Command::new("id").arg("-u").output()?;
+    let gid_output = Command::new("id").arg("-g").output()?;
+    let host_uid = String::from_utf8_lossy(&uid_output.stdout)
+        .trim()
+        .to_string();
+    let host_gid = String::from_utf8_lossy(&gid_output.stdout)
+        .trim()
+        .to_string();
+
+    // Préparer les arguments Docker pour srtool.
+    // On exécute directement le conteneur avec l'UID/GID hôte pour éviter les
+    // fichiers root sur le volume monté. Le groupe builder (1001) est ajouté
+    // pour conserver l'accès en lecture à la toolchain préinstallée dans /home/builder.
     let script_content = format!(
         r#"
         set -e
+        export HOME=/home/builder
         echo "🚀 Démarrage de srtool..."
         echo "📁 Répertoire de travail: /build"
         echo "🔧 Runtime: {runtime}"
         echo "📄 Sortie: {srtool_output}"
+        if [ ! -d /build ] || [ ! -r /build ]; then
+            echo "❌ Erreur: le répertoire /build n est pas accessible dans le conteneur."
+            echo "   Vérifiez les permissions de votre répertoire projet :"
+            echo "   - SELinux actif ? Essayez : sudo chcon -Rt svirt_sandbox_file_t $(pwd)"
+            echo "   - Permissions trop restrictives ? Essayez : chmod o+rx $(pwd)"
+            echo "   - Utilisez-vous Podman ? Ajoutez --security-opt label=disable"
+            ls -la / | grep build || true
+            exit 1
+        fi
         cd /build
-        # Construire le runtime avec srtool
         echo "🔨 Construction du runtime avec srtool..."
         /srtool/build --app --json -cM | tee -a {srtool_output}
-        # Déplacer le fichier WASM généré
         echo "📦 Déplacement du fichier WASM..."
         mv /build/runtime/{runtime}/target/srtool/release/wbuild/{runtime}-runtime/{runtime}_runtime.compact.compressed.wasm /build/release/
         echo "✅ Construction du runtime terminée!"
@@ -82,7 +103,11 @@ pub fn build_runtime(runtime: String) -> Result<()> {
         eprintln!("   Pour un build plus rapide, utilisez une machine Linux x86_64.");
     }
 
-    let build_volume = format!("{}:/build", work_dir.to_string_lossy());
+    // Ajouter :z pour la compatibilité SELinux (Fedora, RHEL, CentOS…)
+    // Inoffensif sur les systèmes sans SELinux (macOS, Ubuntu, etc.)
+    let build_volume = format!("{}:/build:z", work_dir.to_string_lossy());
+    let builder_gid = std::env::var("SRTOOL_BUILDER_GID").unwrap_or_else(|_| "1001".to_string());
+    let user_mapping = format!("{host_uid}:{host_gid}");
     let package = format!("PACKAGE={runtime}-runtime");
     let runtime_dir = format!("RUNTIME_DIR=runtime/{runtime}");
     let mut docker_args = vec!["run", "--rm"];
@@ -91,6 +116,10 @@ pub fn build_runtime(runtime: String) -> Result<()> {
         docker_args.extend_from_slice(&["--platform", "linux/amd64"]);
     }
     docker_args.extend_from_slice(&[
+        "-u",
+        user_mapping.as_str(),
+        "--group-add",
+        builder_gid.as_str(),
         "-v",
         &build_volume,
         "-e",
