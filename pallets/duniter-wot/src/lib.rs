@@ -270,11 +270,11 @@ where
 impl<T: Config> pallet_identity::traits::OnNewIdty<T> for Pallet<T> {
     /// This implementation adds a certificate when a new identity is created.
     fn on_created(idty_index: &IdtyIndex, creator: &IdtyIndex) {
-        if let Err(e) =
+        if let Err(_e) =
             <pallet_certification::Pallet<T>>::do_add_cert_checked(*creator, *idty_index, true)
         {
             #[cfg(feature = "std")]
-            println!("fail to force add cert: {e:?}")
+            println!("fail to force add cert: {_e:?}")
         }
     }
 }

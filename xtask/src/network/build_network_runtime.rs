@@ -116,6 +116,45 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
         &script_content,
     ]);
 
+    // Fixer les permissions du répertoire srtool target si existant
+    // (un précédent run Docker peut avoir créé des fichiers avec un UID différent)
+    let srtool_target = format!("runtime/{runtime}/target/srtool");
+    if current_dir.join(&srtool_target).exists() {
+        println!("🔧 Correction des permissions du cache srtool...");
+        let chown_status = Command::new("docker")
+            .args([
+                "run",
+                "--rm",
+                "-u",
+                "0:0",
+                "-v",
+                &build_volume,
+                "paritytech/srtool:1.88.0",
+                "chown",
+                "-R",
+                &user_mapping,
+                &format!("/build/{srtool_target}"),
+            ])
+            .status()?;
+        if !chown_status.success() {
+            eprintln!("⚠️  Impossible de corriger les permissions, nettoyage du cache...");
+            let _ = Command::new("docker")
+                .args([
+                    "run",
+                    "--rm",
+                    "-u",
+                    "0:0",
+                    "-v",
+                    &build_volume,
+                    "paritytech/srtool:1.88.0",
+                    "rm",
+                    "-rf",
+                    &format!("/build/{srtool_target}"),
+                ])
+                .status();
+        }
+    }
+
     println!("🐳 Lancement du conteneur srtool...");
     let mut docker_cmd = Command::new("docker");
     docker_cmd.args(&docker_args);
