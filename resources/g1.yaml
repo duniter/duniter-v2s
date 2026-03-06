@@ -60,7 +60,7 @@ smiths:
     name: "poka"
     certs_received: ["moul", "HugoTrentesaux", "tuxmain"]
     # This smith will be the first author
-    session_keys: "0xa5558f52a8ed117e03a00e5551232d9fa0c67ec494865f721875dcd9bd0cc56f80986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b91180986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b91180986d7c833775845974a2e25d5f6b3e5a3d28ae1062f239e086cced6c31b911"
+    session_keys: "0xa04843ba2b8b28ce73d7be45fd36229e05df58a50d66516301d10abcffa69f97066b91db7cf72609add48ffd46d79214ad290a2f8b230fcff0039f831bdefa0f066b91db7cf72609add48ffd46d79214ad290a2f8b230fcff0039f831bdefa0f066b91db7cf72609add48ffd46d79214ad290a2f8b230fcff0039f831bdefa0f"
 
 # The address which will automatically transfer 1,00 Ğ1 on Genesis to the Treasury
 treasury_funder_pubkey: "2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ"
