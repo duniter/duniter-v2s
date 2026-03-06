@@ -24,10 +24,8 @@ default:
 .release_rules:
   stage: release
   rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - if: $CI_COMMIT_BRANCH =~ /^network\//
-      when: manual
+    - if: '$CI_COMMIT_TAG =~ /^[a-zA-Z0-9]+-[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$/ && $CI_COMMIT_REF_PROTECTED == "true"'
+      when: on_success
     - when: never
 
 .debian_build_template:
@@ -44,7 +42,8 @@ default:
     # Install build dependencies (curl needed to download raw spec from GitLab release)
     - apt-get update -qq && apt-get install -y -qq protobuf-compiler clang libclang-dev curl
   script:
-    - ./scripts/cargo_with_vendor.sh xtask client-build-deb $NETWORK
+    - source scripts/parse_release_tag.sh
+    - ./scripts/cargo_with_vendor.sh xtask client-build-deb "$NETWORK"
 
 .rpm_build_template:
   extends:
@@ -60,7 +59,8 @@ default:
     # Install RPM build tools and dependencies (curl needed to download raw spec from GitLab release)
     - apt-get update -qq && apt-get install -y -qq rpm protobuf-compiler clang libclang-dev curl
   script:
-    - ./scripts/cargo_with_vendor.sh xtask client-build-rpm $NETWORK
+    - source scripts/parse_release_tag.sh
+    - ./scripts/cargo_with_vendor.sh xtask client-build-rpm "$NETWORK"
 
 .docker_deploy_template:
   extends:
@@ -82,7 +82,8 @@ default:
     - source $HOME/.cargo/env
     - docker info
   script:
-    - ./scripts/cargo_with_vendor.sh xtask client-docker-deploy $NETWORK --arch $ARCH
+    - source scripts/parse_release_tag.sh
+    - ./scripts/cargo_with_vendor.sh xtask client-docker-deploy "$NETWORK" --arch "$ARCH"
 
 # Release build jobs
 release_debian_arm:
@@ -133,12 +134,7 @@ release_docker_x64:
 
 release_docker_manifest:
   stage: release
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - if: $CI_COMMIT_BRANCH =~ /^network\//
-      when: on_success  # Auto-start when dependencies succeed
-    - when: never
+  extends: .release_rules
   needs:
     - job: release_docker_arm
       optional: false
@@ -152,13 +148,11 @@ release_docker_manifest:
   before_script:
     - apk add --no-cache bash grep sed
   script:
+    - source scripts/parse_release_tag.sh
     - docker login -u duniterteam -p $DUNITERTEAM_PASSWD docker.io
     - |
       # Extract runtime from NETWORK (e.g., gtest-1100 -> gtest)
       RUNTIME=$(echo $NETWORK | sed 's/-[0-9].*//')
-
-      # Get client version from node/Cargo.toml
-      CLIENT_VERSION=$(grep '^version = ' node/Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
 
       # Get runtime version from runtime/$RUNTIME/src/lib.rs
       RUNTIME_VERSION=$(grep 'spec_version:' runtime/$RUNTIME/src/lib.rs | sed 's/.*spec_version: \([0-9]*\).*/\1/')
@@ -189,6 +183,10 @@ workflow:
   auto_cancel:
     on_new_commit: interruptible
   rules:
+    - if: '$CI_COMMIT_TAG =~ /^[a-zA-Z0-9]+-[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$/ && $CI_COMMIT_REF_PROTECTED == "true"'
+      when: always
+    - if: '$CI_COMMIT_TAG =~ /^[a-zA-Z0-9]+-[0-9]+$/'
+      when: never
     - changes:
         - docker/Dockerfile
         - end2end-tests/**/*
@@ -234,13 +232,17 @@ generate_metadata:
       when: on_success
     - if: '$CI_MERGE_REQUEST_ID'
       when: on_success
-    - if: '$CI_COMMIT_TAG != "" && $CI_COMMIT_REF_PROTECTED == "true"'
+    - if: '$CI_COMMIT_TAG =~ /^[a-zA-Z0-9]+-[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$/ && $CI_COMMIT_REF_PROTECTED == "true"'
       when: on_success
     - when: never
   script:
     - if ! command -v subxt >/dev/null 2>&1; then cargo install subxt-cli; fi
     - |
       if [[ "$CI_COMMIT_TAG" != "" && "$CI_COMMIT_REF_PROTECTED" == "true" ]]; then
+        if ! printf '%s\n' "$CI_COMMIT_TAG" | grep -Eq '^[a-zA-Z0-9]+-[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$'; then
+          echo "Invalid release tag '${CI_COMMIT_TAG}' (expected SPEC_NAME-SPEC_VERSION-BINARY_VERSION, e.g. g1-1200-2.0.0)"
+          exit 1
+        fi
         METADATA_CHAINS="g1 gtest"
       else
         METADATA_CHAINS="gdev gtest"
@@ -387,8 +389,6 @@ gtest_build:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
     - if: $CI_COMMIT_TAG
-      when: never
-    - if: $CI_COMMIT_BRANCH =~ /^runtime\//
       when: never
     - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
     - when: manual
