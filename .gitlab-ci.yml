@@ -34,6 +34,12 @@ default:
   extends:
     - .release_rules
     - .with_dependencies
+  needs:
+    - job: toolchain_sync_check
+    - job: sdk_resolve
+      artifacts: true
+    - job: generate_metadata
+      artifacts: true
   before_script:
     # Install build dependencies (curl needed to download raw spec from GitLab release)
     - apt-get update -qq && apt-get install -y -qq protobuf-compiler clang libclang-dev curl
@@ -44,6 +50,12 @@ default:
   extends:
     - .release_rules
     - .with_dependencies
+  needs:
+    - job: toolchain_sync_check
+    - job: sdk_resolve
+      artifacts: true
+    - job: generate_metadata
+      artifacts: true
   before_script:
     # Install RPM build tools and dependencies (curl needed to download raw spec from GitLab release)
     - apt-get update -qq && apt-get install -y -qq rpm protobuf-compiler clang libclang-dev curl
@@ -57,7 +69,7 @@ default:
     - job: toolchain_sync_check
     - job: sdk_resolve
       artifacts: true
-    - job: generate_metadata_release
+    - job: generate_metadata
       artifacts: true
   image: docker:latest
   variables:
@@ -218,41 +230,27 @@ generate_metadata:
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
-    - if: $CI_COMMIT_TAG
-      when: never
-    - if: '$CI_COMMIT_BRANCH =~ /^network\//'
-      when: never
-    - if: '$CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == "master"'
-    - when: manual
-  script:
-    - if ! command -v subxt >/dev/null 2>&1; then cargo install subxt-cli; fi
-    - METADATA_CHAINS="gdev gtest" ./scripts/generate_all_metadata.sh
-  artifacts:
-    when: always
-    expire_in: 1 day
-    paths:
-      - resources/gtest_metadata.scale
-      - resources/gdev_metadata.scale
-
-generate_metadata_release:
-  extends:
-    - .env
-    - .with_dependencies
-  stage: metadata
-  rules:
-    - if: '$CI_COMMIT_BRANCH =~ /^network\//'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: on_success
+    - if: '$CI_MERGE_REQUEST_ID'
+      when: on_success
+    - if: '$CI_COMMIT_TAG != "" && $CI_COMMIT_REF_PROTECTED == "true"'
       when: on_success
     - when: never
   script:
     - if ! command -v subxt >/dev/null 2>&1; then cargo install subxt-cli; fi
-    - METADATA_CHAINS="g1 gtest gdev" ./scripts/generate_all_metadata.sh
+    - |
+      if [[ "$CI_COMMIT_TAG" != "" && "$CI_COMMIT_REF_PROTECTED" == "true" ]]; then
+        METADATA_CHAINS="g1 gtest"
+      else
+        METADATA_CHAINS="gdev gtest"
+      fi
+      METADATA_CHAINS="$METADATA_CHAINS" ./scripts/generate_all_metadata.sh
   artifacts:
     when: always
     expire_in: 1 week
     paths:
-      - resources/g1_metadata.scale
-      - resources/gtest_metadata.scale
-      - resources/gdev_metadata.scale
+      - resources/*_metadata.scale
 
 toolchain_sync_check:
   extends: .env
@@ -324,6 +322,8 @@ fmt_and_clippy:
       when: manual
     - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH == "master"'
       when: never
+    - if: '$CI_COMMIT_TAG != "" && $CI_COMMIT_REF_PROTECTED == "true"'
+      when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: always
     - when: manual
@@ -394,6 +394,12 @@ gtest_build:
     - when: manual
   variables:
     DEBIAN_FRONTEND: noninteractive
+  needs:
+    - job: toolchain_sync_check
+    - job: sdk_resolve
+      artifacts: true
+    - job: generate_metadata
+      artifacts: true
   script:
     - ./scripts/cargo_with_vendor.sh build --no-default-features --features gtest -p duniter
 
@@ -408,10 +414,6 @@ gtest_build:
       artifacts: true
     - job: generate_metadata
       artifacts: true
-      optional: true
-    - job: generate_metadata_release
-      artifacts: true
-      optional: true
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
