@@ -3,7 +3,7 @@ id: "g1"
 chainType: "Live"
 protocolId: "g1"
 bootNodes:
-  - "/dns/g1-bootstrap.p2p.legal/tcp/30333/p2p/12D3KooWQBohS4ecS9R47tQxF8rzS5maKYrZSiYR8ypJGV2YevbY"
+  - "/dns/g1-bootstrap.p2p.legal/tcp/30333/p2p/12D3KooWSvuq1J1PVMdruQnxiFM7gvFP1eAbRMk4SZJRjdcYjVz2"
 telemetryEndpoints:
   - ["/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]
 properties:
