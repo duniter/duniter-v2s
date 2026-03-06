@@ -258,12 +258,10 @@ validate_prerequisites() {
   ok "Docker Hub login successful (org duniter accessible)."
 
   # Check that no release with this spec_version already exists on GitLab
-  # Must check all tag formats: network release + runtime release (old and new format)
   info "Checking that spec_version ${SPEC_VERSION} is not already released..."
   local release_tags_to_check=(
     "${NETWORK_TAG}"                        # network release: g1-1000
-    "runtime-${SPEC_VERSION}"               # runtime release old format: runtime-1000
-    "runtime-${RUNTIME}-${SPEC_VERSION}"    # runtime release new format: runtime-g1-1000
+    "runtime-${RUNTIME}-${SPEC_VERSION}"    # runtime release: runtime-g1-1000
   )
   for tag in "${release_tags_to_check[@]}"; do
     local release_code
