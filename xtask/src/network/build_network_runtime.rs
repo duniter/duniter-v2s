@@ -45,19 +45,31 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
         println!("🗑️  Fichier {} supprimé", srtool_output.to_string_lossy());
     }
 
-    // Préparer les arguments Docker pour srtool
+    // Récupérer l'UID:GID de l'utilisateur hôte
+    let uid_output = Command::new("id").arg("-u").output()?;
+    let gid_output = Command::new("id").arg("-g").output()?;
+    let host_uid = String::from_utf8_lossy(&uid_output.stdout)
+        .trim()
+        .to_string();
+    let host_gid = String::from_utf8_lossy(&gid_output.stdout)
+        .trim()
+        .to_string();
+
+    // Préparer les arguments Docker pour srtool.
+    // On exécute directement le conteneur avec l'UID/GID hôte pour éviter les
+    // fichiers root sur le volume monté. Le groupe builder (1001) est ajouté
+    // pour conserver l'accès en lecture à la toolchain préinstallée dans /home/builder.
     let script_content = format!(
         r#"
         set -e
+        export HOME=/home/builder
         echo "🚀 Démarrage de srtool..."
         echo "📁 Répertoire de travail: /build"
         echo "🔧 Runtime: {runtime}"
         echo "📄 Sortie: {srtool_output_filename}"
         cd /build
-        # Construire le runtime avec srtool
         echo "🔨 Construction du runtime avec srtool..."
         /srtool/build --app --json -cM | tee -a release/network/{srtool_output_filename}
-        # Déplacer le fichier WASM généré
         echo "📦 Déplacement du fichier WASM..."
         mv /build/runtime/{runtime}/target/srtool/release/wbuild/{runtime}-runtime/{runtime}_runtime.compact.compressed.wasm /build/release/network/
         mv /build/runtime/{runtime}/target/srtool/release/wbuild/{runtime}-runtime/{runtime}_runtime.compact.wasm /build/release/network/
@@ -75,41 +87,25 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
         eprintln!("   Pour un build plus rapide, utilisez une machine Linux x86_64.");
     }
 
-    let build_volume = format!("{}:/build", current_dir.to_string_lossy());
+    // Ajouter :z pour la compatibilité SELinux (Fedora, RHEL, CentOS…)
+    // Inoffensif sur les systèmes sans SELinux (macOS, Ubuntu, etc.)
+    let build_volume = format!("{}:/build:z", current_dir.to_string_lossy());
+    let builder_gid = std::env::var("SRTOOL_BUILDER_GID").unwrap_or_else(|_| "1001".to_string());
+    let user_mapping = format!("{host_uid}:{host_gid}");
     let package = format!("PACKAGE={runtime}-runtime");
     let runtime_dir = format!("RUNTIME_DIR=runtime/{runtime}");
-    // Volume Docker nommé pour le cache srtool : évite les problèmes de permissions
-    // VirtioFS (UID mapping) tout en persistant le cache entre les runs
-    let cache_volume_name = format!("srtool-cache-{runtime}");
-    let cache_volume = format!("{cache_volume_name}:/build/runtime/{runtime}/target/srtool");
-    // Initialiser les permissions du volume (créé root:root par défaut)
-    // pour que l'utilisateur builder (1001) puisse écrire dedans
-    let init_volume = format!("{cache_volume_name}:/srtool-cache");
-    let init_status = Command::new("docker")
-        .args([
-            "run",
-            "--rm",
-            "-v",
-            &init_volume,
-            "alpine",
-            "chown",
-            "1001:1001",
-            "/srtool-cache",
-        ])
-        .status()?;
-    if !init_status.success() {
-        eprintln!("⚠️  Impossible d'initialiser les permissions du volume cache");
-    }
     let mut docker_args = vec!["run", "--rm"];
     // Forcer la plateforme amd64 pour que Docker utilise l'émulation sur ARM
     if is_arm {
         docker_args.extend_from_slice(&["--platform", "linux/amd64"]);
     }
     docker_args.extend_from_slice(&[
+        "-u",
+        user_mapping.as_str(),
+        "--group-add",
+        builder_gid.as_str(),
         "-v",
         &build_volume,
-        "-v",
-        &cache_volume,
         "-e",
         runtime_dir.as_str(),
         "-e",

@@ -283,3 +283,12 @@ export GITLAB_TOKEN=your_token_here
 cargo xtask release runtime build gdev
 cargo xtask release runtime create gdev runtime/gdev-1100
 ```
+
+### Submitting the runtime upgrade on-chain
+
+Once the GitLab release is created, the runtime must be submitted on-chain
+through the Technical Committee (2/3 supermajority vote via
+`pallet_upgrade_origin`).
+
+See [runtime-upgrade.md](./runtime-upgrade.md) for the complete end-to-end
+procedure (preimage, TC proposal, vote, verification).
