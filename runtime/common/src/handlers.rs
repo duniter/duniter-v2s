@@ -164,9 +164,9 @@ where
         let call = pallet_authority_members::Call::<Runtime>::remove_member {
             member_id: idty_index,
         };
-        if let Err(e) = call.dispatch_bypass_filter(frame_system::Origin::<Runtime>::Root.into()) {
+        if let Err(_e) = call.dispatch_bypass_filter(frame_system::Origin::<Runtime>::Root.into()) {
             #[cfg(feature = "std")]
-            println!("faid to remove member: {e:?}")
+            println!("fail to remove member: {_e:?}")
         }
     }
 }
