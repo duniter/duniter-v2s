@@ -65,11 +65,12 @@ pub async fn trigger_release_builds(
     println!("   Branch: {branch}");
 
     // Compute release tag if not provided
+    let client_version = super::package_validation::get_client_version()?;
     let release_tag = if let Some(tag) = release_tag {
         println!("   Release tag: {tag} (provided)");
         tag
     } else {
-        let computed_tag = compute_release_tag(&network)?;
+        let computed_tag = compute_release_tag(&network, &client_version);
         println!("   Release tag: {computed_tag} (computed)");
         computed_tag
     };
@@ -305,7 +306,7 @@ pub async fn trigger_release_builds(
 
     // Step 7: Upload artifacts to GitLab release
     println!("\n📤 Step 6: Uploading artifacts to GitLab release...");
-    upload_artifacts_to_release(&release_tag, &all_artifacts).await?;
+    upload_artifacts_to_release(&release_tag, &all_artifacts, &client_version).await?;
 
     // Step 8: Summary
     println!("\n✅ Release build process completed successfully!");
@@ -524,7 +525,13 @@ fn find_artifact_files(dir: &Path, files: &mut Vec<PathBuf>) -> Result<()> {
 }
 
 /// Upload artifacts to GitLab release
-async fn upload_artifacts_to_release(release_tag: &str, artifacts: &[PathBuf]) -> Result<()> {
+async fn upload_artifacts_to_release(
+    release_tag: &str,
+    artifacts: &[PathBuf],
+    client_version: &str,
+) -> Result<()> {
+    let mut package_artifacts = Vec::new();
+
     for artifact_path in artifacts {
         let file_name = artifact_path
             .file_name()
@@ -532,11 +539,21 @@ async fn upload_artifacts_to_release(release_tag: &str, artifacts: &[PathBuf]) -
             .to_string_lossy()
             .to_string();
 
-        // Skip non-package files
         if !file_name.ends_with(".deb") && !file_name.ends_with(".rpm") {
             continue;
         }
 
+        package_artifacts.push((artifact_path, file_name));
+    }
+
+    super::package_validation::validate_package_file_names(
+        client_version,
+        package_artifacts
+            .iter()
+            .map(|(_, file_name)| file_name.as_str()),
+    )?;
+
+    for (artifact_path, file_name) in package_artifacts {
         println!("   Uploading: {file_name}");
 
         // Upload file to GitLab
@@ -568,36 +585,8 @@ async fn upload_artifacts_to_release(release_tag: &str, artifacts: &[PathBuf]) -
 /// Compute release tag from network name and client version
 /// Format: {runtime}-{runtime_version}-{client_version}
 /// Example: gtest-1100-0.12.0
-fn compute_release_tag(network: &str) -> Result<String> {
-    // Get client version from node/Cargo.toml
-    let client_version = get_client_version()?;
-
+fn compute_release_tag(network: &str, client_version: &str) -> String {
     // Release tag = network name + client version
     // Example: gtest-1100 + 0.12.0 = gtest-1100-0.12.0
-    Ok(format!("{network}-{client_version}"))
-}
-
-fn get_client_version() -> Result<String> {
-    use std::process::Command;
-
-    let output = Command::new("grep")
-        .args(["version", "node/Cargo.toml"])
-        .output()?;
-
-    if !output.status.success() {
-        return Err(anyhow!(
-            "Failed to read client version from node/Cargo.toml"
-        ));
-    }
-
-    let version_line = String::from_utf8(output.stdout)?;
-    let version = version_line
-        .split("version = \"")
-        .nth(1)
-        .ok_or_else(|| anyhow!("Invalid version format in node/Cargo.toml"))?
-        .split('"')
-        .next()
-        .ok_or_else(|| anyhow!("Invalid version format in node/Cargo.toml"))?;
-
-    Ok(version.to_string())
+    format!("{network}-{client_version}")
 }
