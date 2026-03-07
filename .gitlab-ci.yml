@@ -256,7 +256,7 @@ sdk_resolve:
       artifacts: true
 
 .env_arm:
-  image: rust:1.88.0  # Pinned to match CI unified image Rust version
+  image: rust:1.88.0-bullseye  # Pinned to match CI unified image Rust version and amd64 release libc baseline
   tags:
     - linuxARM
 
