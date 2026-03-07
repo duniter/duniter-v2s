@@ -472,6 +472,10 @@ async fn download_job_artifacts(
     let zip_path = artifacts_dir.join(format!("{}.zip", job_result.job_name));
     let extract_dir = artifacts_dir.join(&job_result.job_name);
 
+    if extract_dir.exists() {
+        std::fs::remove_dir_all(&extract_dir)?;
+    }
+
     // Download artifacts zip
     match crate::gitlab::download_job_artifacts(
         PROJECT_ID.to_string(),
