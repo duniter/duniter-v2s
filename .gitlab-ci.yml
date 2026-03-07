@@ -40,7 +40,7 @@ default:
       artifacts: true
   before_script:
     # Install build dependencies (curl needed to download raw spec from GitLab release)
-    - apt-get update -qq && apt-get install -y -qq protobuf-compiler clang libclang-dev curl
+    - apt-get update -qq && apt-get install -y -qq protobuf-compiler clang libclang-dev curl jq
   script:
     - source scripts/parse_release_tag.sh
     - ./scripts/cargo_with_vendor.sh xtask client-build-deb "$NETWORK"
@@ -57,7 +57,7 @@ default:
       artifacts: true
   before_script:
     # Install RPM build tools and dependencies (curl needed to download raw spec from GitLab release)
-    - apt-get update -qq && apt-get install -y -qq rpm protobuf-compiler clang libclang-dev curl
+    - apt-get update -qq && apt-get install -y -qq rpm protobuf-compiler clang libclang-dev curl jq
   script:
     - source scripts/parse_release_tag.sh
     - ./scripts/cargo_with_vendor.sh xtask client-build-rpm "$NETWORK"
@@ -76,7 +76,7 @@ default:
     DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
     # Install Rust and build dependencies
-    - apk add --no-cache curl bash gcc musl-dev
+    - apk add --no-cache curl bash gcc musl-dev jq
     - export RUST_STABLE_VERSION="${CI_UNIFIED_IMAGE##*-}"
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain "${RUST_STABLE_VERSION}" --profile minimal
     - source $HOME/.cargo/env
@@ -146,7 +146,7 @@ release_docker_manifest:
   variables:
     DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
-    - apk add --no-cache bash grep sed
+    - apk add --no-cache bash grep sed jq
   script:
     - source scripts/parse_release_tag.sh
     - docker login -u duniterteam -p $DUNITERTEAM_PASSWD docker.io
