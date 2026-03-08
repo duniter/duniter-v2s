@@ -20,4 +20,6 @@ pub mod build_rpm;
 pub mod create_client_release;
 pub mod docker_deploy;
 pub mod ensure_raw_spec;
+pub mod finalize_release;
+pub mod package_validation;
 pub mod trigger_release_builds;

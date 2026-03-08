@@ -40,6 +40,12 @@ rm -rf release/*
 
 Vérifier `spec_version: 1100` dans `runtime/g1/src/lib.rs` et vérifier que la **version client** dans `node/Cargo.toml` a bien été bumpée (checklist A6, ex : `version = "2.0.0"`). Cette version client est distincte du `spec_version` runtime : elle identifie le binaire du nœud et apparaît dans le tag Docker (`1100-<client_version>`) et le nom de la release GitLab.
 
+Pour les futures releases client de Ğ1, le tag GitLab doit rester au format
+`g1-1100-<client_version>` : la partie `1100` correspond au runtime de genesis
+de la chaîne et ne doit pas être remplacée par un runtime plus récent. Exemple :
+si la prochaine release client est `2.1.0`, le tag doit être
+`g1-1100-2.1.0`, même si un runtime `g1-1200` a été publié entre-temps.
+
 Vérifier que les fichiers modifiés par la checklist (section « En amont du jour J ») sont bien présents :
 
 - `resources/g1.yaml` (clique_smiths, technical_committee, paramètres économiques)
@@ -137,6 +143,10 @@ Image Docker résultante : `duniter/duniter-g1-1100:1100-<client_version>`
 - `create` : upload les specs vers la release GitLab.
 - `trigger-builds` : passe l'URL de `g1-raw.json` aux jobs CI via `RAW_SPEC_URL`, déclenche DEB/RPM x64+ARM, Docker amd64+arm64, manifest multi-arch.
 </details>
+
+> **Convention de tag pour les releases client :** utiliser
+> `g1-1100-<client_version>`. La composante `1100` reste figée car elle désigne
+> le runtime de genesis de Ğ1, pas le dernier runtime upgrade déployé.
 
 ### Étape 7 — Déploiement du noeud bootstrap
 

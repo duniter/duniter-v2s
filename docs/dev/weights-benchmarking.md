@@ -23,17 +23,17 @@ complete real example.
 cargo test -p <pallet> --features runtime-benchmarks
 ```
 
-3. If the benchmark tests compiles and pass, compile the binary with benchmarks on your local
+3. If the benchmark tests compiles and pass, compile the runtime with benchmarks on your local
 machine:
 
 ```
-cargo build --release --features runtime-benchmarks
+cargo build --release -p <runtime>-runtime --features runtime-benchmarks
 ```
 
 4. Run the benchmarks on your local machine (to test if it work with a real runtime). See 0d1232cd0d8b5809e1586b48376f8952cebc0d27 for a complete real example. The command is:
 
 ```
-duniter benchmark pallet --chain=CHAINSPEC --steps=50 --repeat=20 --pallet=<pallet> --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=./runtime/common/src/weights/
+frame-omni-bencher v1 benchmark pallet --runtime=target/release/wbuild/<runtime>-runtime/<runtime>_runtime.compact.compressed.wasm --genesis-builder=runtime --steps=50 --repeat=20 --pallet=<pallet> --extrinsic=* --header=./file_header.txt --output=./runtime/<runtime>/src/weights/
 ```
 
 5. Use the generated file content to create the `WeightInfo` trait and the `()` dummy implementation in `pallets/<pallet>/src/weights.rs`. Then use the `WeightInfo` trait in the real code of the pallet. See 62dcc17f2c0b922e883fbc6337a9e7da97fc3218 for a complete real example.
@@ -42,10 +42,7 @@ duniter benchmark pallet --chain=CHAINSPEC --steps=50 --repeat=20 --pallet=<pall
 
 7. Use the `runtime/common/src/weights/pallet_<pallet>.rs` generated on the reference machine in the runtimes configuration. See  af62a3b9cfc42d6653b3a957836f58540c18e65a for a complete real example.
 
-Note 1: Use relevant chainspec for the benchmarks in place of `CHAINSPEC`, for example `--chain=dev`.
-
-Note 2: If the reference machine does not support wasmtime, you should replace `--wasm-execution=compiled`
-by `--wasm-execution=interpreted-i-know-what-i-do`.
+Note: `frame-omni-bencher` supports `pallet` and `overhead` benchmarks. Storage benchmarking is not available in omni-bencher.
 
 ## Generate base block benchmarking
 
@@ -53,7 +50,7 @@ by `--wasm-execution=interpreted-i-know-what-i-do`.
 2. Run base block benchmarks command:
 
 ```
-duniter benchmark overhead --chain=dev --execution=wasm --wasm-execution=compiled --weight-path=./runtime/common/src/weights/ --warmup=10 --repeat=100
+frame-omni-bencher v1 benchmark overhead --runtime=target/release/wbuild/<runtime>-runtime/<runtime>_runtime.compact.compressed.wasm --genesis-builder=runtime --weight-path=./runtime/<runtime>/src/weights/ --warmup=10 --repeat=100
 ```
 
 3. Commit changes and open an MR.

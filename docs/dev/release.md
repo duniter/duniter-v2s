@@ -114,6 +114,18 @@ You must know:
 - the client version (e.g. `0.11.1`) refered as `<client-version>` in the
   following
 
+For client releases, the Git tag format is:
+
+```text
+<network>-<genesis-runtime-version>-<client-version>
+```
+
+The middle component is the runtime version used at genesis for that network
+and must stay stable for all future client releases on that network, even after
+later runtime upgrades. Example: for network `g1-1100`, if the next client
+release is `2.1.0`, the tag must be `g1-1100-2.1.0`, even if a newer runtime
+release exists in the meantime.
+
 You must have:
 
 - set the Client version in the `node/Cargo.toml` file (as
@@ -125,7 +137,12 @@ You must have:
 - set the `DUNITERTEAM_PASSWD` environment variable with the DockerHub password
   of the Duniter organization (only for manual Docker deployment)
 
-### Step 1: Build raw specs and create GitLab release
+### Flow A: Genesis / bootstrap client release
+
+Use this flow when the client release accompanies the bootstrap of a new
+network, or when the GitLab release page still needs the genesis raw spec.
+
+#### Step 1: Build raw specs and create GitLab release
 
 First, build the raw specs and create the GitLab release:
 
@@ -149,7 +166,7 @@ This creates the GitLab release with the specs files
 also upload local DEB/RPM packages, use the `--upload-packages` flag. However,
 it's recommended to use the automated CI builds (Step 2, Option A) instead.
 
-### Step 2: Build client packages and Docker images
+#### Step 2: Build client packages and Docker images
 
 You have **two options** to build and publish the client packages:
 
@@ -219,7 +236,7 @@ cargo xtask release client create gdev-1000 network/gdev-1000 --upload-packages
 To build for multiple architectures, you need to use cross-compilation tools or
 run the commands on different machines.
 
-### Step 3: Build and push Docker images (Optional - for local testing)
+#### Step 3: Build and push Docker images (Optional - for local testing)
 
 Docker images are normally built automatically by the CI (Option A). However,
 you can also build them locally for testing:
@@ -243,6 +260,71 @@ Podman.
 **Note:** The `--arch` flag can be used to build for a specific architecture
 only (e.g., `--arch amd64`), which pushes an image with the architecture in the
 tag (e.g., `1100-2.0.0-amd64`). This is mainly for CI use or testing.
+
+### Flow B: Client upgrade on an existing network
+
+Use this flow for a binary upgrade on a network that already exists. In this
+case, the genesis raw spec is already published on the network release, so the
+client release flow no longer needs to regenerate or upload `<runtime>-raw.json`.
+
+#### Step 1: Update version and push the client tag
+
+Prepare the client version on the release branch, then create and push the
+client tag manually:
+
+```bash
+git tag <network>-<genesis-runtime-version>-<client-version>
+git push origin <network>-<genesis-runtime-version>-<client-version>
+```
+
+Example:
+
+```bash
+git tag g1-1100-2.0.1
+git push origin g1-1100-2.0.1
+```
+
+The middle component must stay the **genesis runtime version** of the network.
+For example, use `g1-1100-2.0.1` even if the latest runtime release is now
+`g1-1200`.
+
+#### Step 2: Launch the release pipeline from the GitLab UI
+
+Open the pipeline associated with the pushed tag in GitLab and run the release
+jobs from the UI. This pipeline builds:
+
+- DEB packages for x86_64 and ARM64
+- RPM packages for x86_64 and ARM64
+- Docker images for amd64 and arm64
+- The multi-arch Docker manifest
+
+#### Step 3: Finalize the GitLab release page from xtask
+
+Once the pipeline has completed successfully, create or fill the client release
+page from the artifacts already produced by CI:
+
+```bash
+export GITLAB_TOKEN=your_token_here
+cargo xtask release client finalize <network>-<runtime-version> <pipeline-id>
+```
+
+Example:
+
+```bash
+export GITLAB_TOKEN=your_token_here
+cargo xtask release client finalize g1-1100 45972
+```
+
+This command will:
+
+- use `node/Cargo.toml` to compute the client release tag
+- default the release ref to `v<client-version>` if `--branch` is not provided
+- copy `<runtime>_client-specs.yaml` into `release/client/`
+- download the `.deb` and `.rpm` artifacts from the given GitLab pipeline
+- create the GitLab release page if it does not already exist
+- upload the missing package assets and client specs to that release
+
+For this non-genesis flow, `finalize` does **not** upload `<runtime>-raw.json`.
 
 ## Runtime release
 

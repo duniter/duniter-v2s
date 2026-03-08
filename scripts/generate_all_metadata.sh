@@ -1,13 +1,44 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CHAINS=(g1 gtest gdev)
+DEFAULT_CHAINS=(g1 gtest gdev)
+if [ -n "${METADATA_CHAINS:-}" ]; then
+    # Accept both comma-separated and space-separated lists.
+    IFS=' ' read -r -a CHAINS <<< "$(printf '%s' "$METADATA_CHAINS" | tr ',' ' ')"
+else
+    CHAINS=("${DEFAULT_CHAINS[@]}")
+fi
 RESOURCES_DIR="$(cd "$(dirname "$0")/../resources" && pwd)"
 CARGO_TARGET_DIR="$(cd "$(dirname "$0")/.." && pwd)/target"
 NODE_PID=""
 RPC_PORT=19944  # non-standard port to avoid conflicts with a running node
 RPC_URL="http://127.0.0.1:${RPC_PORT}"
 MAX_WAIT=120  # seconds to wait for node startup
+BUILD_PROFILE="${DUNITER_BUILD_PROFILE:-debug}"
+
+case "$BUILD_PROFILE" in
+    debug)
+        BUILD_FLAG=""
+        TARGET_PROFILE_DIR="debug"
+        ;;
+    release)
+        BUILD_FLAG="--release"
+        TARGET_PROFILE_DIR="release"
+        ;;
+    *)
+        echo "Error: invalid DUNITER_BUILD_PROFILE='$BUILD_PROFILE' (expected 'debug' or 'release')."
+        exit 1
+        ;;
+esac
+
+# In CI we prefer the local SDK mirror if available; locally we fall back to plain cargo.
+cargo_cmd() {
+    if [ -f "$(cd "$(dirname "$0")/.." && pwd)/local-sdk.env" ] && [ -x "$(cd "$(dirname "$0")/.." && pwd)/scripts/cargo_with_vendor.sh" ]; then
+        "$(cd "$(dirname "$0")/.." && pwd)/scripts/cargo_with_vendor.sh" "$@"
+    else
+        cargo "$@"
+    fi
+}
 
 cleanup() {
     if [ -n "$NODE_PID" ] && kill -0 "$NODE_PID" 2>/dev/null; then
@@ -49,34 +80,7 @@ wait_for_node() {
     echo "Node is ready (took ~${elapsed}s)."
 }
 
-# Bootstrap: if any metadata file is empty or missing, copy a valid one as placeholder
-# This solves the chicken-and-egg problem where cargo build fails on empty metadata.
-bootstrap_placeholder() {
-    local donor=""
-    # Find a valid metadata file (non-empty) to use as donor
-    for chain in "${CHAINS[@]}"; do
-        local f="$RESOURCES_DIR/${chain}_metadata.scale"
-        if [ -f "$f" ] && [ -s "$f" ]; then
-            donor="$f"
-            break
-        fi
-    done
-
-    for chain in "${CHAINS[@]}"; do
-        local f="$RESOURCES_DIR/${chain}_metadata.scale"
-        if [ ! -f "$f" ] || [ ! -s "$f" ]; then
-            if [ -z "$donor" ]; then
-                echo "Error: no valid metadata file found to bootstrap. Cannot continue."
-                echo "Manually place a valid .scale file in $RESOURCES_DIR/"
-                exit 1
-            fi
-            echo "Bootstrapping $f with placeholder from $donor"
-            cp "$donor" "$f"
-        fi
-    done
-}
-
-bootstrap_placeholder
+echo "Metadata chains: ${CHAINS[*]}"
 
 for chain in "${CHAINS[@]}"; do
     echo ""
@@ -85,10 +89,12 @@ for chain in "${CHAINS[@]}"; do
     echo "========================================"
 
     echo "Building runtime..."
-    cargo build --release --no-default-features --features "$chain"
+    # Build only the node binary; building the whole workspace with
+    # `--no-default-features` can compile other runtimes in no_std mode.
+    cargo_cmd build $BUILD_FLAG --no-default-features --features "$chain" -p duniter
 
     echo "Starting node (--dev --tmp)..."
-    "$CARGO_TARGET_DIR/release/duniter" --dev --tmp --rpc-port "$RPC_PORT" &
+    "$CARGO_TARGET_DIR/$TARGET_PROFILE_DIR/duniter" --dev --tmp --rpc-port "$RPC_PORT" &
     NODE_PID=$!
 
     if ! wait_for_node; then
