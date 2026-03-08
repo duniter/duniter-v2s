@@ -1,7 +1,7 @@
 [alias]
 sanity-gdev = "test -p duniter-live-tests --test sanity_gdev -- --nocapture"
-tu = "test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features constant-fees" # Unit tests with constant-fees
-tf = "test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests test_fee" # Custom fee model tests
+tu = "test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features constant-fees" # Unit tests with constant-fees; pass runtime feature (gdev/gtest) from caller
+tf = "test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests test_fee" # Custom fee model tests; pass runtime feature (gdev/gtest) from caller
 # `te` and `cucumber` are synonyms
 te = "test -p duniter-end2end-tests --test cucumber_tests --features constant-fees --"
 cucumber-build = "build --features constant-fees"

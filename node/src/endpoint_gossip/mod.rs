@@ -6,7 +6,6 @@ mod types;
 
 use crate::endpoint_gossip::duniter_peering_protocol_name::NAME;
 use codec::{Decode, Encode};
-use frame_benchmarking::__private::traits::ConstU32;
 use sc_network::{
     MAX_RESPONSE_SIZE, NetworkBackend, NotificationMetrics, NotificationService,
     config::{PeerStoreProvider, SetConfig},
@@ -14,7 +13,7 @@ use sc_network::{
 };
 use serde::{Deserialize, Serialize};
 use sp_api::__private::BlockT;
-use sp_core::bounded_vec::BoundedVec;
+use sp_core::{ConstU32, bounded_vec::BoundedVec};
 use std::{sync::Arc, time};
 
 pub mod well_known_endpoint_types {

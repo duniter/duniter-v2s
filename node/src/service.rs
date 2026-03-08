@@ -56,6 +56,12 @@ type HostFunctions = (
     frame_benchmarking::benchmarking::HostFunctions,
 );
 
+#[cfg(not(feature = "runtime-benchmarks"))]
+type BenchmarkHostFunctions = ();
+
+#[cfg(feature = "runtime-benchmarks")]
+type BenchmarkHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
 // Allow to use native Runtime for debugging/development purposes
 #[cfg(feature = "native")]
 type FullClient<RuntimeApi, Executor> =
@@ -69,7 +75,7 @@ type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
 pub mod runtime_executor {
-    use crate::service::HostFunctions;
+    use crate::service::{BenchmarkHostFunctions, HostFunctions};
     #[cfg(feature = "g1")]
     pub use g1_runtime as runtime;
     #[cfg(feature = "gdev")]
@@ -81,7 +87,7 @@ pub mod runtime_executor {
 
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
-        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+        type ExtendHostFunctions = BenchmarkHostFunctions;
 
         fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
             runtime::api::dispatch(method, data)

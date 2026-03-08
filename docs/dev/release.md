@@ -114,6 +114,18 @@ You must know:
 - the client version (e.g. `0.11.1`) refered as `<client-version>` in the
   following
 
+For client releases, the Git tag format is:
+
+```text
+<network>-<genesis-runtime-version>-<client-version>
+```
+
+The middle component is the runtime version used at genesis for that network
+and must stay stable for all future client releases on that network, even after
+later runtime upgrades. Example: for network `g1-1100`, if the next client
+release is `2.1.0`, the tag must be `g1-1100-2.1.0`, even if a newer runtime
+release exists in the meantime.
+
 You must have:
 
 - set the Client version in the `node/Cargo.toml` file (as

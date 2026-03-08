@@ -242,11 +242,56 @@ impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
     }
 
     fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-        frame_support::genesis_builder_helper::get_preset::<RuntimeGenesisConfig>(id, |_| None)
+        frame_support::genesis_builder_helper::get_preset::<RuntimeGenesisConfig>(id, |preset| {
+            match preset.as_ref() {
+                sp_genesis_builder::DEV_RUNTIME_PRESET |
+                sp_genesis_builder::LOCAL_TESTNET_RUNTIME_PRESET => {
+                    // Provide a funded dev signer account through Duniter custom account genesis
+                    // so overhead/extrinsic benchmarks can include paid signed transactions.
+                    let alice_balance: Balance = Balance::MAX / 4;
+                    let treasury_balance: Balance = Balance::MAX / 4;
+                    let alice: AccountId = sp_runtime::AccountId32::new([
+                        0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c,
+                        0x61, 0x14, 0x1a, 0xbd, 0x04, 0xa9, 0x9f, 0xd6,
+                        0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3,
+                        0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d,
+                    ])
+                    .into();
+
+                    let patch = frame_support::build_struct_json_patch!(RuntimeGenesisConfig {
+                        balances: pallet_balances::GenesisConfig::<Runtime> {
+                            total_issuance: alice_balance.saturating_add(treasury_balance),
+                        },
+                        account: pallet_duniter_account::GenesisConfig::<Runtime> {
+                            accounts: [(
+                                alice,
+                                pallet_duniter_account::GenesisAccountData {
+                                    balance: alice_balance,
+                                    idty_id: None,
+                                },
+                            )]
+                            .into_iter()
+                            .collect(),
+                            treasury_balance,
+                        },
+                    });
+
+                    Some(
+                        frame_support::__private::serde_json::to_string(&patch)
+                            .expect("serialization to json is expected to work. qed.")
+                            .into_bytes(),
+                    )
+                },
+                _ => None,
+            }
+        })
     }
 
     fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-        vec![]
+        vec![
+            sp_genesis_builder::PresetId::from(sp_genesis_builder::DEV_RUNTIME_PRESET),
+            sp_genesis_builder::PresetId::from(sp_genesis_builder::LOCAL_TESTNET_RUNTIME_PRESET),
+        ]
     }
 }
 
