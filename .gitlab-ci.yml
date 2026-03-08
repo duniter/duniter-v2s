@@ -34,6 +34,7 @@ variables:
     # Install build dependencies (curl needed to download raw spec from GitLab release)
     - apt-get update -qq && apt-get install -y -qq protobuf-compiler clang libclang-dev curl
   script:
+    - rm -f target/release/duniter target/release/distance-oracle
     - ./scripts/cargo_with_vendor.sh xtask client-build-deb $NETWORK
 
 .rpm_build_template:
@@ -44,6 +45,7 @@ variables:
     # Install RPM build tools and dependencies (curl needed to download raw spec from GitLab release)
     - apt-get update -qq && apt-get install -y -qq rpm protobuf-compiler clang libclang-dev curl
   script:
+    - rm -f target/release/duniter target/release/distance-oracle
     - ./scripts/cargo_with_vendor.sh xtask client-build-rpm $NETWORK
 
 .docker_deploy_template:
