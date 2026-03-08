@@ -24,36 +24,19 @@ if [ "$CLIENT_VERSION_FROM_TAG" != "$CLIENT_VERSION" ]; then
 fi
 
 if [ -z "${RAW_SPEC_URL:-}" ]; then
-  if ! command -v jq >/dev/null 2>&1; then
-    echo "jq is required to resolve RAW_SPEC_URL in release jobs"
-    exit 1
-  fi
-
-  PROJECT_ID="${CI_PROJECT_ID:-nodes%2Frust%2Fduniter-v2s}"
-  RELEASES_API="${CI_API_V4_URL:-https://git.duniter.org/api/v4}/projects/${PROJECT_ID}/releases?per_page=100"
-  CURL_ARGS=(-fsSL)
-
-  if [ -n "${GITLAB_TOKEN:-}" ]; then
-    CURL_ARGS+=(--header "PRIVATE-TOKEN: ${GITLAB_TOKEN}")
-  elif [ -n "${CI_JOB_TOKEN:-}" ]; then
-    CURL_ARGS+=(--header "JOB-TOKEN: ${CI_JOB_TOKEN}")
-  fi
-
-  RELEASES_JSON="$(curl "${CURL_ARGS[@]}" "${RELEASES_API}")"
+  GENESIS_RELEASE_TAG="${NETWORK}"
+  PROJECT_ID="${CI_PROJECT_ID:-520}"
+  RELEASE_LINKS_API="${CI_API_V4_URL:-https://git.duniter.org/api/v4}/projects/${PROJECT_ID}/releases/${GENESIS_RELEASE_TAG}/assets/links"
+  RELEASE_LINKS_JSON="$(curl -fsSL "${RELEASE_LINKS_API}")"
   RAW_SPEC_URL="$(
-    printf '%s' "${RELEASES_JSON}" | jq -r \
-      --arg prefix "${NETWORK}-" \
-      --arg asset "${RUNTIME}-raw.json" \
-      '
-        sort_by(.released_at // .created_at) | reverse
-        | map(select(.tag_name | startswith($prefix)))
-        | map(.assets.links[]? | select(.name == $asset) | .url)
-        | .[0] // empty
-      '
+    printf '%s' "${RELEASE_LINKS_JSON}" \
+      | jq -r \
+        --arg asset "${RUNTIME}-raw.json" \
+        'map(select(.name == $asset) | (.direct_asset_url // .url)) | .[0] // empty'
   )"
 
   if [ -z "${RAW_SPEC_URL}" ]; then
-    echo "Could not find ${RUNTIME}-raw.json in any release matching prefix ${NETWORK}-"
+    echo "Could not find public link to ${RUNTIME}-raw.json via ${RELEASE_LINKS_API}"
     exit 1
   fi
 fi

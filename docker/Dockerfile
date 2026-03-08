@@ -57,8 +57,8 @@ ARG chain="gdev"
 RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
-    ./scripts/cargo_with_vendor.sh build --locked $CARGO_OPTIONS --no-default-features $BENCH_OPTIONS --features ${chain},embed --target "$RUST_ARCH_TRIPLET" && \
-    ./scripts/cargo_with_vendor.sh build --locked $CARGO_OPTIONS --target "$RUST_ARCH_TRIPLET" --package distance-oracle && \
+    ./scripts/cargo_with_vendor.sh build --locked $CARGO_OPTIONS -p duniter --no-default-features $BENCH_OPTIONS --features ${chain},embed --target "$RUST_ARCH_TRIPLET" && \
+    ./scripts/cargo_with_vendor.sh build --locked $CARGO_OPTIONS -p distance-oracle --no-default-features --features ${chain},standalone,std --target "$RUST_ARCH_TRIPLET" && \
     mkdir -p build && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/ && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/distance-oracle build/

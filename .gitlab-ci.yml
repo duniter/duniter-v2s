@@ -148,7 +148,7 @@ release_docker_manifest:
   variables:
     DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
-    - apk add --no-cache bash grep sed jq
+    - apk add --no-cache bash grep sed jq curl
   script:
     - source scripts/parse_release_tag.sh
     - docker login -u duniterteam -p $DUNITERTEAM_PASSWD docker.io
