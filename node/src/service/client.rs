@@ -15,16 +15,21 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use common_runtime::{AccountId, Balance, Block, BlockNumber, Hash, Header, Index};
+#[cfg(feature = "runtime-benchmarks")]
+use sc_client_api::BlockBackend;
 use sc_client_api::{
-    AuxStore, Backend as BackendT, BlockBackend, BlockchainEvents, KeysIter, MerkleValue,
-    PairsIter, UsageProvider,
+    AuxStore, Backend as BackendT, BlockchainEvents, KeysIter, MerkleValue, PairsIter,
+    UsageProvider,
 };
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
 use sp_consensus::BlockStatus;
+#[cfg(feature = "runtime-benchmarks")]
 use sp_core::{Encode, Pair};
+#[cfg(feature = "runtime-benchmarks")]
+use sp_runtime::SaturatedConversion;
 use sp_runtime::{
-    Justifications, SaturatedConversion,
+    Justifications,
     generic::SignedBlock,
     traits::{BlakeTwo256, Block as BlockT},
 };
@@ -277,6 +282,7 @@ impl sc_client_api::BlockBackend<Block> for Client {
 ///
 /// Should only be used for benchmarking since it makes strong assumptions
 /// about the chain state that these calls will be valid for.
+#[cfg(feature = "runtime-benchmarks")]
 trait BenchmarkCallSigner<RuntimeCall: Encode + Clone, Signer: Pair> {
     /// Signs a call together with the signed extensions of the specific runtime.
     ///
@@ -293,23 +299,26 @@ trait BenchmarkCallSigner<RuntimeCall: Encode + Clone, Signer: Pair> {
     ) -> sp_runtime::OpaqueExtrinsic;
 }
 
-#[cfg(feature = "g1")]
+#[cfg(all(feature = "runtime-benchmarks", feature = "g1"))]
 type FullClient = super::FullClient<
     super::runtime_executor::runtime::RuntimeApi,
     super::runtime_executor::Executor,
 >;
-#[cfg(feature = "gdev")]
+#[cfg(all(feature = "runtime-benchmarks", feature = "gdev"))]
 type FullClient = super::FullClient<
     super::runtime_executor::runtime::RuntimeApi,
     super::runtime_executor::Executor,
 >;
-#[cfg(feature = "gtest")]
+#[cfg(all(feature = "runtime-benchmarks", feature = "gtest"))]
 type FullClient = super::FullClient<
     super::runtime_executor::runtime::RuntimeApi,
     super::runtime_executor::Executor,
 >;
 
-#[cfg(any(feature = "gdev", feature = "gtest", feature = "g1"))]
+#[cfg(all(
+    feature = "runtime-benchmarks",
+    any(feature = "gdev", feature = "gtest", feature = "g1")
+))]
 impl BenchmarkCallSigner<super::runtime_executor::runtime::RuntimeCall, sp_core::sr25519::Pair>
     for FullClient
 {
@@ -369,6 +378,7 @@ impl BenchmarkCallSigner<super::runtime_executor::runtime::RuntimeCall, sp_core:
     }
 }
 
+#[cfg(feature = "runtime-benchmarks")]
 impl frame_benchmarking_cli::ExtrinsicBuilder for Client {
     fn pallet(&self) -> &str {
         "system"

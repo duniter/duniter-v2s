@@ -2591,7 +2591,7 @@ dependencies = [
  "sp-core",
  "sp-distance",
  "sp-runtime",
- "subxt 0.43.0",
+ "subxt 0.43.1",
  "tokio",
 ]
 
@@ -2661,7 +2661,7 @@ dependencies = [
 
 [[package]]
 name = "duniter"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "array-bytes 6.2.3",
  "async-channel 2.5.0",
@@ -2769,7 +2769,7 @@ dependencies = [
  "sp-core",
  "sp-keyring",
  "sp-runtime",
- "subxt 0.43.0",
+ "subxt 0.43.1",
  "tokio",
 ]
 
@@ -2782,7 +2782,7 @@ dependencies = [
  "parity-scale-codec",
  "sp-core",
  "sp-runtime",
- "subxt 0.43.0",
+ "subxt 0.43.1",
  "tokio",
 ]
 
@@ -12976,8 +12976,9 @@ dependencies = [
 
 [[package]]
 name = "subxt"
-version = "0.43.0"
-source = "git+https://github.com/paritytech/subxt?tag=v0.43.0#841a43b1ece8dcbf6c466f9ee38669f702069a07"
+version = "0.43.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8c6dc0f90e23c521465b8f7e026af04a48cc6f00c51d88a8d313d33096149de"
 dependencies = [
  "async-trait",
  "derive-where",
@@ -12998,7 +12999,7 @@ dependencies = [
  "sp-crypto-hashing 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "subxt-core 0.43.0",
  "subxt-lightclient 0.43.0",
- "subxt-macro 0.43.0",
+ "subxt-macro 0.43.1",
  "subxt-metadata 0.43.0",
  "subxt-rpcs 0.43.0",
  "thiserror 2.0.16",
@@ -13030,7 +13031,8 @@ dependencies = [
 [[package]]
 name = "subxt-codegen"
 version = "0.43.0"
-source = "git+https://github.com/paritytech/subxt?tag=v0.43.0#841a43b1ece8dcbf6c466f9ee38669f702069a07"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1728caecd9700391e78cc30dc298221d6f5ca0ea28258a452aa76b0b7c229842"
 dependencies = [
  "heck 0.5.0",
  "parity-scale-codec",
@@ -13076,7 +13078,8 @@ dependencies = [
 [[package]]
 name = "subxt-core"
 version = "0.43.0"
-source = "git+https://github.com/paritytech/subxt?tag=v0.43.0#841a43b1ece8dcbf6c466f9ee38669f702069a07"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25338dd11ae34293b8d0c5807064f2e00194ba1bd84cccfa694030c8d185b941"
 dependencies = [
  "base58",
  "blake2 0.10.6",
@@ -13122,7 +13125,8 @@ dependencies = [
 [[package]]
 name = "subxt-lightclient"
 version = "0.43.0"
-source = "git+https://github.com/paritytech/subxt?tag=v0.43.0#841a43b1ece8dcbf6c466f9ee38669f702069a07"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9097ef356e534ce0b6a50b95233512afc394347b971a4f929c4830adc52bbc6f"
 dependencies = [
  "futures 0.3.31",
  "futures-util",
@@ -13153,8 +13157,9 @@ dependencies = [
 
 [[package]]
 name = "subxt-macro"
-version = "0.43.0"
-source = "git+https://github.com/paritytech/subxt?tag=v0.43.0#841a43b1ece8dcbf6c466f9ee38669f702069a07"
+version = "0.43.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c269228a2e5de4c0c61ed872b701967ee761df0f167d5b91ecec1185bca65793"
 dependencies = [
  "darling",
  "parity-scale-codec",
@@ -13185,7 +13190,8 @@ dependencies = [
 [[package]]
 name = "subxt-metadata"
 version = "0.43.0"
-source = "git+https://github.com/paritytech/subxt?tag=v0.43.0#841a43b1ece8dcbf6c466f9ee38669f702069a07"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c134068711c0c46906abc0e6e4911204420331530738e18ca903a5469364d9f"
 dependencies = [
  "frame-decode 0.8.3",
  "frame-metadata 23.0.0",
@@ -13222,7 +13228,8 @@ dependencies = [
 [[package]]
 name = "subxt-rpcs"
 version = "0.43.0"
-source = "git+https://github.com/paritytech/subxt?tag=v0.43.0#841a43b1ece8dcbf6c466f9ee38669f702069a07"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25de7727144780d780a6a7d78bbfd28414b8adbab68b05e87329c367d7705be4"
 dependencies = [
  "derive-where",
  "frame-metadata 23.0.0",
@@ -13286,7 +13293,8 @@ dependencies = [
 [[package]]
 name = "subxt-utils-fetchmetadata"
 version = "0.43.0"
-source = "git+https://github.com/paritytech/subxt?tag=v0.43.0#841a43b1ece8dcbf6c466f9ee38669f702069a07"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c4fb8fd6b16ecd3537a29d70699f329a68c1e47f70ed1a46d64f76719146563"
 dependencies = [
  "hex",
  "parity-scale-codec",

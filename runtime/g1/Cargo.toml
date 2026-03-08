@@ -24,6 +24,9 @@ constant-fees = ["common-runtime/constant-fees"]
 # extension.
 metadata-hash = ["substrate-wasm-builder/metadata-hash"]
 runtime-benchmarks = [
+	"dep:frame-benchmarking",
+	"dep:frame-system-benchmarking",
+	"dep:pallet-session-benchmarking",
 	"common-runtime/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
@@ -64,13 +67,13 @@ runtime-benchmarks = [
 std = [
 	"codec/std",
 	"common-runtime/std",
-	"frame-benchmarking/std",
+	"frame-benchmarking?/std",
 	"frame-executive/std",
 	"frame-support/std",
-	"frame-system-benchmarking/std",
+	"frame-system-benchmarking?/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
-	"frame-try-runtime/std",
+	"frame-try-runtime?/std",
 	"log/std",
 	"node-primitives/std",
 	"pallet-atomic-swap/std",
@@ -96,7 +99,7 @@ std = [
 	"pallet-proxy/std",
 	"pallet-quota/std",
 	"pallet-scheduler/std",
-	"pallet-session-benchmarking/std",
+	"pallet-session-benchmarking?/std",
 	"pallet-session/std",
 	"pallet-smith-members/std",
 	"pallet-sudo/std",
@@ -159,7 +162,7 @@ try-runtime = [
 	"pallet-proxy/try-runtime",
 	"pallet-quota/try-runtime",
 	"pallet-scheduler/try-runtime",
-	"pallet-session-benchmarking/try-runtime",
+	"pallet-session-benchmarking?/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-smith-members/try-runtime",
 	"pallet-sudo/try-runtime",
@@ -184,10 +187,10 @@ substrate-wasm-builder = { workspace = true, optional = true }
 codec = { workspace = true, features = ["derive"] }
 common-runtime = { workspace = true }
 frame-executive = { workspace = true }
-pallet-session-benchmarking = { workspace = true }
+pallet-session-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
-frame-benchmarking = { workspace = true }
-frame-system-benchmarking = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
+frame-system-benchmarking = { workspace = true, optional = true }
 frame-system = { workspace = true }
 frame-system-rpc-runtime-api = { workspace = true }
 frame-try-runtime = { workspace = true, optional = true }

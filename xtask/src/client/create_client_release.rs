@@ -15,7 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::{Result, anyhow};
-use std::{fs, path::Path, process::Command};
+use std::path::Path;
 
 /// Crée une release client sur GitLab avec les assets nécessaires.
 /// Cette fonction reproduit l'étape de CI create_client_release qui :
@@ -49,7 +49,7 @@ pub async fn create_client_release(
     println!("📦 Runtime: {runtime}");
 
     // Calculer les versions et noms comme dans la CI
-    let client_version = get_client_version()?;
+    let client_version = super::package_validation::get_client_version()?;
     let runtime_version = extract_runtime_version_from_network(&network)?;
     let client_milestone = format!("client-{client_version}");
     let client_release_name = format!("{runtime}-{runtime_version}-{client_version}");
@@ -77,7 +77,7 @@ pub async fn create_client_release(
 
     // Rechercher les fichiers .deb et .rpm dans target (seulement si demandé)
     let package_files = if upload_packages {
-        let packages = find_package_files()?;
+        let packages = super::package_validation::find_local_package_files(&client_version)?;
         if !packages.is_empty() {
             println!("📦 Packages trouvés (seront uploadés):");
             for (asset_name, file_path) in &packages {
@@ -157,29 +157,6 @@ pub async fn create_client_release(
     Ok(())
 }
 
-fn get_client_version() -> Result<String> {
-    let output = Command::new("grep")
-        .args(["version", "node/Cargo.toml"])
-        .output()?;
-
-    if !output.status.success() {
-        return Err(anyhow!(
-            "Impossible de lire la version du client depuis node/Cargo.toml"
-        ));
-    }
-
-    let version_line = String::from_utf8(output.stdout)?;
-    let version = version_line
-        .split("version = \"")
-        .nth(1)
-        .ok_or_else(|| anyhow!("Format de version invalide dans node/Cargo.toml"))?
-        .split('"')
-        .next()
-        .ok_or_else(|| anyhow!("Format de version invalide dans node/Cargo.toml"))?;
-
-    Ok(version.to_string())
-}
-
 /// Extract runtime version from network name (e.g., "gtest-1100" -> "1100")
 fn extract_runtime_version_from_network(network: &str) -> Result<String> {
     // The network name format is expected to be: {runtime}-{version}
@@ -205,47 +182,4 @@ fn extract_runtime_version_from_network(network: &str) -> Result<String> {
     }
 
     Ok(version.to_string())
-}
-
-/// Recherche les fichiers .deb et .rpm dans les répertoires spécifiques
-fn find_package_files() -> Result<Vec<(String, String)>> {
-    let mut packages = Vec::new();
-
-    // Rechercher les fichiers .deb dans target/debian
-    let debian_dir = Path::new("target/debian");
-    if debian_dir.exists()
-        && let Ok(entries) = fs::read_dir(debian_dir)
-    {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if let Some(file_name) = path.file_name()
-                && let Some(name_str) = file_name.to_str()
-                && name_str.ends_with(".deb")
-            {
-                let asset_name = name_str.to_string();
-                let file_path = path.to_string_lossy().to_string();
-                packages.push((asset_name, file_path));
-            }
-        }
-    }
-
-    // Rechercher les fichiers .rpm dans target/generate-rpm
-    let rpm_dir = Path::new("target/generate-rpm");
-    if rpm_dir.exists()
-        && let Ok(entries) = fs::read_dir(rpm_dir)
-    {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if let Some(file_name) = path.file_name()
-                && let Some(name_str) = file_name.to_str()
-                && name_str.ends_with(".rpm")
-            {
-                let asset_name = name_str.to_string();
-                let file_path = path.to_string_lossy().to_string();
-                packages.push((asset_name, file_path));
-            }
-        }
-    }
-
-    Ok(packages)
 }

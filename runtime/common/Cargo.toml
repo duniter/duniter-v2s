@@ -14,6 +14,7 @@ default = ["std"]
 no_std = []
 constant-fees = []
 runtime-benchmarks = [
+	"dep:frame-benchmarking",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
@@ -40,7 +41,7 @@ runtime-benchmarks = [
 std = [
 	"codec/std",
 	"duniter-primitives/std",
-	"frame-benchmarking/std",
+	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-authority-members/std",
@@ -98,7 +99,7 @@ try-runtime = [
 [dependencies]
 codec = { workspace = true, features = ["derive"] }
 duniter-primitives = { workspace = true }
-frame-benchmarking = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-authority-members = { workspace = true }

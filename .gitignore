@@ -40,3 +40,6 @@ node/specs/g1-raw.json
 # Launch script generated files
 deploy-bootstrap/
 launch-secrets-*.txt
+
+# Generated metadata files
+resources/*_metadata.scale

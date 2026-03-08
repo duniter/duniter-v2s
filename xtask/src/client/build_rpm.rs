@@ -71,10 +71,10 @@ pub fn build_rpm(network: String) -> Result<()> {
 
     // Step 2: Build the binary with appropriate features
     println!("🔨 Building binary...");
-    let features = format!("--features {runtime},embed --no-default-features");
+    let features = format!("--features {runtime},embed,distance-oracle --no-default-features");
     let mut build_cmd = Command::new("cargo");
     apply_vendor_config_if_present(&mut build_cmd)
-        .args(["build", "--release"])
+        .args(["build", "--release", "-p", "duniter"])
         .args(features.split_whitespace());
     exec_should_success(&mut build_cmd)?;
 
