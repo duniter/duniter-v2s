@@ -118,7 +118,31 @@ Use Rust's native `cargo` command to build and launch the node:
 cargo run -- --dev
 ```
 
-This will deploy a local blockchain with test accounts (Alice, Bob, etc) in the genesis.
+This deploys a local blockchain with test accounts (Alice, Bob, etc) in the genesis using the
+default runtime (`gdev`).
+
+To run a local chain with another runtime:
+
+```sh
+# gdev local chain
+cargo run -p duniter --no-default-features --features gdev -- \
+  --chain gdev_local --validator --unsafe-force-node-key-generation --sealing manual --tmp
+
+# gtest local chain
+cargo run -p duniter --no-default-features --features gtest -- \
+  --chain gtest_local --validator --unsafe-force-node-key-generation --sealing manual --tmp
+
+# g1 local chain
+cargo run -p duniter --no-default-features --features g1 -- \
+  --chain g1_local --validator --unsafe-force-node-key-generation --sealing manual --tmp
+```
+
+You can also use the helper script (it includes these options by default):
+
+```sh
+scripts/run-local-chain.sh --runtime gtest
+```
+
 Open `https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944` to watch and interact with your node.
 
 Start the development chain with detailed logging:

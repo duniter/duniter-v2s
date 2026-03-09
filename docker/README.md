@@ -55,16 +55,39 @@ volumes:
   data-validator:
 ```
 
+## Local manual-sealing chain (gtest/g1)
+
+Build a local image (separate from production image build) with the runtime you want:
+
+```bash
+docker build -f docker/local.Dockerfile --build-arg chain=gtest -t duniter/duniter-v2s-gtest-local:latest .
+docker build -f docker/local.Dockerfile --build-arg chain=g1 -t duniter/duniter-v2s-g1-local:latest .
+```
+
+Production image builds keep using `docker/Dockerfile`.
+
+Run a local chain:
+
+```bash
+docker run --rm -it -p9944:9944 -p30333:30333 \
+  -e DUNITER_CHAIN_NAME=gtest_local \
+  duniter/duniter-v2s-gtest-local:latest
+```
+
+Using a `*_local` chain automatically enables local mode in the entrypoint:
+`--validator --unsafe-force-node-key-generation --sealing manual --tmp`.
+
 ## Environment variables
 
 | Name                         | Description                                                                                                                                                                                                                                                                                                                                          | Default                                                                                     |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `DUNITER_NODE_NAME`          | The node name. This name will appear on the Substrate telemetry server when telemetry is enabled.                                                                                                                                                                                                                                                    | Random name                                                                                 |
-| `DUNITER_CHAIN_NAME`         | The currency to process. "gdev" uses the embeded chainspec. A path allows to use a local json raw chainspec.                                                                                                                                                                                                                                         | `dev` (development mode)                                                                    |
+| `DUNITER_CHAIN_NAME`         | The chain spec to run (for example `dev`, `gdev`, `gtest_dev`, `g1_dev`, `gtest_local`, `g1_local`, or a path to a local raw chainspec JSON file).                                                                                                                                                                                                  | `dev` (development mode)                                                                    |
 | `DUNITER_PUBLIC_ADDR`        | The libp2p public address base. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when the node is behind a reverse proxy with its ports not directly exposed.<br>Note: the `p2p/<peer_id>` part of the address shouldn't be set in this variable. It is automatically added by Duniter. | duniter guesses one from the node's IPv4 address.                                       |
 | `DUNITER_LISTEN_ADDR`        | The libp2p listen address. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when running a validator node behind a reverse proxy, to force the P2P end point in websocket mode with:<br> `DUNITER_LISTEN_ADDR=/ip4/0.0.0.0/tcp/30333/ws`                                                | Non validator node: `/ip4/0.0.0.0/tcp/30333/ws`<br>Validator node: `/ip4/0.0.0.0/tcp/30333` |
 | `DUNITER_RPC_CORS`           | Value of the polkadot `--rpc-cors` option.                                                                                                                                                                                                                                                                                                           | `all`                                                                                       |
 | `DUNITER_VALIDATOR`          | Boolean (`true` / `false`) to run the node in validator mode. Configure the polkadot options `--validator --rpc-methods Unsafe`.                                                                                                                                                                                                                     | `false`                                                                                     |
+| `DUNITER_LOCAL_CHAIN`        | Boolean (`true` / `false`) to force local manual-sealing mode. Adds `--validator --unsafe-force-node-key-generation --sealing manual --tmp`. This mode is automatically enabled when `DUNITER_CHAIN_NAME` ends with `_local`.                                                                                                                    | `false`                                                                                     |
 | `DUNITER_DISABLE_PROMETHEUS` | Boolean to disable the Prometheus endpoint on port 9615.                                                                                                                                                                                                                                                                                             | `false`                                                                                     |
 | `DUNITER_DISABLE_TELEMETRY`  | Boolean to disable connecting to the Substrate telemetry server.                                                                                                                                                                                                                                                                                     | `false`                                                                                     |
 | `DUNITER_PRUNING_PROFILE`    | _ `default`<br> _ `archive`: keep all blocks and state blocks<br> \* `light`: keep only last 256 state blocks and last 14400 blocks (one day duration)                                                                                                                                                                                               | `default`                                                                                   |

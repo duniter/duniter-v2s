@@ -28,7 +28,7 @@ use sc_telemetry::TelemetryEndpoints;
 use serde::Deserialize;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
-use sp_core::{Get, sr25519};
+use sp_core::{Get, ed25519};
 use std::{env, fs};
 
 pub type ChainSpec = sc_service::GenericChainSpec;
@@ -73,6 +73,7 @@ pub fn local_testnet_config(
     )
     .with_name("ĞTest Local Testnet")
     .with_id("gtest_local")
+    .with_protocol_id("gtest_local")
     .with_chain_type(ChainType::Local)
     .with_genesis_config_patch({
         let genesis_data =
@@ -86,7 +87,7 @@ pub fn local_testnet_config(
                 EXISTENTIAL_DEPOSIT,
                 None,
                 // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                get_account_id_from_seed::<ed25519::Public>("Alice"),
                 get_parameters,
             )
             .expect("Genesis Data must be buildable");

@@ -24,12 +24,19 @@ function ternary () {
 # Define chain name at the beginning
 # with #274 we could have default given in network branch
 DUNITER_CHAIN_NAME="${DUNITER_CHAIN_NAME:-dev}"
+DUNITER_LOCAL_CHAIN=$(boolean "${DUNITER_LOCAL_CHAIN:-false}")
 case "$DUNITER_CHAIN_NAME" in
   dev)
     chain=(--dev)
     ;;
   *)
     chain=(--chain "$DUNITER_CHAIN_NAME")
+    ;;
+esac
+# Local chain mode is enabled automatically when using a local chain spec.
+case "$DUNITER_CHAIN_NAME" in
+  *_local)
+    DUNITER_LOCAL_CHAIN=true
     ;;
 esac
 
@@ -84,8 +91,12 @@ set -- "$@" --rpc-cors "$DUNITER_RPC_CORS"
 
 # In case of validator, unsafe rpc methods are needed (like rotate_key) and should not be exposed publicly
 DUNITER_VALIDATOR=$(boolean "${DUNITER_VALIDATOR:-false}")
-if [ "$DUNITER_VALIDATOR" = true ]; then
+if [ "$DUNITER_VALIDATOR" = true ] || [ "$DUNITER_LOCAL_CHAIN" = true ]; then
   set -- "$@" --rpc-methods Unsafe --validator
+fi
+
+if [ "$DUNITER_LOCAL_CHAIN" = true ]; then
+  set -- "$@" --unsafe-force-node-key-generation --sealing manual --tmp
 fi
 
 DUNITER_DISABLE_PROMETHEUS=$(boolean "${DUNITER_DISABLE_PROMETHEUS:-false}")

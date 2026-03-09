@@ -56,6 +56,23 @@ cargo run -- --dev --tmp # here, --dev means --chain=dev which selects the gdev 
 
 When you see the logs, the blockchain is running and you can connect to it with [Duniter Portal](https://duniter-portal.axiom-team.fr/?rpc=ws://127.0.0.1:9944). You should see blocks being added every 6 seconds. You can use Alice, Bob, etc test accounts to submit extrinsics.
 
+If you need a local chain with another runtime, compile and run with the corresponding feature:
+
+```bash
+cargo run -p duniter --no-default-features --features gtest -- \
+  --chain gtest_local --validator --unsafe-force-node-key-generation --sealing manual --tmp
+cargo run -p duniter --no-default-features --features g1 -- \
+  --chain g1_local --validator --unsafe-force-node-key-generation --sealing manual --tmp
+```
+
+Or use the helper script (it includes these options by default):
+
+```bash
+scripts/run-local-chain.sh --runtime g1
+```
+
+When you see the logs, the blockchain is running and you can connect to it with [Duniter Portal](https://duniter-portal.axiom-team.fr/?rpc=ws://127.0.0.1:9944). You should see blocks being added every 6 seconds. You can use Alice, Bob, etc test accounts to submit extrinsics.
+
 ## Autocompletion
 
 When using Duniter commands, you will benefit a lot from commands autocompletion. This can be achieved by following [autocompletion documentation](../user/autocompletion.md) for you shell. If you use bash the commands are:
