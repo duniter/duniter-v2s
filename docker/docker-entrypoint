@@ -114,6 +114,11 @@ case "$DUNITER_PRUNING_PROFILE" in
     ;;
 esac
 
+# Duniter custom options
+if [ -n "$DUNITER_OPTIONS" ]; then
+  set -- "$@" "$DUNITER_OPTIONS"
+fi
+
 # Set main command
 # Since we are inside docker, we can bind to all interfaces.
 # User will bind port to host interface or set reverse proxy when needed.
