@@ -5,7 +5,6 @@ protocolId: "g1"
 bootNodes:
   - "/dns/g1.1000i100.fr/tcp/30333/p2p/12D3KooWKg6XoiHHArDYL6XDu7MPU44MvnfZugRxKuVR5vXV6Jip"
   - "/dns/g1.p2p.legal/tcp/30336/p2p/12D3KooWLqDSbiyiz8Dj4Mdnss5ZeUmxF3BRqohDDnEkL6oZJ8S5"
-  - "/dns/g1.asycn.io/tcp/30333/p2p/12D3KooWT2CtCqXE9pokgYCLh9HodSb4EQgfiv4LUvavu85qa2be"
   - "/dns/g1.coinduf.eu/tcp/30333/p2p/12D3KooWPbEg2WvkaCrPGCTe8BA8u9m6iH3dEZKS3UN7pfRQXidp"
   - "/dns/g1.axiom-team.fr/tcp/30333/p2p/12D3KooWAQdLdSScMu5uPRLAyKenAWRhwho517qf8bfN2hkbzteE"
 telemetryEndpoints:
