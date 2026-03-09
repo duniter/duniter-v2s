@@ -184,6 +184,33 @@ release_docker_manifest:
 
       echo "✅ Multi-arch tag created: ${IMAGE_NAME}:latest"
 
+release_gitlab_page:
+  stage: release
+  extends: .release_rules
+  tags:
+    - kepler
+  needs:
+    - job: release_debian_arm
+      artifacts: true
+    - job: release_debian_x64
+      artifacts: true
+    - job: release_rpm_arm
+      artifacts: true
+    - job: release_rpm_x64
+      artifacts: true
+    - job: release_docker_manifest
+      artifacts: false
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache bash curl jq
+  script:
+    - bash scripts/create_gitlab_client_release.sh
+  artifacts:
+    when: always
+    expire_in: never
+    paths:
+      - release/client-assets/*
+
 workflow:
   auto_cancel:
     on_new_commit: interruptible
