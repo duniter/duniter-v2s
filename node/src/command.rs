@@ -85,6 +85,8 @@ impl SubstrateCli for Cli {
             // For benchmarking, the total length of identities should be at least MinReceivedCertToBeAbleToIssueCert + 1
             #[cfg(feature = "gdev")]
             "dev" => Box::new(chain_spec::gdev::local_testnet_config(1, 5, 6)?),
+            #[cfg(feature = "gdev")]
+            "gdev_local" => Box::new(chain_spec::gdev::local_testnet_config(1, 5, 6)?),
 
             // Local testnet with G1 data, Gdev configuration (parameters & Smiths), and Alice as a validator.
             // Optionally, load configuration from DUNITER_GENESIS_CONFIG file to override default Gdev configuration.
@@ -129,6 +131,8 @@ impl SubstrateCli for Cli {
             // For benchmarking, the total length of identities should be at least MinReceivedCertToBeAbleToIssueCert + 1
             #[cfg(feature = "gtest")]
             "dev" => Box::new(chain_spec::gtest::local_testnet_config(1, 5, 6)?),
+            #[cfg(feature = "gtest")]
+            "gtest_local" => Box::new(chain_spec::gtest::local_testnet_config(1, 5, 6)?),
 
             // Generate development chainspecs with Alice as a validator.
             // Provide the DUNITER_GTEST_GENESIS environment variable to build genesis from JSON; otherwise, a local testnet with generated genesis will be used.
@@ -170,6 +174,8 @@ impl SubstrateCli for Cli {
             // For benchmarking, the total length of identities should be at least MinReceivedCertToBeAbleToIssueCert + 1
             #[cfg(feature = "g1")]
             "dev" => Box::new(chain_spec::g1::local_testnet_config(1, 5, 6)?),
+            #[cfg(feature = "g1")]
+            "g1_local" => Box::new(chain_spec::g1::local_testnet_config(1, 5, 6)?),
 
             // Generate development chainspecs with Alice as a validator.
             // Provide the DUNITER_GENESIS_CONFIG environment variable to build genesis from JSON; otherwise, a local testnet with generated genesis will be used.

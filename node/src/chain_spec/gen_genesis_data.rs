@@ -1261,7 +1261,7 @@ fn make_authority_exist<SessionKeys: Encode, SKP: SessionKeysProvider<SessionKey
             authority_name.clone(),
             IdentityV2 {
                 index: (identities_v2.len() as u32 + 1),
-                owner_key: get_account_id_from_seed::<sr25519::Public>(authority_name),
+                owner_key: get_account_id_from_seed::<ed25519::Public>(authority_name),
                 balance: common_parameters.balances_existential_deposit,
                 certs_received: HashMap::new(),
                 // note: in this context of generating genesis identities
@@ -1598,6 +1598,55 @@ fn decorate_smiths_with_identity(
         .collect()
 }
 
+fn parse_local_chain_technical_committee_members_len(
+    technical_committee_members_len: Option<&str>,
+) -> Result<Option<usize>, String> {
+    let technical_committee_members_len = technical_committee_members_len
+        .map(|raw| {
+            raw.parse::<usize>().map_err(|_| {
+                "DUNITER_LOCAL_TECHNICAL_COMMITTEE_MEMBERS must be an integer".to_string()
+            })
+        })
+        .transpose()?;
+
+    let Some(technical_committee_members_len) = technical_committee_members_len else {
+        return Ok(None);
+    };
+
+    if technical_committee_members_len == 0 {
+        return Err("DUNITER_LOCAL_TECHNICAL_COMMITTEE_MEMBERS must be greater than 0".to_string());
+    }
+    Ok(Some(technical_committee_members_len))
+}
+
+fn get_local_chain_technical_committee_members_len() -> Result<Option<usize>, String> {
+    let technical_committee_members_len =
+        std::env::var("DUNITER_LOCAL_TECHNICAL_COMMITTEE_MEMBERS").ok();
+    parse_local_chain_technical_committee_members_len(technical_committee_members_len.as_deref())
+}
+
+fn local_chain_default_technical_committee_members() -> Vec<AccountId> {
+    vec![get_account_id_from_seed::<ed25519::Public>("Alice")]
+}
+
+fn local_chain_technical_committee_member_seed(index: usize) -> String {
+    let names: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"];
+    if index < names.len() {
+        names[index].to_string()
+    } else {
+        format!("TechnicalCommittee{}", index + 1)
+    }
+}
+
+fn local_chain_technical_committee_members(
+    technical_committee_members_len: usize,
+) -> Vec<AccountId> {
+    (0..technical_committee_members_len)
+        .map(local_chain_technical_committee_member_seed)
+        .map(|seed| get_account_id_from_seed::<ed25519::Public>(seed.as_str()))
+        .collect()
+}
+
 pub fn generate_genesis_data_for_local_chain<P, SK, SessionKeys: Encode, SKP>(
     initial_authorities_len: usize,
     initial_smiths_len: usize,
@@ -1629,7 +1678,7 @@ where
         .map(|i| {
             (
                 IdtyName::from(names[i]),
-                get_account_id_from_seed::<sr25519::Public>(names[i]),
+                get_account_id_from_seed::<ed25519::Public>(names[i]),
             )
         })
         .collect::<BTreeMap<IdtyName, AccountId>>();
@@ -1708,10 +1757,13 @@ where
         .filter(|(_, authority)| authority.1)
         .count() as u32;
 
-    let technical_committee_members = initial_smiths
-        .iter()
-        .map(|x| x.0.clone())
-        .collect::<Vec<_>>();
+    let technical_committee_members = if let Some(technical_committee_members_len) =
+        get_local_chain_technical_committee_members_len()?
+    {
+        local_chain_technical_committee_members(technical_committee_members_len)
+    } else {
+        local_chain_default_technical_committee_members()
+    };
 
     let genesis_timestamp: u64 = get_genesis_timestamp()?;
     let genesis_info = GenesisInfo {
@@ -1939,7 +1991,7 @@ pub struct CommonParameters {
 /// Generate an authority keys.
 fn get_authority_keys_from_seed(s: &str) -> AuthorityKeys {
     (
-        get_account_id_from_seed::<sr25519::Public>(s),
+        get_account_id_from_seed::<ed25519::Public>(s),
         get_from_seed::<GrandpaId>(s),
         get_from_seed::<BabeId>(s),
         get_from_seed::<ImOnlineId>(s),
@@ -2102,5 +2154,94 @@ technical_committee: ["alice"]
         );
 
         fs::remove_file(file_path).expect("must remove temporary yaml config");
+    }
+
+    #[test]
+    fn test_parse_local_chain_technical_committee_members_len_default() {
+        assert_eq!(
+            parse_local_chain_technical_committee_members_len(None).expect("must parse default"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_parse_local_chain_technical_committee_members_len_custom() {
+        assert_eq!(
+            parse_local_chain_technical_committee_members_len(Some("3"))
+                .expect("must parse custom len"),
+            Some(3)
+        );
+    }
+
+    #[test]
+    fn test_parse_local_chain_technical_committee_members_len_reject_zero() {
+        let err = parse_local_chain_technical_committee_members_len(Some("0"))
+            .expect_err("zero must be rejected");
+        assert!(err.contains("greater than 0"));
+    }
+
+    #[test]
+    fn test_parse_local_chain_technical_committee_members_len_no_upper_bound() {
+        assert_eq!(
+            parse_local_chain_technical_committee_members_len(Some("42"))
+                .expect("must parse large len"),
+            Some(42)
+        );
+    }
+
+    #[test]
+    fn test_local_chain_technical_committee_members_has_requested_size() {
+        let technical_committee_members = local_chain_technical_committee_members(3);
+
+        assert_eq!(technical_committee_members.len(), 3);
+        assert_eq!(
+            technical_committee_members[0],
+            get_account_id_from_seed::<ed25519::Public>("Alice")
+        );
+        assert_eq!(
+            technical_committee_members[1],
+            get_account_id_from_seed::<ed25519::Public>("Bob")
+        );
+        assert_eq!(
+            technical_committee_members[2],
+            get_account_id_from_seed::<ed25519::Public>("Charlie")
+        );
+    }
+
+    #[test]
+    fn test_local_chain_technical_committee_members_one_member_is_alice() {
+        let technical_committee_members = local_chain_technical_committee_members(1);
+
+        assert_eq!(technical_committee_members.len(), 1);
+        assert_eq!(
+            technical_committee_members[0],
+            get_account_id_from_seed::<ed25519::Public>("Alice")
+        );
+    }
+
+    #[test]
+    fn test_local_chain_technical_committee_members_supports_more_than_six_members() {
+        let technical_committee_members = local_chain_technical_committee_members(8);
+
+        assert_eq!(technical_committee_members.len(), 8);
+        assert_eq!(
+            technical_committee_members[6],
+            get_account_id_from_seed::<ed25519::Public>("TechnicalCommittee7")
+        );
+        assert_eq!(
+            technical_committee_members[7],
+            get_account_id_from_seed::<ed25519::Public>("TechnicalCommittee8")
+        );
+    }
+
+    #[test]
+    fn test_local_chain_default_technical_committee_is_alice() {
+        let technical_committee_members = local_chain_default_technical_committee_members();
+
+        assert_eq!(technical_committee_members.len(), 1);
+        assert_eq!(
+            technical_committee_members[0],
+            get_account_id_from_seed::<ed25519::Public>("Alice")
+        );
     }
 }

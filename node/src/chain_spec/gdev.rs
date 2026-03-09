@@ -27,7 +27,7 @@ use sc_network::config::MultiaddrWithPeerId;
 use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use serde::Deserialize;
-use sp_core::{Get, sr25519};
+use sp_core::{Get, ed25519};
 use std::{env, fs};
 
 pub type ChainSpec = sc_service::GenericChainSpec;
@@ -200,7 +200,7 @@ pub fn local_testnet_config(
                 EXISTENTIAL_DEPOSIT,
                 get_local_chain_parameters(),
                 // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                get_account_id_from_seed::<ed25519::Public>("Alice"),
                 get_parameters,
             )
             .expect("Genesis Data must be buildable");
