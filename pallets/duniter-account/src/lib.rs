@@ -475,6 +475,12 @@ where
             frame_system::Pallet::<T>::providers(account) > 0,
             pallet_identity::Error::<T>::AccountNotExist
         );
+        ensure!(
+            frame_system::Pallet::<T>::get(account)
+                .linked_idty
+                .is_none(),
+            pallet_identity::Error::<T>::AccountAlreadyLinked
+        );
         // This check verifies that the account can withdraw at least twice the minimum balance.
         ensure!(
             T::Currency::can_withdraw(account, T::Currency::minimum_balance() * 2u32.into())

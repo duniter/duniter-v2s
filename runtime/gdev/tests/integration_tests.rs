@@ -1451,6 +1451,45 @@ fn test_link_account() {
         })
 }
 
+#[test]
+fn test_create_identity_forbids_already_linked_account() {
+    ExtBuilder::new(1, 3, 4)
+        .change_parameters(|params| params.wot_min_cert_for_create_idty_right = 0)
+        .with_initial_balances(vec![
+            (Keyring::Alice.to_account_id(), 8_888),
+            (
+                get_account_id_from_seed::<sp_core::sr25519::Public>("Zoe"),
+                1_000,
+            ),
+        ])
+        .build()
+        .execute_with(|| {
+            run_to_block(1);
+
+            let genesis_hash = System::block_hash(0);
+            let alice = Keyring::Alice.to_account_id();
+            let zoe = get_account_id_from_seed::<sp_core::sr25519::Public>("Zoe");
+            let zoe_signer = sp_core::sr25519::Pair::from_string("//Zoe", None)
+                .expect("static test key should be valid");
+            let link_payload = (b"link", genesis_hash, 1u32, zoe.clone()).encode();
+
+            assert_ok!(Identity::link_account(
+                RuntimeOrigin::signed(alice.clone()),
+                zoe.clone(),
+                zoe_signer.sign(&link_payload).into()
+            ));
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&zoe).linked_idty,
+                Some(1)
+            );
+
+            assert_noop!(
+                Identity::create_identity(RuntimeOrigin::signed(alice), zoe),
+                pallet_identity::Error::<Runtime>::AccountAlreadyLinked
+            );
+        })
+}
+
 /// test change owner key was validator is online
 #[test]
 fn test_change_owner_key_validator_online() {

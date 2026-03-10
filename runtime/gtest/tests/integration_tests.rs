@@ -22,6 +22,7 @@ use codec::Encode;
 use common::*;
 use frame_support::{assert_ok, traits::StoredMap};
 use gtest_runtime::*;
+use sp_core::Pair;
 use sp_keyring::sr25519::Keyring;
 use sp_runtime::MultiAddress;
 
@@ -110,5 +111,66 @@ fn test_change_owner_key_with_batch_all_claim_transfer_all() {
 
             // Keep advancing blocks with on_idle enabled in the harness.
             run_to_block(block_after_refund + 1);
+        })
+}
+
+#[test]
+fn test_change_owner_key_reaps_old_old_owner_key_without_balance() {
+    ExtBuilder::new(1, 3, 5)
+        .with_initial_balances(vec![
+            (Keyring::Ferdie.to_account_id(), 1_000),
+            (
+                get_account_id_from_seed::<sp_core::sr25519::Public>("Zoe"),
+                1_000,
+            ),
+        ])
+        .build()
+        .execute_with(|| {
+            run_to_block(4);
+
+            let genesis_hash = System::block_hash(0);
+            let dave = Keyring::Dave.to_account_id();
+            let ferdie = Keyring::Ferdie.to_account_id();
+            let zoe = get_account_id_from_seed::<sp_core::sr25519::Public>("Zoe");
+            let zoe_signer = sp_core::sr25519::Pair::from_string("//Zoe", None)
+                .expect("static test key should be valid");
+
+            assert_eq!(Balances::free_balance(dave.clone()), 0);
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&dave).linked_idty,
+                Some(4)
+            );
+
+            let first_payload = (b"icok", genesis_hash, 4u32, dave.clone()).encode();
+            let first_signature = Keyring::Ferdie.sign(&first_payload);
+            assert_ok!(Identity::change_owner_key(
+                RuntimeOrigin::signed(dave.clone()),
+                ferdie.clone(),
+                first_signature.into()
+            ));
+
+            assert_eq!(Identity::identity_index_of(&dave), None);
+            assert_eq!(Identity::identity_index_of(&ferdie), Some(4));
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&dave).linked_idty,
+                Some(4)
+            );
+
+            System::set_block_number(System::block_number() + ChangeOwnerKeyPeriod::get());
+
+            let second_payload = (b"icok", genesis_hash, 4u32, ferdie.clone()).encode();
+            let second_signature = zoe_signer.sign(&second_payload);
+            assert_ok!(Identity::change_owner_key(
+                RuntimeOrigin::signed(ferdie.clone()),
+                zoe.clone(),
+                second_signature.into()
+            ));
+
+            assert_eq!(Identity::identity_index_of(&zoe), Some(4));
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&dave),
+                pallet_duniter_account::AccountData::default()
+            );
+            assert_eq!(Balances::free_balance(dave), 0);
         })
 }
