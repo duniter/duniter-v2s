@@ -16,7 +16,7 @@ Multiple documentation sources are available depending on the level of detail yo
 
 - Full technical Rust doc (auto-generated with `cargo xtask gen-doc`) : https://doc-duniter-org.ipns.pagu.re/duniter/
 - User and client developer doc (official website) : https://duniter.org/wiki/duniter-v2/
-- Internal documentation (within git repository), see table of contents below : [./doc](./doc)
+- Internal documentation (within git repository), see table of contents below : [./docs](./docs)
 
 ### Internal documentation TOC
 
@@ -34,21 +34,23 @@ Multiple documentation sources are available depending on the level of detail yo
     - [beginner-walkthrough](./docs/dev/beginner-walkthrough.md)
     - [git-conventions](./docs/dev/git-conventions.md)
     - [pallet_conventions](./docs/dev/pallet_conventions.md)
-    - [launch-a-live-network](./docs/dev/launch-a-live-network.md)
+    - [release](./docs/dev/release.md)
+    - [runtime-upgrade](./docs/dev/runtime-upgrade.md)
+    - [g1-production-launch](./docs/dev/g1-production-launch.md)
+    - [g1-launch-checklist](./docs/dev/g1-launch-checklist.md)
     - [setup](./docs/dev/setup.md)
     - [compilation features](./docs/dev/compilation.md)
     - [verify-runtime-code](./docs/dev/verify-runtime-code.md)
     - [weights-benchmarking](./docs/dev/weights-benchmarking.md)
     - [upgrade-substrate](./docs/dev/upgrade-substrate.md)
-    - [replay-block](./docs/test/replay-block.md)
   - [user](./docs/user/) user documentation
     - [autocompletion](./docs/user/autocompletion.md)
     - [debian installation](./docs/user/installation_debian.md)
+    - [reverse proxy](./docs/user/reverse-proxy.md)
     - [distance](./docs/user/distance.md)
     - [fees](./docs/user/fees.md)
   - [packaging](./docs/packaging/) packaging
     - [build-for-arm](./docs/packaging/build-for-arm.md) build for ARM architecture
-    - [build-debian](./docs/packaging/build-deb.md) build a native Debian package
 - [docker](./docker/) docker-related documentation
 - [end2end-tests](./end2end-tests/) automated end to end tests written with cucumber
 - [live-tests](./live-tests/) sanity checks to test the storage of a live chain

@@ -1,5 +1,9 @@
 # Debian Setup Instructions
 
+If you want to publish a public RPC endpoint, do not expose port `9944`
+directly. Put it behind a reverse proxy instead. See
+`docs/user/reverse-proxy.md` for nginx examples and deployment guidance.
+
 ## Mirror Node
 
 1. Download the Duniter .deb file.

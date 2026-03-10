@@ -217,19 +217,6 @@ enum ClientReleaseCommand {
         #[clap(long)]
         release_tag: Option<String>,
     },
-    /// Download artifacts from an existing CI pipeline and create/fill the GitLab release
-    Finalize {
-        /// Format: <network>-<runtime-version> (ex: gtest-1100, gdev-1000)
-        network: String,
-        /// GitLab pipeline ID that already built the release packages
-        pipeline_id: u64,
-        /// Git ref used when creating the release if it does not already exist
-        #[clap(long)]
-        branch: Option<String>,
-        /// Release tag (auto-computed if omitted)
-        #[clap(long)]
-        release_tag: Option<String>,
-    },
 }
 
 #[derive(Debug, clap::Subcommand)]
@@ -347,20 +334,6 @@ async fn main() -> Result<()> {
                 } => {
                     client::trigger_release_builds::trigger_release_builds(
                         network,
-                        branch,
-                        release_tag,
-                    )
-                    .await
-                }
-                ClientReleaseCommand::Finalize {
-                    network,
-                    pipeline_id,
-                    branch,
-                    release_tag,
-                } => {
-                    client::finalize_release::finalize_release(
-                        network,
-                        pipeline_id,
                         branch,
                         release_tag,
                     )
