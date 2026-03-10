@@ -447,6 +447,14 @@ pub mod pallet {
             let mut idty_value =
                 Identities::<T>::get(idty_index).ok_or(Error::<T>::IdtyNotFound)?;
 
+            match idty_value.status {
+                IdtyStatus::Unconfirmed => {
+                    return Err(Error::<T>::CanNotChangeOwnerKeyOfUnconfirmed.into());
+                }
+                IdtyStatus::Revoked => return Err(Error::<T>::CanNotChangeOwnerKeyOfRevoked.into()),
+                IdtyStatus::Unvalidated | IdtyStatus::Member | IdtyStatus::NotMember => {}
+            }
+
             ensure!(
                 IdentityIndexOf::<T>::get(&new_key).is_none(),
                 Error::<T>::OwnerKeyAlreadyUsed
@@ -809,6 +817,10 @@ pub mod pallet {
         InvalidLegacyRevocationFormat,
         /// Cannot create an identity on an account already linked to one.
         AccountAlreadyLinked,
+        /// Can not change owner key of an unconfirmed identity.
+        CanNotChangeOwnerKeyOfUnconfirmed,
+        /// Can not change owner key of a revoked identity.
+        CanNotChangeOwnerKeyOfRevoked,
     }
 
     // INTERNAL FUNCTIONS //

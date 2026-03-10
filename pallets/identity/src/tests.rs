@@ -89,6 +89,66 @@ fn inactive_bob() -> GenesisIdty<Test> {
     }
 }
 
+fn unconfirmed_bob() -> GenesisIdty<Test> {
+    GenesisIdty {
+        index: 2,
+        name: IdtyName::from("Bob"),
+        value: IdtyVal {
+            data: (),
+            next_creatable_identity_on: 0,
+            old_owner_key: None,
+            owner_key: account(2).id,
+            next_scheduled: 10,
+            status: crate::IdtyStatus::Unconfirmed,
+        },
+    }
+}
+
+fn unvalidated_bob() -> GenesisIdty<Test> {
+    GenesisIdty {
+        index: 2,
+        name: IdtyName::from("Bob"),
+        value: IdtyVal {
+            data: (),
+            next_creatable_identity_on: 0,
+            old_owner_key: None,
+            owner_key: account(2).id,
+            next_scheduled: 10,
+            status: crate::IdtyStatus::Unvalidated,
+        },
+    }
+}
+
+fn revoked_bob() -> GenesisIdty<Test> {
+    GenesisIdty {
+        index: 2,
+        name: IdtyName::from("Bob"),
+        value: IdtyVal {
+            data: (),
+            next_creatable_identity_on: 0,
+            old_owner_key: None,
+            owner_key: account(2).id,
+            next_scheduled: 10,
+            status: crate::IdtyStatus::Revoked,
+        },
+    }
+}
+
+fn expiring_unvalidated_bob() -> GenesisIdty<Test> {
+    GenesisIdty {
+        index: 2,
+        name: IdtyName::from("Bob"),
+        value: IdtyVal {
+            data: (),
+            next_creatable_identity_on: 0,
+            old_owner_key: None,
+            owner_key: account(2).id,
+            next_scheduled: 4,
+            status: crate::IdtyStatus::Unvalidated,
+        },
+    }
+}
+
 // From legacy credentials Charlie:Charlie
 fn legacy_charlie() -> GenesisIdty<Test> {
     GenesisIdty {
@@ -395,6 +455,183 @@ fn test_change_owner_key() {
         assert_eq!(System::sufficients(&account(10).id), 1);
         // Last owner key should still be sufficient  (identity is revoked but not removed)
         assert_eq!(System::sufficients(&account(100).id), 1);
+    });
+}
+
+#[test]
+fn test_change_owner_key_refuses_unconfirmed_identity() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice(), unconfirmed_bob()],
+    })
+    .execute_with(|| {
+        let genesis_hash = System::block_hash(0);
+        let payload = IdtyIndexAccountIdPayload {
+            genesis_hash: &genesis_hash,
+            idty_index: 2u64,
+            old_owner_key: &account(2).id,
+        };
+
+        run_to_block(1);
+
+        assert_noop!(
+            Identity::change_owner_key(
+                RuntimeOrigin::signed(account(2).id),
+                account(20).id,
+                test_signature(
+                    account(20).signer,
+                    (NEW_OWNER_KEY_PAYLOAD_PREFIX, payload).encode()
+                )
+            ),
+            Error::<Test>::CanNotChangeOwnerKeyOfUnconfirmed
+        );
+    });
+}
+
+#[test]
+fn test_change_owner_key_allows_unvalidated_identity() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice(), unvalidated_bob()],
+    })
+    .execute_with(|| {
+        let genesis_hash = System::block_hash(0);
+        let payload = IdtyIndexAccountIdPayload {
+            genesis_hash: &genesis_hash,
+            idty_index: 2u64,
+            old_owner_key: &account(2).id,
+        };
+
+        run_to_block(1);
+
+        assert_ok!(Identity::change_owner_key(
+            RuntimeOrigin::signed(account(2).id),
+            account(20).id,
+            test_signature(
+                account(20).signer,
+                (NEW_OWNER_KEY_PAYLOAD_PREFIX, payload).encode()
+            )
+        ));
+        assert_eq!(Identity::identity(2).unwrap().owner_key, account(20).id);
+        assert_eq!(
+            Identity::identity(2).unwrap().status,
+            crate::IdtyStatus::Unvalidated
+        );
+    });
+}
+
+#[test]
+fn test_change_owner_key_allows_not_member_identity() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice(), inactive_bob()],
+    })
+    .execute_with(|| {
+        let genesis_hash = System::block_hash(0);
+        let payload = IdtyIndexAccountIdPayload {
+            genesis_hash: &genesis_hash,
+            idty_index: 2u64,
+            old_owner_key: &account(2).id,
+        };
+
+        run_to_block(1);
+
+        assert_ok!(Identity::change_owner_key(
+            RuntimeOrigin::signed(account(2).id),
+            account(20).id,
+            test_signature(
+                account(20).signer,
+                (NEW_OWNER_KEY_PAYLOAD_PREFIX, payload).encode()
+            )
+        ));
+        assert_eq!(Identity::identity(2).unwrap().owner_key, account(20).id);
+        assert_eq!(
+            Identity::identity(2).unwrap().status,
+            crate::IdtyStatus::NotMember
+        );
+    });
+}
+
+#[test]
+fn test_change_owner_key_refuses_revoked_identity() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice(), revoked_bob()],
+    })
+    .execute_with(|| {
+        let genesis_hash = System::block_hash(0);
+        let payload = IdtyIndexAccountIdPayload {
+            genesis_hash: &genesis_hash,
+            idty_index: 2u64,
+            old_owner_key: &account(2).id,
+        };
+
+        run_to_block(1);
+
+        assert_noop!(
+            Identity::change_owner_key(
+                RuntimeOrigin::signed(account(2).id),
+                account(20).id,
+                test_signature(
+                    account(20).signer,
+                    (NEW_OWNER_KEY_PAYLOAD_PREFIX, payload).encode()
+                )
+            ),
+            Error::<Test>::CanNotChangeOwnerKeyOfRevoked
+        );
+    });
+}
+
+#[test]
+fn test_unvalidated_identity_is_pruned_after_validation_deadline() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice(), expiring_unvalidated_bob()],
+    })
+    .execute_with(|| {
+        run_to_block(4);
+
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
+            idty_index: 2,
+            reason: RemovalReason::Unvalidated,
+        }));
+        assert_eq!(Identity::identity(2), None);
+        assert_eq!(Identity::identity_index_of(account(2).id), None);
+    });
+}
+
+#[test]
+fn test_unvalidated_identity_is_pruned_after_validation_deadline_even_after_key_change() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice(), expiring_unvalidated_bob()],
+    })
+    .execute_with(|| {
+        let genesis_hash = System::block_hash(0);
+        let payload = IdtyIndexAccountIdPayload {
+            genesis_hash: &genesis_hash,
+            idty_index: 2u64,
+            old_owner_key: &account(2).id,
+        };
+
+        run_to_block(1);
+
+        assert_ok!(Identity::change_owner_key(
+            RuntimeOrigin::signed(account(2).id),
+            account(20).id,
+            test_signature(
+                account(20).signer,
+                (NEW_OWNER_KEY_PAYLOAD_PREFIX, payload).encode()
+            )
+        ));
+        assert_eq!(Identity::identity(2).unwrap().next_scheduled, 4);
+        assert_eq!(
+            Identity::identity(2).unwrap().status,
+            crate::IdtyStatus::Unvalidated
+        );
+
+        run_to_block(4);
+
+        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRemoved {
+            idty_index: 2,
+            reason: RemovalReason::Unvalidated,
+        }));
+        assert_eq!(Identity::identity(2), None);
+        assert_eq!(Identity::identity_index_of(account(20).id), None);
     });
 }
 
