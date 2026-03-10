@@ -29,7 +29,6 @@ Commands:
   client-create-release   Create client release (reprend la tâche create_client_release de la CI)
   client-build-rpm        Build RPM (reprend la tâche build_rpm de la CI)
   client-build-deb        Build DEB (reprend la tâche build_deb de la CI)
-  client-finalize-release Download artifacts from an existing CI pipeline and create/fill the release page
   runtime-build           Build runtime (reprend la tâche build_runtime de la CI)
   runtime-create-release  Create runtime release (reprend la tâche create_runtime_release de la CI)
   help                    Print this message or the help of the given subcommand(s)

@@ -2,6 +2,10 @@
 
 Guide opérationnel pour le lancement du réseau Ğ1 sur Duniter-v2S.
 
+Pour un lancement standard, utiliser en priorité `scripts/launch-network.sh
+--runtime g1`. Ce document détaille le même processus étape par étape pour
+audit, contrôle manuel ou reprise ciblée.
+
 ## Prérequis techniques
 
 ### Machine de build
@@ -39,6 +43,11 @@ rm -rf release/*
 ```
 
 Vérifier `spec_version: 1100` dans `runtime/g1/src/lib.rs` et vérifier que la **version client** dans `node/Cargo.toml` a bien été bumpée (checklist A6, ex : `version = "2.0.0"`). Cette version client est distincte du `spec_version` runtime : elle identifie le binaire du nœud et apparaît dans le tag Docker (`1100-<client_version>`) et le nom de la release GitLab.
+
+Toute modification du binaire publié doit entraîner un bump de cette version
+client. En particulier, les changements du raw chainspec embarqué (par exemple
+une mise à jour des bootnodes) modifient bien le binaire final et doivent donc
+être publiés comme une nouvelle release client pour le réseau concerné.
 
 Pour les futures releases client de Ğ1, le tag GitLab doit rester au format
 `g1-1100-<client_version>` : la partie `1100` correspond au runtime de genesis
@@ -122,6 +131,11 @@ genesis.json, g1.json, g1.yaml, WASM, block_hist.json.gz, cert_hist.json.gz, tx_
 </details>
 
 ### Étape 6 — Release client
+
+Cette étape correspond au **client de bootstrap** associé à une nouvelle
+genesis. Pour les futures releases client de Ğ1 sur un réseau déjà lancé,
+utiliser uniquement le flow par tag protégé + GitLab CI décrit dans
+`docs/dev/release.md`.
 
 Créer le jalon GitLab **avant** de lancer la release :
 
@@ -365,6 +379,8 @@ server {
 ```
 
 Le `proxy_read_timeout 86400` (24h) est nécessaire pour les connexions WebSocket longue durée.
+
+Guide détaillé : `docs/user/reverse-proxy.md`.
 </details>
 
 <details><summary>Alternative : lancement depuis les sources</summary>
