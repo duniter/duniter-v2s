@@ -807,6 +807,8 @@ pub mod pallet {
         InsufficientBalance,
         /// Legacy revocation document format is invalid
         InvalidLegacyRevocationFormat,
+        /// Cannot create an identity on an account already linked to one.
+        AccountAlreadyLinked,
     }
 
     // INTERNAL FUNCTIONS //
