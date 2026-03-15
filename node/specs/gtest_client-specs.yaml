@@ -4,6 +4,9 @@ chainType: "Live"
 protocolId: "gtest"
 bootNodes:
   - "/dns/gtest.axiom-team.fr/tcp/30333/p2p/12D3KooWRsoY1uWFh5manQ7qjYt6bNiLTfJr9fAgcLz3mxwJY79y"
+  - "/dns/mirror.gtest-bn.brussels.ovh/tcp/443/wss/p2p/12D3KooWD1mp5M1CsZnVuPWQBHs5PhGZfhSEtm6gh6UvypcVrpjh"
+  - "/dns/vit.fdn.org/tcp/30334/ws/p2p/12D3KooWNpCpiZdAY1W9qngQoYmMfDsBoqYeNwH2NuPmiTunebhu"
+
 telemetryEndpoints:
   - ["/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]
 properties:
