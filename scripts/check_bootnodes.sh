@@ -3,16 +3,18 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CLIENT_SPEC_FILE="${1:-${ROOT_DIR}/node/specs/g1_client-specs.yaml}"
-RAW_SPEC_FILE="${2:-${ROOT_DIR}/node/specs/g1-raw.json}"
 BUILD_PROFILE="${DUNITER_BUILD_PROFILE:-debug}"
 BOOTNODE_TIMEOUT_SECONDS="${BOOTNODE_TIMEOUT_SECONDS:-60}"
 RESULTS_DIR="${BOOTNODE_RESULTS_DIR:-${ROOT_DIR}/target/bootnode-check}"
 ISOLATED_RAW_SPEC_FILE=""
+DEFAULT_CHAIN="g1"
+CLIENT_SPEC_FILE=""
+RAW_SPEC_FILE=""
 
 usage() {
   cat <<'EOF'
-Usage: scripts/check_bootnodes.sh [client-spec-file] [raw-spec-file]
+Usage: scripts/check_bootnodes.sh [g1|gtest] [client-spec-file] [raw-spec-file]
+       scripts/check_bootnodes.sh [client-spec-file] [raw-spec-file]
 
 Checks every bootnode listed in the client spec and reports:
 - unreachable bootnodes
@@ -26,8 +28,14 @@ Environment variables:
 - BOOTNODE_RESULTS_DIR: directory used for logs and per-node results
 
 Defaults:
-- client spec: node/specs/g1_client-specs.yaml
-- raw spec: node/specs/g1-raw.json
+- chain: g1
+- client spec: node/specs/<chain>_client-specs.yaml
+- raw spec: node/specs/<chain>-raw.json
+
+Examples:
+- scripts/check_bootnodes.sh
+- scripts/check_bootnodes.sh gtest
+- scripts/check_bootnodes.sh node/specs/g1_client-specs.yaml node/specs/g1-raw.json
 EOF
 }
 
@@ -37,6 +45,18 @@ case "${1:-}" in
     exit 0
     ;;
 esac
+
+CHAIN="${DEFAULT_CHAIN}"
+
+case "${1:-}" in
+  g1|gtest)
+    CHAIN="$1"
+    shift
+    ;;
+esac
+
+CLIENT_SPEC_FILE="${1:-${ROOT_DIR}/node/specs/${CHAIN}_client-specs.yaml}"
+RAW_SPEC_FILE="${2:-${ROOT_DIR}/node/specs/${CHAIN}-raw.json}"
 
 case "$BUILD_PROFILE" in
   debug|release)
@@ -69,7 +89,7 @@ fi
 if [ ! -x "$DUNITER_BINARY" ]; then
   echo "Duniter binary not found or not executable: $DUNITER_BINARY" >&2
   echo "Build it first, for example:" >&2
-  echo "  cargo build --release --locked --package duniter --bin duniter --no-default-features --features g1" >&2
+  echo "  cargo build --locked --package duniter --bin duniter --no-default-features --features g1" >&2
   exit 1
 fi
 
