@@ -338,12 +338,9 @@ sdk_resolve:
 fmt_and_clippy:
   extends:
     - .env
-  needs:
-    - job: toolchain_sync_check
-    - job: sdk_resolve
-      artifacts: true
-    - job: generate_metadata
-      artifacts: true
+  dependencies:
+    - sdk_resolve
+    - generate_metadata
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
