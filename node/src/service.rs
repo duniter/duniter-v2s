@@ -30,7 +30,7 @@ use crate::{
     rpc::DuniterPeeringRpcModuleDeps,
 };
 use async_io::Timer;
-use common_runtime::Block;
+use common_runtime::{Block, Header};
 use futures::{Stream, StreamExt};
 use log::error;
 use sc_client_api::{Backend, client::BlockBackend};
@@ -45,7 +45,7 @@ use sc_transaction_pool_api::TransactionPool;
 use sp_consensus_babe::inherents::InherentDataProvider;
 use sp_core::H256;
 use sp_runtime::traits::BlakeTwo256;
-use std::{fs, sync::Arc, time::Duration};
+use std::{fs, path::PathBuf, sync::Arc, time::Duration};
 
 #[cfg(not(feature = "runtime-benchmarks"))]
 type HostFunctions = sp_io::SubstrateHostFunctions;
@@ -114,6 +114,61 @@ pub mod runtime_executor {
 /// The minimum period of blocks on which justifications will be
 /// imported and generated.
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
+
+#[cfg(feature = "g1")]
+const DEFAULT_WARP_CHECKPOINT_JSON: &str = include_str!("../specs/g1-checkpoint.json");
+#[cfg(feature = "g1")]
+const DEFAULT_WARP_CHECKPOINT_NAME: &str = "g1";
+
+#[cfg(all(feature = "gdev", not(feature = "g1")))]
+const DEFAULT_WARP_CHECKPOINT_JSON: &str = include_str!("../specs/gdev-checkpoint.json");
+#[cfg(all(feature = "gdev", not(feature = "g1")))]
+const DEFAULT_WARP_CHECKPOINT_NAME: &str = "gdev";
+
+#[cfg(all(feature = "gtest", not(feature = "g1"), not(feature = "gdev")))]
+const DEFAULT_WARP_CHECKPOINT_JSON: &str = include_str!("../specs/gtest-checkpoint.json");
+#[cfg(all(feature = "gtest", not(feature = "g1"), not(feature = "gdev")))]
+const DEFAULT_WARP_CHECKPOINT_NAME: &str = "gtest";
+
+#[cfg(not(any(feature = "g1", feature = "gdev", feature = "gtest")))]
+compile_error!("One of the features g1, gdev, or gtest must be enabled.");
+
+fn load_checkpoint_from_file(path: PathBuf) -> Result<Header, ServiceError> {
+    let bytes = fs::read(path)?;
+    serde_json::from_slice(&bytes).map_err(|e| {
+        ServiceError::from(format!(
+            "failed to decode warp checkpoint header from file: {e}"
+        ))
+    })
+}
+
+fn build_warp_sync_config(
+    duniter_options: &crate::cli::DuniterConfigExtension,
+    network_provider: Arc<sc_consensus_grandpa::warp_proof::NetworkProvider<Block, FullBackend>>,
+) -> Result<WarpSyncConfig<Block>, ServiceError> {
+    if duniter_options.no_checkpoint {
+        return Ok(WarpSyncConfig::WithProvider(network_provider));
+    }
+
+    if let Some(warp_checkpoint_path) = &duniter_options.warp_checkpoint_header {
+        return Ok(WarpSyncConfig::WithTarget(load_checkpoint_from_file(
+            warp_checkpoint_path.clone(),
+        )?));
+    }
+
+    let checkpoint = serde_json::from_slice::<Header>(DEFAULT_WARP_CHECKPOINT_JSON.as_bytes())
+        .map_err(|e| {
+            ServiceError::from(format!(
+                "failed to decode embedded warp checkpoint for network {DEFAULT_WARP_CHECKPOINT_NAME}: {e}"
+            ))
+        })?;
+
+    if checkpoint.parent_hash == Default::default() {
+        return Ok(WarpSyncConfig::WithProvider(network_provider));
+    }
+
+    Ok(WarpSyncConfig::WithTarget(checkpoint))
+}
 
 #[derive(Debug)]
 pub enum RuntimeType {
@@ -406,6 +461,7 @@ where
         grandpa_link.shared_authority_set().clone(),
         Vec::default(),
     ));
+    let warp_sync_config = build_warp_sync_config(&duniter_options, Arc::clone(&warp_sync))?;
 
     // build network service from params
     let (network, system_rpc_tx, tx_handler_controller, sync_service) =
@@ -417,7 +473,7 @@ where
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: None,
-            warp_sync_config: Some(WarpSyncConfig::WithProvider(warp_sync)),
+            warp_sync_config: Some(warp_sync_config),
             block_relay: None,
             metrics,
         })?;
