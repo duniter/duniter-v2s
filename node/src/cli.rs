@@ -41,6 +41,25 @@ pub struct DuniterConfigExtension {
     #[arg(long)]
     pub public_rpc: Option<String>,
 
+    /// Trusted warp-sync checkpoint header from a JSON file.
+    ///
+    /// When provided, warp sync skips GRANDPA proof download and starts from this trusted header.
+    #[arg(
+        long,
+        value_name = "JSON_FILE_PATH",
+        conflicts_with = "no_checkpoint",
+        value_hint = clap::ValueHint::FilePath
+    )]
+    pub warp_checkpoint_header: Option<std::path::PathBuf>,
+
+    /// Ignore embedded checkpoint and force warp-sync to use the network provider.
+    #[arg(
+        long,
+        default_value_t = false,
+        conflicts_with = "warp_checkpoint_header"
+    )]
+    pub no_checkpoint: bool,
+
     /// Public Squid graphql endpoint to gossip on the network and make available in the apps. Convention: `<domain.tld>/v1/graphql`
     #[arg(long)]
     pub public_squid: Option<String>,
