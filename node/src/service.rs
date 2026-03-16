@@ -474,6 +474,7 @@ where
             import_queue,
             block_announce_validator_builder: None,
             warp_sync_config: Some(warp_sync_config),
+            warp_sync_provider: Some(warp_sync),
             block_relay: None,
             metrics,
         })?;
