@@ -178,6 +178,103 @@ pipeline will:
 The GitLab release page is created by CI through
 `scripts/create_gitlab_client_release.sh`.
 
+### GRANDPA hard fork after forced finality recovery
+
+If a network has recovered finality with `grandpa.noteStalled`, a later client
+release may need a network-specific `AuthoritySetHardFork` in
+`node/src/service.rs` so that new nodes can sync correctly.
+
+This must be configured carefully:
+
+- Add the hard fork only for the live chain spec id of the affected network.
+- Model only the single forced authority-set jump that was actually finalized.
+- Do not encode all intermediate on-chain `Grandpa.NewAuthorities` events that
+  happened while finality was stalled.
+
+For a forced recovery, the hard fork entry must be derived from the
+`ConsensusLog::ForcedChange`, not from the later `Grandpa.NewAuthorities`
+application block:
+
+- `block`: use the block that contains the `ForcedChange` digest log.
+- `set_id`: use the effective GRANDPA offchain set id after recovery.
+- `authorities`: use the authority list of the recovered live set.
+- `last_finalized`: set it to `Some(median_last_finalized)` from the
+  `ForcedChange` digest.
+
+Do not anchor the hard fork on the later `Grandpa.NewAuthorities` block with
+`last_finalized: Some(...)`. In the SDK, `AuthoritySetHardFork` is converted to
+a pending forced change with `delay = 0`. If you anchor it on the application
+block, the node will see:
+
+- the original on-chain forced change from the earlier digest
+- plus the local hard fork forced change
+
+This creates two simultaneous pending forced changes and sync fails with:
+
+```text
+Multiple pending forced authority set changes are not allowed.
+```
+
+Recommended procedure to derive the correct config:
+
+1. Identify the `grandpa.noteStalled` recovery window.
+2. Query the chain around that point and find the header digest containing
+   `ConsensusLog::ForcedChange`.
+3. Decode from that digest:
+   - the `median_last_finalized`
+   - the delay
+   - the recovered authority list
+4. Use the block that contains that digest as the hard fork `block`.
+5. Use the recovered live GRANDPA offchain `set_id`, not the on-chain runtime
+   `CurrentSetId` if they diverged during the stall.
+6. Gate the config to the live network only, for example by checking
+   `config.chain_spec.id()`.
+7. Verify with a fresh sync from genesis or fast sync before releasing.
+
+Operational notes:
+
+- Existing nodes that already synced without the hard fork may need a resync to
+  rebuild their local GRANDPA metadata with the new interpretation.
+- To validate `warp sync WithProvider`, at least one provider node must run the
+  new binary and be resynced from scratch before using it as the provider for a
+  second fresh node.
+- In Duniter, `warp sync WithProvider` also requires `--no-checkpoint`.
+  Otherwise the node uses `WithTarget` by default when a checkpoint is embedded
+  or provided.
+
+Concrete `gtest` example:
+
+- `grandpa.noteStalled` was executed at block `#2187746`.
+- The actual forced change was announced later by a `ConsensusLog::ForcedChange`
+  digest in block `#2188261`, not at the `noteStalled` block itself.
+- The forced change carried:
+  - `median_last_finalized = 2_123_891`
+  - `delay = 600`
+- The recovered live GRANDPA set after the recovery used offchain `set_id = 115`
+  with the following six authorities:
+  - `0x10c3f8cd9768029be7e32f125031d8540c1e8d9d8af54ab104fabf12e7291e8a`
+  - `0x8760a45a6b359b30ddc3aa9a160f41e4d6d3a72a5eacef7cfaf00285757cc9b1`
+  - `0xfd823b99be9106836fd685c1a8716b108aff80bf5220114498f224d29d06a95f`
+  - `0x92eea3f0194c2c53e07015bb642f2ea00196e48b730b964a7dacbdf465119951`
+  - `0xc4be7d48526f5bfa4c3427fca551abdcf45e90e9a750bfaccac1b60635218e67`
+  - `0x40bebbf11d0cfad19a65fd0756994d16c53d0bed57067cbdf0c764df5853704b`
+
+The corresponding hard fork entry is therefore anchored on block `#2188261`
+with hash `0x275b7296dab9ab0d925b4a835f919f0272cb68dc5ee44a658cceb1f84bc4d02f`,
+not on the later `Grandpa.NewAuthorities` application block `#2188861`.
+
+Using `#2188861` with `last_finalized: Some(2_123_891)` causes sync failures
+because the node sees both:
+
+- the original pending forced change from the on-chain digest at `#2188261`
+- the local hard fork forced change added at `#2188861`
+
+which triggers:
+
+```text
+Multiple pending forced authority set changes are not allowed.
+```
+
 ### Important note about image tags
 
 The Git tag keeps the **genesis runtime version** in its middle component, but
