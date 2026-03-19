@@ -44,6 +44,7 @@ use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::TransactionPool;
 use sp_consensus_babe::inherents::InherentDataProvider;
 use sp_core::H256;
+use sp_core::ByteArray;
 use sp_runtime::traits::BlakeTwo256;
 use std::{fs, path::PathBuf, sync::Arc, time::Duration};
 
@@ -132,6 +133,69 @@ const DEFAULT_WARP_CHECKPOINT_NAME: &str = "gtest";
 
 #[cfg(not(any(feature = "g1", feature = "gdev", feature = "gtest")))]
 compile_error!("One of the features g1, gdev, or gtest must be enabled.");
+
+#[cfg(feature = "gtest")]
+fn gtest_grandpa_hard_forks() -> Vec<sc_consensus_grandpa::AuthoritySetHardFork<Block>> {
+    fn authority_id(hex: &str) -> sp_consensus_grandpa::AuthorityId {
+        sp_consensus_grandpa::AuthorityId::from_slice(&array_bytes::hex2array_unchecked::<_, 32>(
+            hex,
+        ))
+        .expect("gtest GRANDPA hard fork authority is statically defined; qed")
+    }
+
+    fn authorities(authority_ids: &[&str]) -> sp_consensus_grandpa::AuthorityList {
+        authority_ids
+            .iter()
+            .map(|hex| (authority_id(hex.trim_start_matches("0x")), 1))
+            .collect()
+    }
+
+    fn hard_fork(
+        set_id: u64,
+        hash: &str,
+        number: u32,
+        authority_ids: &[&str],
+        last_finalized: Option<u32>,
+    ) -> sc_consensus_grandpa::AuthoritySetHardFork<Block> {
+        sc_consensus_grandpa::AuthoritySetHardFork {
+            set_id,
+            block: (
+                H256::from(array_bytes::hex2array_unchecked::<_, 32>(
+                    hash.trim_start_matches("0x"),
+                )),
+                number,
+            ),
+            authorities: authorities(authority_ids),
+            last_finalized,
+        }
+    }
+
+    vec![hard_fork(
+        115,
+        "0x275b7296dab9ab0d925b4a835f919f0272cb68dc5ee44a658cceb1f84bc4d02f",
+        2_188_261,
+        &[
+            "0x10c3f8cd9768029be7e32f125031d8540c1e8d9d8af54ab104fabf12e7291e8a",
+            "0x8760a45a6b359b30ddc3aa9a160f41e4d6d3a72a5eacef7cfaf00285757cc9b1",
+            "0xfd823b99be9106836fd685c1a8716b108aff80bf5220114498f224d29d06a95f",
+            "0x92eea3f0194c2c53e07015bb642f2ea00196e48b730b964a7dacbdf465119951",
+            "0xc4be7d48526f5bfa4c3427fca551abdcf45e90e9a750bfaccac1b60635218e67",
+            "0x40bebbf11d0cfad19a65fd0756994d16c53d0bed57067cbdf0c764df5853704b",
+        ],
+        Some(2_119_795),
+    )]
+}
+
+fn grandpa_hard_forks(
+    config: &Configuration,
+) -> Vec<sc_consensus_grandpa::AuthoritySetHardFork<Block>> {
+    #[cfg(feature = "gtest")]
+    if config.chain_spec.id() == "gtest" {
+        return gtest_grandpa_hard_forks();
+    }
+
+    Vec::new()
+}
 
 fn load_checkpoint_from_file(path: PathBuf) -> Result<Header, ServiceError> {
     let bytes = fs::read(path)?;
@@ -307,11 +371,13 @@ where
     );
 
     let client_ = client.clone();
-    let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
+    let (grandpa_block_import, grandpa_link) =
+        sc_consensus_grandpa::block_import_with_authority_set_hard_forks(
         client.clone(),
         GRANDPA_JUSTIFICATION_PERIOD,
         &(client_ as Arc<_>),
         select_chain.clone(),
+        grandpa_hard_forks(config),
         telemetry.as_ref().map(|x| x.handle()),
     )?;
 
@@ -456,10 +522,11 @@ where
     net_config.add_notification_protocol(duniter_peering_config);
 
     // warp sync network provider
+    let grandpa_hard_forks = grandpa_hard_forks(&config);
     let warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
         backend.clone(),
         grandpa_link.shared_authority_set().clone(),
-        Vec::default(),
+        grandpa_hard_forks,
     ));
     let warp_sync_config = build_warp_sync_config(&duniter_options, Arc::clone(&warp_sync))?;
 
