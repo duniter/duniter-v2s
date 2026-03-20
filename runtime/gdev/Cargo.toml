@@ -21,6 +21,9 @@ default = ["std"]
 # extension.
 metadata-hash = ["substrate-wasm-builder/metadata-hash"]
 constant-fees = ["common-runtime/constant-fees"]
+# Only enable for local test chains.
+# This must not be used for production or public network builds.
+fast = ["common-runtime/fast"]
 runtime-benchmarks = [
 	"dep:frame-benchmarking",
 	"dep:frame-system-benchmarking",

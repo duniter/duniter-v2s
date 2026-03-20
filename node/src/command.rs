@@ -107,6 +107,13 @@ impl SubstrateCli for Cli {
             // Optionally load configuration from DUNITER_GENESIS_CONFIG file to override default Gdev configuration.
             #[cfg(feature = "gdev")]
             "gdev_live" => {
+                if cfg!(feature = "constant-fees") {
+                    return Err(
+                        "cannot build gdev live chainspec with the `constant-fees` feature enabled"
+                            .to_string(),
+                    );
+                }
+
                 const CLIENT_SPEC: &str = "./node/specs/gdev_client-specs.yaml";
                 let client_spec: chain_spec::gdev::ClientSpec = serde_yaml::from_slice(
                     &std::fs::read(
@@ -133,6 +140,8 @@ impl SubstrateCli for Cli {
             "dev" => Box::new(chain_spec::gtest::local_testnet_config(1, 5, 6)?),
             #[cfg(feature = "gtest")]
             "gtest_local" => Box::new(chain_spec::gtest::local_testnet_config(1, 5, 6)?),
+            #[cfg(feature = "gtest")]
+            "gtest_local2" => Box::new(chain_spec::gtest::local_testnet_config(2, 5, 6)?),
 
             // Generate development chainspecs with Alice as a validator.
             // Provide the DUNITER_GTEST_GENESIS environment variable to build genesis from JSON; otherwise, a local testnet with generated genesis will be used.
@@ -147,6 +156,21 @@ impl SubstrateCli for Cli {
             // - gtest_client-specs.json / DUNITER_GTEST_CLIENT_SPEC
             #[cfg(feature = "gtest")]
             "gtest_live" => {
+                if cfg!(feature = "fast") {
+                    return Err(
+                        "cannot build gtest live chainspec with the `fast` feature enabled"
+                            .to_string()
+                            .into(),
+                    );
+                }
+                if cfg!(feature = "constant-fees") {
+                    return Err(
+                        "cannot build gtest live chainspec with the `constant-fees` feature enabled"
+                            .to_string()
+                            .into(),
+                    );
+                }
+
                 const JSON_CLIENT_SPEC: &str = "./node/specs/gtest_client-specs.yaml";
                 let client_spec: chain_spec::gtest::ClientSpec = serde_yaml::from_slice(
                     &std::fs::read(
@@ -190,6 +214,21 @@ impl SubstrateCli for Cli {
             // - g1_client-specs.yaml / DUNITER_CLIENT_SPEC
             #[cfg(feature = "g1")]
             "g1_live" => {
+                if cfg!(feature = "fast") {
+                    return Err(
+                        "cannot build g1 live chainspec with the `fast` feature enabled"
+                            .to_string()
+                            .into(),
+                    );
+                }
+                if cfg!(feature = "constant-fees") {
+                    return Err(
+                        "cannot build g1 live chainspec with the `constant-fees` feature enabled"
+                            .to_string()
+                            .into(),
+                    );
+                }
+
                 const CLIENT_SPEC: &str = "./node/specs/g1_client-specs.yaml";
                 let client_spec: chain_spec::g1::ClientSpec = serde_yaml::from_slice(
                     &std::fs::read(

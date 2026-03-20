@@ -67,6 +67,13 @@ pub type IdtyIndex = u32;
 /// Time in milliseconds
 pub type Moment = u64;
 
+#[macro_export]
+macro_rules! param_duration {
+    ($real:expr, $fast:expr) => {
+        if cfg!(feature = "fast") { $fast } else { $real }
+    };
+}
+
 pub struct FullIdentificationOfImpl;
 impl sp_runtime::traits::Convert<AccountId, Option<entities::ValidatorFullIdentification>>
     for FullIdentificationOfImpl

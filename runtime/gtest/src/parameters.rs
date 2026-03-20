@@ -47,21 +47,24 @@ parameter_types! {
     pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
-// Distance
 parameter_types! {
     pub const MinAccessibleReferees: Perbill = Perbill::from_percent(80);
     pub const MaxRefereeDistance: u32 = 5;
-    pub const EvaluationPeriod: u32 = 40;
+    pub const EvaluationPeriod: u32 = common_runtime::param_duration!(40, 5 * MINUTES);
 }
 
 // Babe
-pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = HOURS;
+pub const EPOCH_DURATION_IN_SLOTS: BlockNumber =
+    common_runtime::param_duration!(HOURS, 2 * MINUTES);
 parameter_types! {
     pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS as u64;
     pub const ExpectedBlockTime: u64 = MILLISECS_PER_BLOCK;
     // Keep offence/equivocation reports valid long enough to tolerate network delays
     // and temporary outages, reducing missed-slash risk from short reporting windows.
-    pub const ReportLongevity: BlockNumber = 28 * 24 * EPOCH_DURATION_IN_SLOTS;
+    pub const ReportLongevity: BlockNumber = common_runtime::param_duration!(
+        28 * 24 * EPOCH_DURATION_IN_SLOTS,
+        10 * EPOCH_DURATION_IN_SLOTS
+    );
 }
 
 // ImOnline
@@ -87,8 +90,9 @@ parameter_types! {
 parameter_types! {
     // (1.1**0.5-1)**2 = 0.0023823036
     pub const SquareMoneyGrowthRate: Perbill = Perbill::from_parts(2_382_304);
-    pub const UdCreationPeriod: Moment = 86_400_000; // 1 day
-    pub const UdReevalPeriod: Moment = 15_778_800_000; // 1/2 year
+    pub const UdCreationPeriod: Moment = common_runtime::param_duration!(86_400_000, 10 * 60_000); // 1 day
+    pub const UdReevalPeriod: Moment =
+        common_runtime::param_duration!(15_778_800_000, 30 * 60_000); // 1/2 year
 }
 
 /*******/
@@ -104,24 +108,33 @@ parameter_types! {
 
 // Identity
 parameter_types! {
-    pub const ChangeOwnerKeyPeriod: BlockNumber = 6 * MONTHS;
-    pub const ConfirmPeriod: BlockNumber = 2 * MONTHS;
-    pub const IdtyCreationPeriod: BlockNumber = 5 * DAYS;
-    pub const AutorevocationPeriod: BlockNumber = YEARS;
-    pub const DeletionPeriod: BlockNumber = 10 * YEARS;
+    pub const ChangeOwnerKeyPeriod: BlockNumber =
+        common_runtime::param_duration!(6 * MONTHS, 30 * MINUTES);
+    pub const ConfirmPeriod: BlockNumber =
+        common_runtime::param_duration!(2 * MONTHS, 10 * MINUTES);
+    pub const IdtyCreationPeriod: BlockNumber =
+        common_runtime::param_duration!(5 * DAYS, 15 * MINUTES);
+    pub const AutorevocationPeriod: BlockNumber =
+        common_runtime::param_duration!(YEARS, 60 * MINUTES);
+    pub const DeletionPeriod: BlockNumber =
+        common_runtime::param_duration!(10 * YEARS, 120 * MINUTES);
 }
 
 // Membership
 parameter_types! {
-    pub const MembershipPeriod: BlockNumber = YEARS;
-    pub const MembershipRenewalPeriod: BlockNumber = 2 * MONTHS;
+    pub const MembershipPeriod: BlockNumber =
+        common_runtime::param_duration!(YEARS, 60 * MINUTES);
+    pub const MembershipRenewalPeriod: BlockNumber =
+        common_runtime::param_duration!(2 * MONTHS, 20 * MINUTES);
 }
 
 // Certification
 parameter_types! {
-    pub const CertPeriod: BlockNumber = 5 * DAYS;
+    pub const CertPeriod: BlockNumber =
+        common_runtime::param_duration!(5 * DAYS, 15 * MINUTES);
     pub const MaxByIssuer: u32 = 100;
-    pub const ValidityPeriod: BlockNumber = 2 * YEARS;
+    pub const ValidityPeriod: BlockNumber =
+        common_runtime::param_duration!(2 * YEARS, 120 * MINUTES);
 }
 
 /******************/
@@ -131,7 +144,8 @@ parameter_types! {
 parameter_types! {
     pub const SmithWotMinCertForMembership: u32 = 3;
     pub const SmithMaxByIssuer: u32 = 100;
-    pub const SmithInactivityMaxDuration: u32 = 3 * 24 * 30; // 3 months (24 sessions/day)
+    pub const SmithInactivityMaxDuration: u32 =
+        common_runtime::param_duration!(3 * 24 * 30, 15); // 3 months (24 sessions/day)
 }
 
 /*************/

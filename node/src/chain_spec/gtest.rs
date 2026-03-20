@@ -42,6 +42,7 @@ pub type AuthorityKeys = (
 
 const TOKEN_DECIMALS: usize = 2;
 const TOKEN_SYMBOL: &str = "ĞT";
+const NON_EXPIRING_LOCAL_AUTHORITY: u32 = u32::MAX;
 static EXISTENTIAL_DEPOSIT: u64 = parameters::ExistentialDeposit::get();
 
 #[derive(Default, Clone, Deserialize)]
@@ -87,11 +88,14 @@ pub fn local_testnet_config(
                 EXISTENTIAL_DEPOSIT,
                 None,
                 // Sudo account
-                get_account_id_from_seed::<ed25519::Public>("Alice"),
+                get_local_sudo_account_id_from_seed("Alice"),
                 get_parameters,
             )
             .expect("Genesis Data must be buildable");
-        genesis_data_to_gtest_genesis_conf(genesis_data)
+        genesis_data_to_gtest_genesis_conf(pin_local_authorities_non_expiring(
+            genesis_data,
+            initial_authorities_len,
+        ))
     })
     .with_properties(
         serde_json::json!({
@@ -103,6 +107,23 @@ pub fn local_testnet_config(
         .clone(),
     )
     .build())
+}
+
+fn pin_local_authorities_non_expiring(
+    mut genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
+    initial_authorities_len: usize,
+) -> super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys> {
+    for authority_index in 1..=initial_authorities_len as u32 {
+        if let Some(membership) = genesis_data.memberships.get_mut(&authority_index) {
+            membership.expire_on = NON_EXPIRING_LOCAL_AUTHORITY;
+        }
+        if let Some(received_certs) = genesis_data.certs_by_receiver.get_mut(&authority_index) {
+            for expire_on in received_certs.values_mut() {
+                *expire_on = Some(NON_EXPIRING_LOCAL_AUTHORITY);
+            }
+        }
+    }
+    genesis_data
 }
 
 fn get_parameters(_: &Option<GenesisParameters>) -> CommonParameters {
@@ -208,6 +229,18 @@ pub fn live_chainspecs(
     client_spec: ClientSpec,
     config_file_path: String,
 ) -> Result<ChainSpec, String> {
+    if cfg!(feature = "fast") {
+        return Err(
+            "cannot build gtest live chainspec with the `fast` feature enabled".to_string(),
+        );
+    }
+    if cfg!(feature = "constant-fees") {
+        return Err(
+            "cannot build gtest live chainspec with the `constant-fees` feature enabled"
+                .to_string(),
+        );
+    }
+
     Ok(ChainSpec::builder(
         &get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?,
         None,
@@ -337,4 +370,61 @@ fn get_wasm_binary() -> Option<Vec<u8>> {
         None
     };
     wasm_bytes_from_file.or_else(|| WASM_BINARY.map(|bytes| bytes.to_vec()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::chain_spec::gen_genesis_data;
+
+    #[test]
+    fn local_genesis_authorities_are_pinned_as_non_expiring() {
+        let genesis_data =
+            gen_genesis_data::generate_genesis_data_for_local_chain::<_, _, SessionKeys, GTestSKP>(
+                1,
+                3,
+                4,
+                EXISTENTIAL_DEPOSIT,
+                None,
+                get_local_sudo_account_id_from_seed("Alice"),
+                get_parameters,
+            )
+            .expect("Genesis Data must be buildable");
+
+        let genesis_data = pin_local_authorities_non_expiring(genesis_data, 1);
+
+        assert_eq!(
+            genesis_data
+                .memberships
+                .get(&1)
+                .expect("authority membership")
+                .expire_on,
+            NON_EXPIRING_LOCAL_AUTHORITY
+        );
+        assert!(
+            genesis_data
+                .certs_by_receiver
+                .get(&1)
+                .expect("authority certs")
+                .values()
+                .all(|expire_on| *expire_on == Some(NON_EXPIRING_LOCAL_AUTHORITY))
+        );
+
+        assert_eq!(
+            genesis_data
+                .memberships
+                .get(&2)
+                .expect("non-authority membership")
+                .expire_on,
+            parameters::MembershipPeriod::get()
+        );
+        assert!(
+            genesis_data
+                .certs_by_receiver
+                .get(&2)
+                .expect("non-authority certs")
+                .values()
+                .all(|expire_on| expire_on.is_none())
+        );
+    }
 }

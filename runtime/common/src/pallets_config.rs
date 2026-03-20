@@ -373,7 +373,8 @@ macro_rules! pallets_config {
             pub const Burn: Permill = Permill::zero();
             pub const ProposalBond: Permill = Permill::from_percent(1);
             pub const ProposalBondMaximum: Option<Balance> = None;
-            pub const SpendPeriod: BlockNumber = DAYS;
+            pub const SpendPeriod: BlockNumber =
+                common_runtime::param_duration!(DAYS, 15 * MINUTES);
             // Treasury account address:
             // gdev/gtest: 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
             pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
@@ -427,7 +428,8 @@ macro_rules! pallets_config {
         }
 
         parameter_types! {
-            pub const ValidationPeriod: BlockNumber = 2 * MONTHS;
+            pub const ValidationPeriod: BlockNumber =
+                common_runtime::param_duration!(2 * MONTHS, 20 * MINUTES);
         }
         impl pallet_identity::Config for Runtime {
             type AccountId32 = AccountId;
@@ -523,7 +525,8 @@ macro_rules! pallets_config {
             }
         }
         parameter_types! {
-            pub const TechnicalCommitteeMotionDuration: BlockNumber = 7 * DAYS;
+            pub const TechnicalCommitteeMotionDuration: BlockNumber =
+                common_runtime::param_duration!(7 * DAYS, 30 * MINUTES);
             pub MaxWeight: Weight = Perbill::from_percent(50) * BlockWeights::get().max_block;
         }
         impl pallet_collective::Config<Instance2> for Runtime {

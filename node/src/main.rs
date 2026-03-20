@@ -19,6 +19,11 @@
 #![warn(missing_docs)]
 #![allow(clippy::result_large_err)]
 
+#[cfg(all(feature = "embed", any(feature = "fast", feature = "constant-fees"),))]
+compile_error!(
+    "the `embed` feature is production-only and cannot be combined with `fast` or `constant-fees`"
+);
+
 //mod benchmarking;
 mod chain_spec;
 #[macro_use]

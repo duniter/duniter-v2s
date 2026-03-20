@@ -434,7 +434,8 @@ fn test_identity_creation_workflow() {
                     next_creatable_identity_on: 0u32,
                     old_owner_key: None,
                     owner_key: Keyring::Eve.to_account_id(),
-                    next_scheduled: 2 + 876600,
+                    next_scheduled: 2
+                        + <Runtime as pallet_identity::Config>::ValidationPeriod::get(),
                     status: pallet_identity::IdtyStatus::Unvalidated,
                 })
             );

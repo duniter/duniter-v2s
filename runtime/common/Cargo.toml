@@ -13,6 +13,9 @@ targets = ["x86_64-unknown-linux-gnu"]
 default = ["std"]
 no_std = []
 constant-fees = []
+# Only enable through local test-chain builds.
+# This must not be used for production or public network runtimes.
+fast = []
 runtime-benchmarks = [
 	"dep:frame-benchmarking",
 	"frame-benchmarking/runtime-benchmarks",
