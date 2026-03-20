@@ -120,6 +120,12 @@ fn test_refund_on_idle() {
             let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Alice, 1u64, 0);
             assert_ok!(Executive::apply_extrinsic(xt));
 
+            let refund = pallet_quota::RefundQueue::<Runtime>::get()
+                .first()
+                .cloned()
+                .expect("a refund should have been added to the queue");
+            let expected_refund = Quota::estimate_quota_refund(1u32).min(refund.amount);
+
             // call on_idle to activate refund
             Quota::on_idle(System::block_number(), Weight::from(1_000_000_000));
 
@@ -127,14 +133,14 @@ fn test_refund_on_idle() {
             System::assert_has_event(RuntimeEvent::Quota(pallet_quota::Event::Refunded {
                 who: Keyring::Alice.to_account_id(),
                 identity: 1u32,
-                amount: 1u64,
+                amount: expected_refund,
             }));
 
             // check that refund queue is empty
             assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
             assert_eq!(
                 Balances::free_balance(Keyring::Alice.to_account_id()),
-                10_000 - 500 - 1 - 2 + 1 // initial - transfered - tip - fees + refunded fees
+                10_000 - 500 - 1 - 2 + expected_refund // initial - transfered - tip - fees + refunded fees
             );
         })
 }

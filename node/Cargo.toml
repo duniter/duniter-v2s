@@ -23,6 +23,9 @@ default = ["distance-oracle", "gdev"]
 gdev = ["distance-oracle?/gdev", "gdev-runtime", "gdev-runtime/std", "std"]
 gtest = ["distance-oracle?/gtest", "gtest-runtime", "gtest-runtime/std", "std"]
 g1 = ["distance-oracle?/g1", "g1-runtime", "g1-runtime/std", "std"]
+# Only enable for local test-chain node builds.
+# This must not be used for production or public network binaries.
+fast = ["g1-runtime?/fast", "gtest-runtime?/fast"]
 constant-fees = [
 	"common-runtime/constant-fees",
 	"g1-runtime?/constant-fees",

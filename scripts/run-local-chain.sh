@@ -19,6 +19,7 @@ EOF
 RUNTIME="gdev"
 TECHNICAL_COMMITTEE_MEMBERS=""
 NODE_ARGS=()
+FEATURES=""
 
 while (($# > 0)); do
     case "$1" in
@@ -64,6 +65,15 @@ case "$RUNTIME" in
         ;;
 esac
 
+case "$RUNTIME" in
+    g1|gtest)
+        FEATURES="${RUNTIME},fast"
+        ;;
+    gdev)
+        FEATURES="$RUNTIME"
+        ;;
+esac
+
 if [ -n "$TECHNICAL_COMMITTEE_MEMBERS" ]; then
     if ! [[ "$TECHNICAL_COMMITTEE_MEMBERS" =~ ^[0-9]+$ ]]; then
         echo "--technical-committee-members must be a positive integer." >&2
@@ -85,7 +95,7 @@ for arg in "${NODE_ARGS[@]}"; do
     esac
 done
 
-exec cargo run -p duniter --no-default-features --features "$RUNTIME" -- \
+exec cargo run -p duniter --no-default-features --features "$FEATURES" -- \
     --chain "${RUNTIME}_local" \
     --validator \
     --unsafe-force-node-key-generation \

@@ -44,6 +44,7 @@ pub type AuthorityKeys = (
 
 pub const BLOCK_TIME: u64 = 6_000;
 pub const NAMES: [&str; 6] = ["Alice", "Bob", "Charlie", "Dave", "Eve", "Ferdie"];
+pub const NON_EXPIRING_LOCAL_AUTHORITY: u32 = u32::MAX;
 
 pub struct ExtBuilder {
     initial_accounts: BTreeMap<AccountId, GenesisAccountData<Balance, u32>>,
@@ -199,7 +200,11 @@ impl ExtBuilder {
                     (
                         i as u32,
                         MembershipData {
-                            expire_on: MembershipPeriod::get(),
+                            expire_on: if i <= initial_authorities_len {
+                                NON_EXPIRING_LOCAL_AUTHORITY
+                            } else {
+                                MembershipPeriod::get()
+                            },
                         },
                     )
                 })
@@ -209,7 +214,11 @@ impl ExtBuilder {
         .unwrap();
 
         pallet_certification::GenesisConfig::<Runtime> {
-            certs_by_receiver: clique_wot(initial_identities.len(), ValidityPeriod::get()),
+            certs_by_receiver: clique_wot(
+                initial_identities.len(),
+                initial_authorities_len,
+                ValidityPeriod::get(),
+            ),
             apply_cert_period_at_genesis: false,
         }
         .assimilate_storage(&mut t)
@@ -335,6 +344,7 @@ pub fn get_unchecked_extrinsic(
 
 fn clique_wot(
     initial_identities_len: usize,
+    initial_authorities_len: usize,
     cert_validity_period: common_runtime::BlockNumber,
 ) -> BTreeMap<IdtyIndex, BTreeMap<IdtyIndex, Option<common_runtime::BlockNumber>>> {
     let mut certs_by_issuer = BTreeMap::new();
@@ -344,7 +354,12 @@ fn clique_wot(
             (1..=initial_identities_len)
                 .filter_map(|j| {
                     if i != j {
-                        Some((j as IdtyIndex, Some(cert_validity_period)))
+                        let expire_on = if i <= initial_authorities_len {
+                            NON_EXPIRING_LOCAL_AUTHORITY
+                        } else {
+                            cert_validity_period
+                        };
+                        Some((j as IdtyIndex, Some(expire_on)))
                     } else {
                         None
                     }

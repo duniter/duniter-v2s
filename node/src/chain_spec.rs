@@ -25,8 +25,9 @@ pub mod gdev;
 pub mod gtest;
 
 use common_runtime::{AccountId, Signature};
-use sp_core::{Pair, Public};
+use sp_core::{Pair, Public, ed25519, sr25519};
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use std::env;
 
 pub type AccountPublic = <Signature as Verify>::Signer;
 
@@ -43,4 +44,12 @@ where
     AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
     AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
+}
+
+/// Generate a local sudo account ID from seed using the configured crypto scheme.
+pub fn get_local_sudo_account_id_from_seed(seed: &str) -> AccountId {
+    match env::var("DUNITER_SUDO_ACCOUNT_CRYPTO").as_deref() {
+        Ok("sr25519") => get_account_id_from_seed::<sr25519::Public>(seed),
+        _ => get_account_id_from_seed::<ed25519::Public>(seed),
+    }
 }

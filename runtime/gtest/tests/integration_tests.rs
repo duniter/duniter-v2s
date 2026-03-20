@@ -22,9 +22,48 @@ use codec::Encode;
 use common::*;
 use frame_support::{assert_ok, traits::StoredMap};
 use gtest_runtime::*;
+use pallet_identity::IdtyStatus;
 use sp_core::Pair;
 use sp_keyring::sr25519::Keyring;
 use sp_runtime::MultiAddress;
+
+#[test]
+fn test_local_genesis_authority_never_expires() {
+    ExtBuilder::new(1, 3, 4).build().execute_with(|| {
+        assert_eq!(
+            Membership::membership(1)
+                .expect("authority membership should exist")
+                .expire_on,
+            NON_EXPIRING_LOCAL_AUTHORITY
+        );
+        assert!(
+            Certification::certs_by_receiver(1)
+                .iter()
+                .all(|(_, expire_on)| *expire_on == NON_EXPIRING_LOCAL_AUTHORITY)
+        );
+
+        let target_block = MembershipPeriod::get().max(ValidityPeriod::get()) + 5;
+        run_to_block(target_block);
+
+        assert_eq!(
+            Identity::identity(1)
+                .expect("authority identity should exist")
+                .status,
+            IdtyStatus::Member
+        );
+        assert_eq!(
+            Membership::membership(1)
+                .expect("authority membership should still exist")
+                .expire_on,
+            NON_EXPIRING_LOCAL_AUTHORITY
+        );
+        assert!(
+            Certification::certs_by_receiver(1)
+                .iter()
+                .all(|(_, expire_on)| *expire_on == NON_EXPIRING_LOCAL_AUTHORITY)
+        );
+    })
+}
 
 #[test]
 fn test_change_owner_key_with_batch_all_claim_transfer_all() {

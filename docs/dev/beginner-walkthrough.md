@@ -65,7 +65,41 @@ cargo run -p duniter --no-default-features --features g1 -- \
   --chain g1_local --validator --unsafe-force-node-key-generation --sealing manual --tmp
 ```
 
-Or use the helper script (it includes these options by default):
+To start a 2-authority `gtest_local2` network with Alice and Bob:
+
+```bash
+# Generate Alice's deterministic p2p key once
+cargo run -p duniter --no-default-features --features gtest -- \
+  key generate-node-key --file /tmp/gtest_local2_alice.nodekey
+
+# Inspect Alice's stable peer ID
+cargo run -p duniter --no-default-features --features gtest -- \
+  key inspect-node-key --file /tmp/gtest_local2_alice.nodekey
+
+# Alice
+cargo run -p duniter --no-default-features --features gtest -- \
+  --chain gtest_local2 --validator --alice --unsafe-force-node-key-generation \
+  --node-key-file /tmp/gtest_local2_alice.nodekey \
+  --listen-addr /ip4/127.0.0.1/tcp/30333 --tmp
+
+# Reuse the peer ID printed by `key inspect-node-key` as <ALICE_PEER_ID>
+
+# Bob, with different local ports
+cargo run -p duniter --no-default-features --features gtest -- \
+  --chain gtest_local2 --validator --bob --unsafe-force-node-key-generation \
+  --port 30334 --rpc-port 9945 --prometheus-port 9616 \
+  --bootnodes /ip4/127.0.0.1/tcp/30333/p2p/<ALICE_PEER_ID> --tmp
+```
+
+Or use the dedicated helper script for the 2-validator `gtest_local2` setup:
+
+```bash
+scripts/run-gtest-local2.sh alice-peer-id
+scripts/run-gtest-local2.sh alice
+scripts/run-gtest-local2.sh bob --alice-peer-id <ALICE_PEER_ID>
+```
+
+For the single-node local chains shown above, you can still use the generic helper script:
 
 ```bash
 scripts/run-local-chain.sh --runtime g1

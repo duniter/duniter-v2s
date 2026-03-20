@@ -20,15 +20,14 @@ use crate::chain_spec::gen_genesis_data::{
 };
 use common_runtime::{GenesisIdty, constants::*, entities::IdtyData};
 use g1_runtime::{
-    Runtime, RuntimeGenesisConfig, WASM_BINARY, opaque::SessionKeys, pallet_universal_dividend,
-    parameters,
+    Runtime, WASM_BINARY, opaque::SessionKeys, pallet_universal_dividend, parameters,
 };
 use jsonrpsee::core::JsonValue;
 use sc_network::config::MultiaddrWithPeerId;
 use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use serde::Deserialize;
-use sp_core::{Get, ed25519};
+use sp_core::Get;
 use std::{env, fs};
 
 pub type ChainSpec = sc_service::GenericChainSpec;
@@ -121,7 +120,7 @@ pub fn local_testnet_config(
                 EXISTENTIAL_DEPOSIT,
                 None,
                 // Sudo account
-                get_account_id_from_seed::<ed25519::Public>("Alice"),
+                get_local_sudo_account_id_from_seed("Alice"),
                 get_parameters,
             )
             .expect("Genesis Data must be buildable");
@@ -196,6 +195,15 @@ pub fn live_chainspecs(
     client_spec: ClientSpec,
     config_file_path: String,
 ) -> Result<ChainSpec, String> {
+    if cfg!(feature = "fast") {
+        return Err("cannot build g1 live chainspec with the `fast` feature enabled".to_string());
+    }
+    if cfg!(feature = "constant-fees") {
+        return Err(
+            "cannot build g1 live chainspec with the `constant-fees` feature enabled".to_string(),
+        );
+    }
+
     Ok(ChainSpec::builder(
         &get_wasm_binary().ok_or_else(|| "Development wasm not available".to_string())?,
         None,

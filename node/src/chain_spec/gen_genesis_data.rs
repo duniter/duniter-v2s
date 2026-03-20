@@ -1706,7 +1706,7 @@ where
 
     let (certs_by_receiver, counter_cert) = clique_wot(initial_identities.len());
 
-    let accounts = initial_identities
+    let mut accounts: BTreeMap<AccountId, GenesisAccountData<u64, u32>> = initial_identities
         .iter()
         .enumerate()
         .map(|(i, (_, owner_key))| {
@@ -1720,6 +1720,21 @@ where
             )
         })
         .collect();
+
+    let minimum_sudo_balance = common_parameters
+        .balances_existential_deposit
+        .saturating_mul(100);
+    accounts
+        .entry(root_key.clone())
+        .and_modify(|account| {
+            if account.balance < minimum_sudo_balance {
+                account.balance = minimum_sudo_balance;
+            }
+        })
+        .or_insert(GenesisAccountData {
+            balance: minimum_sudo_balance,
+            idty_id: None,
+        });
 
     let identity_index = identities
         .iter()
@@ -1783,6 +1798,8 @@ where
 
     dump_genesis_info(genesis_info);
 
+    let initial_monetary_mass = accounts.values().map(|account| account.balance).sum();
+
     let genesis_data = GenesisData {
         accounts,
         // Treasury balance is created out of nothing for local blockchain
@@ -1792,7 +1809,7 @@ where
         first_ud_reeval: None,
         identities,
         initial_authorities,
-        initial_monetary_mass: initial_identities_len as u64 * initial_idty_balance,
+        initial_monetary_mass,
         // when generating data for local chain, we can set membersip expiration to membership period
         memberships: (1..=initial_identities.len())
             .map(|i| {

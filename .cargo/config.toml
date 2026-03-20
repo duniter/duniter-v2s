@@ -1,12 +1,12 @@
 [alias]
 sanity-gdev = "test -p duniter-live-tests --test sanity_gdev -- --nocapture"
-tu = "test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features constant-fees" # Unit tests with constant-fees; pass runtime feature (gdev/gtest) from caller
-tf = "test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests test_fee" # Custom fee model tests; pass runtime feature (gdev/gtest) from caller
+tu = "test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features constant-fees,fast" # Unit tests with constant-fees and fast timings; pass runtime feature (gtest/g1) from caller
+tf = "test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests test_fee --features fast" # Custom fee model tests; pass runtime feature (gtest/g1) from caller
 # `te` and `cucumber` are synonyms
-te = "test -p duniter-end2end-tests --test cucumber_tests --features constant-fees --"
-cucumber-build = "build --features constant-fees"
+te = "test -p duniter-end2end-tests --test cucumber_tests --features constant-fees,fast --"
+cucumber-build = "build --features constant-fees,fast"
 cucumber = "test -p duniter-end2end-tests --test cucumber_tests --"
-ta = "test --workspace --exclude duniter-live-tests --features constant-fees"
+ta = "test --workspace --exclude duniter-live-tests --features constant-fees,fast"
 tb = "test --features runtime-benchmarks -p"
 rbp = "run --release --features runtime-benchmarks -- benchmark pallet --chain=dev --steps=50 --repeat=20 --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --header=./file_header.txt --output=. --pallet"
 xtask = "run --package xtask --"
