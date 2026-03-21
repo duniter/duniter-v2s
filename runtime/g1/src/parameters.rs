@@ -64,7 +64,7 @@ parameter_types! {
     // and temporary outages, reducing missed-slash risk from short reporting windows.
     // TODO: temporarily use 1h for chain launch, must be changed to 28d when the chain is stable
     pub const ReportLongevity: BlockNumber =
-        common_runtime::param_duration!(EPOCH_DURATION_IN_SLOTS, 10 * EPOCH_DURATION_IN_SLOTS);
+        common_runtime::param_duration!(28 * 24 * EPOCH_DURATION_IN_SLOTS, 10 * EPOCH_DURATION_IN_SLOTS);
 }
 
 // ImOnline
