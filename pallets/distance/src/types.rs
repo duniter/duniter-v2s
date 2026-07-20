@@ -22,7 +22,7 @@ use frame_support::pallet_prelude::*;
 use sp_runtime::Perbill;
 
 /// Status of the distance evaluation of an identity.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub enum DistanceStatus {
     /// Identity is in evaluation.
     Pending,
@@ -36,7 +36,7 @@ pub enum DistanceStatus {
 ///
 /// Depending on the pool rotation, this may not be complete and may still be accepting
 /// new evaluation requests (with empty median accumulators) or new evaluations (with evaluators and new samples in the median accumulators).
-#[derive(Encode, Decode, Clone, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, Debug, TypeInfo)]
 pub struct EvaluationPool<AccountId: Ord, IdtyIndex> {
     /// List of identities with their evaluation result.
     /// The result is the median of all the evaluations.

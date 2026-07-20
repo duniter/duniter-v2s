@@ -55,9 +55,7 @@ pub async fn download_job_artifacts(
         let status = response.status();
         let error_text = response.text().await?;
         Err(anyhow!(
-            "Failed to download artifacts (status {}): {}",
-            status,
-            error_text
+            "Failed to download artifacts (status {status}): {error_text}"
         ))
     }
 }

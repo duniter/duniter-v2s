@@ -39,8 +39,7 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
         "g1"
     } else {
         return Err(anyhow!(
-            "Impossible de déterminer le runtime pour le réseau: {}. Préfixez le nom de release par gdev-, gtest- ou g1-. Ex. : gtest-1000",
-            network
+            "Impossible de déterminer le runtime pour le réseau: {network}. Préfixez le nom de release par gdev-, gtest- ou g1-. Ex. : gtest-1000"
         ));
     };
 
@@ -61,8 +60,7 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
     for file in &required_files {
         if !Path::new(file).exists() {
             return Err(anyhow!(
-                "Le fichier requis n'existe pas: {}. Assurez-vous d'avoir exécuté les étapes de build précédentes.",
-                file
+                "Le fichier requis n'existe pas: {file}. Assurez-vous d'avoir exécuté les étapes de build précédentes."
             ));
         }
         println!("✅ Fichier trouvé: {file}");
@@ -104,7 +102,7 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
     for (asset_name, file_path) in &asset_files {
         let path = Path::new(file_path);
         if !path.exists() {
-            return Err(anyhow!("Le fichier d'asset n'existe pas: {}", file_path));
+            return Err(anyhow!("Le fichier d'asset n'existe pas: {file_path}"));
         }
 
         println!("📤 Upload de {asset_name}...");
@@ -120,14 +118,14 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
     for filename in &squid_files {
         let src = format!("release/network/{filename}");
         if !Path::new(&src).exists() {
-            return Err(anyhow!("Le fichier Squid n'existe pas: {}", src));
+            return Err(anyhow!("Le fichier Squid n'existe pas: {src}"));
         }
         let gz_path = format!("{src}.gz");
         let gz_name = format!("{filename}.gz");
         println!("🗜️  Compression de {filename}...");
         let status = Command::new("gzip").args(["-k", "-f", &src]).status()?;
         if !status.success() {
-            return Err(anyhow!("Échec de la compression de {}", src));
+            return Err(anyhow!("Échec de la compression de {src}"));
         }
         println!("📤 Upload de {gz_name}...");
         let asset_url =

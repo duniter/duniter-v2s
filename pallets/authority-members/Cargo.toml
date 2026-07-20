@@ -60,5 +60,6 @@ sp-runtime = { workspace = true }
 sp-staking = { workspace = true }
 
 [dev-dependencies]
+pallet-balances = { workspace = true, default-features = true }
 sp-io = { workspace = true, default-features = true }
 sp-state-machine = { workspace = true, default-features = true }

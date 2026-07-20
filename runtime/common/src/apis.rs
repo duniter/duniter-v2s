@@ -85,7 +85,7 @@ impl sp_api::Core<Block> for Runtime {
         VERSION
     }
 
-    fn execute_block(block: Block) {
+    fn execute_block(block: <Block as BlockT>::LazyBlock) {
         Executive::execute_block(block)
     }
 
@@ -122,7 +122,7 @@ impl sp_block_builder::BlockBuilder<Block> for Runtime {
     }
 
     fn check_inherents(
-        block: Block,
+        block: <Block as BlockT>::LazyBlock,
         data: sp_inherents::InherentData,
     ) -> sp_inherents::CheckInherentsResult {
         data.check_extrinsics(&block)
@@ -154,8 +154,8 @@ impl sp_session::SessionKeys<Block> for Runtime {
         opaque::SessionKeys::decode_into_raw_public_keys(&encoded)
     }
 
-    fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
-        opaque::SessionKeys::generate(seed)
+    fn generate_session_keys(owner: Vec<u8>, seed: Option<Vec<u8>>) -> sp_session::OpaqueGeneratedSessionKeys {
+        opaque::SessionKeys::generate(&owner, seed).into()
     }
 }
 
@@ -303,7 +303,7 @@ impl frame_try_runtime::TryRuntime<Block> for Runtime {
     }
 
     fn execute_block(
-        block: Block,
+        block: <Block as BlockT>::LazyBlock,
         state_root_check: bool,
         signature_check: bool,
         select: frame_try_runtime::TryStateSelect,
@@ -348,7 +348,15 @@ impl frame_benchmarking::Benchmark<Block> for Runtime {
         };
         use pallet_session_benchmarking::Pallet as SessionBench;
 
-        impl pallet_session_benchmarking::Config for Runtime {}
+        impl pallet_session_benchmarking::Config for Runtime {
+            fn generate_session_keys_and_proof(
+                owner: AccountId,
+            ) -> (opaque::SessionKeys, scale_info::prelude::vec::Vec<u8>) {
+                use codec::Encode;
+                let generated = opaque::SessionKeys::generate(&owner.encode(), None);
+                (generated.keys, generated.proof.encode())
+            }
+        }
         impl frame_system_benchmarking::Config for Runtime {}
         impl frame_benchmarking::baseline::Config for Runtime {}
 

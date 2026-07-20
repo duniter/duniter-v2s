@@ -42,7 +42,7 @@ use sc_service::{
 };
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::TransactionPool;
-use sp_consensus_babe::inherents::InherentDataProvider;
+use sp_consensus_babe::inherents::{BabeCreateInherentDataProviders, InherentDataProvider};
 // Some CI jobs compile code paths that call `AuthorityId::from_slice`, which is
 // provided by `ByteArray`, while the default clippy target leaves this import unused.
 #[allow(unused_imports)]
@@ -305,6 +305,8 @@ pub fn new_partial<RuntimeApi, Executor>(
                     Block,
                     FullClient<RuntimeApi, Executor>,
                     FullGrandpaBlockImport<RuntimeApi, Executor>,
+                    BabeCreateInherentDataProviders<Block>,
+                    FullSelectChain,
                 >,
                 sc_consensus_babe::BabeLink<Block>,
                 Option<sc_consensus_babe::BabeWorkerHandle<Block>>,
@@ -350,6 +352,7 @@ where
             config,
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
             executor,
+            vec![],
         )?;
     let client = Arc::new(client);
 
@@ -386,10 +389,45 @@ where
 
     let justification_import = grandpa_block_import.clone();
 
+    let babe_config = sc_consensus_babe::configuration(&*client)?;
+    let slot_duration = babe_config.slot_duration();
+    let import_cidp_client = client.clone();
     let (babe_block_import, babe_link) = sc_consensus_babe::block_import(
-        sc_consensus_babe::configuration(&*client)?,
+        babe_config,
         grandpa_block_import,
         client.clone(),
+        Arc::new(move |_, ()| {
+            let import_cidp_client = import_cidp_client.clone();
+            async move {
+                // In manual-seal/dev mode, blocks are authored with a slot-based
+                // timestamp (see the manual-seal `create_inherent_data_providers`
+                // below) that runs ahead of wall-clock time when many blocks are
+                // sealed in a row. The BABE block import now checks inherents on
+                // every imported block, so the reference timestamp used here must
+                // mirror that slot-based timestamp, otherwise the runtime rejects
+                // the block as "too far in the future". On a regular node we keep
+                // using the system clock.
+                let timestamp = if consensus_manual {
+                    let slot_timestamp =
+                        sc_consensus_manual_seal::consensus::timestamp::SlotTimestampProvider::new_babe(
+                            import_cidp_client.clone(),
+                        )
+                        .map_err(|err| {
+                            Box::<dyn std::error::Error + Send + Sync>::from(format!("{err:?}"))
+                        })?;
+                    sp_timestamp::InherentDataProvider::new(slot_timestamp.timestamp())
+                } else {
+                    sp_timestamp::InherentDataProvider::from_system_time()
+                };
+                let slot = InherentDataProvider::from_timestamp_and_slot_duration(
+                    *timestamp,
+                    slot_duration,
+                );
+                Ok::<_, Box<dyn std::error::Error + Send + Sync>>((slot, timestamp))
+            }
+        }) as BabeCreateInherentDataProviders<Block>,
+        select_chain.clone(),
+        sc_transaction_pool_api::OffchainTransactionPoolFactory::new(transaction_pool.clone()),
     )?;
 
     let (import_queue, babe_worker_handle) = if consensus_manual {
@@ -407,24 +445,10 @@ where
                 block_import: babe_block_import.clone(),
                 justification_import: Some(Box::new(justification_import)),
                 client: client.clone(),
-                select_chain: select_chain.clone(),
-                create_inherent_data_providers: move |_, ()| async move {
-                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-                    let slot = InherentDataProvider::from_timestamp_and_slot_duration(
-                        *timestamp,
-                        slot_duration,
-                    );
-
-                    Ok((slot, timestamp))
-                },
+                slot_duration,
                 spawner: &task_manager.spawn_essential_handle(),
                 registry: config.prometheus_registry(),
                 telemetry: telemetry.as_ref().map(|x| x.handle()),
-                offchain_tx_pool_factory:
-                    sc_transaction_pool_api::OffchainTransactionPoolFactory::new(
-                        transaction_pool.clone(),
-                    ),
             })?;
 
         (queue, Some(handle))
@@ -541,10 +565,10 @@ where
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
+            spawn_essential_handle: task_manager.spawn_essential_handle(),
             import_queue,
             block_announce_validator_builder: None,
             warp_sync_config: Some(warp_sync_config),
-            warp_sync_provider: Some(warp_sync),
             block_relay: None,
             metrics,
         })?;
@@ -720,7 +744,7 @@ where
 
                         let storage_proof =
                             sp_transaction_storage_proof::registration::new_data_provider(
-                                &*client, &parent,
+                                &*client, &parent, 0u32,
                             )?;
 
                         let distance = dc_distance::create_distance_inherent_data_provider::<
@@ -813,6 +837,7 @@ where
         system_rpc_tx,
         tx_handler_controller,
         telemetry: telemetry.as_mut(),
+        tracing_execute_block: None,
     })?;
 
     // if the node isn't actively participating in consensus then it doesn't

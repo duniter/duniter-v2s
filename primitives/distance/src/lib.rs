@@ -20,7 +20,6 @@
 #![allow(clippy::type_complexity)]
 
 use codec::{Decode, DecodeWithMemTracking, Encode};
-use frame_support::pallet_prelude::RuntimeDebug;
 use scale_info::TypeInfo;
 use sp_inherents::{InherentIdentifier, IsFatalError};
 use sp_runtime::Perbill;
@@ -30,13 +29,13 @@ use std::marker::PhantomData;
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"distanc0";
 
 /// Represents the result of a distance computation.
-#[derive(Clone, DecodeWithMemTracking, Decode, Encode, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, DecodeWithMemTracking, Decode, Encode, PartialEq, Debug, TypeInfo)]
 pub struct ComputationResult {
     pub distances: scale_info::prelude::vec::Vec<Perbill>,
 }
 
 /// Errors that can occur while checking the inherent data in `ProvideInherent::check_inherent` from pallet-distance.
-#[derive(Encode, sp_runtime::RuntimeDebug)]
+#[derive(Debug, Encode)]
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error))]
 pub enum InherentError {}
 

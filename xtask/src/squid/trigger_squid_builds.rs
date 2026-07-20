@@ -46,15 +46,13 @@ pub async fn trigger_squid_builds(
     let network = release_tag
         .split('-')
         .next()
-        .ok_or_else(|| anyhow!("Invalid release tag format: {}", release_tag))?;
+        .ok_or_else(|| anyhow!("Invalid release tag format: {release_tag}"))?;
 
     match network {
         "g1" | "gtest" | "gdev" => {}
         _ => {
             return Err(anyhow!(
-                "Unknown network '{}' in release tag '{}'. Expected g1, gtest, or gdev.",
-                network,
-                release_tag
+                "Unknown network '{network}' in release tag '{release_tag}'. Expected g1, gtest, or gdev."
             ));
         }
     }
@@ -94,7 +92,7 @@ pub async fn trigger_squid_builds(
     println!("\n▶️  Step 3: Starting prepare job...");
     let prepare_job_id = *job_ids
         .get(PREPARE_JOB)
-        .ok_or_else(|| anyhow!("Could not find '{}' job", PREPARE_JOB))?;
+        .ok_or_else(|| anyhow!("Could not find '{PREPARE_JOB}' job"))?;
 
     play_job_with_retries(PREPARE_JOB, prepare_job_id).await?;
 

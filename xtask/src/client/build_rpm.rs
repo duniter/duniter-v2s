@@ -50,8 +50,7 @@ pub fn build_rpm(network: String) -> Result<()> {
         "gtest"
     } else {
         return Err(anyhow!(
-            "Unknown network: {}. Supported networks are g1-*, gdev-*, and gtest-*.",
-            network
+            "Unknown network: {network}. Supported networks are g1-*, gdev-*, and gtest-*."
         ));
     };
 
@@ -143,12 +142,12 @@ fn exec_should_success(command: &mut Command) -> Result<()> {
 
     let status = command
         .spawn()
-        .map_err(|e| anyhow!("Failed to spawn command: {}", e))?
+        .map_err(|e| anyhow!("Failed to spawn command: {e}"))?
         .wait()
-        .map_err(|e| anyhow!("Failed to wait for command: {}", e))?;
+        .map_err(|e| anyhow!("Failed to wait for command: {e}"))?;
 
     if !status.success() {
-        return Err(anyhow!("Command failed with status: {}", status));
+        return Err(anyhow!("Command failed with status: {status}"));
     }
 
     Ok(())

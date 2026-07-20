@@ -637,7 +637,7 @@ fn get_from_metadata_v16(
                     &i.ty.id,
                     &metadata_v16.types,
                 )
-                .map_err(|e| anyhow::anyhow!("{}", e))?;
+                .map_err(|e| anyhow::anyhow!("{e}"))?;
                 Ok(Constant {
                     documentation: i.docs.join("\n"),
                     name: i.name.clone(),

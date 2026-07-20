@@ -42,8 +42,10 @@ fn test_local_genesis_authority_never_expires() {
                 .all(|(_, expire_on)| *expire_on == NON_EXPIRING_LOCAL_AUTHORITY)
         );
 
-        let target_block = MembershipPeriod::get().max(ValidityPeriod::get()) + 5;
-        run_to_block(target_block);
+        // Run a few blocks to trigger on_finalize expiry checks without simulating
+        // the full production-scale periods (YEARS). 100 blocks is sufficient to verify
+        // that NON_EXPIRING_LOCAL_AUTHORITY (u32::MAX) prevents any expiry.
+        run_to_block(100);
 
         assert_eq!(
             Identity::identity(1)

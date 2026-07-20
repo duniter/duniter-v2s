@@ -30,8 +30,7 @@ pub fn build_runtime(runtime: String) -> Result<()> {
     // Vérifier que le runtime est valide
     if !["gdev", "gtest", "g1"].contains(&runtime.as_str()) {
         return Err(anyhow!(
-            "Runtime invalide: {}. Les runtimes supportés sont gdev, gtest, g1.",
-            runtime
+            "Runtime invalide: {runtime}. Les runtimes supportés sont gdev, gtest, g1."
         ));
     }
 
@@ -219,13 +218,12 @@ pub fn build_runtime(runtime: String) -> Result<()> {
     // Vérifier que les fichiers ont été générés
     let wasm_file = format!("release/{runtime}_runtime.compact.compressed.wasm");
     if !Path::new(&wasm_file).exists() {
-        return Err(anyhow!("Le fichier WASM n'a pas été généré: {}", wasm_file));
+        return Err(anyhow!("Le fichier WASM n'a pas été généré: {wasm_file}"));
     }
 
     if !Path::new(&srtool_output).exists() {
         return Err(anyhow!(
-            "Le fichier d'output srtool n'a pas été généré: {}",
-            srtool_output
+            "Le fichier d'output srtool n'a pas été généré: {srtool_output}"
         ));
     }
 

@@ -184,6 +184,8 @@ macro_rules! pallets_config {
             type WeightInfo = weights::pallet_transaction_payment::WeightInfo<Runtime>;
             type WeightToFee = common_runtime::fees::WeightToFeeImpl<Balance, Self, Target>;
         }
+        #[cfg(feature = "runtime-benchmarks")]
+        impl pallet_transaction_payment::BenchmarkConfig for Runtime {}
         impl pallet_oneshot_account::Config for Runtime {
             type Currency = Balances;
             // when call is not oneshot account, fall back to duniter-account implementation
@@ -230,8 +232,10 @@ macro_rules! pallets_config {
             type OnOffenceHandler = AuthorityMembers;
         }
         impl pallet_session::Config for Runtime {
+            type Currency = Balances;
             type DisablingStrategy =
                 pallet_session::disabling::UpToLimitWithReEnablingDisablingStrategy;
+            type KeyDeposit = frame_support::traits::ConstU64<0>;
             type Keys = opaque::SessionKeys;
             type NextSessionRotation = Babe;
             type RuntimeEvent = RuntimeEvent;

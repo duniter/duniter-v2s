@@ -36,8 +36,7 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
         "gtest"
     } else {
         return Err(anyhow!(
-            "Réseau inconnu: {}. Les réseaux supportés sont g1-*, gdev-* et gtest-*.",
-            network
+            "Réseau inconnu: {network}. Les réseaux supportés sont g1-*, gdev-* et gtest-*."
         ));
     };
 
@@ -262,8 +261,7 @@ fn get_runtime_version(runtime: &str) -> Result<String> {
 
     if !output.status.success() {
         return Err(anyhow!(
-            "Impossible de lire la version du runtime depuis {}",
-            runtime_file
+            "Impossible de lire la version du runtime depuis {runtime_file}"
         ));
     }
 
@@ -271,10 +269,10 @@ fn get_runtime_version(runtime: &str) -> Result<String> {
     let version = version_line
         .split("spec_version: ")
         .nth(1)
-        .ok_or_else(|| anyhow!("Format de version invalide dans {}", runtime_file))?
+        .ok_or_else(|| anyhow!("Format de version invalide dans {runtime_file}"))?
         .split(',')
         .next()
-        .ok_or_else(|| anyhow!("Format de version invalide dans {}", runtime_file))?
+        .ok_or_else(|| anyhow!("Format de version invalide dans {runtime_file}"))?
         .trim();
 
     println!("📦 Version runtime détectée: {version}");

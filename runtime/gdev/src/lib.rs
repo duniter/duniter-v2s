@@ -154,7 +154,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
     PartialOrd,
     codec::Encode,
     codec::Decode,
-    frame_support::pallet_prelude::RuntimeDebug,
+    Debug,
     codec::MaxEncodedLen,
     scale_info::TypeInfo,
 )]

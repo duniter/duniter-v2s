@@ -41,8 +41,7 @@ pub async fn create_client_release(
         "gtest"
     } else {
         return Err(anyhow!(
-            "Réseau inconnu: {}. Les réseaux supportés sont g1-*, gdev-* et gtest-*.",
-            network
+            "Réseau inconnu: {network}. Les réseaux supportés sont g1-*, gdev-* et gtest-*."
         ));
     };
 
@@ -68,8 +67,7 @@ pub async fn create_client_release(
     for file in &required_files {
         if !Path::new(file).exists() {
             return Err(anyhow!(
-                "Le fichier requis n'existe pas: {}. Assurez-vous d'avoir exécuté build-raw-specs.",
-                file
+                "Le fichier requis n'existe pas: {file}. Assurez-vous d'avoir exécuté build-raw-specs."
             ));
         }
         println!("✅ Fichier trouvé: {file}");
@@ -128,7 +126,7 @@ pub async fn create_client_release(
     for (asset_name, file_path) in &asset_files {
         let path = Path::new(file_path);
         if !path.exists() {
-            return Err(anyhow!("Le fichier d'asset n'existe pas: {}", file_path));
+            return Err(anyhow!("Le fichier d'asset n'existe pas: {file_path}"));
         }
 
         println!("📤 Upload de {asset_name}...");
@@ -165,8 +163,7 @@ fn extract_runtime_version_from_network(network: &str) -> Result<String> {
 
     if parts.len() < 2 {
         return Err(anyhow!(
-            "Le nom du réseau '{}' doit être au format {{runtime}}-{{version}} (ex: gtest-1100)",
-            network
+            "Le nom du réseau '{network}' doit être au format {{runtime}}-{{version}} (ex: gtest-1100)"
         ));
     }
 
@@ -175,9 +172,7 @@ fn extract_runtime_version_from_network(network: &str) -> Result<String> {
     // Validate that it's a number
     if version.parse::<u32>().is_err() {
         return Err(anyhow!(
-            "La version extraite '{}' du réseau '{}' n'est pas un nombre valide",
-            version,
-            network
+            "La version extraite '{version}' du réseau '{network}' n'est pas un nombre valide"
         ));
     }
 

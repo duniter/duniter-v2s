@@ -152,7 +152,9 @@ impl ShouldEndSession<u64> for TestShouldEndSession {
 }
 
 impl pallet_session::Config for Test {
+    type Currency = Balances;
     type DisablingStrategy = ();
+    type KeyDeposit = frame_support::traits::ConstU64<0>;
     type Keys = MockSessionKeys;
     type NextSessionRotation = ();
     type RuntimeEvent = RuntimeEvent;

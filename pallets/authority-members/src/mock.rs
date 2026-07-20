@@ -49,6 +49,7 @@ frame_support::construct_runtime!(
     pub enum Test
     {
         System: frame_system,
+        Balances: pallet_balances,
         Session: pallet_session,
         AuthorityMembers: pallet_authority_members,
         Historical: pallet_session::historical,
@@ -62,6 +63,7 @@ parameter_types! {
 
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl system::Config for Test {
+    type AccountData = pallet_balances::AccountData<u64>;
     type AccountId = AccountId;
     type BaseCallFilter = Everything;
     type Block = Block;
@@ -76,6 +78,12 @@ impl system::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = SS58Prefix;
+}
+
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
+impl pallet_balances::Config for Test {
+    type AccountStore = System;
+    type RuntimeHoldReason = RuntimeHoldReason;
 }
 
 pub struct TestSessionHandler;
@@ -103,7 +111,9 @@ impl ShouldEndSession<u64> for TestShouldEndSession {
 }
 
 impl pallet_session::Config for Test {
+    type Currency = Balances;
     type DisablingStrategy = ();
+    type KeyDeposit = frame_support::traits::ConstU64<0>;
     type Keys = MockSessionKeys;
     type NextSessionRotation = ();
     type RuntimeEvent = RuntimeEvent;

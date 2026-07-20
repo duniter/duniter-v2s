@@ -31,8 +31,7 @@ pub async fn create_runtime_release(network: String, branch: String) -> Result<(
     // Vérifier que le réseau est valide
     if !["gdev", "gtest", "g1"].contains(&network.as_str()) {
         return Err(anyhow!(
-            "Réseau invalide: {}. Les réseaux supportés sont gdev, gtest, g1.",
-            network
+            "Réseau invalide: {network}. Les réseaux supportés sont gdev, gtest, g1."
         ));
     }
 
@@ -47,9 +46,7 @@ pub async fn create_runtime_release(network: String, branch: String) -> Result<(
     let wasm_file = format!("release/{network}_runtime.compact.compressed.wasm");
     if !Path::new(&wasm_file).exists() {
         return Err(anyhow!(
-            "Le fichier WASM n'existe pas: {}. Exécutez d'abord 'cargo xtask release runtime build {}' pour générer le runtime.",
-            wasm_file,
-            network
+            "Le fichier WASM n'existe pas: {wasm_file}. Exécutez d'abord 'cargo xtask release runtime build {network}' pour générer le runtime."
         ));
     }
     println!("✅ Fichier WASM trouvé: {wasm_file}");
@@ -104,8 +101,7 @@ fn get_runtime_version(network: &str) -> Result<String> {
 
     if !output.status.success() {
         return Err(anyhow!(
-            "Impossible de lire la version du runtime depuis {}",
-            runtime_file
+            "Impossible de lire la version du runtime depuis {runtime_file}"
         ));
     }
 
@@ -113,10 +109,10 @@ fn get_runtime_version(network: &str) -> Result<String> {
     let version = version_line
         .split("spec_version: ")
         .nth(1)
-        .ok_or_else(|| anyhow!("Format de version invalide dans {}", runtime_file))?
+        .ok_or_else(|| anyhow!("Format de version invalide dans {runtime_file}"))?
         .split(',')
         .next()
-        .ok_or_else(|| anyhow!("Format de version invalide dans {}", runtime_file))?
+        .ok_or_else(|| anyhow!("Format de version invalide dans {runtime_file}"))?
         .trim();
 
     println!("📦 Version runtime détectée: {version}");

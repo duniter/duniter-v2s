@@ -35,8 +35,7 @@ pub fn build_deb(network: String) -> Result<()> {
         "gtest"
     } else {
         return Err(anyhow!(
-            "Réseau inconnu: {}. Les réseaux supportés sont g1-*, gdev-* et gtest-*.",
-            network
+            "Réseau inconnu: {network}. Les réseaux supportés sont g1-*, gdev-* et gtest-*."
         ));
     };
 
