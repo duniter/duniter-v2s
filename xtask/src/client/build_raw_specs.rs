@@ -36,8 +36,7 @@ pub fn build_raw_specs(network: String) -> Result<()> {
         "gtest"
     } else {
         return Err(anyhow!(
-            "Réseau inconnu: {}. Les réseaux supportés sont g1-*, gdev-* et gtest-*.",
-            network
+            "Réseau inconnu: {network}. Les réseaux supportés sont g1-*, gdev-* et gtest-*."
         ));
     };
 
@@ -52,8 +51,7 @@ pub fn build_raw_specs(network: String) -> Result<()> {
     for file in &required_files {
         if !Path::new(file).exists() {
             return Err(anyhow!(
-                "Le fichier requis n'existe pas: {}. Assurez-vous d'avoir les spécifications client.",
-                file
+                "Le fichier requis n'existe pas: {file}. Assurez-vous d'avoir les spécifications client."
             ));
         } else {
             // Copier le fichier dans la release

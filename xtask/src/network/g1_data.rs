@@ -137,9 +137,8 @@ pub async fn g1_data(dump_url: Option<String>) -> Result<()> {
             }
             return Err(anyhow::anyhow!(
                 "Échec du téléchargement. Vérifiez l'URL et votre connexion.\n\
-                URL: {}\n\
-                💡 Relancez la commande pour reprendre le téléchargement.",
-                dump_url
+                URL: {dump_url}\n\
+                💡 Relancez la commande pour reprendre le téléchargement."
             ));
         }
 

@@ -96,7 +96,7 @@ where
 
         let length = Runtime::BlockLength::get();
         let normal_max_length = *length.max.get(DispatchClass::Normal) as u64;
-        let current_block_length = <frame_system::Pallet<Runtime>>::all_extrinsics_len() as u64;
+        let current_block_length = <frame_system::Pallet<Runtime>>::block_size() as u64;
 
         if current_block_weight
             .get(DispatchClass::Normal)
@@ -160,7 +160,7 @@ where
 
         let length = Runtime::BlockLength::get();
         let normal_max_length = *length.max.get(DispatchClass::Normal) as u64;
-        let current_block_length = <frame_system::Pallet<Runtime>>::all_extrinsics_len() as u64;
+        let current_block_length = <frame_system::Pallet<Runtime>>::block_size() as u64;
 
         if current_block_weight
             .get(DispatchClass::Normal)
@@ -267,7 +267,7 @@ where
 
         let length = Runtime::BlockLength::get();
         let normal_max_length = *length.max.get(DispatchClass::Normal) as u64;
-        let current_block_length = <frame_system::Pallet<Runtime>>::all_extrinsics_len() as u64;
+        let current_block_length = <frame_system::Pallet<Runtime>>::block_size() as u64;
 
         if <frame_system::Pallet<Runtime>>::block_weight()
             .get(DispatchClass::Normal)

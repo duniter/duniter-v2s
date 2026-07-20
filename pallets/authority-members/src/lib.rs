@@ -318,11 +318,9 @@ pub mod pallet {
             let who = ensure_signed(origin.clone())?;
             let member_id = Self::verify_ownership_and_membership(&who)?;
 
-            let _post_info = pallet_session::Call::<T>::set_keys {
-                keys,
-                proof: vec![],
-            }
-            .dispatch_bypass_filter(origin)?;
+            // Use SessionInterface::set_keys to bypass pallet_session's ownership proof
+            // validation, since authority-members has its own membership and ownership checks.
+            <pallet_session::Pallet<T> as pallet_session::SessionInterface>::set_keys(&who, keys)?;
 
             Members::<T>::insert(member_id, MemberData { owner_key: who });
 
@@ -395,12 +393,12 @@ pub mod pallet {
             let _post_info = pallet_session::Call::<T>::purge_keys {}
                 .dispatch_bypass_filter(frame_system::RawOrigin::Signed(old_owner_key).into())?;
 
-            // Set session keys
-            pallet_session::Call::<T>::set_keys {
-                keys: session_keys,
-                proof: vec![],
-            }
-            .dispatch_bypass_filter(frame_system::RawOrigin::Signed(new_owner_key).into())?;
+            // Use SessionInterface::set_keys to bypass the ownership proof check,
+            // since key transfer is authorized by the authority-members pallet itself.
+            <pallet_session::Pallet<T> as pallet_session::SessionInterface>::set_keys(
+                &new_owner_key,
+                session_keys,
+            )?;
 
             Ok(Default::default())
         }

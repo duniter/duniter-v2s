@@ -55,9 +55,9 @@ pub(super) async fn upload_file(
             ));
         }
 
-        Err(anyhow!("Réponse d'upload invalide: {}", upload_response))
+        Err(anyhow!("Réponse d'upload invalide: {upload_response}"))
     } else {
         let error_text = response.text().await?;
-        Err(anyhow!("Erreur lors de l'upload: {}", error_text))
+        Err(anyhow!("Erreur lors de l'upload: {error_text}"))
     }
 }

@@ -62,7 +62,7 @@ pub(super) async fn create_asset_link(
                 Err(anyhow!("Logic errors"))
             }
         } else if let Some(errors) = response_body.errors {
-            Err(anyhow!("Errors: {:?}", errors))
+            Err(anyhow!("Errors: {errors:?}"))
         } else {
             Err(anyhow!("Invalid response: no release_asset_link_create"))
         }

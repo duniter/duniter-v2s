@@ -17,13 +17,12 @@
 use codec::{Decode, DecodeWithMemTracking, Encode, Error, Input, MaxEncodedLen, Output};
 use core::num::NonZeroU16;
 use scale_info::prelude::vec::Vec;
-use sp_runtime::RuntimeDebug;
 
 pub type UdIndex = u16;
 
 /// Represents the first eligible Universal Dividend.
 #[derive(
-    Clone, Eq, DecodeWithMemTracking, PartialEq, RuntimeDebug, serde::Deserialize, serde::Serialize,
+    Clone, Eq, DecodeWithMemTracking, PartialEq, Debug, serde::Deserialize, serde::Serialize,
 )]
 pub struct FirstEligibleUd(pub Option<NonZeroU16>);
 

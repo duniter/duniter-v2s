@@ -29,6 +29,10 @@ use frame_support::{
 use gdev_runtime::*;
 use sp_core::Encode;
 use sp_keyring::sr25519::Keyring;
+use sp_runtime::{
+    MultiAddress,
+    transaction_validity::{InvalidTransaction, TransactionValidityError},
+};
 
 /// test currency transfer with extrinsic
 // the signer account should pay fees and a tip
@@ -307,5 +311,355 @@ fn test_no_member_no_refund() {
             let xt = get_unchecked_extrinsic(call.clone(), 4u64, 8u64, Keyring::Alice, 0u64, 0);
             assert_ok!(Executive::apply_extrinsic(xt));
             assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
+        })
+}
+
+/// test that consume_oneshot_account via extrinsic withdraws fees from oneshot storage
+// when account has both regular balance and oneshot balance, fees come from oneshot storage
+#[test]
+fn test_oneshot_consume_fee_from_oneshot_storage() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (Keyring::Alice.to_account_id(), 10_000),
+            (Keyring::Eve.to_account_id(), 10_000),
+        ])
+        .build()
+        .execute_with(|| {
+            // Alice creates a oneshot account for Eve with 500
+            assert_ok!(OneshotAccount::create_oneshot_account(
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                MultiAddress::Id(Keyring::Eve.to_account_id()),
+                500
+            ));
+            assert_eq!(
+                Balances::free_balance(Keyring::Alice.to_account_id()),
+                10_000 - 500
+            );
+            assert_eq!(
+                pallet_oneshot_account::OneshotAccounts::<Runtime>::get(
+                    Keyring::Eve.to_account_id()
+                ),
+                Some(500)
+            );
+
+            // Eve consumes her oneshot account, sending to Alice (normal account)
+            let call = RuntimeCall::OneshotAccount(
+                pallet_oneshot_account::Call::consume_oneshot_account {
+                    block_height: 0u32.into(),
+                    dest: pallet_oneshot_account::Account::Normal(MultiAddress::Id(
+                        Keyring::Alice.to_account_id(),
+                    )),
+                },
+            );
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Eve, 0u64, 0);
+            assert_ok!(Executive::apply_extrinsic(xt));
+
+            // Oneshot account consumed
+            assert!(
+                pallet_oneshot_account::OneshotAccounts::<Runtime>::get(
+                    Keyring::Eve.to_account_id()
+                )
+                .is_none()
+            );
+            // Eve's regular balance is unchanged (fees came from oneshot storage)
+            assert_eq!(Balances::free_balance(Keyring::Eve.to_account_id()), 10_000);
+            // Alice receives the oneshot value minus the fee deducted from oneshot storage
+            // Under constant-fees: fee = 2, so Alice gets 500 - 2 = 498
+            assert_eq!(
+                Balances::free_balance(Keyring::Alice.to_account_id()),
+                9_500 + 498
+            );
+            // Eve has no linked identity, so no refund is queued
+            assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
+        })
+}
+
+/// test that consume_oneshot_account by an identity-linked account queues a refund
+// fees are withdrawn from oneshot storage, but refund is queued via the duniter-account
+// correct_and_deposit_fee delegation since the account has a linked identity
+#[test]
+fn test_oneshot_consume_with_linked_identity_gets_refund() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (Keyring::Alice.to_account_id(), 10_000),
+            (Keyring::Bob.to_account_id(), 10_000),
+        ])
+        .build()
+        .execute_with(|| {
+            // Alice (identity 1, Member) creates oneshot account for herself
+            assert_ok!(OneshotAccount::create_oneshot_account(
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                MultiAddress::Id(Keyring::Alice.to_account_id()),
+                500
+            ));
+            assert_eq!(
+                Balances::free_balance(Keyring::Alice.to_account_id()),
+                10_000 - 500
+            );
+
+            // Alice consumes her own oneshot account, sending to Bob
+            let call = RuntimeCall::OneshotAccount(
+                pallet_oneshot_account::Call::consume_oneshot_account {
+                    block_height: 0u32.into(),
+                    dest: pallet_oneshot_account::Account::Normal(MultiAddress::Id(
+                        Keyring::Bob.to_account_id(),
+                    )),
+                },
+            );
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Alice, 0u64, 0);
+            assert_ok!(Executive::apply_extrinsic(xt));
+
+            // Oneshot consumed
+            assert!(
+                pallet_oneshot_account::OneshotAccounts::<Runtime>::get(
+                    Keyring::Alice.to_account_id()
+                )
+                .is_none()
+            );
+            // Bob receives oneshot value minus fee (500 - 2 = 498)
+            assert_eq!(
+                Balances::free_balance(Keyring::Bob.to_account_id()),
+                10_000 + 498
+            );
+            // Alice has linked identity 1 → refund should be queued
+            // refund amount = corrected_fee - tip = 2 - 0 = 2
+            let queue = pallet_quota::RefundQueue::<Runtime>::get();
+            assert_eq!(queue.len(), 1);
+            assert_eq!(
+                queue.first().unwrap(),
+                &pallet_quota::pallet::Refund {
+                    account: Keyring::Alice.to_account_id(),
+                    identity: 1u32,
+                    amount: 2u64
+                }
+            );
+        })
+}
+
+/// test that tips are excluded from refund amount
+// two extrinsics from the same identity-linked account: one without tip, one with tip
+// both should produce the same refund amount (base fee only)
+#[test]
+fn test_tip_excluded_from_refund_amount() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (Keyring::Alice.to_account_id(), 10_000),
+            (Keyring::Eve.to_account_id(), 10_000),
+        ])
+        .build()
+        .execute_with(|| {
+            // First transfer with no tip
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: Keyring::Eve.to_account_id().into(),
+                value: 100,
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Alice, 0u64, 0);
+            assert_ok!(Executive::apply_extrinsic(xt));
+
+            // refund amount = corrected_fee(2) - tip(0) = 2
+            let queue = pallet_quota::RefundQueue::<Runtime>::get();
+            assert_eq!(queue.len(), 1);
+            assert_eq!(queue[0].amount, 2u64);
+
+            // Second transfer with tip=2
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: Keyring::Eve.to_account_id().into(),
+                value: 100,
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Alice, 2u64, 1);
+            assert_ok!(Executive::apply_extrinsic(xt));
+
+            // refund amount = corrected_fee(4) - tip(2) = 2 (same as without tip)
+            let queue = pallet_quota::RefundQueue::<Runtime>::get();
+            assert_eq!(queue.len(), 2);
+            assert_eq!(queue[0].amount, 2u64); // first: no tip
+            assert_eq!(queue[1].amount, 2u64); // second: with tip, but refund excludes tip
+
+            // Alice paid: 100 + 2 (first) + 100 + 4 (second) = 206
+            assert_eq!(
+                Balances::free_balance(Keyring::Alice.to_account_id()),
+                10_000 - 206
+            );
+            // Treasury received all fees+tips: 2 + 4 = 6
+            assert_eq!(Balances::free_balance(Treasury::account_id()), 100 + 6);
+        })
+}
+
+/// test refund queue accumulation from multiple extrinsics in the same block
+// multiple identity-linked accounts submit extrinsics, refunds accumulate and are processed
+#[test]
+fn test_multiple_extrinsics_refund_accumulation() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (Keyring::Alice.to_account_id(), 10_000),
+            (Keyring::Bob.to_account_id(), 10_000),
+            (Keyring::Eve.to_account_id(), 10_000),
+        ])
+        .build()
+        .execute_with(|| {
+            // Alice (identity 1) sends transfer
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: Keyring::Eve.to_account_id().into(),
+                value: 100,
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Alice, 0u64, 0);
+            assert_ok!(Executive::apply_extrinsic(xt));
+
+            // Bob (identity 2) sends transfer
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: Keyring::Eve.to_account_id().into(),
+                value: 200,
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Bob, 0u64, 0);
+            assert_ok!(Executive::apply_extrinsic(xt));
+
+            // Alice sends another transfer
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: Keyring::Eve.to_account_id().into(),
+                value: 100,
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Alice, 0u64, 1);
+            assert_ok!(Executive::apply_extrinsic(xt));
+
+            // Refund queue should have 3 entries
+            let queue = pallet_quota::RefundQueue::<Runtime>::get();
+            assert_eq!(queue.len(), 3);
+            assert_eq!(
+                queue[0],
+                pallet_quota::pallet::Refund {
+                    account: Keyring::Alice.to_account_id(),
+                    identity: 1u32,
+                    amount: 2u64
+                }
+            );
+            assert_eq!(
+                queue[1],
+                pallet_quota::pallet::Refund {
+                    account: Keyring::Bob.to_account_id(),
+                    identity: 2u32,
+                    amount: 2u64
+                }
+            );
+            assert_eq!(
+                queue[2],
+                pallet_quota::pallet::Refund {
+                    account: Keyring::Alice.to_account_id(),
+                    identity: 1u32,
+                    amount: 2u64
+                }
+            );
+
+            // Process all refunds
+            Quota::on_idle(System::block_number(), Weight::from(1_000_000_000));
+
+            // Queue should be empty after processing
+            assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
+
+            // Alice: 10000 - 100 - 2 - 100 - 2 + refunds
+            // Bob: 10000 - 200 - 2 + refund
+            // Eve: 10000 + 100 + 200 + 100 (receives all transfers)
+            assert_eq!(
+                Balances::free_balance(Keyring::Eve.to_account_id()),
+                10_000 + 400
+            );
+        })
+}
+
+/// test that can_withdraw_fee rejects extrinsic when balance is insufficient
+// Eve has exactly the existential deposit (100) but cannot pay fees (2) without
+// going below ED, so the fee withdrawal should be rejected
+#[test]
+fn test_insufficient_balance_rejects_extrinsic() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (Keyring::Alice.to_account_id(), 10_000),
+            // Eve gets exactly ED (100), not enough to cover fee (2) while staying alive
+            (Keyring::Eve.to_account_id(), 100),
+        ])
+        .build()
+        .execute_with(|| {
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: Keyring::Alice.to_account_id().into(),
+                value: 0,
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Eve, 0u64, 0);
+
+            // Extrinsic should fail due to insufficient balance for fees
+            let result = Executive::apply_extrinsic(xt);
+            assert!(result.is_err());
+            assert_eq!(
+                result.unwrap_err(),
+                TransactionValidityError::Invalid(InvalidTransaction::Payment)
+            );
+
+            // Eve's balance should be unchanged
+            assert_eq!(Balances::free_balance(Keyring::Eve.to_account_id()), 100);
+            // No refund queued
+            assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
+        })
+}
+
+/// test that dynamically linking an identity enables fee refunds for subsequent transactions
+// first transfer has no refund (no identity), then link identity, second transfer gets refund
+#[test]
+fn test_dynamic_link_identity_then_refund() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (Keyring::Alice.to_account_id(), 10_000),
+            (Keyring::Ferdie.to_account_id(), 10_000),
+        ])
+        .build()
+        .execute_with(|| {
+            let ferdie = Keyring::Ferdie.to_account_id();
+
+            // Ferdie has no linked identity
+            assert!(
+                frame_system::Pallet::<Runtime>::get(&ferdie)
+                    .linked_idty
+                    .is_none()
+            );
+
+            // First transfer: Ferdie → Alice, no identity linked → no refund
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: Keyring::Alice.to_account_id().into(),
+                value: 100,
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Ferdie, 0u64, 0);
+            assert_ok!(Executive::apply_extrinsic(xt));
+            assert!(pallet_quota::RefundQueue::<Runtime>::get().is_empty());
+
+            // Link Ferdie's account to Alice's identity (identity 1)
+            let genesis_hash = System::block_hash(0);
+            let payload = (b"link", genesis_hash, 1u32, ferdie.clone()).encode();
+            let signature = Keyring::Ferdie.sign(&payload);
+            assert_ok!(Identity::link_account(
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                ferdie.clone(),
+                signature.into()
+            ));
+            assert_eq!(
+                frame_system::Pallet::<Runtime>::get(&ferdie).linked_idty,
+                Some(1)
+            );
+
+            // Second transfer: Ferdie → Alice, now with linked identity → refund queued
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: Keyring::Alice.to_account_id().into(),
+                value: 100,
+            });
+            let xt = get_unchecked_extrinsic(call, 4u64, 8u64, Keyring::Ferdie, 0u64, 1);
+            assert_ok!(Executive::apply_extrinsic(xt));
+
+            // Now refund should be queued for Ferdie with Alice's identity
+            let queue = pallet_quota::RefundQueue::<Runtime>::get();
+            assert_eq!(queue.len(), 1);
+            assert_eq!(
+                queue[0],
+                pallet_quota::pallet::Refund {
+                    account: ferdie,
+                    identity: 1u32,
+                    amount: 2u64
+                }
+            );
         })
 }

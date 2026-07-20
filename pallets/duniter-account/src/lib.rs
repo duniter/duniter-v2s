@@ -57,7 +57,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use pallet_quota::RefundFee;
-use pallet_transaction_payment::OnChargeTransaction;
+use pallet_transaction_payment::{OnChargeTransaction, TxCreditHold};
 use scale_info::prelude::{
     collections::{BTreeMap, BTreeSet},
     fmt::Debug,
@@ -372,6 +372,13 @@ where
 
 // ------
 // allows pay fees with quota instead of currency if available
+impl<T: Config> TxCreditHold<T> for Pallet<T>
+where
+    T::InnerOnChargeTransaction: TxCreditHold<T>,
+{
+    type Credit = <T::InnerOnChargeTransaction as TxCreditHold<T>>::Credit;
+}
+
 impl<T: Config> OnChargeTransaction<T> for Pallet<T>
 where
     T::RuntimeCall: IsSubType<Call<T>>,
@@ -425,6 +432,8 @@ where
         // if account can be exonerated, add it to a refund queue
         let account_data = frame_system::Pallet::<T>::get(who);
         if let Some(idty_index) = account_data.linked_idty {
+            // If the owner key changed in this same block (e.g. via batch_all), route the
+            // refund to the new owner key so the new owner receives the quota reimbursement.
             let current_block = frame_system::Pallet::<T>::block_number();
             let refund_account = pallet_identity::Pallet::<T>::identity(idty_index)
                 .and_then(|idty_value| {
@@ -439,7 +448,6 @@ where
                         })
                 })
                 .unwrap_or_else(|| who.clone());
-
             T::Refund::request_refund(
                 refund_account,
                 idty_index,

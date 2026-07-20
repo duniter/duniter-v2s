@@ -21,7 +21,7 @@ use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 
 /// Represents the certification metadata attached to an identity.
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, Debug, TypeInfo)]
 pub struct IdtyCertMeta<BlockNumber: Default> {
     /// Number of certifications issued by this identity.
     pub issued_count: u32,

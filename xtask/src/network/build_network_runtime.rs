@@ -207,8 +207,7 @@ pub fn build_network_runtime(runtime: String) -> Result<()> {
     let wasm_file = format!("release/network/{runtime}_runtime.compact.compressed.wasm");
     if !std::path::Path::new(&wasm_file).exists() {
         return Err(anyhow::anyhow!(
-            "Le fichier WASM n'a pas été généré: {}",
-            wasm_file
+            "Le fichier WASM n'a pas été généré: {wasm_file}"
         ));
     }
 

@@ -24,29 +24,34 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg(feature = "runtime-benchmarks")]
-use codec::Decode;
 
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_session::*;
-use scale_info::prelude::{vec, vec::Vec};
+use scale_info::prelude::vec::Vec;
 
 pub struct Pallet<T: Config>(pallet_session::Pallet<T>);
-pub trait Config: pallet_session::Config {}
+pub trait Config: pallet_session::Config {
+    /// Generate session keys together with a valid ownership proof for `owner`.
+    ///
+    /// `pallet_session::set_keys` now verifies the ownership proof, so the benchmark
+    /// needs real keys and a matching proof. Producing them requires the concrete
+    /// (non-opaque) `SessionKeys` type and a keystore, which are only available in the
+    /// runtime; hence this is delegated here (mirroring `pallet-session-benchmarking`).
+    fn generate_session_keys_and_proof(owner: Self::AccountId) -> (Self::Keys, Vec<u8>);
+}
 
 benchmarks! {
     set_keys {
         let caller: T::AccountId = whitelisted_caller();
         frame_system::Pallet::<T>::inc_providers(&caller);
-        let keys = T::Keys::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes()).unwrap();
-        let proof: Vec<u8> = vec![0,1,2,3];
+        let (keys, proof) = T::generate_session_keys_and_proof(caller.clone());
     }: _(RawOrigin::Signed(caller), keys, proof)
 
     purge_keys {
         let caller: T::AccountId = whitelisted_caller();
         frame_system::Pallet::<T>::inc_providers(&caller);
-        let keys = T::Keys::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes()).unwrap();
-        let proof: Vec<u8> = vec![0,1,2,3];
+        let (keys, proof) = T::generate_session_keys_and_proof(caller.clone());
         let _t = pallet_session::Pallet::<T>::set_keys(RawOrigin::Signed(caller.clone()).into(), keys, proof);
     }: _(RawOrigin::Signed(caller))
 }

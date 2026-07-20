@@ -16,7 +16,6 @@
 
 use codec::{Codec, Decode, Encode};
 use scale_info::TypeInfo;
-use sp_runtime::RuntimeDebug;
 
 sp_api::decl_runtime_apis! {
     /// Runtime API for duniter account pallet
@@ -37,7 +36,7 @@ sp_api::decl_runtime_apis! {
 }
 
 /// Account total balance information
-#[derive(Encode, Decode, TypeInfo, Clone, PartialEq, RuntimeDebug)]
+#[derive(Encode, Decode, TypeInfo, Clone, PartialEq, Debug)]
 pub struct EstimatedCost<Balance> {
     /// The estimated effective cost for the user (fees - refund)
     pub cost: Balance,

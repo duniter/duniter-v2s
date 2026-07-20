@@ -45,7 +45,7 @@ pub enum IdtyEvent<T: crate::Config> {
 }
 
 /// Reasons for revocation.
-#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub enum RevocationReason {
     /// Revoked by root (e.g., governance or migration).
     Root,
@@ -56,7 +56,7 @@ pub enum RevocationReason {
 }
 
 /// Reasons for removal.
-#[derive(Encode, Decode, Clone, DecodeWithMemTracking, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, DecodeWithMemTracking, PartialEq, Eq, Debug, TypeInfo)]
 pub enum RemovalReason {
     /// Removed by root.
     Root,
@@ -79,7 +79,7 @@ pub enum RemovalReason {
     Eq,
     PartialOrd,
     Ord,
-    RuntimeDebug,
+    Debug,
     Serialize,
     Deserialize,
     TypeInfo,
@@ -94,17 +94,7 @@ impl From<&str> for IdtyName {
 
 /// State of an identity.
 #[derive(
-    Encode,
-    Decode,
-    Default,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    RuntimeDebug,
-    TypeInfo,
-    Deserialize,
-    Serialize,
+    Encode, Decode, Default, Clone, Copy, PartialEq, Eq, Debug, TypeInfo, Deserialize, Serialize,
 )]
 pub enum IdtyStatus {
     /// Created through a first certification but unconfirmed.
@@ -144,7 +134,7 @@ pub struct IdtyValue<BlockNumber, AccountId, IdtyData> {
 }
 
 /// Reprensent the payload to define a new owner key.
-#[derive(Clone, Copy, Encode, RuntimeDebug)]
+#[derive(Clone, Copy, Encode, Debug)]
 pub struct IdtyIndexAccountIdPayload<'a, AccountId, IdtyIndex, Hash> {
     /// Hash of the genesis block.
     // Used to avoid replay attacks across networks.
@@ -156,7 +146,7 @@ pub struct IdtyIndexAccountIdPayload<'a, AccountId, IdtyIndex, Hash> {
 }
 
 /// Represents the payload for identity revocation.
-#[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, TypeInfo, RuntimeDebug)]
+#[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, TypeInfo, Debug)]
 pub struct RevocationPayload<IdtyIndex, Hash> {
     /// Hash of the genesis block.
     // Used to avoid replay attacks across networks.

@@ -23,7 +23,7 @@ use scale_info::{TypeInfo, prelude::vec::Vec};
 use sp_staking::SessionIndex;
 
 /// Represents a certification metadata attached to a Smith identity.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub struct SmithMeta<IdtyIndex, BlockNumber> {
     /// Current status of the Smith.
     pub status: SmithStatus,

@@ -22,7 +22,7 @@
 pub mod traits;
 
 use codec::{Decode, Encode};
-use frame_support::pallet_prelude::{RuntimeDebug, Weight};
+use frame_support::pallet_prelude::Weight;
 
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
@@ -39,17 +39,7 @@ pub enum Event<IdtyId> {
 
 /// Represent membership data.
 #[derive(
-    Encode,
-    Decode,
-    Default,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    RuntimeDebug,
-    TypeInfo,
-    Deserialize,
-    Serialize,
+    Encode, Decode, Default, Clone, Copy, PartialEq, Eq, Debug, TypeInfo, Deserialize, Serialize,
 )]
 pub struct MembershipData<BlockNumber: Decode + Encode + TypeInfo> {
     pub expire_on: BlockNumber,

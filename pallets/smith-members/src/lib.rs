@@ -57,7 +57,7 @@ use duniter_primitives::Idty;
 use frame_support::{
     dispatch::DispatchResult,
     ensure,
-    pallet_prelude::{Get, RuntimeDebug, Weight},
+    pallet_prelude::{Get, Weight},
 };
 use frame_system::{
     ensure_signed,
@@ -76,7 +76,7 @@ use pallet_authority_members::SessionIndex;
 pub use types::*;
 
 /// Reasons for the removal of a Smith identity.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub enum SmithRemovalReason {
     /// Membership was lost due to expiration or other reasons.
     LostMembership,
@@ -87,7 +87,7 @@ pub enum SmithRemovalReason {
 }
 
 /// Possible statuses of a Smith identity.
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub enum SmithStatus {
     /// The identity has been invited by a Smith but has not accepted yet.
     Invited,

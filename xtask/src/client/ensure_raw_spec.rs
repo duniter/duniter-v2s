@@ -27,8 +27,7 @@ pub fn extract_runtime(network: &str) -> Result<&str> {
         Ok("gtest")
     } else {
         Err(anyhow!(
-            "Unknown network: {}. Supported networks are g1-*, gdev-*, and gtest-*.",
-            network
+            "Unknown network: {network}. Supported networks are g1-*, gdev-*, and gtest-*."
         ))
     }
 }
@@ -69,25 +68,23 @@ pub fn ensure_raw_spec(network: &str) -> Result<()> {
                 &url,
             ])
             .status()
-            .map_err(|e| anyhow!("Failed to execute curl: {}. Is curl installed?", e))?;
+            .map_err(|e| anyhow!("Failed to execute curl: {e}. Is curl installed?"))?;
 
         if !status.success() {
             // Clean up partial download
             let _ = std::fs::remove_file(&raw_spec_path);
             return Err(anyhow!(
-                "Failed to download raw spec from {}.\n\
-                 curl exited with status: {}",
-                url,
-                status
+                "Failed to download raw spec from {url}.\n\
+                 curl exited with status: {status}"
             ));
         }
 
         // Verify the file was downloaded and is not empty
         let metadata = std::fs::metadata(&raw_spec_path)
-            .map_err(|_| anyhow!("Downloaded file not found: {}", raw_spec_path))?;
+            .map_err(|_| anyhow!("Downloaded file not found: {raw_spec_path}"))?;
         if metadata.len() == 0 {
             let _ = std::fs::remove_file(&raw_spec_path);
-            return Err(anyhow!("Downloaded file is empty: {}", raw_spec_path));
+            return Err(anyhow!("Downloaded file is empty: {raw_spec_path}"));
         }
 
         println!(
@@ -99,17 +96,15 @@ pub fn ensure_raw_spec(network: &str) -> Result<()> {
     }
 
     Err(anyhow!(
-        "Raw spec file not found: {}\n\
+        "Raw spec file not found: {raw_spec_path}\n\
          \n\
          This file is required for compilation with the 'embed' feature.\n\
          \n\
          To generate it locally:\n\
          \n\
-         \x20 cargo xtask release client build-raw-specs {}\n\
+         \x20 cargo xtask release client build-raw-specs {network}\n\
          \n\
          In CI, this file is automatically downloaded from the GitLab release\n\
-         via the RAW_SPEC_URL variable set by trigger-builds.",
-        raw_spec_path,
-        network
+         via the RAW_SPEC_URL variable set by trigger-builds."
     ))
 }

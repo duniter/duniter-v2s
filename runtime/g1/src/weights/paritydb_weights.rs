@@ -1,21 +1,21 @@
 
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 49.1.0
-//! DATE: 2026-02-23 (Y/M/D)
-//! HOSTNAME: `aynuc`, CPU: `Raspberry Pi 4 Model B Rev 1.4`
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 53.0.0
+//! DATE: 2026-02-22 (Y/M/D)
+//! HOSTNAME: `sonic`, CPU: `Intel Core Processor (Broadwell, no TSX, IBRS)`
 //!
 //! DATABASE: `ParityDb`, RUNTIME: `Ğ1 Local Testnet`
 //! BLOCK-NUM: `BlockId::Number(0)`
 //! SKIP-WRITE: `false`, SKIP-READ: `false`, WARMUPS: `1`
 //! STATE-VERSION: `V1`, STATE-CACHE-SIZE: ``
 //! WEIGHT-PATH: `./runtime/g1/src/weights/`
-//! METRIC: `Average`, WEIGHT-MUL: `3.0`, WEIGHT-ADD: `0`
+//! METRIC: `Average`, WEIGHT-MUL: `2.0`, WEIGHT-ADD: `0`
 
 // Executed Command:
 //   target/release/duniter
 //   benchmark
 //   storage
 //   --dev
-//   --mul=3
+//   --mul=2
 //   --weight-path=./runtime/g1/src/weights/
 //   --state-version=1
 //   --database=paritydb
@@ -33,34 +33,34 @@ pub mod constants {
 		/// are available for brave runtime engineers who may want to try this out as default.
 		pub const ParityDbWeight: RuntimeDbWeight = RuntimeDbWeight {
 			/// Time to read one storage item.
-			/// Calculated by multiplying the *Average* of all values with `3.0` and adding `0`.
+			/// Calculated by multiplying the *Average* of all values with `2.0` and adding `0`.
 			///
 			/// Stats nanoseconds:
-			///   Min, Max: 2_185, 6_013_963
-			///   Average:  43_706
-			///   Median:   5_352
-			///   Std-Dev:  478007.55
+			///   Min, Max: 800, 1_417_144
+			///   Average:  11_613
+			///   Median:   2_214
+			///   Std-Dev:  112548.28
 			///
 			/// Percentiles nanoseconds:
-			///   99th: 20_740
-			///   95th: 8_408
-			///   75th: 6_389
-			read: 131_118 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			///   99th: 20_905
+			///   95th: 5_223
+			///   75th: 2_960
+			read: 23_226 * constants::WEIGHT_REF_TIME_PER_NANOS,
 
 			/// Time to write one storage item.
-			/// Calculated by multiplying the *Average* of all values with `3.0` and adding `0`.
+			/// Calculated by multiplying the *Average* of all values with `2.0` and adding `0`.
 			///
 			/// Stats nanoseconds:
-			///   Min, Max: 319_145, 319_145
-			///   Average:  319_145
-			///   Median:   319_145
+			///   Min, Max: 7_617, 7_617
+			///   Average:  7_617
+			///   Median:   7_617
 			///   Std-Dev:  0.0
 			///
 			/// Percentiles nanoseconds:
-			///   99th: 319_145
-			///   95th: 319_145
-			///   75th: 319_145
-			write: 957_435 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			///   99th: 7_617
+			///   95th: 7_617
+			///   75th: 7_617
+			write: 15_234 * constants::WEIGHT_REF_TIME_PER_NANOS,
 		};
 	}
 

@@ -533,7 +533,8 @@ pub mod pallet {
                         removed = true;
                     }
                 } else {
-                    total_weight += T::WeightInfo::do_remove_cert_noop();
+                    total_weight =
+                        total_weight.saturating_add(T::WeightInfo::do_remove_cert_noop());
                 }
             });
             if removed {
@@ -564,7 +565,7 @@ pub mod pallet {
                 // Pessimistic overhead estimation based on the worst path of a successfull
                 // certificate removal to avoid multiplying benchmarks for every branching,
                 // include the OnRemovedCert weight.
-                total_weight.saturating_add(T::WeightInfo::do_remove_cert());
+                total_weight = total_weight.saturating_add(T::WeightInfo::do_remove_cert());
             }
             total_weight
         }

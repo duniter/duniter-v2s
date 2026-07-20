@@ -16,7 +16,6 @@
 
 use codec::{Codec, Decode, Encode};
 use scale_info::TypeInfo;
-use sp_runtime::RuntimeDebug;
 
 sp_api::decl_runtime_apis! {
     /// Runtime API for Universal Dividend pallet
@@ -36,7 +35,7 @@ sp_api::decl_runtime_apis! {
 }
 
 /// Account total balance information
-#[derive(Encode, Decode, TypeInfo, Clone, PartialEq, RuntimeDebug)]
+#[derive(Encode, Decode, TypeInfo, Clone, PartialEq, Debug)]
 pub struct AccountBalances<Balance> {
     /// The total amount of funds for which the user is the ultimate beneficial owner.
     /// Includes funds that may not be transferable (e.g., reserved balance, existential deposit).

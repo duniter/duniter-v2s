@@ -61,9 +61,7 @@ pub(super) async fn get_release(tag: String) -> Result<Vec<(String, String)>> {
         let status = res.status();
         let error_text = res.text().await?;
         Err(anyhow!(
-            "Failed to fetch release (status {}): {}",
-            status,
-            error_text
+            "Failed to fetch release (status {status}): {error_text}"
         ))
     }
 }

@@ -22,7 +22,7 @@ use sp_runtime::traits::Zero;
 /// Account data structure.
 ///
 /// For details, refer to `struct AccountData` in Substrate code.
-#[derive(Clone, Decode, Encode, Eq, MaxEncodedLen, PartialEq, RuntimeDebug, TypeInfo)] // Default,
+#[derive(Clone, Decode, Encode, Eq, MaxEncodedLen, PartialEq, Debug, TypeInfo)] // Default,
 pub struct AccountData<Balance, IdtyId> {
     /// Free balance of the account.
     pub(super) free: Balance,
@@ -77,7 +77,7 @@ impl<Balance: Zero, IdtyId> From<AccountData<Balance, IdtyId>>
     Eq,
     MaxEncodedLen,
     PartialEq,
-    RuntimeDebug,
+    Debug,
     TypeInfo,
     serde::Serialize,
     serde::Deserialize,

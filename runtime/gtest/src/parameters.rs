@@ -23,8 +23,15 @@ parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
     /// We allow for 2 seconds of compute with a 6 second average block time.
     pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::with_sensible_defaults(Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND * 2u64, u64::MAX), NORMAL_DISPATCH_RATIO);
-    pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
-        ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+    // Equivalent of the deprecated `BlockLength::max_with_normal_ratio`: its deprecation
+    // note points to a `builder().normal_ratio()` that does not exist in the SDK.
+    pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength::builder()
+        .max_length(5 * 1024 * 1024)
+        .modify_max_length_for_class(
+            frame_support::dispatch::DispatchClass::Normal,
+            |max| *max = NORMAL_DISPATCH_RATIO * *max,
+        )
+        .build();
     pub const SS58Prefix: u16 = 4450;
 }
 

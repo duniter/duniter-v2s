@@ -121,14 +121,16 @@ impl<
             if let Some(idty_value) = maybe_idty_value
                 && let Some(first_ud_index) = idty_value.data.first_eligible_ud.0.take()
             {
-                weight += pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
-                    first_ud_index.into(),
-                    &idty_value.owner_key,
+                weight = weight.saturating_add(
+                    pallet_universal_dividend::Pallet::<Runtime>::on_removed_member(
+                        first_ud_index.into(),
+                        &idty_value.owner_key,
+                    ),
                 );
             }
         });
-        weight.saturating_add(pallet_quota::Pallet::<Runtime>::on_removed(idty_index));
-        weight.saturating_add(Runtime::DbWeight::get().reads_writes(1, 1));
+        weight = weight.saturating_add(pallet_quota::Pallet::<Runtime>::on_removed(idty_index));
+        weight = weight.saturating_add(Runtime::DbWeight::get().reads_writes(1, 1));
 
         // When membership is removed, also remove from smith member.
         weight.saturating_add(

@@ -87,7 +87,7 @@ pub async fn get_identity_index(world: &DuniterWorld, account: String) -> Result
         )
         .await
         .await?
-        .ok_or_else(|| anyhow::anyhow!("identity {} has no associated index", account))
+        .ok_or_else(|| anyhow::anyhow!("identity {account} has no associated index"))
         .unwrap();
 
     Ok(identity_index)
@@ -101,10 +101,7 @@ pub async fn get_identity_value(world: &DuniterWorld, account: String) -> Result
         .await
         .await?
         .ok_or_else(|| {
-            anyhow::anyhow!(
-                "indentity index {} does not have associated value",
-                identity_index
-            )
+            anyhow::anyhow!("indentity index {identity_index} does not have associated value")
         })?;
 
     Ok(identity_value)

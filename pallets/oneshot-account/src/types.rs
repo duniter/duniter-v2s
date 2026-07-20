@@ -18,7 +18,7 @@ use codec::{Decode, DecodeWithMemTracking, Encode};
 use frame_support::pallet_prelude::*;
 
 /// The type of account.
-#[derive(Clone, Decode, Encode, DecodeWithMemTracking, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Decode, Encode, DecodeWithMemTracking, PartialEq, Debug, TypeInfo)]
 pub enum Account<AccountId> {
     /// Normal account type.
     Normal(AccountId),

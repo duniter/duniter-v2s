@@ -1,19 +1,25 @@
 # Polkadot Upgrade Guide
 
-ParityTech frequently releases upgrades of the polkadot-sdk. For each upgrade, Duniter should be upgraded following the instructions below. These instructions are based on upgrading from version 1.8.0 to 1.9.0.
+ParityTech frequently releases upgrades of the polkadot-sdk. For each upgrade, Duniter should be upgraded following the instructions below. These instructions are based on upgrading from version 1.21.1 to 1.22.3.
 
 ## 1. Upgrade the duniter-polkadot-sdk
 
 * Clone the repository: `git clone git@github.com:duniter/duniter-polkadot-sdk.git`
 * Set the upstream repository: `git remote add upstream git@github.com:paritytech/polkadot-sdk.git`
-* Fetch the latest released version: `git fetch --tag polkadot-v1.9.0`
-* Create a new branch: `git checkout -b duniter-polkadot-v1.9.0`
-* Rebase the branch, keeping only specific commits: "fix treasury benchmarks when no SpendOrigin", "allow manual seal to produce non-empty blocks with BABE", "add custom pallet-balance GenesisConfig", and "remove pallet-balances upgrade_account extrinsic", "remove all paritytech sdk dependencies".
+* Fetch the latest released version: `git fetch --tag polkadot-v1.22.3`
+* Create a new branch: `git checkout -b duniter-substrate-v1.22.3`
+* Rebase the branch, keeping only specific commits:
+- "Duniter-v2s genesis state need more wasm memory",
+- "tests: substrate-test-runtime is broken by custom pallet-balance GenesisConfig",
+- "disable rocksdb by default",
+- "allow manual seal to produce non-empty blocks with BABE",
+- "remove pallet-balances upgrade_account extrinsic",
+- "add custom pallet-balance GenesisConfig".
 * Push the new branch: `git push`
 
 ## 2. Upgrade repository
 
-* In the `Cargo.toml` file of Duniter, change the version number from 1.8.0 to 1.9.0 for all polkadot-sdk dependencies. Also, change the version for Subxt. `find . -type f -name "Cargo.toml" -exec sed -i'' -e 's/polkadot-v1.8.0\/polkadot-v1.9.0/g' {} +`.
+* In the `Cargo.toml` file of Duniter, change the version number from 1.21.1 to 1.22.3 for all polkadot-sdk dependencies. Also, change the version for Subxt. `find . -type f -name "Cargo.toml" -exec sed -i'' -e 's/duniter-substrate-v1.21.1/duniter-substrate-v1.22.3/g' {} \;`.
 * Upgrade the version number of all crateio dependencies to ensure compatibility with those used in the polkadot-sdk, see the node template at: [Node Template](https://github.com/paritytech/polkadot-sdk/blob/master/templates/solochain/node/Cargo.toml) (choose the correct branch/tag).
 
 At this point, two cases may arise:

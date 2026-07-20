@@ -275,7 +275,7 @@ fn gen_release_notes(currency: String, srtool_output: String) -> Result<String> 
     values.insert("blake2_256".to_owned(), wasm.blake2_256);
 
     // Render template
-    placeholder::render(&template, &values).map_err(|e| anyhow!("Fail to render template: {}", e))
+    placeholder::render(&template, &values).map_err(|e| anyhow!("Fail to render template: {e}"))
 }
 
 pub(crate) async fn create_asset_link(

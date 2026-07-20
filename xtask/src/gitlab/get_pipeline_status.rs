@@ -61,9 +61,7 @@ pub async fn get_pipeline_status(
         let status = response.status();
         let error_text = response.text().await?;
         Err(anyhow!(
-            "Failed to get pipeline status (status {}): {}",
-            status,
-            error_text
+            "Failed to get pipeline status (status {status}): {error_text}"
         ))
     }
 }
@@ -91,9 +89,7 @@ pub async fn get_pipeline_jobs(
         let status = response.status();
         let error_text = response.text().await?;
         Err(anyhow!(
-            "Failed to get pipeline jobs (status {}): {}",
-            status,
-            error_text
+            "Failed to get pipeline jobs (status {status}): {error_text}"
         ))
     }
 }
@@ -117,9 +113,7 @@ pub async fn play_job(gitlab_token: String, project_id: String, job_id: u64) -> 
         let status = response.status();
         let error_text = response.text().await?;
         Err(anyhow!(
-            "Failed to play job (status {}): {}",
-            status,
-            error_text
+            "Failed to play job (status {status}): {error_text}"
         ))
     }
 }

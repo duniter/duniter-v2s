@@ -79,9 +79,7 @@ pub async fn trigger_pipeline(
         let status = response.status();
         let error_text = response.text().await?;
         Err(anyhow!(
-            "Failed to trigger pipeline (status {}): {}",
-            status,
-            error_text
+            "Failed to trigger pipeline (status {status}): {error_text}"
         ))
     }
 }

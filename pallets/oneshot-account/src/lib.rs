@@ -41,7 +41,7 @@ use frame_support::{
     },
 };
 use frame_system::pallet_prelude::*;
-use pallet_transaction_payment::OnChargeTransaction;
+use pallet_transaction_payment::{OnChargeTransaction, TxCreditHold};
 use sp_runtime::traits::{DispatchInfoOf, PostDispatchInfoOf, Saturating, StaticLookup, Zero};
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
@@ -322,6 +322,13 @@ pub mod pallet {
             Ok(())
         }
     }
+}
+
+impl<T: Config> TxCreditHold<T> for Pallet<T>
+where
+    T::InnerOnChargeTransaction: TxCreditHold<T>,
+{
+    type Credit = <T::InnerOnChargeTransaction as TxCreditHold<T>>::Credit;
 }
 
 impl<T: Config> OnChargeTransaction<T> for Pallet<T>

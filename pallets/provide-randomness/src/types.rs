@@ -23,9 +23,7 @@ use scale_info::TypeInfo;
 use sp_core::H256;
 
 /// The type of randomness source.
-#[derive(
-    Clone, DecodeWithMemTracking, Copy, Decode, Encode, Eq, PartialEq, RuntimeDebug, TypeInfo,
-)]
+#[derive(Clone, DecodeWithMemTracking, Copy, Decode, Encode, Eq, PartialEq, Debug, TypeInfo)]
 pub enum RandomnessType {
     /// Randomness derived from the previous block.
     RandomnessFromPreviousBlock,
@@ -36,7 +34,7 @@ pub enum RandomnessType {
 }
 
 /// Represents a randomness request.
-#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, Debug, TypeInfo)]
 pub struct Request {
     /// Request ID.
     pub request_id: RequestId,

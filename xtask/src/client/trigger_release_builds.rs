@@ -90,16 +90,12 @@ pub async fn trigger_release_builds(
         }
         Err(e) => {
             return Err(anyhow!(
-                "❌ GitLab release '{}' does not exist!\n\
+                "❌ GitLab release '{release_tag}' does not exist!\n\
                 \n\
                 You must create the release first using:\n\
-                  cargo xtask release client create {} {}\n\
+                  cargo xtask release client create {network} {branch}\n\
                 \n\
-                Error details: {}",
-                release_tag,
-                network,
-                branch,
-                e
+                Error details: {e}"
             ));
         }
     };
@@ -165,10 +161,8 @@ pub async fn trigger_release_builds(
         .map(|(_, url)| url.clone())
         .ok_or_else(|| {
             anyhow!(
-                "Asset '{}' not found in release '{}'.\n\
-                 Make sure 'cargo xtask release client create' was run before trigger-builds.",
-                raw_spec_name,
-                release_tag
+                "Asset '{raw_spec_name}' not found in release '{release_tag}'.\n\
+                 Make sure 'cargo xtask release client create' was run before trigger-builds."
             )
         })?;
     println!("   Raw spec URL: {raw_spec_url}");
@@ -539,7 +533,7 @@ async fn upload_artifacts_to_release(
     for artifact_path in artifacts {
         let file_name = artifact_path
             .file_name()
-            .ok_or_else(|| anyhow!("Invalid artifact path: {:?}", artifact_path))?
+            .ok_or_else(|| anyhow!("Invalid artifact path: {artifact_path:?}"))?
             .to_string_lossy()
             .to_string();
 

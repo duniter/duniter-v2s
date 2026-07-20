@@ -33,9 +33,7 @@ pub fn build_network_specs(runtime: String) -> Result<()> {
     let wasm_path = std::path::Path::new(&wasm_file);
     if !wasm_path.exists() {
         return Err(anyhow::anyhow!(
-            "Le fichier WASM n'existe pas: {}. Exécutez d'abord 'cargo xtask build-network-runtime --runtime {}' pour générer le runtime.",
-            wasm_file,
-            runtime
+            "Le fichier WASM n'existe pas: {wasm_file}. Exécutez d'abord 'cargo xtask build-network-runtime --runtime {runtime}' pour générer le runtime."
         ));
     }
 
