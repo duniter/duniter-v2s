@@ -282,6 +282,10 @@ generate_metadata:
 toolchain_sync_check:
   extends: .env
   stage: dependencies
+  needs:
+    - job: check_labels
+      artifacts: false
+      optional: true
   rules:
     - if: '$CI_MERGE_REQUEST_ID || $CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
@@ -338,12 +342,6 @@ sdk_resolve:
 fmt_and_clippy:
   extends:
     - .env
-  needs:
-    - job: toolchain_sync_check
-    - job: sdk_resolve
-      artifacts: true
-    - job: generate_metadata
-      artifacts: true
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
