@@ -19,6 +19,7 @@
 #![allow(clippy::result_large_err)]
 
 pub mod client;
+mod indexer_batch_sink;
 
 use self::client::{Client, ClientHandle, RuntimeApiCollection};
 use crate::{
@@ -209,6 +210,41 @@ fn load_checkpoint_from_file(path: PathBuf) -> Result<Header, ServiceError> {
     })
 }
 
+fn load_indexer_batch_sink_token(
+    options: &crate::cli::DuniterConfigExtension,
+) -> Result<Option<String>, ServiceError> {
+    let token = if let Some(path) = &options.indexer_batch_sink_token_file {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+
+            let mode = fs::metadata(path)?.permissions().mode();
+            if mode & 0o077 != 0 {
+                return Err(ServiceError::from(format!(
+                    "indexer batch sink token file {} must not be readable or writable by group/others",
+                    path.display()
+                )));
+            }
+        }
+        Some(fs::read_to_string(path)?)
+    } else {
+        std::env::var(&options.indexer_batch_sink_token_env).ok()
+    };
+
+    token
+        .map(|value| {
+            let trimmed = value.trim();
+            if trimmed.is_empty() {
+                Err(ServiceError::from(
+                    "indexer batch sink authentication token must not be empty",
+                ))
+            } else {
+                Ok(trimmed.to_owned())
+            }
+        })
+        .transpose()
+}
+
 fn build_warp_sync_config(
     duniter_options: &crate::cli::DuniterConfigExtension,
     network_provider: Arc<sc_consensus_grandpa::warp_proof::NetworkProvider<Block, FullBackend>>,
@@ -287,6 +323,20 @@ type FullGrandpaBlockImport<RuntimeApi, Executor> = sc_consensus_grandpa::Grandp
     FullSelectChain,
 >;
 
+type FullIndexerBlockImport<RuntimeApi, Executor> = indexer_batch_sink::IndexerBlockImport<
+    RuntimeApi,
+    Executor,
+    FullGrandpaBlockImport<RuntimeApi, Executor>,
+>;
+
+type FullBabeBlockImport<RuntimeApi, Executor> = sc_consensus_babe::BabeBlockImport<
+    Block,
+    FullClient<RuntimeApi, Executor>,
+    FullIndexerBlockImport<RuntimeApi, Executor>,
+    BabeCreateInherentDataProviders<Block>,
+    FullSelectChain,
+>;
+
 #[allow(clippy::type_complexity)]
 pub fn new_partial<RuntimeApi, Executor>(
     config: &Configuration,
@@ -301,13 +351,7 @@ pub fn new_partial<RuntimeApi, Executor>(
             sc_consensus::DefaultImportQueue<Block>,
             sc_transaction_pool::TransactionPoolWrapper<Block, FullClient<RuntimeApi, Executor>>,
             (
-                sc_consensus_babe::BabeBlockImport<
-                    Block,
-                    FullClient<RuntimeApi, Executor>,
-                    FullGrandpaBlockImport<RuntimeApi, Executor>,
-                    BabeCreateInherentDataProviders<Block>,
-                    FullSelectChain,
-                >,
+                FullBabeBlockImport<RuntimeApi, Executor>,
                 sc_consensus_babe::BabeLink<Block>,
                 Option<sc_consensus_babe::BabeWorkerHandle<Block>>,
                 sc_consensus_grandpa::LinkHalf<
@@ -316,6 +360,7 @@ pub fn new_partial<RuntimeApi, Executor>(
                     FullSelectChain,
                 >,
                 Option<Telemetry>,
+                Option<indexer_batch_sink::SegmentedBatchJournal>,
             ),
         >,
         crate::cli::DuniterConfigExtension,
@@ -331,6 +376,26 @@ where
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     Executor: sc_executor::sp_wasm_interface::HostFunctions + 'static,
 {
+    if duniter_options.indexer_batch_sink_url.is_some()
+        && config.network.sync_mode != sc_network::config::SyncMode::Full
+    {
+        return Err(ServiceError::from(
+            "--indexer-batch-sink-url requires --sync full so every block is executed from genesis",
+        ));
+    }
+    if duniter_options.indexer_batch_sink_url.is_some() {
+        let minimum = indexer_batch_sink::GROUP_COMMIT_BLOCKS;
+        if !indexer_pruning_supports_recovery(
+            config.state_pruning.as_ref(),
+            config.blocks_pruning,
+            minimum,
+        ) {
+            return Err(ServiceError::from(format!(
+                "--indexer-batch-sink-url uses a {minimum}-block group-commit window and requires explicit --state-pruning and --blocks-pruning values that retain at least {minimum} finalized blocks"
+            )));
+        }
+    }
+
     let telemetry = config
         .telemetry_endpoints
         .clone()
@@ -392,9 +457,33 @@ where
     let babe_config = sc_consensus_babe::configuration(&*client)?;
     let slot_duration = babe_config.slot_duration();
     let import_cidp_client = client.clone();
+    let indexer_store_dir = duniter_options.indexer_batch_sink_url.as_ref().map(|_| {
+        config
+            .base_path
+            .config_dir(config.chain_spec.id())
+            .join("indexer-batch-sink")
+    });
+    let indexer_journal = indexer_store_dir
+        .map(|dir| indexer_batch_sink::SegmentedBatchJournal::new(dir.join("journal")))
+        .transpose()
+        .map_err(ServiceError::from)?;
+    let genesis_hash = client
+        .block_hash(0)
+        .ok()
+        .flatten()
+        .expect("Genesis block exists after creating full client parts; qed");
+    let indexer_block_import = indexer_batch_sink::IndexerBlockImport::new(
+        grandpa_block_import,
+        client.clone(),
+        indexer_journal.clone(),
+        config.chain_spec.id().to_owned(),
+        genesis_hash,
+    )
+    .map_err(ServiceError::from)?;
+
     let (babe_block_import, babe_link) = sc_consensus_babe::block_import(
         babe_config,
-        grandpa_block_import,
+        indexer_block_import,
         client.clone(),
         Arc::new(move |_, ()| {
             let import_cidp_client = import_cidp_client.clone();
@@ -469,10 +558,32 @@ where
                 babe_worker_handle,
                 grandpa_link,
                 telemetry,
+                indexer_journal,
             ),
         },
         duniter_options,
     ))
+}
+
+fn indexer_pruning_supports_recovery(
+    state: Option<&sc_service::PruningMode>,
+    blocks: sc_service::BlocksPruning,
+    minimum: u32,
+) -> bool {
+    let blocks_ok = match blocks {
+        sc_service::BlocksPruning::KeepAll | sc_service::BlocksPruning::KeepFinalized => true,
+        sc_service::BlocksPruning::Some(retained) => retained >= minimum,
+    };
+    let states_ok = match state {
+        None => false,
+        Some(sc_service::PruningMode::ArchiveAll | sc_service::PruningMode::ArchiveCanonical) => {
+            true
+        }
+        Some(sc_service::PruningMode::Constrained(constraints)) => constraints
+            .max_blocks
+            .is_some_and(|retained| retained >= minimum),
+    };
+    blocks_ok && states_ok
 }
 
 /// Builds a new service for a full client.
@@ -494,6 +605,7 @@ where
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     Executor: sc_executor::sp_wasm_interface::HostFunctions + 'static,
 {
+    let indexer_batch_sink_token = load_indexer_batch_sink_token(&duniter_options)?;
     let (
         sc_service::PartialComponents {
             client,
@@ -503,7 +615,15 @@ where
             keystore_container,
             select_chain,
             transaction_pool,
-            other: (block_import, babe_link, babe_worker_handle, grandpa_link, mut telemetry),
+            other:
+                (
+                    block_import,
+                    babe_link,
+                    babe_worker_handle,
+                    grandpa_link,
+                    mut telemetry,
+                    indexer_journal,
+                ),
         },
         duniter_options,
     ) = new_partial::<RuntimeApi, Executor>(
@@ -555,7 +675,16 @@ where
         grandpa_link.shared_authority_set().clone(),
         grandpa_hard_forks,
     ));
-    let warp_sync_config = build_warp_sync_config(&duniter_options, Arc::clone(&warp_sync))?;
+    let warp_sync_config = if duniter_options.indexer_batch_sink_url.is_some() {
+        // A complete raw-storage history requires executing every block from genesis. Warp/state
+        // sync imports a snapshot and therefore cannot provide the intervening storage changes.
+        None
+    } else {
+        Some(build_warp_sync_config(
+            &duniter_options,
+            Arc::clone(&warp_sync),
+        )?)
+    };
 
     // build network service from params
     let (network, system_rpc_tx, tx_handler_controller, sync_service) =
@@ -568,13 +697,15 @@ where
             spawn_essential_handle: task_manager.spawn_essential_handle(),
             import_queue,
             block_announce_validator_builder: None,
-            warp_sync_config: Some(warp_sync_config),
+            warp_sync_config,
             block_relay: None,
             metrics,
         })?;
 
     // aliases
     let role = config.role;
+    let indexer_requires_network_sync_target =
+        matches!(config.chain_spec.chain_type(), sc_service::ChainType::Live);
     let force_authoring = config.force_authoring;
     let backoff_authoring_blocks: Option<()> = None;
     let name = config.network.node_name.clone();
@@ -633,7 +764,7 @@ where
                             transaction_pool.import_notification_stream().map(|_| {
                                 EngineCommand::SealNewBlock {
                                     create_empty: false,
-                                    finalize: false,
+                                    finalize: true,
                                     parent_hash: None,
                                     sender: None,
                                 }
@@ -824,12 +955,13 @@ where
         )
     };
 
+    let indexer_chain_id = config.chain_spec.id().to_owned();
     let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         config,
         backend,
         network: network.clone(),
         sync_service: sync_service.clone(),
-        client,
+        client: client.clone(),
         keystore: keystore_container.keystore(),
         task_manager: &mut task_manager,
         transaction_pool: transaction_pool.clone(),
@@ -839,6 +971,23 @@ where
         telemetry: telemetry.as_mut(),
         tracing_execute_block: None,
     })?;
+
+    if let Some(indexer_batch_sink_url) = duniter_options.indexer_batch_sink_url.clone() {
+        indexer_batch_sink::spawn::<RuntimeApi, Executor>(
+            task_manager.spawn_handle(),
+            client.clone(),
+            sync_service.clone(),
+            indexer_batch_sink::BatchSinkConfig {
+                requires_network_sync_target: indexer_requires_network_sync_target,
+                base_url: indexer_batch_sink_url,
+                token: indexer_batch_sink_token,
+                max_queue_len: duniter_options.indexer_batch_sink_max_queue_len,
+                chain_id: indexer_chain_id,
+                genesis_hash,
+            },
+            indexer_journal.expect("indexer journal exists when sink URL is configured; qed"),
+        )?;
+    }
 
     // if the node isn't actively participating in consensus then it doesn't
     // need a keystore, regardless of which protocol we use below.
@@ -974,5 +1123,97 @@ impl client::ExecuteWithClient for RevertConsensus {
         sc_consensus_babe::revert(client.clone(), self.backend, self.blocks)?;
         sc_consensus_grandpa::revert(client, self.blocks)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    #[test]
+    fn indexer_group_commit_requires_explicit_sufficient_pruning() {
+        let minimum = indexer_batch_sink::GROUP_COMMIT_BLOCKS;
+        assert!(!indexer_pruning_supports_recovery(
+            None,
+            sc_service::BlocksPruning::KeepFinalized,
+            minimum,
+        ));
+        assert!(!indexer_pruning_supports_recovery(
+            Some(&sc_service::PruningMode::blocks_pruning(minimum - 1)),
+            sc_service::BlocksPruning::KeepFinalized,
+            minimum,
+        ));
+        assert!(!indexer_pruning_supports_recovery(
+            Some(&sc_service::PruningMode::blocks_pruning(minimum)),
+            sc_service::BlocksPruning::Some(minimum - 1),
+            minimum,
+        ));
+        assert!(indexer_pruning_supports_recovery(
+            Some(&sc_service::PruningMode::blocks_pruning(minimum)),
+            sc_service::BlocksPruning::Some(minimum),
+            minimum,
+        ));
+        assert!(indexer_pruning_supports_recovery(
+            Some(&sc_service::PruningMode::ArchiveCanonical),
+            sc_service::BlocksPruning::KeepFinalized,
+            minimum,
+        ));
+    }
+
+    #[test]
+    fn indexer_sink_token_file_is_trimmed() {
+        let path = std::env::temp_dir().join(format!(
+            "duniter-indexer-token-{}-{}",
+            std::process::id(),
+            std::thread::current().name().unwrap_or("test")
+        ));
+        let mut file = fs::File::create(&path).expect("create token file");
+        file.write_all(b"  sink-secret\n")
+            .expect("write token file");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+
+            file.set_permissions(fs::Permissions::from_mode(0o600))
+                .expect("secure token file");
+        }
+        drop(file);
+
+        let options = crate::cli::DuniterConfigExtension {
+            indexer_batch_sink_token_file: Some(path.clone()),
+            ..Default::default()
+        };
+        assert_eq!(
+            load_indexer_batch_sink_token(&options).expect("load token"),
+            Some("sink-secret".to_owned())
+        );
+        fs::remove_file(path).expect("remove token file");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn indexer_sink_token_file_rejects_group_access() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let path = std::env::temp_dir().join(format!(
+            "duniter-indexer-insecure-token-{}-{}",
+            std::process::id(),
+            std::thread::current().name().unwrap_or("test")
+        ));
+        let mut file = fs::File::create(&path).expect("create token file");
+        file.write_all(b"sink-secret").expect("write token file");
+        file.set_permissions(fs::Permissions::from_mode(0o640))
+            .expect("set insecure token file mode");
+        drop(file);
+
+        let options = crate::cli::DuniterConfigExtension {
+            indexer_batch_sink_token_file: Some(path.clone()),
+            ..Default::default()
+        };
+        let error = load_indexer_batch_sink_token(&options)
+            .expect_err("group-readable token file must be rejected");
+        assert!(error.to_string().contains("group/others"));
+        fs::remove_file(path).expect("remove token file");
     }
 }

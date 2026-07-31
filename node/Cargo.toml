@@ -135,6 +135,8 @@ serde_yaml = { workspace = true }
 codec = { workspace = true }
 array-bytes = { workspace = true }
 parking_lot = { workspace = true }
+reqwest = { workspace = true }
+async-trait = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 # Local
@@ -191,6 +193,7 @@ sp-membership = { workspace = true, default-features = true }
 sp-offchain = { workspace = true, default-features = true }
 sp-runtime = { workspace = true, default-features = true }
 sp-session = { workspace = true, default-features = true }
+sp-state-machine = { workspace = true, default-features = true }
 sp-storage = { workspace = true, default-features = true }
 sp-timestamp = { workspace = true, default-features = true }
 sp-transaction-pool = { workspace = true, default-features = true }
@@ -199,7 +202,6 @@ substrate-frame-rpc-system = { workspace = true, default-features = true }
 
 [dev-dependencies]
 sc-network-test = { workspace = true, default-features = true }
-async-trait = { workspace = true }
 env_logger = "0.10.2"
 async-channel = "2.3.1"
 
