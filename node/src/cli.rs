@@ -64,6 +64,32 @@ pub struct DuniterConfigExtension {
     #[arg(long)]
     pub public_squid: Option<String>,
 
+    /// Base URL of the private compatible indexer Duniter API. Providing this URL enables the sink.
+    #[arg(long, value_name = "URL")]
+    pub indexer_batch_sink_url: Option<String>,
+
+    /// File containing the optional bearer token for the private compatible indexer API.
+    ///
+    /// On Unix, the file must not be accessible by group or other users.
+    #[arg(
+        long,
+        value_name = "TOKEN_FILE_PATH",
+        value_hint = clap::ValueHint::FilePath
+    )]
+    pub indexer_batch_sink_token_file: Option<std::path::PathBuf>,
+
+    /// Environment variable containing the optional bearer token when no token file is set.
+    #[arg(
+        long,
+        default_value = "DUNITER_INDEXER_BATCH_SINK_TOKEN",
+        value_name = "ENV_VAR"
+    )]
+    pub indexer_batch_sink_token_env: String,
+
+    /// Maximum in-memory finalized cursor queue; complete batches remain durably spooled on disk.
+    #[arg(long, default_value_t = 1024)]
+    pub indexer_batch_sink_max_queue_len: usize,
+
     /// Public endpoints from a JSON file, using following format where `protocol` and `address` are
     /// strings (value is free) :
     ///

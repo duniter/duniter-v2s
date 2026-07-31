@@ -119,7 +119,8 @@ pub trait ExecuteWithClient {
 /// This trait has no methods or associated type. It is a concise marker for all the trait bounds
 /// that it contains.
 pub trait RuntimeApiCollection:
-    pallet_grandpa::fg_primitives::GrandpaApi<Block>
+    sp_api::Core<Block>
+    + pallet_grandpa::fg_primitives::GrandpaApi<Block>
     + pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>
     + sp_api::ApiExt<Block>
     + sp_authority_discovery::AuthorityDiscoveryApi<Block>
@@ -133,7 +134,8 @@ pub trait RuntimeApiCollection:
 {
 }
 impl<Api> RuntimeApiCollection for Api where
-    Api: pallet_grandpa::fg_primitives::GrandpaApi<Block>
+    Api: sp_api::Core<Block>
+        + pallet_grandpa::fg_primitives::GrandpaApi<Block>
         + pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>
         + sp_api::ApiExt<Block>
         + sp_authority_discovery::AuthorityDiscoveryApi<Block>
