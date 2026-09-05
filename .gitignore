@@ -43,3 +43,6 @@ launch-secrets-*.txt
 
 # Generated metadata files
 resources/*_metadata.scale
+
+# Local agent instructions
+AGENTS.local.md
