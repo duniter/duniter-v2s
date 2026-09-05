@@ -15,6 +15,7 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 #[derive(Debug, clap::Parser)]
+#[command(mut_arg("trie_cache_size", |arg| arg.default_value("536870912")))]
 pub struct Cli {
     #[clap(subcommand)]
     pub subcommand: Option<Subcommand>,
