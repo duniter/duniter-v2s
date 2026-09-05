@@ -7,7 +7,7 @@ homepage.workspace = true
 license.workspace = true
 name = "duniter"
 repository.workspace = true
-version = "2.1.0"
+version = "2.1.1"
 default-run = "duniter"
 
 [package.metadata.docs.rs]
