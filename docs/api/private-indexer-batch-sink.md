@@ -52,6 +52,7 @@ The configured URL is a base URL. The compatible indexer must expose:
 ```text
 POST <base-url>/stream-start
 POST <base-url>/batches
+POST <base-url>/best-chain
 ```
 
 For example, with `--indexer-batch-sink-url http://127.0.0.1:9949/private/duniter`,
@@ -60,6 +61,7 @@ this means:
 ```text
 POST /private/duniter/stream-start
 POST /private/duniter/batches
+POST /private/duniter/best-chain
 ```
 
 If a sink token file or environment variable is configured, both endpoints receive:
@@ -103,6 +105,28 @@ Equivalent top-level fields are also accepted:
   "last_received_finalized_block_hash": "0x..."
 }
 ```
+
+An indexer that consumes the BEST projection also returns its durably committed
+BEST head:
+
+```json
+{
+  "last_received_best_block": {
+    "number": 125,
+    "hash": "0x..."
+  }
+}
+```
+
+Duniter calculates the complete tree route from this cursor to its current
+BEST head. This reconciliation runs at startup and after every failed delivery,
+so the BEST endpoint may receive a repeated transition and must commit it
+atomically.
+
+Duniter does not send BEST updates during initial network synchronization. It
+first catches the consumer up with FINALIZED historical chunks. Once the local
+node has reached the network target and the finalized backlog is bounded, the
+sink switches permanently to live delivery and sends both FINALIZED and BEST.
 
 If no last received block is provided, Duniter starts at genesis. The genesis
 batch contains an `Upsert` for every top-level genesis storage entry, so an
@@ -166,6 +190,39 @@ retried every 5 seconds by an independent background task and never blocks
 delivery.
 Duplicate batches must also be acknowledged with a 2xx response: a 409 is never
 sufficient proof that the stored block has the same hash and content.
+
+## BEST chain request
+
+Every new BEST head is sent as one atomic SCALE transition:
+
+```http
+POST /private/duniter/best-chain
+Content-Type: application/octet-stream
+Authorization: Bearer <token>
+```
+
+The field order is:
+
+```text
+u32 fixture_format_version = 1
+String chain_id
+[u8; 32] genesis_hash
+BestBlockRef from
+BestBlockRef to
+Vec<BestBlockRef> retracted
+Vec<Vec<u8>> enacted_batches
+
+BestBlockRef:
+  u32 number
+  [u8; 32] hash
+```
+
+`retracted` is ordered from the previous head toward the common ancestor.
+`enacted_batches` is ordered from the common ancestor toward the new head and
+uses the same inner batch format as finalized delivery. A 2xx response means
+the whole transition, including its new BEST cursor, is durable. Finalized
+delivery remains the sole source for append-only finalization and downstream
+consumers that must never observe a rollback.
 
 ## Inner batch SCALE format
 
