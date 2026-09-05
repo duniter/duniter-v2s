@@ -38,7 +38,7 @@ use std::{
     path::PathBuf,
     sync::{
         Arc,
-        atomic::{AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
     },
     time::Duration,
 };
@@ -118,6 +118,23 @@ struct ObservedStorageChange {
 struct QueuedBatch {
     number: u32,
     hash: H256,
+}
+
+#[derive(codec::Encode, codec::Decode, Clone, Copy, Debug)]
+struct BestBlockRef {
+    number: u32,
+    hash: [u8; 32],
+}
+
+#[derive(codec::Encode, codec::Decode)]
+struct BestChainUpdate {
+    fixture_format_version: u32,
+    chain_id: String,
+    genesis_hash: [u8; 32],
+    from: BestBlockRef,
+    to: BestBlockRef,
+    retracted: Vec<BestBlockRef>,
+    enacted_batches: Vec<Vec<u8>>,
 }
 
 // Legacy per-file store types are kept temporarily to make the on-disk format transition
@@ -232,6 +249,7 @@ struct HttpSink {
     client: reqwest::Client,
     stream_start_url: String,
     batches_url: String,
+    best_chain_url: String,
     token: Option<String>,
     chain_id: String,
     genesis_hash: H256,
@@ -274,6 +292,7 @@ struct BlockCursor {
 struct StreamStartAck {
     resume_from: u32,
     last_received: Option<BlockCursor>,
+    best: Option<BlockCursor>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -1354,6 +1373,7 @@ where
     recover_journal_tail(&client, &journal, &chain_id, genesis_hash).map_err(ServiceError::from)?;
     let finality_stream = client.finality_notification_stream();
     let cleanup_scheduler = CleanupScheduler::default();
+    let best_delivery_ready = Arc::new(AtomicBool::new(false));
     let (mut batch_tx, batch_rx) = mpsc::channel(max_queue_len.max(1));
 
     let producer = {
@@ -1364,12 +1384,21 @@ where
         }
     };
 
+    let finalized_base_url = base_url.clone();
+    let finalized_token = token.clone();
+    let finalized_chain_id = chain_id.clone();
     let sender = {
         let client = client.clone();
         let journal = journal.clone();
         let cleanup_scheduler = cleanup_scheduler.clone();
+        let best_delivery_ready = best_delivery_ready.clone();
         async move {
-            let sink = HttpSink::new(base_url, token, chain_id, genesis_hash);
+            let sink = HttpSink::new(
+                finalized_base_url,
+                finalized_token,
+                finalized_chain_id,
+                genesis_hash,
+            );
             send_batches(
                 BatchSender {
                     client,
@@ -1381,12 +1410,28 @@ where
                     cleanup_scheduler,
                 },
                 batch_rx,
+                best_delivery_ready,
             )
             .await;
         }
     };
 
     let cleanup = cleanup_scheduler.run(journal.clone());
+
+    let best_sender = {
+        let client = client.clone();
+        let journal = journal.clone();
+        let best_delivery_ready = best_delivery_ready.clone();
+        let sink = HttpSink::new(
+            base_url.clone(),
+            token.clone(),
+            chain_id.clone(),
+            genesis_hash,
+        );
+        async move {
+            send_best_chain(client, sink, journal, best_delivery_ready).await;
+        }
+    };
 
     spawn_handle.spawn(
         "indexer-finalized-batch-producer",
@@ -1403,8 +1448,197 @@ where
         Some("indexer-batch-sink"),
         cleanup,
     );
+    spawn_handle.spawn(
+        "indexer-best-chain-sender",
+        Some("indexer-batch-sink"),
+        best_sender,
+    );
 
     Ok(())
+}
+
+async fn send_best_chain<RuntimeApi, Executor>(
+    client: Arc<FullClient<RuntimeApi, Executor>>,
+    sink: HttpSink,
+    journal: SegmentedBatchJournal,
+    live_delivery_ready: Arc<AtomicBool>,
+) where
+    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
+        + Send
+        + Sync
+        + 'static,
+    RuntimeApi::RuntimeApi: super::RuntimeApiCollection,
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    Executor: sc_executor::sp_wasm_interface::HostFunctions + 'static,
+{
+    let mut acknowledged = None;
+    let mut retry_delay = INITIAL_BATCH_RETRY;
+
+    loop {
+        if !live_delivery_ready.load(Ordering::Acquire) {
+            async_io::Timer::after(Duration::from_millis(250)).await;
+            continue;
+        }
+        if acknowledged.is_none() {
+            match sink.open_stream().await.and_then(|ack| {
+                resolve_best_cursor(&client, ack.best.or(ack.last_received), sink.genesis_hash)
+            }) {
+                Ok(cursor) => acknowledged = Some(cursor),
+                Err(err) => {
+                    error!(
+                        "COMPATIBLE INDEXER BEST CHAIN STREAM IS NOT OPEN: {err}; retrying in {retry_delay:?}"
+                    );
+                    async_io::Timer::after(retry_delay).await;
+                    retry_delay = std::cmp::min(retry_delay * 2, MAX_BATCH_RETRY);
+                    continue;
+                }
+            }
+        }
+
+        let from = acknowledged.expect("best cursor was established above; qed");
+        let info = client.info();
+        let to = BestBlockRef {
+            number: info.best_number,
+            hash: h256_to_bytes(info.best_hash),
+        };
+        if from.hash != to.hash {
+            let delivery = match build_best_chain_update(&client, &journal, &sink, from, to) {
+                Ok(update) => sink.send_best_chain(update).await,
+                Err(err) => Err(err),
+            };
+            match delivery {
+                Ok(()) => {
+                    acknowledged = Some(to);
+                    retry_delay = INITIAL_BATCH_RETRY;
+                    continue;
+                }
+                Err(err) => {
+                    error!(
+                        "Compatible indexer best-chain update was not acknowledged; stream-start will reconcile it after {retry_delay:?}: {err}"
+                    );
+                    acknowledged = None;
+                    async_io::Timer::after(retry_delay).await;
+                    retry_delay = std::cmp::min(retry_delay * 2, MAX_BATCH_RETRY);
+                    continue;
+                }
+            }
+        }
+
+        // Polling also covers import-notification races during block commit and
+        // nodes whose manual-seal import is finalized in the same operation.
+        // No HTTP request is made while the head is unchanged.
+        async_io::Timer::after(Duration::from_millis(250)).await;
+    }
+}
+
+fn resolve_best_cursor<RuntimeApi, Executor>(
+    client: &Arc<FullClient<RuntimeApi, Executor>>,
+    cursor: Option<BlockCursor>,
+    genesis_hash: H256,
+) -> Result<BestBlockRef, String>
+where
+    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
+        + Send
+        + Sync
+        + 'static,
+    RuntimeApi::RuntimeApi: super::RuntimeApiCollection,
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    Executor: sc_executor::sp_wasm_interface::HostFunctions + 'static,
+{
+    let Some(cursor) = cursor else {
+        return Ok(BestBlockRef {
+            number: 0,
+            hash: h256_to_bytes(genesis_hash),
+        });
+    };
+    let hash = match cursor.hash {
+        Some(hash) => hash,
+        None => client
+            .block_hash(cursor.number)
+            .map_err(|err| format!("cannot resolve indexer BEST cursor: {err}"))?
+            .ok_or_else(|| {
+                format!(
+                    "cannot resolve indexer BEST cursor at block_number={}",
+                    cursor.number
+                )
+            })?,
+    };
+    let header = client
+        .header(hash)
+        .map_err(|err| format!("cannot read indexer BEST cursor header: {err}"))?
+        .ok_or_else(|| format!("indexer BEST cursor hash is unknown locally: {hash:?}"))?;
+    if *header.number() != cursor.number {
+        return Err(format!(
+            "indexer BEST cursor number/hash mismatch: reported={} local={}",
+            cursor.number,
+            header.number()
+        ));
+    }
+    Ok(BestBlockRef {
+        number: cursor.number,
+        hash: h256_to_bytes(hash),
+    })
+}
+
+fn build_best_chain_update<RuntimeApi, Executor>(
+    client: &Arc<FullClient<RuntimeApi, Executor>>,
+    journal: &SegmentedBatchJournal,
+    sink: &HttpSink,
+    from: BestBlockRef,
+    to: BestBlockRef,
+) -> Result<BestChainUpdate, String>
+where
+    RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
+        + Send
+        + Sync
+        + 'static,
+    RuntimeApi::RuntimeApi: super::RuntimeApiCollection,
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    Executor: sc_executor::sp_wasm_interface::HostFunctions + 'static,
+{
+    let route = sp_blockchain::tree_route(&**client, H256::from(from.hash), H256::from(to.hash))
+        .map_err(|err| format!("cannot calculate BEST chain route: {err}"))?;
+    let finalized_number = client.info().finalized_number;
+    if route
+        .retracted()
+        .iter()
+        .any(|block| block.number <= finalized_number)
+    {
+        return Err(format!(
+            "indexer BEST cursor conflicts with locally finalized chain at block_number={finalized_number}"
+        ));
+    }
+    let retracted = route
+        .retracted()
+        .iter()
+        .map(|block| BestBlockRef {
+            number: block.number,
+            hash: h256_to_bytes(block.hash),
+        })
+        .collect();
+    let enacted_batches = route
+        .enacted()
+        .iter()
+        .map(|block| {
+            journal
+                .load(block.number, block.hash)?
+                .ok_or_else(|| {
+                    format!(
+                        "BEST batch is unavailable in the durable journal at block_number={} block_hash={:?}",
+                        block.number, block.hash
+                    )
+                })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    Ok(BestChainUpdate {
+        fixture_format_version: FIXTURE_FORMAT_VERSION,
+        chain_id: sink.chain_id.clone(),
+        genesis_hash: h256_to_bytes(sink.genesis_hash),
+        from,
+        to,
+        retracted,
+        enacted_batches,
+    })
 }
 
 fn recover_journal_tail<RuntimeApi, Executor>(
@@ -1972,6 +2206,7 @@ where
 async fn send_batches<RuntimeApi, Executor>(
     sender: BatchSender<RuntimeApi, Executor>,
     mut batch_rx: mpsc::Receiver<QueuedBatch>,
+    best_delivery_ready: Arc<AtomicBool>,
 ) where
     RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
         + Send
@@ -2080,6 +2315,7 @@ async fn send_batches<RuntimeApi, Executor>(
                         finalized_number,
                     );
                     if live_delivery_ready {
+                        best_delivery_ready.store(true, Ordering::Release);
                         info!(
                             "Compatible indexer delivery switched permanently to live mode at next_expected_block_number={} local_best_number={} network_best_seen_block={:?}",
                             next_expected_number, best_number, status.best_seen_block,
@@ -2467,6 +2703,7 @@ impl HttpSink {
                 .expect("reqwest client configuration is valid; qed"),
             stream_start_url: format!("{base_url}/stream-start"),
             batches_url: format!("{base_url}/batches"),
+            best_chain_url: format!("{base_url}/best-chain"),
             token,
             chain_id,
             genesis_hash,
@@ -2519,6 +2756,24 @@ impl HttpSink {
             .map_err(|err| format!("batch chunk transport failure: {err}"))?;
         classify_response("batch chunk", response).await.map(|_| ())
     }
+
+    async fn send_best_chain(&self, update: BestChainUpdate) -> Result<(), String> {
+        let mut request = self
+            .client
+            .post(&self.best_chain_url)
+            .header(header::CONTENT_TYPE, "application/octet-stream")
+            .body(codec::Encode::encode(&update));
+        if let Some(token) = &self.token {
+            request = request.bearer_auth(token);
+        }
+        let response = request
+            .send()
+            .await
+            .map_err(|err| format!("BEST chain update transport failure: {err}"))?;
+        classify_response("BEST chain update", response)
+            .await
+            .map(|_| ())
+    }
 }
 
 async fn classify_response(endpoint: &str, response: reqwest::Response) -> Result<String, String> {
@@ -2554,6 +2809,7 @@ fn parse_stream_start_ack(body: &str) -> Result<StreamStartAck, String> {
         return Ok(StreamStartAck {
             resume_from: 0,
             last_received: None,
+            best: None,
         });
     }
 
@@ -2561,11 +2817,17 @@ fn parse_stream_start_ack(body: &str) -> Result<StreamStartAck, String> {
         format!("stream-start response must be JSON or empty: {err}; body={body}")
     })?;
     let cursor = parse_last_received_cursor(&value)?;
+    let best = value
+        .get("last_received_best_block")
+        .map(|value| parse_cursor_value(value, "last_received_best_block"))
+        .transpose()?
+        .flatten();
     Ok(StreamStartAck {
         resume_from: cursor
             .map(|cursor| cursor.number.saturating_add(1))
             .unwrap_or(0),
         last_received: cursor,
+        best,
     })
 }
 
