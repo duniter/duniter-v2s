@@ -138,6 +138,25 @@ client version accordingly. In particular, changes to the embedded raw chainspec
 (for example bootnodes, because the release build embeds the raw spec in the
 binary) require a new client version for the network being released.
 
+### Build environments and compatibility
+
+The release jobs build DEB and RPM packages on Debian 12 Bookworm with Rust
+1.93.0, for both amd64 and arm64. Bookworm is the native package build baseline.
+Compatibility with older distributions is no longer guaranteed. Check the
+package dependencies and the binary's required GLIBC symbol versions before
+announcing support for another distribution.
+
+The published and local Docker images use Debian 12 Bookworm for both compilation
+and execution, with Rust pinned to 1.93.0. The containers include their own
+userspace libraries, so the host does not need to run Bookworm.
+
+The Rust validation jobs still use the Parity CI image defined by
+`CI_UNIFIED_IMAGE`. Package jobs use the separate `PACKAGE_BUILD_IMAGE` so that
+their distribution baseline does not depend on the Parity image's availability.
+
+Metadata generation uses subxt-cli 0.50.3 locally and in CI. The metadata scripts
+install this version with locked dependencies if the selected CLI differs.
+
 ### Release steps
 
 #### Step 1: prepare the version

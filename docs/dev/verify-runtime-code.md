@@ -25,7 +25,7 @@ Le WASM est généré dans `release/gtest_runtime.compact.compressed.wasm`.
 
 La commande xtask utilise en interne le Docker `paritytech/srtool` dont la
 version correspond au channel Rust dans `rust-toolchain.toml` (actuellement
-`1.88.0`). Le build est reproductible : le même code source produit toujours
+`1.93.0`). Le build est reproductible : le même code source produit toujours
 le même binaire WASM, quel que soit la machine.
 
 <details><summary>Commande srtool manuelle (sans xtask)</summary>
@@ -37,7 +37,7 @@ docker run \
   -e PACKAGE=<network>-runtime \
   -e RUNTIME_DIR=runtime/<network> \
   -v $PWD:/build \
-  paritytech/srtool:1.88.0 build --app --json -cM
+  paritytech/srtool:1.93.0 build --app --json -cM
 ```
 
 Le WASM est dans :

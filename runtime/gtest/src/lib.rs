@@ -153,16 +153,13 @@ impl Contains<RuntimeCall> for BaseCallFilter {
     scale_info::TypeInfo,
 )]
 #[allow(clippy::unnecessary_cast)]
+#[derive(Default)]
 pub enum ProxyType {
+    #[default]
     AlmostAny = 0,
     TransferOnly = 1,
     CancelProxy = 2,
     TechnicalCommitteePropose = 3,
-}
-impl Default for ProxyType {
-    fn default() -> Self {
-        Self::AlmostAny
-    }
 }
 impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
     fn filter(&self, c: &RuntimeCall) -> bool {

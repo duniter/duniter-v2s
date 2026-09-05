@@ -49,12 +49,8 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# Check for subxt CLI
-if ! command -v subxt &>/dev/null; then
-    echo "Error: subxt-cli not found. Install it with:"
-    echo "  cargo install subxt-cli"
-    exit 1
-fi
+# Use the same metadata CLI locally and in CI.
+source "$(dirname "$0")/ensure_subxt.sh"
 
 # Ensure port is free
 if lsof -i :"$RPC_PORT" -sTCP:LISTEN &>/dev/null 2>&1 || ss -tlnp 2>/dev/null | grep -q ":${RPC_PORT} "; then

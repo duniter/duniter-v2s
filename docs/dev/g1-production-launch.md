@@ -12,7 +12,7 @@ audit, contrôle manuel ou reprise ciblée.
 
 - Linux (Ubuntu 22.04), 16 Go RAM, 8 CPU, 50 Go disque
 - Docker ou Podman (`podman machine set --memory 16384 --cpus 8`)
-- Rust (toolchain 1.88.0 via `rust-toolchain.toml`)
+- Rust (toolchain 1.93.0 via `rust-toolchain.toml`)
 - Outils : `cmake pkg-config libssl-dev git build-essential clang protobuf-compiler jq`
 
 ### Credentials
@@ -99,7 +99,7 @@ cargo xtask release network build-runtime g1
 
 <details><summary>Fonctionnement</summary>
 
-Build reproductible via `srtool` (Docker `paritytech/srtool:1.88.0`). Le WASM est généré dans `release/network/` et le hash SHA256 dans `release/network/network_srtool_output.json`.
+Build reproductible via `srtool` (Docker `paritytech/srtool:1.93.0`). Le WASM est généré dans `release/network/` et le hash SHA256 dans `release/network/network_srtool_output.json`.
 </details>
 
 ### Étape 4 — Génération des specs réseau

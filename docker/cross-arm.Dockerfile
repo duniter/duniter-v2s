@@ -1,4 +1,4 @@
-FROM rust:1.88.0
+FROM rust:1.93.0-bookworm
 
 RUN dpkg --add-architecture armhf && \
   apt-get update && apt-get upgrade -y && \
