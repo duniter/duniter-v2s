@@ -14,7 +14,8 @@ stages:
   - deploy_readme
 
 variables:
-  CI_UNIFIED_IMAGE: paritytech/ci-unified:bullseye-1.88.0
+  CI_UNIFIED_IMAGE: paritytech/ci-unified:bullseye-1.93.0
+  PACKAGE_BUILD_IMAGE: rust:1.93.0-bookworm
   DUNITER_POLKADOT_SDK_URL: https://github.com/duniter/duniter-polkadot-sdk
 
 default:
@@ -29,6 +30,7 @@ default:
     - when: never
 
 .debian_build_template:
+  image: $PACKAGE_BUILD_IMAGE
   extends:
     - .release_rules
     - .with_dependencies
@@ -40,7 +42,7 @@ default:
       artifacts: true
   before_script:
     # Install build dependencies and tools to patch embedded raw specs in CI
-    - apt-get update -qq && apt-get install -y -qq protobuf-compiler clang libclang-dev curl jq
+    - apt-get update -qq && apt-get install -y -qq protobuf-compiler clang libclang-dev cmake curl jq
   script:
     - rm -f target/release/duniter target/release/distance-oracle
     - source scripts/parse_release_tag.sh
@@ -48,6 +50,7 @@ default:
     - ./scripts/cargo_with_vendor.sh xtask client-build-deb "$NETWORK"
 
 .rpm_build_template:
+  image: $PACKAGE_BUILD_IMAGE
   extends:
     - .release_rules
     - .with_dependencies
@@ -59,7 +62,7 @@ default:
       artifacts: true
   before_script:
     # Install RPM build tools and dependencies to patch embedded raw specs in CI
-    - apt-get update -qq && apt-get install -y -qq rpm protobuf-compiler clang libclang-dev curl jq
+    - apt-get update -qq && apt-get install -y -qq rpm protobuf-compiler clang libclang-dev cmake curl jq
   script:
     - rm -f target/release/duniter target/release/distance-oracle
     - source scripts/parse_release_tag.sh
@@ -261,7 +264,7 @@ generate_metadata:
       when: on_success
     - when: never
   script:
-    - if ! command -v subxt >/dev/null 2>&1; then cargo install subxt-cli; fi
+    - source scripts/ensure_subxt.sh
     - |
       if [[ "$CI_COMMIT_TAG" != "" && "$CI_COMMIT_REF_PROTECTED" == "true" ]]; then
         if ! printf '%s\n' "$CI_COMMIT_TAG" | grep -Eq '^[a-zA-Z0-9]+-[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$'; then
@@ -335,7 +338,7 @@ sdk_resolve:
       artifacts: true
 
 .env_arm:
-  image: rust:1.88.0-bullseye  # Pinned to match CI unified image Rust version and amd64 release libc baseline
+  image: $PACKAGE_BUILD_IMAGE
   tags:
     - linuxARM
 

@@ -65,7 +65,7 @@ pub use weights::WeightInfo;
 
 use codec::alloc::borrow::ToOwned;
 use frame_support::traits::Get;
-use scale_info::prelude::{collections::BTreeMap, vec, vec::Vec};
+use scale_info::prelude::{collections::BTreeMap, vec::Vec};
 use sp_runtime::traits::{Convert, IsMember};
 
 #[allow(unreachable_patterns)]

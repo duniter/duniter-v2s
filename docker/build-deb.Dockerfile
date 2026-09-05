@@ -1,4 +1,8 @@
-FROM paritytech/ci-linux:production
+FROM rust:1.93.0-bookworm
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y clang libclang-dev cmake protobuf-compiler && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
 WORKDIR /app/

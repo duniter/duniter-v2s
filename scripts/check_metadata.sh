@@ -27,9 +27,7 @@ case "$BUILD_PROFILE" in
     ;;
 esac
 
-if ! command -v subxt >/dev/null 2>&1; then
-  cargo install subxt-cli
-fi
+source "$(dirname "$0")/ensure_subxt.sh"
 
 needs_regen=0
 for chain in g1 gtest gdev; do

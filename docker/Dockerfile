@@ -1,5 +1,5 @@
 # Workaround for https://github.com/containers/buildah/issues/4742
-FROM --platform=$BUILDPLATFORM docker.io/library/debian:bullseye-slim AS target
+FROM --platform=$BUILDPLATFORM docker.io/library/debian:bookworm-slim AS target
 
 # ------------------------------------------------------------------------------
 # Build Stage
@@ -7,7 +7,7 @@ FROM --platform=$BUILDPLATFORM docker.io/library/debian:bullseye-slim AS target
 
 # When building for a foreign arch, use cross-compilation
 # https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
-FROM --platform=$BUILDPLATFORM docker.io/library/rust:1-bullseye AS build
+FROM --platform=$BUILDPLATFORM docker.io/library/rust:1.93.0-bookworm AS build
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
@@ -89,7 +89,7 @@ RUN apt-get update \
 RUN update-ca-certificates
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN adduser --home /var/lib/duniter duniter
+RUN adduser --disabled-password --gecos "" --home /var/lib/duniter duniter
 
 # Configuration
 # rpc, p2p, telemetry

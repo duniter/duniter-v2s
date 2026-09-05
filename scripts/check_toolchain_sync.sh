@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CI_IMAGE="${1:-paritytech/ci-unified:bullseye-1.88.0}"
+CI_IMAGE="${1:-paritytech/ci-unified:bullseye-1.93.0}"
 
 if [[ "$CI_IMAGE" != *:* ]]; then
   echo "Invalid CI image format: $CI_IMAGE" >&2
