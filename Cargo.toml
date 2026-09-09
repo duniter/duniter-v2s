@@ -1,5 +1,6 @@
 [workspace]
 resolver = "2"
+exclude = ["patches/sdk-tracing/sc-tracing", "patches/sdk-tracing/sp-tracing", "patches/multihash"]
 
 members = [
     'client/distance',
@@ -281,3 +282,14 @@ zeroize = { opt-level = 3 }
 lto = "thin"
 # Substrate runtime requires unwinding.
 panic = "unwind"
+
+# Permit the ANSI log-injection fix while retaining SDK 1.22.3.
+# See patches/sdk-tracing/README.md.
+[patch."https://github.com/duniter/duniter-polkadot-sdk"]
+sc-tracing = { path = "patches/sdk-tracing/sc-tracing" }
+sp-tracing = { path = "patches/sdk-tracing/sp-tracing" }
+
+[patch.crates-io]
+# Replace the last core2 dependency with the maintained no_std_io2 fork.
+# Source and scope: patches/multihash/PATCH.md.
+multihash = { path = "patches/multihash" }
