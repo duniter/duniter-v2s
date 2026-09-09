@@ -342,6 +342,54 @@ sdk_resolve:
   tags:
     - linuxARM
 
+audit_production_linux:
+  extends: .env
+  image: $PACKAGE_BUILD_IMAGE
+  stage: quality
+  # Self-contained so the audit can start even when prerequisite jobs are manual.
+  needs: []
+  rules:
+    - when: manual
+  allow_failure: true
+  timeout: 4 hours
+  variables:
+    RUST_LOG: info
+    RUST_MIN_STACK: "16777216"
+  before_script:
+    # Bookworm supplies Python 3.11, required for tomllib in the audit script.
+    - apt-get update -qq && apt-get install -y -qq python3 pkg-config libssl-dev protobuf-compiler clang libclang-dev cmake curl jq git ca-certificates lsof
+    - cargo install --locked cargo-auditable --version 0.7.5
+    - cargo install --locked cargo-audit --version 0.22.2
+    - cargo install --locked rust-audit-info --version 0.5.4
+  script:
+    - ./scripts/check_toolchain_sync.sh "$CI_UNIFIED_IMAGE"
+    - ./scripts/prepare_local_polkadot_sdk.sh Cargo.lock duniter-polkadot-sdk.git
+    - |
+      # The production G1 genesis is published in the upstream g1-1100 release.
+      # Use the upstream project ID so this also works in project forks.
+      set -o pipefail
+      RAW_SPEC_URL="$(curl --fail --silent --show-error --retry 3 \
+        https://git.duniter.org/api/v4/projects/520/releases/g1-1100/assets/links \
+        | jq -er '[.[] | select(.name == "g1-raw.json") | .direct_asset_url // .url] | if length == 1 then .[0] else error("Expected one G1 raw spec") end')"
+      export RAW_SPEC_URL
+      RUNTIME=g1 bash scripts/prepare_embedded_raw_spec.sh
+    - METADATA_CHAINS=g1 DUNITER_BUILD_PROFILE=release ./scripts/generate_all_metadata.sh
+    - |
+      # Keep both audit results, including when either audit rejects a dependency.
+      set -o pipefail
+      mkdir -p target/audit
+      production_status=0
+      ./scripts/audit-production.py --target x86_64-unknown-linux-gnu || production_status=$?
+      lockfile_status=0
+      cargo audit 2>&1 | tee target/audit/full-lockfile.txt || lockfile_status=$?
+      printf 'Production audit: %s\nFull lockfile audit: %s\n' "$production_status" "$lockfile_status" | tee target/audit/status.txt
+      test "$production_status" -eq 0 && test "$lockfile_status" -eq 0
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - target/audit/
+
 fmt_and_clippy:
   extends:
     - .env

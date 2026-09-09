@@ -1,0 +1,95 @@
+[advisories]
+# Reviewed against SDK e2f5d447 and the macOS production build on 2026-09-08.
+# Recheck these exceptions when SDK versions, features, or callers change.
+# Detailed evidence and limits, attached to the dependency-audit merge request:
+# https://git.duniter.org/-/project/520/uploads/9f036033d5ec0fef59e343b89a584ba5/dependency-vulnerabilities.md
+ignore = [
+    # hickory-proto 0.24.4/0.25.2: clients encode one-question requests, not remote
+    # multi-record responses. libp2p mDNS uses its own response encoder.
+    "RUSTSEC-2026-0119",
+    # hickory-proto 0.25.2: neither DNSSEC crypto feature is compiled.
+    "RUSTSEC-2026-0118",
+
+    # wasmtime 35.0.0: Winch is not compiled; the SDK selects Cranelift.
+    "RUSTSEC-2026-0086", # table64 stack disclosure
+    "RUSTSEC-2026-0089", # table.fill panic
+    "RUSTSEC-2026-0094", # table.grow incorrect result type
+    "RUSTSEC-2026-0095", # linear-memory sandbox escape
+    # wasmtime 35.0.0: component-model is not compiled or instantiated.
+    "RUSTSEC-2026-0085", # flags lifting panic
+    "RUSTSEC-2026-0091", # string transcoding write
+    "RUSTSEC-2026-0092", # UTF-16 alignment panic
+    "RUSTSEC-2026-0093", # UTF-16 bounds read
+    # wasmtime 35.0.0: no WASI host implementation is linked or registered.
+    "RUSTSEC-2026-0020", # WASI resource exhaustion
+    "RUSTSEC-2026-0021", # WASI HTTP header panic
+    "RUSTSEC-2026-0269", # WASI filesystem sandbox escape
+    # wasmtime 35.0.0: wasm_memory64(false) excludes the vulnerable ARM64 load.
+    "RUSTSEC-2026-0096",
+    # wasmtime 35.0.0: wasm_memory64(false) excludes oversized 64-bit tables.
+    "RUSTSEC-2026-0114",
+    # wasmtime 35.0.0: threads are disabled; the SDK creates no shared memories.
+    "RUSTSEC-2025-0118",
+    # wasmtime 35.0.0: each runtime keeps its module, linker and stores on one engine.
+    "RUSTSEC-2026-0222",
+    # wasmtime 35.0.0: guard=32 MiB and reservation=4 GiB exclude the pool leak.
+    "RUSTSEC-2026-0088",
+    # wasmtime 35.0.0: f64.copysign is absent from G1 runtime 1100 at finalized
+    # block 2656459, the embedded G1 genesis, and this branch's G1 Wasm build.
+    # Recheck actual Wasm after runtime/toolchain changes and for other runtimes;
+    # signals-based traps prevent a process crash, not incorrect block rejection.
+    "RUSTSEC-2026-0006",
+    # wasmtime 35.0.0: the SDK executor sets wasm_simd=false, rejecting f64x2.splat.
+    # It is also absent from all three G1 artifacts above. Recheck if SIMD is enabled.
+    "RUSTSEC-2026-0087",
+
+    # lru 0.12.5: compiled libp2p callers use get_mut/iter, never IterMut.
+    "RUSTSEC-2026-0002",
+    # lru 0.7.8/0.12.5: keys are integer pairs, PeerId or Multiaddr, with no
+    # panicking Drop implementation. The pop/unwind prerequisite is absent.
+    "RUSTSEC-2026-0253",
+    # memmap2 0.5.10: ParityDB flushes META_SIZE..map.len(), within the mapping.
+    # It does not call the affected advise_range APIs; other users have 0.9.11.
+    "RUSTSEC-2026-0186",
+
+    # Additional complete-lockfile entries, absent from macOS production artifacts.
+    # h2 0.3.27: igd-next uses Hyper's default HTTP/1 client over plain HTTP,
+    # with no HTTP/2 prior knowledge or TLS/ALPN negotiation.
+    "RUSTSEC-2026-0258",
+    # ring 0.16.20: rcgen uses signatures/digests, not the affected AES/QUIC APIs.
+    "RUSTSEC-2025-0009",
+    # rustls-webpki 0.101.7: libp2p-tls uses its Error type, not its certificate
+    # chain/name-constraint verification or CRL parsers; it has its own verifier.
+    "RUSTSEC-2026-0098", # URI name constraints
+    "RUSTSEC-2026-0099", # wildcard DNS name constraints
+    "RUSTSEC-2026-0104", # CRL parser panic
+
+    # Maintenance debt, not an assertion that these packages are maintained.
+    "RUSTSEC-2025-0057", # fxhash 0.2.1: retained by the SDK network dependencies.
+    "RUSTSEC-2024-0384", # instant 0.1.13: retained by the SDK network dependencies.
+    "RUSTSEC-2025-0161", # libsecp256k1 0.7.2: SDK crypto; migration needs API review.
+    "RUSTSEC-2022-0061", # parity-wasm 0.45.0: SDK Wasm tooling still uses its API.
+    "RUSTSEC-2024-0436", # paste 1.0.15: SDK macros; no maintained in-place update.
+    "RUSTSEC-2024-0370", # proc-macro-error 1.0.4: SDK macro dependencies require v1.
+    "RUSTSEC-2026-0173", # proc-macro-error2 2.0.1: subxt-macro still requires it.
+    "RUSTSEC-2025-0141", # bincode 1.3.3: distance-oracle test fixtures; no known defect.
+    "RUSTSEC-2024-0388", # derivative 2.2.0: SDK arkworks macros; maintenance notice only.
+    "RUSTSEC-2025-0010", # ring 0.16.20: rcgen 0.11 signing for optional libp2p TLS.
+]
+informational_warnings = ["unmaintained", "unsound", "notice"]
+
+[database]
+fetch = true
+stale = false
+
+[output]
+# Vulnerabilities fail by default; maintenance notices remain warnings.
+deny = ["unsound", "yanked"]
+quiet = false
+show_tree = true
+
+[yanked]
+# core2 is removed through the root multihash patch.
+# Keep registry yank checks enabled for every remaining crates.io dependency.
+enabled = true
+update_index = true
