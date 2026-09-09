@@ -1,12 +1,14 @@
 use crate::{
     endpoint_gossip,
     endpoint_gossip::{
-        DuniterEndpoint, DuniterEndpoints, Peering, duniter_peering_protocol_name,
+        DuniterEndpoint, DuniterEndpoints, MAX_ENDPOINT_ADDRESS_SIZE, MAX_ENDPOINT_PROTOCOL_SIZE,
+        MAX_GOSSIP_SIZE, Peering, duniter_peering_protocol_name,
         handler::{DuniterPeeringCommand, DuniterPeeringEvent},
         well_known_endpoint_types::RPC,
     },
 };
 use async_channel::Receiver;
+use codec::Encode;
 use futures::{FutureExt, StreamExt, future, stream};
 use log::{debug, warn};
 use parking_lot::Mutex;
@@ -23,6 +25,50 @@ use sp_api::__private::BlockT;
 use sp_consensus::Error as ConsensusError;
 use sp_runtime::traits::Header;
 use std::{future::Future, pin::pin, sync::Arc, task::Poll, time::Duration};
+
+#[test]
+fn peering_payload_boundaries_are_enforced() {
+    let valid = Peering {
+        endpoints: DuniterEndpoints::truncate_from(
+            (0..10)
+                .map(|_| DuniterEndpoint {
+                    protocol: "p".repeat(MAX_ENDPOINT_PROTOCOL_SIZE),
+                    address: "a".repeat(MAX_ENDPOINT_ADDRESS_SIZE),
+                })
+                .collect(),
+        ),
+    };
+    let encoded = valid.encode();
+    assert!(encoded.len() < MAX_GOSSIP_SIZE as usize);
+    assert_eq!(Peering::decode_and_validate(&encoded), Some(valid));
+
+    let oversized_protocol = Peering {
+        endpoints: DuniterEndpoints::truncate_from(vec![DuniterEndpoint {
+            protocol: "p".repeat(MAX_ENDPOINT_PROTOCOL_SIZE + 1),
+            address: String::new(),
+        }]),
+    };
+    assert!(Peering::decode_and_validate(&oversized_protocol.encode()).is_none());
+
+    let oversized_address = Peering {
+        endpoints: DuniterEndpoints::truncate_from(vec![DuniterEndpoint {
+            protocol: String::new(),
+            address: "a".repeat(MAX_ENDPOINT_ADDRESS_SIZE + 1),
+        }]),
+    };
+    assert!(Peering::decode_and_validate(&oversized_address.encode()).is_none());
+}
+
+#[test]
+fn peering_payload_rejects_trailing_bytes() {
+    let mut encoded = Peering {
+        endpoints: DuniterEndpoints::new(),
+    }
+    .encode();
+    encoded.push(0);
+
+    assert!(Peering::decode_and_validate(&encoded).is_none());
+}
 
 #[tokio::test]
 async fn peering_is_forwarded_and_only_once_per_connection() {
@@ -171,17 +217,15 @@ fn start_network(
             .take_notification_service(&format!("/{}", duniter_peering_protocol_name::NAME).into())
             .unwrap();
 
-        let (rpc_sink, mut stream_unbounded) =
-            tracing_unbounded("mpsc_duniter_gossip_peering_test", 100_000);
-        let (sink_unbounded, stream) = async_channel::unbounded();
+        let (rpc_sink, mut rpc_stream) = tokio::sync::mpsc::channel(128);
+        let (event_sink, stream) = async_channel::unbounded();
         let (command_tx, command_rx) =
             tracing_unbounded("mpsc_duniter_gossip_peering_test_command", 100_000);
 
-        // mapping from mpsc TracingUnboundedReceiver to mpmc Receiver
+        // Map the bounded handler channel to the cloneable test receiver.
         tokio::spawn(async move {
-            // forward the event
-            while let Some(command) = stream_unbounded.next().await {
-                sink_unbounded.send(command).await.unwrap();
+            while let Some(event) = rpc_stream.recv().await {
+                event_sink.send(event).await.unwrap();
             }
         });
 

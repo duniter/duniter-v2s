@@ -2,10 +2,8 @@ use crate::endpoint_gossip::{
     DuniterEndpoints, handler::DuniterPeeringEvent, rpc::data::DuniterPeeringsData,
 };
 use codec::{Decode, Encode};
-use futures::StreamExt;
 use jsonrpsee::core::Serialize;
 use parking_lot::RwLock;
-use sc_utils::mpsc::{TracingUnboundedSender, tracing_unbounded};
 use serde::Deserialize;
 use std::sync::Arc;
 
@@ -51,26 +49,24 @@ impl DuniterPeeringsState {
     }
 
     /// Creates a channel for binding to the network events.
-    pub fn listen(&self) -> TracingUnboundedSender<DuniterPeeringEvent> {
-        let (sink, stream) = tracing_unbounded("mpsc_duniter_peering_rpc_stream", 1_000);
+    pub fn listen(&self) -> tokio::sync::mpsc::Sender<DuniterPeeringEvent> {
+        let (sink, mut stream) = tokio::sync::mpsc::channel(128);
         let state = self.clone();
         tokio::spawn(async move {
-            stream
-                .for_each(|event| async {
-                    match event {
-                        DuniterPeeringEvent::GoodPeering(who, peering) => {
-                            state.insert(PeeringWithId {
-                                peer_id: who.to_base58(),
-                                endpoints: peering.endpoints,
-                            });
-                        }
-                        DuniterPeeringEvent::StreamClosed(who) => {
-                            state.remove(who.to_base58());
-                        }
-                        _ => {}
+            while let Some(event) = stream.recv().await {
+                match event {
+                    DuniterPeeringEvent::GoodPeering(who, peering) => {
+                        state.insert(PeeringWithId {
+                            peer_id: who.to_base58(),
+                            endpoints: peering.endpoints,
+                        });
                     }
-                })
-                .await
+                    DuniterPeeringEvent::StreamClosed(who) => {
+                        state.remove(who.to_base58());
+                    }
+                    _ => {}
+                }
+            }
         });
         sink
     }

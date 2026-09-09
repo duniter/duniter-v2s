@@ -5,9 +5,9 @@ mod tests;
 mod types;
 
 use crate::endpoint_gossip::duniter_peering_protocol_name::NAME;
-use codec::{Decode, Encode};
+use codec::{Decode, DecodeAll, Encode};
 use sc_network::{
-    MAX_RESPONSE_SIZE, NetworkBackend, NotificationMetrics, NotificationService,
+    NetworkBackend, NotificationMetrics, NotificationService,
     config::{PeerStoreProvider, SetConfig},
     types::ProtocolName,
 };
@@ -26,8 +26,10 @@ pub struct DuniterPeeringParams {
     pub notification_service: Box<dyn NotificationService>,
 }
 
-/// Maximum allowed size for a transactions notification.
-pub(crate) const MAX_GOSSIP_SIZE: u64 = MAX_RESPONSE_SIZE;
+/// Maximum allowed size for a Duniter peering notification.
+pub(crate) const MAX_GOSSIP_SIZE: u64 = 32 * 1024;
+pub(crate) const MAX_ENDPOINT_PROTOCOL_SIZE: usize = 64;
+pub(crate) const MAX_ENDPOINT_ADDRESS_SIZE: usize = 2 * 1024;
 
 /// Interval at which we propagate gossips;
 pub(crate) const PROPAGATE_TIMEOUT: time::Duration = time::Duration::from_secs(1);
@@ -84,8 +86,8 @@ impl DuniterPeeringParams {
 /// Peer information
 #[derive(Debug)]
 struct Peer {
-    /// Holds a set of transactions known to this peer.
-    known_peering: Option<Peering>,
+    /// Whether this peer already sent its peering during the current connection.
+    known_peering: bool,
     sent_peering: bool,
 }
 
@@ -102,4 +104,18 @@ pub type DuniterEndpoints = BoundedVec<DuniterEndpoint, ConstU32<10>>;
 #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Peering {
     pub endpoints: DuniterEndpoints,
+}
+
+impl Peering {
+    fn decode_and_validate(mut input: &[u8]) -> Option<Self> {
+        let peering = Self::decode_all(&mut input).ok()?;
+        peering.has_valid_field_lengths().then_some(peering)
+    }
+
+    fn has_valid_field_lengths(&self) -> bool {
+        self.endpoints.iter().all(|endpoint| {
+            endpoint.protocol.len() <= MAX_ENDPOINT_PROTOCOL_SIZE
+                && endpoint.address.len() <= MAX_ENDPOINT_ADDRESS_SIZE
+        })
+    }
 }

@@ -22,6 +22,9 @@
 
 #![warn(missing_docs)]
 
+#[cfg(test)]
+mod tests;
+
 use crate::endpoint_gossip::rpc::{api::DuniterPeeringRpcApiServer, state::DuniterPeeringsState};
 use common_runtime::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use jsonrpsee::RpcModule;

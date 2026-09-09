@@ -131,11 +131,11 @@ if [ -n "$DUNITER_OPTIONS" ]; then
 fi
 
 # Set main command
-# Since we are inside docker, we can bind to all interfaces.
-# User will bind port to host interface or set reverse proxy when needed.
+# Since we are inside Docker, bind the safe RPC methods to all interfaces.
+# Unsafe methods must be enabled explicitly for short-lived administration tasks.
 set -- "$@" \
   "${chain[@]}" \
-  -d /var/lib/duniter --unsafe-rpc-external
+  -d /var/lib/duniter --rpc-external
 
 echo "Starting duniter with parameters:" "$@"
 exec duniter "$@"

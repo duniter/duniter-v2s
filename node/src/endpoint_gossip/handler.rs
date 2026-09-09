@@ -2,7 +2,7 @@ use crate::endpoint_gossip::{
     DuniterEndpoints, PROPAGATE_TIMEOUT, Peer, Peering,
     types::validation_result::DuniterStreamValidationResult,
 };
-use codec::{Decode, Encode};
+use codec::Encode;
 use futures::{FutureExt, Stream, StreamExt, future, stream};
 use log::debug;
 use sc_network::{
@@ -10,7 +10,7 @@ use sc_network::{
     service::traits::{NotificationEvent, ValidationResult},
     utils::interval,
 };
-use sc_utils::mpsc::{TracingUnboundedReceiver, TracingUnboundedSender};
+use sc_utils::mpsc::TracingUnboundedReceiver;
 use sp_api::__private::BlockT;
 use std::{collections::HashMap, future::Future, marker::PhantomData, pin::Pin};
 
@@ -20,7 +20,7 @@ pub fn build<
 >(
     notification_service: Box<dyn NotificationService>,
     network: N,
-    rpc_sink: TracingUnboundedSender<DuniterPeeringEvent>,
+    rpc_sink: tokio::sync::mpsc::Sender<DuniterPeeringEvent>,
     command_rx: Option<TracingUnboundedReceiver<DuniterPeeringCommand>>,
     endpoints: DuniterEndpoints,
 ) -> GossipsHandler<B, N> {
@@ -79,17 +79,16 @@ pub enum DuniterPeeringCommand {
 }
 
 struct DuniterEventsReporter {
-    sink: TracingUnboundedSender<DuniterPeeringEvent>,
+    sink: tokio::sync::mpsc::Sender<DuniterPeeringEvent>,
     local_peer_id: PeerId,
 }
 
 impl DuniterEventsReporter {
     /// Report an event for monitoring purposes (logs + unit tests).
-    fn report_event(&self, event: DuniterPeeringEvent) {
-        self.sink.unbounded_send(event.clone())
-            .unwrap_or_else(|e| {
-                log::error!(target: "duniter-libp2p", "[{}] Failed to send notification: {}", self.local_peer_id, e);
-            })
+    async fn report_event(&self, event: DuniterPeeringEvent) {
+        if let Err(e) = self.sink.send(event).await {
+            log::error!(target: "duniter-libp2p", "[{}] Failed to send notification: {}", self.local_peer_id, e);
+        }
     }
 }
 
@@ -128,7 +127,8 @@ where
             .report_event(DuniterPeeringEvent::GoodPeering(
                 self.network.local_peer_id(),
                 self.self_peering.clone(),
-            ));
+            ))
+            .await;
         // Then start the network loop
         loop {
             futures::select! {
@@ -140,11 +140,11 @@ where
                                 Ok(_) => {
                                     peer_data.sent_peering = true;
                                     debug!(target: "duniter-libp2p", "[{}] self peering sent to {}", self.network.local_peer_id(), peer);
-                                    self.events_reporter.report_event(DuniterPeeringEvent::SelfPeeringPropagationSuccess(*peer, self.self_peering.clone()));
+                                    self.events_reporter.report_event(DuniterPeeringEvent::SelfPeeringPropagationSuccess(*peer, self.self_peering.clone())).await;
                                 }
                                 Err(e) => {
                                     debug!(target: "duniter-libp2p", "[{}] failed to send self peering to {}: {}", self.network.local_peer_id(), peer, e);
-                                    self.events_reporter.report_event(DuniterPeeringEvent::SelfPeeringPropagationFailed(*peer, self.self_peering.clone(), e.to_string()));
+                                    self.events_reporter.report_event(DuniterPeeringEvent::SelfPeeringPropagationFailed(*peer, self.self_peering.clone(), e.to_string())).await;
                                 }
                             }
                         }
@@ -152,7 +152,7 @@ where
                 },
                 event = self.notification_service.next_event().fuse() => {
                     if let Some(event) = event {
-                        self.handle_notification_event(event)
+                        self.handle_notification_event(event).await
                     } else {
                         // `Notifications` has seemingly closed. Closing as well.
                         return
@@ -167,7 +167,7 @@ where
         }
     }
 
-    fn handle_notification_event(&mut self, event: NotificationEvent) {
+    async fn handle_notification_event(&mut self, event: NotificationEvent) {
         match event {
             NotificationEvent::ValidateInboundSubstream {
                 peer,
@@ -187,7 +187,8 @@ where
                     .report_event(DuniterPeeringEvent::StreamValidation(
                         peer,
                         duniter_validation.clone(),
-                    ));
+                    ))
+                    .await;
                 let _ = result_tx.send(duniter_validation.into());
             }
             NotificationEvent::NotificationStreamOpened {
@@ -202,31 +203,43 @@ where
                     peer,
                     Peer {
                         sent_peering: false,
-                        known_peering: None,
+                        known_peering: false,
                     },
                 );
                 debug_assert!(_was_in.is_none());
                 debug!(target: "duniter-libp2p", "[{}] stream opened with {peer}", self.network.local_peer_id());
                 self.events_reporter
-                    .report_event(DuniterPeeringEvent::StreamOpened(peer, role));
+                    .report_event(DuniterPeeringEvent::StreamOpened(peer, role))
+                    .await;
             }
             NotificationEvent::NotificationStreamClosed { peer } => {
                 let _peer = self.peers.remove(&peer);
                 debug_assert!(_peer.is_some());
                 debug!(target: "duniter-libp2p", "[{}] stream closed with {peer}", self.network.local_peer_id());
                 self.events_reporter
-                    .report_event(DuniterPeeringEvent::StreamClosed(peer));
+                    .report_event(DuniterPeeringEvent::StreamClosed(peer))
+                    .await;
             }
             NotificationEvent::NotificationReceived { peer, notification } => {
                 debug!(target: "duniter-libp2p", "[{}] received gossip from {}", self.network.local_peer_id(), peer);
-                if let Ok(peering) = <Peering as Decode>::decode(&mut notification.as_ref()) {
+                if self.peers.get(&peer).is_some_and(|peer| peer.known_peering) {
+                    self.network.report_peer(peer, rep::BAD_PEERING);
                     self.events_reporter
-                        .report_event(DuniterPeeringEvent::GossipReceived(peer, true));
-                    debug!(target: "duniter-libp2p", "[{}] received gossip from {}: {:?}", self.network.local_peer_id(), peer, peering);
-                    self.on_peering(peer, peering);
+                        .report_event(DuniterPeeringEvent::AlreadyReceivedPeering(peer))
+                        .await;
+                    return;
+                }
+
+                if let Some(peering) = Peering::decode_and_validate(notification.as_ref()) {
+                    self.events_reporter
+                        .report_event(DuniterPeeringEvent::GossipReceived(peer, true))
+                        .await;
+                    debug!(target: "duniter-libp2p", "[{}] received {} peering endpoints from {}", self.network.local_peer_id(), peering.endpoints.len(), peer);
+                    self.on_peering(peer, peering).await;
                 } else {
                     self.events_reporter
-                        .report_event(DuniterPeeringEvent::GossipReceived(peer, false));
+                        .report_event(DuniterPeeringEvent::GossipReceived(peer, false))
+                        .await;
                     debug!(target: "duniter-libp2p", "[{}] received gossip from {} but couldn't decode it", self.network.local_peer_id(), peer);
                     self.network.report_peer(peer, rep::BAD_PEERING);
                 }
@@ -235,19 +248,13 @@ where
     }
 
     /// Called when peer sends us new peerings
-    fn on_peering(&mut self, who: PeerId, peering: Peering) {
+    async fn on_peering(&mut self, who: PeerId, peering: Peering) {
         if let Some(ref mut peer) = self.peers.get_mut(&who) {
-            if peer.known_peering.is_some() {
-                // Peering has already been received for this peer. Only one is allowed per connection.
-                self.network.report_peer(who, rep::BAD_PEERING);
-                self.events_reporter
-                    .report_event(DuniterPeeringEvent::AlreadyReceivedPeering(who));
-            } else {
-                peer.known_peering = Some(peering.clone());
-                self.events_reporter
-                    .report_event(DuniterPeeringEvent::GoodPeering(who, peering.clone()));
-                self.network.report_peer(who, rep::GOOD_PEERING);
-            }
+            peer.known_peering = true;
+            self.events_reporter
+                .report_event(DuniterPeeringEvent::GoodPeering(who, peering))
+                .await;
+            self.network.report_peer(who, rep::GOOD_PEERING);
         }
     }
 
@@ -261,18 +268,20 @@ where
                     .await
                 {
                     Ok(_) => {
-                        self.events_reporter.report_event(
-                            DuniterPeeringEvent::SelfPeeringPropagationSuccess(peer, peering),
-                        );
+                        self.events_reporter
+                            .report_event(DuniterPeeringEvent::SelfPeeringPropagationSuccess(
+                                peer, peering,
+                            ))
+                            .await;
                     }
                     Err(e) => {
-                        self.events_reporter.report_event(
-                            DuniterPeeringEvent::SelfPeeringPropagationFailed(
+                        self.events_reporter
+                            .report_event(DuniterPeeringEvent::SelfPeeringPropagationFailed(
                                 peer,
                                 peering,
                                 e.to_string(),
-                            ),
-                        );
+                            ))
+                            .await;
                     }
                 }
             }
