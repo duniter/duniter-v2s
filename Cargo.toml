@@ -8,6 +8,7 @@ members = [
     'end2end-tests',
     'live-tests',
     'node',
+    'node/cli',
     'pallets/authority-members',
     'pallets/certification',
     'pallets/distance',
@@ -47,6 +48,7 @@ repository = 'https://git.duniter.org/nodes/rust/duniter-v2s'
 version = '1.0.0'
 
 [workspace.dependencies]
+duniter-cli = { path = "node/cli" }
 # crates.io dependencies
 anyhow = { version = "1.0.81", default-features = false }
 base64 = { version = "0.22.1", default-features = false }

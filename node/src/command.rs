@@ -303,7 +303,7 @@ pub fn run() -> sc_cli::Result<()> {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|config| {
                 let (client, _, import_queue, task_manager) =
-                    service::new_chain_ops(&config, cli.sealing.is_manual_consensus())?;
+                    service::new_chain_ops(&config, cli.options.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
@@ -311,7 +311,7 @@ pub fn run() -> sc_cli::Result<()> {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|config| {
                 let (client, _, _, task_manager) =
-                    service::new_chain_ops(&config, cli.sealing.is_manual_consensus())?;
+                    service::new_chain_ops(&config, cli.options.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, config.database), task_manager))
             })
         }
@@ -319,7 +319,7 @@ pub fn run() -> sc_cli::Result<()> {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|config| {
                 let (client, _, _, task_manager) =
-                    service::new_chain_ops(&config, cli.sealing.is_manual_consensus())?;
+                    service::new_chain_ops(&config, cli.options.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, config.chain_spec), task_manager))
             })
         }
@@ -334,7 +334,7 @@ pub fn run() -> sc_cli::Result<()> {
                 }
 
                 let (client, _, import_queue, task_manager) =
-                    service::new_chain_ops(&config, cli.sealing.is_manual_consensus())?;
+                    service::new_chain_ops(&config, cli.options.sealing.is_manual_consensus())?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
@@ -346,7 +346,7 @@ pub fn run() -> sc_cli::Result<()> {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|config| {
                 let (client, backend, _, task_manager) =
-                    service::new_chain_ops(&config, cli.sealing.is_manual_consensus())?;
+                    service::new_chain_ops(&config, cli.options.sealing.is_manual_consensus())?;
                 let aux_revert = Box::new(|client, backend, blocks| {
                     service::revert_backend(client, backend, blocks)
                 });
@@ -462,8 +462,8 @@ pub fn run() -> sc_cli::Result<()> {
             You can enable it with `--features runtime-benchmarks`."
             .into()),
         None => {
-            let runner = cli.create_runner(&cli.run)?;
-            let duniter_options: DuniterConfigExtension = cli.duniter_options;
+            let runner = cli.create_runner(&cli.options.run)?;
+            let duniter_options: DuniterConfigExtension = cli.options.duniter_options;
             runner.run_node_until_exit(|mut config| async move {
                 // Force offchain worker and offchain indexing if we have the role Authority
                 if config.role.is_authority() {
@@ -476,7 +476,7 @@ pub fn run() -> sc_cli::Result<()> {
                         service::runtime_executor::runtime::RuntimeApi,
                         Executor,
                         sc_network::Litep2pNetworkBackend,
-                    >(config, cli.sealing, duniter_options)
+                    >(config, cli.options.sealing, duniter_options)
                     .map_err(sc_cli::Error::Service)
                 }
             })
@@ -499,7 +499,8 @@ fn force_cli_options(cli: &mut Cli) {
             cmd.database_params.database = Some(sc_cli::Database::ParityDb);
         }
         None => {
-            cli.run.import_params.database_params.database = Some(sc_cli::Database::ParityDb);
+            cli.options.run.import_params.database_params.database =
+                Some(sc_cli::Database::ParityDb);
         }
         _ => {}
     }

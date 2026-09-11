@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
+mod cli_schema;
 mod client;
 mod gen_doc;
 mod gitlab;
@@ -39,6 +40,15 @@ struct DuniterXTask {
 
 #[derive(Debug, clap::Subcommand)]
 enum DuniterXTaskCommand {
+    /// Export daemon CLI metadata as versioned JSON, without parsing help text.
+    ExportCliSchema {
+        /// Output file. Defaults to node/cli/schema.json in the source tree.
+        #[arg(long)]
+        output: Option<PathBuf>,
+        /// Fail if the committed catalogue differs from the CLI metadata.
+        #[arg(long)]
+        check: bool,
+    },
     /// Build duniter binary
     Build {
         #[clap(long)]
@@ -291,7 +301,8 @@ async fn main() -> Result<()> {
     }
 
     match &args.command {
-        DuniterXTaskCommand::PrintSpec { .. }
+        DuniterXTaskCommand::ExportCliSchema { .. }
+        | DuniterXTaskCommand::PrintSpec { .. }
         | DuniterXTaskCommand::SquidTriggerBuilds { .. }
         | DuniterXTaskCommand::Release {
             command: ReleaseCommand::Squid(_),
@@ -303,6 +314,7 @@ async fn main() -> Result<()> {
     }
 
     match args.command {
+        DuniterXTaskCommand::ExportCliSchema { output, check } => cli_schema::export(output, check),
         DuniterXTaskCommand::Build { production } => build(production),
         DuniterXTaskCommand::GenDoc => gen_doc::gen_doc(),
         DuniterXTaskCommand::Release { command } => match command {

@@ -122,3 +122,42 @@ To run duniter from the command line without the default configuration detailed 
 $ docker run --rm duniter/duniter-gdev:latest -- key generate
 $ docker run --rm duniter/duniter-gdev:latest -- --chain gdev ...
 ```
+
+## Generated CLI environment variables
+
+The image accepts daemon flags as `DUNITER_<FLAG_NAME>`, with hyphens replaced
+by underscores and letters uppercased. For example, `DUNITER_BLOCKS_PRUNING=archive`
+passes `--blocks-pruning=archive`. Values are passed literally, without shell
+expansion. The [CLI catalogue](../node/cli/schema.json) lists the supported flags.
+
+Explicit CLI arguments override the corresponding environment option. Generated
+variables override legacy aliases and pruning profiles. Existing variables such
+as `DUNITER_CHAIN_NAME`, `DUNITER_NODE_NAME`, `DUNITER_INSTANCE_NAME`,
+`DUNITER_DISABLE_TELEMETRY`, and `DUNITER_PRUNING_PROFILE` remain supported.
+`DUNITER_OPTIONS` retains its historical behavior as one literal argument.
+
+Boolean variables accept `true`, `yes`, or `1` to enable the flag, and `false`,
+`no`, or `0` to omit it. Words are case-insensitive. An empty value leaves the
+Docker or Duniter default unchanged. Repeated options accept one value per line,
+including spaces within a value:
+
+```sh
+DUNITER_TELEMETRY_URL='wss://telemetry.example.org/submit 0
+wss://backup.example.org/submit 1'
+```
+
+The normal entrypoint keeps the Docker defaults, automatic node identity, and
+legacy validator and local-chain profiles. An explicit node key or key file
+bypasses automatic identity generation. Temporary mode omits the default base
+path because Duniter rejects `--tmp` together with `--base-path`.
+
+A leading `--` still bypasses all entrypoint configuration, including the new
+variables. Use this mode for administrative subcommands or full manual control:
+
+```sh
+docker run --rm <duniter-image> -- --chain g1 --blocks-pruning archive
+```
+
+`cargo xtask export-cli-schema` also generates `docker/duniter-cli-options.sh`.
+Commit both files after CLI changes. The `--check` command verifies both outputs.
+The runtime image needs neither Python nor a JSON parser for environment support.

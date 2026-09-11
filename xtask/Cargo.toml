@@ -13,6 +13,7 @@ path = "src/main.rs"
 name = "xtask"
 
 [dependencies]
+duniter-cli = { workspace = true }
 anyhow = { workspace = true, features = ["std"] }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { workspace = true, features = ["derive"] }
