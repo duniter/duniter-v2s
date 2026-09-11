@@ -83,7 +83,7 @@ default:
     DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
     # Install Rust and build dependencies to patch embedded raw specs in CI
-    - apk add --no-cache curl bash gcc musl-dev jq
+    - apk add --no-cache curl bash gcc g++ musl-dev jq clang clang-dev cmake make protobuf-dev protoc linux-headers pkgconf openssl-dev
     - export RUST_STABLE_VERSION="${CI_UNIFIED_IMAGE##*-}"
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain "${RUST_STABLE_VERSION}" --profile minimal
     - source $HOME/.cargo/env
@@ -409,6 +409,8 @@ fmt_and_clippy:
     - ./scripts/cargo_with_vendor.sh fmt -- --check
     - ./scripts/cargo_with_vendor.sh clippy -- -V
     - ./scripts/cargo_with_vendor.sh clippy --all --tests -- -D warnings
+    - ./scripts/cargo_with_vendor.sh xtask export-cli-schema --check
+    - python3 docker/test-entrypoint.py
 
 .benchmarks_rules:
   rules:

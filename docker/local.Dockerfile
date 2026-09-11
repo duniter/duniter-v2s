@@ -91,7 +91,7 @@ USER duniter
 # Install
 COPY --from=build /root/build /usr/local/bin/
 COPY --from=build /root/dynenv /var/lib/duniter
-COPY docker/docker-entrypoint /usr/local/bin/
+COPY docker/docker-entrypoint docker/duniter-cli-env.sh docker/duniter-cli-options.sh /usr/local/bin/
 COPY docker/docker-distance-entrypoint /usr/local/bin/
 
 # Debug

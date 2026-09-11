@@ -1,0 +1,148 @@
+// Copyright 2021 Axiom-Team
+//
+// This file is part of Duniter-v2S.
+//
+// Duniter-v2S is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, version 3 of the License.
+//
+// Duniter-v2S is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
+
+//! Shared definition of Duniter daemon arguments.
+
+#[derive(Debug, clap::Parser)]
+#[command(name = "duniter", mut_arg("trie_cache_size", |arg| arg.default_value("536870912")))]
+pub struct RunOptions {
+    /// substrate base options
+    #[clap(flatten)]
+    pub run: sc_cli::RunCmd,
+
+    /// duniter specific options
+    #[clap(flatten)]
+    pub duniter_options: DuniterConfigExtension,
+
+    /// How blocks should be sealed
+    ///
+    /// Options are "production", "instant", "manual", or timer interval in milliseconds
+    #[clap(long, default_value = "production")]
+    pub sealing: Sealing,
+}
+
+/// add options specific to duniter client
+#[derive(Debug, Default, Clone, clap::Parser)]
+pub struct DuniterConfigExtension {
+    /// Public RPC endpoint to gossip on the network and make available in the apps.
+    #[arg(long)]
+    pub public_rpc: Option<String>,
+
+    /// Trusted warp-sync checkpoint header from a JSON file.
+    ///
+    /// When provided, warp sync skips GRANDPA proof download and starts from this trusted header.
+    #[arg(
+        long,
+        value_name = "JSON_FILE_PATH",
+        conflicts_with = "no_checkpoint",
+        value_hint = clap::ValueHint::FilePath
+    )]
+    pub warp_checkpoint_header: Option<std::path::PathBuf>,
+
+    /// Ignore embedded checkpoint and force warp-sync to use the network provider.
+    #[arg(
+        long,
+        default_value_t = false,
+        conflicts_with = "warp_checkpoint_header"
+    )]
+    pub no_checkpoint: bool,
+
+    /// Public Squid graphql endpoint to gossip on the network and make available in the apps. Convention: `<domain.tld>/v1/graphql`
+    #[arg(long)]
+    pub public_squid: Option<String>,
+
+    /// Base URL of the private compatible indexer Duniter API. Providing this URL enables the sink.
+    #[arg(long, value_name = "URL")]
+    pub indexer_batch_sink_url: Option<String>,
+
+    /// File containing the optional bearer token for the private compatible indexer API.
+    ///
+    /// On Unix, the file must not be accessible by group or other users.
+    #[arg(
+        long,
+        value_name = "TOKEN_FILE_PATH",
+        value_hint = clap::ValueHint::FilePath
+    )]
+    pub indexer_batch_sink_token_file: Option<std::path::PathBuf>,
+
+    /// Environment variable containing the optional bearer token when no token file is set.
+    #[arg(
+        long,
+        default_value = "DUNITER_INDEXER_BATCH_SINK_TOKEN",
+        value_name = "ENV_VAR"
+    )]
+    pub indexer_batch_sink_token_env: String,
+
+    /// Maximum in-memory finalized cursor queue; complete batches remain durably spooled on disk.
+    #[arg(long, default_value_t = 1024)]
+    pub indexer_batch_sink_max_queue_len: usize,
+
+    /// Public endpoints from a JSON file, using following format where `protocol` and `address` are
+    /// strings (value is free) :
+    ///
+    /// ```json
+    /// {
+    ///     "endpoints": [
+    ///         { "protocol": "rpc", "address": "wss://gdev.example.com" },
+    ///         { "protocol": "squid", "address": "gdev.example.com/v1/graphql" },
+    ///         { "protocol": "other", "address": "gdev.example.com/other" }
+    ///     ]
+    /// }
+    /// ```
+    #[arg(long, value_name = "JSON_FILE_PATH")]
+    pub public_endpoints: Option<String>,
+}
+
+/// Block authoring scheme to be used by the node
+#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
+pub enum Sealing {
+    /// Author a block using normal runtime behavior (mandatory for production networks)
+    Production,
+    /// Author a block immediately upon receiving a transaction into the transaction pool
+    Instant,
+    /// Author a block upon receiving an RPC command
+    Manual,
+    /// Author blocks at a regular interval specified in milliseconds
+    // Clap limitiation with non-unit variant.
+    // While it compiles just fine with clap alone, clap_complete emits a compile-time error.
+    // See https://github.com/clap-rs/clap/issues/3543
+    #[clap(skip)]
+    Interval(u64),
+}
+
+impl Sealing {
+    pub fn is_manual_consensus(self) -> bool {
+        self != Self::Production
+    }
+}
+
+impl std::str::FromStr for Sealing {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "production" => Self::Production,
+            "instant" => Self::Instant,
+            "manual" => Self::Manual,
+            s => {
+                let millis = s
+                    .parse::<u64>()
+                    .map_err(|_| "couldn't decode sealing param")?;
+                Self::Interval(millis)
+            }
+        })
+    }
+}

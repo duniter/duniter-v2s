@@ -1,0 +1,1980 @@
+{
+  "command": "duniter",
+  "options": [
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "bob",
+        "charlie",
+        "dave",
+        "eve",
+        "ferdie",
+        "one",
+        "two"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_ALICE",
+      "flag": "alice",
+      "help": "Shortcut for `--name Alice --validator`",
+      "hidden": false,
+      "id": "alice",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "no_private_ip"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_ALLOW_PRIVATE_IP",
+      "flag": "allow-private-ip",
+      "help": "Always accept connecting to private IPv4/IPv6 addresses",
+      "hidden": false,
+      "id": "allow_private_ip",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_BASE_PATH",
+      "flag": "base-path",
+      "help": "Specify custom base path",
+      "hidden": false,
+      "id": "base_path",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "archive-canonical"
+      ],
+      "env": "DUNITER_BLOCKS_PRUNING",
+      "flag": "blocks-pruning",
+      "help": "Specify the blocks pruning mode",
+      "hidden": false,
+      "id": "blocks_pruning",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "alice",
+        "charlie",
+        "dave",
+        "eve",
+        "ferdie",
+        "one",
+        "two"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_BOB",
+      "flag": "bob",
+      "help": "Shortcut for `--name Bob --validator`",
+      "hidden": false,
+      "id": "bob",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "append",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_BOOTNODES",
+      "flag": "bootnodes",
+      "help": "Specify a list of bootnodes",
+      "hidden": false,
+      "id": "bootnodes",
+      "max_values": null,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_CHAIN",
+      "flag": "chain",
+      "help": "Specify the chain specification",
+      "hidden": false,
+      "id": "chain",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "alice",
+        "bob",
+        "dave",
+        "eve",
+        "ferdie",
+        "one",
+        "two"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_CHARLIE",
+      "flag": "charlie",
+      "help": "Shortcut for `--name Charlie --validator`",
+      "hidden": false,
+      "id": "charlie",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_DATABASE",
+      "flag": "database",
+      "help": "Select database backend to use",
+      "hidden": false,
+      "id": "database",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "paritydb",
+        "auto",
+        "paritydb-experimental"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "alice",
+        "bob",
+        "charlie",
+        "eve",
+        "ferdie",
+        "one",
+        "two"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_DAVE",
+      "flag": "dave",
+      "help": "Shortcut for `--name Dave --validator`",
+      "hidden": false,
+      "id": "dave",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_DB_CACHE",
+      "flag": "db-cache",
+      "help": "Limit the memory the database cache can use",
+      "hidden": false,
+      "id": "database_cache_size",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_DETAILED_LOG_OUTPUT",
+      "flag": "detailed-log-output",
+      "help": "Enable detailed log output",
+      "hidden": false,
+      "id": "detailed_log_output",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_DEV",
+      "flag": "dev",
+      "help": "Specify the development chain",
+      "hidden": false,
+      "id": "dev",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_DISABLE_LOG_COLOR",
+      "flag": "disable-log-color",
+      "help": "Disable log color output",
+      "hidden": false,
+      "id": "disable_log_color",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_DISCOVER_LOCAL",
+      "flag": "discover-local",
+      "help": "Enable peer discovery on local networks",
+      "hidden": false,
+      "id": "discover_local",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_ENABLE_LOG_RELOADING",
+      "flag": "enable-log-reloading",
+      "help": "Enable feature to dynamically update and reload the log filter",
+      "hidden": false,
+      "id": "enable_log_reloading",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_ENABLE_OFFCHAIN_INDEXING",
+      "flag": "enable-offchain-indexing",
+      "help": "Enable offchain indexing API",
+      "hidden": false,
+      "id": "indexing_enabled",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "true",
+        "false"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "alice",
+        "bob",
+        "charlie",
+        "dave",
+        "ferdie",
+        "one",
+        "two"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_EVE",
+      "flag": "eve",
+      "help": "Shortcut for `--name Eve --validator`",
+      "hidden": false,
+      "id": "eve",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "execution_other",
+        "execution_offchain_worker",
+        "execution_block_construction",
+        "execution_import_block",
+        "execution_syncing"
+      ],
+      "default_values": [],
+      "env": "DUNITER_EXECUTION",
+      "flag": "execution",
+      "help": "The execution strategy that should be used by all execution contexts",
+      "hidden": false,
+      "id": "execution",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "native",
+        "wasm",
+        "both",
+        "native-else-wasm"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_EXECUTION_BLOCK_CONSTRUCTION",
+      "flag": "execution-block-construction",
+      "help": "Runtime execution strategy for constructing blocks",
+      "hidden": false,
+      "id": "execution_block_construction",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "native",
+        "wasm",
+        "both",
+        "native-else-wasm"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_EXECUTION_IMPORT_BLOCK",
+      "flag": "execution-import-block",
+      "help": "Runtime execution strategy for general block import (including locally authored blocks)",
+      "hidden": false,
+      "id": "execution_import_block",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "native",
+        "wasm",
+        "both",
+        "native-else-wasm"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_EXECUTION_OFFCHAIN_WORKER",
+      "flag": "execution-offchain-worker",
+      "help": "Runtime execution strategy for offchain workers",
+      "hidden": false,
+      "id": "execution_offchain_worker",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "native",
+        "wasm",
+        "both",
+        "native-else-wasm"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_EXECUTION_OTHER",
+      "flag": "execution-other",
+      "help": "Runtime execution strategy when not syncing, importing or constructing blocks",
+      "hidden": false,
+      "id": "execution_other",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "native",
+        "wasm",
+        "both",
+        "native-else-wasm"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_EXECUTION_SYNCING",
+      "flag": "execution-syncing",
+      "help": "Runtime execution strategy for importing blocks during initial sync",
+      "hidden": false,
+      "id": "execution_syncing",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "native",
+        "wasm",
+        "both",
+        "native-else-wasm"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "append",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "rpc_external",
+        "unsafe_rpc_external",
+        "rpc_port",
+        "rpc_cors",
+        "rpc_rate_limit_trust_proxy_headers",
+        "rpc_rate_limit",
+        "rpc_rate_limit_whitelisted_ips",
+        "rpc_message_buffer_capacity_per_connection",
+        "rpc_disable_batch_requests",
+        "rpc_max_subscriptions_per_connection",
+        "rpc_max_request_size",
+        "rpc_max_response_size"
+      ],
+      "default_values": [],
+      "env": "DUNITER_EXPERIMENTAL_RPC_ENDPOINT",
+      "flag": "experimental-rpc-endpoint",
+      "help": "EXPERIMENTAL: Specify the JSON-RPC server interface and this option which can be enabled\nseveral times if you want expose several RPC interfaces with different configurations.",
+      "hidden": false,
+      "id": "experimental_rpc_endpoint",
+      "max_values": null,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "alice",
+        "bob",
+        "charlie",
+        "dave",
+        "eve",
+        "one",
+        "two"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_FERDIE",
+      "flag": "ferdie",
+      "help": "Shortcut for `--name Ferdie --validator`",
+      "hidden": false,
+      "id": "ferdie",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_FORCE_AUTHORING",
+      "flag": "force-authoring",
+      "help": "Enable authoring even when offline",
+      "hidden": false,
+      "id": "force_authoring",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "32"
+      ],
+      "env": "DUNITER_IN_PEERS",
+      "flag": "in-peers",
+      "help": "Maximum number of inbound full nodes peers",
+      "hidden": false,
+      "id": "in_peers",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "100"
+      ],
+      "env": "DUNITER_IN_PEERS_LIGHT",
+      "flag": "in-peers-light",
+      "help": "Maximum number of inbound light nodes peers",
+      "hidden": false,
+      "id": "in_peers_light",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "1024"
+      ],
+      "env": "DUNITER_INDEXER_BATCH_SINK_MAX_QUEUE_LEN",
+      "flag": "indexer-batch-sink-max-queue-len",
+      "help": "Maximum in-memory finalized cursor queue; complete batches remain durably spooled on disk",
+      "hidden": false,
+      "id": "indexer_batch_sink_max_queue_len",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "DUNITER_INDEXER_BATCH_SINK_TOKEN"
+      ],
+      "env": "DUNITER_INDEXER_BATCH_SINK_TOKEN_ENV",
+      "flag": "indexer-batch-sink-token-env",
+      "help": "Environment variable containing the optional bearer token when no token file is set",
+      "hidden": false,
+      "id": "indexer_batch_sink_token_env",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_INDEXER_BATCH_SINK_TOKEN_FILE",
+      "flag": "indexer-batch-sink-token-file",
+      "help": "File containing the optional bearer token for the private compatible indexer API",
+      "hidden": false,
+      "id": "indexer_batch_sink_token_file",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_INDEXER_BATCH_SINK_URL",
+      "flag": "indexer-batch-sink-url",
+      "help": "Base URL of the private compatible indexer Duniter API. Providing this URL enables the sink",
+      "hidden": false,
+      "id": "indexer_batch_sink_url",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_IPFS_SERVER",
+      "flag": "ipfs-server",
+      "help": "Join the IPFS network and serve transactions over bitswap protocol",
+      "hidden": false,
+      "id": "ipfs_server",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_KADEMLIA_DISJOINT_QUERY_PATHS",
+      "flag": "kademlia-disjoint-query-paths",
+      "help": "Require iterative Kademlia DHT queries to use disjoint paths",
+      "hidden": false,
+      "id": "kademlia_disjoint_query_paths",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "20"
+      ],
+      "env": "DUNITER_KADEMLIA_REPLICATION_FACTOR",
+      "flag": "kademlia-replication-factor",
+      "help": "Kademlia replication factor",
+      "hidden": false,
+      "id": "kademlia_replication_factor",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_KEYSTORE_PATH",
+      "flag": "keystore-path",
+      "help": "Specify custom keystore path",
+      "hidden": false,
+      "id": "keystore_path",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "append",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_LISTEN_ADDR",
+      "flag": "listen-addr",
+      "help": "Listen on this multiaddress",
+      "hidden": false,
+      "id": "listen_addr",
+      "max_values": null,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "append",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_LOG",
+      "flag": "log",
+      "help": "Sets a custom logging filter (syntax: `<target>=<level>`)",
+      "hidden": false,
+      "id": "log",
+      "max_values": null,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "64"
+      ],
+      "env": "DUNITER_MAX_BLOCKS_PER_REQUEST",
+      "flag": "max-blocks-per-request",
+      "help": "Maximum number of blocks per request",
+      "hidden": false,
+      "id": "max_blocks_per_request",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "5"
+      ],
+      "env": "DUNITER_MAX_PARALLEL_DOWNLOADS",
+      "flag": "max-parallel-downloads",
+      "help": "Maximum number of peers from which to ask for the same blocks in parallel",
+      "hidden": false,
+      "id": "max_parallel_downloads",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "8"
+      ],
+      "env": "DUNITER_MAX_RUNTIME_INSTANCES",
+      "flag": "max-runtime-instances",
+      "help": "The size of the instances cache for each runtime [max: 32]",
+      "hidden": false,
+      "id": "max_runtime_instances",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_NAME",
+      "flag": "name",
+      "help": "The human-readable name for this node",
+      "hidden": false,
+      "id": "name",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "litep2p"
+      ],
+      "env": "DUNITER_NETWORK_BACKEND",
+      "flag": "network-backend",
+      "help": "Network backend used for P2P networking.",
+      "hidden": false,
+      "id": "network_backend",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "libp2p",
+        "litep2p"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "warp_checkpoint_header"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_NO_CHECKPOINT",
+      "flag": "no-checkpoint",
+      "help": "Ignore embedded checkpoint and force warp-sync to use the network provider",
+      "hidden": false,
+      "id": "no_checkpoint",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_NO_GRANDPA",
+      "flag": "no-grandpa",
+      "help": "Disable GRANDPA",
+      "hidden": false,
+      "id": "no_grandpa",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_NO_MDNS",
+      "flag": "no-mdns",
+      "help": "Disable mDNS discovery (default: true)",
+      "hidden": false,
+      "id": "no_mdns",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "allow_private_ip"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_NO_PRIVATE_IP",
+      "flag": "no-private-ip",
+      "help": "Always forbid connecting to private IPv4/IPv6 addresses",
+      "hidden": false,
+      "id": "no_private_ip",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_NO_PROMETHEUS",
+      "flag": "no-prometheus",
+      "help": "Do not expose a Prometheus exporter endpoint",
+      "hidden": false,
+      "id": "no_prometheus",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_NO_TELEMETRY",
+      "flag": "no-telemetry",
+      "help": "Disable connecting to the Substrate telemetry server",
+      "hidden": false,
+      "id": "no_telemetry",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_NODE_KEY",
+      "flag": "node-key",
+      "help": "Secret key to use for p2p networking",
+      "hidden": false,
+      "id": "node_key",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_NODE_KEY_FILE",
+      "flag": "node-key-file",
+      "help": "File from which to read the node's secret key to use for p2p networking",
+      "hidden": false,
+      "id": "node_key_file",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "ed25519"
+      ],
+      "env": "DUNITER_NODE_KEY_TYPE",
+      "flag": "node-key-type",
+      "help": "Crypto primitive to use for p2p networking",
+      "hidden": false,
+      "id": "node_key_type",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "ed25519"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "when-authority"
+      ],
+      "env": "DUNITER_OFFCHAIN_WORKER",
+      "flag": "offchain-worker",
+      "help": "Execute offchain workers on every block",
+      "hidden": false,
+      "id": "enabled",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "always",
+        "never",
+        "when-authority"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "alice",
+        "bob",
+        "charlie",
+        "dave",
+        "eve",
+        "ferdie",
+        "two"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_ONE",
+      "flag": "one",
+      "help": "Shortcut for `--name One --validator`",
+      "hidden": false,
+      "id": "one",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "8"
+      ],
+      "env": "DUNITER_OUT_PEERS",
+      "flag": "out-peers",
+      "help": "Number of outgoing connections we're trying to maintain",
+      "hidden": false,
+      "id": "out_peers",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "password_interactive",
+        "password_filename"
+      ],
+      "default_values": [],
+      "env": "DUNITER_PASSWORD",
+      "flag": "password",
+      "help": "Password used by the keystore",
+      "hidden": false,
+      "id": "password",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "password_interactive",
+        "password"
+      ],
+      "default_values": [],
+      "env": "DUNITER_PASSWORD_FILENAME",
+      "flag": "password-filename",
+      "help": "File that contains the password used by the keystore",
+      "hidden": false,
+      "id": "password_filename",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "password",
+        "password_filename"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_PASSWORD_INTERACTIVE",
+      "flag": "password-interactive",
+      "help": "Use interactive shell for entering the password used by the keystore",
+      "hidden": false,
+      "id": "password_interactive",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "20480"
+      ],
+      "env": "DUNITER_POOL_KBYTES",
+      "flag": "pool-kbytes",
+      "help": "Maximum number of kilobytes of all transactions stored in the pool",
+      "hidden": false,
+      "id": "pool_kbytes",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "8192"
+      ],
+      "env": "DUNITER_POOL_LIMIT",
+      "flag": "pool-limit",
+      "help": "Maximum number of transactions in the transaction pool",
+      "hidden": false,
+      "id": "pool_limit",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "fork-aware"
+      ],
+      "env": "DUNITER_POOL_TYPE",
+      "flag": "pool-type",
+      "help": "The type of transaction pool to be instantiated",
+      "hidden": false,
+      "id": "pool_type",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "single-state",
+        "fork-aware"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "listen_addr"
+      ],
+      "default_values": [],
+      "env": "DUNITER_PORT",
+      "flag": "port",
+      "help": "Specify p2p protocol TCP port",
+      "hidden": false,
+      "id": "port",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_PROMETHEUS_EXTERNAL",
+      "flag": "prometheus-external",
+      "help": "Expose Prometheus exporter on all interfaces",
+      "hidden": false,
+      "id": "prometheus_external",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_PROMETHEUS_PORT",
+      "flag": "prometheus-port",
+      "help": "Specify Prometheus exporter TCP Port",
+      "hidden": false,
+      "id": "prometheus_port",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "append",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_PUBLIC_ADDR",
+      "flag": "public-addr",
+      "help": "Public address that other nodes will use to connect to this node",
+      "hidden": false,
+      "id": "public_addr",
+      "max_values": null,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_PUBLIC_ENDPOINTS",
+      "flag": "public-endpoints",
+      "help": "Public endpoints from a JSON file, using following format where `protocol` and `address` are strings (value is free) :",
+      "hidden": false,
+      "id": "public_endpoints",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_PUBLIC_RPC",
+      "flag": "public-rpc",
+      "help": "Public RPC endpoint to gossip on the network and make available in the apps",
+      "hidden": false,
+      "id": "public_rpc",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_PUBLIC_SQUID",
+      "flag": "public-squid",
+      "help": "Public Squid graphql endpoint to gossip on the network and make available in the apps. Convention: `<domain.tld>/v1/graphql`",
+      "hidden": false,
+      "id": "public_squid",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "append",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_RESERVED_NODES",
+      "flag": "reserved-nodes",
+      "help": "Specify a list of reserved node addresses",
+      "hidden": false,
+      "id": "reserved_nodes",
+      "max_values": null,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_RESERVED_ONLY",
+      "flag": "reserved-only",
+      "help": "Whether to only synchronize the chain with reserved nodes",
+      "hidden": false,
+      "id": "reserved_only",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_RPC_CORS",
+      "flag": "rpc-cors",
+      "help": "Specify browser *origins* allowed to access the HTTP & WS RPC servers",
+      "hidden": false,
+      "id": "rpc_cors",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "rpc_max_batch_request_len"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_RPC_DISABLE_BATCH_REQUESTS",
+      "flag": "rpc-disable-batch-requests",
+      "help": "Disable RPC batch requests",
+      "hidden": false,
+      "id": "rpc_disable_batch_requests",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_RPC_EXTERNAL",
+      "flag": "rpc-external",
+      "help": "Listen to all RPC interfaces (default: local)",
+      "hidden": false,
+      "id": "rpc_external",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "rpc_disable_batch_requests"
+      ],
+      "default_values": [],
+      "env": "DUNITER_RPC_MAX_BATCH_REQUEST_LEN",
+      "flag": "rpc-max-batch-request-len",
+      "help": "Limit the max length per RPC batch request",
+      "hidden": false,
+      "id": "rpc_max_batch_request_len",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "100"
+      ],
+      "env": "DUNITER_RPC_MAX_CONNECTIONS",
+      "flag": "rpc-max-connections",
+      "help": "Maximum number of RPC server connections",
+      "hidden": false,
+      "id": "rpc_max_connections",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "15"
+      ],
+      "env": "DUNITER_RPC_MAX_REQUEST_SIZE",
+      "flag": "rpc-max-request-size",
+      "help": "Set the maximum RPC request payload size for both HTTP and WS in megabytes",
+      "hidden": false,
+      "id": "rpc_max_request_size",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "15"
+      ],
+      "env": "DUNITER_RPC_MAX_RESPONSE_SIZE",
+      "flag": "rpc-max-response-size",
+      "help": "Set the maximum RPC response payload size for both HTTP and WS in megabytes",
+      "hidden": false,
+      "id": "rpc_max_response_size",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "1024"
+      ],
+      "env": "DUNITER_RPC_MAX_SUBSCRIPTIONS_PER_CONNECTION",
+      "flag": "rpc-max-subscriptions-per-connection",
+      "help": "Set the maximum concurrent subscriptions per connection",
+      "hidden": false,
+      "id": "rpc_max_subscriptions_per_connection",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "64"
+      ],
+      "env": "DUNITER_RPC_MESSAGE_BUFFER_CAPACITY_PER_CONNECTION",
+      "flag": "rpc-message-buffer-capacity-per-connection",
+      "help": "The number of messages the RPC server is allowed to keep in memory",
+      "hidden": false,
+      "id": "rpc_message_buffer_capacity_per_connection",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "auto"
+      ],
+      "env": "DUNITER_RPC_METHODS",
+      "flag": "rpc-methods",
+      "help": "RPC methods to expose.",
+      "hidden": false,
+      "id": "rpc_methods",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "auto",
+        "safe",
+        "unsafe"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_RPC_PORT",
+      "flag": "rpc-port",
+      "help": "Specify JSON-RPC server TCP port",
+      "hidden": false,
+      "id": "rpc_port",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_RPC_RATE_LIMIT",
+      "flag": "rpc-rate-limit",
+      "help": "RPC rate limiting (calls/minute) for each connection",
+      "hidden": false,
+      "id": "rpc_rate_limit",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_RPC_RATE_LIMIT_TRUST_PROXY_HEADERS",
+      "flag": "rpc-rate-limit-trust-proxy-headers",
+      "help": "Trust proxy headers for disable rate limiting",
+      "hidden": false,
+      "id": "rpc_rate_limit_trust_proxy_headers",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "append",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_RPC_RATE_LIMIT_WHITELISTED_IPS",
+      "flag": "rpc-rate-limit-whitelisted-ips",
+      "help": "Disable RPC rate limiting for certain ip addresses",
+      "hidden": false,
+      "id": "rpc_rate_limit_whitelisted_ips",
+      "max_values": null,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "2"
+      ],
+      "env": "DUNITER_RUNTIME_CACHE_SIZE",
+      "flag": "runtime-cache-size",
+      "help": "Maximum number of different runtimes that can be cached",
+      "hidden": false,
+      "id": "runtime_cache_size",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "production"
+      ],
+      "env": "DUNITER_SEALING",
+      "flag": "sealing",
+      "help": "How blocks should be sealed",
+      "hidden": false,
+      "id": "sealing",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "production",
+        "instant",
+        "manual"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_STATE_PRUNING",
+      "flag": "state-pruning",
+      "help": "Specify the state pruning mode",
+      "hidden": false,
+      "id": "state_pruning",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "full"
+      ],
+      "env": "DUNITER_SYNC",
+      "flag": "sync",
+      "help": "Blockchain syncing mode.",
+      "hidden": false,
+      "id": "sync",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "full",
+        "fast",
+        "fast-unsafe",
+        "warp"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "append",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_TELEMETRY_URL",
+      "flag": "telemetry-url",
+      "help": "The URL of the telemetry server to connect to",
+      "hidden": false,
+      "id": "telemetry_endpoints",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "base_path"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_TMP",
+      "flag": "tmp",
+      "help": "Run a temporary node",
+      "hidden": false,
+      "id": "tmp",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "log"
+      ],
+      "env": "DUNITER_TRACING_RECEIVER",
+      "flag": "tracing-receiver",
+      "help": "Receiver to process tracing messages",
+      "hidden": false,
+      "id": "tracing_receiver",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "log"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_TRACING_TARGETS",
+      "flag": "tracing-targets",
+      "help": "Sets a custom profiling filter",
+      "hidden": false,
+      "id": "tracing_targets",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "536870912"
+      ],
+      "env": "DUNITER_TRIE_CACHE_SIZE",
+      "flag": "trie-cache-size",
+      "help": "Specify the state cache size",
+      "hidden": false,
+      "id": "trie_cache_size",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "alice",
+        "bob",
+        "charlie",
+        "dave",
+        "eve",
+        "ferdie",
+        "one"
+      ],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_TWO",
+      "flag": "two",
+      "help": "Shortcut for `--name Two --validator`",
+      "hidden": false,
+      "id": "two",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_TX_BAN_SECONDS",
+      "flag": "tx-ban-seconds",
+      "help": "How long a transaction is banned for",
+      "hidden": false,
+      "id": "tx_ban_seconds",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_UNSAFE_FORCE_NODE_KEY_GENERATION",
+      "flag": "unsafe-force-node-key-generation",
+      "help": "Forces key generation if node-key-file file does not exist",
+      "hidden": false,
+      "id": "unsafe_force_node_key_generation",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_UNSAFE_RPC_EXTERNAL",
+      "flag": "unsafe-rpc-external",
+      "help": "Listen to all RPC interfaces",
+      "hidden": false,
+      "id": "unsafe_rpc_external",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set_true",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "false"
+      ],
+      "env": "DUNITER_VALIDATOR",
+      "flag": "validator",
+      "help": "Enable validator mode",
+      "hidden": false,
+      "id": "validator",
+      "max_values": 0,
+      "min_values": 0,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_WARM_UP_TRIE_CACHE",
+      "flag": "warm-up-trie-cache",
+      "help": "Warm up the trie cache",
+      "hidden": false,
+      "id": "warm_up_trie_cache",
+      "max_values": 1,
+      "min_values": 0,
+      "possible_values": [
+        "non-blocking",
+        "blocking"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [
+        "no_checkpoint"
+      ],
+      "default_values": [],
+      "env": "DUNITER_WARP_CHECKPOINT_HEADER",
+      "flag": "warp-checkpoint-header",
+      "help": "Trusted warp-sync checkpoint header from a JSON file",
+      "hidden": false,
+      "id": "warp_checkpoint_header",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "compiled"
+      ],
+      "env": "DUNITER_WASM_EXECUTION",
+      "flag": "wasm-execution",
+      "help": "Method for executing Wasm runtime code",
+      "hidden": false,
+      "id": "wasm_method",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "interpreted-i-know-what-i-do",
+        "compiled"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_WASM_RUNTIME_OVERRIDES",
+      "flag": "wasm-runtime-overrides",
+      "help": "Specify the path where local WASM runtimes are stored",
+      "hidden": false,
+      "id": "wasm_runtime_overrides",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
+      "default_values": [
+        "pooling-copy-on-write"
+      ],
+      "env": "DUNITER_WASMTIME_INSTANTIATION_STRATEGY",
+      "flag": "wasmtime-instantiation-strategy",
+      "help": "The WASM instantiation method to use",
+      "hidden": false,
+      "id": "wasmtime_instantiation_strategy",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [
+        "pooling-copy-on-write",
+        "recreate-instance-copy-on-write",
+        "pooling",
+        "recreate-instance"
+      ],
+      "require_equals": false,
+      "value_delimiter": null
+    }
+  ],
+  "schema_version": 1,
+  "scope": "daemon"
+}

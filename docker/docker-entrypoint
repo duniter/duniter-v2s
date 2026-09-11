@@ -1,141 +1,81 @@
 #!/bin/bash
+set -eo pipefail
 
-# Custom startup if a first argument is present and is equal to '--'
-# then we just run duniter with the provided arguments (but the '--')
-# without applying all the automated configuration below
-if [ "$1" = -- ]; then
+# Keep the historical escape hatch, including for administrative subcommands.
+if [[ ${1:-} == -- ]]; then
   shift
   exec duniter "$@"
 fi
 
-# Normal startup
-function boolean () {
-  echo "$1" | sed -E 's/^(true|yes|1)$/true/i'
-}
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=docker/duniter-cli-env.sh
+source "$script_dir/duniter-cli-env.sh"
+# shellcheck source=docker/duniter-cli-options.sh
+source "$script_dir/duniter-cli-options.sh"
+cli_args=("$@")
+env_args=()
 
-function ternary () {
-  if [ $(boolean "$1") = true ]; then
-    echo "$2"
+# Legacy aliases and profiles provide defaults for the generated variables.
+boolean() { [[ $1 =~ ^([Tt][Rr][Uu][Ee]|[Yy][Ee][Ss]|1)$ ]]; }
+DUNITER_NAME=${DUNITER_NAME:-${DUNITER_NODE_NAME:-${DUNITER_INSTANCE_NAME:-}}}
+DUNITER_RPC_CORS=${DUNITER_RPC_CORS:-all}
+DUNITER_RPC_EXTERNAL=${DUNITER_RPC_EXTERNAL:-true}
+DUNITER_NO_PROMETHEUS=${DUNITER_NO_PROMETHEUS:-${DUNITER_DISABLE_PROMETHEUS:-false}}
+DUNITER_NO_TELEMETRY=${DUNITER_NO_TELEMETRY:-${DUNITER_DISABLE_TELEMETRY:-false}}
+
+chain_name=${DUNITER_CHAIN:-${DUNITER_CHAIN_NAME:-dev}}
+if [[ -z ${DUNITER_CHAIN:-} ]] && ! duniter_has_arg chain && ! duniter_has_arg dev; then
+  if [[ $chain_name == dev ]]; then
+    DUNITER_DEV=${DUNITER_DEV:-true}
   else
-    echo "$3"
+    DUNITER_CHAIN=$chain_name
   fi
-}
-
-# Define chain name at the beginning
-# with #274 we could have default given in network branch
-DUNITER_CHAIN_NAME="${DUNITER_CHAIN_NAME:-dev}"
-DUNITER_LOCAL_CHAIN=$(boolean "${DUNITER_LOCAL_CHAIN:-false}")
-case "$DUNITER_CHAIN_NAME" in
-  dev)
-    chain=(--dev)
-    ;;
-  *)
-    chain=(--chain "$DUNITER_CHAIN_NAME")
-    ;;
-esac
-# Local chain mode is enabled automatically when using a local chain spec.
-case "$DUNITER_CHAIN_NAME" in
-  *_local)
-    DUNITER_LOCAL_CHAIN=true
-    ;;
-esac
-
-# Node name will appear on network
-DUNITER_NODE_NAME="${DUNITER_NODE_NAME:-$DUNITER_INSTANCE_NAME}"
-if [ -n "$DUNITER_NODE_NAME" ]; then
-  set -- "$@" --name "$DUNITER_NODE_NAME"
 fi
-
-# Path of key file. Should be generated below if not present before starting Duniter
-_DUNITER_KEY_FILE=/var/lib/duniter/node.key
-set -- "$@" --node-key-file "$_DUNITER_KEY_FILE"
-
-# Generate node.key if not existing (chain name is required)
-if [ ! -f "$_DUNITER_KEY_FILE" ]; then
-  echo "Generating node key file '$_DUNITER_KEY_FILE'..."
-  duniter key generate-node-key --file "$_DUNITER_KEY_FILE" "${chain[@]}"
-else
-  echo "Node key file '$_DUNITER_KEY_FILE' exists."
+local_chain=${DUNITER_LOCAL_CHAIN:-false}
+[[ $chain_name != *_local ]] || local_chain=true
+if boolean "$local_chain"; then
+  DUNITER_VALIDATOR=${DUNITER_VALIDATOR:-true}
+  DUNITER_UNSAFE_FORCE_NODE_KEY_GENERATION=${DUNITER_UNSAFE_FORCE_NODE_KEY_GENERATION:-true}
+  DUNITER_SEALING=${DUNITER_SEALING:-manual}
+  DUNITER_TMP=${DUNITER_TMP:-true}
 fi
-# Log peer ID
-_DUNITER_PEER_ID="$(duniter key inspect-node-key --file "$_DUNITER_KEY_FILE")"
-echo "Node peer ID is '$_DUNITER_PEER_ID'."
-
-# Define public address (with dns, correct port and protocol for instance)
-if [ -n "$DUNITER_PUBLIC_ADDR" ]; then
-  set -- "$@" --public-addr "$DUNITER_PUBLIC_ADDR"
+# --tmp conflicts with --base-path in Clap. Do not inject the Docker default.
+if ! boolean "${DUNITER_TMP:-false}" && ! duniter_has_arg tmp; then
+  DUNITER_BASE_PATH=${DUNITER_BASE_PATH:-/var/lib/duniter}
 fi
-
-# Define public RPC endpoint (gossiped on the network)
-if [ -n "$DUNITER_PUBLIC_RPC" ]; then
-  set -- "$@" --public-rpc "$DUNITER_PUBLIC_RPC"
+if boolean "${DUNITER_VALIDATOR:-false}" || boolean "$local_chain"; then
+  DUNITER_RPC_METHODS=${DUNITER_RPC_METHODS:-Unsafe}
 fi
-
-# Define public Squid endpoint (gossiped on the network)  
-if [ -n "$DUNITER_PUBLIC_SQUID" ]; then
-  set -- "$@" --public-squid "$DUNITER_PUBLIC_SQUID"
-fi
-
-# Define public endpoints from JSON file (gossiped on the network)
-if [ -n "$DUNITER_PUBLIC_ENDPOINTS" ]; then
-  set -- "$@" --public-endpoints "$DUNITER_PUBLIC_ENDPOINTS"
-fi
-
-# Define listen address (inside docker)
-if [ -n "$DUNITER_LISTEN_ADDR" ]; then
-  set -- "$@" --listen-addr "$DUNITER_LISTEN_ADDR"
-fi
-
-DUNITER_RPC_CORS="${DUNITER_RPC_CORS:-all}"
-set -- "$@" --rpc-cors "$DUNITER_RPC_CORS"
-
-# In case of validator, unsafe rpc methods are needed (like rotate_key) and should not be exposed publicly
-DUNITER_VALIDATOR=$(boolean "${DUNITER_VALIDATOR:-false}")
-if [ "$DUNITER_VALIDATOR" = true ] || [ "$DUNITER_LOCAL_CHAIN" = true ]; then
-  set -- "$@" --rpc-methods Unsafe --validator
-fi
-
-if [ "$DUNITER_LOCAL_CHAIN" = true ]; then
-  set -- "$@" --unsafe-force-node-key-generation --sealing manual --tmp
-fi
-
-DUNITER_DISABLE_PROMETHEUS=$(boolean "${DUNITER_DISABLE_PROMETHEUS:-false}")
-if [ "$DUNITER_DISABLE_PROMETHEUS" = true ]; then
-  set -- "$@" --no-prometheus
-fi
-
-DUNITER_DISABLE_TELEMETRY=$(boolean "${DUNITER_DISABLE_TELEMETRY:-false}")
-if [ "$DUNITER_DISABLE_TELEMETRY" = true ]; then
-  set -- "$@" --no-telemetry
-fi
-
-# Set pruning profile
-DUNITER_PRUNING_PROFILE="${DUNITER_PRUNING_PROFILE:-default}"
-case "$DUNITER_PRUNING_PROFILE" in
-  default)
-    ;;
+case ${DUNITER_PRUNING_PROFILE:-default} in
+  default) ;;
   archive)
-    set -- "$@" --state-pruning archive --blocks-pruning archive
-    ;;
-  light)
-    set -- "$@" --blocks-pruning 14400
-    ;;
-  *)
-    echo "ERROR: ignoring unknown DUNITER_PRUNING_PROFILE value '$DUNITER_PRUNING_PROFILE'" >&2
-    ;;
+    DUNITER_STATE_PRUNING=${DUNITER_STATE_PRUNING:-archive}
+    DUNITER_BLOCKS_PRUNING=${DUNITER_BLOCKS_PRUNING:-archive} ;;
+  light) DUNITER_BLOCKS_PRUNING=${DUNITER_BLOCKS_PRUNING:-14400} ;;
+  *) echo "ERROR: ignoring unknown DUNITER_PRUNING_PROFILE value '$DUNITER_PRUNING_PROFILE'" >&2 ;;
 esac
 
-# Duniter custom options
-if [ -n "$DUNITER_OPTIONS" ]; then
-  set -- "$@" "$DUNITER_OPTIONS"
+# Preserve DUNITER_OPTIONS as one literal argument, as in older images.
+[[ -z ${DUNITER_OPTIONS:-} ]] || cli_args+=("$DUNITER_OPTIONS")
+
+# Explicit node keys bypass automatic identity creation.
+automatic_key=false
+if [[ -z ${DUNITER_NODE_KEY:-}${DUNITER_NODE_KEY_FILE:-} ]] &&
+   ! duniter_has_arg node-key && ! duniter_has_arg node-key-file; then
+  DUNITER_NODE_KEY_FILE=/var/lib/duniter/node.key
+  automatic_key=true
 fi
 
-# Set main command
-# Since we are inside Docker, bind the safe RPC methods to all interfaces.
-# Unsafe methods must be enabled explicitly for short-lived administration tasks.
-set -- "$@" \
-  "${chain[@]}" \
-  -d /var/lib/duniter --rpc-external
-
-echo "Starting duniter with parameters:" "$@"
-exec duniter "$@"
+# Reject invalid environment syntax before creating an identity.
+duniter_env_configure
+if $automatic_key; then
+  key_chain=(--chain "$chain_name")
+  [[ $chain_name != dev ]] || key_chain=(--dev)
+  if [[ ! -f $DUNITER_NODE_KEY_FILE ]]; then
+    duniter key generate-node-key --file "$DUNITER_NODE_KEY_FILE" "${key_chain[@]}"
+  fi
+  peer_id=$(duniter key inspect-node-key --file "$DUNITER_NODE_KEY_FILE")
+  echo "Node peer ID is '$peer_id'."
+fi
+# Do not log arguments: CLI options can contain passwords or node secrets.
+exec duniter ${env_args[@]+"${env_args[@]}"} ${cli_args[@]+"${cli_args[@]}"}

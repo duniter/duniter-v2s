@@ -16,6 +16,24 @@ The three flows do not use the same tooling anymore:
 
 ## Common conventions
 
+### Commit the daemon CLI catalogue
+
+Before tagging a client release, regenerate the deployment catalogue from the
+shared Clap command in `node/cli`:
+
+```sh
+./scripts/cargo_with_vendor.sh xtask export-cli-schema
+./scripts/cargo_with_vendor.sh xtask export-cli-schema --check
+```
+
+Commit `node/cli/schema.json` and `docker/duniter-cli-options.sh` with any CLI changes. CI rejects a stale catalogue.
+The schema covers daemon long options, including flattened Substrate options.
+It excludes administrative subcommands. It records argument actions, arity,
+defaults, possible values, and conflicts; custom Rust validators remain in Duniter.
+
+Dunipod imports this committed file through Git when preparing its own release.
+No Duniter build or help-text parsing is needed in the Dunipod repository.
+
 ### Network release tag
 
 Network releases use the following tag format:

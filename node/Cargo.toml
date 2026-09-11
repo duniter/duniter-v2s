@@ -115,6 +115,7 @@ std = [
 distance-oracle = ["dep:distance-oracle"]
 
 [dependencies]
+duniter-cli = { workspace = true }
 async-io = { workspace = true }
 bs58 = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
