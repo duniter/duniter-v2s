@@ -181,6 +181,7 @@ try-runtime = [
 ]
 
 [dev-dependencies]
+sp-io = { workspace = true, features = ["std"] }
 sp-staking = { workspace = true }
 
 [build-dependencies]
