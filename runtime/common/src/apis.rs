@@ -222,6 +222,7 @@ impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Ba
     }
 }
 
+#[api_version(2)]
 impl pallet_duniter_account::DuniterAccountApi<Block, Balance> for Runtime {
     fn estimate_cost(
         uxt: <Block as BlockT>::Extrinsic,

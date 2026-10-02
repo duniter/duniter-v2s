@@ -208,7 +208,7 @@ pub mod pallet {
                 len as u32,
             )
             .partial_fee;
-            let refund: BalanceOf<T> = if let Some(signer) = signer {
+            let available_quota: BalanceOf<T> = if let Some(signer) = signer {
                 let account_data = frame_system::Pallet::<T>::get(&signer);
                 if let Some(idty_index) = account_data.linked_idty {
                     pallet_quota::Pallet::<T>::estimate_quota_refund(idty_index)
@@ -218,15 +218,17 @@ pub mod pallet {
             } else {
                 Zero::zero()
             };
+            let refund = if fees > available_quota {
+                available_quota
+            } else {
+                fees
+            };
 
             EstimatedCost {
-                cost: if fees > refund {
-                    fees - refund
-                } else {
-                    Zero::zero()
-                },
+                cost: fees - refund,
                 fees,
                 refund,
+                available_quota,
             }
         }
     }
