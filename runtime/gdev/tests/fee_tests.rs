@@ -48,6 +48,37 @@ fn test_fees_empty() {
         })
 }
 
+#[test]
+fn test_fee_estimate_cost_does_not_refund_more_than_zero_fees() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (Keyring::Alice.to_account_id(), 10_000),
+            (Keyring::Eve.to_account_id(), 10_000),
+        ])
+        .build()
+        .execute_with(|| {
+            pallet_quota::IdtyQuota::<Runtime>::insert(
+                1,
+                pallet_quota::Quota {
+                    last_use: System::block_number(),
+                    amount: 1_000,
+                },
+            );
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: Keyring::Eve.to_account_id().into(),
+                value: 500,
+            });
+            let xt = get_unchecked_extrinsic(call, 4, 8, Keyring::Alice, 0, 0);
+
+            let estimate = Account::estimate_cost(xt);
+
+            assert_eq!(estimate.fees, 0);
+            assert_eq!(estimate.available_quota, 1_000);
+            assert_eq!(estimate.refund, 0);
+            assert_eq!(estimate.cost, 0);
+        });
+}
+
 /// This test checks the fee behavior when the block is almost full.
 /// - Multiple extrinsics are applied successfully without incurring fees until the block is under target weight.
 /// - The last extrinsic incurs additional fees as the block reaches its target, verifying fee calculation under high load conditions.

@@ -105,6 +105,37 @@ fn test_refund_queue() {
         })
 }
 
+#[test]
+fn test_estimate_cost_limits_refund_to_refundable_fees() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![
+            (Keyring::Alice.to_account_id(), 10_000),
+            (Keyring::Eve.to_account_id(), 10_000),
+        ])
+        .build()
+        .execute_with(|| {
+            pallet_quota::IdtyQuota::<Runtime>::insert(
+                1,
+                pallet_quota::Quota {
+                    last_use: System::block_number(),
+                    amount: 1_000,
+                },
+            );
+            let call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+                dest: Keyring::Eve.to_account_id().into(),
+                value: 500,
+            });
+            let xt = get_unchecked_extrinsic(call, 4, 8, Keyring::Alice, 1, 0);
+
+            let estimate = Account::estimate_cost(xt);
+
+            assert_eq!(estimate.fees, 2);
+            assert_eq!(estimate.available_quota, 1_000);
+            assert_eq!(estimate.refund, 2);
+            assert_eq!(estimate.cost, 0);
+        });
+}
+
 /// test refund on_idle
 #[test]
 fn test_refund_on_idle() {
