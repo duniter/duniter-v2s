@@ -22,6 +22,10 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+#[cfg(test)]
+#[path = "../../common/src/proxy_tests.rs"]
+mod proxy_tests;
+
 pub mod parameters;
 pub mod weights;
 
@@ -192,6 +196,10 @@ impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
                 )
             }
         }
+    }
+
+    fn is_superset(&self, other: &Self) -> bool {
+        self == other || matches!(self, Self::AlmostAny)
     }
 }
 
