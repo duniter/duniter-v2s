@@ -190,6 +190,110 @@ fn test_identity_index() {
 }
 
 #[test]
+fn test_reject_identity_removes_only_the_pending_invitation() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice()],
+    })
+    .execute_with(|| {
+        let owner = account(2).id;
+        let sufficients = System::account(&owner).sufficients;
+        assert_ok!(Identity::create_identity(
+            RuntimeOrigin::signed(account(1).id),
+            owner.clone(),
+        ));
+        let idty_index = IdentityIndexOf::<Test>::get(&owner).unwrap();
+        let deadline = Identities::<Test>::get(idty_index).unwrap().next_scheduled;
+        let creator = Identities::<Test>::get(1).unwrap();
+
+        assert_noop!(
+            Identity::reject_identity(RuntimeOrigin::signed(account(3).id)),
+            Error::<Test>::IdtyIndexNotFound
+        );
+        assert_ok!(Identity::reject_identity(RuntimeOrigin::signed(
+            owner.clone()
+        )));
+        assert!(!Identities::<Test>::contains_key(idty_index));
+        assert!(!IdentityIndexOf::<Test>::contains_key(&owner));
+        assert_eq!(System::account(&owner).sufficients, sufficients);
+        assert_eq!(Identities::<Test>::get(1), Some(creator));
+        System::assert_has_event(RuntimeEvent::Identity(Event::IdtyRemoved {
+            idty_index,
+            reason: RemovalReason::Rejected,
+        }));
+        assert_noop!(
+            Identity::reject_identity(RuntimeOrigin::signed(owner.clone())),
+            Error::<Test>::IdtyIndexNotFound
+        );
+        assert_noop!(
+            Identity::confirm_identity(RuntimeOrigin::signed(owner.clone()), "Bob".into()),
+            Error::<Test>::IdtyIndexNotFound
+        );
+
+        // A fresh invitation has a new index and survives the old deadline.
+        Identities::<Test>::mutate(1, |value| {
+            value.as_mut().unwrap().next_creatable_identity_on = 0;
+        });
+        run_to_block(2);
+        assert_ok!(Identity::create_identity(
+            RuntimeOrigin::signed(account(1).id),
+            owner.clone(),
+        ));
+        let new_index = IdentityIndexOf::<Test>::get(&owner).unwrap();
+        assert_ne!(new_index, idty_index);
+        run_to_block(deadline);
+        assert!(IdentityChangeSchedule::<Test>::get(deadline).is_empty());
+        assert!(Identities::<Test>::contains_key(new_index));
+    });
+}
+
+#[test]
+fn test_reject_identity_fails_for_every_other_status() {
+    for status in [
+        IdtyStatus::Unvalidated,
+        IdtyStatus::Member,
+        IdtyStatus::NotMember,
+        IdtyStatus::Revoked,
+    ] {
+        new_test_ext(IdentityConfig {
+            identities: vec![alice(), bob()],
+        })
+        .execute_with(|| {
+            Identities::<Test>::mutate(2, |value| value.as_mut().unwrap().status = status);
+            assert_noop!(
+                Identity::reject_identity(RuntimeOrigin::signed(account(2).id)),
+                Error::<Test>::IdtyAlreadyConfirmed
+            );
+        });
+    }
+}
+
+#[test]
+fn test_reject_identity_requires_a_signed_owner_with_an_identity() {
+    new_test_ext(IdentityConfig {
+        identities: vec![alice()],
+    })
+    .execute_with(|| {
+        assert_noop!(
+            Identity::reject_identity(RuntimeOrigin::none()),
+            sp_runtime::DispatchError::BadOrigin
+        );
+        assert_noop!(
+            Identity::reject_identity(RuntimeOrigin::root()),
+            sp_runtime::DispatchError::BadOrigin
+        );
+        assert_noop!(
+            Identity::reject_identity(RuntimeOrigin::signed(account(2).id)),
+            Error::<Test>::IdtyIndexNotFound
+        );
+        IdentityIndexOf::<Test>::insert(account(2).id, 42);
+        assert_noop!(
+            Identity::reject_identity(RuntimeOrigin::signed(account(2).id)),
+            Error::<Test>::IdtyNotFound
+        );
+    });
+}
+
+#[test]
 fn test_create_identity_ok() {
     new_test_ext(IdentityConfig {
         identities: vec![alice()],

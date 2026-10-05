@@ -66,6 +66,8 @@ pub enum RemovalReason {
     Unvalidated,
     /// Removed automatically after revocation buffer.
     Revoked,
+    /// Invitation rejected by the owner before confirmation.
+    Rejected,
 }
 
 /// Represents the name of an identity, ASCII encoded.

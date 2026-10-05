@@ -168,6 +168,29 @@ mod benchmarks {
     }
 
     #[benchmark]
+    fn reject_identity() -> Result<(), BenchmarkError> {
+        let creator = Identities::<T>::get(T::IdtyIndex::one()).unwrap().owner_key;
+        let owner_key: T::AccountId = account("invited_identity", 2, 1);
+        T::CheckAccountWorthiness::set_worthy(&owner_key);
+        Pallet::<T>::create_identity(RawOrigin::Signed(creator).into(), owner_key.clone())?;
+        let idty_index = IdentityIndexOf::<T>::get(&owner_key).unwrap();
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(owner_key.clone()));
+
+        assert!(!Identities::<T>::contains_key(idty_index));
+        assert!(!IdentityIndexOf::<T>::contains_key(owner_key));
+        assert_has_event::<T>(
+            Event::<T>::IdtyRemoved {
+                idty_index,
+                reason: RemovalReason::Rejected,
+            }
+            .into(),
+        );
+        Ok(())
+    }
+
+    #[benchmark]
     fn change_owner_key() -> Result<(), BenchmarkError> {
         let old_key: T::AccountId = account("new_identity", 2, 1);
         let account: Account<T> = create_one_identity(old_key.clone())?;
