@@ -1177,6 +1177,49 @@ fn test_create_new_idty() {
 }
 
 #[test]
+fn test_reject_identity_cleans_up_the_invitation() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(Keyring::Eve.to_account_id(), 10_000)])
+        .build()
+        .execute_with(|| {
+            run_to_block(2);
+            let owner = Keyring::Eve.to_account_id();
+            let creator = Keyring::Alice.to_account_id();
+            let initial_sufficients = System::account(&owner).sufficients;
+            let initial_certs = Certification::idty_cert_meta(1).issued_count;
+            assert_ok!(Identity::create_identity(
+                RuntimeOrigin::signed(creator),
+                owner.clone(),
+            ));
+            let idty_index = Identity::identity_index_of(&owner).unwrap();
+            let creator_identity = Identity::identity(1).unwrap();
+            assert_eq!(Certification::certs_by_receiver(idty_index).len(), 1);
+            assert_eq!(System::account(&owner).data.linked_idty, Some(idty_index));
+
+            let call = RuntimeCall::Identity(pallet_identity::Call::reject_identity {});
+            // Keep the Identity pallet and existing call indices stable.
+            assert_eq!(call.encode(), vec![41, 10]);
+            let xt = get_unchecked_extrinsic(call, 64, 0, Keyring::Eve, 0, 0);
+            assert_ok!(Executive::apply_extrinsic(xt).unwrap());
+
+            assert!(Identity::identity(idty_index).is_none());
+            assert!(Identity::identity_index_of(&owner).is_none());
+            assert_eq!(System::account(&owner).data.linked_idty, None);
+            assert_eq!(System::account(&owner).sufficients, initial_sufficients);
+            assert!(Certification::certs_by_receiver(idty_index).is_empty());
+            assert_eq!(Certification::idty_cert_meta(1).issued_count, initial_certs);
+            assert!(Membership::membership(idty_index).is_none());
+            assert_eq!(Identity::identity(1), Some(creator_identity));
+            System::assert_has_event(RuntimeEvent::Identity(
+                pallet_identity::Event::IdtyRemoved {
+                    idty_index,
+                    reason: pallet_identity::RemovalReason::Rejected,
+                },
+            ));
+        });
+}
+
+#[test]
 fn test_create_new_idty_without_founds() {
     ExtBuilder::new(1, 3, 4)
         .with_initial_balances(vec![(Keyring::Alice.to_account_id(), 1_000)])

@@ -12,7 +12,7 @@ Calls are categorized according to the dispatch origin they require:
 
 We only document user calls below.
 
-There are **69** user calls from **17** pallets.
+There are **70** user calls from **17** pallets.
 
 ## Account - 1
 
@@ -611,6 +611,16 @@ Confirm the creation of an identity and give it a name
 - `idty_name`: the name uniquely associated to this identity. Must match the validation rules defined by the runtime.
 
 The identity must have been created using `create_identity` before it can be confirmed.
+
+### reject_identity - 10
+
+`reject_identity()` rejects an invitation to become a member. It takes no arguments.
+The origin must be signed by the owner of an identity with status `Unconfirmed`.
+The call fails for every other status and for accounts without an identity.
+
+The call removes the identity and its incoming certification, unlinks the owner
+account, and emits `IdtyRemoved` with reason `Rejected`. The creator's cooldown
+remains unchanged. The account can receive another invitation later.
 
 ### change_owner_key - 3
 
@@ -1735,5 +1745,4 @@ A spend void is only possible if the payout has not been attempted yet.
 ###### Events
 
 Emits [`Event::AssetSpendVoided`] if successful.
-
 

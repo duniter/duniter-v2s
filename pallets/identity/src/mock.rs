@@ -24,7 +24,7 @@ use frame_system as system;
 use sp_core::{H256, Pair};
 use sp_keystore::{KeystoreExt, testing::MemoryKeystore};
 use sp_runtime::{
-    BuildStorage, MultiSignature, MultiSigner,
+    BuildStorage, DispatchError, MultiSignature, MultiSigner,
     traits::{BlakeTwo256, IdentityLookup},
 };
 use sp_state_machine::BasicExternalities;
@@ -88,12 +88,25 @@ impl pallet_identity::traits::IdtyNameValidator for IdtyNameValidatorTestImpl {
     }
 }
 
+pub struct CheckAccountWorthinessTest;
+impl CheckAccountWorthiness<Test> for CheckAccountWorthinessTest {
+    fn check_account_worthiness(_account: &AccountId) -> Result<(), DispatchError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn set_worthy(account: &AccountId) {
+        // Benchmark accounts must exist before create_identity checks providers.
+        System::inc_providers(account);
+    }
+}
+
 impl pallet_identity::Config for Test {
     type AccountId32 = AccountId;
     type AccountLinker = ();
     type AutorevocationPeriod = AutorevocationPeriod;
     type ChangeOwnerKeyPeriod = ChangeOwnerKeyPeriod;
-    type CheckAccountWorthiness = ();
+    type CheckAccountWorthiness = CheckAccountWorthinessTest;
     type CheckIdtyCallAllowed = ();
     type ConfirmPeriod = ConfirmPeriod;
     type DeletionPeriod = DeletionPeriod;

@@ -425,6 +425,32 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Reject an invitation before confirming the identity.
+        ///
+        /// Only the owner of an `Unconfirmed` identity can reject it. The identity
+        /// and its incoming certification are removed immediately. This does not
+        /// prevent another invitation or reset the creator's cooldown.
+        #[pallet::call_index(10)]
+        #[pallet::weight(T::WeightInfo::reject_identity())]
+        pub fn reject_identity(origin: OriginFor<T>) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+            let idty_index =
+                IdentityIndexOf::<T>::try_get(&who).map_err(|_| Error::<T>::IdtyIndexNotFound)?;
+            let idty_value =
+                Identities::<T>::try_get(idty_index).map_err(|_| Error::<T>::IdtyNotFound)?;
+            ensure!(
+                idty_value.status == IdtyStatus::Unconfirmed,
+                Error::<T>::IdtyAlreadyConfirmed
+            );
+
+            // Unlink the owner account while the identity still exists.
+            T::OnRemoveIdty::on_revoked(&idty_index);
+            Self::do_remove_identity(idty_index, RemovalReason::Rejected);
+            // Leave the scheduled entry for pruning at its original deadline.
+            // Scanning the shared schedule here would make this call unbounded.
+            Ok(())
+        }
+
         /// Change identity owner key.
         ///
         /// - `new_key`: the new owner key.

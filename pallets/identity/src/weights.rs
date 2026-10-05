@@ -21,6 +21,11 @@ use frame_support::weights::{Weight, constants::RocksDbWeight};
 pub trait WeightInfo {
     fn create_identity() -> Weight;
     fn confirm_identity() -> Weight;
+    /// Conservative composition of existing weights, including removal handlers.
+    /// Rejection skips signature verification and schedule updates from revocation.
+    fn reject_identity() -> Weight {
+        Self::revoke_identity().saturating_add(Self::do_remove_identity())
+    }
     fn change_owner_key() -> Weight;
     fn revoke_identity() -> Weight;
     fn revoke_identity_legacy() -> Weight;
