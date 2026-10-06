@@ -50,11 +50,12 @@ impl<Runtime: pallet_duniter_wot::Config> pallet_identity::traits::OnNewIdty<Run
 /// Runtime handler for OnRemoveIdty, calling all implementations of
 /// OnRemoveIdty and implementing logic at the runtime level.
 pub struct OnRemoveIdtyHandler<Runtime>(core::marker::PhantomData<Runtime>);
-impl<Runtime: pallet_duniter_wot::Config + pallet_duniter_account::Config>
+impl<Runtime: pallet_duniter_wot::Config + pallet_duniter_account::Config + pallet_distance::Config>
     pallet_identity::traits::OnRemoveIdty<Runtime> for OnRemoveIdtyHandler<Runtime>
 {
     fn on_removed(idty_index: &IdtyIndex) -> Weight {
         pallet_duniter_wot::Pallet::<Runtime>::on_removed(idty_index)
+            .saturating_add(pallet_distance::Pallet::<Runtime>::on_removed(idty_index))
     }
 
     fn on_revoked(idty_index: &IdtyIndex) -> Weight {

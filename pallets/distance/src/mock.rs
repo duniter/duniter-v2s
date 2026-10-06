@@ -276,7 +276,7 @@ impl pallet_identity::Config for Test {
     type IdtyNameValidator = IdtyNameValidatorTestImpl;
     type OnKeyChange = ();
     type OnNewIdty = ();
-    type OnRemoveIdty = ();
+    type OnRemoveIdty = Distance;
     type Signature = TestSignature;
     type Signer = UintAuthorityId;
     type ValidationPeriod = ValidationPeriod;
@@ -284,6 +284,7 @@ impl pallet_identity::Config for Test {
 }
 
 parameter_types! {
+    pub static DistanceRetryPeriod: u64 = 8;
     pub const MinAccessibleReferees: Perbill = Perbill::from_percent(80);
 }
 impl pallet_distance::Config for Test {
@@ -293,7 +294,7 @@ impl pallet_distance::Config for Test {
     type EvaluationPrice = frame_support::traits::ConstU64<1000>;
     type MaxRefereeDistance = frame_support::traits::ConstU32<5>;
     type MinAccessibleReferees = MinAccessibleReferees;
-    type OnUnbalanced = ();
+    type DistanceRetryPeriod = DistanceRetryPeriod;
     type OnValidDistanceStatus = ();
     type RuntimeHoldReason = RuntimeHoldReason;
     type WeightInfo = ();

@@ -45,8 +45,8 @@ Feature: Distance fail
     Then ferdie should be certified by bob
     # The distance rule is failed
     Then ferdie identity should be unvalidated
-    # Ferdie got his reserve slashed
+    # Ferdie gets his evaluation deposit back
     Then ferdie should have 0 ĞD reserved
-    Then ferdie should have 446 cĞD
-    # Slashed amount is transfered to treasury
-    Then treasury should contain 1105 cĞD
+    Then ferdie should have 1446 cĞD
+    # A negative distance result does not pay the treasury
+    Then treasury should contain 105 cĞD

@@ -63,6 +63,8 @@ mod benchmarks {
             .owner_key;
         let _ = T::Currency::set_balance(&caller, u32::MAX.into());
 
+        NextEvaluationOn::<T>::insert(idty, frame_system::Pallet::<T>::block_number());
+
         #[extrinsic_call]
         _(RawOrigin::Signed(caller.clone()));
 
@@ -93,6 +95,8 @@ mod benchmarks {
         pallet_identity::Identities::<T>::mutate(target, |idty_val| {
             idty_val.as_mut().unwrap().status = pallet_identity::IdtyStatus::Unvalidated
         });
+
+        NextEvaluationOn::<T>::insert(target, frame_system::Pallet::<T>::block_number());
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller.clone()), target);
@@ -261,6 +265,13 @@ mod benchmarks {
             Pallet::<T>::do_evaluation(0);
         }
 
+        assert_eq!(
+            NextEvaluationOn::<T>::get(idty),
+            Some(
+                frame_system::Pallet::<T>::block_number()
+                    .saturating_add(T::DistanceRetryPeriod::get())
+            ),
+        );
         assert_has_event::<T>(
             Event::<T>::EvaluatedInvalid {
                 idty_index: idty,
