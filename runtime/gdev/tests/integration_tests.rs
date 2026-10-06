@@ -2056,3 +2056,83 @@ fn test_killed_account() {
             );
         })
 }
+
+#[test]
+fn negative_distance_refunds_and_delays_the_target() {
+    ExtBuilder::new(1, 3, 4)
+        .with_initial_balances(vec![(Keyring::Eve.to_account_id(), 2_000)])
+        .build()
+        .execute_with(|| {
+            run_to_block(1);
+            assert_ok!(Identity::create_identity(
+                RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                Keyring::Eve.to_account_id(),
+            ));
+            run_to_block(2);
+            assert_ok!(Identity::confirm_identity(
+                RuntimeOrigin::signed(Keyring::Eve.to_account_id()),
+                "EveDistance".into(),
+            ));
+            run_to_block(3);
+            // Insufficient certifications remain a prerequisite, even without slashing.
+            assert_noop!(
+                Distance::request_distance_evaluation(RuntimeOrigin::signed(
+                    Keyring::Eve.to_account_id()
+                )),
+                pallet_duniter_wot::Error::<Runtime>::NotEnoughCerts,
+            );
+            for certifier in [Keyring::Bob, Keyring::Charlie] {
+                assert_ok!(Certification::add_cert(
+                    RuntimeOrigin::signed(certifier.to_account_id()),
+                    5
+                ));
+            }
+            let eve = Keyring::Eve.to_account_id();
+            let balance_before = Balances::free_balance(&eve);
+            let treasury_before = Balances::free_balance(Treasury::account_id());
+            let issuance_before = Balances::total_issuance();
+            assert_ok!(Distance::request_distance_evaluation(
+                RuntimeOrigin::signed(eve.clone())
+            ));
+            let period = <Runtime as pallet_distance::Config>::EvaluationPeriod::get();
+            run_to_block(2 * period);
+            assert_ok!(Distance::force_update_evaluation(
+                RuntimeOrigin::root(),
+                Keyring::Alice.to_account_id(),
+                pallet_distance::ComputationResult {
+                    distances: vec![Perbill::from_percent(79)]
+                },
+            ));
+            run_to_block(3 * period);
+            assert_eq!(Balances::free_balance(&eve), balance_before);
+            assert_eq!(
+                Balances::free_balance(Treasury::account_id()),
+                treasury_before
+            );
+            assert_eq!(Balances::total_issuance(), issuance_before);
+            assert_eq!(
+                Identity::identity(5).unwrap().status,
+                pallet_identity::IdtyStatus::Unvalidated
+            );
+            let retry_on =
+                3 * period + <Runtime as pallet_distance::Config>::DistanceRetryPeriod::get();
+            assert_eq!(Distance::next_evaluation_on(5), Some(retry_on));
+            assert_noop!(
+                Distance::request_distance_evaluation_for(
+                    RuntimeOrigin::signed(Keyring::Alice.to_account_id()),
+                    5
+                ),
+                pallet_distance::Error::<Runtime>::DistanceRetryPeriodNotRespected,
+            );
+            run_to_block(retry_on - 1);
+            assert_noop!(
+                Distance::request_distance_evaluation(RuntimeOrigin::signed(eve.clone())),
+                pallet_distance::Error::<Runtime>::DistanceRetryPeriodNotRespected,
+            );
+            run_to_block(retry_on);
+            assert_ok!(Distance::request_distance_evaluation(
+                RuntimeOrigin::signed(eve)
+            ));
+            assert_eq!(Distance::next_evaluation_on(5), None);
+        });
+}

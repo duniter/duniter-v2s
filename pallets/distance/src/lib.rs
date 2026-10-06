@@ -45,7 +45,7 @@
 //! 2. Results from the current pool (results from the previous period's pool) are processed, and for each identity:
 //!     - The median of the distance results for this identity is chosen.
 //!     - If the distance is acceptable, it is marked as valid.
-//!     - If the distance is not acceptable, the result for this identity is discarded, and reserved currency is slashed (from the account which requested the evaluation).
+//!     - If the distance is not acceptable, the result for this identity is discarded, and the deposit is returned and new requests for the identity must wait for `DistanceRetryPeriod`.
 //!
 //! Then, in other pallets, when a membership is claimed, it is possible to check if there is a valid distance evaluation for this identity.
 //!
@@ -84,8 +84,8 @@ pub use weights::WeightInfo;
 use frame_support::{
     DefaultNoBound,
     traits::{
-        OnUnbalanced, StorageVersion,
-        fungible::{self, Credit, Mutate, MutateHold, hold},
+        Get, StorageVersion,
+        fungible::{self, Mutate, MutateHold},
         tokens::Precision,
     },
 };
@@ -132,10 +132,9 @@ pub mod pallet {
         + pallet_authorship::Config
         + pallet_identity::Config<IdtyIndex = IdtyIndex>
     {
-        /// Currency type used in this pallet for reserve and slash operations.
+        /// Currency type used to hold and release evaluation deposits.
         type Currency: Mutate<Self::AccountId>
-            + MutateHold<Self::AccountId, Reason = Self::RuntimeHoldReason>
-            + hold::Balanced<Self::AccountId>;
+            + MutateHold<Self::AccountId, Reason = Self::RuntimeHoldReason>;
 
         /// The overarching hold reason type.
         type RuntimeHoldReason: From<HoldReason>;
@@ -158,8 +157,9 @@ pub mod pallet {
         #[pallet::constant]
         type MinAccessibleReferees: Get<Perbill>;
 
-        /// Handler for unbalanced reduction when invalid distance causes a slash.
-        type OnUnbalanced: OnUnbalanced<Credit<Self::AccountId, Self::Currency>>;
+        /// Minimum delay in blocks after a negative result before another request for the identity.
+        #[pallet::constant]
+        type DistanceRetryPeriod: Get<BlockNumberFor<Self>>;
 
         /// Type representing the weight of this pallet
         type WeightInfo: WeightInfo;
@@ -228,6 +228,13 @@ pub mod pallet {
         OptionQuery,
     >;
 
+    /// Earliest block at which an identity with a negative result can be evaluated again.
+    /// The delay applies to the target identity, regardless of who submits the request.
+    #[pallet::storage]
+    #[pallet::getter(fn next_evaluation_on)]
+    pub type NextEvaluationOn<T: Config> =
+        StorageMap<_, Twox64Concat, T::IdtyIndex, BlockNumberFor<T>, OptionQuery>;
+
     /// Store if the evaluation was updated in this block.
     #[pallet::storage]
     pub(super) type DidUpdate<T: Config> = StorageValue<_, bool, ValueQuery>;
@@ -292,6 +299,8 @@ pub mod pallet {
         WrongResultLength,
         /// Targeted distance evaluation request is only possible for an unvalidated identity.
         TargetMustBeUnvalidated,
+        /// The delay after the target identity's last negative result has not elapsed.
+        DistanceRetryPeriodNotRespected,
     }
 
     #[pallet::genesis_config]
@@ -339,9 +348,11 @@ pub mod pallet {
         ///
         /// This function allows the caller to request an evaluation of their distance.
         /// A positive evaluation will lead to claiming or renewing membership, while a negative
-        /// evaluation will result in slashing for the caller.
+        /// evaluation returns the deposit and starts the identity's retry delay.
         #[pallet::call_index(0)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::request_distance_evaluation())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::request_distance_evaluation()
+            .saturating_add(T::DbWeight::get().reads_writes(1, 1))
+            .saturating_add(Weight::from_parts(0, 3_500)))]
         pub fn request_distance_evaluation(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
@@ -356,7 +367,9 @@ pub mod pallet {
         /// This function allows the caller to request an evaluation of a specific target identity's distance.
         /// This action is only permitted for unvalidated identities.
         #[pallet::call_index(4)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::request_distance_evaluation_for())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::request_distance_evaluation_for()
+            .saturating_add(T::DbWeight::get().reads_writes(1, 1))
+            .saturating_add(Weight::from_parts(0, 3_500)))]
         pub fn request_distance_evaluation_for(
             origin: OriginFor<T>,
             target: T::IdtyIndex,
@@ -549,6 +562,12 @@ pub mod pallet {
                 PendingEvaluationRequest::<T>::get(target).is_none(),
                 Error::<T>::AlreadyInEvaluation
             );
+            if let Some(next_evaluation_on) = NextEvaluationOn::<T>::get(target) {
+                ensure!(
+                    frame_system::Pallet::<T>::block_number() >= next_evaluation_on,
+                    Error::<T>::DistanceRetryPeriodNotRespected
+                );
+            }
             // external validation (wot)
             // - membership renewal antispam
             // - target has received enough certifications
@@ -579,6 +598,8 @@ pub mod pallet {
                     .map_err(|_| Error::<T>::QueueFull)?;
 
                 PendingEvaluationRequest::<T>::insert(idty_index, who);
+                // Remove expired delays only after the request has succeeded.
+                NextEvaluationOn::<T>::remove(idty_index);
 
                 Self::deposit_event(Event::EvaluationRequested {
                     idty_index,
@@ -641,8 +662,8 @@ pub mod pallet {
         /// This function executes evaluation logic based on the provided pool index. It retrieves the current
         /// evaluation pool for the index, processes each evaluation, and handles the outcomes based on the
         /// computed median distances. If a positive evaluation result is obtained, it releases reserved funds
-        /// and updates the distance status accordingly. For negative or inconclusive results, it slashes funds
-        /// or releases them, respectively.
+        /// and updates the distance status accordingly. Negative results return the deposit and start
+        /// the identity's retry delay. Missing results return the deposit without a retry delay.
         pub fn do_evaluation(index: u32) -> Weight {
             let mut weight = <T as pallet::Config>::WeightInfo::do_evaluation_overhead();
             // set evaluation block
@@ -688,19 +709,32 @@ pub mod pallet {
                                     ),
                             );
                         } else {
-                            // Negative result, slash and deposit event
-                            let (imbalance, _) = <T::Currency as hold::Balanced<_>>::slash(
+                            // Refund the deposit and rate-limit requests for this identity.
+                            let _ = T::Currency::release(
                                 &HoldReason::DistanceHold.into(),
                                 &requester,
                                 <T as Config>::EvaluationPrice::get(),
+                                Precision::Exact,
                             );
-                            T::OnUnbalanced::on_unbalanced(imbalance);
+                            // An identity may have been removed while its evaluation was pending.
+                            if pallet_identity::Identities::<T>::contains_key(idty) {
+                                NextEvaluationOn::<T>::insert(
+                                    idty,
+                                    frame_system::Pallet::<T>::block_number()
+                                        .saturating_add(T::DistanceRetryPeriod::get()),
+                                );
+                            }
                             Self::deposit_event(Event::EvaluatedInvalid {
                                 idty_index: idty,
                                 distance,
                             });
+                            // The success weight includes a refund and a membership callback.
+                            // Use it as a conservative refund bound, plus the new storage access.
                             weight = weight.saturating_add(
                                 <T as pallet::Config>::WeightInfo::do_evaluation_failure()
+                                    .max(<T as pallet::Config>::WeightInfo::do_evaluation_success())
+                                    .saturating_add(T::DbWeight::get().reads_writes(1, 1))
+                                    .saturating_add(Weight::from_parts(0, 3_500))
                                     .saturating_sub(
                                         <T as pallet::Config>::WeightInfo::do_evaluation_overhead(),
                                     ),
@@ -750,5 +784,19 @@ pub mod pallet {
         fn is_inherent(call: &Self::Call) -> bool {
             matches!(call, Self::Call::update_evaluation { .. })
         }
+    }
+}
+
+/// Remove retry state along with the identity, without scanning other identities.
+impl<T: Config> pallet_identity::traits::OnRemoveIdty<T> for Pallet<T> {
+    fn on_removed(idty_index: &T::IdtyIndex) -> frame_support::weights::Weight {
+        NextEvaluationOn::<T>::remove(idty_index);
+        T::DbWeight::get()
+            .writes(1)
+            .saturating_add(frame_support::weights::Weight::from_parts(0, 3_500))
+    }
+
+    fn on_revoked(_idty_index: &T::IdtyIndex) -> frame_support::weights::Weight {
+        frame_support::weights::Weight::zero()
     }
 }

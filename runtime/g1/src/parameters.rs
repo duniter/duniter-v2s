@@ -56,6 +56,7 @@ parameter_types! {
 
 // Distance
 parameter_types! {
+    pub const DistanceRetryPeriod: BlockNumber = common_runtime::param_duration!(2 * DAYS, 2 * MINUTES);
     pub const MinAccessibleReferees: Perbill = Perbill::from_percent(80);
     pub const MaxRefereeDistance: u32 = 5;
     pub const EvaluationPeriod: u32 = common_runtime::param_duration!(40, 5 * MINUTES);

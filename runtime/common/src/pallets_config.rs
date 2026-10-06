@@ -497,7 +497,7 @@ macro_rules! pallets_config {
             type EvaluationPrice = frame_support::traits::ConstU64<1000>;
             type MaxRefereeDistance = MaxRefereeDistance;
             type MinAccessibleReferees = MinAccessibleReferees;
-            type OnUnbalanced = HandleFees<TreasuryAccount, Balances>;
+            type DistanceRetryPeriod = DistanceRetryPeriod;
             type OnValidDistanceStatus = Wot;
             type RuntimeHoldReason = RuntimeHoldReason;
             type WeightInfo = weights::pallet_distance::WeightInfo<Runtime>;

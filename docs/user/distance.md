@@ -10,7 +10,15 @@ Online validators who run a distance oracle will compute the distance rule for a
 
 For an evaluation period of N blocks, in order to guarantee a probability less or equal to P that evaluation fails, the network needs at least the following proportion of validators to run an oracle: 1-P^(1/N).
 
-In case no evaluation is submitted, the identity is not validated, but the requester is fully refunded and can try again without additional cost or restriction.
+Each request temporarily holds `Distance.EvaluationPrice` on the requester account. The runtime returns this deposit for every outcome, including a negative result. Ordinary transaction fees still apply.
+
+A negative result leaves the identity unvalidated or its existing membership unchanged. A new request for that identity must wait for `Distance.DistanceRetryPeriod`, starting at the block that applies the negative result. The default is 48 hours, expressed as 28,800 blocks at the nominal six-second block time. Test builds with the `fast` feature use two minutes. The runtime parameter can be changed through a runtime upgrade.
+
+The delay applies to the identity index. Changing the requester or the identity's owner key does not bypass it. `Distance.NextEvaluationOn` stores the first block at which another request is allowed. An earlier request returns `DistanceRetryPeriodNotRespected`.
+
+If no oracle submits a result, the runtime returns the deposit without starting a retry delay. The requester can try again, subject to the existing certification and membership renewal checks.
+
+Applications can use a server's precomputed distance as an estimate. The network's evaluation remains authoritative. A stale or inaccurate estimate can result in a retry delay, but it cannot cause the evaluation deposit to be lost.
 
 ## Running distance evaluation
 
