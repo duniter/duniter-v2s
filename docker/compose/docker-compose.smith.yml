@@ -4,7 +4,7 @@ services:
   # duniter smith node
   duniter-smith:
     container_name: duniter-smith
-    image: duniter/duniter-gdev-800:latest
+    image: duniter/duniter-gtest:latest
     ports:
       # RPC API of a smith node should not be exposed publicly!
       - 127.0.0.1:9944:9944
@@ -12,7 +12,7 @@ services:
       - 30333:30333
     environment:
       DUNITER_NODE_NAME: duniter_smith
-      DUNITER_CHAIN_NAME: gdev
+      DUNITER_CHAIN_NAME: gtest
       DUNITER_VALIDATOR: true
       DUNITER_PRUNING_PROFILE: light
       DUNITER_PUBLIC_ADDR: /dns/your.domain.name/tcp/30333
@@ -23,11 +23,11 @@ services:
   distance-oracle:
     container_name: distance-oracle
     # choose the version of the image here
-    image: duniter/duniter-gdev:latest
+    image: duniter/duniter-gtest:latest
     entrypoint: docker-distance-entrypoint
     environment:
       ORACLE_RPC_URL: ws://duniter-smith:9944
-      ORACLE_RESULT_DIR: /var/lib/duniter/chains/gdev/distance/
+      ORACLE_RESULT_DIR: /var/lib/duniter/chains/gtest/distance/
       ORACLE_EXECUTION_INTERVAL: 1800
       ORACLE_LOG_LEVEL: info
     volumes:

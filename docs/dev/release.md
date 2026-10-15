@@ -44,7 +44,7 @@ Network releases use the following tag format:
 
 Examples:
 
-- `gdev-1000`
+- `gtest-1000`
 - `g1-1100`
 
 ### Client release tag
@@ -57,7 +57,7 @@ Client releases use the following tag format:
 
 Examples:
 
-- `gdev-1000-0.11.1`
+- `gtest-1000-0.11.1`
 - `g1-1100-2.0.1`
 
 Important: the middle component is always the **genesis runtime version** of
@@ -346,7 +346,7 @@ This flow uses `cargo xtask` only.
 You must have:
 
 - a branch named `runtime/<network>-<new-runtime-version>`
-- the new `spec_version` already bumped in `runtime/<network>/src/lib.rs`
+- the new `spec_version` already bumped in `runtime/shared/runtime.rs`
 - a GitLab milestone named `runtime-<network>-<new-runtime-version>`
 - `GITLAB_TOKEN` exported locally
 
@@ -361,8 +361,8 @@ Example:
 
 ```bash
 export GITLAB_TOKEN=your_token_here
-cargo xtask release runtime build gdev
-cargo xtask release runtime create gdev runtime/gdev-1100
+cargo xtask release runtime build gtest
+cargo xtask release runtime create gtest runtime/gtest-1100
 ```
 
 This produces and publishes the runtime artifacts on GitLab. It does **not**

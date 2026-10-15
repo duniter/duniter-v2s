@@ -1,6 +1,6 @@
 # Runtime Storage
 
-There are **151** storages from **35** pallets.
+There are **160** storages from **34** pallets.
 
 <ul>
 
@@ -67,9 +67,11 @@ value: frame_support::dispatch::PerDispatchClass<sp_weights::weight_v2::Weight>
 <li>
 <details>
 <summary>
-<code>AllExtrinsicsLen</code>
+<code>BlockSize</code>
 </summary>
- Total length (in bytes) for all extrinsics put together, for the current block.
+ Total size (in bytes) of the current block.
+
+ Tracks the size of the header and all extrinsics.
 
 ```rust
 value: Option<U32>
@@ -164,7 +166,7 @@ value: sp_runtime::generic::digest::Digest
  just in case someone still reads them from within the runtime.
 
 ```rust
-value: Vec<frame_system::EventRecord<gdev_runtime::RuntimeEvent, primitive_types::H256>>
+value: Vec<frame_system::EventRecord<gtest_runtime::RuntimeEvent, primitive_types::H256>>
 ```
 
 </details>
@@ -217,6 +219,20 @@ value: Vec<(U32, U32)>
 
 ```rust
 value: Option<frame_system::LastRuntimeUpgradeInfo>
+```
+
+</details>
+</li>
+
+<li>
+<details>
+<summary>
+<code>BlocksTillUpgrade</code>
+</summary>
+ Number of blocks till the pending code upgrade is applied.
+
+```rust
+value: Option<U8>
 ```
 
 </details>
@@ -334,7 +350,7 @@ value: Option<U32>
 
 ```rust
 key: U32
-value: bounded_collections::bounded_vec::BoundedVec<Option<pallet_scheduler::Scheduled<[U8; 32], frame_support::traits::preimages::Bounded<gdev_runtime::RuntimeCall, sp_runtime::traits::BlakeTwo256>, U32, gdev_runtime::OriginCaller, sp_core::crypto::AccountId32>>, >
+value: bounded_collections::bounded_vec::BoundedVec<Option<pallet_scheduler::Scheduled<[U8; 32], frame_support::traits::preimages::Bounded<gtest_runtime::RuntimeCall, sp_runtime::traits::BlakeTwo256>, U32, gtest_runtime::OriginCaller, sp_core::crypto::AccountId32>>, >
 ```
 
 </details>
@@ -697,26 +713,6 @@ value: Bool
 </ul>
 </li>
 
-<li>Parameters - 5
-<ul>
-
-<li>
-<details>
-<summary>
-<code>ParametersStorage</code>
-</summary>
-
-
-```rust
-value: pallet_duniter_test_parameters::types::Parameters<U32, U32, U64, U32>
-```
-
-</details>
-</li>
-
-</ul>
-</li>
-
 <li>Balances - 6
 <ul>
 
@@ -830,7 +826,7 @@ value: bounded_collections::bounded_vec::BoundedVec<pallet_balances::types::Rese
 
 ```rust
 key: sp_core::crypto::AccountId32
-value: bounded_collections::bounded_vec::BoundedVec<frame_support::traits::tokens::misc::IdAmount<gdev_runtime::RuntimeHoldReason, U64>, >
+value: bounded_collections::bounded_vec::BoundedVec<frame_support::traits::tokens::misc::IdAmount<gtest_runtime::RuntimeHoldReason, U64>, >
 ```
 
 </details>
@@ -880,6 +876,22 @@ value: sp_arithmetic::fixed_point::FixedU128
 
 ```rust
 value: pallet_transaction_payment::Releases
+```
+
+</details>
+</li>
+
+<li>
+<details>
+<summary>
+<code>TxPaymentCredit</code>
+</summary>
+ The `OnChargeTransaction` stores the withdrawn tx fee here.
+
+ Use `withdraw_txfee` and `remaining_txfee` to access from outside the crate.
+
+```rust
+value: Option<frame_support::traits::storage::NoDrop<frame_support::traits::tokens::fungible::imbalance::Imbalance<U64, , >>>
 ```
 
 </details>
@@ -1217,7 +1229,7 @@ value: Bool
  will be used to determine the validator's session keys.
 
 ```rust
-value: Vec<(sp_core::crypto::AccountId32, gdev_runtime::opaque::SessionKeys)>
+value: Vec<(sp_core::crypto::AccountId32, gtest_runtime::opaque::SessionKeys)>
 ```
 
 </details>
@@ -1250,7 +1262,7 @@ value: Vec<(U32, sp_staking::offence::OffenceSeverity)>
 
 ```rust
 key: sp_core::crypto::AccountId32
-value: gdev_runtime::opaque::SessionKeys
+value: gtest_runtime::opaque::SessionKeys
 ```
 
 </details>
@@ -1266,6 +1278,24 @@ value: gdev_runtime::opaque::SessionKeys
 ```rust
 key: (sp_core::crypto::KeyTypeId, Vec<U8>)
 value: sp_core::crypto::AccountId32
+```
+
+</details>
+</li>
+
+<li>
+<details>
+<summary>
+<code>ExternallySetKeys</code>
+</summary>
+ Accounts whose keys were set via `SessionInterface` (external path) without
+ incrementing the consumer reference or placing a key deposit. `do_purge_keys`
+ only decrements consumers for accounts that were registered through the local
+ session pallet.
+
+```rust
+key: sp_core::crypto::AccountId32
+value: ()
 ```
 
 </details>
@@ -1601,7 +1631,7 @@ value: bounded_collections::bounded_vec::BoundedVec<primitive_types::H256, >
 
 ```rust
 key: primitive_types::H256
-value: gdev_runtime::RuntimeCall
+value: gtest_runtime::RuntimeCall
 ```
 
 </details>
@@ -2056,6 +2086,22 @@ value: sp_core::crypto::AccountId32
 <li>
 <details>
 <summary>
+<code>NextEvaluationOn</code>
+</summary>
+ Earliest block at which an identity with a negative result can be evaluated again.
+ The delay applies to the target identity, regardless of who submits the request.
+
+```rust
+key: U32
+value: U32
+```
+
+</details>
+</li>
+
+<li>
+<details>
+<summary>
 <code>DidUpdate</code>
 </summary>
  Store if the evaluation was updated in this block.
@@ -2231,7 +2277,7 @@ value: U32
 
 ```rust
 key: sp_core::crypto::AccountId32
-value: (bounded_collections::bounded_vec::BoundedVec<pallet_proxy::ProxyDefinition<sp_core::crypto::AccountId32, gdev_runtime::ProxyType, U32>, >, U64)
+value: (bounded_collections::bounded_vec::BoundedVec<pallet_proxy::ProxyDefinition<sp_core::crypto::AccountId32, gtest_runtime::ProxyType, U32>, >, U64)
 ```
 
 </details>

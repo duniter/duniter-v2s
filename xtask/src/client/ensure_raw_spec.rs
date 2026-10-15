@@ -21,13 +21,11 @@ use std::{path::Path, process::Command};
 pub fn extract_runtime(network: &str) -> Result<&str> {
     if network.starts_with("g1") {
         Ok("g1")
-    } else if network.starts_with("gdev") {
-        Ok("gdev")
     } else if network.starts_with("gtest") {
         Ok("gtest")
     } else {
         Err(anyhow!(
-            "Unknown network: {network}. Supported networks are g1-*, gdev-*, and gtest-*."
+            "Unknown network: {network}. Supported networks are g1-* and gtest-*."
         ))
     }
 }

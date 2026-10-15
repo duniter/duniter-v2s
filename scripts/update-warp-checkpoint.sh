@@ -14,7 +14,7 @@ When the returned hashes/headers are inconsistent, the script computes the major
 hash and asks for interactive confirmation before writing it.
 
 Arguments:
-  network    One of g1, gdev, or gtest.
+  network    One of g1 or gtest.
 
 Output:
   Writes the validated header to node/specs/<network>-checkpoint.json.
@@ -27,17 +27,17 @@ if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
 fi
 
 if [ $# -ne 1 ]; then
-  echo "Missing network argument (g1, gdev, or gtest)." >&2
+  echo "Missing network argument (g1 or gtest)." >&2
   usage
   exit 1
 fi
 
 NETWORK="$1"
 case "$NETWORK" in
-  g1|gdev|gtest)
+  g1|gtest)
     ;;
   *)
-    echo "Invalid network '$NETWORK' (expected g1, gdev, or gtest)." >&2
+    echo "Invalid network '$NETWORK' (expected g1 or gtest)." >&2
     exit 1
     ;;
 esac

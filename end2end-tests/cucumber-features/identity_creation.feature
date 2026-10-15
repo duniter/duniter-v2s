@@ -7,19 +7,17 @@ Feature: Identity creation
     When alice sends 7 ĞD to dave
     # Alice is treasury funder for 1 ĞD => 10-1-7 = 2 (minus TODO fees)
     Then alice should have 0 ĞD reserved
-    Then alice should have 199 cĞD
+    Then alice should have 2 ĞD
     When bob sends 750 cĞD to dave
     When charlie sends 6 ĞD to eve
-    # alice last certification is counted from block zero
-    # then next cert can be done after cert_period, which is 15
-    When 15 block later
     When alice creates identity for dave
     Then dave identity should be unconfirmed
     Then dave should be certified by alice
     When dave confirms his identity with pseudo "dave"
     Then dave identity should be unvalidated
-    When 3 block later
     When bob certifies dave
+    When one certifies dave
+    When two certifies dave
     When charlie certifies dave
     Then dave should be certified by bob
     Then dave should be certified by charlie
@@ -30,9 +28,10 @@ Feature: Identity creation
     Then dave should have 10 ĞD reserved
     # 1448 - 1000 - 2(one transaction fee, not a member yet)
     Then dave should have 446 cĞD
-    When 7 blocks later
+    When the distance request enters the computation pool
     When alice runs distance oracle
-    When 7 blocks later
+    Then the oracle should compute 100 percent accessibility
+    When the distance result is applied
     Then dave identity should be member
     Then dave should have 0 ĞD reserved
     Then dave should have 1446 cĞD

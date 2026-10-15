@@ -196,7 +196,6 @@ pub(super) async fn print_spec(network: String) -> Result<()> {
     let spec_file = match network.clone() {
         network if network.starts_with("g1") => "g1.json",
         network if network.starts_with("gtest") => "gtest.json",
-        network if network.starts_with("gdev") => "gdev.json",
         _ => {
             return Err(anyhow!("Invalid network"));
         }

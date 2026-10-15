@@ -67,6 +67,10 @@ pub type IdtyIndex = u32;
 /// Time in milliseconds
 pub type Moment = u64;
 
+/// Build-mode markers prevent Cargo feature unification from contaminating another runtime.
+pub const CONSTANT_FEES_ENABLED: bool = cfg!(feature = "constant-fees");
+pub const FAST_ENABLED: bool = cfg!(feature = "fast");
+
 #[macro_export]
 macro_rules! param_duration {
     ($real:expr, $fast:expr) => {

@@ -19,8 +19,7 @@ name = "duniter"
 path = "src/main.rs"
 
 [features]
-default = ["distance-oracle", "gdev"]
-gdev = ["distance-oracle?/gdev", "gdev-runtime", "gdev-runtime/std", "std"]
+default = ["distance-oracle", "gtest"]
 gtest = ["distance-oracle?/gtest", "gtest-runtime", "gtest-runtime/std", "std"]
 g1 = ["distance-oracle?/g1", "g1-runtime", "g1-runtime/std", "std"]
 # Only enable for local test-chain node builds.
@@ -29,7 +28,6 @@ fast = ["g1-runtime?/fast", "gtest-runtime?/fast"]
 constant-fees = [
 	"common-runtime/constant-fees",
 	"g1-runtime?/constant-fees",
-	"gdev-runtime?/constant-fees",
 	"gtest-runtime?/constant-fees",
 ]
 embed = []
@@ -43,7 +41,6 @@ runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"g1-runtime?/runtime-benchmarks",
-	"gdev-runtime?/runtime-benchmarks",
 	"gtest-runtime?/runtime-benchmarks",
 	"pallet-grandpa/runtime-benchmarks",
 	"pallet-oneshot-account/runtime-benchmarks",
@@ -61,7 +58,6 @@ try-runtime = [
 	"distance-oracle?/try-runtime",
 	"frame-system/try-runtime",
 	"g1-runtime?/try-runtime",
-	"gdev-runtime?/try-runtime",
 	"gtest-runtime?/try-runtime",
 	"pallet-grandpa/try-runtime",
 	"pallet-oneshot-account/try-runtime",
@@ -143,7 +139,6 @@ tokio = { workspace = true, features = ["rt-multi-thread"] }
 # Local
 common-runtime = { workspace = true }
 g1-runtime = { workspace = true, optional = true }
-gdev-runtime = { workspace = true, optional = true }
 gtest-runtime = { workspace = true, optional = true }
 distance-oracle = { workspace = true, optional = true }
 dc-distance = { workspace = true, optional = true }
@@ -202,6 +197,8 @@ sp-transaction-storage-proof = { workspace = true, default-features = true }
 substrate-frame-rpc-system = { workspace = true, default-features = true }
 
 [dev-dependencies]
+frame-metadata = { workspace = true, features = ["std"] }
+merkleized-metadata = "0.5.0"
 sc-network-test = { workspace = true, default-features = true }
 env_logger = "0.10.2"
 async-channel = "2.3.1"

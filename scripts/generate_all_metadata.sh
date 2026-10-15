@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_CHAINS=(g1 gtest gdev)
+DEFAULT_CHAINS=(g1 gtest)
 if [ -n "${METADATA_CHAINS:-}" ]; then
     # Accept both comma-separated and space-separated lists.
     IFS=' ' read -r -a CHAINS <<< "$(printf '%s' "$METADATA_CHAINS" | tr ',' ' ')"

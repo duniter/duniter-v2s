@@ -11,7 +11,7 @@ version: "3.5"
 
 services:
   duniter-mirror:
-    image: duniter/duniter-gdev:latest
+    image: duniter/duniter-gtest:latest
     restart: unless-stopped
     ports:
       # Prometheus endpoint
@@ -23,7 +23,7 @@ services:
     volumes:
       - data-mirror:/var/lib/duniter/
     environment:
-      - DUNITER_CHAIN_NAME=gdev
+      - DUNITER_CHAIN_NAME=gtest
       - DUNITER_NODE_NAME=<my-node-name>
 
 volumes:
@@ -37,7 +37,7 @@ version: "3.5"
 
 services:
   duniter-validator:
-    image: duniter/duniter-gdev:latest
+    image: duniter/duniter-gtest:latest
     restart: unless-stopped
     ports:
       # Prometheus endpoint
@@ -47,7 +47,7 @@ services:
     volumes:
       - data-validator:/var/lib/duniter/
     environment:
-      - DUNITER_CHAIN_NAME=gdev
+      - DUNITER_CHAIN_NAME=gtest
       - DUNITER_VALIDATOR=true
       - DUNITER_NODE_NAME=<my-validator-node-name>
 
@@ -70,9 +70,12 @@ Run a local chain:
 
 ```bash
 docker run --rm -it -p9944:9944 -p30333:30333 \
-  -e DUNITER_CHAIN_NAME=gtest_local \
+  -e DUNITER_CHAIN_NAME=gt_local \
   duniter/duniter-v2s-gtest-local:latest
 ```
+
+`gt_local` is an alias for `gtest_local`. Genesis authorities have non-expiring
+memberships and received certifications. Sudo uses `//Alice` with ed25519 by default.
 
 Using a `*_local` chain automatically enables local mode in the entrypoint:
 `--validator --unsafe-force-node-key-generation --sealing manual --tmp`.
@@ -82,7 +85,7 @@ Using a `*_local` chain automatically enables local mode in the entrypoint:
 | Name                         | Description                                                                                                                                                                                                                                                                                                                                          | Default                                                                                     |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `DUNITER_NODE_NAME`          | The node name. This name will appear on the Substrate telemetry server when telemetry is enabled.                                                                                                                                                                                                                                                    | Random name                                                                                 |
-| `DUNITER_CHAIN_NAME`         | The chain spec to run (for example `dev`, `gdev`, `gtest_dev`, `g1_dev`, `gtest_local`, `g1_local`, or a path to a local raw chainspec JSON file).                                                                                                                                                                                                  | `dev` (development mode)                                                                    |
+| `DUNITER_CHAIN_NAME`         | The chain spec to run (for example `dev`, `gtest`, `gtest_dev`, `g1_dev`, `gt_local`, `gtest_local`, `g1_local`, or a path to a local raw chainspec JSON file).                                                                                                                                                                                                  | `dev` (development mode)                                                                    |
 | `DUNITER_PUBLIC_ADDR`        | The libp2p public address base. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when the node is behind a reverse proxy with its ports not directly exposed.<br>Note: the `p2p/<peer_id>` part of the address shouldn't be set in this variable. It is automatically added by Duniter. | duniter guesses one from the node's IPv4 address.                                       |
 | `DUNITER_LISTEN_ADDR`        | The libp2p listen address. See [libp2p documentation](https://docs.libp2p.io/concepts/fundamentals/addressing/). This variable is useful when running a validator node behind a reverse proxy, to force the P2P end point in websocket mode with:<br> `DUNITER_LISTEN_ADDR=/ip4/0.0.0.0/tcp/30333/ws`                                                | Non validator node: `/ip4/0.0.0.0/tcp/30333/ws`<br>Validator node: `/ip4/0.0.0.0/tcp/30333` |
 | `DUNITER_RPC_CORS`           | Value of the polkadot `--rpc-cors` option.                                                                                                                                                                                                                                                                                                           | `all`                                                                                       |
@@ -93,7 +96,7 @@ Using a `*_local` chain automatically enables local mode in the entrypoint:
 | `DUNITER_PRUNING_PROFILE`    | _ `default`<br> _ `archive`: keep all blocks and state blocks<br> \* `light`: keep only last 256 state blocks and last 14400 blocks (one day duration)                                                                                                                                                                                               | `default`                                                                                   |
 | `DUNITER_PUBLIC_RPC`         | The public RPC endpoint to gossip on the network and make available in the apps. | None |
 | `DUNITER_PUBLIC_SQUID`       | The public Squid graphql endpoint to gossip on the network and make available in the apps. Convention: `<domain.tld>/v1/graphql` | None |
-| `DUNITER_PUBLIC_ENDPOINTS`   | Path to a JSON file containing public endpoints to gossip on the network. The file should use the following format:<br>```{"endpoints": [  { "protocol": "rpc", "address": "wss://gdev.example.com" },  { "protocol": "squid", "address": "gdev.example.com/v1/graphql" }]}``` | None |
+| `DUNITER_PUBLIC_ENDPOINTS`   | Path to a JSON file containing public endpoints to gossip on the network. The file should use the following format:<br>```{"endpoints": [  { "protocol": "rpc", "address": "wss://gtest.example.com" },  { "protocol": "squid", "address": "gtest.example.com/v1/graphql" }]}``` | None |
 
 ## Other Duniter options
 
@@ -119,8 +122,8 @@ docker compose up -d
 To run duniter from the command line without the default configuration detailed in the "Environment variables" section use `--` as the first argument. For example:
 
 ```
-$ docker run --rm duniter/duniter-gdev:latest -- key generate
-$ docker run --rm duniter/duniter-gdev:latest -- --chain gdev ...
+$ docker run --rm duniter/duniter-gtest:latest -- key generate
+$ docker run --rm duniter/duniter-gtest:latest -- --chain gtest ...
 ```
 
 ## Generated CLI environment variables

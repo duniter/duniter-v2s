@@ -92,7 +92,7 @@ pub trait ClientHandle {
 
 /// Execute something with the client instance.
 ///
-/// As there exist multiple chains, like g1 itself, gtest, gdev etc,
+/// As there exist multiple chains, like g1 itself and gtest,
 /// there can exist different kinds of client types. As these client types differ in the generics
 /// that are being used, we can not easily return them from a function. For returning them from a
 /// function there exists [`Client`]. However, the problem on how to use this client instance still
@@ -306,21 +306,13 @@ type FullClient = super::FullClient<
     super::runtime_executor::runtime::RuntimeApi,
     super::runtime_executor::Executor,
 >;
-#[cfg(all(feature = "runtime-benchmarks", feature = "gdev"))]
-type FullClient = super::FullClient<
-    super::runtime_executor::runtime::RuntimeApi,
-    super::runtime_executor::Executor,
->;
 #[cfg(all(feature = "runtime-benchmarks", feature = "gtest"))]
 type FullClient = super::FullClient<
     super::runtime_executor::runtime::RuntimeApi,
     super::runtime_executor::Executor,
 >;
 
-#[cfg(all(
-    feature = "runtime-benchmarks",
-    any(feature = "gdev", feature = "gtest", feature = "g1")
-))]
+#[cfg(all(feature = "runtime-benchmarks", any(feature = "gtest", feature = "g1")))]
 impl BenchmarkCallSigner<super::runtime_executor::runtime::RuntimeCall, sp_core::sr25519::Pair>
     for FullClient
 {

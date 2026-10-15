@@ -12,8 +12,6 @@ members = [
     'pallets/authority-members',
     'pallets/certification',
     'pallets/distance',
-    'pallets/duniter-test-parameters',
-    'pallets/duniter-test-parameters/macro',
     'pallets/duniter-wot',
     'pallets/identity',
     'pallets/membership',
@@ -26,7 +24,6 @@ members = [
     'primitives/membership',
     'resources/weight_analyzer',
     'runtime/common',
-    'runtime/gdev',
     'xtask',
 ]
 
@@ -119,14 +116,11 @@ common-runtime = { path = 'runtime/common', default-features = false }
 dc-distance = { path = 'client/distance', default-features = false }
 distance-oracle = { path = 'distance-oracle', default-features = false }
 g1-runtime = { path = 'runtime/g1', default-features = false }
-gdev-runtime = { path = 'runtime/gdev', default-features = false }
 gtest-runtime = { path = 'runtime/gtest', default-features = false }
 pallet-authority-members = { path = 'pallets/authority-members', default-features = false }
 pallet-certification = { path = 'pallets/certification', default-features = false }
 pallet-distance = { path = "pallets/distance", default-features = false }
 pallet-duniter-account = { path = 'pallets/duniter-account', default-features = false }
-pallet-duniter-test-parameters = { path = 'pallets/duniter-test-parameters', default-features = false }
-pallet-duniter-test-parameters-macro = { path = 'pallets/duniter-test-parameters/macro', default-features = false }
 duniter-primitives = { path = 'primitives/duniter', default-features = false }
 pallet-duniter-wot = { path = 'pallets/duniter-wot', default-features = false }
 pallet-identity = { path = 'pallets/identity', default-features = false }

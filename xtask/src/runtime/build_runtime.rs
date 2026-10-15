@@ -23,14 +23,14 @@ use std::{path::Path, process::Command};
 /// 2. Génère le fichier WASM compressé
 /// 3. Sauvegarde l'output srtool
 /// # Arguments
-/// * `runtime` - Le runtime à construire (gdev, gtest, g1)
+/// * `runtime` - Le runtime à construire (gtest, g1)
 pub fn build_runtime(runtime: String) -> Result<()> {
     println!("🚀 Construction du runtime avec srtool: {runtime}");
 
     // Vérifier que le runtime est valide
-    if !["gdev", "gtest", "g1"].contains(&runtime.as_str()) {
+    if !["gtest", "g1"].contains(&runtime.as_str()) {
         return Err(anyhow!(
-            "Runtime invalide: {runtime}. Les runtimes supportés sont gdev, gtest, g1."
+            "Runtime invalide: {runtime}. Les runtimes supportés sont gtest, g1."
         ));
     }
 

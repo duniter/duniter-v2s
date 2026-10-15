@@ -42,17 +42,17 @@ pub async fn trigger_squid_builds(
     branch: String,
     rpc_url: Option<String>,
 ) -> Result<()> {
-    // Validate release_tag format (e.g., g1-1000, gtest-1000, gdev-800)
+    // Validate release_tag format (e.g., g1-1000, gtest-1000)
     let network = release_tag
         .split('-')
         .next()
         .ok_or_else(|| anyhow!("Invalid release tag format: {release_tag}"))?;
 
     match network {
-        "g1" | "gtest" | "gdev" => {}
+        "g1" | "gtest" => {}
         _ => {
             return Err(anyhow!(
-                "Unknown network '{network}' in release tag '{release_tag}'. Expected g1, gtest, or gdev."
+                "Unknown network '{network}' in release tag '{release_tag}'. Expected g1 or gtest."
             ));
         }
     }

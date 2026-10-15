@@ -23,7 +23,7 @@ use std::{path::Path, process::Command};
 /// Les livraisons de tous les futurs clients feront référence à cette release réseau
 /// pour construire les spécifications du client (raw specs).
 /// # Arguments
-/// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+/// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000)
 /// * `branch` - La branche GitLab à partir de laquelle créer la release (ex: network/gtest-1000).
 ///   Doit exister sur GitLab. Peut-être n'importe quelle branche, mais préférer créer
 ///   une branche dédiée par réseau comme `network/gtest-1000`.
@@ -31,15 +31,13 @@ pub async fn create_network_release(network: String, branch: String) -> Result<(
     println!("🚀 Création de la release réseau pour: {network}");
 
     // Déterminer le runtime basé sur le réseau
-    let runtime = if network.starts_with("gdev-") {
-        "gdev"
-    } else if network.contains("gtest-") {
+    let runtime = if network.starts_with("gtest-") {
         "gtest"
     } else if network.contains("g1-") {
         "g1"
     } else {
         return Err(anyhow!(
-            "Impossible de déterminer le runtime pour le réseau: {network}. Préfixez le nom de release par gdev-, gtest- ou g1-. Ex. : gtest-1000"
+            "Impossible de déterminer le runtime pour le réseau: {network}. Préfixez le nom de release par gtest- ou g1-. Ex. : gtest-1000"
         ));
     };
 

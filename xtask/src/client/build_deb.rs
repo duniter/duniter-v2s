@@ -23,19 +23,17 @@ use std::{path::Path, process::Command};
 /// 2. Construit le binaire avec les features appropriées
 /// 3. Génère le package DEB
 /// # Arguments
-/// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+/// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000)
 pub fn build_deb(network: String) -> Result<()> {
     println!("📦 Construction du package DEB pour le réseau: {network}");
 
     let runtime = if network.starts_with("g1") {
         "g1"
-    } else if network.starts_with("gdev") {
-        "gdev"
     } else if network.starts_with("gtest") {
         "gtest"
     } else {
         return Err(anyhow!(
-            "Réseau inconnu: {network}. Les réseaux supportés sont g1-*, gdev-* et gtest-*."
+            "Réseau inconnu: {network}. Les réseaux supportés sont g1-* et gtest-*."
         ));
     };
 

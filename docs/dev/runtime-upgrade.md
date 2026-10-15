@@ -44,7 +44,7 @@ git checkout -b runtime/gtest-1100
 
 ## Step 2: Bump the spec_version
 
-In `runtime/<network>/src/lib.rs`, increment `spec_version`:
+In `runtime/shared/runtime.rs`, increment `spec_version`:
 
 ```rust
 spec_version: 1100,  // was 1000
@@ -77,7 +77,7 @@ changed, **no migration is needed**.
 ## Step 4: Commit and push
 
 ```bash
-git add runtime/<network>/src/lib.rs
+git add runtime/shared/runtime.rs
 git commit -m "chore(<network>): bump spec_version to <new-version>"
 git push -u origin runtime/<network>-<new-version>
 ```

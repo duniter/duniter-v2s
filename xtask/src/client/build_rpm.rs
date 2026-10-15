@@ -26,7 +26,7 @@ use std::{
 /// 2. Builds the binary with appropriate features
 /// 3. Generates the RPM package
 /// # Arguments
-/// * `network` - The network name (e.g., gtest-1000, g1-1000, gdev-1000)
+/// * `network` - The network name (e.g., gtest-1000, g1-1000)
 pub fn build_rpm(network: String) -> Result<()> {
     println!("📦 Building RPM package for network: {network}");
 
@@ -44,13 +44,11 @@ pub fn build_rpm(network: String) -> Result<()> {
 
     let runtime = if network.starts_with("g1") {
         "g1"
-    } else if network.starts_with("gdev") {
-        "gdev"
     } else if network.starts_with("gtest") {
         "gtest"
     } else {
         return Err(anyhow!(
-            "Unknown network: {network}. Supported networks are g1-*, gdev-*, and gtest-*."
+            "Unknown network: {network}. Supported networks are g1-* and gtest-*."
         ));
     };
 

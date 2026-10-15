@@ -14,7 +14,7 @@ Feature: Oneshot account
 
   Scenario: Double oneshot consumption
     When charlie sends 7 ĞD to dave
-    Then charlie should have 299 cĞD
+    Then charlie should have 3 ĞD
     # Cover the oneshot calls fees
     When alice sends 7 ĞD to oneshot dave
     # Alice is treasury funder for 1 ĞD, and member so fees are refunded
@@ -24,5 +24,5 @@ Feature: Oneshot account
     Then dave should have oneshot 0 ĞD
     Then bob should have 14 ĞD
     Then bob should have oneshot 0 ĞD
-    Then charlie should have 299 cĞD
+    Then charlie should have 3 ĞD
     Then charlie should have oneshot 298 cĞD

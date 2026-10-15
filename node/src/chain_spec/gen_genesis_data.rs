@@ -338,7 +338,7 @@ where
 
     // FORCED AUTHORITY //
     // If this authority is defined (most likely Alice), then it must exist in both _identities_
-    // and _smiths_. We create all this, for *development purposes* (used with `gdev_dev` or `gtest_dev` chains).
+    // and _smiths_. We create all this, for *development purposes* (used with `gtest_dev` chains).
     if let Some(authority_name) = &maybe_force_authority {
         make_authority_exist::<SessionKeys, SKP>(
             &mut identities_v2,

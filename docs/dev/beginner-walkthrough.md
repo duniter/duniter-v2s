@@ -51,7 +51,7 @@ cargo build
 This will take about **2 minutes** to download dependencies plus between 5 and **15 minutes** to build in debug mode depending on the power of your processor. At this point, you built the *substrate client* (a kind of "shell" in which lies the runtime) and the default *runtime* itself. You can run a local blockchain with:
 
 ```bash
-cargo run -- --dev --tmp # here, --dev means --chain=dev which selects the gdev runtime
+cargo run -- --dev --tmp # here, --dev means --chain=dev which selects the gtest runtime
 ```
 
 When you see the logs, the blockchain is running and you can connect to it with [Duniter Portal](https://duniter-portal.axiom-team.fr/?rpc=ws://127.0.0.1:9944). You should see blocks being added every 6 seconds. You can use Alice, Bob, etc test accounts to submit extrinsics.

@@ -11,7 +11,7 @@ Test suite that verifies the consistency of the onchain storage.
 1. Checkout the git tag of the runtime that you want to check
 2. run the tests again the default network of the specified runtime type: `cargo sanity-RUNTIME_TYPE`
 
-`RUNTIME_TYPE` should be replaced by `gdev`, `gtest` or `g1`.
+`RUNTIME_TYPE` should be replaced by `gtest`.
 
 #### Custom RPC endpoint
 

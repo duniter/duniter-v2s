@@ -4,7 +4,7 @@
 
 ⚠️ Duniter-v2s is under active development.
 
-🚧 A test network called "ĞDev" is deployed, allowing to test wallets and indexers.
+Gtest provides the runtime used to test wallets and indexers. It shares its business logic with G1.
 
 <div align="center">
     <img alt="logov2" src="https://duniter.fr/img/duniterv2.svg" width="128" height="128"/>
@@ -57,24 +57,22 @@ Multiple documentation sources are available depending on the level of detail yo
 
 ## Use
 
-### Join ĞDev network
+### Run a local gtest node
 
-The easiest way is to use the docker image.
+Build and start a temporary chain:
 
-Minimal command to deploy a temporary mirror peer:
-
-```docker
-docker run -it -p9944:9944 -e DUNITER_CHAIN_NAME=gdev duniter/duniter-gdev-800:latest
+```sh
+scripts/run-local-chain.sh --runtime gtest
 ```
 
-To go further, read [How to deploy a permanent mirror node on ĞDev network 🔗](https://duniter.org/wiki/duniter-v2/#run-a-mirror-node).
+See [the runtime guide](runtime/README.md) for the shared implementation and test modes.
 
 ### Create your local blockchain
 
 It can be useful to deploy your local blockchain, for instance to have a controlled environment to develop/test an application that interacts with the blockchain.
 
 ```docker
-docker run -it -p9944:9944 duniter/duniter-gdev-800:latest
+docker run -it -p9944:9944 duniter/duniter-gtest:latest
 ```
 
 Or use the [`docker-compose.yml`](./docker-compose.yml) at the root of this repository.
@@ -121,18 +119,14 @@ cargo run -- --dev
 ```
 
 This deploys a local blockchain with test accounts (Alice, Bob, etc) in the genesis using the
-default runtime (`gdev`).
+default runtime (`gtest`).
 
 To run a local chain with another runtime:
 
 ```sh
-# gdev local chain
-cargo run -p duniter --no-default-features --features gdev -- \
-  --chain gdev_local --validator --unsafe-force-node-key-generation --sealing manual --tmp
-
-# gtest local chain
+# gtest local chain, gt_local aliases gtest_local; sudo uses //Alice (ed25519 by default)
 cargo run -p duniter --no-default-features --features gtest -- \
-  --chain gtest_local --validator --unsafe-force-node-key-generation --sealing manual --tmp
+  --chain gt_local --validator --alice --unsafe-force-node-key-generation --sealing manual --tmp
 
 # gtest local chain with 2 authorities (Alice and Bob)
 # generate Alice's deterministic p2p key once

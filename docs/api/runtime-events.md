@@ -1,6 +1,6 @@
 # Runtime events
 
-There are **151** events from **35** pallets.
+There are **160** events from **34** pallets.
 
 <ul>
 <li>System - 0
@@ -281,10 +281,6 @@ when: BlockNumberFor<T>
 <ul>
 </ul>
 </li>
-<li>Parameters - 5
-<ul>
-</ul>
-</li>
 <li>Balances - 6
 <ul>
 <li>
@@ -438,7 +434,19 @@ amount: T::Balance
 <li>
 <details>
 <summary>
-<code>Burned(who, amount)</code> - 11</summary>
+<code>MintedCredit(amount)</code> - 11</summary>
+Some credit was balanced and added to the TotalIssuance.
+
+```rust
+amount: T::Balance
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>Burned(who, amount)</code> - 12</summary>
 Some amount was burned from an account.
 
 ```rust
@@ -451,7 +459,19 @@ amount: T::Balance
 <li>
 <details>
 <summary>
-<code>Suspended(who, amount)</code> - 12</summary>
+<code>BurnedDebt(amount)</code> - 13</summary>
+Some debt has been dropped from the Total Issuance.
+
+```rust
+amount: T::Balance
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>Suspended(who, amount)</code> - 14</summary>
 Some amount was suspended from an account (it can be restored later).
 
 ```rust
@@ -464,7 +484,7 @@ amount: T::Balance
 <li>
 <details>
 <summary>
-<code>Restored(who, amount)</code> - 13</summary>
+<code>Restored(who, amount)</code> - 15</summary>
 Some amount was restored into an account.
 
 ```rust
@@ -477,7 +497,7 @@ amount: T::Balance
 <li>
 <details>
 <summary>
-<code>Upgraded(who)</code> - 14</summary>
+<code>Upgraded(who)</code> - 16</summary>
 An account was upgraded.
 
 ```rust
@@ -489,7 +509,7 @@ who: T::AccountId
 <li>
 <details>
 <summary>
-<code>Issued(amount)</code> - 15</summary>
+<code>Issued(amount)</code> - 17</summary>
 Total issuance was increased by `amount`, creating a credit to be balanced.
 
 ```rust
@@ -501,7 +521,7 @@ amount: T::Balance
 <li>
 <details>
 <summary>
-<code>Rescinded(amount)</code> - 16</summary>
+<code>Rescinded(amount)</code> - 18</summary>
 Total issuance was decreased by `amount`, creating a debt to be balanced.
 
 ```rust
@@ -513,7 +533,7 @@ amount: T::Balance
 <li>
 <details>
 <summary>
-<code>Locked(who, amount)</code> - 17</summary>
+<code>Locked(who, amount)</code> - 19</summary>
 Some balance was locked.
 
 ```rust
@@ -526,7 +546,7 @@ amount: T::Balance
 <li>
 <details>
 <summary>
-<code>Unlocked(who, amount)</code> - 18</summary>
+<code>Unlocked(who, amount)</code> - 20</summary>
 Some balance was unlocked.
 
 ```rust
@@ -539,7 +559,7 @@ amount: T::Balance
 <li>
 <details>
 <summary>
-<code>Frozen(who, amount)</code> - 19</summary>
+<code>Frozen(who, amount)</code> - 21</summary>
 Some balance was frozen.
 
 ```rust
@@ -552,7 +572,7 @@ amount: T::Balance
 <li>
 <details>
 <summary>
-<code>Thawed(who, amount)</code> - 20</summary>
+<code>Thawed(who, amount)</code> - 22</summary>
 Some balance was thawed.
 
 ```rust
@@ -565,12 +585,96 @@ amount: T::Balance
 <li>
 <details>
 <summary>
-<code>TotalIssuanceForced(old, new)</code> - 21</summary>
+<code>TotalIssuanceForced(old, new)</code> - 23</summary>
 The `TotalIssuance` was forcefully changed.
 
 ```rust
 old: T::Balance
 new: T::Balance
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>Held(reason, who, amount)</code> - 24</summary>
+Some balance was placed on hold.
+
+```rust
+reason: T::RuntimeHoldReason
+who: T::AccountId
+amount: T::Balance
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>BurnedHeld(reason, who, amount)</code> - 25</summary>
+Held balance was burned from an account.
+
+```rust
+reason: T::RuntimeHoldReason
+who: T::AccountId
+amount: T::Balance
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>TransferOnHold(reason, source, dest, amount)</code> - 26</summary>
+A transfer of `amount` on hold from `source` to `dest` was initiated.
+
+```rust
+reason: T::RuntimeHoldReason
+source: T::AccountId
+dest: T::AccountId
+amount: T::Balance
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>TransferAndHold(reason, source, dest, transferred)</code> - 27</summary>
+The `transferred` balance is placed on hold at the `dest` account.
+
+```rust
+reason: T::RuntimeHoldReason
+source: T::AccountId
+dest: T::AccountId
+transferred: T::Balance
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>Released(reason, who, amount)</code> - 28</summary>
+Some balance was released from hold.
+
+```rust
+reason: T::RuntimeHoldReason
+who: T::AccountId
+amount: T::Balance
+```
+
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>Unexpected()</code> - 29</summary>
+An unexpected/defensive event was triggered.
+
+```rust
+: UnexpectedKind
 ```
 
 </details>
@@ -1585,6 +1689,19 @@ distance: Perbill
 
 </details>
 </li>
+<li>
+<details>
+<summary>
+<code>NotEvaluated(idty_index, who)</code> - 3</summary>
+No distance evaluation was provided.
+
+```rust
+idty_index: T::IdtyIndex
+who: T::AccountId
+```
+
+</details>
+</li>
 </ul>
 </li>
 <li>AtomicSwap - 50
@@ -1759,7 +1876,7 @@ result: DispatchResult
 <li>
 <details>
 <summary>
-<code>PureCreated(pure, who, proxy_type, disambiguation_index)</code> - 1</summary>
+<code>PureCreated(pure, who, proxy_type, disambiguation_index, at, extrinsic_index)</code> - 1</summary>
 A pure account has been created by new proxy with given
 disambiguation index and proxy type.
 
@@ -1768,6 +1885,8 @@ pure: T::AccountId
 who: T::AccountId
 proxy_type: T::ProxyType
 disambiguation_index: u16
+at: BlockNumberFor<T>
+extrinsic_index: u32
 ```
 
 </details>

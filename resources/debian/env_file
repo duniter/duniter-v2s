@@ -3,7 +3,7 @@
 DUNITER_NODE_NAME=My Node
 
 # Specifies the blockchain network to connect to.
-DUNITER_CHAIN_NAME=gdev
+DUNITER_CHAIN_NAME=gtest
 
 # Defines the address and port for node communication.
 # The format is /ip4/[IP address]/tcp/[port]/[protocol].

@@ -93,19 +93,19 @@ enum DuniterXTaskCommand {
     NetworkBuildRuntime { runtime: String },
     /// Create network release (reprend la tâche create_network_release de la CI)
     NetworkCreateRelease {
-        /// Nom du réseau (ex: gdev, gtest, g1)
+        /// Nom du réseau (ex: gtest, g1)
         network: String,
         /// Branche Git à utiliser
         branch: String,
     },
     /// Build raw specs (reprend la tâche build_raw_specs de la CI)
     ClientBuildRawSpecs {
-        /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+        /// Nom du réseau (ex: gtest-1000, g1-1000)
         network: String,
     },
     /// Docker deploy (reprend la tâche docker_deploy de la CI)
     ClientDockerDeploy {
-        /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+        /// Nom du réseau (ex: gtest-1000, g1-1000)
         network: String,
         /// Architecture cible (amd64, arm64) ou None pour multi-arch
         #[clap(long)]
@@ -113,7 +113,7 @@ enum DuniterXTaskCommand {
     },
     /// Create client release (reprend la tâche create_client_release de la CI)
     ClientCreateRelease {
-        /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+        /// Nom du réseau (ex: gtest-1000, g1-1000)
         network: String,
         /// Branche Git à utiliser
         branch: String,
@@ -123,17 +123,17 @@ enum DuniterXTaskCommand {
     },
     /// Build RPM (reprend la tâche build_rpm de la CI)
     ClientBuildRpm {
-        /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+        /// Nom du réseau (ex: gtest-1000, g1-1000)
         network: String,
     },
     /// Build DEB (reprend la tâche build_deb de la CI)
     ClientBuildDeb {
-        /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+        /// Nom du réseau (ex: gtest-1000, g1-1000)
         network: String,
     },
     /// Trigger release builds on GitLab CI and upload artifacts to release
     ClientTriggerReleaseBuilds {
-        /// Nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+        /// Nom du réseau (ex: gtest-1000, g1-1000)
         network: String,
         /// Branche Git à utiliser
         branch: String,
@@ -143,12 +143,12 @@ enum DuniterXTaskCommand {
     },
     /// Build runtime (reprend la tâche build_runtime de la CI)
     RuntimeBuild {
-        /// Runtime à construire (gdev, gtest, g1)
+        /// Runtime à construire (gtest, g1)
         runtime: String,
     },
     /// Create runtime release (reprend la tâche create_runtime_release de la CI)
     RuntimeCreateRelease {
-        /// Réseau cible (gdev, gtest, g1)
+        /// Réseau cible (gtest, g1)
         network: String,
         /// Branche Git à utiliser
         branch: String,
@@ -186,12 +186,12 @@ enum ReleaseCommand {
 enum ClientReleaseCommand {
     /// Build raw specs for a network
     BuildRawSpecs {
-        /// Format: <network>-<runtime-version> (ex: gtest-1100, g1-1000, gdev-1000)
+        /// Format: <network>-<runtime-version> (ex: gtest-1100, g1-1000)
         network: String,
     },
     /// Create GitLab release with specs files
     Create {
-        /// Format: <network>-<runtime-version> (ex: gtest-1100, gdev-1000)
+        /// Format: <network>-<runtime-version> (ex: gtest-1100)
         network: String,
         /// Format: network/<network>-<runtime-version> (ex: network/gtest-1100)
         branch: String,
@@ -201,17 +201,17 @@ enum ClientReleaseCommand {
     },
     /// Build DEB package for current architecture
     BuildDeb {
-        /// Format: <network>-<runtime-version> (ex: gtest-1100, gdev-1000)
+        /// Format: <network>-<runtime-version> (ex: gtest-1100)
         network: String,
     },
     /// Build RPM package for current architecture
     BuildRpm {
-        /// Format: <network>-<runtime-version> (ex: gtest-1100, gdev-1000)
+        /// Format: <network>-<runtime-version> (ex: gtest-1100)
         network: String,
     },
     /// Build and push Docker image (multi-arch by default)
     Docker {
-        /// Format: <network>-<runtime-version> (ex: gtest-1100, gdev-1000)
+        /// Format: <network>-<runtime-version> (ex: gtest-1100)
         network: String,
         /// Target architecture: amd64 or arm64 (omit for multi-arch)
         #[clap(long)]
@@ -219,7 +219,7 @@ enum ClientReleaseCommand {
     },
     /// Trigger CI builds and upload artifacts to release
     TriggerBuilds {
-        /// Format: <network>-<runtime-version> (ex: gtest-1100, gdev-1000)
+        /// Format: <network>-<runtime-version> (ex: gtest-1100)
         network: String,
         /// Format: network/<network>-<runtime-version> (ex: network/gtest-1100)
         branch: String,
@@ -233,17 +233,17 @@ enum ClientReleaseCommand {
 enum NetworkReleaseCommand {
     /// Build network specs for bootstrapping
     BuildSpecs {
-        /// Network name (ex: gdev, gtest, g1)
+        /// Network name (ex: gtest, g1)
         runtime: String,
     },
     /// Build network runtime WASM for bootstrapping
     BuildRuntime {
-        /// Network name (ex: gdev, gtest, g1)
+        /// Network name (ex: gtest, g1)
         runtime: String,
     },
     /// Create network release on GitLab
     Create {
-        /// Format: <network>-<runtime-version> (ex: gtest-1000, gdev-1000)
+        /// Format: <network>-<runtime-version> (ex: gtest-1000)
         network: String,
         /// Format: network/<network>-<runtime-version> (ex: network/gtest-1000)
         branch: String,
@@ -260,12 +260,12 @@ enum NetworkReleaseCommand {
 enum RuntimeReleaseCommand {
     /// Build runtime WASM binary
     Build {
-        /// Runtime name (ex: gdev, gtest, g1)
+        /// Runtime name (ex: gtest, g1)
         runtime: String,
     },
     /// Create runtime release on GitLab
     Create {
-        /// Network name (ex: gdev, gtest, g1)
+        /// Network name (ex: gtest, g1)
         network: String,
         /// Format: runtime/<network>-<new-runtime-version> (ex: runtime/gtest-1100)
         branch: String,

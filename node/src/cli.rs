@@ -93,7 +93,11 @@ pub struct Completion {
 #[derive(Debug, clap::Parser)]
 pub struct DistanceOracle {
     /// Saving path.
-    #[clap(short = 'd', long, default_value = "/tmp/duniter/chains/gdev/distance")]
+    #[clap(
+        short = 'd',
+        long,
+        default_value = "/tmp/duniter/chains/gtest/distance"
+    )]
     pub evaluation_result_dir: String,
     /// Number of seconds between two evaluations (oneshot if absent).
     #[clap(short = 'i', long)]

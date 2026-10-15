@@ -1,6 +1,6 @@
 # Runtime Constant
 
-There are **70** constants from **35** pallets.
+There are **72** constants from **34** pallets.
 
 <ul>
 
@@ -29,7 +29,7 @@ value: frame_system::limits::BlockWeights({ base_block: { ref_time: 431614000, p
  The maximum length of a block (in bytes).
 
 ```rust
-value: frame_system::limits::BlockLength({ max: { normal: 3932160, operational: 5242880, mandatory: 5242880 } })
+value: frame_system::limits::BlockLength({ max: { normal: 3932160, operational: 5242880, mandatory: 5242880 }, max_header_size: None () })
 ```
 
 </details>
@@ -57,7 +57,7 @@ value: U32(2400)
  The weight of runtime database operations the runtime can invoke.
 
 ```rust
-value: sp_weights::RuntimeDbWeight({ read: 17460000, write: 143510000 })
+value: sp_weights::RuntimeDbWeight({ read: 23226000, write: 15234000 })
 ```
 
 </details>
@@ -71,7 +71,7 @@ value: sp_weights::RuntimeDbWeight({ read: 17460000, write: 143510000 })
  Get the chain's in-code version.
 
 ```rust
-value: sp_version::RuntimeVersion({ spec_name: ("gdev"), impl_name: ("duniter-gdev"), authoring_version: 1, spec_version: 1000, impl_version: 1, apis: ((((104, 122, 212, 74, 211, 127, 3, 194), 1), ((203, 202, 37, 227, 159, 20, 35, 135), 2), ((223, 106, 203, 104, 153, 7, 96, 155), 5), ((55, 227, 151, 252, 124, 145, 245, 228), 2), ((64, 254, 58, 212, 1, 248, 149, 154), 6), ((210, 188, 152, 151, 238, 208, 143, 21), 3), ((247, 139, 39, 139, 229, 63, 69, 76), 2), ((171, 60, 5, 114, 41, 31, 235, 139), 1), ((237, 153, 197, 172, 178, 94, 237, 245), 3), ((188, 157, 137, 144, 79, 91, 146, 63), 1), ((55, 200, 187, 19, 80, 169, 162, 168), 4), ((80, 118, 17, 182, 87, 247, 70, 137), 1), ((231, 119, 33, 121, 137, 168, 157, 158), 1), ((251, 197, 119, 185, 215, 71, 239, 214), 1))), transaction_version: 1, system_version: 1 })
+value: sp_version::RuntimeVersion({ spec_name: ("gtest"), impl_name: ("duniter"), authoring_version: 1, spec_version: 1200, impl_version: 1, apis: ((((104, 122, 212, 74, 211, 127, 3, 194), 1), ((203, 202, 37, 227, 159, 20, 35, 135), 2), ((223, 106, 203, 104, 153, 7, 96, 155), 5), ((55, 227, 151, 252, 124, 145, 245, 228), 2), ((64, 254, 58, 212, 1, 248, 149, 154), 6), ((210, 188, 152, 151, 238, 208, 143, 21), 3), ((247, 139, 39, 139, 229, 63, 69, 76), 2), ((171, 60, 5, 114, 41, 31, 235, 139), 2), ((237, 153, 197, 172, 178, 94, 237, 245), 3), ((188, 157, 137, 144, 79, 91, 146, 63), 1), ((55, 200, 187, 19, 80, 169, 162, 168), 4), ((80, 118, 17, 182, 87, 247, 70, 137), 2), ((231, 119, 33, 121, 137, 168, 157, 158), 1), ((251, 197, 119, 185, 215, 71, 239, 214), 1))), transaction_version: 1, system_version: 1 })
 ```
 
 </details>
@@ -89,7 +89,7 @@ value: sp_version::RuntimeVersion({ spec_name: ("gdev"), impl_name: ("duniter-gd
  an identifier of the chain.
 
 ```rust
-value: U16(42)
+value: U16(4450)
 ```
 
 </details>
@@ -155,7 +155,7 @@ value: U32(50)
  the chain has started. Attempting to do so will brick block production.
 
 ```rust
-value: U64(30)
+value: U64(600)
 ```
 
 </details>
@@ -231,12 +231,6 @@ value: U64(3000)
 
 </details>
 </li>
-
-</ul>
-</li>
-
-<li>Parameters - 5
-<ul>
 
 </ul>
 </li>
@@ -392,7 +386,7 @@ value: sp_core::crypto::AccountId32(((109, 111, 100, 108, 112, 121, 47, 116, 114
  Maximum number of active certifications per issuer.
 
 ```rust
-value: U32(8)
+value: U32(12)
 ```
 
 </details>
@@ -406,7 +400,7 @@ value: U32(8)
  Minimum number of certifications required to become a Smith.
 
 ```rust
-value: U32(2)
+value: U32(3)
 ```
 
 </details>
@@ -420,7 +414,7 @@ value: U32(2)
  Maximum duration of inactivity allowed before a Smith is removed.
 
 ```rust
-value: U32(48)
+value: U32(2160)
 ```
 
 </details>
@@ -469,6 +463,20 @@ value: U32(32)
 
 <li>Session - 15
 <ul>
+
+<li>
+<details>
+<summary>
+<code>KeyDeposit</code>
+</summary>
+ The amount to be held when setting keys.
+
+```rust
+value: U64(0)
+```
+
+</details>
+</li>
 
 </ul>
 </li>
@@ -618,7 +626,7 @@ value: U32(160)
  Square of the money growth rate per UD reevaluation period.
 
 ```rust
-value: sp_arithmetic::per_things::Perbill((2381440))
+value: sp_arithmetic::per_things::Perbill((2382304))
 ```
 
 </details>
@@ -632,7 +640,7 @@ value: sp_arithmetic::per_things::Perbill((2381440))
  Universal dividend creation period in milliseconds.
 
 ```rust
-value: U64(60000)
+value: U64(86400000)
 ```
 
 </details>
@@ -646,7 +654,7 @@ value: U64(60000)
  Universal dividend reevaluation period in milliseconds.
 
 ```rust
-value: U64(1200000)
+value: U64(15778800000)
 ```
 
 </details>
@@ -666,7 +674,7 @@ value: U64(1200000)
  The block number from which the first certification can be issued.
 
 ```rust
-value: U32(20)
+value: U32(0)
 ```
 
 </details>
@@ -680,7 +688,7 @@ value: U32(20)
  The minimum number of certifications required for membership eligibility.
 
 ```rust
-value: U32(2)
+value: U32(5)
 ```
 
 </details>
@@ -694,7 +702,7 @@ value: U32(2)
  The minimum number of certifications required to create an identity.
 
 ```rust
-value: U32(2)
+value: U32(5)
 ```
 
 </details>
@@ -714,7 +722,7 @@ value: U32(2)
  The period during which the owner can confirm the new identity.
 
 ```rust
-value: U32(40)
+value: U32(876600)
 ```
 
 </details>
@@ -742,7 +750,7 @@ value: U32(876600)
  The period before which an identity that lost membership is automatically revoked.
 
 ```rust
-value: U32(438300)
+value: U32(5259600)
 ```
 
 </details>
@@ -756,7 +764,7 @@ value: U32(438300)
  The period after which a revoked identity is removed and the keys are freed.
 
 ```rust
-value: U32(438300)
+value: U32(52596000)
 ```
 
 </details>
@@ -770,7 +778,7 @@ value: U32(438300)
  The minimum duration between two owner key changes to prevent identity theft.
 
 ```rust
-value: U32(100800)
+value: U32(2629800)
 ```
 
 </details>
@@ -785,7 +793,7 @@ value: U32(100800)
  Should be greater than or equal to the certification period defined in the certification pallet.
 
 ```rust
-value: U32(50)
+value: U32(72000)
 ```
 
 </details>
@@ -805,7 +813,7 @@ value: U32(50)
  Maximum lifespan of a single membership (in number of blocks).
 
 ```rust
-value: U32(1000)
+value: U32(5259600)
 ```
 
 </details>
@@ -819,7 +827,7 @@ value: U32(1000)
  Minimum delay to wait before renewing membership, i.e., asking for distance evaluation.
 
 ```rust
-value: U32(1000)
+value: U32(876600)
 ```
 
 </details>
@@ -839,7 +847,7 @@ value: U32(1000)
  The minimum duration (in blocks) between two certifications issued by the same issuer.
 
 ```rust
-value: U32(15)
+value: U32(72000)
 ```
 
 </details>
@@ -853,7 +861,7 @@ value: U32(15)
  The maximum number of active certifications that can be issued by a single issuer.
 
 ```rust
-value: U32(10)
+value: U32(100)
 ```
 
 </details>
@@ -868,7 +876,7 @@ value: U32(10)
  to be allowed to issue a certification.
 
 ```rust
-value: U32(2)
+value: U32(5)
 ```
 
 </details>
@@ -882,7 +890,7 @@ value: U32(2)
  The duration (in blocks) for which a certification remains valid.
 
 ```rust
-value: U32(1000)
+value: U32(10519200)
 ```
 
 </details>
@@ -917,7 +925,7 @@ value: U64(1000)
  Since the evaluation uses 3 pools, the total evaluation time will be 3 * EvaluationPeriod.
 
 ```rust
-value: U32(7)
+value: U32(40)
 ```
 
 </details>
@@ -947,6 +955,20 @@ value: U32(5)
 
 ```rust
 value: sp_arithmetic::per_things::Perbill((800000000))
+```
+
+</details>
+</li>
+
+<li>
+<details>
+<summary>
+<code>DistanceRetryPeriod</code>
+</summary>
+ Minimum delay in blocks after a negative result before another request for the identity.
+
+```rust
+value: U32(28800)
 ```
 
 </details>

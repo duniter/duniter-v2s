@@ -58,7 +58,7 @@ pub struct WeightInfo {
 ///    use weightanalyzer::analyze_weight;
 ///    use std::path::Path;
 ///    use weightanalyzer::MaxBlockWeight;
-///    let weight_by_pallet = analyze_weight(Path::new("../../runtime/gdev/src/weights/"), &MaxBlockWeight::default());
+///    let weight_by_pallet = analyze_weight(Path::new("../../runtime/shared/weights/"), &MaxBlockWeight::default());
 ///    println!("{:?}", weight_by_pallet);
 /// ```
 pub fn analyze_weight(
@@ -177,7 +177,7 @@ mod tests {
     #[test]
     fn should_works() {
         let weight_by_pallet = analyze_weight(
-            Path::new("../../runtime/gdev/src/weights/"),
+            Path::new("../../runtime/shared/weights/"),
             &MaxBlockWeight::default(),
         );
         assert!(

@@ -20,7 +20,6 @@ use common::*;
 use cucumber::{StatsWriter, World, given, then, when};
 use sp_keyring::sr25519::Keyring;
 use std::{
-    path::PathBuf,
     str::FromStr,
     sync::{
         Arc,
@@ -33,27 +32,32 @@ use subxt::backend::rpc::RpcClient;
 
 #[derive(cucumber::World, Default)]
 pub struct DuniterWorld {
-    ignore_errors: bool,
     inner: Option<DuniterWorldInner>,
+    initial_monetary_mass: u64,
+    last_distances: Vec<u32>,
 }
 
 impl DuniterWorld {
     // Write methods
-    async fn init(&mut self, maybe_genesis_conf_file: Option<PathBuf>, no_spawn: bool) {
+    async fn init(&mut self, fixture: String, no_spawn: bool) {
         if let Some(ref mut inner) = self.inner {
             inner.kill();
         }
-        self.inner = Some(DuniterWorldInner::new(maybe_genesis_conf_file, no_spawn).await);
+        self.inner = Some(DuniterWorldInner::new(no_spawn).await);
+        common::setup::prepare(self.full_client(), &fixture)
+            .await
+            .expect("scenario setup failed");
+        self.initial_monetary_mass = self
+            .read_or_default(&gtest::storage().universal_dividend().monetary_mass())
+            .await
+            .await
+            .expect("initial monetary mass");
     }
 
     fn kill(&mut self) {
         if let Some(ref mut inner) = self.inner {
             inner.kill();
         }
-    }
-
-    fn set_ignore_errors(&mut self, ignore_errors: bool) {
-        self.ignore_errors = ignore_errors;
     }
 
     // Read methods
@@ -79,11 +83,6 @@ impl DuniterWorld {
         } else {
             panic!("uninit")
         }
-    }
-
-    // Read methods
-    fn ignore_errors(&self) -> bool {
-        self.ignore_errors
     }
 
     // Read storage entry on last block
@@ -137,8 +136,8 @@ struct DuniterWorldInner {
 }
 
 impl DuniterWorldInner {
-    async fn new(maybe_genesis_conf_file: Option<PathBuf>, no_spawn: bool) -> Self {
-        let (client, process, ws_port) = spawn_node(maybe_genesis_conf_file, no_spawn).await;
+    async fn new(no_spawn: bool) -> Self {
+        let (client, process, ws_port) = spawn_node(no_spawn).await;
         DuniterWorldInner {
             client,
             process,
@@ -174,7 +173,7 @@ async fn who_have(world: &mut DuniterWorld, who: String, amount: u64, unit: Stri
 
     if is_ud {
         let current_ud_amount = world
-            .read(&gdev::storage().universal_dividend().current_ud())
+            .read(&gtest::storage().universal_dividend().current_ud())
             .await
             .await?
             .unwrap_or_default();
@@ -212,13 +211,11 @@ async fn transfer(
     let to = Keyring::from_str(&to).expect("unknown to");
     let (amount, is_ud) = parse_amount(amount, &unit);
 
-    let res = if is_ud {
+    if is_ud {
         common::balances::transfer_ud(world.full_client(), from, amount, to).await
     } else {
         common::balances::transfer(world.full_client(), from, amount, to).await
-    };
-
-    if world.ignore_errors() { Ok(()) } else { res }
+    }
 }
 
 #[allow(clippy::needless_pass_by_ref_mut)]
@@ -354,12 +351,13 @@ async fn request_distance_evaluation(world: &mut DuniterWorld, who: String) -> R
 async fn run_distance_oracle(world: &mut DuniterWorld, who: String) -> Result<()> {
     let who = Keyring::from_str(&who).expect("unknown origin");
 
-    common::distance::run_oracle(
+    world.last_distances = common::distance::run_oracle(
         world.full_client(),
         who,
         format!("ws://127.0.0.1:{}", world.inner.as_ref().unwrap().ws_port),
     )
-    .await
+    .await?;
+    Ok(())
 }
 
 // ===== then ====
@@ -377,7 +375,7 @@ async fn treasury_should_contain(
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
     let who_account = world
-        .read_or_default(&gdev::storage().system().account(who))
+        .read_or_default(&gtest::storage().system().account(who))
         .await
         .await?;
     assert_eq!(who_account.data.free, amount);
@@ -401,7 +399,7 @@ async fn should_have(
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
     let who_account = world
-        .read_or_default(&gdev::storage().system().account(who))
+        .read_or_default(&gtest::storage().system().account(who))
         .await
         .await?;
     if reserved.is_empty() {
@@ -428,7 +426,7 @@ async fn should_have_oneshot(
     let (amount, _is_ud) = parse_amount(amount, &unit);
 
     let oneshot_amount = world
-        .read(&gdev::storage().oneshot_account().oneshot_accounts(who))
+        .read(&gtest::storage().oneshot_account().oneshot_accounts(who))
         .await
         .await?;
     assert_eq!(oneshot_amount.unwrap_or(0), amount);
@@ -444,7 +442,7 @@ async fn current_ud_amount_should_be(
 ) -> Result<()> {
     let expected = (amount * 100) + cents;
     let actual = world
-        .read_or_default(&gdev::storage().universal_dividend().current_ud())
+        .read_or_default(&gtest::storage().universal_dividend().current_ud())
         .await
         .await?;
     assert_eq!(actual, expected);
@@ -456,7 +454,7 @@ async fn current_ud_amount_should_be(
 async fn monetary_mass_should_be(world: &mut DuniterWorld, amount: u64, cents: u64) -> Result<()> {
     let expected = (amount * 100) + cents;
     let actual = world
-        .read_or_default(&gdev::storage().universal_dividend().monetary_mass())
+        .read_or_default(&gtest::storage().universal_dividend().monetary_mass())
         .await
         .await?;
     assert_eq!(actual, expected);
@@ -482,13 +480,17 @@ async fn should_be_certified_by(
 
     // get corresponding identities index
     let issuer_index = world
-        .read(&gdev::storage().identity().identity_index_of(issuer_account))
+        .read(
+            &gtest::storage()
+                .identity()
+                .identity_index_of(issuer_account),
+        )
         .await
         .await?
         .unwrap();
     let receiver_index = world
         .read(
-            &gdev::storage()
+            &gtest::storage()
                 .identity()
                 .identity_index_of(receiver_account),
         )
@@ -498,7 +500,7 @@ async fn should_be_certified_by(
 
     let issuers = world
         .read_or_default(
-            &gdev::storage()
+            &gtest::storage()
                 .certification()
                 .certs_by_receiver(receiver_index),
         )
@@ -510,8 +512,7 @@ async fn should_be_certified_by(
         Ok(_) => Ok(()),
         Err(_) => Err(anyhow::anyhow!(
             "no certification found from {issuer} ({issuer_index}) to {receiver} ({receiver_index}): {issuers:?}"
-        )
-        .into()),
+        )),
     }
 }
 
@@ -535,7 +536,7 @@ async fn should_be_eligible_to_ud(
     Ok(())
 }
 
-use gdev::runtime_types::pallet_identity::types::IdtyStatus;
+use gtest::runtime_types::pallet_identity::types::IdtyStatus;
 
 // status from string
 impl FromStr for IdtyStatus {
@@ -561,7 +562,7 @@ async fn identity_status_should_be(
     status: String,
 ) -> Result<()> {
     let identity_value = common::identity::get_identity_value(world, name).await?;
-    let expected_status = IdtyStatus::from_str(&status)?;
+    let expected_status = IdtyStatus::from_str(&status).map_err(anyhow::Error::msg)?;
     assert_eq!(identity_value.status, expected_status);
     Ok(())
 }
@@ -616,16 +617,10 @@ async fn main() {
 
     let summarize = DuniterWorld::cucumber()
         .fail_on_skipped()
-        .max_concurrent_scenarios(2)
+        .max_concurrent_scenarios(if no_spawn { 1 } else { 2 })
         .before(move |feature, _rule, scenario, world| {
-            let mut genesis_conf_file_path = PathBuf::new();
-            genesis_conf_file_path.push("cucumber-genesis");
-            genesis_conf_file_path.push(format!(
-                "{}.json",
-                genesis_conf_name(&feature.tags, &scenario.tags)
-            ));
-            world.set_ignore_errors(ignore_errors(&scenario.tags));
-            Box::pin(world.init(Some(genesis_conf_file_path), no_spawn))
+            let fixture = setup_name(&feature.tags, &scenario.tags);
+            Box::pin(world.init(fixture, no_spawn))
         })
         .after(move |_feature, _rule, _scenario, _ev, maybe_world| {
             if keep_running {
@@ -655,25 +650,122 @@ async fn main() {
     }
 }
 
-fn genesis_conf_name(feature_tags: &[String], scenario_tags: &[String]) -> String {
+fn setup_name(feature_tags: &[String], scenario_tags: &[String]) -> String {
     for tag in scenario_tags {
-        if let Some(("genesis", conf_name)) = tag.split_once('.') {
+        if let Some(("setup", conf_name)) = tag.split_once('.') {
             return conf_name.to_owned();
         }
     }
     for tag in feature_tags {
-        if let Some(("genesis", conf_name)) = tag.split_once('.') {
+        if let Some(("setup", conf_name)) = tag.split_once('.') {
             return conf_name.to_owned();
         }
     }
     "default".to_owned()
 }
 
-fn ignore_errors(scenario_tags: &[String]) -> bool {
-    for tag in scenario_tags {
-        if tag == "ignoreErrors" {
-            return true;
+#[when(
+    regex = r"([a-zA-Z]+) cannot send (\d+) (ĞD|cĞD) to ([a-zA-Z]+) because the account cannot pay fees"
+)]
+async fn transfer_rejected(
+    world: &mut DuniterWorld,
+    from: String,
+    amount: u64,
+    unit: String,
+    to: String,
+) -> Result<()> {
+    let result = balances::transfer(
+        world.full_client(),
+        Keyring::from_str(&from).expect("unknown sender"),
+        parse_amount(amount, &unit).0,
+        Keyring::from_str(&to).expect("unknown recipient"),
+    )
+    .await;
+    let error = result.expect_err("transaction unexpectedly succeeded");
+    let Some(subxt::Error::Rpc(subxt::error::RpcError::ClientError(
+        subxt::ext::subxt_rpcs::Error::User(rpc),
+    ))) = error.downcast_ref::<subxt::Error>()
+    else {
+        return Err(anyhow::anyhow!(
+            "expected a transaction payment rejection, got {error:?}"
+        ));
+    };
+    let data = rpc.data.as_ref().map_or("", |data| data.get());
+    anyhow::ensure!(
+        rpc.code == 1010
+            && (data.contains("Payment")
+                || data.contains("payment")
+                || data.contains("Inability to pay")),
+        "expected a payment rejection, got {rpc:?}"
+    );
+    Ok(())
+}
+
+#[when("the next UD is created")]
+async fn next_ud(world: &mut DuniterWorld) -> Result<()> {
+    let before = world
+        .read_or_default(&gtest::storage().universal_dividend().current_ud_index())
+        .await
+        .await?;
+    let period = world
+        .client()
+        .constants()
+        .at(&gtest::constants().universal_dividend().ud_creation_period())?;
+    let blocks = period.div_ceil(common_runtime::constants::MILLISECS_PER_BLOCK) + 1;
+    for _ in 0..=blocks {
+        create_empty_block(world.rpc_client()).await?;
+        let current = world
+            .read_or_default(&gtest::storage().universal_dividend().current_ud_index())
+            .await
+            .await?;
+        if current != before {
+            return Ok(());
         }
     }
-    false
+    Err(anyhow::anyhow!("UD was not created within its fast period"))
+}
+
+#[when("the distance request enters the computation pool")]
+async fn distance_computation_pool(world: &mut DuniterWorld) -> Result<()> {
+    // Requests move to the computation pool on the next period boundary.
+    let before = world
+        .read_or_default(&gtest::storage().distance().current_period_index())
+        .await
+        .await?;
+    let period = world
+        .client()
+        .constants()
+        .at(&gtest::constants().distance().evaluation_period())?;
+    for _ in 0..=period {
+        create_empty_block(world.rpc_client()).await?;
+        let current = world
+            .read_or_default(&gtest::storage().distance().current_period_index())
+            .await
+            .await?;
+        if current != before {
+            return Ok(());
+        }
+    }
+    Err(anyhow::anyhow!("distance period did not advance"))
+}
+
+#[when("the distance result is applied")]
+async fn distance_applied(world: &mut DuniterWorld) -> Result<()> {
+    distance_computation_pool(world).await
+}
+
+#[then(regex = r"Monetary mass should grow by (\d+)\.(\d+) ĞD")]
+async fn monetary_mass_growth(world: &mut DuniterWorld, amount: u64, cents: u64) -> Result<()> {
+    let mass = world
+        .read_or_default(&gtest::storage().universal_dividend().monetary_mass())
+        .await
+        .await?;
+    assert_eq!(mass, world.initial_monetary_mass + amount * 100 + cents);
+    Ok(())
+}
+
+#[then(regex = r"the oracle should compute (\d+) percent accessibility")]
+async fn oracle_accessibility(world: &mut DuniterWorld, percent: u32) -> Result<()> {
+    assert_eq!(world.last_distances, vec![percent * 10_000_000]);
+    Ok(())
 }

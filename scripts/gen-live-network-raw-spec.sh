@@ -6,7 +6,7 @@
 set -e
 
 # params
-CURRENCY="${1:-gdev}"
+CURRENCY="${1:-gtest}"
 GENESIS="${2:-resources/$CURRENCY.json}"
 
 # constants

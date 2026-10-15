@@ -23,20 +23,18 @@ use std::{path::Path, process::Command};
 /// 2. Fusionne les spécifications client (YAML -> JSON)
 /// 3. Génère le fichier raw spec final
 /// # Arguments
-/// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
-/// * `runtime` - Le runtime à utiliser (gdev, gtest, g1)
+/// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000)
+/// * `runtime` - Le runtime à utiliser (gtest, g1)
 pub fn build_raw_specs(network: String) -> Result<()> {
     println!("🚀 Construction des spécifications raw pour le réseau: {network}");
 
     let runtime = if network.starts_with("g1") {
         "g1"
-    } else if network.starts_with("gdev") {
-        "gdev"
     } else if network.starts_with("gtest") {
         "gtest"
     } else {
         return Err(anyhow!(
-            "Réseau inconnu: {network}. Les réseaux supportés sont g1-*, gdev-* et gtest-*."
+            "Réseau inconnu: {network}. Les réseaux supportés sont g1-* et gtest-*."
         ));
     };
 
