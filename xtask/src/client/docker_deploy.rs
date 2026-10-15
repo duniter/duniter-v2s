@@ -23,20 +23,18 @@ use std::process::Command;
 /// 2. Construit une image pour l'architecture spécifiée (ou multi-arch si None)
 /// 3. Pousse l'image vers Docker Hub avec les tags appropriés
 /// # Arguments
-/// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+/// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000)
 /// * `arch` - L'architecture cible (amd64, arm64) ou None pour multi-arch
 pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
     println!("🐳 Déploiement Docker pour le réseau: {network}");
 
     let runtime = if network.starts_with("g1") {
         "g1"
-    } else if network.starts_with("gdev") {
-        "gdev"
     } else if network.starts_with("gtest") {
         "gtest"
     } else {
         return Err(anyhow!(
-            "Réseau inconnu: {network}. Les réseaux supportés sont g1-*, gdev-* et gtest-*."
+            "Réseau inconnu: {network}. Les réseaux supportés sont g1-* et gtest-*."
         ));
     };
 
@@ -253,8 +251,8 @@ fn get_client_version() -> Result<String> {
     Ok(version.to_string())
 }
 
-fn get_runtime_version(runtime: &str) -> Result<String> {
-    let runtime_file = format!("runtime/{runtime}/src/lib.rs");
+fn get_runtime_version(_runtime: &str) -> Result<String> {
+    let runtime_file = "runtime/shared/runtime.rs".to_string();
     let output = Command::new("grep")
         .args(["spec_version:", &runtime_file])
         .output()?;

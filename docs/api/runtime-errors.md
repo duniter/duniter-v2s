@@ -1,6 +1,6 @@
 # Runtime errors
 
-There are **193** errors from **35** pallets.
+There are **197** errors from **34** pallets.
 
 <ul>
 <li>System - 0
@@ -150,10 +150,6 @@ Submitted configuration is invalid.
 </ul>
 </li>
 <li>Timestamp - 4
-<ul>
-</ul>
-</li>
-<li>Parameters - 5
 <ul>
 </ul>
 </li>
@@ -1007,6 +1003,27 @@ Insufficient balance to create an identity.
 Legacy revocation document format is invalid
 </details>
 </li>
+<li>
+<details>
+<summary>
+<code>AccountAlreadyLinked</code> - 21</summary>
+Cannot create an identity on an account already linked to one.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CanNotChangeOwnerKeyOfUnconfirmed</code> - 22</summary>
+Can not change owner key of an unconfirmed identity.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>CanNotChangeOwnerKeyOfRevoked</code> - 23</summary>
+Can not change owner key of a revoked identity.
+</details>
+</li>
 </ul>
 </li>
 <li>Membership - 42
@@ -1171,6 +1188,13 @@ Evaluation result has a wrong length.
 <summary>
 <code>TargetMustBeUnvalidated</code> - 12</summary>
 Targeted distance evaluation request is only possible for an unvalidated identity.
+</details>
+</li>
+<li>
+<details>
+<summary>
+<code>DistanceRetryPeriodNotRespected</code> - 13</summary>
+The delay after the target identity's last negative result has not elapsed.
 </details>
 </li>
 </ul>

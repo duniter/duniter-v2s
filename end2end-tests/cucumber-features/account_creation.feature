@@ -26,12 +26,11 @@ Feature: Account creation
     """
     Then eve should have 7 ĞD
 
-  @ignoreErrors
   Scenario: Create a new account without any funds
     Then eve should have 0 ĞD
     # Alice is treasury funder for 1 ĞD
     Then alice should have 9 ĞD
-    When eve send 0 ĞD to alice
+    When eve cannot send 0 ĞD to alice because the account cannot pay fees
     Then alice should have 9 ĞD
     When alice send 5 ĞD to eve
     Then eve should have 5 ĞD

@@ -21,21 +21,20 @@ pub mod cert;
 pub mod distance;
 pub mod identity;
 pub mod oneshot;
+pub mod setup;
 
 #[subxt::subxt(
-    runtime_metadata_path = "../resources/gdev_metadata.scale",
-    derive_for_all_types = "Eq, PartialEq"
+    runtime_metadata_path = "../resources/gtest_metadata.scale",
+    derive_for_all_types = "Eq, PartialEq, codec::Decode"
 )]
-pub mod gdev {}
+pub mod gtest {}
 
 use anyhow::anyhow;
 use codec::Encode;
-use notify_debouncer_mini::new_debouncer;
 use serde_json::Value;
 use sp_keyring::sr25519::Keyring;
 use std::{
-    io::prelude::*,
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::Command,
     str::FromStr,
     time::{Duration, Instant},
@@ -46,14 +45,14 @@ use subxt::{
     ext::subxt_rpcs::client::{RpcParams, rpc_params},
 };
 
-pub type Client = subxt::OnlineClient<GdevConfig>;
-pub type Event = gdev::Event;
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-pub type SubmittableExtrinsic = subxt::tx::SubmittableTransaction<GdevConfig, Client>;
-pub type TxProgress = subxt::tx::TxProgress<GdevConfig, Client>;
+pub type Client = subxt::OnlineClient<GtestConfig>;
+pub type Event = gtest::Event;
+pub type Result<T> = anyhow::Result<T>;
+pub type SubmittableExtrinsic = subxt::tx::SubmittableTransaction<GtestConfig, Client>;
+pub type TxProgress = subxt::tx::TxProgress<GtestConfig, Client>;
 
-pub enum GdevConfig {}
-impl subxt::config::Config for GdevConfig {
+pub enum GtestConfig {}
+impl subxt::config::Config for GtestConfig {
     type AccountId = subxt::utils::AccountId32;
     type Address = subxt::utils::MultiAddress<Self::AccountId, u32>;
     type AssetId = ();
@@ -87,12 +86,15 @@ impl From<u64> for Tip {
     }
 }
 
-pub const SUDO_ACCOUNT: Keyring = Keyring::Alice;
+pub const SUDO_ACCOUNT: sp_keyring::ed25519::Keyring = sp_keyring::ed25519::Keyring::Alice;
 
 pub struct Process(std::process::Child);
 impl Process {
     pub fn kill(&mut self) {
-        self.0.kill().expect("node already down");
+        if matches!(self.0.try_wait(), Ok(None)) {
+            self.0.kill().expect("failed to stop node");
+            self.0.wait().expect("failed to reap node");
+        }
     }
 }
 
@@ -104,7 +106,7 @@ impl Drop for Process {
 }
 
 pub const DISTANCE_ORACLE_LOCAL_PATH: &str = "../target/debug/distance-oracle";
-const DUNITER_DOCKER_PATH: &str = "/usr/local/bin/duniter";
+const DUNITER_DOCKER_PATH: &str = "/usr/local/bin/duniter-gtest-fast";
 const DUNITER_LOCAL_PATH: &str = "../target/debug/duniter";
 
 struct FullNode {
@@ -113,11 +115,7 @@ struct FullNode {
     rpc_port: u16,
 }
 
-pub async fn spawn_node(
-    maybe_genesis_conf_file: Option<PathBuf>,
-    no_spawn: bool,
-) -> (FullClient, Option<Process>, u16) {
-    println!("maybe_genesis_conf_file={maybe_genesis_conf_file:?}");
+pub async fn spawn_node(no_spawn: bool) -> (FullClient, Option<Process>, u16) {
     let duniter_binary_path = std::env::var("DUNITER_BINARY_PATH").unwrap_or_else(|_| {
         if std::path::Path::new(DUNITER_DOCKER_PATH).exists() {
             DUNITER_DOCKER_PATH.to_owned()
@@ -136,8 +134,7 @@ pub async fn spawn_node(
             rpc_port,
         } = spawn_full_node(
             &[
-                "--chain=gdev_dev",
-                "--execution=Native",
+                "--chain=gt_local",
                 "--sealing=manual",
                 // Necessary options which were previously set by --dev option:
                 "--force-authoring",
@@ -151,41 +148,31 @@ pub async fn spawn_node(
                 "--no-mdns",
             ],
             &duniter_binary_path,
-            maybe_genesis_conf_file,
         );
         opt_process = Some(process);
         the_rpc_port = rpc_port;
     }
-    // Retry RPC connection up to 5 times with 5 seconds between attempts
-    // This is needed in CI where resource contention can slow down node startup
-    let mut retry_count = 0;
-    let max_retries = 5;
+    let timeout = std::env::var("DUNITER_END2END_TESTS_SPAWN_NODE_TIMEOUT")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(30);
+    let deadline = Instant::now() + Duration::from_secs(timeout);
     let (rpc, client) = loop {
-        match RpcClient::from_url(format!("ws://127.0.0.1:{the_rpc_port}")).await {
-            Ok(rpc) => match Client::from_rpc_client(rpc.clone()).await {
-                Ok(client) => break (rpc, client),
-                Err(e) => {
-                    retry_count += 1;
-                    if retry_count >= max_retries {
-                        panic!("Failed to create client after {max_retries} retries: {e:?}");
-                    }
-                    eprintln!(
-                        "Failed to create client (attempt {retry_count}/{max_retries}): {e:?}. Retrying in 5 seconds..."
-                    );
-                    tokio::time::sleep(Duration::from_secs(5)).await;
-                }
-            },
-            Err(e) => {
-                retry_count += 1;
-                if retry_count >= max_retries {
-                    panic!("Failed to create the rpc backend after {max_retries} retries: {e:?}");
-                }
-                eprintln!(
-                    "Failed to create RPC client (attempt {retry_count}/{max_retries}): {e:?}. Retrying in 5 seconds..."
-                );
-                tokio::time::sleep(Duration::from_secs(5)).await;
-            }
+        if let Ok(rpc) = RpcClient::from_url(format!("ws://127.0.0.1:{the_rpc_port}")).await
+            && let Ok(client) = Client::from_rpc_client(rpc.clone()).await
+        {
+            break (rpc, client);
         }
+        if let Some(process) = &mut opt_process
+            && let Some(status) = process.0.try_wait().expect("cannot inspect node")
+        {
+            panic!("node exited with {status}; read duniter-v2s-{the_rpc_port}.log");
+        }
+        assert!(
+            Instant::now() < deadline,
+            "RPC startup timeout; read duniter-v2s-{the_rpc_port}.log"
+        );
+        tokio::time::sleep(Duration::from_millis(100)).await;
     };
 
     (FullClient { rpc, client }, opt_process, the_rpc_port)
@@ -203,40 +190,80 @@ pub async fn create_empty_block(client: &RpcClient) -> Result<()> {
 pub async fn create_block_with_extrinsic(
     client: &RpcClient,
     extrinsic: SubmittableExtrinsic,
-) -> Result<subxt::blocks::ExtrinsicEvents<GdevConfig>> {
+) -> Result<subxt::blocks::ExtrinsicEvents<GtestConfig>> {
     //println!("extrinsic encoded: {}", hex::encode(extrinsic.encoded()));
 
-    let watcher = extrinsic.submit_and_watch().await?;
+    let mut watcher = extrinsic.submit_and_watch().await?;
+    loop {
+        let status = tokio::time::timeout(Duration::from_secs(30), watcher.next())
+            .await?
+            .ok_or_else(|| anyhow!("transaction subscription ended before validation"))??;
+        match status {
+            subxt::tx::TxStatus::Validated | subxt::tx::TxStatus::Broadcasted => break,
+            subxt::tx::TxStatus::Invalid { message }
+            | subxt::tx::TxStatus::Dropped { message }
+            | subxt::tx::TxStatus::Error { message } => {
+                return Err(anyhow!("transaction rejected: {message}"));
+            }
+            _ => {}
+        }
+    }
 
-    // Create a non-empty block
-    let _: Value = client
-        .request("engine_createBlock", rpc_params![false, true, Value::Null])
+    // Epoch-transition hooks can consume the available block budget. Allow
+    // inclusion in a subsequent block, and always verify the finalized result.
+    let mut finalized = None;
+    for attempt in 0..4 {
+        let _: Value = client
+            .request("engine_createBlock", rpc_params![true, true, Value::Null])
+            .await?;
+        // The subscription can lag block import on a busy CI runner. After the
+        // last block, allow notification delivery without sealing extra blocks.
+        let delivery_timeout = if attempt == 3 {
+            Duration::from_secs(30)
+        } else {
+            Duration::from_millis(100)
+        };
+        let deadline = tokio::time::Instant::now() + delivery_timeout;
+        loop {
+            let Ok(status) = tokio::time::timeout_at(deadline, watcher.next()).await else {
+                break;
+            };
+            match status
+                .ok_or_else(|| anyhow!("transaction subscription ended before finalization"))??
+            {
+                subxt::tx::TxStatus::InFinalizedBlock(block) => {
+                    finalized = Some(block);
+                    break;
+                }
+                subxt::tx::TxStatus::Invalid { message }
+                | subxt::tx::TxStatus::Dropped { message }
+                | subxt::tx::TxStatus::Error { message } => {
+                    return Err(anyhow!("transaction rejected: {message}"));
+                }
+                _ => {}
+            }
+        }
+        if finalized.is_some() {
+            break;
+        }
+    }
+    let events = finalized
+        .ok_or_else(|| anyhow!("transaction was not finalized within four manually sealed blocks"))?
+        .wait_for_success()
         .await?;
-
-    // Get extrinsic events
-    watcher
-        .wait_for_finalized()
-        .await?
-        .fetch_events()
-        .await
-        .map_err(Into::into)
+    for result in events.find::<gtest::sudo::events::Sudid>() {
+        let result = result?;
+        if let Err(error) = result.sudo_result {
+            return Err(anyhow!("sudo call failed: {error:?}"));
+        }
+    }
+    Ok(events)
 }
 
-fn spawn_full_node(
-    args: &[&str],
-    duniter_binary_path: &str,
-    maybe_genesis_conf_file: Option<PathBuf>,
-) -> FullNode {
+fn spawn_full_node(args: &[&str], duniter_binary_path: &str) -> FullNode {
     // Ports
     let p2p_port = portpicker::pick_unused_port().expect("No ports free");
     let rpc_port = portpicker::pick_unused_port().expect("No ports free");
-
-    // Env vars
-    let mut envs = Vec::new();
-    if let Some(genesis_conf_file) = maybe_genesis_conf_file {
-        envs.push(("DUNITER_GENESIS_CONFIG", genesis_conf_file.clone()));
-        envs.push(("DUNITER_GENESIS_DATA", genesis_conf_file));
-    }
 
     // Logs
     let log_file_path = format!("duniter-v2s-{rpc_port}.log");
@@ -257,24 +284,11 @@ fn spawn_full_node(
                 .iter()
                 .chain(args),
             )
-            .envs(envs)
+            .env("DUNITER_SUDO_ACCOUNT_CRYPTO", "ed25519")
             .stdout(std::process::Stdio::null())
             .stderr(log_file)
             .spawn()
             .expect("failed to spawn node"),
-    );
-
-    let timeout =
-        if let Ok(duration_string) = std::env::var("DUNITER_END2END_TESTS_SPAWN_NODE_TIMEOUT") {
-            duration_string.parse().unwrap_or(10)
-        } else {
-            10
-        };
-
-    wait_until_log_line(
-        "***** Duniter has fully started *****",
-        &log_file_path,
-        std::time::Duration::from_secs(timeout),
     );
 
     FullNode {
@@ -284,70 +298,6 @@ fn spawn_full_node(
     }
 }
 
-fn wait_until_log_line(expected_log_line: &str, log_file_path: &str, timeout: Duration) {
-    if cfg!(target_os = "macos") {
-        // MacOs seems to not be able to use inotify (buggy)
-        // So we use a specific implementation for `wait_until_log_line()` here
-        let start = Instant::now();
-        loop {
-            let now = Instant::now();
-            if now.duration_since(start) > timeout {
-                eprintln!("Timeout starting node");
-                std::process::exit(1);
-            }
-            if has_log_line(log_file_path, expected_log_line) {
-                // Ready
-                return;
-            }
-            std::thread::sleep(Duration::from_millis(100));
-        }
-    } else {
-        let (tx, rx) = std::sync::mpsc::channel();
-        let mut debouncer = new_debouncer(std::time::Duration::from_millis(100), tx).unwrap();
-        debouncer
-            .watcher()
-            .watch(
-                Path::new(log_file_path),
-                notify::RecursiveMode::NonRecursive,
-            )
-            .unwrap();
-
-        let mut pos = 0;
-        loop {
-            match rx.recv_timeout(timeout) {
-                Ok(_) => {
-                    let mut file = std::fs::File::open(log_file_path).unwrap();
-                    file.seek(std::io::SeekFrom::Start(pos)).unwrap();
-                    pos = file.metadata().unwrap().len();
-                    let reader = std::io::BufReader::new(file);
-
-                    for line in reader.lines() {
-                        if line.expect("fail to read line").contains(expected_log_line) {
-                            return;
-                        }
-                    }
-                }
-                Err(err) => {
-                    eprintln!("Error: {err:?}");
-                    std::process::exit(1);
-                }
-            }
-        }
-    }
-}
-
-fn has_log_line(log_file_path: &str, expected_log_line: &str) -> bool {
-    let mut file = std::fs::File::open(log_file_path).unwrap();
-    file.seek(std::io::SeekFrom::Start(0)).unwrap();
-    let reader = std::io::BufReader::new(file);
-    for line in reader.lines() {
-        if line.expect("fail to read line").contains(expected_log_line) {
-            return true;
-        }
-    }
-    false
-}
-
 pub fn spawn_distance_oracle(distance_oracle_binary_path: &str, duniter_rpc_port: u16) {
     Command::new(distance_oracle_binary_path)
         .args(
@@ -355,7 +305,7 @@ pub fn spawn_distance_oracle(distance_oracle_binary_path: &str, duniter_rpc_port
                 "-u",
                 &format!("ws://127.0.0.1:{duniter_rpc_port}"),
                 "-d",
-                "/tmp/duniter-cucumber/chains/gdev/distance",
+                "/tmp/duniter-cucumber/chains/gtest/distance",
             ]
             .iter(),
         )
@@ -365,15 +315,11 @@ pub fn spawn_distance_oracle(distance_oracle_binary_path: &str, duniter_rpc_port
         .unwrap();
 }
 
-/// A concrete PairSigner implementation which relies on `sr25519::Pair` for signing
-/// and where GdevConfig is the runtime configuration.
+/// Sign sr25519 scenario calls and ed25519 sudo calls with the same test configuration.
 mod pair_signer {
     use super::*;
-    use sp_core::{Pair as _, sr25519};
-    use sp_runtime::{
-        MultiSignature as SpMultiSignature,
-        traits::{IdentifyAccount, Verify},
-    };
+    use sp_core::{Pair, sr25519};
+    use sp_runtime::{MultiSigner, traits::IdentifyAccount};
     use subxt::{
         Config,
         config::substrate::{AccountId32, MultiSignature},
@@ -381,22 +327,24 @@ mod pair_signer {
     };
 
     #[derive(Clone)]
-    pub struct PairSigner {
-        account_id: <GdevConfig as Config>::AccountId,
-        signer: sr25519::Pair,
+    pub struct PairSigner<P: Pair = sr25519::Pair> {
+        account_id: <GtestConfig as Config>::AccountId,
+        signer: P,
     }
 
-    impl PairSigner {
-        pub fn new(signer: sr25519::Pair) -> Self {
-            let account_id =
-                <SpMultiSignature as Verify>::Signer::from(signer.public()).into_account();
+    impl<P: Pair> PairSigner<P>
+    where
+        MultiSigner: From<P::Public>,
+    {
+        pub fn new(signer: P) -> Self {
+            let account_id = MultiSigner::from(signer.public()).into_account();
             Self {
                 account_id: AccountId32(account_id.into()),
                 signer,
             }
         }
 
-        pub fn signer(&self) -> &sr25519::Pair {
+        pub fn signer(&self) -> &P {
             &self.signer
         }
 
@@ -405,14 +353,23 @@ mod pair_signer {
         }
     }
 
-    impl Signer<GdevConfig> for PairSigner {
-        fn account_id(&self) -> <GdevConfig as Config>::AccountId {
+    impl Signer<GtestConfig> for PairSigner<sr25519::Pair> {
+        fn account_id(&self) -> <GtestConfig as Config>::AccountId {
             self.account_id.clone()
         }
 
-        fn sign(&self, signer_payload: &[u8]) -> <GdevConfig as Config>::Signature {
-            let signature = self.signer.sign(signer_payload);
-            MultiSignature::Sr25519(signature.0)
+        fn sign(&self, signer_payload: &[u8]) -> <GtestConfig as Config>::Signature {
+            MultiSignature::Sr25519(self.signer.sign(signer_payload).0)
+        }
+    }
+
+    impl Signer<GtestConfig> for PairSigner<sp_core::ed25519::Pair> {
+        fn account_id(&self) -> <GtestConfig as Config>::AccountId {
+            self.account_id.clone()
+        }
+
+        fn sign(&self, signer_payload: &[u8]) -> <GtestConfig as Config>::Signature {
+            MultiSignature::Ed25519(self.signer.sign(signer_payload).0)
         }
     }
 }

@@ -14,19 +14,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Substrate-Libre-Currency. If not, see <https://www.gnu.org/licenses/>.
 
-use super::{gdev, gdev::runtime_types::pallet_identity, *};
+use super::{gtest, gtest::runtime_types::pallet_identity, *};
 use crate::{
     DuniterWorld, common::pair_signer::PairSigner,
-    gdev::runtime_types::pallet_identity::types::IdtyName,
+    gtest::runtime_types::pallet_identity::types::IdtyName,
 };
 use sp_keyring::sr25519::Keyring;
 use subxt::config::substrate::MultiAddress;
 
 type BlockNumber = u32;
 type AccountId = subxt::utils::AccountId32;
-type IdtyData = gdev::runtime_types::common_runtime::entities::IdtyData;
+type IdtyData = gtest::runtime_types::common_runtime::entities::IdtyData;
 type IdtyValue =
-    gdev::runtime_types::pallet_identity::types::IdtyValue<BlockNumber, AccountId, IdtyData>;
+    gtest::runtime_types::pallet_identity::types::IdtyValue<BlockNumber, AccountId, IdtyData>;
 
 // submit extrinsics
 
@@ -40,7 +40,7 @@ pub async fn create_identity(client: &FullClient, from: Keyring, to: Keyring) ->
             .client
             .tx()
             .create_signed(
-                &gdev::tx().identity().create_identity(to.into()),
+                &gtest::tx().identity().create_identity(to.into()),
                 &from,
                 SubstrateExtrinsicParamsBuilder::new().build(),
             )
@@ -61,7 +61,7 @@ pub async fn confirm_identity(client: &FullClient, from: Keyring, pseudo: String
             .client
             .tx()
             .create_signed(
-                &gdev::tx().identity().confirm_identity(pseudo),
+                &gtest::tx().identity().confirm_identity(pseudo),
                 &from,
                 SubstrateExtrinsicParamsBuilder::new().build(),
             )
@@ -81,7 +81,7 @@ pub async fn get_identity_index(world: &DuniterWorld, account: String) -> Result
 
     let identity_index = world
         .read(
-            &gdev::storage()
+            &gtest::storage()
                 .identity()
                 .identity_index_of(account.clone()),
         )
@@ -97,7 +97,7 @@ pub async fn get_identity_value(world: &DuniterWorld, account: String) -> Result
     let identity_index = get_identity_index(world, account).await.unwrap();
 
     let identity_value = world
-        .read(&gdev::storage().identity().identities(identity_index))
+        .read(&gtest::storage().identity().identities(identity_index))
         .await
         .await?
         .ok_or_else(|| {

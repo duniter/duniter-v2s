@@ -48,7 +48,7 @@ const CONSTANTS_DOC_FILEPATH: &str = "docs/api/runtime-constants.md";
 const ERRORS_DOC_FILEPATH: &str = "docs/api/runtime-errors.md";
 const ERRORS_PO_FILEPATH: &str = "docs/api/runtime-errors.po";
 const TEMPLATES_GLOB: &str = "xtask/res/templates/*.{md,po}";
-const WEIGHT_FILEPATH: &str = "runtime/gdev/src/weights/";
+const WEIGHT_FILEPATH: &str = "runtime/shared/weights/";
 
 // define structs and implementations
 
@@ -287,7 +287,7 @@ impl CallCategory {
 /// generate runtime calls documentation
 pub(super) fn gen_doc() -> Result<()> {
     // Read metadata
-    let mut file = std::fs::File::open("resources/gdev_metadata.scale")
+    let mut file = std::fs::File::open("resources/gtest_metadata.scale")
         .with_context(|| "Failed to open metadata file")?;
 
     let mut bytes = Vec::new();

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use super::{gdev, gdev::runtime_types::pallet_balances, *};
+use super::{gtest, gtest::runtime_types::pallet_balances, *};
 use crate::common::pair_signer::PairSigner;
 use sp_keyring::sr25519::Keyring;
 use subxt::utils::MultiAddress;
@@ -26,14 +26,14 @@ pub async fn set_balance(client: &FullClient, who: Keyring, amount: u64) -> Resu
             .client
             .tx()
             .create_signed(
-                &gdev::tx()
-                    .sudo()
-                    .sudo(gdev::runtime_types::gdev_runtime::RuntimeCall::Balances(
+                &gtest::tx().sudo().sudo(
+                    gtest::runtime_types::gtest_runtime::RuntimeCall::Balances(
                         pallet_balances::pallet::Call::force_set_balance {
                             who: MultiAddress::Id(who.to_raw_public().into()),
                             new_free: amount,
                         },
-                    )),
+                    ),
+                ),
                 &PairSigner::new(SUDO_ACCOUNT.pair()),
                 SubstrateExtrinsicParamsBuilder::new().build(),
             )
@@ -54,7 +54,7 @@ pub async fn transfer(client: &FullClient, from: Keyring, amount: u64, to: Keyri
             .client
             .tx()
             .create_signed(
-                &gdev::tx().universal_dividend().transfer_ud(to, amount),
+                &gtest::tx().balances().transfer_allow_death(to, amount),
                 &from,
                 SubstrateExtrinsicParamsBuilder::new().build(),
             )
@@ -75,7 +75,7 @@ pub async fn transfer_all(client: &FullClient, from: Keyring, to: Keyring) -> Re
             .client
             .tx()
             .create_signed(
-                &gdev::tx().balances().transfer_all(to, false),
+                &gtest::tx().balances().transfer_all(to, false),
                 &from,
                 SubstrateExtrinsicParamsBuilder::new().build(),
             )
@@ -100,7 +100,7 @@ pub async fn transfer_ud(
             .client
             .tx()
             .create_signed(
-                &gdev::tx()
+                &gtest::tx()
                     .universal_dividend()
                     .transfer_ud(MultiAddress::Id(to.to_raw_public().into()), amount),
                 &from,

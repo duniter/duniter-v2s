@@ -42,7 +42,7 @@ git checkout -b network/g1-1100
 rm -rf release/*
 ```
 
-Vérifier `spec_version: 1100` dans `runtime/g1/src/lib.rs` et vérifier que la **version client** dans `node/Cargo.toml` a bien été bumpée (checklist A6, ex : `version = "2.0.0"`). Cette version client est distincte du `spec_version` runtime : elle identifie le binaire du nœud et apparaît dans le tag Docker (`1100-<client_version>`) et le nom de la release GitLab.
+Vérifier `spec_version: 1100` dans `runtime/shared/runtime.rs` et vérifier que la **version client** dans `node/Cargo.toml` a bien été bumpée (checklist A6, ex : `version = "2.0.0"`). Cette version client est distincte du `spec_version` runtime : elle identifie le binaire du nœud et apparaît dans le tag Docker (`1100-<client_version>`) et le nom de la release GitLab.
 
 Toute modification du binaire publié doit entraîner un bump de cette version
 client. En particulier, les changements du raw chainspec embarqué (par exemple
@@ -63,7 +63,7 @@ Vérifier que les fichiers modifiés par la checklist (section « En amont du jo
 
 ```bash
 # Committer les changements et pousser la branche
-git add resources/g1.yaml node/specs/g1_client-specs.yaml runtime/g1/src/lib.rs node/Cargo.toml
+git add resources/g1.yaml node/specs/g1_client-specs.yaml runtime/shared/runtime.rs node/Cargo.toml
 git commit -m "chore(g1): configure network/g1-1100"
 git push -u origin network/g1-1100
 ```
@@ -465,7 +465,7 @@ curl -s -d '{"id":1,"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[
 
 ## Paramètres runtime Ğ1
 
-Source : `runtime/g1/src/parameters.rs` — paramètres **figés** (non modifiables sans upgrade runtime).
+Source : `runtime/shared/parameters.rs` — paramètres **figés** (non modifiables sans upgrade runtime).
 
 | Paramètre | Valeur |
 |-----------|--------|

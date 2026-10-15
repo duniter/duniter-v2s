@@ -33,7 +33,7 @@ use std::{env, fs};
 pub type ChainSpec = sc_service::GenericChainSpec;
 
 #[derive(Default, Clone, Deserialize)]
-// No parameters for G1 (unlike GDev)
+// Runtime parameters are fixed at compilation.
 struct GenesisParameters {}
 
 const TOKEN_DECIMALS: usize = 2;
@@ -67,8 +67,8 @@ fn get_parameters(_parameters_from_file: &Option<GenesisParameters>) -> CommonPa
         universal_dividend_max_past_reevals:
             <Runtime as pallet_universal_dividend::Config>::MaxPastReeval::get(),
         universal_dividend_square_money_growth_rate: parameters::SquareMoneyGrowthRate::get(),
-        universal_dividend_ud_creation_period: parameters::UdCreationPeriod::get() as u64,
-        universal_dividend_ud_reeval_period: parameters::UdReevalPeriod::get() as u64,
+        universal_dividend_ud_creation_period: parameters::UdCreationPeriod::get(),
+        universal_dividend_ud_reeval_period: parameters::UdReevalPeriod::get(),
         wot_first_issuable_on: parameters::WotFirstCertIssuableOn::get(),
         wot_min_cert_for_membership: parameters::WotMinCertForMembership::get(),
         wot_min_cert_for_create_idty_right: parameters::WotMinCertForCreateIdtyRight::get(),
@@ -151,6 +151,7 @@ pub struct ClientSpec {
     boot_nodes: Vec<MultiaddrWithPeerId>,
     telemetry_endpoints: Option<TelemetryEndpoints>,
     #[serde(default = "Default::default", skip_serializing_if = "Option::is_none")]
+    #[allow(dead_code)]
     protocol_id: Option<String>,
     properties: Option<serde_json::Map<std::string::String, JsonValue>>,
 }
@@ -244,7 +245,7 @@ fn genesis_data_to_g1_genesis_conf(
         common_parameters: _,
         session_keys_map,
         initial_smiths,
-        sudo_key,
+        sudo_key: _,
         technical_committee_members,
         ud,
     } = genesis_data;
@@ -269,7 +270,7 @@ fn genesis_data_to_g1_genesis_conf(
                 .map(|(account_id, session_keys)| (account_id.clone(), account_id, session_keys))
                 .collect::<Vec<_>>(),
         },
-        "sudo": { "key": sudo_key },
+
         "technicalCommittee": {
             "members": technical_committee_members,
         },

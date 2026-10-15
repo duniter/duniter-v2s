@@ -70,9 +70,6 @@ use std::{io::Write, path::PathBuf};
 /// thereby preventing potential penalties.
 const VERSION_PREFIX: &str = "001-";
 
-#[cfg(feature = "gdev")]
-#[subxt::subxt(runtime_metadata_path = "../resources/gdev_metadata.scale")]
-pub mod runtime {}
 #[cfg(feature = "gtest")]
 #[subxt::subxt(runtime_metadata_path = "../resources/gtest_metadata.scale")]
 pub mod runtime {}
@@ -120,7 +117,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            evaluation_result_dir: PathBuf::from("/tmp/duniter/chains/gdev/distance"),
+            evaluation_result_dir: PathBuf::from("/tmp/duniter/chains/gtest/distance"),
             rpc_url: String::from("ws://127.0.0.1:9944"),
         }
     }
@@ -420,3 +417,6 @@ fn distance_rule(
     );
     result
 }
+
+#[cfg(all(feature = "g1", feature = "gtest"))]
+compile_error!("The g1 and gtest oracle features are mutually exclusive.");

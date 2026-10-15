@@ -30,8 +30,8 @@ esac
 source "$(dirname "$0")/ensure_subxt.sh"
 
 needs_regen=0
-for chain in g1 gtest gdev; do
-  cargo build $BUILD_FLAG --no-default-features --features "$chain"
+for chain in g1 gtest; do
+  ./scripts/cargo_with_vendor.sh build $BUILD_FLAG -p duniter --no-default-features --features "$chain"
   "./target/${TARGET_PROFILE_DIR}/duniter" --dev --tmp &
   NODE_PID=$!
   sleep 20

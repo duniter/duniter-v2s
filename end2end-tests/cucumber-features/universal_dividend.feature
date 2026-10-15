@@ -1,4 +1,4 @@
-@genesis.wot
+@setup.wot
 
 Feature: Universal Dividend
 

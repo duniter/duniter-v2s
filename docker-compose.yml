@@ -4,8 +4,8 @@ services:
   duniter-mirror:
     container_name: duniter-mirror
     # the image tells which network you are connecting to
-    # here it is gdev network
-    image: duniter/duniter-gdev-800:latest
+    # here it is gtest network
+    image: duniter/duniter-gtest:latest
     ports:
       # prometheus telemetry to monitor resource use
       - 9615:9615
@@ -17,7 +17,7 @@ services:
       # read https://duniter.org/wiki/duniter-v2/configure-docker/
       # to configure these
       DUNITER_NODE_NAME: duniter_local
-      DUNITER_CHAIN_NAME: gdev
+      DUNITER_CHAIN_NAME: gtest
       DUNITER_PUBLIC_ADDR: /dns/your.domain.name/tcp/30333
       DUNITER_LISTEN_ADDR: /ip4/0.0.0.0/tcp/30333
     volumes:

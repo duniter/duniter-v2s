@@ -18,7 +18,7 @@
 
 #[macro_export]
 macro_rules! benchmarks_config {
-    () => {
+    ($($extra:tt)*) => {
         #[macro_use]
         extern crate frame_benchmarking;
         pub use pallet_collective::RawOrigin;
@@ -46,7 +46,7 @@ macro_rules! benchmarks_config {
                 [pallet_collective, TechnicalCommittee]
                 [pallet_session, SessionBench::<Runtime>]
                 [pallet_im_online, ImOnline]
-                [pallet_sudo, Sudo]
+                $($extra)*
                 [pallet_multisig, Multisig]
                 [pallet_preimage, Preimage]
                 [pallet_proxy, Proxy]

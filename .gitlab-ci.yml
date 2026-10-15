@@ -162,8 +162,8 @@ release_docker_manifest:
       # Extract runtime from NETWORK (e.g., gtest-1100 -> gtest)
       RUNTIME=$(echo $NETWORK | sed 's/-[0-9].*//')
 
-      # Get runtime version from runtime/$RUNTIME/src/lib.rs
-      RUNTIME_VERSION=$(grep 'spec_version:' runtime/$RUNTIME/src/lib.rs | sed 's/.*spec_version: \([0-9]*\).*/\1/')
+      # Get runtime version from runtime/shared/runtime.rs
+      RUNTIME_VERSION=$(grep 'spec_version:' runtime/shared/runtime.rs | sed 's/.*spec_version: \([0-9]*\).*/\1/')
 
       IMAGE_NAME="duniter/duniter-${NETWORK}"
       TAG="${RUNTIME_VERSION}-${CLIENT_VERSION}"
@@ -271,11 +271,9 @@ generate_metadata:
           echo "Invalid release tag '${CI_COMMIT_TAG}' (expected SPEC_NAME-SPEC_VERSION-BINARY_VERSION, e.g. g1-1200-2.0.0)"
           exit 1
         fi
-        METADATA_CHAINS="g1 gtest"
-      else
-        METADATA_CHAINS="gdev gtest"
       fi
-      METADATA_CHAINS="$METADATA_CHAINS" ./scripts/generate_all_metadata.sh
+      METADATA_CHAINS="g1 gtest" ./scripts/generate_all_metadata.sh
+    - python3 scripts/check_runtime_compatibility.py
   artifacts:
     when: always
     expire_in: 1 week
@@ -408,9 +406,10 @@ fmt_and_clippy:
     - ./scripts/cargo_with_vendor.sh fmt -- --version
     - ./scripts/cargo_with_vendor.sh fmt -- --check
     - ./scripts/cargo_with_vendor.sh clippy -- -V
-    - ./scripts/cargo_with_vendor.sh clippy --all --tests -- -D warnings
+    - ./scripts/cargo_with_vendor.sh clippy --all --tests --exclude g1-runtime -- -D warnings
     - ./scripts/cargo_with_vendor.sh xtask export-cli-schema --check
     - python3 docker/test-entrypoint.py
+    - python3 scripts/test_runtime_compatibility.py
 
 .benchmarks_rules:
   rules:
@@ -495,22 +494,33 @@ gtest_build:
   variables:
     DEBIAN_FRONTEND: noninteractive
 
-tests_gdev:
-  extends: .tests_template
-  script:
-    - export RUST_MIN_STACK=16777216 # 16MB stack size otherwise CI fail during LLVM's Thin LTO (Link Time Optimization) phase
-    - ./scripts/cargo_with_vendor.sh tu --features gdev --exclude g1-runtime --exclude gtest-runtime
-    - ./scripts/cargo_with_vendor.sh tf --features gdev --exclude g1-runtime --exclude gtest-runtime
-
 tests_gtest:
   extends: .tests_template
   script:
     - export RUST_MIN_STACK=16777216 # 16MB stack size otherwise CI fail during LLVM's Thin LTO (Link Time Optimization) phase
-    - ./scripts/cargo_with_vendor.sh tu --no-default-features --features gtest,std,standalone --exclude g1-runtime --exclude gdev-runtime
-    - ./scripts/cargo_with_vendor.sh tf --no-default-features --features gtest,std,standalone --exclude g1-runtime --exclude gdev-runtime
+    - ./scripts/cargo_with_vendor.sh tu --no-default-features --features gtest,std,standalone
+    - ./scripts/cargo_with_vendor.sh tf --no-default-features --features gtest,std,standalone
 
 tests_cucumber:
   extends: .tests_template
   script:
     - ./scripts/cargo_with_vendor.sh cucumber-build
     - ./scripts/cargo_with_vendor.sh cucumber
+
+# MR 416 deliberately removes G1 sudo and changes the metadata-hash symbol.
+# Compare against the actual MR base, rather than against the new Gtest runtime.
+g1_refactor_compatibility:
+  extends:
+    - .env
+    - .with_dependencies
+  stage: tests
+  rules:
+    - if: '$CI_MERGE_REQUEST_IID == "416"'
+    - when: never
+  script:
+    - ./scripts/check_g1_refactor.sh "$CI_MERGE_REQUEST_DIFF_BASE_SHA"
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - target/g1-refactor-comparison/

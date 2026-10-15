@@ -17,7 +17,6 @@ These pallets are at the core of Duniter/Ğ1 currency
 
 ## Functional pallets
 
-- **[`duniter-test-parameters`](https://doc-duniter-org.ipns.pagu.re/pallet_duniter_test_parameters/index.html)** Test parameters only used in ĞDev to allow tweaking parameters more easily.
 - **[`offences`](https://doc-duniter-org.ipns.pagu.re/pallet_offences/index.html)** Sorts offences that will be executed by the `authority-members` pallet.
 - **[`oneshot-account`](https://doc-duniter-org.ipns.pagu.re/pallet_oneshot_account/index.html)** Oneshot accounts are light accounts only used once for anonymity or convenience use case.
 - **[`provide-randomness`](https://doc-duniter-org.ipns.pagu.re/pallet_provide_randomness/index.html)** Lets blockchain users ask for a verifiable random number.

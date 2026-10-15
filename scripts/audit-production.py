@@ -48,7 +48,7 @@ def main():
         "--target", help="Rust target triple; defaults to the compiler's host target"
     )
     parser.add_argument(
-        "--chain", choices=("g1", "gtest", "gdev"), default="g1",
+        "--chain", choices=("g1", "gtest"), default="g1",
         help="release chain features; defaults to g1",
     )
     args = parser.parse_args()

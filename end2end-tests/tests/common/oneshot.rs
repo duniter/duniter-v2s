@@ -15,8 +15,8 @@
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
 use super::{
-    gdev,
-    gdev::runtime_types::{pallet_balances, pallet_oneshot_account},
+    gtest,
+    gtest::runtime_types::{pallet_balances, pallet_oneshot_account},
     *,
 };
 use crate::common::pair_signer::PairSigner;
@@ -58,7 +58,7 @@ pub async fn create_oneshot_account(
             .client
             .tx()
             .create_signed(
-                &gdev::tx()
+                &gtest::tx()
                     .oneshot_account()
                     .create_oneshot_account(to, amount),
                 &from,
@@ -85,7 +85,7 @@ pub async fn consume_oneshot_account(
             .client
             .tx()
             .create_signed(
-                &gdev::tx().oneshot_account().consume_oneshot_account(0, to),
+                &gtest::tx().oneshot_account().consume_oneshot_account(0, to),
                 &from,
                 SubstrateExtrinsicParamsBuilder::new().build(),
             )
@@ -114,7 +114,7 @@ pub async fn consume_oneshot_account_with_remaining(
             .client
             .tx()
             .create_signed(
-                &gdev::tx()
+                &gtest::tx()
                     .oneshot_account()
                     .consume_oneshot_account_with_remaining(0, to, remaining_to, amount),
                 &from,

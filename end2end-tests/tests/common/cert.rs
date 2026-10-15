@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use super::{gdev, gdev::runtime_types::pallet_certification, *};
+use super::{gtest, gtest::runtime_types::pallet_certification, *};
 use crate::common::pair_signer::PairSigner;
 use sp_keyring::sr25519::Keyring;
 use subxt::utils::MultiAddress;
@@ -30,7 +30,7 @@ pub async fn certify(client: &FullClient, from: Keyring, to: Keyring) -> Result<
         .at_latest()
         .await
         .unwrap()
-        .fetch(&gdev::storage().identity().identity_index_of(from.clone()))
+        .fetch(&gtest::storage().identity().identity_index_of(from.clone()))
         .await?
         .unwrap_or_else(|| panic!("{from} issuer must exist"));
     let receiver_index = client
@@ -39,7 +39,7 @@ pub async fn certify(client: &FullClient, from: Keyring, to: Keyring) -> Result<
         .at_latest()
         .await
         .unwrap()
-        .fetch(&gdev::storage().identity().identity_index_of(to))
+        .fetch(&gtest::storage().identity().identity_index_of(to))
         .await?
         .unwrap_or_else(|| panic!("{from} issuer must exist"));
 
@@ -49,7 +49,7 @@ pub async fn certify(client: &FullClient, from: Keyring, to: Keyring) -> Result<
             .client
             .tx()
             .create_signed(
-                &gdev::tx().certification().add_cert(receiver_index),
+                &gtest::tx().certification().add_cert(receiver_index),
                 &signer,
                 SubstrateExtrinsicParamsBuilder::new().build(),
             )

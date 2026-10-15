@@ -23,15 +23,15 @@ use std::{path::Path, process::Command};
 /// 2. Upload le fichier WASM runtime
 /// 3. Crée le lien d'asset pour la release
 /// # Arguments
-/// * `network` - Le réseau cible (gdev, gtest, g1)
+/// * `network` - Le réseau cible (gtest, g1)
 /// * `branch` - La branche Git à utiliser
 pub async fn create_runtime_release(network: String, branch: String) -> Result<()> {
     println!("🚀 Création de la release runtime pour: {network}");
 
     // Vérifier que le réseau est valide
-    if !["gdev", "gtest", "g1"].contains(&network.as_str()) {
+    if !["gtest", "g1"].contains(&network.as_str()) {
         return Err(anyhow!(
-            "Réseau invalide: {network}. Les réseaux supportés sont gdev, gtest, g1."
+            "Réseau invalide: {network}. Les réseaux supportés sont gtest, g1."
         ));
     }
 
@@ -93,10 +93,10 @@ pub async fn create_runtime_release(network: String, branch: String) -> Result<(
     Ok(())
 }
 
-fn get_runtime_version(network: &str) -> Result<String> {
-    let runtime_file = format!("runtime/{network}/src/lib.rs");
+fn get_runtime_version(_network: &str) -> Result<String> {
+    let runtime_file = "runtime/shared/runtime.rs";
     let output = Command::new("grep")
-        .args(["spec_version:", &runtime_file])
+        .args(["spec_version:", runtime_file])
         .output()?;
 
     if !output.status.success() {

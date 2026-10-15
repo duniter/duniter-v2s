@@ -5,10 +5,10 @@
 
 ## Validation
 
-- Use the commands in `.gitlab-ci.yml`: prepare the SDK with `sdk_resolve` before running `fmt_and_clippy` and `tests_gdev` locally. Plain `cargo test` is insufficient.
+- Use the commands in `.gitlab-ci.yml`: prepare the SDK with `sdk_resolve` before running `fmt_and_clippy` and `tests_gtest` locally. Plain `cargo test` is insufficient.
 - Run full validation for production-code changes only. Use focused checks for docs, tooling, and benchmarks.
-- For node, RPC, networking, or end-to-end changes, also run `tests_cucumber`. Run `gtest` checks only to reproduce CI failures.
-- For runtime or metadata changes, run `METADATA_CHAINS=gdev ./scripts/generate_all_metadata.sh`, with `subxt` installed.
+- For node, RPC, networking, or end-to-end changes, also run `tests_cucumber`.
+- For runtime or metadata changes, run `METADATA_CHAINS="g1 gtest" ./scripts/generate_all_metadata.sh`, with `subxt` installed, then run `python3 scripts/check_runtime_compatibility.py`.
 - Measure realistic production load for per-block, consensus, networking, sink, or indexing changes. Bound work by the block, batch, or reorganization route.
 
 ## Releases

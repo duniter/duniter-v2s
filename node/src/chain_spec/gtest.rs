@@ -28,7 +28,7 @@ use sc_telemetry::TelemetryEndpoints;
 use serde::Deserialize;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
-use sp_core::{Get, ed25519};
+use sp_core::Get;
 use std::{env, fs};
 
 pub type ChainSpec = sc_service::GenericChainSpec;
@@ -46,7 +46,7 @@ const NON_EXPIRING_LOCAL_AUTHORITY: u32 = u32::MAX;
 static EXISTENTIAL_DEPOSIT: u64 = parameters::ExistentialDeposit::get();
 
 #[derive(Default, Clone, Deserialize)]
-// No parameters for GTest (unlike GDev)
+// Runtime parameters are fixed at compilation.
 struct GenesisParameters {}
 
 struct GTestSKP;
@@ -109,6 +109,7 @@ pub fn local_testnet_config(
     .build())
 }
 
+/// Keep local genesis authorities stable. Expiry tests must add their smith after genesis.
 fn pin_local_authorities_non_expiring(
     mut genesis_data: super::gen_genesis_data::GenesisData<GenesisParameters, SessionKeys>,
     initial_authorities_len: usize,
@@ -140,8 +141,8 @@ fn get_parameters(_: &Option<GenesisParameters>) -> CommonParameters {
         universal_dividend_max_past_reevals:
             <Runtime as pallet_universal_dividend::Config>::MaxPastReeval::get(),
         universal_dividend_square_money_growth_rate: parameters::SquareMoneyGrowthRate::get(),
-        universal_dividend_ud_creation_period: parameters::UdCreationPeriod::get() as u64,
-        universal_dividend_ud_reeval_period: parameters::UdReevalPeriod::get() as u64,
+        universal_dividend_ud_creation_period: parameters::UdCreationPeriod::get(),
+        universal_dividend_ud_reeval_period: parameters::UdReevalPeriod::get(),
         wot_first_issuable_on: parameters::WotFirstCertIssuableOn::get(),
         wot_min_cert_for_membership: parameters::WotMinCertForMembership::get(),
         wot_min_cert_for_create_idty_right: parameters::WotMinCertForCreateIdtyRight::get(),
@@ -180,6 +181,7 @@ pub struct ClientSpec {
     boot_nodes: Vec<MultiaddrWithPeerId>,
     telemetry_endpoints: Option<TelemetryEndpoints>,
     #[serde(default = "Default::default", skip_serializing_if = "Option::is_none")]
+    #[allow(dead_code)]
     protocol_id: Option<String>,
     // #[serde(default = "Default::default", skip_serializing_if = "Option::is_none")]
     // fork_id: Option<String>,

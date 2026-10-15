@@ -53,7 +53,7 @@ struct JobResult {
 
 /// Triggers release builds on GitLab CI and uploads artifacts to release
 /// # Arguments
-/// * `network` - The network name (e.g., gtest-1000, g1-1000, gdev-1000)
+/// * `network` - The network name (e.g., gtest-1000, g1-1000)
 /// * `branch` - The Git branch to use
 /// * `release_tag` - Optional release tag. If not provided, will be computed from network and client version
 pub async fn trigger_release_builds(

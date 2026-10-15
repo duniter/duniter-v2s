@@ -81,65 +81,11 @@ impl SubstrateCli for Cli {
 
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         Ok(match id {
-            // Development chainspec with generated genesis and Alice as a validator
             // For benchmarking, the total length of identities should be at least MinReceivedCertToBeAbleToIssueCert + 1
-            #[cfg(feature = "gdev")]
-            "dev" => Box::new(chain_spec::gdev::local_testnet_config(1, 5, 6)?),
-            #[cfg(feature = "gdev")]
-            "gdev_local" => Box::new(chain_spec::gdev::local_testnet_config(1, 5, 6)?),
-
-            // Local testnet with G1 data, Gdev configuration (parameters & Smiths), and Alice as a validator.
-            // Optionally, load configuration from DUNITER_GENESIS_CONFIG file to override default Gdev configuration.
-            #[cfg(all(feature = "gdev", not(feature = "embed")))]
-            "gdev" => Box::new(chain_spec::gdev::gdev_development_chain_spec(
-                "resources/gdev.yaml".to_string(),
-            )?),
-
-            // Generate development chainspecs with Alice as a validator.
-            // Provide the DUNITER_GENESIS_CONFIG environment variable to build genesis from JSON; otherwise, a local testnet with generated genesis will be used.
-            #[cfg(all(feature = "gdev", not(feature = "embed")))]
-            "gdev_dev" => Box::new(chain_spec::gdev::gdev_development_chain_spec(
-                "resources/gdev.yaml".to_string(),
-            )?),
-
-            // Chainspecs for live network with G1 data, Gdev configuration (parameters & Smiths).
-            // A Smith with declared session keys is required.
-            // Optionally load configuration from DUNITER_GENESIS_CONFIG file to override default Gdev configuration.
-            #[cfg(feature = "gdev")]
-            "gdev_live" => {
-                if cfg!(feature = "constant-fees") {
-                    return Err(
-                        "cannot build gdev live chainspec with the `constant-fees` feature enabled"
-                            .to_string(),
-                    );
-                }
-
-                const CLIENT_SPEC: &str = "./node/specs/gdev_client-specs.yaml";
-                let client_spec: chain_spec::gdev::ClientSpec = serde_yaml::from_slice(
-                    &std::fs::read(
-                        std::env::var("DUNITER_CLIENT_SPEC")
-                            .unwrap_or_else(|_| CLIENT_SPEC.to_string()),
-                    )
-                    .map_err(|e| format!("failed to read {CLIENT_SPEC} {e}"))?[..],
-                )
-                .map_err(|e| format!("failed to parse {e}"))?;
-                Box::new(chain_spec::gdev::gen_live_conf(
-                    client_spec,
-                    "resources/gdev.yaml".to_string(),
-                )?)
+            #[cfg(feature = "gtest")]
+            "dev" | "gtest_local" | "gt_local" => {
+                Box::new(chain_spec::gtest::local_testnet_config(1, 5, 6)?)
             }
-
-            // Hardcoded raw chainspecs with previously generated values, resulting in a needlessly heavy binary due to hexadecimal-text-encoded values.
-            #[cfg(all(feature = "gdev", feature = "embed"))]
-            "gdev" => Box::new(chain_spec::gdev::ChainSpec::from_json_bytes(
-                &include_bytes!("../specs/gdev-raw.json")[..],
-            )?),
-
-            // For benchmarking, the total length of identities should be at least MinReceivedCertToBeAbleToIssueCert + 1
-            #[cfg(feature = "gtest")]
-            "dev" => Box::new(chain_spec::gtest::local_testnet_config(1, 5, 6)?),
-            #[cfg(feature = "gtest")]
-            "gtest_local" => Box::new(chain_spec::gtest::local_testnet_config(1, 5, 6)?),
             #[cfg(feature = "gtest")]
             "gtest_local2" => Box::new(chain_spec::gtest::local_testnet_config(2, 5, 6)?),
 
@@ -159,15 +105,13 @@ impl SubstrateCli for Cli {
                 if cfg!(feature = "fast") {
                     return Err(
                         "cannot build gtest live chainspec with the `fast` feature enabled"
-                            .to_string()
-                            .into(),
+                            .to_string(),
                     );
                 }
                 if cfg!(feature = "constant-fees") {
                     return Err(
                         "cannot build gtest live chainspec with the `constant-fees` feature enabled"
-                            .to_string()
-                            .into(),
+                            .to_string(),
                     );
                 }
 
@@ -217,15 +161,13 @@ impl SubstrateCli for Cli {
                 if cfg!(feature = "fast") {
                     return Err(
                         "cannot build g1 live chainspec with the `fast` feature enabled"
-                            .to_string()
-                            .into(),
+                            .to_string(),
                     );
                 }
                 if cfg!(feature = "constant-fees") {
                     return Err(
                         "cannot build g1 live chainspec with the `constant-fees` feature enabled"
-                            .to_string()
-                            .into(),
+                            .to_string(),
                     );
                 }
 
@@ -261,9 +203,7 @@ impl SubstrateCli for Cli {
 
                 let runtime_type = if starts_with("g1") {
                     RuntimeType::G1
-                } else if starts_with("dev") || starts_with("gdev") {
-                    RuntimeType::GDev
-                } else if starts_with("gt") {
+                } else if starts_with("gt") || starts_with("dev") {
                     RuntimeType::GTest
                 } else {
                     panic!("unknown runtime")
@@ -272,10 +212,6 @@ impl SubstrateCli for Cli {
                 match runtime_type {
                     #[cfg(feature = "g1")]
                     RuntimeType::G1 => Box::new(chain_spec::g1::ChainSpec::from_json_file(path)?),
-                    #[cfg(feature = "gdev")]
-                    RuntimeType::GDev => {
-                        Box::new(chain_spec::gdev::ChainSpec::from_json_file(path)?)
-                    }
                     #[cfg(feature = "gtest")]
                     RuntimeType::GTest => {
                         Box::new(chain_spec::gtest::ChainSpec::from_json_file(path)?)
@@ -503,5 +439,24 @@ fn force_cli_options(cli: &mut Cli) {
                 Some(sc_cli::Database::ParityDb);
         }
         _ => {}
+    }
+}
+
+#[cfg(all(test, feature = "gtest"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn gt_local_alias_has_the_same_spec_as_gtest_local() {
+        let cli = <Cli as clap::Parser>::parse_from(["duniter"]);
+        let canonical = cli.load_spec("gtest_local").expect("gtest_local spec");
+        let alias = cli.load_spec("gt_local").expect("gt_local alias");
+        assert_eq!(alias.id(), "gtest_local");
+        let canonical: serde_json::Value =
+            serde_json::from_str(&canonical.as_json(false).expect("serialize gtest_local"))
+                .unwrap();
+        let alias: serde_json::Value =
+            serde_json::from_str(&alias.as_json(false).expect("serialize gt_local")).unwrap();
+        assert_eq!(alias, canonical);
     }
 }

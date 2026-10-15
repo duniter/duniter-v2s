@@ -1,10 +1,9 @@
-# Ğtest runtime
+# Gtest runtime
 
-ĞTest runtime is the one used in ĞTest network, which is a test network for Ǧ1.
-It has a sudo account to be able to test runtime upgrades more easily before deploying them to Ğ1 network.
+This entry point instantiates `../shared/runtime.rs` with `spec_name = "gtest"`
+and sudo at pallet index 20. All business parameters and weights match G1.
 
-## ĞTest chainspecs
+All runtime and end-to-end tests run on gtest. Local test builds enable `fast`
+and `constant-fees`. Public network builds keep both features disabled.
 
-ĞTest chainspecs are intended to use with real data.
-There is no particular case for genesis identities. In `gtest.json`:
-- no `genesis_parameters`
+See [the runtime guide](../README.md) for artifact compatibility checks.

@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
     cat <<'EOF'
-Usage: scripts/run-local-chain.sh [--runtime gdev|gtest|g1] [--technical-committee-members N] [-- <duniter args...>]
+Usage: scripts/run-local-chain.sh [--runtime gtest|g1] [--technical-committee-members N] [-- <duniter args...>]
 
 This helper always runs with local-chain defaults:
   --validator --unsafe-force-node-key-generation --sealing manual --tmp
@@ -16,7 +16,7 @@ Examples:
 EOF
 }
 
-RUNTIME="gdev"
+RUNTIME="gtest"
 TECHNICAL_COMMITTEE_MEMBERS=""
 NODE_ARGS=()
 FEATURES=""
@@ -58,20 +58,17 @@ while (($# > 0)); do
 done
 
 case "$RUNTIME" in
-    gdev|gtest|g1) ;;
+    gtest|g1) ;;
     *)
-        echo "Invalid runtime '$RUNTIME'. Must be one of: gdev, gtest, g1." >&2
+        echo "Invalid runtime '$RUNTIME'. Must be one of: gtest, g1." >&2
         exit 1
         ;;
 esac
 
+FEATURES="${RUNTIME},fast"
 case "$RUNTIME" in
-    g1|gtest)
-        FEATURES="${RUNTIME},fast"
-        ;;
-    gdev)
-        FEATURES="$RUNTIME"
-        ;;
+    g1) LOCAL_CHAIN="g1_local" ;;
+    gtest) LOCAL_CHAIN="gt_local" ;;
 esac
 
 if [ -n "$TECHNICAL_COMMITTEE_MEMBERS" ]; then
@@ -96,7 +93,7 @@ for arg in "${NODE_ARGS[@]}"; do
 done
 
 exec cargo run -p duniter --no-default-features --features "$FEATURES" -- \
-    --chain "${RUNTIME}_local" \
+    --chain "$LOCAL_CHAIN" \
     --validator \
     --unsafe-force-node-key-generation \
     --sealing manual \

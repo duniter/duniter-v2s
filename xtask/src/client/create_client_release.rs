@@ -23,7 +23,7 @@ use std::path::Path;
 /// 2. Upload les fichiers client-specs.yaml et raw.json
 /// 3. Optionnellement upload les packages .deb et .rpm locaux
 /// # Arguments
-/// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000, gdev-1000)
+/// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000)
 /// * `branch` - La branche Git à utiliser
 /// * `upload_packages` - Si true, upload aussi les packages .deb/.rpm trouvés localement
 pub async fn create_client_release(
@@ -35,13 +35,11 @@ pub async fn create_client_release(
 
     let runtime = if network.starts_with("g1") {
         "g1"
-    } else if network.starts_with("gdev") {
-        "gdev"
     } else if network.starts_with("gtest") {
         "gtest"
     } else {
         return Err(anyhow!(
-            "Réseau inconnu: {network}. Les réseaux supportés sont g1-*, gdev-* et gtest-*."
+            "Réseau inconnu: {network}. Les réseaux supportés sont g1-* et gtest-*."
         ));
     };
 
@@ -158,7 +156,7 @@ pub async fn create_client_release(
 /// Extract runtime version from network name (e.g., "gtest-1100" -> "1100")
 fn extract_runtime_version_from_network(network: &str) -> Result<String> {
     // The network name format is expected to be: {runtime}-{version}
-    // e.g., gtest-1100, g1-1000, gdev-1000
+    // e.g., gtest-1100, g1-1000
     let parts: Vec<&str> = network.split('-').collect();
 
     if parts.len() < 2 {

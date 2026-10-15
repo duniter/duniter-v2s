@@ -380,7 +380,7 @@ macro_rules! pallets_config {
             pub const SpendPeriod: BlockNumber =
                 common_runtime::param_duration!(DAYS, 15 * MINUTES);
             // Treasury account address:
-            // gdev/gtest: 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
+            // gtest: 5EYCAe5ijiYfyeZ2JJCGq56LmPyNRAKzpG4QkoQkkQNB5e6Z
             pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
         }
         impl pallet_treasury::Config for Runtime {
@@ -455,12 +455,6 @@ macro_rules! pallets_config {
             type Signer = <Signature as sp_runtime::traits::Verify>::Signer;
             type ValidationPeriod = ValidationPeriod;
             type WeightInfo = weights::pallet_identity::WeightInfo<Runtime>;
-        }
-
-        impl pallet_sudo::Config for Runtime {
-            type RuntimeCall = RuntimeCall;
-            type RuntimeEvent = RuntimeEvent;
-            type WeightInfo = weights::pallet_sudo::WeightInfo<Runtime>;
         }
 
         impl pallet_membership::Config for Runtime {

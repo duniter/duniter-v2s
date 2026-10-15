@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# launch-network.sh — Automated launch of a Duniter v2s network (g1, gtest, gdev)
+# launch-network.sh — Automated launch of a Duniter v2s network (g1, gtest)
 #
 # Usage: ./scripts/launch-network.sh [OPTIONS]
 #
 # Options:
-#   --runtime NAME     Runtime: g1|gtest|gdev (default: g1)
+#   --runtime NAME     Runtime: g1|gtest (default: g1)
 #   --resume-from N    Resume from step N (1-11)
 #   --skip-build       Skip long builds (assumes release/ is populated)
 #   --dump-url URL     Custom G1 v1 dump URL
@@ -137,7 +137,7 @@ require_env() {
 # ============================================================================
 
 detect_spec_version() {
-  local runtime_lib="runtime/${RUNTIME}/src/lib.rs"
+  local runtime_lib="runtime/shared/runtime.rs"
   [ -f "$runtime_lib" ] || die "Runtime lib not found: $runtime_lib"
 
   SPEC_VERSION=$(grep 'spec_version:' "$runtime_lib" | head -1 | grep -o '[0-9]\+')
@@ -269,7 +269,7 @@ validate_prerequisites() {
       -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
       "https://git.duniter.org/api/v4/projects/${GITLAB_PROJECT_ID}/releases/${tag}")
     if [ "$release_code" = "200" ]; then
-      die "GitLab release '${tag}' already exists. Bump spec_version in runtime/${RUNTIME}/src/lib.rs before launching a new network."
+      die "GitLab release '${tag}' already exists. Bump spec_version in runtime/shared/runtime.rs before launching a new network."
     fi
   done
   ok "No existing release found for spec_version ${SPEC_VERSION}."
@@ -584,7 +584,7 @@ step1_create_network_branch() {
 
   # Verify spec_version in source
   local current_sv
-  current_sv=$(grep 'spec_version:' "runtime/${RUNTIME}/src/lib.rs" | head -1 | grep -o '[0-9]\+')
+  current_sv=$(grep 'spec_version:' "runtime/shared/runtime.rs" | head -1 | grep -o '[0-9]\+')
   [ "$current_sv" = "$SPEC_VERSION" ] || die "spec_version mismatch: expected $SPEC_VERSION, found $current_sv"
   ok "spec_version $SPEC_VERSION confirmed in source."
 
@@ -603,7 +603,7 @@ step1_create_network_branch() {
   local files_to_commit=(
     "resources/${RUNTIME}.yaml"
     "node/specs/${RUNTIME}_client-specs.yaml"
-    "runtime/${RUNTIME}/src/lib.rs"
+    "runtime/shared/runtime.rs"
     "node/Cargo.toml"
     "Cargo.lock"
     ".gitignore"
@@ -1396,7 +1396,7 @@ Usage: ./scripts/launch-network.sh [OPTIONS]
 Automated launch of a Duniter v2s network.
 
 Options:
-  --runtime NAME     Runtime: g1|gtest|gdev (default: g1)
+  --runtime NAME     Runtime: g1|gtest (default: g1)
   --resume-from N    Resume from step N (1-11)
   --skip-build       Skip long builds (assumes release/ is populated)
   --dump-url URL     Custom G1 v1 dump URL
@@ -1454,8 +1454,8 @@ main() {
 
   # Validate runtime
   case "$RUNTIME" in
-    g1|gtest|gdev) ;;
-    *) die "Invalid runtime: $RUNTIME. Must be g1, gtest, or gdev." ;;
+    g1|gtest) ;;
+    *) die "Invalid runtime: $RUNTIME. Must be g1 or gtest." ;;
   esac
 
   # Validate resume-from
@@ -1501,7 +1501,7 @@ main() {
   echo ""
   echo -e "${BOLD}Configuration summary:${NC}"
   echo "  Runtime:          $RUNTIME"
-  echo "  spec_version:     $SPEC_VERSION  (runtime/${RUNTIME}/src/lib.rs)"
+  echo "  spec_version:     $SPEC_VERSION  (runtime/shared/runtime.rs)"
   echo "  client_version:   $CLIENT_VERSION  (node/Cargo.toml)"
   echo "  Network tag:      $NETWORK_TAG"
   echo "  Network branch:   $NETWORK_BRANCH"

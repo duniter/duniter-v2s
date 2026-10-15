@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Duniter-v2S. If not, see <https://www.gnu.org/licenses/>.
 
-use super::{gdev, gdev::runtime_types::pallet_identity, *};
+use super::{gtest, gtest::runtime_types::pallet_identity, *};
 use crate::{DuniterWorld, common::pair_signer::PairSigner};
 use sp_keyring::sr25519::Keyring;
 use subxt::{backend::rpc::RpcClient, tx::Signer, utils::AccountId32};
@@ -28,7 +28,7 @@ pub async fn request_evaluation(client: &FullClient, origin: Keyring) -> Result<
             .client
             .tx()
             .create_signed(
-                &gdev::tx().distance().request_distance_evaluation(),
+                &gtest::tx().distance().request_distance_evaluation(),
                 &origin,
                 SubstrateExtrinsicParamsBuilder::new().build(),
             )
@@ -39,11 +39,11 @@ pub async fn request_evaluation(client: &FullClient, origin: Keyring) -> Result<
     Ok(())
 }
 
-pub async fn run_oracle(client: &FullClient, origin: Keyring, rpc_url: String) -> Result<()> {
+pub async fn run_oracle(client: &FullClient, origin: Keyring, rpc_url: String) -> Result<Vec<u32>> {
     let origin = PairSigner::new(origin.pair());
     let account_id: &AccountId32 = origin.account_id();
 
-    if let Some((distances, _current_session, _evaluation_result_path)) =
+    if let Some((distances, current_period, _evaluation_result_path)) =
         distance_oracle::compute_distance_evaluation(
             &distance_oracle::api::client(rpc_url.clone()).await,
             &distance_oracle::Settings {
@@ -53,41 +53,59 @@ pub async fn run_oracle(client: &FullClient, origin: Keyring, rpc_url: String) -
         )
         .await
     {
-        // Distance evaluation period is 7 blocks
-        for _ in 0..7 {
+        let results = distances
+            .iter()
+            .map(|distance| distance.deconstruct())
+            .collect();
+        let period: u32 = client
+            .client
+            .constants()
+            .at(&gtest::constants().distance().evaluation_period())?;
+        let mut advanced = false;
+        for _ in 0..=period {
             super::create_empty_block(&client.rpc).await?;
+            let index = client
+                .client
+                .storage()
+                .at_latest()
+                .await?
+                .fetch_or_default(&gtest::storage().distance().current_period_index())
+                .await?;
+            if index != current_period {
+                advanced = true;
+                break;
+            }
         }
-        let _events = create_block_with_extrinsic(
-            &client.rpc,
-            client.client
-                .tx()
-                .create_signed(
-                    &gdev::tx().sudo().sudo(gdev::runtime_types::gdev_runtime::RuntimeCall::Distance(
-                            gdev::runtime_types::pallet_distance::pallet::Call::force_update_evaluation {
-                                evaluator: account_id.clone(),
-                                computation_result:
-                                    gdev::runtime_types::sp_distance::ComputationResult {
-                                        distances: distances.into_iter().map(|res| unsafe{std::mem::transmute(res)}).collect(),
-                                    },
-                            },
-                        )
-                    ),
-                    &origin,
+        anyhow::ensure!(advanced, "distance computation period did not advance");
+        let call = gtest::runtime_types::gtest_runtime::RuntimeCall::Distance(
+            gtest::runtime_types::pallet_distance::pallet::Call::force_update_evaluation {
+                evaluator: account_id.clone(),
+                computation_result: gtest::runtime_types::sp_distance::ComputationResult {
+                    distances: distances
+                        .into_iter()
+                        .map(|res| {
+                            gtest::runtime_types::sp_arithmetic::per_things::Perbill(
+                                res.deconstruct(),
+                            )
+                        })
+                        .collect(),
+                },
+            },
+        );
+        let extrinsic = client
+            .client
+            .tx()
+            .create_signed(
+                &gtest::tx().sudo().sudo(call),
+                &PairSigner::new(SUDO_ACCOUNT.pair()),
                 SubstrateExtrinsicParamsBuilder::new().build(),
-                )
-                .await?,
-        )
-        .await?;
-        /*for event in events.iter() {
-            let event = event.unwrap();
-            println!(
-                "Event: {}::{} -> {:?}\n\n",
-                event.pallet_name(),
-                event.variant_name(),
-                event.field_values()
-            );
-        }*/
+            )
+            .await?;
+        create_block_with_extrinsic(&client.rpc, extrinsic).await?;
+        Ok(results)
+    } else {
+        Err(anyhow::anyhow!(
+            "oracle has no computation pool to evaluate"
+        ))
     }
-
-    Ok(())
 }

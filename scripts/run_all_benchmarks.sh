@@ -11,7 +11,6 @@ storage_chain_for() {
   case "$1" in
     g1) echo "${STORAGE_CHAIN_G1:-g1_dev}" ;;
     gtest) echo "${STORAGE_CHAIN_GTEST:-gtest_dev}" ;;
-    gdev) echo "${STORAGE_CHAIN_GDEV:-gdev}" ;;
     *)
       echo "unsupported chain '$1'" >&2
       exit 1
@@ -23,7 +22,6 @@ storage_base_path_for() {
   case "$1" in
     g1) echo "${STORAGE_BASE_PATH_G1:-}" ;;
     gtest) echo "${STORAGE_BASE_PATH_GTEST:-}" ;;
-    gdev) echo "${STORAGE_BASE_PATH_GDEV:-}" ;;
     *)
       echo "unsupported chain '$1'" >&2
       exit 1
@@ -34,7 +32,7 @@ storage_base_path_for() {
 STORAGE_STATE_VERSION="${STORAGE_STATE_VERSION:-1}"
 STORAGE_MUL="${STORAGE_MUL:-2}"
 
-for chain in g1 gtest gdev; do
+for chain in gtest; do
   runtime_package="${chain}-runtime"
   runtime_wasm="target/release/wbuild/${runtime_package}/${chain}_runtime.compact.compressed.wasm"
   chain_spec="target/${chain}-dev-spec.json"
@@ -57,7 +55,7 @@ for chain in g1 gtest gdev; do
     --runtime "$runtime_wasm" \
     --genesis-builder=runtime \
     --genesis-builder-preset=local_testnet \
-    --weight-path="./runtime/$chain/src/weights/" \
+    --weight-path="./runtime/shared/weights/" \
     --warmup=10 \
     --repeat=100
 
@@ -70,13 +68,13 @@ for chain in g1 gtest gdev; do
     --pallet="*" \
     --extrinsic="*" \
     --header=./file_header.txt \
-    --output="./runtime/$chain/src/weights/"
+    --output="./runtime/shared/weights/"
 
   target/release/duniter benchmark storage \
     --base-path "$storage_base_path" \
     --chain "$storage_chain" \
     --mul "$STORAGE_MUL" \
-    --weight-path "./runtime/$chain/src/weights/" \
+    --weight-path "./runtime/shared/weights/" \
     --header ./file_header.txt \
     --state-version "$STORAGE_STATE_VERSION"
 done

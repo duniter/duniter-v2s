@@ -15,7 +15,7 @@ set -e
 
 # params
 VALIDATOR_SESSION_KEYS_SURI=$1
-CURRENCY="${2:-gdev}"
+CURRENCY="${2:-gtest}"
 WORK_DIR="${3:-tmp/$CURRENCY}"
 SPEC_DIR="${4:-resources}"
 

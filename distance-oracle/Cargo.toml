@@ -11,8 +11,7 @@ name = "distance-oracle"
 required-features = ["standalone"]
 
 [features]
-default = ["gdev", "standalone", "std"]
-gdev = []
+default = ["gtest", "standalone", "std"]
 gtest = []
 g1 = []
 # Feature standalone is for CLI executable

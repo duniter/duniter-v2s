@@ -53,7 +53,7 @@ RUN set -x && \
     fi
 
 # Build
-ARG chain="gdev"
+ARG chain="gtest"
 RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
@@ -66,8 +66,10 @@ RUN set -x && \
 # Run tests if requested, except when cross-building
 ARG cucumber=0
 RUN if [ "$cucumber" != 0 ] && [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then \
+        ./scripts/cargo_with_vendor.sh cucumber-build && \
+        cp target/debug/duniter build/duniter-gtest-fast && \
         ./scripts/cargo_with_vendor.sh ta && \
-        ./scripts/cargo_with_vendor.sh test --workspace --exclude duniter-end2end-tests --exclude duniter-live-tests --features=runtime-benchmarks,constant-fees && \
+        ./scripts/cargo_with_vendor.sh test --workspace --exclude g1-runtime --exclude duniter-end2end-tests --exclude duniter-live-tests --features=runtime-benchmarks,constant-fees,fast && \
         cd target/debug/deps/ && \
         rm cucumber_tests-*.d && \
         mv cucumber_tests* ../../../build/duniter-cucumber; \

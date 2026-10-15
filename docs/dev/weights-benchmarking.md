@@ -33,14 +33,14 @@ cargo build --release -p <runtime>-runtime --features runtime-benchmarks
 4. Run the benchmarks on your local machine (to test if it work with a real runtime). See 0d1232cd0d8b5809e1586b48376f8952cebc0d27 for a complete real example. The command is:
 
 ```
-frame-omni-bencher v1 benchmark pallet --runtime=target/release/wbuild/<runtime>-runtime/<runtime>_runtime.compact.compressed.wasm --genesis-builder=runtime --steps=50 --repeat=20 --pallet=<pallet> --extrinsic=* --header=./file_header.txt --output=./runtime/<runtime>/src/weights/
+frame-omni-bencher v1 benchmark pallet --runtime=target/release/wbuild/<runtime>-runtime/<runtime>_runtime.compact.compressed.wasm --genesis-builder=runtime --steps=50 --repeat=20 --pallet=<pallet> --extrinsic=* --header=./file_header.txt --output=./runtime/shared/weights/
 ```
 
 5. Use the generated file content to create the `WeightInfo` trait and the `()` dummy implementation in `pallets/<pallet>/src/weights.rs`. Then use the `WeightInfo` trait in the real code of the pallet. See 62dcc17f2c0b922e883fbc6337a9e7da97fc3218 for a complete real example.
 
 6. Redo steps `3.` and `4.` on the reference machine.
 
-7. Use the `runtime/common/src/weights/pallet_<pallet>.rs` generated on the reference machine in the runtimes configuration. See  af62a3b9cfc42d6653b3a957836f58540c18e65a for a complete real example.
+7. Use the `runtime/shared/weights/pallet_<pallet>.rs` generated on the reference machine in the runtimes configuration. See  af62a3b9cfc42d6653b3a957836f58540c18e65a for a complete real example.
 
 Note: `frame-omni-bencher` supports `pallet` and `overhead` benchmarks. Storage benchmarking is not available in omni-bencher.
 
@@ -50,7 +50,7 @@ Note: `frame-omni-bencher` supports `pallet` and `overhead` benchmarks. Storage 
 2. Run base block benchmarks command:
 
 ```
-frame-omni-bencher v1 benchmark overhead --runtime=target/release/wbuild/<runtime>-runtime/<runtime>_runtime.compact.compressed.wasm --genesis-builder=runtime --weight-path=./runtime/<runtime>/src/weights/ --warmup=10 --repeat=100
+frame-omni-bencher v1 benchmark overhead --runtime=target/release/wbuild/<runtime>-runtime/<runtime>_runtime.compact.compressed.wasm --genesis-builder=runtime --weight-path=./runtime/shared/weights/ --warmup=10 --repeat=100
 ```
 
 3. Commit changes and open an MR.
@@ -62,10 +62,10 @@ frame-omni-bencher v1 benchmark overhead --runtime=target/release/wbuild/<runtim
 3. Run storage benchmarks command, example:
 
 ```
-duniter benchmark storage -d=/mnt/ssd1/duniter-v2s/t1 --chain=gdev --mul=2 --weight-path=. --state-version=1
+duniter benchmark storage -d=/mnt/ssd1/duniter-v2s/t1 --chain=gtest --mul=2 --weight-path=. --state-version=1
 ```
 
-4. Copy the generated file `paritydb_weights.rs` in the codebase in folder `runtime/common/src/weights/`.
+4. Copy the generated file `paritydb_weights.rs` in the codebase in folder `runtime/shared/weights/`.
 5. Commit changes and open an MR.
 
 

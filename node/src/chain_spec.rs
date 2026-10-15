@@ -19,8 +19,6 @@ pub mod gen_genesis_data;
 
 #[cfg(feature = "g1")]
 pub mod g1;
-#[cfg(feature = "gdev")]
-pub mod gdev;
 #[cfg(feature = "gtest")]
 pub mod gtest;
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Building g1 runtime wasm with runtime-benchmarks..."
-./scripts/cargo_with_vendor.sh build --release -p g1-runtime --features runtime-benchmarks
+echo "Building gtest runtime wasm with runtime-benchmarks..."
+./scripts/cargo_with_vendor.sh build --release -p gtest-runtime --features runtime-benchmarks
 
 echo "Building duniter benchmark binary..."
-SKIP_WASM_BUILD=1 ./scripts/cargo_with_vendor.sh build -p duniter --no-default-features --features g1,runtime-benchmarks
+SKIP_WASM_BUILD=1 ./scripts/cargo_with_vendor.sh build -p duniter --no-default-features --features gtest,runtime-benchmarks
 
 if [[ -f "local-sdk.env" ]]; then
   # shellcheck disable=SC1091
@@ -41,8 +41,8 @@ echo "Expanding frame-omni-bencher binary..."
 gzip -d -c target/frame-omni-bencher.gz > target/frame-omni-bencher
 chmod +x target/frame-omni-bencher
 
-CHAIN_SPEC="target/g1-dev-spec.json"
-RUNTIME_WASM="target/release/wbuild/g1-runtime/g1_runtime.compact.compressed.wasm"
+CHAIN_SPEC="target/gtest-dev-spec.json"
+RUNTIME_WASM="target/release/wbuild/gtest-runtime/gtest_runtime.compact.compressed.wasm"
 
 if [[ ! -f "${RUNTIME_WASM}" ]]; then
   echo "Expected runtime wasm not found: ${RUNTIME_WASM}" >&2
@@ -68,7 +68,7 @@ target/frame-omni-bencher \
   --genesis-builder-preset=local_testnet \
   --warmup=1 \
   --repeat=1 \
-  --weight-path=./runtime/g1/src/weights/
+  --weight-path=./runtime/shared/weights/
 
 echo "Running pallet benchmark smoke test..."
 target/frame-omni-bencher \
@@ -79,7 +79,8 @@ target/frame-omni-bencher \
   --repeat=1 \
   --pallet="*" \
   --extrinsic="*" \
-  --output=./runtime/g1/src/weights/
+  --output=./runtime/shared/weights/
 
-echo "Rebuilding g1 runtime to validate generated weights..."
+echo "Rebuilding both runtimes separately to validate generated weights..."
+./scripts/cargo_with_vendor.sh build -p gtest-runtime
 ./scripts/cargo_with_vendor.sh build -p g1-runtime

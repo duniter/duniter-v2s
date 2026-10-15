@@ -66,16 +66,16 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in library 'gdev-runtime'",
+      "name": "Debug unit tests in library 'gtest-runtime'",
       "cargo": {
         "args": [
           "test",
           "--no-run",
           "--lib",
-          "--package=gdev-runtime"
+          "--package=gtest-runtime"
         ],
         "filter": {
-          "name": "gdev-runtime",
+          "name": "gtest-runtime",
           "kind": "lib"
         }
       },

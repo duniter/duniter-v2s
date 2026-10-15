@@ -83,8 +83,6 @@ pub mod runtime_executor {
     use crate::service::{BenchmarkHostFunctions, HostFunctions};
     #[cfg(feature = "g1")]
     pub use g1_runtime as runtime;
-    #[cfg(feature = "gdev")]
-    pub use gdev_runtime as runtime;
     #[cfg(feature = "gtest")]
     pub use gtest_runtime as runtime;
 
@@ -125,18 +123,13 @@ const DEFAULT_WARP_CHECKPOINT_JSON: &str = include_str!("../specs/g1-checkpoint.
 #[cfg(feature = "g1")]
 const DEFAULT_WARP_CHECKPOINT_NAME: &str = "g1";
 
-#[cfg(all(feature = "gdev", not(feature = "g1")))]
-const DEFAULT_WARP_CHECKPOINT_JSON: &str = include_str!("../specs/gdev-checkpoint.json");
-#[cfg(all(feature = "gdev", not(feature = "g1")))]
-const DEFAULT_WARP_CHECKPOINT_NAME: &str = "gdev";
-
-#[cfg(all(feature = "gtest", not(feature = "g1"), not(feature = "gdev")))]
+#[cfg(all(feature = "gtest", not(feature = "g1")))]
 const DEFAULT_WARP_CHECKPOINT_JSON: &str = include_str!("../specs/gtest-checkpoint.json");
-#[cfg(all(feature = "gtest", not(feature = "g1"), not(feature = "gdev")))]
+#[cfg(all(feature = "gtest", not(feature = "g1")))]
 const DEFAULT_WARP_CHECKPOINT_NAME: &str = "gtest";
 
-#[cfg(not(any(feature = "g1", feature = "gdev", feature = "gtest")))]
-compile_error!("One of the features g1, gdev, or gtest must be enabled.");
+#[cfg(not(any(feature = "g1", feature = "gtest")))]
+compile_error!("One of the features g1 or gtest must be enabled.");
 
 #[cfg(feature = "gtest")]
 fn gtest_grandpa_hard_forks() -> Vec<sc_consensus_grandpa::AuthoritySetHardFork<Block>> {
@@ -276,7 +269,6 @@ fn build_warp_sync_config(
 #[derive(Debug)]
 pub enum RuntimeType {
     G1,
-    GDev,
     GTest,
 }
 
@@ -1217,3 +1209,6 @@ mod tests {
         fs::remove_file(path).expect("remove token file");
     }
 }
+
+#[cfg(all(feature = "g1", feature = "gtest"))]
+compile_error!("The g1 and gtest node features are mutually exclusive.");
