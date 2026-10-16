@@ -341,7 +341,9 @@ image, and `latest-fast` selects the fast image. The Git release tag and native
 packages keep their existing formats.
 
 The fast feature shortens runtime timings for local development networks.
-It does not change the genesis raw spec fetched for the released network.
+Fast images omit the production-only `embed` feature and require a development
+chain or an explicit chain spec. Normal images still embed the released network
+genesis raw spec. The genesis raw spec download remains unchanged.
 
 ## 3. Runtime release on an existing network
 
