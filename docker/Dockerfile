@@ -54,10 +54,11 @@ RUN set -x && \
 
 # Build
 ARG chain="gtest"
+ARG fast=0
 RUN set -x && \
     cat /root/dynenv && \
     . /root/dynenv && \
-    ./scripts/cargo_with_vendor.sh build --locked $CARGO_OPTIONS -p duniter --no-default-features $BENCH_OPTIONS --features ${chain},embed --target "$RUST_ARCH_TRIPLET" && \
+    ./scripts/cargo_with_vendor.sh build --locked $CARGO_OPTIONS -p duniter --no-default-features $BENCH_OPTIONS --features ${chain},embed$(if [ "$fast" = 1 ]; then printf ",fast"; fi) --target "$RUST_ARCH_TRIPLET" && \
     ./scripts/cargo_with_vendor.sh build --locked $CARGO_OPTIONS -p distance-oracle --no-default-features --features ${chain},standalone,std --target "$RUST_ARCH_TRIPLET" && \
     mkdir -p build && \
     mv target/$RUST_ARCH_TRIPLET/$TARGET_FOLDER/duniter build/ && \
