@@ -91,7 +91,12 @@ default:
   script:
     - source scripts/parse_release_tag.sh
     - bash scripts/prepare_embedded_raw_spec.sh
-    - ./scripts/cargo_with_vendor.sh xtask client-docker-deploy "$NETWORK" --arch "$ARCH"
+    - |
+      if [ "$RUNTIME_MODE" = fast ]; then
+        ./scripts/cargo_with_vendor.sh xtask client-docker-deploy "$NETWORK" --arch "$ARCH" --fast
+      else
+        ./scripts/cargo_with_vendor.sh xtask client-docker-deploy "$NETWORK" --arch "$ARCH"
+      fi
 
 # Release build jobs
 release_debian_arm:
@@ -127,6 +132,9 @@ release_rpm_x64:
       - target/generate-rpm/*.rpm
 
 release_docker_arm:
+  parallel:
+    matrix:
+      - RUNTIME_MODE: [normal, fast]
   extends: .docker_deploy_template
   tags:
     - linuxARM
@@ -134,6 +142,9 @@ release_docker_arm:
     ARCH: arm64
 
 release_docker_x64:
+  parallel:
+    matrix:
+      - RUNTIME_MODE: [normal, fast]
   extends: .docker_deploy_template
   tags:
     - kepler
@@ -141,6 +152,9 @@ release_docker_x64:
     ARCH: amd64
 
 release_docker_manifest:
+  parallel:
+    matrix:
+      - RUNTIME_MODE: [normal, fast]
   stage: release
   extends: .release_rules
   needs:
@@ -166,6 +180,11 @@ release_docker_manifest:
       RUNTIME_VERSION=$(grep 'spec_version:' runtime/shared/runtime.rs | sed 's/.*spec_version: \([0-9]*\).*/\1/')
 
       IMAGE_NAME="duniter/duniter-${NETWORK}"
+      LATEST_TAG=latest
+      if [ "$RUNTIME_MODE" = fast ]; then
+        RUNTIME_VERSION="${RUNTIME_VERSION}-fast"
+        LATEST_TAG=latest-fast
+      fi
       TAG="${RUNTIME_VERSION}-${CLIENT_VERSION}"
 
       echo "Creating multi-arch manifest for ${IMAGE_NAME}:${TAG}"
@@ -181,11 +200,11 @@ release_docker_manifest:
 
       # Also create :latest tag
       docker buildx imagetools create \
-        --tag ${IMAGE_NAME}:latest \
+        --tag ${IMAGE_NAME}:${LATEST_TAG} \
         ${IMAGE_NAME}:${TAG}-amd64 \
         ${IMAGE_NAME}:${TAG}-arm64
 
-      echo "✅ Multi-arch tag created: ${IMAGE_NAME}:latest"
+      echo "✅ Multi-arch tag created: ${IMAGE_NAME}:${LATEST_TAG}"
 
 release_gitlab_page:
   stage: release

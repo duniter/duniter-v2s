@@ -25,7 +25,8 @@ use std::process::Command;
 /// # Arguments
 /// * `network` - Le nom du réseau (ex: gtest-1000, g1-1000)
 /// * `arch` - L'architecture cible (amd64, arm64) ou None pour multi-arch
-pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
+/// * `fast` - Compile the embedded runtime with fast timings
+pub fn docker_deploy(network: String, arch: Option<String>, fast: bool) -> Result<()> {
     println!("🐳 Déploiement Docker pour le réseau: {network}");
 
     let runtime = if network.starts_with("g1") {
@@ -66,6 +67,13 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
     // Calculer les variables comme dans la CI
     let client_version = get_client_version()?;
     let runtime_version = get_runtime_version(runtime)?;
+
+    let runtime_version = if fast {
+        format!("{runtime_version}-fast")
+    } else {
+        runtime_version
+    };
+    let fast_arg = format!("fast={}", u8::from(fast));
 
     // Add architecture suffix to tag if building for specific arch
     let docker_tag = if let Some(ref arch) = arch {
@@ -122,6 +130,8 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
                 "docker/Dockerfile",
                 "--build-arg",
                 &format!("chain={runtime}"),
+                "--build-arg",
+                &fast_arg,
                 ".",
             ]))?;
 
@@ -142,6 +152,8 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
                 "docker/Dockerfile",
                 "--build-arg",
                 &format!("chain={runtime}"),
+                "--build-arg",
+                &fast_arg,
                 ".",
             ]))?;
         }
@@ -160,6 +172,8 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
                 "docker/Dockerfile",
                 "--build-arg",
                 &format!("chain={runtime}"),
+                "--build-arg",
+                &fast_arg,
                 ".",
             ]))?;
         } else {
@@ -175,6 +189,8 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
                 "docker/Dockerfile",
                 "--build-arg",
                 &format!("chain={runtime}"),
+                "--build-arg",
+                &fast_arg,
                 ".",
             ]))?;
         }
@@ -200,7 +216,10 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
                 "push",
                 "--all",
                 &manifest,
-                &format!("docker://docker.io/{image_name}:latest"),
+                &format!(
+                    "docker://docker.io/{image_name}:{}",
+                    if fast { "latest-fast" } else { "latest" }
+                ),
             ]))?;
         }
 
@@ -217,11 +236,14 @@ pub fn docker_deploy(network: String, arch: Option<String>) -> Result<()> {
     println!("   - Runtime: {runtime}");
     if let Some(ref arch_val) = arch {
         println!("   - Architecture: {arch_val}");
-        println!("   - Image: {image_name}:{docker_tag}-{arch_val}");
+        println!("   - Image: {image_name}:{docker_tag}");
     } else {
         println!("   - Architecture: multi-arch (amd64, arm64)");
         println!("   - Image: {image_name}:{docker_tag}");
-        println!("   - Image latest: {image_name}:latest");
+        println!(
+            "   - Image latest: {image_name}:{}",
+            if fast { "latest-fast" } else { "latest" }
+        );
     }
 
     Ok(())

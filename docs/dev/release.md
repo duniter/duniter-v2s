@@ -333,6 +333,16 @@ That means a client release can legitimately use:
 
 if `1200` is the current runtime `spec_version` in the release branch.
 
+For both G1 and GTest, each client release also publishes an image with the
+embedded runtime compiled with the `fast` feature. Its tag inserts `fast`
+between the runtime and client versions, for example `1200-fast-2.3.0` alongside
+`1200-2.3.0`. Both variants support amd64 and arm64. `latest` selects the normal
+image, and `latest-fast` selects the fast image. The Git release tag and native
+packages keep their existing formats.
+
+The fast feature shortens runtime timings for local development networks.
+It does not change the genesis raw spec fetched for the released network.
+
 ## 3. Runtime release on an existing network
 
 Use this flow when the on-chain runtime changes on an already running network.

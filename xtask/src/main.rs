@@ -110,6 +110,9 @@ enum DuniterXTaskCommand {
         /// Architecture cible (amd64, arm64) ou None pour multi-arch
         #[clap(long)]
         arch: Option<String>,
+        /// Compile the embedded runtime with fast timings
+        #[clap(long)]
+        fast: bool,
     },
     /// Create client release (reprend la tâche create_client_release de la CI)
     ClientCreateRelease {
@@ -337,7 +340,7 @@ async fn main() -> Result<()> {
                 ClientReleaseCommand::BuildDeb { network } => client::build_deb::build_deb(network),
                 ClientReleaseCommand::BuildRpm { network } => client::build_rpm::build_rpm(network),
                 ClientReleaseCommand::Docker { network, arch } => {
-                    client::docker_deploy::docker_deploy(network, arch)
+                    client::docker_deploy::docker_deploy(network, arch, false)
                 }
                 ClientReleaseCommand::TriggerBuilds {
                     network,
@@ -410,9 +413,11 @@ async fn main() -> Result<()> {
         DuniterXTaskCommand::ClientBuildRawSpecs { network } => {
             client::build_raw_specs::build_raw_specs(network)
         }
-        DuniterXTaskCommand::ClientDockerDeploy { network, arch } => {
-            client::docker_deploy::docker_deploy(network, arch)
-        }
+        DuniterXTaskCommand::ClientDockerDeploy {
+            network,
+            arch,
+            fast,
+        } => client::docker_deploy::docker_deploy(network, arch, fast),
         DuniterXTaskCommand::ClientCreateRelease {
             network,
             branch,
