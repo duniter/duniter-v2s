@@ -524,7 +524,7 @@ macro_rules! pallets_config {
         }
         parameter_types! {
             pub const TechnicalCommitteeMotionDuration: BlockNumber =
-                common_runtime::param_duration!(7 * DAYS, 30 * MINUTES);
+                common_runtime::param_duration!(28 * DAYS, 30 * MINUTES);
             pub MaxWeight: Weight = Perbill::from_percent(50) * BlockWeights::get().max_block;
         }
         impl pallet_collective::Config<Instance2> for Runtime {
