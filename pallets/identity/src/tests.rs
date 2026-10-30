@@ -998,7 +998,7 @@ fn test_idty_revocation() {
 // print(r.signed_raw())
 // ```
 #[test]
-fn test_idty_revocation_legacy() {
+fn test_idty_revocation_legacy_disabled() {
     new_test_ext(IdentityConfig {
         identities: vec![alice(), legacy_charlie()],
     })
@@ -1016,52 +1016,21 @@ IdtySignature: 7KUagcMiQw05rwbkBsRrnNqPRHu/Y5ukCLoAEpb/1tXAQsSNf2gRi1h5PWIGs9y/v
 CfiG4xhcWS+/DgxY0xFIyOA9TVr4Im3XEXcCApNgXC+Ns9jy2yrNoC3NF8MCD63cZ8QTRfrr4Iv6n3leYCCcDQ==
 ";
 
-let revocation_document_bad_username = r"Version: 10
-Type: Revocation
-Currency: g1
-Issuer: Fnf2xaxYdQpB4kU45DMLQ9Ey4bd6DtoebKJajRkLBUXm
-IdtyUniqueID: Alice
-IdtyTimestamp: 42-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-IdtySignature: dqO8nnYWZDDDzadMXpOVwehJXQ9wocE9QTKsVBa88rPONLhz12QA6Ytib2+VtPU+gnewO2mRVOvzdYKXemQPDg==
-0q/Dy4jwLTjZGSOu4GWdkfW+SqXRAPHUwwvWQenqiuNuL2eEc0x2hM0MWhIOuSLy2ifNq6PfSH/dBrV5CgYIAw==
-";
-
-let revocation_document_bad_signer = r"Version: 10
-Type: Revocation
-Currency: g1
-Issuer: 9cFLFh12MZSL8HHW9KvEDGTEEyKALGjEdHpNP8rqmmw3
-IdtyUniqueID: Charlie
-IdtyTimestamp: 42-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-IdtySignature: 8P2vjDHZf4tHaGpZYTuTXJ9Xe+3qQ0FAM6fypvwl2mYqLs1ZfE07gp4mqRpNY90rC9+CIIi7eHvv2uAlFVpfCQ==
-iWOssQ1y2svWeUD4byjJx6n+/Xgf0pgMe1FDhnR9oN76Ri9B8SQfP+hFD3GCth7sZRD162sR83g3UvYpFHJLBQ==
-";
-
-        assert_eq!(
-            Identity::revoke_identity_legacy(
-                RuntimeOrigin::signed(account(1).id),
-                revocation_document_bad_username.into()
-            ),
-            Err(Error::<Test>::InvalidRevocationKey.into())
-        );
-
-        assert_eq!(
-            Identity::revoke_identity_legacy(
-                RuntimeOrigin::signed(account(1).id),
-                revocation_document_bad_signer.into()
-            ),
-            Err(Error::<Test>::InvalidRevocationKey.into())
-        );
-
-        // Anyone can submit a revocation payload
-        assert_ok!(Identity::revoke_identity_legacy(
-            RuntimeOrigin::signed(account(42).id),
-            valid_revocation_document.into()
-        ));
-
-        System::assert_has_event(RuntimeEvent::Identity(crate::Event::IdtyRevoked {
-            idty_index: 102,
-            reason: RevocationReason::User,
-        }));
+        for document in [
+            valid_revocation_document.as_bytes().to_vec(),
+            [b"\xef\xbb\xbf".as_slice(), valid_revocation_document.as_bytes()].concat(),
+            Vec::new(),
+        ] {
+            frame_support::assert_storage_noop!({
+                assert_eq!(
+                    Identity::revoke_identity_legacy(
+                        RuntimeOrigin::signed(account(42).id),
+                        document,
+                    ),
+                    Err(Error::<Test>::LegacyRevocationDisabled.into())
+                );
+            });
+        }
     });
 }
 
