@@ -30,7 +30,7 @@ pub struct RunOptions {
     /// How blocks should be sealed
     ///
     /// Options are "production", "instant", "manual", or timer interval in milliseconds
-    #[clap(long, default_value = "production")]
+    #[clap(long, default_value = "production", value_parser = SealingParser, hide_possible_values = true)]
     pub sealing: Sealing,
 }
 
@@ -107,7 +107,10 @@ pub struct DuniterConfigExtension {
 }
 
 /// Block authoring scheme to be used by the node
-#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
+///
+/// Parsed with [`std::str::FromStr`] (not `clap::ValueEnum`) so that the
+/// interval variant can be given as a number of milliseconds.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Sealing {
     /// Author a block using normal runtime behavior (mandatory for production networks)
     Production,
@@ -115,11 +118,7 @@ pub enum Sealing {
     Instant,
     /// Author a block upon receiving an RPC command
     Manual,
-    /// Author blocks at a regular interval specified in milliseconds
-    // Clap limitiation with non-unit variant.
-    // While it compiles just fine with clap alone, clap_complete emits a compile-time error.
-    // See https://github.com/clap-rs/clap/issues/3543
-    #[clap(skip)]
+    /// Author and finalize a block at a regular interval specified in milliseconds
     Interval(u64),
 }
 
@@ -137,12 +136,92 @@ impl std::str::FromStr for Sealing {
             "production" => Self::Production,
             "instant" => Self::Instant,
             "manual" => Self::Manual,
-            s => {
-                let millis = s
-                    .parse::<u64>()
-                    .map_err(|_| "couldn't decode sealing param")?;
-                Self::Interval(millis)
-            }
+            s => match s.parse::<u64>() {
+                Ok(0) => return Err("sealing interval must be greater than 0 ms".into()),
+                Ok(millis) => Self::Interval(millis),
+                Err(_) => {
+                    return Err(format!(
+                        "expected \"production\", \"instant\", \"manual\" or an interval in milliseconds, got \"{s}\""
+                    ));
+                }
+            },
         })
+    }
+}
+
+/// Clap parser for [`Sealing`]: accepts the named modes (also listed for shell completion)
+/// and any interval in milliseconds.
+#[derive(Clone, Copy, Debug)]
+struct SealingParser;
+
+impl clap::builder::TypedValueParser for SealingParser {
+    type Value = Sealing;
+
+    fn parse_ref(
+        &self,
+        cmd: &clap::Command,
+        arg: Option<&clap::Arg>,
+        value: &std::ffi::OsStr,
+    ) -> Result<Self::Value, clap::Error> {
+        let arg = arg.map_or_else(|| "...".to_owned(), ToString::to_string);
+        value
+            .to_str()
+            .ok_or_else(|| "value is not valid UTF-8".to_owned())
+            .and_then(str::parse)
+            .map_err(|err| {
+                clap::Error::raw(
+                    clap::error::ErrorKind::InvalidValue,
+                    format!("invalid value {value:?} for '{arg}': {err}\n"),
+                )
+                .with_cmd(cmd)
+            })
+    }
+
+    fn possible_values(
+        &self,
+    ) -> Option<Box<dyn Iterator<Item = clap::builder::PossibleValue> + '_>> {
+        Some(Box::new(
+            ["production", "instant", "manual"]
+                .into_iter()
+                .map(clap::builder::PossibleValue::new),
+        ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    fn parse(args: &[&str]) -> Result<Sealing, clap::Error> {
+        RunOptions::try_parse_from(std::iter::once("duniter").chain(args.iter().copied()))
+            .map(|options| options.sealing)
+    }
+
+    #[test]
+    fn sealing_defaults_to_production() {
+        assert_eq!(parse(&[]).unwrap(), Sealing::Production);
+    }
+
+    #[test]
+    fn sealing_accepts_named_modes() {
+        assert_eq!(
+            parse(&["--sealing=production"]).unwrap(),
+            Sealing::Production
+        );
+        assert_eq!(parse(&["--sealing=instant"]).unwrap(), Sealing::Instant);
+        assert_eq!(parse(&["--sealing", "manual"]).unwrap(), Sealing::Manual);
+    }
+
+    #[test]
+    fn sealing_accepts_interval_in_milliseconds() {
+        assert_eq!(parse(&["--sealing=6000"]).unwrap(), Sealing::Interval(6000));
+    }
+
+    #[test]
+    fn sealing_rejects_invalid_values() {
+        assert!(parse(&["--sealing=0"]).is_err());
+        assert!(parse(&["--sealing=fast"]).is_err());
+        assert!(parse(&["--sealing=-1"]).is_err());
     }
 }
