@@ -773,7 +773,7 @@ where
                         Timer::interval(Duration::from_millis(millis)),
                         |_| EngineCommand::SealNewBlock {
                             create_empty: true,
-                            finalize: false,
+                            finalize: true,
                             parent_hash: None,
                             sender: None,
                         },
