@@ -237,6 +237,161 @@ fn local_node_submits_finalized_and_best_chain_batches_to_an_indexer() {
     server.join().expect("indexer mock thread");
 }
 
+#[test]
+fn local_node_recovers_a_missing_journal_by_replaying_a_babe_sealed_block() {
+    let directory = std::env::temp_dir().join(format!(
+        "duniter-sealed-block-recovery-{}",
+        std::process::id()
+    ));
+    std::fs::create_dir(&directory).expect("create node directory");
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind indexer mock");
+    let address = listener.local_addr().expect("read indexer mock address");
+    listener
+        .set_nonblocking(true)
+        .expect("nonblocking listener");
+    let (batch_tx, batch_rx) = mpsc::channel();
+    let stopping = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let server_stopping = stopping.clone();
+    let server = std::thread::spawn(move || {
+        while !server_stopping.load(std::sync::atomic::Ordering::Acquire) {
+            let stream = match listener.accept() {
+                Ok((stream, _)) => stream,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    std::thread::sleep(Duration::from_millis(20));
+                    continue;
+                }
+                Err(error) => panic!("accept sink request: {error}"),
+            };
+            stream
+                .set_nonblocking(false)
+                .expect("blocking accepted stream");
+            let request = read_request(stream);
+            let mut response = br#"{"status":"accepted"}"#.to_vec();
+            match request.path.as_str() {
+                "/stream-start" => {
+                    let identity: serde_json::Value =
+                        serde_json::from_slice(&request.body).expect("decode stream identity");
+                    response = serde_json::to_vec(&serde_json::json!({
+                        "last_received_best_block": {
+                            "number": 0,
+                            "hash": identity["genesis_hash"],
+                        }
+                    }))
+                    .expect("encode stream cursor");
+                }
+                "/best-chain" => {
+                    let update = BestChainUpdate::decode(&mut request.body.as_slice())
+                        .expect("decode best chain update");
+                    for batch in update.enacted_batches {
+                        batch_tx.send(batch).expect("report received block");
+                    }
+                }
+                "/batches" => {}
+                path => panic!("unexpected sink path {path}"),
+            }
+            respond(request.stream, "200 OK", "application/json", &response);
+        }
+    });
+    let start_node = || {
+        ChildGuard(
+            Command::new(env!("CARGO_BIN_EXE_duniter"))
+                .args([
+                    "--base-path",
+                    directory.to_str().expect("UTF-8 node directory"),
+                    "--chain",
+                    "gtest_local",
+                    "--alice",
+                    "--force-authoring",
+                    "--unsafe-force-node-key-generation",
+                    "--port",
+                    "0",
+                    "--rpc-port",
+                    "0",
+                    "--no-prometheus",
+                    "--sync",
+                    "full",
+                    "--state-pruning",
+                    "256",
+                    "--blocks-pruning",
+                    "archive-canonical",
+                    "--indexer-batch-sink-url",
+                    &format!("http://{address}"),
+                ])
+                .env("DUNITER_INDEXER_BATCH_SINK_TOKEN", TOKEN)
+                .stdout(Stdio::null())
+                .stderr(Stdio::from(
+                    std::fs::File::create(directory.join("node.log")).expect("create node log"),
+                ))
+                .spawn()
+                .expect("start BABE node"),
+        )
+    };
+    let receive_batch = |node: &mut ChildGuard| {
+        for _ in 0..450 {
+            match batch_rx.recv_timeout(Duration::from_millis(200)) {
+                Ok(batch) => return batch,
+                Err(mpsc::RecvTimeoutError::Timeout) => {}
+                Err(error) => panic!("indexer mock stopped: {error}"),
+            }
+            assert!(
+                node.0.try_wait().expect("inspect node status").is_none(),
+                "node exited before delivering the recovered batch: {}",
+                std::fs::read_to_string(directory.join("node.log")).unwrap_or_default()
+            );
+        }
+        panic!("node did not deliver a BABE block within 90 seconds");
+    };
+    let mut node = start_node();
+    let original = receive_batch(&mut node);
+    let batch = decode_batch(&original);
+    assert!(batch.block.number > 0);
+    let header = common_runtime::Header::decode(
+        &mut batch
+            .block
+            .header_raw_bytes
+            .as_deref()
+            .expect("sealed header"),
+    )
+    .expect("decode sealed header");
+    use sp_runtime::traits::Header as _;
+    assert!(matches!(
+        header.digest().logs.last(),
+        Some(sp_runtime::DigestItem::Seal(engine, _)) if engine == b"BABE"
+    ));
+
+    assert!(
+        Command::new("kill")
+            .args(["-TERM", &node.0.id().to_string()])
+            .status()
+            .expect("stop node gracefully")
+            .success()
+    );
+    node.0.wait().expect("wait for node shutdown");
+    // Keep the Substrate database and parent states, but force startup to rebuild the journal.
+    std::fs::remove_dir_all(directory.join("chains/gtest_local/indexer-batch-sink/journal"))
+        .expect("remove journal to reproduce a missing group-commit tail");
+    for _ in batch_rx.try_iter() {}
+
+    let recovery_started = std::time::Instant::now();
+    let mut restarted = start_node();
+    let recovered = receive_batch(&mut restarted);
+    assert_eq!(
+        recovered, original,
+        "recovery must preserve the exact sealed batch"
+    );
+    eprintln!(
+        "Recovered BABE block {}: {} bytes, {} storage changes, restart and replay took {:?}",
+        batch.block.number,
+        recovered.len(),
+        batch.storage_changes.len(),
+        recovery_started.elapsed(),
+    );
+    drop(restarted);
+    stopping.store(true, std::sync::atomic::Ordering::Release);
+    server.join().expect("indexer mock thread");
+    std::fs::remove_dir_all(directory).expect("remove node directory");
+}
+
 fn create_manual_block(address: std::net::SocketAddr) {
     let body =
         br#"{"jsonrpc":"2.0","id":1,"method":"engine_createBlock","params":[true,true,null]}"#;

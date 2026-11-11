@@ -2090,10 +2090,20 @@ where
             .collect()
     } else {
         let parent_hash = *header.parent_hash();
+        // Consensus verifies and removes seals before runtime execution. Keep the canonical
+        // sealed header for the batch, but replay the same pre-seal header as block import.
+        let mut execution_header = header.clone();
+        execution_header
+            .digest_mut()
+            .logs
+            .retain(|item| !matches!(item, sp_runtime::DigestItem::Seal(..)));
         let mut runtime_api = client.runtime_api();
         runtime_api.set_call_context(CallContext::Onchain);
         runtime_api
-            .execute_block(parent_hash, Block::new(header.clone(), body.clone()).into())
+            .execute_block(
+                parent_hash,
+                Block::new(execution_header, body.clone()).into(),
+            )
             .map_err(|err| BatchBuildError::HistoricalStatePruned {
                 number,
                 hash: block_hash,
