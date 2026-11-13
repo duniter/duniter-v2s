@@ -41,7 +41,7 @@ Please read [Developer documentation] before contributing.
 ## List of Duniter's reviewers
 
 - @HugoTrentesaux
-- @tuxmain
+- @elois
 
 [commit naming conventions]: ./docs/dev/git-conventions.md#naming-commits
 [Developer documentation]: ./docs/dev/
