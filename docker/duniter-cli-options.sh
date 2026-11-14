@@ -103,5 +103,6 @@ duniter_env_configure() {
   duniter_env_option 'DUNITER_WARP_CHECKPOINT_HEADER' 'warp-checkpoint-header' 'set' '' || return
   duniter_env_option 'DUNITER_WASM_EXECUTION' 'wasm-execution' 'set' '' || return
   duniter_env_option 'DUNITER_WASM_RUNTIME_OVERRIDES' 'wasm-runtime-overrides' 'set' '' || return
+  duniter_env_option 'DUNITER_WASMTIME_CACHE_PATH' 'wasmtime-cache-path' 'set' '' || return
   duniter_env_option 'DUNITER_WASMTIME_INSTANTIATION_STRATEGY' 'wasmtime-instantiation-strategy' 'set' '' || return
 }

@@ -1955,6 +1955,22 @@
       "action": "set",
       "allow_hyphen_values": false,
       "conflicts": [],
+      "default_values": [],
+      "env": "DUNITER_WASMTIME_CACHE_PATH",
+      "flag": "wasmtime-cache-path",
+      "help": "Directory for compiled runtimes, writable only by trusted processes",
+      "hidden": false,
+      "id": "wasmtime_cache_path",
+      "max_values": 1,
+      "min_values": 1,
+      "possible_values": [],
+      "require_equals": false,
+      "value_delimiter": null
+    },
+    {
+      "action": "set",
+      "allow_hyphen_values": false,
+      "conflicts": [],
       "default_values": [
         "pooling-copy-on-write"
       ],
