@@ -90,6 +90,19 @@ pub struct DuniterConfigExtension {
     #[arg(long, default_value_t = 1024)]
     pub indexer_batch_sink_max_queue_len: usize,
 
+    /// Directory for compiled runtimes, writable only by trusted processes.
+    ///
+    /// Without this option, the runtime is compiled again at each start, which takes a few
+    /// seconds. Cached artifacts are looked up by the runtime code and compiler settings, so
+    /// a runtime upgrade simply adds a new entry.
+    ///
+    /// Cached artifacts contain native code that the node executes without authenticating its
+    /// source. Anyone who can modify the cache can execute arbitrary code as the node user.
+    /// Restrict write access to the node user and trusted processes. Share the directory only
+    /// with trusted nodes and containers.
+    #[arg(long, value_name = "PATH", value_hint = clap::ValueHint::DirPath)]
+    pub wasmtime_cache_path: Option<std::path::PathBuf>,
+
     /// Public endpoints from a JSON file, using following format where `protocol` and `address` are
     /// strings (value is free) :
     ///

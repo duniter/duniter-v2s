@@ -80,6 +80,17 @@ memberships and received certifications. Sudo uses `//Alice` with ed25519 by def
 Using a `*_local` chain automatically enables local mode in the entrypoint:
 `--validator --unsafe-force-node-key-generation --sealing manual --tmp`.
 
+## Runtime compilation cache
+
+Set `DUNITER_WASMTIME_CACHE_PATH` to a directory inside the container to reuse
+compiled runtimes between restarts. Mount a persistent volume at that path to
+retain the cache when you replace the container. The cache is disabled by default.
+
+The cache contains native code that Duniter executes without authenticating its
+source. Anyone who can modify the cache can execute arbitrary code as the node
+user. Restrict write access to the node user and trusted processes. Share the
+volume only with trusted nodes and containers.
+
 ## Environment variables
 
 | Name                         | Description                                                                                                                                                                                                                                                                                                                                          | Default                                                                                     |

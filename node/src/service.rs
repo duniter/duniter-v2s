@@ -329,6 +329,31 @@ type FullBabeBlockImport<RuntimeApi, Executor> = sc_consensus_babe::BabeBlockImp
     FullSelectChain,
 >;
 
+/// Same as [`sc_service::new_wasm_executor`], with an optional persistent wasmtime cache.
+fn new_wasm_executor<H: sc_executor::HostFunctions>(
+    config: &sc_service::config::ExecutorConfiguration,
+    wasmtime_cache_path: Option<&std::path::Path>,
+) -> sc_executor::WasmExecutor<H> {
+    use sc_executor::{DEFAULT_HEAP_ALLOC_STRATEGY, HeapAllocStrategy};
+
+    let strategy = config
+        .default_heap_pages
+        .map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |p| HeapAllocStrategy::Static {
+            extra_pages: p as _,
+        });
+    let mut builder = sc_executor::WasmExecutor::<H>::builder()
+        .with_execution_method(config.wasm_method)
+        .with_onchain_heap_alloc_strategy(strategy)
+        .with_offchain_heap_alloc_strategy(strategy)
+        .with_max_runtime_instances(config.max_runtime_instances)
+        .with_runtime_cache_size(config.runtime_cache_size);
+    if let Some(path) = wasmtime_cache_path {
+        log::info!("💾 Wasmtime compilation cache: {}", path.display());
+        builder = builder.with_cache_path(path);
+    }
+    builder.build()
+}
+
 #[allow(clippy::type_complexity)]
 pub fn new_partial<RuntimeApi, Executor>(
     config: &Configuration,
@@ -399,10 +424,15 @@ where
         })
         .transpose()?;
 
+    let wasm_executor = new_wasm_executor(
+        &config.executor,
+        duniter_options.wasmtime_cache_path.as_deref(),
+    );
     #[cfg(feature = "native")]
-    let executor = sc_service::new_native_or_wasm_executor(&config);
+    #[allow(deprecated)]
+    let executor = sc_executor::NativeElseWasmExecutor::new_with_wasm_executor(wasm_executor);
     #[cfg(not(feature = "native"))]
-    let executor = sc_service::new_wasm_executor(&config.executor);
+    let executor = wasm_executor;
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts::<Block, RuntimeApi, _>(
