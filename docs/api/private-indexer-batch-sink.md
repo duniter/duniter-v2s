@@ -174,6 +174,16 @@ crossed, every later finalized batch is sent as `live`, including gap catch-up
 after an interruption and batches recovered through chain continuity after an
 in-memory wake-up cursor was dropped.
 
+If the boundary is crossed after every finalized batch was already acknowledged
+as `historical`, for example on an idle or manually sealed chain, Duniter does
+not wait for the next finalized block. It replays the last acknowledged batch,
+byte for byte, as a one-element `live` chunk. The consumer acknowledges it as an
+idempotent duplicate and thereby observes the live boundary. Duniter keeps only
+that one batch in memory, and drops it when a later `stream-start` reports a
+different last received block. If the historical chunk's HTTP acknowledgement
+is lost after the consumer commits it, Duniter keeps the last batch sent and
+replays it only after `stream-start` confirms the same block number and hash.
+
 The header describes the producer path, not whether a consumer is bootstrapping.
 A consumer that maintains a transient event journal should suppress historical
 notifications only until it has accepted its first `live` chunk. Once live mode

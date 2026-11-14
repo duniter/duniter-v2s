@@ -288,6 +288,27 @@ struct BlockCursor {
     hash: Option<H256>,
 }
 
+/// The last finalized batch sent in historical mode by this process.
+///
+/// Its exact bytes are kept even if the HTTP acknowledgement is lost. After a
+/// failed request, stream-start must confirm receipt before the live replay.
+struct HistoricalTail {
+    number: u32,
+    hash: H256,
+    encoded: Vec<u8>,
+}
+
+impl HistoricalTail {
+    /// The replay is valid only while the indexer still reports this batch as its
+    /// last received finalized block.
+    fn is_last_received(&self, ack: &StreamStartAck) -> bool {
+        ack.resume_from == self.number.saturating_add(1)
+            && ack.last_received.is_some_and(|cursor| {
+                cursor.number == self.number && cursor.hash == Some(self.hash)
+            })
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 struct StreamStartAck {
     resume_from: u32,
@@ -2241,6 +2262,7 @@ async fn send_batches<RuntimeApi, Executor>(
     let mut retry_delay = INITIAL_BATCH_RETRY;
     let mut next_expected_number = 0;
     let mut live_delivery_ready = false;
+    let mut historical_tail: Option<HistoricalTail> = None;
     let mut historical_acknowledgements = ProgressLogCounter::default();
     let mut already_submitted_live_drops = ProgressLogCounter::default();
 
@@ -2278,6 +2300,12 @@ async fn send_batches<RuntimeApi, Executor>(
                         queue.retain(|batch| batch.number > cursor.number);
                     }
 
+                    if historical_tail
+                        .as_ref()
+                        .is_some_and(|tail| !tail.is_last_received(&ack))
+                    {
+                        historical_tail = None;
+                    }
                     stream_open = true;
                     next_expected_number = ack.resume_from;
                     retry_delay = INITIAL_BATCH_RETRY;
@@ -2354,6 +2382,7 @@ async fn send_batches<RuntimeApi, Executor>(
                 &mut queue,
                 next_expected_number..=finalized_number,
                 &mut historical_acknowledgements,
+                &mut historical_tail,
             )
             .await
             {
@@ -2404,6 +2433,7 @@ async fn send_batches<RuntimeApi, Executor>(
                     &mut queue,
                     next_expected_number..=batch_number.saturating_sub(1),
                     &mut historical_acknowledgements,
+                    &mut historical_tail,
                 )
                 .await
                 {
@@ -2445,7 +2475,18 @@ async fn send_batches<RuntimeApi, Executor>(
                 }
             };
             let mode = delivery_mode(live_delivery_ready);
-            match sink.send_batches(vec![encoded], mode).await {
+            match sink
+                .send_batches_retaining_tail(
+                    vec![encoded],
+                    QueuedBatch {
+                        number: batch_number,
+                        hash: batch_hash,
+                    },
+                    mode,
+                    &mut historical_tail,
+                )
+                .await
+            {
                 Ok(()) => {
                     info!(
                         "Compatible indexer durably acknowledged finalized batch chunk block_number={} block_hash={:?} delivery_mode={}; removing it from memory queue and storage diff journal",
@@ -2462,6 +2503,33 @@ async fn send_batches<RuntimeApi, Executor>(
                     stream_open = false;
                     error!(
                         "Compatible indexer did not durably acknowledge live finalized batch chunk block_number={batch_number} block_hash={batch_hash:?}; it stays queued and will be retried after {retry_delay:?}. Error: {err}",
+                    );
+                    async_io::Timer::after(retry_delay).await;
+                    retry_delay = std::cmp::min(retry_delay * 2, MAX_BATCH_RETRY);
+                }
+            }
+        } else if live_delivery_ready && let Some(tail) = historical_tail.as_ref() {
+            // Every finalized batch was acknowledged in historical mode, so the
+            // indexer has not observed the live boundary. Replay the last batch
+            // as live instead of waiting for the next finalized block, which may
+            // never come on an idle or manually sealed chain.
+            match sink
+                .send_batches(std::slice::from_ref(&tail.encoded), BatchDeliveryMode::Live)
+                .await
+            {
+                Ok(()) => {
+                    info!(
+                        "Compatible indexer acknowledged the live handoff replay of finalized batch block_number={} block_hash={:?}",
+                        tail.number, tail.hash,
+                    );
+                    historical_tail = None;
+                    retry_delay = INITIAL_BATCH_RETRY;
+                }
+                Err(err) => {
+                    stream_open = false;
+                    error!(
+                        "Compatible indexer did not acknowledge the live handoff replay of finalized batch block_number={} block_hash={:?}; it will be retried after {retry_delay:?}. Error: {err}",
+                        tail.number, tail.hash,
                     );
                     async_io::Timer::after(retry_delay).await;
                     retry_delay = std::cmp::min(retry_delay * 2, MAX_BATCH_RETRY);
@@ -2508,6 +2576,7 @@ async fn send_historical_range<RuntimeApi, Executor>(
     queue: &mut VecDeque<QueuedBatch>,
     range: std::ops::RangeInclusive<u32>,
     historical_acknowledgements: &mut ProgressLogCounter,
+    historical_tail: &mut Option<HistoricalTail>,
 ) -> Result<u32, String>
 where
     RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>
@@ -2536,6 +2605,7 @@ where
         let chunk_to = historical_chunk_end(chunk_from, to);
         let mut encoded_batches = Vec::with_capacity((chunk_to - chunk_from + 1) as usize);
         let mut first_queued = None;
+        let mut last_hash = H256::zero();
 
         for number in chunk_from..=chunk_to {
             let hash = client
@@ -2543,6 +2613,7 @@ where
                 .map_err(|err| format!("failed to read historical block hash at #{number}: {err}"))?
                 .ok_or_else(|| format!("historical block hash is unavailable at #{number}"))?;
             first_queued.get_or_insert(QueuedBatch { number, hash });
+            last_hash = hash;
             let encoded = match journal.load(number, hash)? {
                 Some(encoded) => encoded,
                 None => {
@@ -2557,7 +2628,18 @@ where
         }
 
         let chunk_len = encoded_batches.len();
-        match sink.send_batches(encoded_batches, mode).await {
+        match sink
+            .send_batches_retaining_tail(
+                encoded_batches,
+                QueuedBatch {
+                    number: chunk_to,
+                    hash: last_hash,
+                },
+                mode,
+                historical_tail,
+            )
+            .await
+        {
             Ok(()) => {
                 acknowledge_or_schedule(cleanup_scheduler, journal, chunk_to, false);
                 for number in chunk_from..=chunk_to {
@@ -2745,7 +2827,7 @@ impl HttpSink {
 
     async fn send_batches(
         &self,
-        encoded_batches: Vec<Vec<u8>>,
+        encoded_batches: &[Vec<u8>],
         mode: BatchDeliveryMode,
     ) -> Result<(), String> {
         debug_assert!(!encoded_batches.is_empty());
@@ -2755,7 +2837,7 @@ impl HttpSink {
             .post(&self.batches_url)
             .header(header::CONTENT_TYPE, "application/octet-stream")
             .header(BATCH_MODE_HEADER, mode.as_str())
-            .body(codec::Encode::encode(&encoded_batches));
+            .body(codec::Encode::encode(encoded_batches));
         if let Some(token) = &self.token {
             request = request.bearer_auth(token);
         }
@@ -2765,6 +2847,28 @@ impl HttpSink {
             .await
             .map_err(|err| format!("batch chunk transport failure: {err}"))?;
         classify_response("batch chunk", response).await.map(|_| ())
+    }
+
+    async fn send_batches_retaining_tail(
+        &self,
+        mut encoded_batches: Vec<Vec<u8>>,
+        last_batch: QueuedBatch,
+        mode: BatchDeliveryMode,
+        historical_tail: &mut Option<HistoricalTail>,
+    ) -> Result<(), String> {
+        let result = self.send_batches(&encoded_batches, mode).await;
+        if matches!(mode, BatchDeliveryMode::Historical) {
+            // A transport failure can happen after the indexer commits the chunk.
+            // Keep its tail until stream-start confirms or rejects that cursor.
+            *historical_tail = encoded_batches.pop().map(|encoded| HistoricalTail {
+                number: last_batch.number,
+                hash: last_batch.hash,
+                encoded,
+            });
+        } else if result.is_ok() {
+            *historical_tail = None;
+        }
+        result
     }
 
     async fn send_best_chain(&self, update: BestChainUpdate) -> Result<(), String> {
@@ -3032,6 +3136,147 @@ mod tests {
             u32::MAX,
             u32::MAX
         ));
+    }
+
+    #[test]
+    fn live_handoff_replays_only_the_last_received_historical_batch() {
+        let tail = HistoricalTail {
+            number: 3,
+            hash: H256::repeat_byte(3),
+            encoded: vec![1, 2, 3],
+        };
+        let ack = |resume_from, number, hash| StreamStartAck {
+            resume_from,
+            last_received: Some(BlockCursor { number, hash }),
+            best: None,
+        };
+
+        assert!(tail.is_last_received(&ack(4, 3, Some(H256::repeat_byte(3)))));
+        assert!(!tail.is_last_received(&ack(4, 3, Some(H256::repeat_byte(4)))));
+        assert!(!tail.is_last_received(&ack(4, 3, None)));
+        assert!(!tail.is_last_received(&ack(3, 2, Some(H256::repeat_byte(3)))));
+        assert!(!tail.is_last_received(&StreamStartAck {
+            resume_from: 0,
+            last_received: None,
+            best: None,
+        }));
+    }
+
+    #[test]
+    fn live_handoff_survives_a_lost_historical_acknowledgement() {
+        use std::net::TcpListener;
+
+        // Exercise a full catch-up chunk without retaining more than its tail.
+        let batches: Vec<Vec<u8>> = (0..SINK_CHUNK_MAX_BATCHES)
+            .map(|number| vec![number as u8; 128 * 1024])
+            .collect();
+        let expected_tail = batches.last().unwrap().clone();
+        let number = SINK_CHUNK_MAX_BATCHES as u32 - 1;
+        let hash = H256::repeat_byte(number as u8);
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server_tail = expected_tail.clone();
+        let server = std::thread::spawn(move || {
+            for step in 0..3 {
+                let (mut stream, _) = listener.accept().unwrap();
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(10)))
+                    .unwrap();
+                let mut request = Vec::new();
+                let mut buffer = [0; 8192];
+                let header_end = loop {
+                    let count = stream.read(&mut buffer).unwrap();
+                    assert_ne!(count, 0);
+                    request.extend_from_slice(&buffer[..count]);
+                    if let Some(end) = request.windows(4).position(|bytes| bytes == b"\r\n\r\n") {
+                        break end + 4;
+                    }
+                };
+                let headers = String::from_utf8(request[..header_end].to_vec()).unwrap();
+                let content_length: usize = headers
+                    .lines()
+                    .find_map(|line| {
+                        line.to_ascii_lowercase()
+                            .strip_prefix("content-length: ")
+                            .map(str::to_owned)
+                    })
+                    .unwrap()
+                    .parse()
+                    .unwrap();
+                while request.len() < header_end + content_length {
+                    let count = stream.read(&mut buffer).unwrap();
+                    assert_ne!(count, 0);
+                    request.extend_from_slice(&buffer[..count]);
+                }
+                if step == 1 {
+                    assert!(headers.starts_with("POST /stream-start "));
+                    let body = serde_json::json!({
+                        "last_received_finalized_block": {
+                            "number": number,
+                            "hash": format!("{hash:?}"),
+                        }
+                    })
+                    .to_string();
+                    write!(
+                        stream,
+                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                        body.len()
+                    )
+                    .unwrap();
+                } else {
+                    assert!(headers.starts_with("POST /batches "));
+                    let decoded =
+                        <Vec<Vec<u8>> as codec::Decode>::decode(&mut &request[header_end..])
+                            .unwrap();
+                    if step == 0 {
+                        assert!(headers.contains("duniter-batch-mode: historical\r\n"));
+                        assert_eq!(decoded.len(), SINK_CHUNK_MAX_BATCHES);
+                        assert_eq!(decoded.last(), Some(&server_tail));
+                        // Commit the chunk but close without an HTTP response.
+                    } else {
+                        assert!(headers.contains("duniter-batch-mode: live\r\n"));
+                        assert_eq!(decoded, vec![server_tail.clone()]);
+                        stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").unwrap();
+                    }
+                }
+            }
+        });
+
+        tokio::runtime::Runtime::new().unwrap().block_on(async {
+            let sink = HttpSink::new(
+                format!("http://{address}"),
+                None,
+                "test".into(),
+                H256::zero(),
+            );
+            let mut tail = None;
+            assert!(
+                sink.send_batches_retaining_tail(
+                    batches,
+                    QueuedBatch { number, hash },
+                    BatchDeliveryMode::Historical,
+                    &mut tail,
+                )
+                .await
+                .is_err()
+            );
+            let ack = sink.open_stream().await.unwrap();
+            let retained = tail
+                .as_ref()
+                .expect("retain the tail after a lost HTTP response");
+            assert!(retained.is_last_received(&ack));
+            assert_eq!(retained.encoded, expected_tail);
+            sink.send_batches_retaining_tail(
+                vec![retained.encoded.clone()],
+                QueuedBatch { number, hash },
+                BatchDeliveryMode::Live,
+                &mut tail,
+            )
+            .await
+            .unwrap();
+            assert!(tail.is_none());
+        });
+        server.join().unwrap();
     }
 
     #[test]
